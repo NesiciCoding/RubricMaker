@@ -4,9 +4,11 @@ import { useTranslation } from 'react-i18next';
 import { Check } from 'lucide-react';
 import { decodeFeedbackCode } from '../utils/shareCode';
 import { calcGradeSummary } from '../utils/gradeCalc';
+import { criteriaForTier } from '../utils/tieredRubric';
 import { safeAudioDataUrl } from '../utils/safeUrl';
 import { SharedPageShell, SharedPageInvalid, sharedCardStyle } from '../components/ui/SharedPageShell';
 import PassageReadAloud from '../components/Tests/PassageReadAloud';
+import SubItemFeedback from '../components/Students/SubItemFeedback';
 
 export default function StudentFeedbackPage() {
     const { code } = useParams<{ code: string }>();
@@ -27,7 +29,7 @@ export default function StudentFeedbackPage() {
     }
 
     const { sr, rubric, student, scale } = data;
-    const summary = calcGradeSummary(sr, rubric.criteria, scale);
+    const summary = calcGradeSummary(sr, rubric.criteria, scale, rubric);
     const fmt = rubric.format;
     // The rubric's accent only tints borders and backgrounds; text keeps the theme colours so a light
     // accent never drops below contrast.
@@ -76,7 +78,7 @@ export default function StudentFeedbackPage() {
                     </div>
                     {showGrade && (
                         <div style={{ textAlign: 'end' }}>
-                            {scale && (
+                            {(scale || summary.verdict) && (
                                 <div
                                     style={{
                                         fontSize: '2.8rem',
@@ -119,7 +121,7 @@ export default function StudentFeedbackPage() {
                 )}
             </header>
 
-            {rubric.criteria.map((criterion) => {
+            {criteriaForTier(rubric.criteria, sr.tierId).map((criterion) => {
                 const entry = sr.entries.find((e) => e.criterionId === criterion.id);
                 const audioSrc = safeAudioDataUrl(entry?.audioDataUrl);
                 const selectedLevel = criterion.levels.find((l) => l.id === entry?.levelId);
@@ -228,6 +230,8 @@ export default function StudentFeedbackPage() {
                                 );
                             })}
                         </ul>
+
+                        <SubItemFeedback criterion={criterion} entry={entry} />
 
                         {entry?.comment && (
                             <>

@@ -27,6 +27,7 @@ export interface LearningGoalAggregate {
 import { Rubric, StudentRubric, LinkedStandard, SchoolYear, VoTrack, StandardMasteryTarget } from '../types';
 import type { ProgressStatus } from './cefrOrdinal';
 import { criterionMaxPoints } from './gradeCalc';
+import { scoresSubItems, subItemEarned, subItemRange } from './subItems';
 
 function findMasteryTarget(
     masteryTargets: StandardMasteryTarget[] | undefined,
@@ -100,6 +101,9 @@ export function getStudentGoalScores(
             let criterionMax = 0;
 
             const selectedLevel = criterion.levels.find((l) => l.id === entry.levelId);
+            // The mode the grade was given in, so switching a criterion's mode later leaves its history alone.
+            const gradedMode = (submission.rubricSnapshot?.criteria.find((c) => c.id === criterion.id) ?? criterion)
+                .subItemMode;
 
             if (entry.overridePoints !== undefined) {
                 // If there's an override, we just have the override points vs max points of the criterion
@@ -118,23 +122,15 @@ export function getStudentGoalScores(
                     );
                     maxPointsPerStandard.set(std.guid, (maxPointsPerStandard.get(std.guid) || 0) + criterionMax);
                 });
-            } else if (selectedLevel && selectedLevel.subItems && selectedLevel.subItems.length > 0) {
+            } else if (
+                selectedLevel &&
+                scoresSubItems({ levels: criterion.levels, subItemMode: gradedMode }) &&
+                (selectedLevel.subItems?.length ?? 0) > 0
+            ) {
                 // Sub-items based scoring
                 selectedLevel.subItems.forEach((si) => {
-                    // Check if this sub-item is active
-                    const isChecked = entry.checkedSubItems.includes(si.id);
-                    const granularScore = entry.subItemScores?.[si.id];
-                    let earned = 0;
-
-                    // We need a fallback max points, try granular first, then sub item static points
-                    let max = si.maxPoints ?? si.points ?? 0;
-                    if (max === 0 && si.minPoints !== undefined) max = si.maxPoints || 0;
-
-                    if (granularScore !== undefined) {
-                        earned = granularScore;
-                    } else if (isChecked) {
-                        earned = si.points ?? max;
-                    }
+                    const earned = subItemEarned(entry, si);
+                    const max = subItemRange(si).max;
 
                     // Assign points directly to sub-item standards if any exist
                     let hasSubItemStandard = false;

@@ -362,6 +362,65 @@ describe('AppContext reducer — rubrics, students, classes', () => {
         expect(nextSibling.entries.find((e) => e.criterionId === 'own')?.levelId).toBeNull();
     });
 
+    it("keeps a group sibling's ticks on other tiers' statements when a tiered grade fans out", () => {
+        const tieredRubric: Rubric = {
+            ...rubric,
+            criteria: [
+                {
+                    id: 'shared',
+                    title: 'Shared',
+                    description: '',
+                    weight: 100,
+                    subItemMode: 'checklist',
+                    levels: [
+                        {
+                            id: 'l1',
+                            label: 'B',
+                            minPoints: 1,
+                            maxPoints: 1,
+                            description: '',
+                            subItems: [
+                                { id: 'havo1', label: 'Havo', tierId: 'havo' },
+                                { id: 'mavo1', label: 'Mavo', tierId: 'mavo' },
+                                { id: 'both', label: 'Both' },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        };
+        const entry = (checkedSubItems: string[]) => ({
+            criterionId: 'shared',
+            levelId: 'l1',
+            checkedSubItems,
+            comment: '',
+        });
+        const havoLead: StudentRubric = {
+            id: 'srA',
+            rubricId: 'r1',
+            studentId: 's1',
+            entries: [entry(['havo1', 'both'])],
+            overallComment: '',
+            groupId: 'g1',
+            isPeerReview: false,
+            tierId: 'havo',
+            rubricSnapshot: tieredRubric,
+        };
+        const mavoSibling: StudentRubric = {
+            ...havoLead,
+            id: 'srB',
+            studentId: 's2',
+            tierId: 'mavo',
+            entries: [entry(['mavo1'])],
+        };
+        let state = makeState({ rubrics: [tieredRubric], studentRubrics: [havoLead, mavoSibling] });
+        state = run(state, { type: 'SAVE_STUDENT_RUBRIC', payload: havoLead });
+
+        const sibling = state.studentRubrics.find((sr) => sr.id === 'srB')!;
+        expect(sibling.entries[0].checkedSubItems).toEqual(['havo1', 'both', 'mavo1']);
+        expect(sibling.tierId).toBe('mavo');
+    });
+
     it('soft-deletes student rubrics by student and by group scope, and restores them', () => {
         const srB: StudentRubric = { ...studentRubric, id: 'srB', studentId: 's2', groupId: 'g1' };
         let state = makeState({ studentRubrics: [{ ...studentRubric, groupId: 'g1' }, srB] });

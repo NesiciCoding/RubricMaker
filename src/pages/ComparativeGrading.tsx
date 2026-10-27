@@ -20,9 +20,17 @@ import { SCHOOL_YEAR_LABELS } from '../data/schoolYears';
 import { nanoid } from '../utils/nanoid';
 import { useTranslation } from 'react-i18next';
 import { calcGradeSummary, patchScoreEntry } from '../utils/gradeCalc';
-import { countMatchupsPerStudent, pickNextMatchupPair } from '../utils/comparativeMatchups';
+import { scoresSubItems, subItemMode, subItemRange, toggleTick } from '../utils/subItems';
+import { gradeTier, levelForTier, tierLabel } from '../utils/tieredRubric';
+import SubItemChecklist from '../components/Grading/SubItemChecklist';
+import {
+    countPartnersPerStudent,
+    getMatchKey,
+    matchupCapacity,
+    pickNextMatchupPair,
+} from '../utils/comparativeMatchups';
 import AttachmentViewer from '../components/Attachments/AttachmentViewer';
-import { ComparativeMatchup, ScoreEntry } from '../types';
+import { ComparativeMatchup, ScoreEntry, Student, StudentRubric, TieredConfig } from '../types';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 
@@ -184,6 +192,17 @@ function ClassPicker({ rubricId }: { rubricId: string }) {
     );
 }
 
+function TierTag({ config, tierId }: { config: TieredConfig; tierId: string }) {
+    const tier = config.tiers.find((x) => x.id === tierId);
+    // v8 ignore next 1 -- tierA/tierB only ever name a tier of this config
+    if (!tier) return null;
+    return (
+        <span className="badge badge-blue" style={{ fontSize: '0.72rem' }}>
+            {tierLabel(tier)}
+        </span>
+    );
+}
+
 // ─── Grading session ─────────────────────────────────────────────────────────
 // classId is either a real class ID or COMBINED_ID for all linked classes.
 function ComparativeGradingSession({ classId, rubricId }: { classId: string; rubricId: string }) {
@@ -241,6 +260,41 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
         () => (rubric ? comparativeMatchups.filter((m) => m.rubricId === rubric.id) : []),
         [comparativeMatchups, rubric]
     );
+
+    // A tiered rubric pairs students within their tier unless set to pair across tiers. A student's
+    // tier is the one on their grade for this rubric, else their class tier; a student with neither
+    // gets a group of their own, so two students of unknown tier are never paired as if they matched.
+    const pairing = rubric?.tiered ? (rubric.tiered.comparativePairing ?? 'tier') : 'all';
+    const tierKey = useCallback(
+        (s: Student) => {
+            if (!rubric?.tiered) return '';
+            const sr = studentRubrics.find((r) => r.rubricId === rubric.id && r.studentId === s.id && !r.isPeerReview);
+            const cls = classes.find((c) => c.id === s.classId);
+            return gradeTier(rubric.tiered, sr ?? {}, s, cls)?.id ?? `\u0000${s.id}`;
+        },
+        [rubric, studentRubrics, classes]
+    );
+    const groupOf = pairing === 'tier' ? tierKey : undefined;
+    // Within tiers, only same-tier matchups count toward progress and each student's limit, so
+    // cross-tier comparisons from before a switch don't use up the within-tier budget.
+    const countable = useCallback(
+        (matchups: ComparativeMatchup[]) => {
+            if (!groupOf) return matchups;
+            const byId = new Map(classStudents.map((s) => [s.id, s]));
+            return matchups.filter((m) => {
+                const a = byId.get(m.studentAId);
+                const b = byId.get(m.studentBId);
+                return !a || !b || groupOf(a) === groupOf(b);
+            });
+        },
+        [groupOf, classStudents]
+    );
+    const countedMatchups = useMemo(() => countable(rubricMatchups), [countable, rubricMatchups]);
+
+    function setPairing(next: 'tier' | 'all') {
+        if (!rubric?.tiered) return;
+        updateRubric({ ...rubric, tiered: { ...rubric.tiered, comparativePairing: next } });
+    }
 
     function commitMatchupLimit(limit: number) {
         if (!rubric || (rubric.comparativeMatchupLimit ?? 0) === limit) return;
@@ -330,7 +384,13 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
 
         // Eligibility and pairing preference are both based on rubricMatchups — the persisted
         // history for this rubric — so they hold up across reloads/devices, not just this session.
-        const pick = pickNextMatchupPair(classStudents, matchupsOverride ?? rubricMatchups, matchupLimit, anchorId);
+        const pick = pickNextMatchupPair(
+            classStudents,
+            countable(matchupsOverride ?? rubricMatchups),
+            matchupLimit,
+            anchorId,
+            groupOf
+        );
         if (!pick) {
             setSessionDone(true);
             return;
@@ -349,17 +409,42 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
         setIsDirty(false);
     }
 
+    // A tiered grade is in its saved tier, else the student's class tier; saving pins it.
+    const tierOf = (student: Student, sr: StudentRubric) =>
+        rubric?.tiered
+            ? gradeTier(
+                  rubric.tiered,
+                  sr,
+                  student,
+                  classes.find((c) => c.id === student.classId)
+              )?.id
+            : undefined;
+
     function handleSaveAndNext() {
         // v8 ignore next 1 -- the save button only renders once every student/score pair is set
         if (!srA || !srB || !studentA || !studentB || !rubric) return;
+        const tierA = tierOf(studentA, srA);
+        const tierB = tierOf(studentB, srB);
         const snap = JSON.parse(JSON.stringify(rubric));
         const snapScaleId = rubric.gradeScaleId ?? settings.defaultGradeScaleId;
         const snapScale =
             snapScaleId === 'none' ? null : (gradeScales.find((g) => g.id === snapScaleId) ?? gradeScales[0]);
         const gradeScaleSnapshot = snapScale ? JSON.parse(JSON.stringify(snapScale)) : undefined;
         const gradedAt = new Date().toISOString();
-        const savedSrA = { ...srA, gradedAt, rubricSnapshot: snap, gradeScaleSnapshot };
-        const savedSrB = { ...srB, gradedAt, rubricSnapshot: snap, gradeScaleSnapshot };
+        const savedSrA = {
+            ...srA,
+            ...(tierA && { tierId: tierA }),
+            gradedAt,
+            rubricSnapshot: snap,
+            gradeScaleSnapshot,
+        };
+        const savedSrB = {
+            ...srB,
+            ...(tierB && { tierId: tierB }),
+            gradedAt,
+            rubricSnapshot: snap,
+            gradeScaleSnapshot,
+        };
         saveStudentRubric(savedSrA);
         saveStudentRubric(savedSrB);
         // Only a completed (saved) comparison counts against the per-student cap — an abandoned
@@ -385,6 +470,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
         if (!criteria || criteria.levels.length === 0) return;
 
         const sortedLevels = [...criteria.levels].sort((l1, l2) => (l1.minPoints || 0) - (l2.minPoints || 0));
+        const mode = subItemMode(criteria);
         const entryA = srA.entries.find((e) => e.criterionId === criterionId)!;
         const entryB = srB.entries.find((e) => e.criterionId === criterionId)!;
 
@@ -424,7 +510,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
             ...srA,
             entries: srA.entries.map((e) =>
                 e.criterionId === criterionId
-                    ? patchScoreEntry(e, { levelId: sortedLevels[idxA].id, overridePoints: undefined })
+                    ? patchScoreEntry(e, { levelId: sortedLevels[idxA].id, overridePoints: undefined }, mode)
                     : e
             ),
         });
@@ -432,7 +518,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
             ...srB,
             entries: srB.entries.map((e) =>
                 e.criterionId === criterionId
-                    ? patchScoreEntry(e, { levelId: sortedLevels[idxB].id, overridePoints: undefined })
+                    ? patchScoreEntry(e, { levelId: sortedLevels[idxB].id, overridePoints: undefined }, mode)
                     : e
             ),
         });
@@ -446,16 +532,20 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
         (isA: boolean, criterionId: string, patch: Partial<ScoreEntry>) => {
             const setter = isA ? setSrA : setSrB;
             setIsDirty(true);
+            const criterion = rubric?.criteria.find((c) => c.id === criterionId);
+            const mode = criterion ? subItemMode(criterion) : 'points';
             setter((prev) => {
                 // v8 ignore next 1 -- updateEntry only runs from session controls while both SRs are set
                 if (!prev) return prev;
                 return {
                     ...prev,
-                    entries: prev.entries.map((e) => (e.criterionId === criterionId ? patchScoreEntry(e, patch) : e)),
+                    entries: prev.entries.map((e) =>
+                        e.criterionId === criterionId ? patchScoreEntry(e, patch, mode) : e
+                    ),
                 };
             });
         },
-        [setSrA, setSrB]
+        [setSrA, setSrB, rubric]
     );
 
     function setSubItemScore(isA: boolean, criterionId: string, subItemId: string, score: number) {
@@ -514,18 +604,16 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
         });
     }
 
-    const n = classStudents.length;
-    const totalPossibleMatchups = (n * (n - 1)) / 2;
-    const matchupsDone = rubricMatchups.length;
+    // A pair compared twice (the picker repeats one once every partner is used) counts once, matching
+    // the distinct-pair capacity below.
+    const matchupsDone = new Set(countedMatchups.map((m) => getMatchKey(m.studentAId, m.studentBId))).size;
     // Per-student limit: each student can appear in at most matchupLimit matchups.
     // Maximum matchups given that limit = floor(n * matchupLimit / 2), capped at totalPossible.
-    const sessionMax =
-        matchupLimit > 0 ? Math.min(Math.floor((n * matchupLimit) / 2), totalPossibleMatchups) : totalPossibleMatchups;
+    const { sessionMax, partners } = matchupCapacity(classStudents, matchupLimit, groupOf);
     const matchupsLeft = Math.max(0, sessionMax - matchupsDone);
     const matchupProgress = sessionMax > 0 ? Math.min(100, (matchupsDone / sessionMax) * 100) : 0;
-    const maxPerStudent = n - 1;
 
-    const perStudentDone = useMemo(() => countMatchupsPerStudent(rubricMatchups), [rubricMatchups]);
+    const perStudentDone = useMemo(() => countPartnersPerStudent(countedMatchups), [countedMatchups]);
 
     if (!rubric) return <div className="page-content">{t('comparativeGrading.rubric_not_found')}</div>;
     if (error)
@@ -622,6 +710,8 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
     const scale = scaleId === 'none' ? null : (gradeScales.find((g) => g.id === scaleId) ?? gradeScales[0]);
     const sumA = calcGradeSummary(srA, rubric.criteria, scale, rubric);
     const sumB = calcGradeSummary(srB, rubric.criteria, scale, rubric);
+    const tierA = tierOf(studentA, srA);
+    const tierB = tierOf(studentB, srB);
 
     return (
         <>
@@ -663,6 +753,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                         {/* Student A */}
                         <div style={{ flex: 1 }}>
                             <h2 style={{ fontSize: '1.2rem' }}>{studentA.name}</h2>
+                            {tierA && <TierTag config={rubric.tiered!} tierId={tierA} />}
                             {otherRecords(srA).length > 0 && (
                                 <div className="text-xs" role="status" style={{ color: 'var(--warning, #b45309)' }}>
                                     {t('comparativeGrading.duplicate_records', { count: otherRecords(srA).length + 1 })}{' '}
@@ -683,7 +774,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                 {t('comparativeGrading.matchups_done', {
                                     /* v8 ignore next 1 -- the current matchup guarantees an entry for student A */
                                     done: perStudentDone[studentA.id] ?? 0,
-                                    max: maxPerStudent,
+                                    max: partners[studentA.id],
                                 })}
                             </div>
                         </div>
@@ -751,11 +842,35 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                     </span>
                                 )}
                             </div>
+                            {rubric.tiered && (
+                                <label
+                                    className="text-xs text-muted"
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 6,
+                                        marginTop: 4,
+                                        textTransform: 'none',
+                                        letterSpacing: 'normal',
+                                    }}
+                                >
+                                    {t('comparativeGrading.pairing_label')}
+                                    <select
+                                        value={pairing}
+                                        onChange={(e) => setPairing(e.target.value as 'tier' | 'all')}
+                                        style={{ fontSize: '0.8rem', padding: '2px 4px' }}
+                                    >
+                                        <option value="tier">{t('comparativeGrading.pairing_tier')}</option>
+                                        <option value="all">{t('comparativeGrading.pairing_all')}</option>
+                                    </select>
+                                </label>
+                            )}
                         </div>
 
                         {/* Student B */}
                         <div style={{ flex: 1, textAlign: 'right' }}>
                             <h2 style={{ fontSize: '1.2rem' }}>{studentB.name}</h2>
+                            {tierB && <TierTag config={rubric.tiered!} tierId={tierB} />}
                             {otherRecords(srB).length > 0 && (
                                 <div className="text-xs" role="status" style={{ color: 'var(--warning, #b45309)' }}>
                                     {t('comparativeGrading.duplicate_records', { count: otherRecords(srB).length + 1 })}{' '}
@@ -776,7 +891,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                 {t('comparativeGrading.matchups_done', {
                                     /* v8 ignore next 1 -- the current matchup guarantees an entry for student B */
                                     done: perStudentDone[studentB.id] ?? 0,
-                                    max: maxPerStudent,
+                                    max: partners[studentB.id],
                                 })}
                             </div>
                         </div>
@@ -855,7 +970,8 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                         .map((s) => {
                                             const done = perStudentDone[s.id] ?? 0;
                                             // v8 ignore next 1 -- the progress panel only renders with 2+ students
-                                            const pct = maxPerStudent > 0 ? (done / maxPerStudent) * 100 : 0;
+                                            const max = partners[s.id] ?? 0;
+                                            const pct = max > 0 ? (done / max) * 100 : 0;
                                             const isCurrent = s.id === studentA?.id || s.id === studentB?.id;
                                             return (
                                                 <div key={s.id}>
@@ -876,7 +992,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                                             {s.name}
                                                         </span>
                                                         <span className="text-muted">
-                                                            {done} / {maxPerStudent}
+                                                            {done} / {max}
                                                         </span>
                                                     </div>
                                                     <div
@@ -1004,45 +1120,21 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                             </select>
                                             {lvlA && (
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                                    {lvlA.subItems.map((si) => {
-                                                        const currentScore =
-                                                            eA?.subItemScores?.[si.id] ?? si.minPoints ?? 0;
-                                                        return (
-                                                            <div key={si.id} className="text-xs">
-                                                                <div
-                                                                    style={{
-                                                                        display: 'flex',
-                                                                        justifyContent: 'space-between',
-                                                                        marginBottom: 2,
-                                                                    }}
-                                                                >
-                                                                    <span>{si.label}</span>
-                                                                    <span style={{ fontWeight: 600 }}>
-                                                                        {currentScore}/{si.maxPoints ?? si.points ?? 1}
-                                                                    </span>
-                                                                </div>
-                                                                <input
-                                                                    type="range"
-                                                                    min={si.minPoints ?? 0}
-                                                                    max={si.maxPoints ?? si.points ?? 1}
-                                                                    step={0.5}
-                                                                    value={currentScore}
-                                                                    onChange={(e) =>
-                                                                        setSubItemScore(
-                                                                            true,
-                                                                            c.id,
-                                                                            si.id,
-                                                                            Number(e.target.value)
-                                                                        )
-                                                                    }
-                                                                    style={{
-                                                                        width: '100%',
-                                                                        accentColor: 'var(--accent)',
-                                                                    }}
-                                                                />
-                                                            </div>
-                                                        );
-                                                    })}
+                                                    {eA && (
+                                                        <SubItemChecklist
+                                                            criterion={c}
+                                                            level={levelForTier(lvlA, tierA)}
+                                                            entry={eA}
+                                                            accentColor="var(--accent)"
+                                                            selected
+                                                            onToggleTick={(id) =>
+                                                                updateEntry(true, c.id, {
+                                                                    checkedSubItems: toggleTick(eA, id),
+                                                                })
+                                                            }
+                                                            onScore={(id, v) => setSubItemScore(true, c.id, id, v)}
+                                                        />
+                                                    )}
                                                     {(lvlA.minPoints !== lvlA.maxPoints ||
                                                         lvlA.subItems.length === 0) && (
                                                         <div
@@ -1123,7 +1215,12 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                                 eA.levelId === eB?.levelId &&
                                                 (() => {
                                                     const sharedLevel = c.levels.find((l) => l.id === eA.levelId);
-                                                    if (!sharedLevel || sharedLevel.subItems.length === 0) return null;
+                                                    if (
+                                                        !sharedLevel ||
+                                                        sharedLevel.subItems.length === 0 ||
+                                                        !scoresSubItems(c)
+                                                    )
+                                                        return null;
                                                     return (
                                                         <div
                                                             style={{
@@ -1146,8 +1243,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                                                 {t('comparativeGrading.sub_criteria')}
                                                             </div>
                                                             {sharedLevel.subItems.map((si) => {
-                                                                const min = si.minPoints ?? 0;
-                                                                const max = si.maxPoints ?? si.points ?? 1;
+                                                                const { min, max } = subItemRange(si);
                                                                 return (
                                                                     <div
                                                                         key={si.id}
@@ -1288,45 +1384,21 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                             </select>
                                             {lvlB && (
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                                    {lvlB.subItems.map((si) => {
-                                                        const currentScore =
-                                                            eB?.subItemScores?.[si.id] ?? si.minPoints ?? 0;
-                                                        return (
-                                                            <div key={si.id} className="text-xs">
-                                                                <div
-                                                                    style={{
-                                                                        display: 'flex',
-                                                                        justifyContent: 'space-between',
-                                                                        marginBottom: 2,
-                                                                    }}
-                                                                >
-                                                                    <span>{si.label}</span>
-                                                                    <span style={{ fontWeight: 600 }}>
-                                                                        {currentScore}/{si.maxPoints ?? si.points ?? 1}
-                                                                    </span>
-                                                                </div>
-                                                                <input
-                                                                    type="range"
-                                                                    min={si.minPoints ?? 0}
-                                                                    max={si.maxPoints ?? si.points ?? 1}
-                                                                    step={0.5}
-                                                                    value={currentScore}
-                                                                    onChange={(e) =>
-                                                                        setSubItemScore(
-                                                                            false,
-                                                                            c.id,
-                                                                            si.id,
-                                                                            Number(e.target.value)
-                                                                        )
-                                                                    }
-                                                                    style={{
-                                                                        width: '100%',
-                                                                        accentColor: 'var(--accent)',
-                                                                    }}
-                                                                />
-                                                            </div>
-                                                        );
-                                                    })}
+                                                    {eB && (
+                                                        <SubItemChecklist
+                                                            criterion={c}
+                                                            level={levelForTier(lvlB, tierB)}
+                                                            entry={eB}
+                                                            accentColor="var(--accent)"
+                                                            selected
+                                                            onToggleTick={(id) =>
+                                                                updateEntry(false, c.id, {
+                                                                    checkedSubItems: toggleTick(eB, id),
+                                                                })
+                                                            }
+                                                            onScore={(id, v) => setSubItemScore(false, c.id, id, v)}
+                                                        />
+                                                    )}
                                                     {(lvlB.minPoints !== lvlB.maxPoints ||
                                                         lvlB.subItems.length === 0) && (
                                                         <div

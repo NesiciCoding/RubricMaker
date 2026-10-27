@@ -221,6 +221,7 @@ export default function RubricList() {
             cefrSkill: parsed.cefrSkill,
             cefrAchieveThreshold: parsed.cefrAchieveThreshold,
             ...(parsed.vocabularyItems && { vocabularyItems: parsed.vocabularyItems }),
+            ...(parsed.tiered && { tiered: parsed.tiered }),
         };
     }
 

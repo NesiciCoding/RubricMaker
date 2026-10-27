@@ -1,4 +1,5 @@
 import type { GradeScale, Rubric, ScoreEntry } from '../types';
+import { keepExistingTicks, subItemMode } from './subItems';
 
 export function sameGradeScale(a: GradeScale | null | undefined, b: GradeScale | null | undefined): boolean {
     if (!a || !b) return !a && !b;
@@ -26,12 +27,17 @@ export function remapEntriesToRubric(
     const remapped = rubric.criteria.map((criterion): ScoreEntry => {
         const found = entries.find((e) => e.criterionId === criterion.id);
         if (!found) return { criterionId: criterion.id, levelId: null, comment: '', checkedSubItems: [] };
+        const isChecklist = subItemMode(criterion) === 'checklist';
         // A single-point outcome only scores while the destination rubric is still single-point.
         const entry =
             !isSinglePoint && found.singlePointOutcome !== undefined
                 ? { ...found, singlePointOutcome: undefined }
                 : found;
-        if (!entry.levelId) return entry;
+        if (!entry.levelId) {
+            return isChecklist
+                ? { ...entry, checkedSubItems: keepExistingTicks(criterion, entry.checkedSubItems ?? []) }
+                : entry;
+        }
         const level = criterion.levels.find((l) => l.id === entry.levelId);
         if (!level) {
             clearedCount++;
@@ -41,7 +47,7 @@ export function remapEntriesToRubric(
                 selectedPoints: undefined,
                 // A cleared level must not stay scored through a manual override.
                 overridePoints: undefined,
-                checkedSubItems: [],
+                checkedSubItems: isChecklist ? keepExistingTicks(criterion, entry.checkedSubItems ?? []) : [],
                 subItemScores: undefined,
             };
         }
@@ -55,7 +61,9 @@ export function remapEntriesToRubric(
                 entry.selectedPoints === undefined
                     ? undefined
                     : Math.min(level.maxPoints, Math.max(level.minPoints, entry.selectedPoints)),
-            checkedSubItems: entry.checkedSubItems.filter((id) => subItemIds.has(id)),
+            checkedSubItems: isChecklist
+                ? keepExistingTicks(criterion, entry.checkedSubItems ?? [])
+                : entry.checkedSubItems.filter((id) => subItemIds.has(id)),
             subItemScores,
         };
     });

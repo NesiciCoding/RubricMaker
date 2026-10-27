@@ -290,6 +290,23 @@ describe('RubricList', () => {
         }
     });
 
+    it('imports a tiered share code with its tiers and bands', () => {
+        const tiered = {
+            tiers: [{ id: 't1', year: 'jaar-1' as const, track: 'havo' as const, label: 'Havo' }],
+            bands: [
+                { id: 'io', code: 'IO', label: 'In ontwikkeling', points: 0 },
+                { id: 'b', code: 'B', label: 'Beheerst', points: 1 },
+            ],
+        };
+        renderPage();
+        fireEvent.click(screen.getByText('rubricList.code_import_button'));
+        fireEvent.change(screen.getByPlaceholderText('tooltips.paste_share_code'), {
+            target: { value: encodeRubricShareCode({ ...mockRubric, tiered }) },
+        });
+        fireEvent.click(screen.getByText('rubricList.code_import_submit'));
+        expect(mockAddRubric).toHaveBeenLastCalledWith(expect.objectContaining({ tiered }));
+    });
+
     it('deletes a rubric after confirming, at the latest when the page is left', async () => {
         const { unmount } = renderPage();
         await act(async () => {

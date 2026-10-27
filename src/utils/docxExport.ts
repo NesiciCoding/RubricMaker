@@ -27,6 +27,7 @@ import type {
     TestStrengthBucket,
 } from '../types';
 import { calcGradeSummary, orderedLevels } from './gradeCalc';
+import { subItemMode, subItemRange } from './subItems';
 import {
     calcQuestionBreakdowns,
     calcSkillBreakdowns,
@@ -44,6 +45,8 @@ import {
 } from './testAnswerText';
 import { sanitizeFilename, formatPointsRange, stripHtmlTags, stripCommentHtml } from './exportDataPrep';
 import { plainQuestionPromptText } from './clozeParse';
+import { buildTieredSheet } from './tieredSheet';
+import { tieredSheetDocument, tieredSheetDocxChildren } from './tieredSheetDocx';
 
 const docLabel = (key: string, opts?: Record<string, unknown>): string => i18n.t(`exportDoc.${key}`, opts);
 
@@ -109,6 +112,12 @@ export function buildDocxStyles(
 }
 
 export async function exportRubricToDocx(rubric: Rubric) {
+    const sheet = buildTieredSheet(rubric);
+    if (sheet) {
+        const doc = tieredSheetDocument(sheet, rubric.format, buildDocxStyles(rubric.format.fontFamily));
+        saveAs(await Packer.toBlob(doc), `${sanitizeFilename(rubric.name)}_rubric.docx`);
+        return;
+    }
     const fmt = rubric.format;
     const getLevels = (c: RubricCriterion) => orderedLevels(c, fmt);
 
@@ -231,17 +240,22 @@ export async function exportRubricToDocx(rubric: Rubric) {
                 }),
                 // Level Cells
                 ...levels.map((l) => {
+                    const checklist = subItemMode(c) === 'checklist';
                     const subItemParagraphs = l.subItems.map((si) => {
-                        const max = si.maxPoints ?? si.points ?? 1;
+                        const { min, max } = subItemRange(si);
                         return new Paragraph({
                             children: [
-                                new TextRun({ text: '[ ] ', size: 18, color: '666666' }),
+                                new TextRun({ text: '☐ ', size: 18, color: '666666' }),
                                 new TextRun({ text: si.label, size: 18, color: '666666' }),
-                                new TextRun({
-                                    text: ` (${docLabel('points', { points: `${si.minPoints ?? 0}-${max}` })})`,
-                                    size: 16,
-                                    color: '888888',
-                                }),
+                                ...(checklist
+                                    ? []
+                                    : [
+                                          new TextRun({
+                                              text: ` (${docLabel('points', { points: `${min}-${max}` })})`,
+                                              size: 16,
+                                              color: '888888',
+                                          }),
+                                      ]),
                             ],
                             spacing: { before: 60 },
                         });
@@ -340,6 +354,8 @@ export function buildRubricGridDocxChildren(
     const fmt = rubric.format;
     const children: (Paragraph | Table)[] = [];
     const effectiveRubric = sr.rubricSnapshot ?? rubric;
+    const sheet = buildTieredSheet(effectiveRubric, { sr, studentName: student.name, scale });
+    if (sheet) return tieredSheetDocxChildren(sheet, effectiveRubric.format);
     const summary = calcGradeSummary(sr, effectiveRubric.criteria, scale, effectiveRubric);
 
     children.push(

@@ -223,6 +223,19 @@ describe('RubricVersionDiffModal', () => {
         expect(screen.getByText(/rubricBuilder.diff_added/)).toBeInTheDocument();
     });
 
+    it('names both sub-item modes when a criterion switches mode', () => {
+        const switched = {
+            ...baseRubric,
+            criteria: [{ ...baseRubric.criteria[0], subItemMode: 'checklist' as const }],
+        };
+        render(<RubricVersionDiffModal from={baseRubric} to={switched} onClose={() => {}} />);
+        expect(
+            screen.getByText(
+                /rubricBuilder.diff_field_subItemMode: rubricBuilder.sub_item_mode_points → rubricBuilder.sub_item_mode_checklist/
+            )
+        ).toBeInTheDocument();
+    });
+
     it('calls onClose when close button clicked', () => {
         const onClose = vi.fn();
         render(<RubricVersionDiffModal from={baseRubric} to={baseRubric} onClose={onClose} />);

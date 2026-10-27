@@ -70,6 +70,10 @@ import TiptapEditor, { type TiptapEditorHandle } from '../components/Editor/Tipt
 import type { ScoreEntry, Modifier, EssayAssignment, CommentBankItem } from '../types';
 import type { DbUser } from '../services/database';
 import { calcGradeSummary, orderedLevels as sharedOrderedLevels, patchScoreEntry } from '../utils/gradeCalc';
+import { scoresSubItems, subItemMode, toggleTick } from '../utils/subItems';
+import { criteriaForTier, gradeTier, resolveTier } from '../utils/tieredRubric';
+import SubItemChecklist, { BestFitHint } from '../components/Grading/SubItemChecklist';
+import TieredGradingBar, { type TieredGradePatch } from '../components/Grading/TieredGradingBar';
 import { mergeEditsOntoSavedGrade } from '../utils/hydratedGradeMerge';
 import { stripCommentHtml } from '../utils/exportDataPrep';
 import { getCriterionInterventionFlags } from '../utils/learningPathAggregator';
@@ -298,21 +302,43 @@ export default function GradeStudent() {
     // Stable identity (functional setState guards on prev, so no `sr` dep needed) — a changing
     // updateEntry identity would defeat React.memo on any extracted criterion card and forces the
     // comment editor / grid rows to reconcile on every keystroke.
-    const updateEntry = useCallback((criterionId: string, patch: Partial<ScoreEntry>) => {
-        setSr((prev) => {
-            // sr is never null here: the early return above gates every render path
-            /* v8 ignore next -- sr is non-null whenever this callback can run */
-            if (!prev) return prev;
-            const entries = prev.entries.map((e) => (e.criterionId === criterionId ? patchScoreEntry(e, patch) : e));
-            return { ...prev, entries };
-        });
-        setIsDirty(true);
-    }, []);
+    // Changes only when the rubric does (save, version switch), never per keystroke.
+    const checklistCriteria = useMemo(
+        () => new Set((rubric?.criteria ?? []).filter((c) => subItemMode(c) === 'checklist').map((c) => c.id)),
+        [rubric]
+    );
+    const updateEntry = useCallback(
+        (criterionId: string, patch: Partial<ScoreEntry>) => {
+            const mode = checklistCriteria.has(criterionId) ? 'checklist' : 'points';
+            setSr((prev) => {
+                // sr is never null here: the early return above gates every render path
+                /* v8 ignore next -- sr is non-null whenever this callback can run */
+                if (!prev) return prev;
+                const entries = prev.entries.map((e) =>
+                    e.criterionId === criterionId ? patchScoreEntry(e, patch, mode) : e
+                );
+                return { ...prev, entries };
+            });
+            setIsDirty(true);
+        },
+        [checklistCriteria]
+    );
 
     const summary = useMemo(() => {
         if (!sr || !rubric) return null;
         return calcGradeSummary(sr, rubric.criteria, scale, rubric);
     }, [sr, rubric, scale]);
+
+    // A tiered grade shows only its tier's statements: the tier saved on the grade, else the
+    // student's class tier. Saving pins the tier so a later class change can't regrade it.
+    const studentClass = classes.find((c) => c.id === student?.classId);
+    const classTierId = rubric?.tiered ? resolveTier(rubric.tiered, student, studentClass)?.id : undefined;
+    const tierId = rubric?.tiered && sr ? gradeTier(rubric.tiered, sr, student, studentClass)?.id : undefined;
+    const criteria = useMemo(() => criteriaForTier(rubric?.criteria ?? [], tierId), [rubric, tierId]);
+    const updateTiered = useCallback((patch: TieredGradePatch) => {
+        setSr((prev) => (prev ? { ...prev, ...patch } : prev));
+        setIsDirty(true);
+    }, []);
 
     // A letter is only shown once every criterion is scored: a half-graded record used to show a
     // red "F" straight away, which reads as a final mark rather than work in progress (#681).
@@ -334,6 +360,9 @@ export default function GradeStudent() {
         !!summary &&
         summary.gradedCount === 0 &&
         !sr.globalModifier &&
+        !sr.verdictOverride &&
+        !Object.keys(sr.requirementsMet ?? {}).length &&
+        !sr.tierId &&
         !stripCommentHtml(sr.overallComment ?? '').trim() &&
         !sr.entries.some((e) => stripCommentHtml(e.comment ?? '').trim() || e.audioDataUrl || e.audioStoragePath);
 
@@ -386,6 +415,7 @@ export default function GradeStudent() {
         if (toSave !== sr) setSr(toSave);
         saveStudentRubric({
             ...toSave,
+            ...(tierId && { tierId }),
             feedbackOnly,
             isAnchor,
             rubricSnapshot: JSON.parse(JSON.stringify(rubric)),
@@ -415,6 +445,7 @@ export default function GradeStudent() {
         }
     }, [
         sr,
+        tierId,
         rubric,
         scale,
         nothingScored,
@@ -447,6 +478,7 @@ export default function GradeStudent() {
         }
         saveStudentRubric({
             ...clearNotHandedInIfScored(sr, cannedNhiComment, existingSR),
+            ...(tierId && { tierId }),
             feedbackOnly,
             isAnchor,
             rubricSnapshot: JSON.parse(JSON.stringify(rubric)),
@@ -459,6 +491,7 @@ export default function GradeStudent() {
         navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}`, { replace: true });
     }, [
         sr,
+        tierId,
         rubric,
         scale,
         saveStudentRubric,
@@ -494,6 +527,7 @@ export default function GradeStudent() {
             return;
         const nhiSR = {
             ...markNotHandedIn(sr, cannedNhiComment),
+            ...(tierId && { tierId }),
             feedbackOnly,
             isAnchor,
             rubricSnapshot: JSON.parse(JSON.stringify(rubric)),
@@ -510,6 +544,7 @@ export default function GradeStudent() {
         }
     }, [
         sr,
+        tierId,
         rubric,
         scale,
         saveStudentRubric,
@@ -1241,10 +1276,24 @@ export default function GradeStudent() {
                     </div>
                 )}
 
+                {rubric.tiered && summary && (
+                    <TieredGradingBar
+                        config={rubric.tiered}
+                        tierId={tierId}
+                        classTierId={classTierId}
+                        requirementsMet={sr.requirementsMet}
+                        verdictOverride={sr.verdictOverride}
+                        verdict={summary.verdict}
+                        percentage={summary.modifiedPercentage}
+                        complete={gradingComplete}
+                        onChange={updateTiered}
+                    />
+                )}
+
                 {/* Rubric — grid layout (multi-level rubrics) */}
                 {useGrid && (
                     <GradingGrid
-                        criteria={rubric.criteria}
+                        criteria={criteria}
                         sr={sr}
                         fmt={fmt}
                         orderedLevels={orderedLevels}
@@ -1275,7 +1324,7 @@ export default function GradeStudent() {
                             fontSize: fmt.fontSize,
                         }}
                     >
-                        {rubric.criteria.map((c, criterionIndex) => {
+                        {criteria.map((c, criterionIndex) => {
                             const entry = sr.entries.find((e) => e.criterionId === c.id)!;
                             const levels = orderedLevels(c);
                             const isCriterionFocused = focusedCriterionIdx === criterionIndex;
@@ -1363,6 +1412,15 @@ export default function GradeStudent() {
                                                     {t('gradeStudent.table_points')}
                                                 </div>
                                             )}
+                                            <BestFitHint
+                                                criterion={c}
+                                                entry={entry}
+                                                accentColor={fmt.accentColor}
+                                                style={{ marginTop: 6 }}
+                                                onApply={(levelId) =>
+                                                    updateEntry(c.id, { levelId, overridePoints: undefined })
+                                                }
+                                            />
                                         </div>
                                         <div
                                             className="no-print"
@@ -1638,7 +1696,6 @@ export default function GradeStudent() {
                                                                 </p>
                                                             )}
                                                         </button>
-                                                        {/* Sub-items */}
                                                         {level.subItems.length > 0 && (
                                                             <div
                                                                 style={{
@@ -1647,123 +1704,22 @@ export default function GradeStudent() {
                                                                     borderTop: `1px solid ${isSelected ? fmt.accentColor + '40' : 'var(--border)'}`,
                                                                 }}
                                                             >
-                                                                <div
-                                                                    style={{
-                                                                        display: 'flex',
-                                                                        flexDirection: 'column',
-                                                                        gap: 8,
-                                                                    }}
-                                                                >
-                                                                    {level.subItems.map((si) => {
-                                                                        /* v8 ignore next -- calcGradeSummary crashes on missing checkedSubItems first */
-                                                                        const legacyChecked = (
-                                                                            entry.checkedSubItems ?? []
-                                                                        ).includes(si.id);
-                                                                        const defaultScore = legacyChecked
-                                                                            ? (si.maxPoints ?? si.points ?? 0)
-                                                                            : (si.minPoints ?? 0);
-                                                                        const currentScore =
-                                                                            entry.subItemScores?.[si.id] ??
-                                                                            defaultScore;
-                                                                        const min = si.minPoints ?? 0;
-                                                                        const max = si.maxPoints ?? si.points ?? 1;
-                                                                        return (
-                                                                            <div
-                                                                                key={si.id}
-                                                                                style={{
-                                                                                    display: 'flex',
-                                                                                    flexDirection: 'column',
-                                                                                    gap: 4,
-                                                                                    fontSize: '0.75em',
-                                                                                    lineHeight: 1.3,
-                                                                                }}
-                                                                            >
-                                                                                <div
-                                                                                    style={{
-                                                                                        display: 'flex',
-                                                                                        justifyContent: 'space-between',
-                                                                                        alignItems: 'flex-end',
-                                                                                    }}
-                                                                                >
-                                                                                    <div style={{ paddingRight: 8 }}>
-                                                                                        {si.label}
-                                                                                    </div>
-                                                                                    <div
-                                                                                        style={{
-                                                                                            fontWeight: 600,
-                                                                                            color: 'var(--accent)',
-                                                                                            flexShrink: 0,
-                                                                                        }}
-                                                                                    >
-                                                                                        {currentScore} / {max}{' '}
-                                                                                        {t('gradeStudent.table_points')}
-                                                                                    </div>
-                                                                                </div>
-                                                                                <input
-                                                                                    type="range"
-                                                                                    min={min}
-                                                                                    max={max}
-                                                                                    step={0.5}
-                                                                                    value={currentScore}
-                                                                                    onChange={(e) =>
-                                                                                        setSubItemScore(
-                                                                                            entry,
-                                                                                            si.id,
-                                                                                            Number(e.target.value)
-                                                                                        )
-                                                                                    }
-                                                                                    style={{
-                                                                                        width: '100%',
-                                                                                        cursor: 'pointer',
-                                                                                        height: 4,
-                                                                                        accentColor: fmt.accentColor,
-                                                                                    }}
-                                                                                />
-                                                                                <TouchStepper
-                                                                                    value={currentScore}
-                                                                                    min={min}
-                                                                                    max={max}
-                                                                                    step={0.5}
-                                                                                    accentColor={fmt.accentColor}
-                                                                                    label={si.label}
-                                                                                    onChange={(v) =>
-                                                                                        setSubItemScore(entry, si.id, v)
-                                                                                    }
-                                                                                />
-                                                                                {si.linkedStandards &&
-                                                                                    si.linkedStandards.length > 0 && (
-                                                                                        <div
-                                                                                            style={{
-                                                                                                color: 'var(--accent)',
-                                                                                                opacity: 0.8,
-                                                                                                display: 'flex',
-                                                                                                flexWrap: 'wrap',
-                                                                                                gap: 3,
-                                                                                            }}
-                                                                                        >
-                                                                                            {si.linkedStandards.map(
-                                                                                                (std, idx) => (
-                                                                                                    <span
-                                                                                                        key={idx}
-                                                                                                        title={
-                                                                                                            showStdDesc
-                                                                                                                ? (std.statementNotation ??
-                                                                                                                  '')
-                                                                                                                : std.description
-                                                                                                        }
-                                                                                                    >
-                                                                                                        {showStdDesc
-                                                                                                            ? std.description
-                                                                                                            : `[${std.statementNotation ?? std.guid}]`}
-                                                                                                    </span>
-                                                                                                )
-                                                                                            )}
-                                                                                        </div>
-                                                                                    )}
-                                                                            </div>
-                                                                        );
-                                                                    })}
-                                                                </div>
+                                                                <SubItemChecklist
+                                                                    criterion={c}
+                                                                    level={level}
+                                                                    entry={entry}
+                                                                    accentColor={fmt.accentColor}
+                                                                    selected={isSelected}
+                                                                    standardsDisplay={
+                                                                        showStdDesc ? 'description' : 'notation'
+                                                                    }
+                                                                    onToggleTick={(id) =>
+                                                                        updateEntry(c.id, {
+                                                                            checkedSubItems: toggleTick(entry, id),
+                                                                        })
+                                                                    }
+                                                                    onScore={(id, v) => setSubItemScore(entry, id, v)}
+                                                                />
                                                             </div>
                                                         )}
                                                         {/* Base-points range slider (selected only, when range exists) */}
@@ -1791,7 +1747,7 @@ export default function GradeStudent() {
                                                                                 textTransform: 'uppercase',
                                                                             }}
                                                                         >
-                                                                            {c.levels.some((l) => l.subItems.length > 0)
+                                                                            {scoresSubItems(c)
                                                                                 ? t('gradeStudent.label_base_points')
                                                                                 : t('gradeStudent.label_points')}
                                                                         </label>
@@ -1846,9 +1802,7 @@ export default function GradeStudent() {
                                                                             step={0.5}
                                                                             accentColor={fmt.accentColor}
                                                                             label={
-                                                                                c.levels.some(
-                                                                                    (l) => l.subItems.length > 0
-                                                                                )
+                                                                                scoresSubItems(c)
                                                                                     ? t(
                                                                                           'gradeStudent.label_base_points'
                                                                                       )

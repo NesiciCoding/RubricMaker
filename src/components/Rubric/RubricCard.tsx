@@ -248,17 +248,20 @@ function RubricCard({
                                     <ExternalLink size={14} />
                                 </a>
                             )}
-                            <button
-                                className="btn btn-ghost btn-icon btn-sm"
-                                title={t('voTrack.differentiate_title')}
-                                aria-label={t('voTrack.differentiate_title')}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    actions.onDifferentiate(rubric.id);
-                                }}
-                            >
-                                <Layers size={14} />
-                            </button>
+                            {/* A tiered rubric already holds every tier, so a per-track copy has no use. */}
+                            {!rubric.tiered && (
+                                <button
+                                    className="btn btn-ghost btn-icon btn-sm"
+                                    title={t('voTrack.differentiate_title')}
+                                    aria-label={t('voTrack.differentiate_title')}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        actions.onDifferentiate(rubric.id);
+                                    }}
+                                >
+                                    <Layers size={14} />
+                                </button>
+                            )}
                             <button
                                 className="btn btn-ghost btn-icon btn-sm"
                                 title={t('rubricList.action_duplicate')}

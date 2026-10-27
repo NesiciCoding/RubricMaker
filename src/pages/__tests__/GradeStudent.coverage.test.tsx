@@ -1790,10 +1790,11 @@ describe('GradeStudent coverage', () => {
         renderPage();
         expect(screen.getByText('Legacy A')).toBeInTheDocument();
         expect(screen.getByText('Bare')).toBeInTheDocument();
-        // legacyChecked si2 defaults to its points (3); bare si3 defaults to min 0;
-        // naked si4 (checked, no fields at all) defaults to 0 out of 1
-        expect(screen.getByText('3 / 3 gradeStudent.table_points')).toBeInTheDocument();
-        expect(screen.getAllByText('0 / 1 gradeStudent.table_points').length).toBe(2);
+        // A legacy tick on si2 is worth its points (3). Items without points are worth 0: the
+        // unticked si3 is unscored, the ticked si4 has earned its 0.
+        expect(screen.getByText('3/3gradeStudent.table_points')).toBeInTheDocument();
+        expect(screen.getByText('–/0gradeStudent.table_points')).toBeInTheDocument();
+        expect(screen.getByText('0/0gradeStudent.table_points')).toBeInTheDocument();
         mockRubricsArr[0] = mockRubric;
     });
 

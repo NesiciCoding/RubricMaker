@@ -20,6 +20,14 @@ function FieldChangeLine({ change }: { change: FieldChange }) {
     if (change.field === 'description') {
         return <div style={{ fontSize: '0.8rem', marginTop: 4 }}>{t('rubricBuilder.diff_description_changed')}</div>;
     }
+    if (change.field === 'subItemMode') {
+        return (
+            <div style={{ fontSize: '0.8rem', marginTop: 4 }}>
+                {t('rubricBuilder.diff_field_subItemMode')}: {t(`rubricBuilder.sub_item_mode_${change.from}`)} →{' '}
+                {t(`rubricBuilder.sub_item_mode_${change.to}`)}
+            </div>
+        );
+    }
     return (
         <div style={{ fontSize: '0.8rem', marginTop: 4 }}>
             {t(`rubricBuilder.diff_field_${change.field}`)}: {change.from} → {change.to}

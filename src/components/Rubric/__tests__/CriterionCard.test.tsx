@@ -53,9 +53,8 @@ function cardProps(
         onAddLevel: noop,
         onDeleteLevel: noop,
         onUpdateLevel: noop,
-        onAddSubItem: noop,
-        onUpdateSubItem: noop,
-        onDeleteSubItem: noop,
+        onSetSubItems: noop,
+        onMoveSubItem: noop,
         onToggleCollapse: noop,
         onPickStandard: noop,
         onPickCefr: noop,
@@ -102,9 +101,9 @@ describe('CriterionCard', () => {
 
         // The edited card shows the new title; the untouched card's props are reference-stable,
         // so the memoized CriterionCard is not re-rendered. useTranslation runs once per card
-        // render: card 1 re-renders (+1), card 2 bails out (no change).
+        // render plus once per level's sub-item editor: card 1 re-renders, card 2 bails out.
         expect(screen.getByDisplayValue('Alpha updated')).toBeInTheDocument();
-        expect(i18nMock.useTranslationCalls).toBe(rendersAfterMount + 1);
+        expect(i18nMock.useTranslationCalls).toBe(rendersAfterMount + 1 + c1.levels.length);
     });
 
     it('flags the weight field as ignored in total points mode (#681)', () => {
@@ -133,5 +132,46 @@ describe('CriterionCard', () => {
 
         renderCard('weighted-percentage');
         expect(screen.getByLabelText('rubricBuilder.label_weight')).not.toHaveAttribute('title');
+    });
+
+    it('swaps the weight, mode and level cards for the band × tier grid on a tiered rubric', () => {
+        const criterion: RubricCriterion = {
+            ...makeCriterion('c1', 'Spelling'),
+            subItemMode: 'checklist',
+            levels: [
+                {
+                    id: 'lb',
+                    bandId: 'b',
+                    label: 'B',
+                    minPoints: 1,
+                    maxPoints: 1,
+                    description: '',
+                    subItems: [{ id: 's1', label: 'Spelt well', tierId: 'havo' }],
+                },
+            ],
+        };
+        render(
+            <DragDropContext onDragEnd={noop}>
+                <Droppable droppableId="criteria">
+                    {(provided) => (
+                        <div ref={provided.innerRef} {...provided.droppableProps}>
+                            <CriterionCard
+                                {...cardProps(criterion, noop)}
+                                tiered={{
+                                    tiers: [{ id: 'havo', year: 'jaar-1', track: 'havo' }],
+                                    bands: [{ id: 'b', code: 'B', label: '', points: 1 }],
+                                }}
+                            />
+                        </div>
+                    )}
+                </Droppable>
+            </DragDropContext>
+        );
+
+        expect(screen.queryByLabelText('rubricBuilder.label_weight')).toBeNull();
+        expect(screen.queryByRole('radiogroup')).toBeNull();
+        expect(screen.getAllByRole('columnheader').map((h) => h.textContent)).toContain('Jaar 1 · HAVO');
+        expect(screen.getByRole('rowheader')).toHaveTextContent('B');
+        expect(screen.getByDisplayValue('Spelt well')).toBeInTheDocument();
     });
 });

@@ -50,6 +50,64 @@ describe('PortalCriterionFeedback (#622)', () => {
         expect(screen.queryByText('Language')).toBeNull();
     });
 
+    it('shows a criterion whose only feedback is ticked checklist statements', () => {
+        const checklistRubric = {
+            criteria: [
+                {
+                    id: 'c1',
+                    title: 'Spelling',
+                    description: '',
+                    weight: 100,
+                    subItemMode: 'checklist',
+                    levels: [{ ...level('l1', 'B'), subItems: [{ id: 'k1', label: 'Fewer than 8 errors' }] }],
+                },
+            ],
+        } as unknown as Pick<Rubric, 'criteria'>;
+        render(
+            <PortalCriterionFeedback
+                rubric={checklistRubric}
+                entries={[{ criterionId: 'c1', levelId: null, checkedSubItems: ['k1'], comment: '' }]}
+                studentRubricId="sr1"
+            />
+        );
+        expect(screen.getByText('Spelling')).toBeInTheDocument();
+        expect(screen.getByText('Fewer than 8 errors')).toBeInTheDocument();
+    });
+
+    it("shows only the grade's own tier's ticked statements on a tiered rubric", () => {
+        const tieredRubric = {
+            criteria: [
+                {
+                    id: 'c1',
+                    title: 'Spelling',
+                    description: '',
+                    weight: 100,
+                    subItemMode: 'checklist',
+                    levels: [
+                        {
+                            ...level('l1', 'B'),
+                            subItems: [
+                                { id: 'm1', label: 'Mavo statement', tierId: 'mavo' },
+                                { id: 'h1', label: 'Havo statement', tierId: 'havo' },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        } as unknown as Pick<Rubric, 'criteria'>;
+        // A tick left over from before the teacher switched this grade to havo stays hidden.
+        render(
+            <PortalCriterionFeedback
+                rubric={tieredRubric}
+                entries={[{ criterionId: 'c1', levelId: 'l1', checkedSubItems: ['m1', 'h1'], comment: '' }]}
+                studentRubricId="sr1"
+                tierId="havo"
+            />
+        );
+        expect(screen.getByText('Havo statement')).toBeInTheDocument();
+        expect(screen.queryByText('Mavo statement')).toBeNull();
+    });
+
     it('plays inline and storage-backed voice feedback with an accessible name', () => {
         render(
             <PortalCriterionFeedback
