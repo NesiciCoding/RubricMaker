@@ -348,6 +348,12 @@ If Grafana is down, `docker compose ... up -d` it; if it's up but Nginx still
 `GF_SERVER_ROOT_URL` / `GF_SERVER_DOMAIN` weren't applied. Re-check
 `.env.observability` and re-run `up -d` (step 7).
 
+**Postgres panels say "You do not currently have a default database
+configured"** while the datasource's connection test passes — the copy of
+`docker/observability/grafana-datasources.yml` predates the fix that sets the
+database under `jsonData`. Copy the current file over it and
+`docker compose ... restart grafana`.
+
 **Restricting access further** — Grafana requires login by default
 (`GF_AUTH_ANONYMOUS_ENABLED=false`), which is normally sufficient for a
 pilot window. To additionally restrict by IP during a stress test, add an
