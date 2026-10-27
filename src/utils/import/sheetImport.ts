@@ -28,7 +28,7 @@ export interface SheetDraft {
 
 const BAND_MARKER = /^\s*([A-Za-z][A-Za-z0-9+-]{0,3})\s*:\s*$/;
 const REQUIREMENTS_HEADING = /\b(verplicht\w*|eisen|voorwaarden|requirements?|vereisten)\b/i;
-const CHECKBOX_GLYPHS = /^[\s☐☑☒□■▢◻◼⬜••▪·-]+/u;
+const CHECKBOX_GLYPHS = /^[\s☐☑☒□■▢◻◼⬜•▪·-]+/u;
 
 export const cleanText = (s: string) => s.replace(/\s+/g, ' ').trim();
 const cleanStatement = (s: string) => cleanText(s.replace(CHECKBOX_GLYPHS, ''));
