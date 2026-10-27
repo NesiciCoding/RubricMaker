@@ -216,14 +216,16 @@ function summarizeRubricEntries(entries: PeriodReportEntry[]): RubricGradeSummar
         return da - db;
     });
 
-    return sorted.map((e) => {
-        const scored = e.sr.rubricSnapshot ?? e.rubric;
-        return {
-            ...e,
-            summary: calcGradeSummary(e.sr, scored.criteria, e.scale, scored),
-            dateStr: e.sr.gradedAt ? new Date(e.sr.gradedAt).toLocaleDateString() : '—',
-        };
-    });
+    return sorted.map((e) => ({
+        ...e,
+        summary: calcGradeSummary(
+            e.sr,
+            (e.sr.rubricSnapshot ?? e.rubric).criteria,
+            e.scale,
+            e.sr.rubricSnapshot ?? e.rubric
+        ),
+        dateStr: e.sr.gradedAt ? new Date(e.sr.gradedAt).toLocaleDateString() : '—',
+    }));
 }
 
 async function buildRubricGradeSections(summaries: RubricGradeSummary[]): Promise<(Paragraph | Table)[]> {

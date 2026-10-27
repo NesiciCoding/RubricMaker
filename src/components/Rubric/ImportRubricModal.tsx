@@ -4,7 +4,9 @@ import { Upload, FileText, AlertTriangle, CheckCircle, X, Loader, ChevronRight }
 import type { ParsedRubric } from '../../utils/rubricImport';
 import Modal from '../ui/Modal';
 import { parseDocxToRubric, parsePdfToRubric, parseJsonToRubric } from '../../utils/rubricImport';
-import type { RubricCriterion, RubricLevel } from '../../types';
+import { DEFAULT_FORMAT, type RubricCriterion, type RubricLevel } from '../../types';
+import { buildTieredSheet } from '../../utils/tieredSheet';
+import TieredSheetView from './TieredSheetView';
 
 interface Props {
     onClose: () => void;
@@ -318,7 +320,41 @@ export default function ImportRubricModal({ onClose, onImport }: Props) {
                         </div>
 
                         {/* Table preview */}
-                        {parsed.criteria.length > 0 ? (
+                        {parsed.tiered && parsed.criteria.length > 0 ? (
+                            <>
+                                <p className="text-sm" style={{ margin: '0 0 8px' }}>
+                                    {t('importRubric.tiered_detected', {
+                                        tiers: parsed.tiered.tiers.length,
+                                        bands: parsed.tiered.bands.length,
+                                        statements: parsed.criteria.reduce(
+                                            (n, c) => n + c.levels.reduce((m, l) => m + l.subItems.length, 0),
+                                            0
+                                        ),
+                                    })}
+                                </p>
+                                <div
+                                    style={{
+                                        maxHeight: 320,
+                                        overflowY: 'auto',
+                                        border: '1px solid var(--border)',
+                                        borderRadius: 8,
+                                        padding: 10,
+                                    }}
+                                >
+                                    <TieredSheetView
+                                        sheet={buildTieredSheet({
+                                            name,
+                                            subject,
+                                            criteria: parsed.criteria,
+                                            tiered: parsed.tiered,
+                                            format: parsed.format,
+                                        })!}
+                                        headerColor={(parsed.format ?? DEFAULT_FORMAT).headerColor}
+                                        headerTextColor={(parsed.format ?? DEFAULT_FORMAT).headerTextColor}
+                                    />
+                                </div>
+                            </>
+                        ) : parsed.criteria.length > 0 ? (
                             <div
                                 style={{
                                     overflowX: 'auto',

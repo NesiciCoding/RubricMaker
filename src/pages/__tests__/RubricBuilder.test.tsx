@@ -732,11 +732,41 @@ describe('RubricBuilder', () => {
         expect(screen.getAllByPlaceholderText('rubricBuilder.placeholder_level_name')).toHaveLength(before);
     });
 
-    it('expands sub-items and adds one', () => {
+    it('switches every criterion to checklist mode at once, with undo', () => {
         renderEdit();
-        fireEvent.click(screen.getAllByText(/rubricBuilder.label_sub_items/)[0]);
-        fireEvent.click(screen.getByText('rubricBuilder.action_add_sub_item'));
-        expect(screen.getAllByText(/rubricBuilder.label_sub_items.*\(1\)/).length).toBeGreaterThan(0);
+        mockShowToast.mockClear();
+        const checklistRadios = () => screen.getAllByRole('radio', { name: 'rubricBuilder.sub_item_mode_checklist' });
+        expect(checklistRadios().every((r) => r.getAttribute('aria-checked') === 'false')).toBe(true);
+
+        fireEvent.click(screen.getByText('rubricBuilder.action_all_checklist'));
+        expect(checklistRadios().every((r) => r.getAttribute('aria-checked') === 'true')).toBe(true);
+        // Nothing left to switch, so the action goes away.
+        expect(screen.queryByText('rubricBuilder.action_all_checklist')).toBeNull();
+
+        const [, type, options] = mockShowToast.mock.calls.at(-1)!;
+        expect(type).toBe('info');
+        act(() => options.action.onClick());
+        expect(checklistRadios().every((r) => r.getAttribute('aria-checked') === 'false')).toBe(true);
+    });
+
+    it('adds a sub-item inline and moves it to another level', () => {
+        renderEdit();
+        const before = screen.queryAllByPlaceholderText('rubricBuilder.placeholder_sub_item_label').length;
+        fireEvent.click(screen.getAllByText('rubricBuilder.action_add_sub_item')[0]);
+        const inputs = screen.getAllByPlaceholderText('rubricBuilder.placeholder_sub_item_label');
+        expect(inputs).toHaveLength(before + 1);
+        fireEvent.change(inputs[0], { target: { value: 'Moving item' } });
+        const row = screen.getByDisplayValue('Moving item').closest('li') as HTMLElement;
+        const moveSelect = within(row).getByLabelText('rubricBuilder.sub_item_move_to_level') as HTMLSelectElement;
+        const target = moveSelect.options[1].value;
+        fireEvent.change(moveSelect, { target: { value: target } });
+        // Now listed under the other level, which offers the first level as its move target.
+        const movedRow = screen.getByDisplayValue('Moving item').closest('li') as HTMLElement;
+        expect(
+            Array.from(
+                (within(movedRow).getByLabelText('rubricBuilder.sub_item_move_to_level') as HTMLSelectElement).options
+            ).map((o) => o.value)
+        ).not.toContain(target);
     });
 
     // ── Standards linking ────────────────────────────────────────────────────────
@@ -1049,13 +1079,12 @@ describe('RubricBuilder', () => {
         // Delete a level from c2.
         fireEvent.click(screen.getAllByLabelText('rubricBuilder.action_delete_level')[2]);
         // Sub-item round trip on c1 (walks c2's non-matching branches).
-        fireEvent.click(screen.getAllByText(/rubricBuilder.label_sub_items/)[0]);
-        fireEvent.click(screen.getByText('rubricBuilder.action_add_sub_item'));
+        fireEvent.click(screen.getAllByText('rubricBuilder.action_add_sub_item')[0]);
         const subLabel = screen.getByPlaceholderText('rubricBuilder.placeholder_sub_item_label');
         fireEvent.change(subLabel, { target: { value: 'Detailed' } });
         expect(subLabel).toHaveValue('Detailed');
         // A second sub-item so editing one walks the other's non-matching branch.
-        fireEvent.click(screen.getByText('rubricBuilder.action_add_sub_item'));
+        fireEvent.click(screen.getAllByText('rubricBuilder.action_add_sub_item')[0]);
         fireEvent.change(screen.getAllByPlaceholderText('rubricBuilder.placeholder_sub_item_label')[1], {
             target: { value: 'Second detail' },
         });
@@ -2387,5 +2416,240 @@ describe('RubricBuilder', () => {
         } finally {
             stringifySpy.mockRestore();
         }
+    });
+});
+
+describe('RubricBuilder — tiered rubrics', () => {
+    const bands = [
+        { id: 'io', code: 'IO', label: 'In ontwikkeling', points: 0 },
+        { id: 'b', code: 'B', label: 'Beheerst', points: 1 },
+        { id: 'e', code: 'E', label: 'Expert', points: 2 },
+    ];
+    const tiers = [
+        { id: 'mavo', year: 'jaar-1' as const, track: 'vmbo-tl' as const, label: 'Mavo' },
+        { id: 'havo', year: 'jaar-1' as const, track: 'havo' as const, label: 'Havo' },
+    ];
+    const tieredRubric: Rubric = {
+        ...mockRubric,
+        format: { ...DEFAULT_FORMAT, levelOrder: 'worst-first' },
+        tiered: { tiers, bands },
+        criteria: [
+            {
+                id: 'c1',
+                title: 'Spelling',
+                description: '',
+                weight: 100,
+                subItemMode: 'checklist',
+                levels: [...bands].reverse().map((band) => ({
+                    id: `l-${band.id}`,
+                    bandId: band.id,
+                    label: band.code,
+                    minPoints: band.points,
+                    maxPoints: band.points,
+                    description: '',
+                    subItems: tiers.map((tier) => ({
+                        id: `s-${band.id}-${tier.id}`,
+                        label: `${band.code} ${tier.label}`,
+                        tierId: tier.id,
+                    })),
+                })),
+            },
+        ],
+    };
+    const gradedAtB: StudentRubric = {
+        ...mockSr,
+        tierId: 'havo',
+        entries: [{ criterionId: 'c1', levelId: 'l-b', checkedSubItems: [], comment: '' }],
+    };
+
+    function renderTieredEdit(studentRubrics: StudentRubric[] = []) {
+        appOverrides = { rubrics: [tieredRubric], studentRubrics, peerReviews: [] };
+        const router = createMemoryRouter([{ path: '/rubrics/:id', element: <RubricBuilderLazy /> }], {
+            initialEntries: ['/rubrics/r1'],
+        });
+        return render(<RouterProvider router={router} />);
+    }
+
+    const lastSaved = () => mockUpdateRubric.mock.calls.at(-1)![0] as Rubric;
+    // The button reads "saved" for a moment after each save.
+    const save = () => fireEvent.click(screen.getByText(/^rubricBuilder\.action_save(d)?$/));
+
+    beforeEach(async () => {
+        appOverrides = {};
+        mockUpdateRubric.mockClear();
+        mockSaveUserTemplate.mockClear();
+        mockShowToast.mockClear();
+        mockFetchRubricVersions.mockClear().mockResolvedValue([]);
+        mockLoadCriterionClipboard.mockReset().mockReturnValue(null);
+        i18nState.language = 'en';
+        RubricBuilderLazy = (await import('../RubricBuilder')).default;
+    });
+
+    it('previews a tiered rubric as its sheet, a column per tier', () => {
+        renderTieredEdit();
+        fireEvent.click(screen.getByText('rubricBuilder.action_preview'));
+        const sheet = document.querySelector('.tiered-sheet-view') as HTMLElement;
+        expect(
+            within(sheet)
+                .getAllByRole('heading')
+                .map((h) => h.textContent)
+        ).toEqual(['Spelling', 'Mavo', 'Havo']);
+        expect(within(sheet).getByText('IO Mavo')).toBeInTheDocument();
+        expect(within(sheet).getByText('E Havo')).toBeInTheDocument();
+    });
+
+    it('switches a standard rubric to tiered after confirming, and back again', async () => {
+        const router = createMemoryRouter([{ path: '/rubrics/:id', element: <RubricBuilderLazy /> }], {
+            initialEntries: ['/rubrics/r1'],
+        });
+        render(<RouterProvider router={router} />);
+        const tieredRadio = screen.getByRole('radio', { name: 'rubricBuilder.rubric_type_tiered' });
+
+        // The existing level descriptions would be lost, so cancelling keeps the rubric as it is.
+        fireEvent.click(tieredRadio);
+        expect(await screen.findByText('rubricBuilder.tiered_switch_on_message')).toBeInTheDocument();
+        await act(async () => fireEvent.click(screen.getByText('common.cancel')));
+        expect(screen.getByText('rubricBuilder.label_scoring_mode')).toBeInTheDocument();
+
+        fireEvent.click(tieredRadio);
+        await act(async () => fireEvent.click(await screen.findByText('common.confirm')));
+        expect(screen.getByText('rubricBuilder.tiered_scoring_note')).toBeInTheDocument();
+        expect(screen.queryByText('rubricBuilder.label_scoring_mode')).toBeNull();
+        expect(screen.queryByText('rubricBuilder.action_form_view')).toBeNull();
+        expect(screen.queryByLabelText('rubricBuilder.label_weight')).toBeNull();
+        expect(screen.getAllByText('Mavo').length).toBeGreaterThan(0);
+
+        save();
+        const saved = lastSaved();
+        expect(saved.tiered?.bands.map((b) => b.code)).toEqual(['IO', 'B', 'E']);
+        expect(saved.format.levelOrder).toBe('worst-first');
+        expect(saved.scoringMode).toBe('weighted-percentage');
+        expect(saved.criteria[0].levels.map((l) => l.label)).toEqual(['E', 'B', 'IO']);
+        expect(saved.criteria[0].levels.every((l) => l.bandId && l.subItems.length === 0)).toBe(true);
+        expect(saved.criteria[0].weight).toBe(100);
+
+        fireEvent.click(screen.getByRole('radio', { name: 'rubricBuilder.rubric_type_standard' }));
+        expect(await screen.findByText('rubricBuilder.tiered_switch_off_message')).toBeInTheDocument();
+        await act(async () => fireEvent.click(screen.getByText('common.confirm')));
+        expect(screen.getByText('rubricBuilder.label_scoring_mode')).toBeInTheDocument();
+        save();
+        expect(lastSaved().tiered).toBeUndefined();
+    });
+
+    it('switches an empty rubric to tiered without asking', async () => {
+        appOverrides = {
+            rubrics: [
+                {
+                    ...mockRubric,
+                    criteria: [
+                        {
+                            ...mockRubric.criteria[0],
+                            levels: mockRubric.criteria[0].levels.map((l) => ({ ...l, description: '' })),
+                        },
+                    ],
+                },
+            ],
+        };
+        const router = createMemoryRouter([{ path: '/rubrics/:id', element: <RubricBuilderLazy /> }], {
+            initialEntries: ['/rubrics/r1'],
+        });
+        render(<RouterProvider router={router} />);
+        await act(async () => fireEvent.click(screen.getByRole('radio', { name: 'rubricBuilder.rubric_type_tiered' })));
+        expect(screen.queryByText('rubricBuilder.tiered_switch_on_message')).toBeNull();
+        expect(screen.getByText('rubricBuilder.tiered_scoring_note')).toBeInTheDocument();
+        // Choosing the type it already has does nothing.
+        await act(async () => fireEvent.click(screen.getByRole('radio', { name: 'rubricBuilder.rubric_type_tiered' })));
+        expect(screen.queryByText('common.confirm')).toBeNull();
+    });
+
+    it('asks before removing a band that holds statements and grades', async () => {
+        renderTieredEdit([gradedAtB]);
+        const removeB = () => screen.getAllByLabelText('rubricBuilder.tiered_remove_band')[1];
+
+        fireEvent.click(removeB());
+        expect(await screen.findByText('rubricBuilder.tiered_remove_message')).toBeInTheDocument();
+        await act(async () => fireEvent.click(screen.getByText('common.cancel')));
+        expect(screen.getByDisplayValue('B')).toBeInTheDocument();
+
+        fireEvent.click(removeB());
+        await act(async () => fireEvent.click(await screen.findByText('common.confirm')));
+        expect(screen.queryByDisplayValue('B')).toBeNull();
+        expect(screen.queryByDisplayValue('B Havo')).toBeNull();
+
+        save();
+        expect(lastSaved().criteria[0].levels.map((l) => l.bandId)).toEqual(['e', 'io']);
+    });
+
+    it("removes a tier's statements after confirming, and an empty band straight away", async () => {
+        renderTieredEdit();
+        // A new band has no statements and no grades yet, so removing it needs no confirmation.
+        fireEvent.click(screen.getByText('rubricBuilder.tiered_add_band'));
+        expect(screen.getAllByLabelText('rubricBuilder.tiered_remove_band')).toHaveLength(4);
+        await act(async () => fireEvent.click(screen.getAllByLabelText('rubricBuilder.tiered_remove_band')[3]));
+        expect(screen.getAllByLabelText('rubricBuilder.tiered_remove_band')).toHaveLength(3);
+
+        fireEvent.click(screen.getAllByLabelText('rubricBuilder.tiered_remove_tier')[0]);
+        await act(async () => fireEvent.click(await screen.findByText('common.confirm')));
+        expect(screen.queryByDisplayValue('IO Mavo')).toBeNull();
+        expect(screen.getByDisplayValue('IO Havo')).toBeInTheDocument();
+        save();
+        const saved = lastSaved();
+        expect(saved.tiered?.tiers.map((t) => t.id)).toEqual(['havo']);
+        expect(saved.criteria[0].levels.flatMap((l) => l.subItems.map((si) => si.tierId))).toEqual([
+            'havo',
+            'havo',
+            'havo',
+        ]);
+    });
+
+    it('relabels levels when a band changes without touching criteria for tier label edits', async () => {
+        renderTieredEdit();
+        await act(async () =>
+            fireEvent.change(screen.getAllByLabelText('rubricBuilder.tiered_band_code_of')[1], {
+                target: { value: 'V' },
+            })
+        );
+        await act(async () =>
+            fireEvent.change(screen.getAllByLabelText('rubricBuilder.tiered_column_label_of')[0], {
+                target: { value: 'TL' },
+            })
+        );
+        save();
+        const saved = lastSaved();
+        expect(saved.criteria[0].levels.map((l) => l.label)).toEqual(['E', 'V', 'IO']);
+        expect(saved.tiered?.tiers[0].label).toBe('TL');
+    });
+
+    it('adds and pastes criteria as band levels, edits a tier cell, and keeps tiers in templates', async () => {
+        mockLoadCriterionClipboard.mockReturnValue({
+            id: 'clip',
+            title: 'Pasted',
+            description: '',
+            weight: 10,
+            levels: [{ id: 'x', label: 'Old', minPoints: 0, maxPoints: 9, description: '', subItems: [] }],
+        });
+        renderTieredEdit();
+        fireEvent.click(screen.getByText('rubricBuilder.action_paste_criterion'));
+        fireEvent.click(screen.getByText(/rubricBuilder\.action_add_first_criterion/));
+
+        // Write a statement into the Havo cell of IO for the newest criterion.
+        const addButtons = screen.getAllByText('rubricBuilder.action_add_sub_item');
+        fireEvent.click(addButtons[addButtons.length - 5]);
+        const inputs = screen.getAllByPlaceholderText('rubricBuilder.placeholder_sub_item_label');
+        fireEvent.change(inputs[inputs.length - 1], { target: { value: 'New Havo statement' } });
+
+        save();
+        const saved = lastSaved();
+        expect(saved.criteria).toHaveLength(3);
+        for (const c of saved.criteria.slice(1)) {
+            expect(c.levels.map((l) => l.bandId)).toEqual(['e', 'b', 'io']);
+            expect(c.subItemMode).toBe('checklist');
+        }
+        const added = saved.criteria[2].levels.flatMap((l) => l.subItems);
+        expect(added).toEqual([{ id: expect.any(String), label: 'New Havo statement', tierId: 'havo' }]);
+
+        fireEvent.click(screen.getByText('rubricBuilder.action_export'));
+        fireEvent.click(screen.getByText('rubricBuilder.action_save_as_template'));
+        expect(mockSaveUserTemplate).toHaveBeenCalledWith(expect.objectContaining({ tiered: tieredRubric.tiered }));
     });
 });

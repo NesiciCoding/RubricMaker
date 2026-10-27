@@ -25,6 +25,9 @@ import { saveAs } from 'file-saver';
 import i18n from 'i18next';
 import type { Rubric, RubricCriterion, ExportTemplate } from '../types';
 import { sanitizeFilename } from './exportDataPrep';
+import { buildTieredSheet } from './tieredSheet';
+import { tieredSheetDocument } from './tieredSheetDocx';
+import { subItemMode, subItemRange } from './subItems';
 import { orderedLevels } from './gradeCalc';
 import { contrastRatio } from './contrastCheck';
 
@@ -97,6 +100,21 @@ export async function parseTemplateHeaders(file: File): Promise<{
 
 export async function exportRubricWithTemplate(rubric: Rubric, template: ExportTemplate): Promise<void> {
     const fmt = rubric.format;
+    const sheet = buildTieredSheet(rubric);
+    if (sheet) {
+        // A tiered sheet keeps its own layout; the template only lends its header colour.
+        const fill =
+            toDocxFill(template.headerColor) ??
+            toDocxFill(fmt.headerColor) ??
+            toDocxFill(DEFAULT_TEMPLATE_HEADER_COLOR)!;
+        const doc = tieredSheetDocument(sheet, {
+            orientation: fmt.orientation,
+            headerColor: fill,
+            headerTextColor: headerTextColor(fill),
+        });
+        saveAs(await Packer.toBlob(doc), `${sanitizeFilename(rubric.name)}_rubric.docx`);
+        return;
+    }
 
     const getLevels = (c: RubricCriterion) => orderedLevels(c, fmt);
 
@@ -207,17 +225,22 @@ export async function exportRubricWithTemplate(rubric: Rubric, template: ExportT
                 }),
                 // Level cells
                 ...levels.map((l) => {
+                    const checklist = subItemMode(c) === 'checklist';
                     const subItemParagraphs = l.subItems.map((si) => {
-                        const max = si.maxPoints ?? si.points ?? 1;
+                        const { min, max } = subItemRange(si);
                         return new Paragraph({
                             children: [
-                                new TextRun({ text: '[ ] ', size: (fmt.fontSize - 2) * 2, color: '666666' }),
+                                new TextRun({ text: '☐ ', size: (fmt.fontSize - 2) * 2, color: '666666' }),
                                 new TextRun({ text: si.label, size: (fmt.fontSize - 2) * 2, color: '666666' }),
-                                new TextRun({
-                                    text: ` (${docLabel('points', { points: `${si.minPoints ?? 0}-${max}` })})`,
-                                    size: (fmt.fontSize - 3) * 2,
-                                    color: '888888',
-                                }),
+                                ...(checklist
+                                    ? []
+                                    : [
+                                          new TextRun({
+                                              text: ` (${docLabel('points', { points: `${min}-${max}` })})`,
+                                              size: (fmt.fontSize - 3) * 2,
+                                              color: '888888',
+                                          }),
+                                      ]),
                             ],
                             spacing: { before: 60 },
                         });

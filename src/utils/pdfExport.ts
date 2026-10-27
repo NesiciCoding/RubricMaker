@@ -1,6 +1,7 @@
 import i18n from 'i18next';
 import type { Rubric, Student, StudentRubric, GradeScale, StudentTest, Test, TestStrengthBucket } from '../types';
 import { calcGradeSummary } from './gradeCalc';
+import { isTicked, subItemMode, subItemRange, subItemScore } from './subItems';
 import {
     calcQuestionBreakdowns,
     calcSkillBreakdowns,
@@ -20,6 +21,8 @@ import { formatPointsRange, stripCommentHtml, stripHtmlTags, escapeHtml } from '
 import { plainQuestionPromptText } from './clozeParse';
 import { orderedLevels as sharedOrderedLevels } from './gradeCalc';
 import type { DocxStyleTemplateOverrides } from './docxExport';
+import { buildTieredSheet, type TieredSheet } from './tieredSheet';
+import { tieredSheetHtml } from './tieredSheetHtml';
 
 /**
  * Minimal emphasis parser for the free text that reaches a printout: `**bold**` and `*italic*`.
@@ -112,16 +115,17 @@ function buildRubricGridHtml(rubric: Rubric, sr?: StudentRubric): string {
         <div style="margin-top:8px;padding-top:6px;border-top:1px solid #e5e7eb;font-size:10px;">
           ${l.subItems
               .map((si) => {
-                  const legacyChecked = (entry?.checkedSubItems ?? []).includes(si.id);
-                  const max = si.maxPoints ?? si.points ?? 1;
-                  let scoreLabel: string;
-                  if (entry) {
-                      const currentScore = entry.subItemScores?.[si.id] ?? (legacyChecked ? max : (si.minPoints ?? 0));
-                      scoreLabel = `[${docLabel('points', { points: `${currentScore}/${max}` })}]`;
-                  } else {
-                      scoreLabel = `(${docLabel('points', { points: `${si.minPoints ?? 0}-${max}` })})`;
+                  if (subItemMode(c) === 'checklist') {
+                      const box = entry && isTicked(entry, si.id) ? '☑' : '☐';
+                      return `<div style="margin-bottom:3px;">${box} ${parseMd(si.label)}</div>`;
                   }
-                  return `<div style="margin-bottom:3px;">${entry ? '•' : '[ ]'} ${parseMd(si.label)} <span style="color:#6b7280;font-size:9px">${scoreLabel}</span></div>`;
+                  const { min, max } = subItemRange(si);
+                  // Only the level the student reached carries their sub-item scores.
+                  const scored = !!entry && selected;
+                  const scoreLabel = scored
+                      ? `[${docLabel('points', { points: `${subItemScore(entry, si) ?? 0}/${max}` })}]`
+                      : `(${docLabel('points', { points: `${min}-${max}` })})`;
+                  return `<div style="margin-bottom:3px;">${scored ? '•' : '☐'} ${parseMd(si.label)} <span style="color:#6b7280;font-size:9px">${scoreLabel}</span></div>`;
               })
               .join('')}
         </div>
@@ -182,8 +186,11 @@ export function buildRubricHTML(
     scale: GradeScale | null,
     breakBeforeRight = false
 ): string {
-    const scored = sr.rubricSnapshot ?? rubric;
-    const summary = calcGradeSummary(sr, scored.criteria, scale, scored);
+    // The verdict is the one given at grading time, so it comes from the rubric saved with the grade.
+    const gradedRubric = sr.rubricSnapshot ?? rubric;
+    const sheet = buildTieredSheet(gradedRubric, { sr, studentName: student.name, scale });
+    if (sheet) return tieredPageHtml(sheet, rubric, breakBeforeRight, sr);
+    const summary = calcGradeSummary(sr, gradedRubric.criteria, scale, gradedRubric);
     const fmt = rubric.format;
     const gridHtml = buildRubricGridHtml(rubric, sr);
     const modifierSign = sr.globalModifier && sr.globalModifier.value > 0 ? '+' : '';
@@ -245,7 +252,20 @@ export function buildRubricHTML(
   </div>`;
 }
 
+function tieredPageHtml(sheet: TieredSheet, rubric: Rubric, breakBeforeRight = false, sr?: StudentRubric): string {
+    return `
+  <div class="print-page" style="${breakBeforeRight ? 'break-before: right; page-break-before: right; ' : ''}page-break-after: always; font-family: ${rubric.format.fontFamily}; background: #fff;">
+      ${tieredSheetHtml(sheet, rubric.format)}
+      <div style="margin-top:12px;font-size:11px;color:#94a3b8;text-align:right">
+        ${sr ? `${sr.gradedAt ? docLabel('graded', { date: new Date(sr.gradedAt).toLocaleDateString(i18n.language) }) : docLabel('not_graded')} · ` : ''}${docLabel('generated_by', { date: new Date().toLocaleDateString(i18n.language) })}
+        ${sr?.isPeerReview ? ` · ${docLabel('peer_review')}` : ''}
+      </div>
+  </div>`;
+}
+
 function buildEmptyRubricHTML(rubric: Rubric): string {
+    const sheet = buildTieredSheet(rubric);
+    if (sheet) return tieredPageHtml(sheet, rubric);
     const fmt = rubric.format;
     const gridHtml = buildRubricGridHtml(rubric);
 
@@ -569,7 +589,9 @@ export async function exportBatchPdf(
 
 export async function exportRubricGridPdf(rubric: Rubric, styleTemplate?: DocxStyleTemplateOverrides): Promise<void> {
     const htmlStr = buildEmptyRubricHTML(rubric);
-    await printForExport(htmlStr, rubric.format.orientation || 'portrait', rubric.format.fontFamily, styleTemplate);
+    // A blank tiered sheet has a column per tier, like the paper original: landscape.
+    const orientation = rubric.tiered && rubric.tiered.tiers.length > 1 ? 'landscape' : rubric.format.orientation;
+    await printForExport(htmlStr, orientation || 'portrait', rubric.format.fontFamily, styleTemplate);
 }
 
 /** Same thresholds as bucketForAccuracy() in testSummaryAggregator.ts — keep these in sync. */

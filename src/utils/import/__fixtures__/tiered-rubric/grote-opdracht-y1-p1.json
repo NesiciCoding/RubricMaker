@@ -1,0 +1,271 @@
+{
+    "title": "Grote opdracht P1: MY ID card",
+    "requirementsHeading": "Verplichte Eisen (IO bij niet voldoen hieraan)",
+    "requirements": [
+        "Jouw ID-kaart is volledig af en compleet",
+        "Jouw ID-kaart is door jezelf geschreven; er is geen gebruik gemaakt van AI",
+        "Je hebt op tijd en serieus gewerkt aan jouw ID-kaart"
+    ],
+    "headerFields": {
+        "student": "Naam leerling:",
+        "tier": "Niveau:",
+        "verdict": "Eindbeoordeling:"
+    },
+    "criterionHeading": "Onderdeel",
+    "tiers": [
+        {
+            "id": "mavo",
+            "label": "Mavo",
+            "short": "M",
+            "year": "jaar-1",
+            "track": "vmbo-tl"
+        },
+        {
+            "id": "havo",
+            "label": "Havo",
+            "short": "H",
+            "year": "jaar-1",
+            "track": "havo"
+        },
+        {
+            "id": "vwo",
+            "label": "VWO",
+            "short": "V",
+            "year": "jaar-1",
+            "track": "vwo"
+        }
+    ],
+    "bands": [
+        {
+            "id": "io",
+            "code": "IO",
+            "label": "In Ontwikkeling",
+            "color": "#FFD7DE"
+        },
+        {
+            "id": "b",
+            "code": "B",
+            "label": "Beheerst",
+            "color": "#EBF9D8"
+        },
+        {
+            "id": "e",
+            "code": "E",
+            "label": "Expert",
+            "color": "#CED29F"
+        }
+    ],
+    "criteria": [
+        {
+            "title": "Spelling en woordenschat",
+            "cells": {
+                "mavo": {
+                    "io": [
+                        "De teksten bevatten meer dan 8 spelfouten.",
+                        "De teksten bevatten minder dan 5 woorden uit de woordenlijst."
+                    ],
+                    "b": [
+                        "De teksten bevatten 4 tot 8 spelfouten.",
+                        "Heeft minimaal 5-8 woorden uit de woordenlijst gebruikt."
+                    ],
+                    "e": [
+                        "De teksten bevatten 0 tot 3 spelfouten.",
+                        "Heeft meer dan 8 woorden uit de woordenlijst gebruikt."
+                    ]
+                },
+                "havo": {
+                    "io": [
+                        "De teksten bevatten meer dan 6 spelfouten.",
+                        "De teksten bevatten minder dan 8 woorden uit de woordenlijst."
+                    ],
+                    "b": [
+                        "De teksten bevatten 3-6 spelfouten",
+                        "Heeft minimaal 8-12 woorden uit de woordenlijst gebruikt."
+                    ],
+                    "e": [
+                        "De teksten bevatten 0-2 spelfouten.",
+                        "Heeft meer dan 12 woorden uit de woordenlijst gebruikt."
+                    ]
+                },
+                "vwo": {
+                    "io": [
+                        "De teksten bevatten meer dan 3 spelfouten.",
+                        "De teksten bevatten minder dan 12 woorden uit de woordenlijst."
+                    ],
+                    "b": [
+                        "De teksten bevatten 2-3 spelfouten.",
+                        "Heeft minimaal 12-14 woorden uit de woordenlijst gebruikt."
+                    ],
+                    "e": [
+                        "De teksten bevatten 0-1 spelfout.",
+                        "Heeft meer dan 14 woorden uit de woordenlijst gebruikt."
+                    ]
+                }
+            }
+        },
+        {
+            "title": "Leestekens",
+            "cells": {
+                "mavo": {
+                    "io": [
+                        "Heeft geen hoofdletters gebruikt. Zowel aan het einde van zinnen als bij “I”.",
+                        "Heeft geen punten aan het einde van een zin geschreven.",
+                        "Vraagtekens en uitroeptekens zijn verkeerd gebruikt."
+                    ],
+                    "b": [
+                        "Heeft hoofdletters soms op de juiste plek geschreven, zoals aan het begin van de zin of bij “I”.",
+                        "Heeft het einde van een zin soms geëindigd op een punt.",
+                        "Vraagtekens en uitroeptekens zijn soms nog verkeerd gebruikt."
+                    ],
+                    "e": [
+                        "Heeft hoofdletters vaak op de juiste plek geschreven, zoals aan het begin van de zin of bij “I”.",
+                        "Heeft het einde van een zin vaak geëindigd op een punt.",
+                        "Vraagtekens en uitroeptekens zijn vaak nog verkeerd gebruikt."
+                    ]
+                },
+                "havo": {
+                    "io": [
+                        "Heeft soms geen hoofdletters gebruikt. Zowel aan het einde van zinnen als bij “I”.",
+                        "Heeft regelmatig geen punten aan het einde van een zin geschreven.",
+                        "Vraagtekens en uitroeptekens zijn verkeerd gebruikt."
+                    ],
+                    "b": [
+                        "Heeft vaak hoofdletters gebruikt. Zowel aan het einde van zinnen als bij “I”.",
+                        "Heeft vaak punten aan het einde van een zin geschreven.",
+                        "Vraagtekens en uitroeptekens zijn vaak goed gebruikt."
+                    ],
+                    "e": [
+                        "Heeft bijna altijd hoofdletters gebruikt. Zowel aan het einde van zinnen als bij “I”.",
+                        "Heeft bijna altijd punten aan het einde van een zin geschreven.",
+                        "Vraagtekens en uitroeptekens zijn bijna altijd goed gebruikt."
+                    ]
+                },
+                "vwo": {
+                    "io": [
+                        "Heeft vaak geen hoofdletters gebruikt. Zowel aan het einde van zinnen als bij “I”.",
+                        "Heeft regelmatig geen punten aan het einde van een zin geschreven.",
+                        "Vraagtekens en uitroeptekens zijn regelmatig verkeerd gebruikt."
+                    ],
+                    "b": [
+                        "Heeft bijna altijd hoofdletters gebruikt. Zowel aan het einde van zinnen als bij “I”.",
+                        "Heeft bijna altijd punten aan het einde van een zin geschreven.",
+                        "Vraagtekens en uitroeptekens zijn bijna altijd goed gebruikt."
+                    ],
+                    "e": [
+                        "Heeft altijd hoofdletters gebruikt. Zowel aan het einde van zinnen als bij “I”.",
+                        "Heeft altijd punten aan het einde van een zin geschreven.",
+                        "Vraagtekens en uitroeptekens zijn altijd goed gebruikt."
+                    ]
+                }
+            }
+        },
+        {
+            "title": "Grammatica",
+            "cells": {
+                "mavo": {
+                    "io": [
+                        "Heeft bijna altijd fouten gemaakt in het gebruik van “am”, “is” en “are”.",
+                        "Heeft “has” en have” bijna altijd door elkaar gehaald net als vraagzinnen en negatieve zinnen met to have.",
+                        "Heeft “a”, “an”, “the” bijna altijd fout gebruikt net als de possessive en personal pronouns."
+                    ],
+                    "b": [
+                        "Heeft “am”, “is” en “are” soms al goed gebruikt.",
+                        "Heeft “has” en have” soms al goed gebruikt net als vraagzinnen en negatieve zinnen met to have.",
+                        "Heeft “a”, “an”, “the” soms goed gebruikt net als de possessive en personal pronouns."
+                    ],
+                    "e": [
+                        "Heeft “am”, “is” en “are” vaak al goed gebruikt.",
+                        "Heeft “has” en have” vaak al goed gebruikt net als vraagzinnen en negatieve zinnen met to have.",
+                        "Heeft “a”, “an”, “the” vaak goed gebruikt net als de possessive en personal pronouns."
+                    ]
+                },
+                "havo": {
+                    "io": [
+                        "Heeft soms fouten gemaakt in het gebruik van “am”, “is” en “are”.",
+                        "Heeft “has” en have” soms door elkaar gehaald net als vraagzinnen en negatieve zinnen met to have.",
+                        "Heeft “a”, “an”, “the” soms fout gebruikt net als de possessive en personal pronouns."
+                    ],
+                    "b": [
+                        "Heeft “am”, “is” en “are” vaak al goed gebruikt.",
+                        "Heeft “has” en have” vaak al goed gebruikt net als vraagzinnen en negatieve zinnen met to have.",
+                        "Heeft “a”, “an”, “the” vaak goed gebruikt net als de possessive en personal pronouns."
+                    ],
+                    "e": [
+                        "Heeft “am”, “is” en “are” bijna altijd goed gebruikt.",
+                        "Heeft “has” en have” bijna altijd goed gebruikt net als vraagzinnen en negatieve zinnen met to have.",
+                        "Heeft “a”, “an”, “the” bijna altijd goed gebruikt net als de possessive en personal pronouns."
+                    ]
+                },
+                "vwo": {
+                    "io": [
+                        "Heeft vaak fouten gemaakt in het gebruik van “am”, “is” en “are”.",
+                        "Heeft “has” en have” vaak door elkaar gehaald net als vraagzinnen en negatieve zinnen met to have.",
+                        "Heeft “a”, “an”, “the” vaak fout gebruikt net als de possessive en personal pronouns."
+                    ],
+                    "b": [
+                        "Heeft “am”, “is” en “are” bijna altijd goed gebruikt.",
+                        "Heeft “has” en have” bijna altijd goed gebruikt net als vraagzinnen en negatieve zinnen met to have.",
+                        "Heeft “a”, “an”, “the” bijna altijd goed gebruikt net als de possessive en personal pronouns."
+                    ],
+                    "e": [
+                        "Heeft “am”, “is” en “are” altijd goed gebruikt.",
+                        "Heeft “has” en have” altijd goed gebruikt net als vraagzinnen en negatieve zinnen met to have.",
+                        "Heeft “a”, “an”, “the” altijd goed gebruikt net als de possessive en personal pronouns."
+                    ]
+                }
+            }
+        },
+        {
+            "title": "Inhoud en uitvoering van de opdracht",
+            "cells": {
+                "mavo": {
+                    "io": [
+                        "Heeft niet alle 5 verplichte onderwerpen staan op de ID-kaart.",
+                        "Heeft per onderwerp minder dan 30 woorden geschreven."
+                    ],
+                    "b": [
+                        "Heeft alle 5 verplichte onderwerpen staan op de ID-kaart",
+                        "Heeft per onderwerp 30 woorden geschreven.",
+                        "Je schrijft korte en eenvoudige teksten per onderwerp."
+                    ],
+                    "e": [
+                        "Heeft plaatjes of tekeningen toegevoegd aan de ID-kaart.",
+                        "Heeft per onderwerp 40 woorden geschreven."
+                    ]
+                },
+                "havo": {
+                    "io": [
+                        "Heeft niet alle 5 verplichte onderwerpen staan op de ID-kaart.",
+                        "Heeft per onderwerp minder dan 40 woorden geschreven."
+                    ],
+                    "b": [
+                        "Heeft alle 5 verplichte onderwerpen staan op de ID-kaart.",
+                        "Heeft per onderwerp 40 woorden geschreven.",
+                        "Je schrijft, naast korte teksten vaak al wat uitgebreidere teksten over elk onderwerp."
+                    ],
+                    "e": [
+                        "Heeft plaatjes of tekeningen toegevoegd aan de ID-kaart.",
+                        "Je hebt naast de standaard informatie, ook zelf leuke extra informatie toegevoegd aan de teksten.",
+                        "Heeft per onderwerp 50 woorden geschreven."
+                    ]
+                },
+                "vwo": {
+                    "io": [
+                        "Heeft niet alle 5 verplichte onderwerpen staan op de ID-kaart.",
+                        "Heeft per onderwerp minder dan 50 woorden geschreven."
+                    ],
+                    "b": [
+                        "Heeft alle 5 verplichte onderwerpen staan op de ID-kaart.",
+                        "Heeft per onderwerp 50 woorden geschreven.",
+                        "Je schrijft uitgebreide en gedetailleerde teksten over elk onderwerp."
+                    ],
+                    "e": [
+                        "Heeft plaatjes of tekeningen toegevoegd aan de ID-kaart.",
+                        "Je hebt naast de standaard informatie, ook zelf leuke extra informatie toegevoegd aan de teksten.",
+                        "Heeft per onderwerp 60 woorden geschreven."
+                    ]
+                }
+            }
+        }
+    ]
+}

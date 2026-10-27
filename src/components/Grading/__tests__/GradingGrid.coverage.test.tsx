@@ -225,8 +225,7 @@ describe('GradingGrid coverage', () => {
         const overrideGroup = screen.getByRole('group', { name: 'gradeStudent.override_label' });
         fireEvent.click(within(overrideGroup).getByLabelText('gradeStudent.stepper_increase'));
         expect(mockUpdateEntry).toHaveBeenCalledWith('c0', { overridePoints: 85.5 });
-        // Range sub-items expand to reveal the slider.
-        fireEvent.click(screen.getByText(/Depth ·/));
+        // Range sub-items show their slider directly.
         fireEvent.change(screen.getByRole('slider', { name: 'Depth' }), { target: { value: '3' } });
         expect(mockSetSubItemScore).toHaveBeenCalledWith(entry0, 'si1', 3);
         // Rerender while recording → stop calls the wrapped handler.
@@ -294,5 +293,71 @@ describe('GradingGrid coverage', () => {
         renderGrid(null);
         expect(document.querySelector('.grading-grid-table')).not.toBeNull();
         expect(screen.queryByPlaceholderText('gradeStudent.comment_placeholder')).not.toBeInTheDocument();
+    });
+});
+
+describe('GradingGrid checklist criteria', () => {
+    const checklist: RubricCriterion = {
+        ...makeCriterion('k0', [
+            {
+                ...singleLevel,
+                id: 'kb',
+                label: 'B',
+                subItems: [
+                    { id: 'k1', label: 'One' },
+                    { id: 'k2', label: 'Two' },
+                ],
+            },
+            { ...fillerLevel, id: 'kio', label: 'IO', subItems: [] },
+        ]),
+        subItemMode: 'checklist',
+    };
+    const kEntry: ScoreEntry = { criterionId: 'k0', levelId: null, checkedSubItems: ['k1'], comment: '' };
+    const kSr: StudentRubric = { ...sr, entries: [kEntry] };
+
+    function renderChecklist(focusedIdx: number | null, setFocusedIdx = vi.fn()) {
+        render(
+            <GradingGrid
+                criteria={[checklist]}
+                sr={kSr}
+                fmt={fmt}
+                orderedLevels={(c) => c.levels}
+                focusedIdx={focusedIdx}
+                setFocusedIdx={setFocusedIdx}
+                updateEntry={mockUpdateEntry}
+                setSubItemScore={mockSetSubItemScore}
+                commentBank={[]}
+                commentEditorRef={null}
+                onInsertChip={mockOnInsertChip}
+                onBrowseAll={mockOnBrowseAll}
+                recordingKey={null}
+                onStartAudio={mockOnStartAudio}
+                onStopAudio={mockOnStopAudio}
+            />
+        );
+        return setFocusedIdx;
+    }
+
+    it('counts ticks in each checklist cell', () => {
+        renderChecklist(null);
+        expect(screen.getByText('gradeStudent.grid_ticks:{"ticked":1,"total":2}')).toBeInTheDocument();
+        expect(screen.getAllByText(/gradeStudent.grid_ticks/)).toHaveLength(1);
+    });
+
+    it('opens and closes the detail panel from the criterion title without picking a level', () => {
+        const setFocusedIdx = renderChecklist(null);
+        const title = screen.getByRole('button', { name: 'Criterion k0' });
+        expect(title).toHaveAttribute('aria-expanded', 'false');
+        fireEvent.click(title);
+        expect(setFocusedIdx).toHaveBeenCalledWith(0);
+        expect(mockUpdateEntry).not.toHaveBeenCalled();
+    });
+
+    it('ticks evidence in the detail panel', () => {
+        const setFocusedIdx = renderChecklist(0);
+        fireEvent.click(screen.getByRole('button', { name: 'Criterion k0' }));
+        expect(setFocusedIdx).toHaveBeenCalledWith(null);
+        fireEvent.click(screen.getByRole('checkbox', { name: 'Two' }));
+        expect(mockUpdateEntry).toHaveBeenCalledWith('k0', { checkedSubItems: ['k1', 'k2'] });
     });
 });

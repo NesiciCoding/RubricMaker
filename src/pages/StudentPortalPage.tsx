@@ -1498,7 +1498,9 @@ export default function StudentPortalPage() {
                                                 </div>
                                                 {h.summary.letterGrade && (
                                                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                                        {letterGradeExplanation(h.summary.letterGrade, h.scale)}
+                                                        {h.summary.verdict
+                                                            ? h.summary.letterGrade
+                                                            : letterGradeExplanation(h.summary.letterGrade, h.scale)}
                                                     </div>
                                                 )}
                                             </div>
@@ -1525,6 +1527,7 @@ export default function StudentPortalPage() {
                                         rubric={h.rubric}
                                         entries={h.sr.entries}
                                         studentRubricId={h.sr.id}
+                                        tierId={h.sr.tierId}
                                     />
 
                                     {/* Self-assessment */}

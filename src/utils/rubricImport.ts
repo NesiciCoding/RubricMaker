@@ -13,12 +13,15 @@ import {
     type RubricCriterion,
     type RubricFormat,
     type ScoringMode,
+    type TieredConfig,
     type VocabularyItem,
 } from '../types';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
 import { nanoid } from './nanoid';
+import { sanitizeTiered } from './tieredRubric';
 import { encodeUrlSafeBase64, decodeUrlSafeBase64 } from './urlSafeBase64';
 import type { ImportWarning } from './questionBankImport';
+import { draftToParsedRubric, parseSheetHtml, parseSheetPdf, type PdfTextItem } from './import/sheetImport';
 
 /** Shape of a rubric JSON export — loosely typed since it's untrusted file input. */
 interface RawRubricJson {
@@ -33,6 +36,7 @@ interface RawRubricJson {
     cefrSkill?: unknown;
     cefrAchieveThreshold?: unknown;
     vocabularyItems?: unknown;
+    tiered?: unknown;
     criteria?: Array<{
         id?: string;
         title?: string;
@@ -75,6 +79,7 @@ export interface ParsedRubric {
     cefrSkill?: CefrSkill;
     cefrAchieveThreshold?: number;
     vocabularyItems?: VocabularyItem[];
+    tiered?: TieredConfig;
 }
 
 interface RawTable {
@@ -90,6 +95,10 @@ export async function parseDocxToRubric(file: File): Promise<ParsedRubric> {
 
     const arrayBuffer = await file.arrayBuffer();
     const result = await mammoth.convertToHtml({ arrayBuffer });
+
+    const fallbackName = file.name.replace(/\.[^.]+$/, '');
+    const sheet = parseSheetHtml(result.value);
+    if (sheet) return draftToParsedRubric(sheet, fallbackName);
 
     const parser = new DOMParser();
     const doc = parser.parseFromString(result.value, 'text/html');
@@ -147,9 +156,15 @@ export async function parsePdfToRubric(file: File): Promise<ParsedRubric> {
     const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
     const allLines: string[] = [];
+    const positioned: PdfTextItem[] = [];
     for (let i = 1; i <= pdfDoc.numPages; i++) {
         const page = await pdfDoc.getPage(i);
         const content = await page.getTextContent();
+        const height = page.getViewport({ scale: 1 }).height;
+        for (const item of content.items) {
+            if ('str' in item)
+                positioned.push({ page: i, x: item.transform[4], y: height - item.transform[5], str: item.str });
+        }
 
         // Group text items by approximate Y position (same line)
         const lineMap = new Map<number, string[]>();
@@ -171,6 +186,9 @@ export async function parsePdfToRubric(file: File): Promise<ParsedRubric> {
     if (allLines.length === 0) {
         return emptyResult([{ key: 'importRubric.warn_no_pdf_text' }]);
     }
+
+    const sheet = parseSheetPdf(positioned);
+    if (sheet) return draftToParsedRubric(sheet, file.name.replace(/\.[^.]+$/, ''));
 
     const rawTable = detectTableFromLines(allLines);
     return buildParsedRubric(rawTable, file.name.replace(/\.[^.]+$/, ''));
@@ -544,6 +562,9 @@ function normaliseRubricJson(data: RawRubricJson, fallbackName: string): ParsedR
               )
         : undefined;
     const scoringMode = SCORING_MODES.find((m) => m === data.scoringMode);
+    // Band and tier ids are rubric-local, so levels (bandId) and sub-items (tierId) keep pointing at them.
+    const tiered = sanitizeTiered(data.tiered);
+    if (data.tiered !== undefined && !tiered) warnings.push({ key: 'importRubric.warn_json_tiered_invalid' });
     const cefrTargetLevel = CEFR_LEVELS.find((l) => l === data.cefrTargetLevel);
 
     return {
@@ -565,6 +586,7 @@ function normaliseRubricJson(data: RawRubricJson, fallbackName: string): ParsedR
         cefrAchieveThreshold:
             cefrTargetLevel && isNumber(data.cefrAchieveThreshold) ? data.cefrAchieveThreshold : undefined,
         ...(vocabularyItems?.length ? { vocabularyItems } : {}),
+        ...(tiered && { tiered }),
     };
 }
 
@@ -596,6 +618,7 @@ export function encodeRubricShareCode(rubric: Rubric): string {
         scoringMode: rubric.scoringMode,
         totalMaxPoints: rubric.totalMaxPoints,
         format: rubric.format,
+        tiered: rubric.tiered,
     };
     return encodeUrlSafeBase64(JSON.stringify(shareable));
 }
