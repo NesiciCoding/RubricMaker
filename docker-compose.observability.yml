@@ -44,8 +44,8 @@ services:
       # path) so leaving RUBRICMAKER_WEBSERVER_LOG_DIR unset on non-HestiaCP
       # setups is a harmless no-op rather than creating a bogus empty dir.
       - ${RUBRICMAKER_WEBSERVER_LOG_DIR:-/var/log}:${RUBRICMAKER_WEBSERVER_LOG_DIR:-/var/log}:ro
-      # Container logs (the combined docker-compose.yml stack, if it runs here) and container
-      # metrics (cAdvisor) for every container on the host.
+      # Container logs (the compose projects in ALLOY_DOCKER_PROJECTS) and container metrics
+      # (cAdvisor) for every container on the host.
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/lib/docker:/var/lib/docker:ro
       # Host metrics (node_exporter): the host's /proc, /sys and filesystems, read-only. No `rslave`:
@@ -71,6 +71,8 @@ services:
       # Names this server in host and container metrics (and in alert notifications).
       OBSERVABILITY_HOST_NAME: "${OBSERVABILITY_HOST_NAME:-rubricmaker}"
       SUPABASE_DB_HOST: "${SUPABASE_DB_HOST:-}"
+      # Regex of the compose projects whose container logs are shipped.
+      ALLOY_DOCKER_PROJECTS: "${ALLOY_DOCKER_PROJECTS:-rubricmaker}"
     depends_on: [loki, prometheus]
 
   # Metrics store. Alloy pushes host, container, Postgres and stack metrics here (remote write).

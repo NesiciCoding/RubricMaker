@@ -1,7 +1,7 @@
 {
   "uid": "rubricmaker-application-usage",
   "title": "RubricMaker — Application Usage & Data Health",
-  "description": "Product-level activity across every RubricMaker domain, queried directly from the Supabase database tables. Requires SUPABASE_DB_HOST (and related vars) in .env.observability so the 'Supabase Postgres (client_logs)' datasource is provisioned. No app instrumentation needed — works for any deployment with a reachable database.",
+  "description": "Product-level activity across every RubricMaker domain: counts, per-day counts and latest timestamps, read through the monitoring.app_* functions (migration 092), never the tables themselves. Requires SUPABASE_DB_HOST (and related vars) in .env.observability and a datasource role IN ROLE pg_monitor. No app instrumentation needed.",
   "tags": ["rubricmaker"],
   "timezone": "browser",
   "schemaVersion": 39,
@@ -28,7 +28,7 @@
           "refId": "A",
           "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
           "format": "table",
-          "rawSql": "SELECT count(*) FROM profiles",
+          "rawSql": "SELECT count FROM monitoring.app_entity_counts() WHERE domain = 'teachers'",
           "rawQuery": true
         }
       ]
@@ -52,7 +52,7 @@
           "refId": "A",
           "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
           "format": "table",
-          "rawSql": "SELECT count(*) FROM schools",
+          "rawSql": "SELECT count FROM monitoring.app_entity_counts() WHERE domain = 'schools'",
           "rawQuery": true
         }
       ]
@@ -76,7 +76,7 @@
           "refId": "A",
           "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
           "format": "table",
-          "rawSql": "SELECT count(*) FROM classes",
+          "rawSql": "SELECT count FROM monitoring.app_entity_counts() WHERE domain = 'classes'",
           "rawQuery": true
         }
       ]
@@ -100,7 +100,7 @@
           "refId": "A",
           "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
           "format": "table",
-          "rawSql": "SELECT count(*) FROM students",
+          "rawSql": "SELECT count FROM monitoring.app_entity_counts() WHERE domain = 'students'",
           "rawQuery": true
         }
       ]
@@ -124,7 +124,7 @@
           "refId": "A",
           "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
           "format": "table",
-          "rawSql": "SELECT count(*) FROM rubrics",
+          "rawSql": "SELECT count FROM monitoring.app_entity_counts() WHERE domain = 'rubrics'",
           "rawQuery": true
         }
       ]
@@ -148,7 +148,7 @@
           "refId": "A",
           "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
           "format": "table",
-          "rawSql": "SELECT count(*) FROM student_rubrics WHERE is_peer_review = false",
+          "rawSql": "SELECT count FROM monitoring.app_entity_counts() WHERE domain = 'grades'",
           "rawQuery": true
         }
       ]
@@ -172,7 +172,7 @@
           "refId": "A",
           "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
           "format": "table",
-          "rawSql": "SELECT count(*) FROM tests",
+          "rawSql": "SELECT count FROM monitoring.app_entity_counts() WHERE domain = 'tests'",
           "rawQuery": true
         }
       ]
@@ -196,7 +196,7 @@
           "refId": "A",
           "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
           "format": "table",
-          "rawSql": "SELECT count(*) FROM student_tests",
+          "rawSql": "SELECT count FROM monitoring.app_entity_counts() WHERE domain = 'test_attempts'",
           "rawQuery": true
         }
       ]
@@ -220,7 +220,7 @@
           "refId": "A",
           "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
           "format": "table",
-          "rawSql": "SELECT count(*) FROM essay_assignments",
+          "rawSql": "SELECT count FROM monitoring.app_entity_counts() WHERE domain = 'essay_assignments'",
           "rawQuery": true
         }
       ]
@@ -244,7 +244,7 @@
           "refId": "A",
           "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
           "format": "table",
-          "rawSql": "SELECT count(*) FROM essay_submissions",
+          "rawSql": "SELECT count FROM monitoring.app_entity_counts() WHERE domain = 'essay_submissions'",
           "rawQuery": true
         }
       ]
@@ -268,7 +268,7 @@
           "refId": "A",
           "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
           "format": "table",
-          "rawSql": "SELECT count(*) FROM flashcard_decks",
+          "rawSql": "SELECT count FROM monitoring.app_entity_counts() WHERE domain = 'flashcard_decks'",
           "rawQuery": true
         }
       ]
@@ -292,7 +292,7 @@
           "refId": "A",
           "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
           "format": "table",
-          "rawSql": "SELECT count(*) FROM marketplace_listings",
+          "rawSql": "SELECT count FROM monitoring.app_entity_counts() WHERE domain = 'marketplace_listings'",
           "rawQuery": true
         }
       ]
@@ -316,7 +316,7 @@
           "refId": "A",
           "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
           "format": "table",
-          "rawSql": "SELECT count(*) FROM flashcard_reviews",
+          "rawSql": "SELECT count FROM monitoring.app_entity_counts() WHERE domain = 'flashcard_reviews'",
           "rawQuery": true
         }
       ]
@@ -340,7 +340,7 @@
           "refId": "A",
           "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
           "format": "table",
-          "rawSql": "SELECT count(*) FROM messages",
+          "rawSql": "SELECT count FROM monitoring.app_entity_counts() WHERE domain = 'messages'",
           "rawQuery": true
         }
       ]
@@ -364,7 +364,7 @@
           "refId": "A",
           "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
           "format": "table",
-          "rawSql": "SELECT count(*) FROM question_bank_items",
+          "rawSql": "SELECT count FROM monitoring.app_entity_counts() WHERE domain = 'question_bank_items'",
           "rawQuery": true
         }
       ]
@@ -388,7 +388,7 @@
           "refId": "A",
           "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
           "format": "table",
-          "rawSql": "SELECT count(*) FROM student_rubrics WHERE is_peer_review = true",
+          "rawSql": "SELECT count FROM monitoring.app_entity_counts() WHERE domain = 'peer_reviews'",
           "rawQuery": true
         }
       ]
@@ -412,7 +412,7 @@
           "refId": "A",
           "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
           "format": "table",
-          "rawSql": "SELECT count(DISTINCT owner_id) FROM rubrics WHERE $__timeFilter(created_at)",
+          "rawSql": "SELECT monitoring.app_active_teachers($__timeFrom(), $__timeTo())",
           "rawQuery": true
         }
       ]
@@ -436,7 +436,7 @@
           "refId": "A",
           "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
           "format": "table",
-          "rawSql": "SELECT count(*) FROM grading_tasks",
+          "rawSql": "SELECT count FROM monitoring.app_entity_counts() WHERE domain = 'grading_tasks'",
           "rawQuery": true
         }
       ]
@@ -455,28 +455,28 @@
           "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT $__timeGroup(created_at, '1d') AS time, count(*) AS rubrics FROM rubrics WHERE $__timeFilter(created_at) GROUP BY 1 ORDER BY 1"
+          "rawSql": "SELECT day AS time, n AS rubrics FROM monitoring.app_daily_activity($__timeFrom(), $__timeTo()) WHERE metric = 'rubrics' ORDER BY 1"
         },
         {
           "refId": "B",
           "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT $__timeGroup((COALESCE(data->>'gradedAt', data->>'updatedAt'))::timestamptz, '1d') AS time, count(*) AS grades FROM student_rubrics WHERE is_peer_review = false AND COALESCE(data->>'gradedAt', data->>'updatedAt') IS NOT NULL AND $__timeFilter((COALESCE(data->>'gradedAt', data->>'updatedAt'))::timestamptz) GROUP BY 1 ORDER BY 1"
+          "rawSql": "SELECT day AS time, n AS grades FROM monitoring.app_daily_activity($__timeFrom(), $__timeTo()) WHERE metric = 'grades' ORDER BY 1"
         },
         {
           "refId": "C",
           "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT $__timeGroup(submitted_at, '1d') AS time, count(*) AS essays FROM essay_submissions WHERE $__timeFilter(submitted_at) GROUP BY 1 ORDER BY 1"
+          "rawSql": "SELECT day AS time, n AS essays FROM monitoring.app_daily_activity($__timeFrom(), $__timeTo()) WHERE metric = 'essays' ORDER BY 1"
         },
         {
           "refId": "D",
           "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT $__timeGroup((data->>'startedAt')::timestamptz, '1d') AS time, count(*) AS test_attempts FROM student_tests WHERE $__timeFilter((data->>'startedAt')::timestamptz) GROUP BY 1 ORDER BY 1"
+          "rawSql": "SELECT day AS time, n AS test_attempts FROM monitoring.app_daily_activity($__timeFrom(), $__timeTo()) WHERE metric = 'test_attempts' ORDER BY 1"
         }
       ]
     },
@@ -494,14 +494,14 @@
           "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT $__timeGroup(created_at, '1d') AS time, count(*) AS signups FROM profiles WHERE $__timeFilter(created_at) GROUP BY 1 ORDER BY 1"
+          "rawSql": "SELECT day AS time, n AS signups FROM monitoring.app_daily_activity($__timeFrom(), $__timeTo()) WHERE metric = 'signups' ORDER BY 1"
         },
         {
           "refId": "B",
           "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT $__timeGroup(created_at, '1d') AS time, count(*) AS listings FROM marketplace_listings WHERE $__timeFilter(created_at) GROUP BY 1 ORDER BY 1"
+          "rawSql": "SELECT day AS time, n AS listings FROM monitoring.app_daily_activity($__timeFrom(), $__timeTo()) WHERE metric = 'listings' ORDER BY 1"
         }
       ]
     },
@@ -519,7 +519,7 @@
           "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT 'teachers' AS domain, count(*) AS count FROM profiles UNION ALL SELECT 'schools', count(*) FROM schools UNION ALL SELECT 'classes', count(*) FROM classes UNION ALL SELECT 'students', count(*) FROM students UNION ALL SELECT 'rubrics', count(*) FROM rubrics UNION ALL SELECT 'grades', count(*) FROM student_rubrics WHERE is_peer_review = false UNION ALL SELECT 'peer_reviews', count(*) FROM student_rubrics WHERE is_peer_review = true UNION ALL SELECT 'tests', count(*) FROM tests UNION ALL SELECT 'test_attempts', count(*) FROM student_tests UNION ALL SELECT 'essay_assignments', count(*) FROM essay_assignments UNION ALL SELECT 'essay_submissions', count(*) FROM essay_submissions UNION ALL SELECT 'messages', count(*) FROM messages UNION ALL SELECT 'flashcard_decks', count(*) FROM flashcard_decks UNION ALL SELECT 'flashcard_reviews', count(*) FROM flashcard_reviews UNION ALL SELECT 'question_bank_items', count(*) FROM question_bank_items UNION ALL SELECT 'marketplace_listings', count(*) FROM marketplace_listings UNION ALL SELECT 'grading_tasks', count(*) FROM grading_tasks ORDER BY 2 DESC"
+          "rawSql": "SELECT domain, count FROM monitoring.app_entity_counts() ORDER BY 2 DESC"
         }
       ]
     },
@@ -537,7 +537,7 @@
           "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT s.name AS school, (SELECT count(*) FROM students st JOIN profiles p ON p.id = st.owner_id WHERE p.school_id = s.id) AS students, (SELECT count(*) FROM student_rubrics sr JOIN profiles p ON p.id = sr.grader_id WHERE p.school_id = s.id AND sr.is_peer_review = false) AS grades FROM schools s ORDER BY 2 DESC"
+          "rawSql": "SELECT school, students, grades FROM monitoring.app_school_activity() ORDER BY 2 DESC"
         }
       ]
     },
@@ -555,7 +555,7 @@
           "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT COALESCE(NULLIF(p.display_name, ''), left(p.email, 1) || '•••') AS teacher, count(*) AS grades, max((sr.data->>'gradedAt')::timestamptz) AS last_graded FROM student_rubrics sr JOIN profiles p ON p.id = sr.grader_id WHERE sr.is_peer_review = false GROUP BY p.id, COALESCE(NULLIF(p.display_name, ''), left(p.email, 1) || '•••') ORDER BY 2 DESC LIMIT 20"
+          "rawSql": "SELECT teacher, grades, last_graded FROM monitoring.app_top_graders(20)"
         }
       ]
     },
@@ -573,7 +573,7 @@
           "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT 'profiles' AS domain, max(created_at) AS last_activity FROM profiles UNION ALL SELECT 'rubrics', max(updated_at) FROM rubrics UNION ALL SELECT 'grades', max((data->>'updatedAt')::timestamptz) FROM student_rubrics WHERE is_peer_review = false UNION ALL SELECT 'test_attempts', max((data->>'startedAt')::timestamptz) FROM student_tests UNION ALL SELECT 'essay_submissions', max(submitted_at) FROM essay_submissions UNION ALL SELECT 'messages', max(created_at) FROM messages UNION ALL SELECT 'flashcard_decks', max((data->>'updatedAt')::timestamptz) FROM flashcard_decks UNION ALL SELECT 'flashcard_reviews', max((data->>'updatedAt')::timestamptz) FROM flashcard_reviews UNION ALL SELECT 'marketplace', max(updated_at) FROM marketplace_listings ORDER BY 2 DESC NULLS LAST"
+          "rawSql": "SELECT domain, last_activity FROM monitoring.app_latest_activity() ORDER BY 2 DESC NULLS LAST"
         }
       ]
     }

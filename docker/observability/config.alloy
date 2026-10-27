@@ -1,9 +1,10 @@
 // Grafana Alloy — ships logs to Loki from two sources (replaces Promtail, EOL 2026-03-02):
 //   1. webserver — Apache/Nginx access + error logs from any deployment style (traditional
-//                  HestiaCP/Virtualmin, or files mounted from the combined stack). The glob is
+//                  HestiaCP/Virtualmin, or files mounted from the combined stack). The globs are
 //                  rooted at /var/host-logs, which is mounted from RUBRICMAKER_LOG_DIR.
-//   2. docker    — container stdout/stderr of the combined docker-compose stack, filtered to the
-//                  `rubricmaker` compose project. Harmless if no matching containers exist here.
+//   2. docker    — container stdout/stderr of the compose projects named by ALLOY_DOCKER_PROJECTS
+//                  (a regex, default `rubricmaker`), e.g. `rubricmaker|supabase` to also collect the
+//                  official Supabase stack. Harmless if no matching containers exist here.
 // Read positions live in Alloy's storage path (the alloy-data volume), so a restart resumes where
 // it stopped instead of re-sending every file.
 
@@ -13,6 +14,12 @@ local.file_match "webserver" {
 		__path__ = "/var/host-logs/**/*{access,error}*.log*",
 		// Rotated, compressed logs would be shipped as binary noise.
 		__path_exclude__ = "/var/host-logs/**/*.gz",
+		job              = "webserver",
+	}, {
+		// HestiaCP names a domain's access log `<domain>.log` (next to `<domain>.error.log`), under
+		// web/<domain>/logs/ and /var/log/{apache2,nginx}/domains/. Error logs already match above.
+		__path__         = "/var/host-logs/**/{logs,domains}/*.log",
+		__path_exclude__ = "/var/host-logs/**/*{access,error}*.log",
 		job              = "webserver",
 	}]
 }
@@ -26,10 +33,16 @@ loki.source.file "webserver" {
 discovery.docker "rubricmaker" {
 	host             = "unix:///var/run/docker.sock"
 	refresh_interval = "15s"
+}
 
-	filter {
-		name   = "label"
-		values = ["com.docker.compose.project=rubricmaker"]
+// Docker's label filter only matches exact values, so the project list is a regex applied here.
+discovery.relabel "docker_projects" {
+	targets = discovery.docker.rubricmaker.targets
+
+	rule {
+		source_labels = ["__meta_docker_container_label_com_docker_compose_project"]
+		regex         = coalesce(sys.env("ALLOY_DOCKER_PROJECTS"), "rubricmaker")
+		action        = "keep"
 	}
 }
 
@@ -56,7 +69,7 @@ discovery.relabel "docker" {
 
 loki.source.docker "rubricmaker" {
 	host             = "unix:///var/run/docker.sock"
-	targets          = discovery.docker.rubricmaker.targets
+	targets          = discovery.relabel.docker_projects.output
 	relabel_rules    = discovery.relabel.docker.rules
 	refresh_interval = "15s"
 	forward_to       = [loki.write.default.receiver]
