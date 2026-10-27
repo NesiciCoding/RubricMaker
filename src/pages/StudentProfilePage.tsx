@@ -59,6 +59,8 @@ import RecordingPlayer from '../components/Recordings/RecordingPlayer';
 import type { GradeScale, Rubric, SessionRecording, StudentRubric } from '../types';
 /** Safety valve: calibrating scans every student's evidence, so cap a huge school to a stable slice. */
 const CALIBRATION_COHORT_LIMIT = 200;
+/** Frozen fallback for classes without a cohort, so it stays a stable `useMemo` dependency. */
+const STANDARD_GRAMMAR_CALIBRATION = standardGrammarCalibration();
 
 export default function StudentProfilePage() {
     const { id } = useParams();
@@ -212,7 +214,7 @@ export default function StudentProfilePage() {
         ]
     );
     // No cohort (a class without a school year) means nothing can be targeted or calibrated yet.
-    const grammarWeights = cohort?.grammar ?? standardGrammarCalibration();
+    const grammarWeights = cohort?.grammar ?? STANDARD_GRAMMAR_CALIBRATION;
     const cefrExpectations = cohort?.cefr;
 
     const masteryProfile = useMemo(() => {

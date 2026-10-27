@@ -4324,7 +4324,7 @@
         "no_target": "Aucun objectif",
         "weights_standard": "Pondération standard — écriture {{writing}} % · tests {{test}} % · cartes mémoire {{flashcards}} % ({{count}} points avec les trois).",
         "weights_calibrated": "Pondéré à partir de {{count}} points entièrement observés — écriture {{writing}} % · tests {{test}} % · cartes mémoire {{flashcards}} %.",
-        "weights_tooltip": "La maîtrise grammaticale combine trois sources de preuves. La répartition {{writing}}/{{test}}/{{flashcards}} est la norme ; elle se déplace vers les sources les plus cohérentes avec les autres preuves dès qu au moins {{min}} points réunissent les trois ({{count}} pour l instant)."
+        "weights_tooltip": "La maîtrise grammaticale combine trois sources de preuves. La répartition {{writing}}/{{test}}/{{flashcards}} est la norme ; elle se déplace vers les sources les plus cohérentes avec les autres preuves dès qu’au moins {{min}} points réunissent les trois ({{count}} pour l’instant)."
     },
     "vocabProfile": {
         "page_title": "Analyses du vocabulaire",

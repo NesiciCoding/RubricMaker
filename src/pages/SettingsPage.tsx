@@ -61,7 +61,7 @@ import { MIN_CALIBRATION_SAMPLES } from '../utils/grammarWeightCalibration';
 import { MIN_CEFR_CALIBRATION_STUDENTS, CEFR_CALIBRATION_AGREEMENT } from '../utils/cefrExpectationCalibration';
 import { buildCalibrationCohorts } from '../utils/calibrationCohorts';
 import { VO_TRACK_LABELS } from '../data/voTracks';
-import { getGrammarItemById } from '../data/grammarStandards';
+import { getGrammarItemById, grammarItemToFrameworkDescriptor } from '../data/grammarStandards';
 import { CEFR_SKILL_LABELS } from '../data/cefrDescriptors';
 import { CEFR_SUBLEVEL_LABELS } from '../utils/cefrOrdinal';
 
@@ -600,13 +600,20 @@ export default function SettingsPage() {
     function masteryTargetGoal(target: MasteryTarget): React.ReactNode {
         if (isGrammarTarget(target)) {
             const item = getGrammarItemById(target.grammarItemId);
+            // Resolve the category through the taxonomy too, so a renamed category translates with the UI.
+            const category = item ? grammarItemToFrameworkDescriptor(item.id) : undefined;
+            const categoryLabel = category
+                ? uiLang === 'nl'
+                    ? category.categoryLabelNl
+                    : category.categoryLabelEn
+                : target.grammarCategoryLabel;
             return (
                 <div>
                     <div style={{ fontWeight: 600 }}>
                         {item ? (uiLang === 'nl' ? item.labelNl : item.labelEn) : target.grammarItemLabel}
                     </div>
                     <div className="text-muted text-xs">
-                        {target.grammarCategoryLabel}
+                        {categoryLabel}
                         {item ? ` · ${item.level}` : ''}
                     </div>
                 </div>
