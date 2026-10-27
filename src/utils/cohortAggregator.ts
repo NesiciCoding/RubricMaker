@@ -1,4 +1,6 @@
 import type { Class, CohortFilter, Student } from '../types';
+import { classHasVoTrack } from '../data/voTracks';
+import { classHasSchoolYear } from '../data/schoolYears';
 
 export const ALL_COHORTS: CohortFilter = { voTrack: 'all', year: 'all' };
 
@@ -7,8 +9,9 @@ export function getCohortStudentIds(students: Student[], classes: Class[], filte
     const matches = (classId: string | undefined) => {
         const c = classId ? classesById.get(classId) : undefined;
         if (!c) return false;
-        if (filter.voTrack !== 'all' && c.voTrack !== filter.voTrack) return false;
-        if (filter.year !== 'all' && c.year !== filter.year) return false;
+        // A mixed class (several tracks or years) counts as matching any one of them.
+        if (filter.voTrack !== 'all' && !classHasVoTrack(c, filter.voTrack)) return false;
+        if (filter.year !== 'all' && !classHasSchoolYear(c, filter.year)) return false;
         return true;
     };
     const ids = new Set<string>();

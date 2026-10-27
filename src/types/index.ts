@@ -665,8 +665,10 @@ export interface Student {
     archivedAt?: string;
     /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */
     updatedAt?: string;
-    /** Per-student override of the class's default VO track; must be adjacent to the class track (see isAdjacentTrack). */
+    /** Per-student override of the class's default VO track; must be one of the class's own tracks (see getClassVoTracks). */
     voTrack?: VoTrack;
+    /** Per-student override of the class's school year, for classes that mix years (e.g. groep 7 & 8); must be one of the class's own years (see getClassYears). */
+    schoolYear?: SchoolYear;
     /** Read-aloud accommodation (roadmap Phase 44, §6.2): when true, this student gets TTS read-aloud on passages, question prompts and options in every test mode, including graded ones — separate from the app-wide dyslexiaFriendlyMode preference. */
     readAloudAccommodation?: boolean;
 }
@@ -680,11 +682,16 @@ export interface Class {
     id: string;
     name: string;
     subject?: string;
+    /** Primary school year — the first of `years`. Kept in sync for single-year classes and older records. */
     year?: SchoolYear;
+    /** Every school year taught in this class; set when one class mixes years (e.g. groep 7 & 8). */
+    years?: SchoolYear[];
     /** IDs of rubrics linked to this class. If undefined/empty, all rubrics are shown. */
     rubricIds?: string[];
-    /** Dutch VO track (VMBO-BB/KB/TL, HAVO, VWO) */
+    /** Primary Dutch VO track — the first of `voTracks`. Kept in sync for single-track classes and older records. */
     voTrack?: VoTrack;
+    /** Every Dutch VO track in this class; set for heterogeneous classes that mix tracks (VMBO-BB/KB/TL, HAVO, VWO). */
+    voTracks?: VoTrack[];
     /** Custom hex color for visual scanning in class lists; falls back to the VO_TRACK_COLORS swatch when unset. */
     color?: string;
     /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */

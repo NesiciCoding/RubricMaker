@@ -21,6 +21,7 @@ import type { StoreData } from '../store/storage';
 import { getCefrStudentOverview } from '../utils/cefrStudentAggregator';
 import CefrTrackYearBand from '../components/CEFR/CefrTrackYearBand';
 import { VO_TRACK_LABELS, VO_TRACK_DEFAULT_CEFR, getTrackBadgeColor, getEffectiveVoTrack } from '../data/voTracks';
+import { getEffectiveSchoolYear } from '../data/schoolYears';
 import { CEFR_SKILL_LABELS } from '../data/cefrDescriptors';
 
 // Module-scope selector: stable identity so useStoreSelector's snapshot cache
@@ -101,7 +102,7 @@ export default function StudentCefrOverviewPage() {
                       rubrics,
                       selfAssessments,
                       analysisResults,
-                      cls?.year,
+                      getEffectiveSchoolYear(student, cls),
                       effectiveTrack,
                       tests,
                       studentTests,
@@ -114,7 +115,7 @@ export default function StudentCefrOverviewPage() {
             rubrics,
             selfAssessments,
             analysisResults,
-            cls?.year,
+            cls,
             effectiveTrack,
             tests,
             studentTests,

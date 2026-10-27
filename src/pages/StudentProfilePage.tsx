@@ -46,6 +46,7 @@ import { getWeakWritingCriteria } from '../utils/writingTrendAggregator';
 import { StudentWritingTrendsCard } from '../components/Essay/WritingTrendsCard';
 import { CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
 import { VO_TRACK_LABELS, getTrackBadgeColor, getEffectiveVoTrack } from '../data/voTracks';
+import { getEffectiveSchoolYear } from '../data/schoolYears';
 import RecordingPlayer from '../components/Recordings/RecordingPlayer';
 import type { GradeScale, Rubric, SessionRecording, StudentRubric } from '../types';
 export default function StudentProfilePage() {
@@ -146,10 +147,10 @@ export default function StudentProfilePage() {
             studentRubrics,
             rubrics,
             standardMasteryTargets,
-            cls?.year,
+            getEffectiveSchoolYear(student, cls),
             effectiveTrack
         );
-    }, [student, studentRubrics, rubrics, standardMasteryTargets, cls?.year, effectiveTrack]);
+    }, [student, studentRubrics, rubrics, standardMasteryTargets, cls, effectiveTrack]);
 
     const writingTrends = useMemo(
         () => (student ? getWeakWritingCriteria(student.id, studentRubrics, rubrics, essayAssignments) : []),
@@ -180,7 +181,7 @@ export default function StudentProfilePage() {
                       rubrics,
                       selfAssessments,
                       undefined,
-                      cls?.year,
+                      getEffectiveSchoolYear(student, cls),
                       effectiveTrack,
                       tests,
                       studentTests,
@@ -192,7 +193,7 @@ export default function StudentProfilePage() {
             studentRubrics,
             rubrics,
             selfAssessments,
-            cls?.year,
+            cls,
             effectiveTrack,
             tests,
             studentTests,

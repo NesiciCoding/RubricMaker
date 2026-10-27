@@ -80,6 +80,17 @@ const c1: Class = { id: 'c1', name: 'Class A', displayOrder: 0, rubricIds: ['r1'
 const c2: Class = { id: 'c2', name: 'Class B', displayOrder: 1, voTrack: 'vwo', color: '#ff0000', year: 'jaar-1' };
 const c3: Class = { id: 'c3', name: 'Class C', displayOrder: 2, color: '#00ff00' };
 const c4: Class = { id: 'c4', name: 'Class D', displayOrder: 3, rubricIds: ['r1', 'r2'] };
+// Heterogeneous class: two VO tracks (one primary) in one year.
+const c5: Class = {
+    id: 'c5',
+    name: 'Class E',
+    displayOrder: 4,
+    voTrack: 'havo',
+    voTracks: ['havo', 'vmbo-tl'],
+    year: 'jaar-3',
+};
+// Junior group: one class, two primary-school years (groep 7 & 8), no VO track.
+const c6: Class = { id: 'c6', name: 'Class F', displayOrder: 5, years: ['groep-7', 'groep-8'] };
 
 const mkEntry = (levelId: string | null, comment = '', checkedSubItems: string[] = []) => ({
     criterionId: 'c1',
@@ -166,8 +177,13 @@ const mockUpdateSettings = vi.fn();
 const mockNavigate = vi.fn();
 
 // Stable refs (identity-stable so memos don't churn between renders).
-const classesArr = [c1, c2, c3, c4];
-const studentsArr = [s1, s2, s3, s4, s5, s6, s7];
+// s8 Rick: tagged to the second of Class E's two tracks.
+const s8: Student = { id: 's8', name: 'Rick', classId: 'c5', voTrack: 'vmbo-tl' };
+// s9 Sara: tagged to the second of Class F's two years.
+const s9: Student = { id: 's9', name: 'Sara', classId: 'c6', schoolYear: 'groep-8' };
+
+const classesArr = [c1, c2, c3, c4, c5, c6];
+const studentsArr = [s1, s2, s3, s4, s5, s6, s7, s8, s9];
 const studentRubricsArr = [srA1, srA2, srA3, srA4, srA5, srB1, srB2, srC1, srD1, srD2, srD3, srE1, srF1, srG1];
 const rubricsArr = [rubric, rubricNoScale, rubricMissingScale, rubricNoScaleId];
 const gradeScalesArr = [gradeScale];
@@ -539,26 +555,69 @@ describe('StudentsPage extended', () => {
         expect(textarea.value).not.toContain('→ ');
     });
 
-    it('edits a student, transfers class and saves via the modal', () => {
+    it('edits a student, transfers class and pins a track from that class', () => {
         renderPage();
         const rows = screen.getAllByRole('row');
         const aliceRow = rows.find((r) => within(r).queryByText('Alice'))!;
         fireEvent.click(within(aliceRow).getByLabelText('studentsPage.action_edit_student'));
         expect(screen.getByText('studentsPage.edit_student_title')).toBeInTheDocument();
-        // Change the class to c2 (has voTrack) → track select appears; pick an adjacent track.
+        // Move Alice into Class E (two tracks, one year) → the track select offers exactly its own tracks.
         const classSelect = screen.getByLabelText('studentsPage.form_class');
-        fireEvent.change(classSelect, { target: { value: 'c2' } });
-        fireEvent.change(screen.getByLabelText('voTrack.section_label'), { target: { value: 'havo' } });
+        fireEvent.change(classSelect, { target: { value: 'c5' } });
+        const trackSelect = screen.getByLabelText('voTrack.section_label') as HTMLSelectElement;
+        expect([...trackSelect.options].map((o) => o.value)).toEqual(['', 'vmbo-tl', 'havo']);
+        fireEvent.change(trackSelect, { target: { value: 'vmbo-tl' } });
         fireEvent.change(screen.getByLabelText('studentsPage.form_full_name'), { target: { value: 'Alice B' } });
         fireEvent.click(screen.getByText('studentsPage.action_save_changes'));
         expect(mockUpdateStudent).toHaveBeenCalledWith(
             expect.objectContaining({
                 name: 'Alice B',
-                classId: 'c2',
-                voTrack: 'havo',
+                classId: 'c5',
+                voTrack: 'vmbo-tl',
+                schoolYear: undefined,
                 pastClassMemberships: [expect.objectContaining({ classId: 'c1', leftAt: expect.any(String) })],
             })
         );
+    });
+
+    it('assigns a student to one of a mixed class\u2019s years', () => {
+        renderPage();
+        fireEvent.click(screen.getByText('studentsPage.all_cohorts'));
+        const saraRow = screen.getAllByRole('row').find((r) => within(r).queryByText('Sara'))!;
+        fireEvent.click(within(saraRow).getByLabelText('studentsPage.action_edit_student'));
+        const yearSelect = screen.getByLabelText('studentsPage.form_school_year') as HTMLSelectElement;
+        // Only the class's own years (groep 7 & 8) are offered, seeded with Sara's own tag.
+        expect([...yearSelect.options].map((o) => o.value)).toEqual(['', 'groep-7', 'groep-8']);
+        expect(yearSelect.value).toBe('groep-8');
+        // A primary-school class has no VO track to pin.
+        expect(screen.queryByLabelText('voTrack.section_label')).not.toBeInTheDocument();
+        fireEvent.change(yearSelect, { target: { value: 'groep-7' } });
+        fireEvent.click(screen.getByText('studentsPage.action_save_changes'));
+        expect(mockUpdateStudent).toHaveBeenCalledWith(
+            expect.objectContaining({ schoolYear: 'groep-7', voTrack: undefined, classId: 'c6' })
+        );
+    });
+
+    it('tags students of a mixed class with their own track and year', () => {
+        renderPage();
+        fireEvent.click(screen.getByText('studentsPage.all_cohorts'));
+        const rows = screen.getAllByRole('row');
+        const rickRow = rows.find((r) => within(r).queryByText('Rick'))!;
+        expect(within(rickRow).getByText('VMBO-TL')).toBeInTheDocument();
+        const saraRow = rows.find((r) => within(r).queryByText('Sara'))!;
+        expect(within(saraRow).getByText('Groep 8')).toBeInTheDocument();
+        // Alice's class is not mixed, so her row carries no cohort tag.
+        const aliceRow = rows.find((r) => within(r).queryByText('Alice'))!;
+        expect(within(aliceRow).queryByText('HAVO')).not.toBeInTheDocument();
+    });
+
+    it('floats the class options menu above the scrollable chip bar', () => {
+        renderPage();
+        fireEvent.click(screen.getAllByLabelText('studentsPage.action_class_menu')[0]);
+        const menu = screen.getByRole('menu');
+        // Portaled to the body, so the chip row's horizontal overflow can neither clip it nor scroll.
+        expect(menu.parentElement).toBe(document.body);
+        expect(menu).toHaveStyle({ position: 'fixed' });
     });
 
     it('edits a student without an email (empty-string fallbacks)', () => {
@@ -660,12 +719,16 @@ describe('StudentsPage extended', () => {
         fireEvent.click(screen.getAllByLabelText('studentsPage.action_class_menu')[0]);
         fireEvent.click(screen.getByText('studentsPage.action_rename'));
         expect(screen.getByText('voTrack.class_settings_title')).toBeInTheDocument();
-        // 'groep-8' has no track → track section hidden.
         fireEvent.change(
             screen.getAllByDisplayValue('Class A').find((el) => el.tagName === 'INPUT')!,
             { target: { value: 'Renamed A' } }
         );
-        fireEvent.change(screen.getByLabelText('studentsPage.form_school_year'), { target: { value: 'groep-8' } });
+        // 'groep-8' is primary school → the track group disappears.
+        fireEvent.click(
+            within(screen.getByRole('group', { name: 'studentsPage.form_school_year' })).getByRole('button', {
+                name: 'Groep 8',
+            })
+        );
         expect(screen.queryByLabelText('voTrack.section_label')).not.toBeInTheDocument();
         fireEvent.change(screen.getByLabelText('studentsPage.form_class_color'), { target: { value: '#123456' } });
         // The Clear button resets the color → save persists undefined.
@@ -675,9 +738,56 @@ describe('StudentsPage extended', () => {
             expect.objectContaining({
                 name: 'Renamed A',
                 year: 'groep-8',
+                years: ['groep-8'],
                 voTrack: undefined,
+                voTracks: undefined,
                 color: undefined,
             })
+        );
+    });
+
+    it('connects several years and several tracks to one class', () => {
+        renderPage();
+        fireEvent.click(screen.getAllByLabelText('studentsPage.action_class_menu')[0]);
+        fireEvent.click(screen.getByText('studentsPage.action_rename'));
+        const yearGroup = () => screen.getByRole('group', { name: 'studentsPage.form_school_year' });
+        // Primary years only → no VO track group to choose from.
+        fireEvent.click(within(yearGroup()).getByRole('button', { name: 'Groep 7' }));
+        fireEvent.click(within(yearGroup()).getByRole('button', { name: 'Groep 8' }));
+        expect(screen.queryByLabelText('voTrack.section_label')).not.toBeInTheDocument();
+        // Adding a secondary year brings the track group back.
+        fireEvent.click(within(yearGroup()).getByRole('button', { name: 'Jaar 1' }));
+        const trackGroup = screen.getByRole('group', { name: 'voTrack.section_label' });
+        fireEvent.click(within(trackGroup).getByRole('button', { name: 'VMBO-TL' }));
+        fireEvent.click(within(trackGroup).getByRole('button', { name: 'HAVO' }));
+        fireEvent.click(screen.getByText('common.save'));
+        expect(mockUpdateClass).toHaveBeenCalledWith(
+            expect.objectContaining({
+                name: 'Class A',
+                years: ['groep-7', 'groep-8', 'jaar-1'],
+                year: 'groep-7',
+                voTracks: ['vmbo-tl', 'havo'],
+                voTrack: 'vmbo-tl',
+                color: undefined,
+            })
+        );
+    });
+
+    it('seeds a heterogeneous class and drops its tracks when no track-capable year remains', () => {
+        renderPage();
+        // Class E mixes VMBO-TL and HAVO within jaar-3.
+        fireEvent.click(screen.getAllByLabelText('studentsPage.action_class_menu')[4]);
+        fireEvent.click(screen.getByText('studentsPage.action_rename'));
+        const trackGroup = screen.getByRole('group', { name: 'voTrack.section_label' });
+        expect(within(trackGroup).getByRole('button', { name: 'HAVO' })).toHaveAttribute('aria-pressed', 'true');
+        expect(within(trackGroup).getByRole('button', { name: 'VMBO-TL' })).toHaveAttribute('aria-pressed', 'true');
+        const yearGroup = () => screen.getByRole('group', { name: 'studentsPage.form_school_year' });
+        fireEvent.click(within(yearGroup()).getByRole('button', { name: 'Jaar 3' }));
+        fireEvent.click(within(yearGroup()).getByRole('button', { name: 'Groep 7' }));
+        expect(screen.queryByLabelText('voTrack.section_label')).not.toBeInTheDocument();
+        fireEvent.click(screen.getByText('common.save'));
+        expect(mockUpdateClass).toHaveBeenCalledWith(
+            expect.objectContaining({ year: 'groep-7', years: ['groep-7'], voTrack: undefined, voTracks: undefined })
         );
     });
 
@@ -693,21 +803,33 @@ describe('StudentsPage extended', () => {
 
     it('renames a class keeping a track and saving via Enter', () => {
         renderPage();
-        // c2 has voTrack + year + color → seeds all rename fields.
+        // c2 has voTrack + year + color → seeds all rename fields as pressed chips.
         const menus = screen.getAllByLabelText('studentsPage.action_class_menu');
         fireEvent.click(menus[1]);
         fireEvent.click(screen.getByText('studentsPage.action_rename'));
-        expect(screen.getByLabelText('voTrack.section_label')).toBeInTheDocument();
+        const trackGroup = screen.getByRole('group', { name: 'voTrack.section_label' });
+        expect(within(trackGroup).getByRole('button', { name: 'VWO' })).toHaveAttribute('aria-pressed', 'true');
+        expect(
+            within(screen.getByRole('group', { name: 'studentsPage.form_school_year' })).getByRole('button', {
+                name: 'Jaar 1',
+            })
+        ).toHaveAttribute('aria-pressed', 'true');
         // Enter with an empty name does not save.
         const nameInput = screen.getAllByDisplayValue('Class B').find((el) => el.tagName === 'INPUT')!;
         fireEvent.change(nameInput, { target: { value: '' } });
         fireEvent.keyDown(nameInput, { key: 'Enter' });
         expect(mockUpdateClass).not.toHaveBeenCalled();
         fireEvent.change(nameInput, { target: { value: 'Class B' } });
-        fireEvent.change(screen.getByLabelText('voTrack.section_label'), { target: { value: 'havo' } });
         fireEvent.keyDown(nameInput, { key: 'Enter' });
         expect(mockUpdateClass).toHaveBeenCalledWith(
-            expect.objectContaining({ name: 'Class B', voTrack: 'havo', year: 'jaar-1', color: '#ff0000' })
+            expect.objectContaining({
+                name: 'Class B',
+                voTrack: 'vwo',
+                voTracks: ['vwo'],
+                year: 'jaar-1',
+                years: ['jaar-1'],
+                color: '#ff0000',
+            })
         );
     });
 

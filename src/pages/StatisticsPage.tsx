@@ -27,8 +27,8 @@ import {
 } from '../utils/gradeCalc';
 import { sanitizeFilename } from '../utils/exportDataPrep';
 import type { StudentRubric, Student, Rubric, RubricCriterion, VoTrack, SchoolYear, StudentTest, Test } from '../types';
-import { VO_TRACKS } from '../data/voTracks';
-import { SCHOOL_YEAR_LABELS, getAvailableSchoolYears } from '../data/schoolYears';
+import { VO_TRACKS, getClassVoTracks } from '../data/voTracks';
+import { SCHOOL_YEAR_LABELS, getAvailableSchoolYears, getClassYears } from '../data/schoolYears';
 import {
     calcTestMaxPoints,
     calcStudentTestRawPoints,
@@ -124,12 +124,14 @@ export default function StatisticsPage() {
     const [filterYear, setFilterYear] = useState<SchoolYear | 'all'>('all');
 
     const yearOptions = useMemo(() => getAvailableSchoolYears(classes), [classes]);
+    const hasClassTracks = useMemo(() => classes.some((c) => getClassVoTracks(c).length > 0), [classes]);
 
     const filteredClasses = useMemo(
         () =>
             classes.filter((c) => {
-                if (filterTrack !== 'all' && c.voTrack !== filterTrack) return false;
-                if (filterYear !== 'all' && c.year !== filterYear) return false;
+                // A heterogeneous class counts as matching any track/year it teaches.
+                if (filterTrack !== 'all' && !getClassVoTracks(c).includes(filterTrack)) return false;
+                if (filterYear !== 'all' && !getClassYears(c).includes(filterYear)) return false;
                 return true;
             }),
         [classes, filterTrack, filterYear]
@@ -707,7 +709,7 @@ export default function StatisticsPage() {
                     </div>
 
                     {/* Track + year filters (shown in rubric and compare modes) */}
-                    {viewMode !== 'student' && (yearOptions.length > 0 || classes.some((c) => c.voTrack)) && (
+                    {viewMode !== 'student' && (yearOptions.length > 0 || hasClassTracks) && (
                         <>
                             {yearOptions.length > 0 && (
                                 <div className="form-group" style={{ maxWidth: 140, marginBottom: 0 }}>
@@ -725,7 +727,7 @@ export default function StatisticsPage() {
                                     </select>
                                 </div>
                             )}
-                            {classes.some((c) => c.voTrack) && (
+                            {hasClassTracks && (
                                 <div className="form-group" style={{ maxWidth: 160, marginBottom: 0 }}>
                                     <label>{t('statistics.filters.track')}</label>
                                     <select

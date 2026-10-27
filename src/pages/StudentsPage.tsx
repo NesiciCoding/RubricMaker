@@ -1,4 +1,5 @@
 import React, { useState, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { saveAs } from 'file-saver';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -38,15 +39,14 @@ import { findDuplicateStudent, isValidEmail, studentExportRows } from '../utils/
 import CsvImportModal from '../components/Students/CsvImportModal';
 import StudentPasswordSlipSheet, { type PasswordSlip } from '../components/Students/StudentPasswordSlipSheet';
 import { useTranslation, Trans } from 'react-i18next';
+import { VO_TRACKS, VO_TRACK_LABELS, VO_TRACK_COLORS, getClassVoTracks, getEffectiveVoTrack } from '../data/voTracks';
 import {
-    VO_TRACKS,
-    VO_TRACK_LABELS,
-    VO_TRACK_COLORS,
-    isAdjacentTrack,
-    getTrackBadgeColor,
-    getEffectiveVoTrack,
-} from '../data/voTracks';
-import { SCHOOL_YEARS, SCHOOL_YEAR_LABELS, SCHOOL_YEAR_HAS_TRACK } from '../data/schoolYears';
+    SCHOOL_YEARS,
+    SCHOOL_YEAR_LABELS,
+    SCHOOL_YEAR_HAS_TRACK,
+    getClassYears,
+    getEffectiveSchoolYear,
+} from '../data/schoolYears';
 import type {
     VoTrack,
     SchoolYear,
@@ -61,6 +61,7 @@ import type {
     StudentTest,
 } from '../types';
 import Avatar from '../components/ui/Avatar';
+import ToggleChipGroup from '../components/ui/ToggleChipGroup';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import { getCefrStudentOverview, skillLevelStatus, type CefrLevelStatus } from '../utils/cefrStudentAggregator';
 import { formatShortDate } from '../utils/dateInput';
@@ -263,7 +264,7 @@ function computeStudentDerived(
         rubrics,
         sas,
         ars,
-        cls?.year,
+        getEffectiveSchoolYear(s, cls ?? undefined),
         getEffectiveVoTrack(s, cls ?? undefined),
         tests,
         sts,
@@ -367,32 +368,53 @@ export default function StudentsPage() {
     const [editStudentClassId, setEditStudentClassId] = useState('');
     const [editStudentTrack, setEditStudentTrack] = useState<VoTrack | ''>('');
     const [editStudentReadAloud, setEditStudentReadAloud] = useState(false);
+    const [editStudentYear, setEditStudentYear] = useState<SchoolYear | ''>('');
     const [newClassName, setNewClassName] = useState('');
     const [importFile, setImportFile] = useState<File | null>(null);
     const [tourRun, setTourRun] = useState(false);
     const studentsTourSteps = React.useMemo(() => getStudentsTourSteps(t), [t]);
 
-    // Context Menu State for Classes
-    const [classMenuOpen, setClassMenuOpen] = useState<string | null>(null);
+    // Context Menu State for Classes. The menu floats above the chip bar in a body portal — the
+    // chip row scrolls horizontally, so an in-flow popover would be clipped by its overflow box.
+    const [classMenu, setClassMenu] = useState<null | { id: string; top: number; right: number }>(null);
+    const classMenuOpen = classMenu?.id ?? null;
+    const classMenuTarget = classes.find((c) => c.id === classMenu?.id);
     const [gradeMenuOpen, setGradeMenuOpen] = useState<string | null>(null);
 
     // Class Management Modal States
     const [renameClassId, setRenameClassId] = useState<string | null>(null);
     const [renameClassVal, setRenameClassVal] = useState('');
-    const [renameClassTrack, setRenameClassTrack] = useState<VoTrack | ''>('');
-    const [renameClassYear, setRenameClassYear] = useState<SchoolYear | ''>('');
+    const [renameClassTracks, setRenameClassTracks] = useState<VoTrack[]>([]);
+    const [renameClassYears, setRenameClassYears] = useState<SchoolYear[]>([]);
     const [renameClassColor, setRenameClassColor] = useState('');
+
+    // A class that only teaches primary years (groep 7/8) has no VO tracks to choose from.
+    const renameClassTracksVisible =
+        renameClassYears.length === 0 || renameClassYears.some((y) => SCHOOL_YEAR_HAS_TRACK[y]);
+
+    function toggleRenameClassYear(year: SchoolYear) {
+        setRenameClassYears((prev) => (prev.includes(year) ? prev.filter((y) => y !== year) : [...prev, year]));
+    }
+
+    function toggleRenameClassTrack(track: VoTrack) {
+        setRenameClassTracks((prev) => (prev.includes(track) ? prev.filter((tr) => tr !== track) : [...prev, track]));
+    }
 
     function saveClassRename() {
         const c = classes.find((cl) => cl.id === renameClassId);
         /* v8 ignore next -- saveClassRename only fires from the guarded Save button/Enter handler */
         if (!c || !renameClassVal.trim()) return;
+        const years = SCHOOL_YEARS.filter((y) => renameClassYears.includes(y));
+        const tracks = renameClassTracksVisible ? VO_TRACKS.filter((track) => renameClassTracks.includes(track)) : [];
         updateClass({
             ...c,
             name: renameClassVal.trim(),
-            voTrack:
-                renameClassYear && !SCHOOL_YEAR_HAS_TRACK[renameClassYear] ? undefined : renameClassTrack || undefined,
-            year: renameClassYear || undefined,
+            // The singular fields stay the class's primary/default cohort for every surface that
+            // only has room for one (class-level analytics, exports); the arrays carry the rest.
+            year: years[0],
+            years: years.length ? years : undefined,
+            voTrack: tracks[0],
+            voTracks: tracks.length ? tracks : undefined,
             color: renameClassColor || undefined,
         });
         setRenameClassId(null);
@@ -631,12 +653,15 @@ export default function StudentsPage() {
             const prev = students.find((s) => s.id === editStudent.id)!;
             const isTransfer = prev.classId !== editStudentClassId;
             const targetClass = classes.find((c) => c.id === editStudentClassId);
+            const targetYears = getClassYears(targetClass);
+            const targetTracks = getClassVoTracks(targetClass);
             updateStudent({
                 ...prev,
                 name: trimmedName,
                 email: trimmedEmail,
                 classId: editStudentClassId,
-                voTrack: targetClass?.voTrack ? editStudentTrack || undefined : undefined,
+                voTrack: targetTracks.length ? editStudentTrack || undefined : undefined,
+                schoolYear: targetYears.length ? editStudentYear || undefined : undefined,
                 readAloudAccommodation: editStudentReadAloud || undefined,
                 pastClassMemberships: isTransfer
                     ? [
@@ -650,10 +675,13 @@ export default function StudentsPage() {
                     : prev.pastClassMemberships,
             });
         } else {
+            const newStudentClass = classes.find((c) => c.id === studentFormClassId);
             addStudent({
                 name: trimmedName,
                 email: trimmedEmail,
                 classId: studentFormClassId,
+                voTrack: getClassVoTracks(newStudentClass).length ? editStudentTrack || undefined : undefined,
+                schoolYear: getClassYears(newStudentClass).length ? editStudentYear || undefined : undefined,
                 readAloudAccommodation: editStudentReadAloud || undefined,
             });
         }
@@ -671,6 +699,7 @@ export default function StudentsPage() {
         setEmail('');
         setEditStudentClassId(singleClassId ?? selectedCohorts[0] ?? classes[0]?.id ?? '');
         setEditStudentTrack('');
+        setEditStudentYear('');
         setEditStudentReadAloud(false);
         setShowAddModal(true);
     }
@@ -713,7 +742,7 @@ export default function StudentsPage() {
     // Helper to close all context menus on outside click
     React.useEffect(() => {
         const handleClick = () => {
-            setClassMenuOpen(null);
+            setClassMenu(null);
             setGradeMenuOpen(null);
         };
         window.addEventListener('click', handleClick);
@@ -861,34 +890,53 @@ export default function StudentsPage() {
                                                                     gap: 4,
                                                                 }}
                                                             >
-                                                                {c.voTrack ? (
-                                                                    <span
-                                                                        style={{
-                                                                            fontSize: 9,
-                                                                            fontWeight: 700,
-                                                                            padding: '1px 5px',
-                                                                            borderRadius: 3,
-                                                                            background: getTrackBadgeColor(c),
-                                                                            color: '#fff',
-                                                                            opacity: 1,
-                                                                        }}
-                                                                    >
-                                                                        {VO_TRACK_LABELS[c.voTrack]}
-                                                                    </span>
-                                                                ) : (
-                                                                    c.color && (
+                                                                {getClassYears(c).length > 1 &&
+                                                                    getClassYears(c).map((year) => (
                                                                         <span
-                                                                            aria-hidden="true"
+                                                                            key={year}
                                                                             style={{
-                                                                                width: 9,
-                                                                                height: 9,
-                                                                                borderRadius: '50%',
-                                                                                background: c.color,
-                                                                                display: 'inline-block',
+                                                                                fontSize: 9,
+                                                                                fontWeight: 700,
+                                                                                padding: '1px 5px',
+                                                                                borderRadius: 3,
+                                                                                background: 'var(--bg-raised)',
+                                                                                color: 'var(--text-muted)',
+                                                                                border: '1px solid var(--border)',
+                                                                                opacity: 1,
                                                                             }}
-                                                                        />
-                                                                    )
-                                                                )}
+                                                                        >
+                                                                            {SCHOOL_YEAR_LABELS[year]}
+                                                                        </span>
+                                                                    ))}
+                                                                {getClassVoTracks(c).length > 0
+                                                                    ? getClassVoTracks(c).map((track) => (
+                                                                          <span
+                                                                              key={track}
+                                                                              style={{
+                                                                                  fontSize: 9,
+                                                                                  fontWeight: 700,
+                                                                                  padding: '1px 5px',
+                                                                                  borderRadius: 3,
+                                                                                  background: VO_TRACK_COLORS[track],
+                                                                                  color: '#fff',
+                                                                                  opacity: 1,
+                                                                              }}
+                                                                          >
+                                                                              {VO_TRACK_LABELS[track]}
+                                                                          </span>
+                                                                      ))
+                                                                    : c.color && (
+                                                                          <span
+                                                                              aria-hidden="true"
+                                                                              style={{
+                                                                                  width: 9,
+                                                                                  height: 9,
+                                                                                  borderRadius: '50%',
+                                                                                  background: c.color,
+                                                                                  display: 'inline-block',
+                                                                              }}
+                                                                          />
+                                                                      )}
                                                                 {c.rubricIds && c.rubricIds.length > 0 && (
                                                                     <span
                                                                         title={`${c.rubricIds.length} ${
@@ -917,7 +965,16 @@ export default function StudentsPage() {
                                                             aria-expanded={classMenuOpen === c.id}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                setClassMenuOpen(classMenuOpen === c.id ? null : c.id);
+                                                                if (classMenuOpen === c.id) {
+                                                                    setClassMenu(null);
+                                                                    return;
+                                                                }
+                                                                const rect = e.currentTarget.getBoundingClientRect();
+                                                                setClassMenu({
+                                                                    id: c.id,
+                                                                    top: rect.bottom + 4,
+                                                                    right: Math.max(4, window.innerWidth - rect.right),
+                                                                });
                                                             }}
                                                             style={{
                                                                 opacity: classMenuOpen === c.id ? 1 : 0.6,
@@ -925,86 +982,6 @@ export default function StudentsPage() {
                                                         >
                                                             <MoreVertical size={14} />
                                                         </button>
-
-                                                        {classMenuOpen === c.id && (
-                                                            <div
-                                                                className="card"
-                                                                style={{
-                                                                    position: 'absolute',
-                                                                    right: 0,
-                                                                    top: '100%',
-                                                                    zIndex: 10,
-                                                                    padding: 4,
-                                                                    minWidth: 160,
-                                                                    boxShadow: 'var(--shadow-lg)',
-                                                                }}
-                                                                onClick={(e) => e.stopPropagation()}
-                                                            >
-                                                                <button
-                                                                    type="button"
-                                                                    className="btn btn-ghost btn-sm"
-                                                                    style={{
-                                                                        width: '100%',
-                                                                        justifyContent: 'flex-start',
-                                                                    }}
-                                                                    onClick={() => {
-                                                                        setRenameClassId(c.id);
-                                                                        setRenameClassVal(c.name);
-                                                                        setRenameClassTrack(c.voTrack ?? '');
-                                                                        setRenameClassYear(c.year ?? '');
-                                                                        setRenameClassColor(c.color ?? '');
-                                                                        setClassMenuOpen(null);
-                                                                    }}
-                                                                >
-                                                                    {t('studentsPage.action_rename')}
-                                                                </button>
-                                                                <button
-                                                                    type="button"
-                                                                    className="btn btn-ghost btn-sm"
-                                                                    style={{
-                                                                        width: '100%',
-                                                                        justifyContent: 'flex-start',
-                                                                    }}
-                                                                    onClick={() => {
-                                                                        setLinkRubricsClassId(c.id);
-                                                                        setShowLinkRubrics(true);
-                                                                        setClassMenuOpen(null);
-                                                                    }}
-                                                                >
-                                                                    <Link size={13} style={{ marginRight: 4 }} />{' '}
-                                                                    {t('studentsPage.link_rubrics')}
-                                                                </button>
-                                                                <button
-                                                                    type="button"
-                                                                    className="btn btn-ghost btn-sm"
-                                                                    style={{
-                                                                        width: '100%',
-                                                                        justifyContent: 'flex-start',
-                                                                    }}
-                                                                    onClick={() => {
-                                                                        setMergeClassId(c.id);
-                                                                        setMergeTargetId('');
-                                                                        setClassMenuOpen(null);
-                                                                    }}
-                                                                >
-                                                                    {t('studentsPage.action_merge')}
-                                                                </button>
-                                                                <button
-                                                                    type="button"
-                                                                    className="btn btn-ghost btn-sm text-red"
-                                                                    style={{
-                                                                        width: '100%',
-                                                                        justifyContent: 'flex-start',
-                                                                    }}
-                                                                    onClick={() => {
-                                                                        setDeleteClassId(c.id);
-                                                                        setClassMenuOpen(null);
-                                                                    }}
-                                                                >
-                                                                    {t('studentsPage.action_delete')}
-                                                                </button>
-                                                            </div>
-                                                        )}
                                                     </div>
                                                 )}
                                             </Draggable>
@@ -1156,6 +1133,54 @@ export default function StudentsPage() {
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                                             <Avatar name={s.name} size={26} fontSize="0.75rem" />
                                                             {s.name}
+                                                            {/* Only a mixed class needs per-student cohort tags — a single-track/
+                                                                single-year class already shows them on its chip. */}
+                                                            {(() => {
+                                                                const studentClass = classById.get(s.classId);
+                                                                const tracks = getClassVoTracks(studentClass);
+                                                                const years = getClassYears(studentClass);
+                                                                const track = tracks.length > 1 ? s.voTrack : undefined;
+                                                                const year =
+                                                                    years.length > 1 ? s.schoolYear : undefined;
+                                                                if (!track && !year) return null;
+                                                                return (
+                                                                    <span
+                                                                        style={{
+                                                                            display: 'inline-flex',
+                                                                            alignItems: 'center',
+                                                                            gap: 4,
+                                                                            fontSize: 9,
+                                                                            fontWeight: 700,
+                                                                        }}
+                                                                    >
+                                                                        {year && (
+                                                                            <span
+                                                                                style={{
+                                                                                    padding: '1px 5px',
+                                                                                    borderRadius: 3,
+                                                                                    background: 'var(--bg-raised)',
+                                                                                    color: 'var(--text-muted)',
+                                                                                    border: '1px solid var(--border)',
+                                                                                }}
+                                                                            >
+                                                                                {SCHOOL_YEAR_LABELS[year]}
+                                                                            </span>
+                                                                        )}
+                                                                        {track && (
+                                                                            <span
+                                                                                style={{
+                                                                                    padding: '1px 5px',
+                                                                                    borderRadius: 3,
+                                                                                    background: VO_TRACK_COLORS[track],
+                                                                                    color: '#fff',
+                                                                                }}
+                                                                            >
+                                                                                {VO_TRACK_LABELS[track]}
+                                                                            </span>
+                                                                        )}
+                                                                    </span>
+                                                                );
+                                                            })()}
                                                         </div>
                                                     </td>
                                                     {showClassColumn && (
@@ -1358,6 +1383,7 @@ export default function StudentsPage() {
                                                                     setEmail(s.email ?? '');
                                                                     setEditStudentClassId(s.classId);
                                                                     setEditStudentTrack(s.voTrack ?? '');
+                                                                    setEditStudentYear(s.schoolYear ?? '');
                                                                     setEditStudentReadAloud(
                                                                         s.readAloudAccommodation ?? false
                                                                     );
@@ -1472,6 +1498,7 @@ export default function StudentsPage() {
                                         onChange={(e) => {
                                             setEditStudentClassId(e.target.value);
                                             setEditStudentTrack('');
+                                            setEditStudentYear('');
                                         }}
                                     >
                                         {classes.map((c) => (
@@ -1482,33 +1509,60 @@ export default function StudentsPage() {
                                     </select>
                                 </div>
                             )}
-                            {editStudent &&
-                                (() => {
-                                    const cls = classes.find((c) => c.id === editStudentClassId);
-                                    if (!cls?.voTrack) return null;
-                                    const options = VO_TRACKS.filter((track) => isAdjacentTrack(track, cls.voTrack!));
-                                    return (
-                                        <div className="form-group" style={{ marginTop: 12 }}>
-                                            <label htmlFor="student-track">{t('voTrack.section_label')}</label>
-                                            <select
-                                                id="student-track"
-                                                value={editStudentTrack}
-                                                onChange={(e) => setEditStudentTrack(e.target.value as VoTrack | '')}
-                                            >
-                                                <option value="">
-                                                    {t('voTrack.same_as_class', {
-                                                        track: VO_TRACK_LABELS[cls.voTrack],
-                                                    })}
+                            {/* A class may teach several years and/or several tracks: the student is
+                                pinned to one of each, defaulting to the class's primary cohort. */}
+                            {(() => {
+                                const cls = classes.find((c) => c.id === editStudentClassId);
+                                const classYears = getClassYears(cls);
+                                if (classYears.length === 0) return null;
+                                return (
+                                    <div className="form-group" style={{ marginTop: 12 }}>
+                                        <label htmlFor="student-year">{t('studentsPage.form_school_year')}</label>
+                                        <select
+                                            id="student-year"
+                                            value={editStudentYear}
+                                            onChange={(e) => setEditStudentYear(e.target.value as SchoolYear | '')}
+                                        >
+                                            <option value="">
+                                                {t('studentsPage.form_student_year_same_as_class')}
+                                            </option>
+                                            {classYears.map((year) => (
+                                                <option key={year} value={year}>
+                                                    {SCHOOL_YEAR_LABELS[year]}
                                                 </option>
-                                                {options.map((track) => (
-                                                    <option key={track} value={track}>
-                                                        {VO_TRACK_LABELS[track]}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    );
-                                })()}
+                                            ))}
+                                        </select>
+                                    </div>
+                                );
+                            })()}
+                            {(() => {
+                                const cls = classes.find((c) => c.id === editStudentClassId);
+                                const classTracks = getClassVoTracks(cls);
+                                if (classTracks.length === 0) return null;
+                                return (
+                                    <div className="form-group" style={{ marginTop: 12 }}>
+                                        <label htmlFor="student-track">{t('voTrack.section_label')}</label>
+                                        <select
+                                            id="student-track"
+                                            value={editStudentTrack}
+                                            onChange={(e) => setEditStudentTrack(e.target.value as VoTrack | '')}
+                                        >
+                                            <option value="">
+                                                {classTracks.length === 1
+                                                    ? t('voTrack.same_as_class', {
+                                                          track: VO_TRACK_LABELS[classTracks[0]],
+                                                      })
+                                                    : t('studentsPage.form_student_track_same_as_class')}
+                                            </option>
+                                            {classTracks.map((track) => (
+                                                <option key={track} value={track}>
+                                                    {VO_TRACK_LABELS[track]}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                );
+                            })()}
                             <div className="form-group" style={{ marginTop: 12 }}>
                                 <label
                                     htmlFor="student-read-aloud"
@@ -1582,59 +1636,31 @@ export default function StudentsPage() {
                                         }}
                                     />
                                 </div>
-                                <div className="form-group" style={{ marginBottom: 14 }}>
-                                    <label htmlFor="class-rename-year">{t('studentsPage.form_school_year')}</label>
-                                    <select
-                                        id="class-rename-year"
-                                        value={renameClassYear}
-                                        onChange={(e) => setRenameClassYear(e.target.value as SchoolYear | '')}
-                                    >
-                                        <option value="">{t('studentsPage.form_school_year_none')}</option>
-                                        {SCHOOL_YEARS.map((year) => (
-                                            <option key={year} value={year}>
-                                                {SCHOOL_YEAR_LABELS[year]}
-                                            </option>
-                                        ))}
-                                    </select>
+                                <div style={{ marginBottom: 14 }}>
+                                    <ToggleChipGroup
+                                        label={t('studentsPage.form_school_year')}
+                                        options={SCHOOL_YEARS.map((year) => ({
+                                            value: year,
+                                            label: SCHOOL_YEAR_LABELS[year],
+                                        }))}
+                                        values={renameClassYears}
+                                        onToggle={toggleRenameClassYear}
+                                        hint={t('studentsPage.form_school_years_hint')}
+                                    />
                                 </div>
-                                {(!renameClassYear || SCHOOL_YEAR_HAS_TRACK[renameClassYear]) && (
-                                    <div className="form-group" style={{ marginBottom: 14 }}>
-                                        <label htmlFor="class-rename-track">{t('voTrack.section_label')}</label>
-                                        <select
-                                            id="class-rename-track"
-                                            value={renameClassTrack}
-                                            onChange={(e) => setRenameClassTrack(e.target.value as VoTrack | '')}
-                                        >
-                                            <option value="">{t('voTrack.no_track')}</option>
-                                            {VO_TRACKS.map((track) => (
-                                                <option key={track} value={track}>
-                                                    {VO_TRACK_LABELS[track]}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        {renameClassTrack && (
-                                            <div
-                                                style={{
-                                                    marginTop: 8,
-                                                    display: 'inline-flex',
-                                                    alignItems: 'center',
-                                                    gap: 8,
-                                                }}
-                                            >
-                                                <span
-                                                    style={{
-                                                        fontSize: 12,
-                                                        fontWeight: 700,
-                                                        padding: '3px 10px',
-                                                        borderRadius: 5,
-                                                        background: VO_TRACK_COLORS[renameClassTrack],
-                                                        color: '#fff',
-                                                    }}
-                                                >
-                                                    {VO_TRACK_LABELS[renameClassTrack]}
-                                                </span>
-                                            </div>
-                                        )}
+                                {renameClassTracksVisible && (
+                                    <div style={{ marginBottom: 14 }}>
+                                        <ToggleChipGroup
+                                            label={t('voTrack.section_label')}
+                                            options={VO_TRACKS.map((track) => ({
+                                                value: track,
+                                                label: VO_TRACK_LABELS[track],
+                                                activeColor: VO_TRACK_COLORS[track],
+                                            }))}
+                                            values={renameClassTracks}
+                                            onToggle={toggleRenameClassTrack}
+                                            hint={t('studentsPage.form_class_tracks_hint')}
+                                        />
                                     </div>
                                 )}
                                 <div className="form-group">
@@ -2053,6 +2079,83 @@ export default function StudentsPage() {
                         </div>
                     </div>
                 )}
+
+                {/* Class options menu — portaled to the body and positioned against the trigger, so
+                    the cohort bar's horizontal overflow can never clip or scroll it. */}
+                {classMenu &&
+                    classMenuTarget &&
+                    createPortal(
+                        <div
+                            className="card"
+                            role="menu"
+                            style={{
+                                position: 'fixed',
+                                top: classMenu.top,
+                                right: classMenu.right,
+                                zIndex: 1002,
+                                padding: 4,
+                                minWidth: 160,
+                                boxShadow: 'var(--shadow-lg)',
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <button
+                                type="button"
+                                role="menuitem"
+                                className="btn btn-ghost btn-sm"
+                                style={{ width: '100%', justifyContent: 'flex-start' }}
+                                onClick={() => {
+                                    setRenameClassId(classMenuTarget.id);
+                                    setRenameClassVal(classMenuTarget.name);
+                                    setRenameClassTracks(getClassVoTracks(classMenuTarget));
+                                    setRenameClassYears(getClassYears(classMenuTarget));
+                                    setRenameClassColor(classMenuTarget.color ?? '');
+                                    setClassMenu(null);
+                                }}
+                            >
+                                {t('studentsPage.action_rename')}
+                            </button>
+                            <button
+                                type="button"
+                                role="menuitem"
+                                className="btn btn-ghost btn-sm"
+                                style={{ width: '100%', justifyContent: 'flex-start' }}
+                                onClick={() => {
+                                    setLinkRubricsClassId(classMenuTarget.id);
+                                    setShowLinkRubrics(true);
+                                    setClassMenu(null);
+                                }}
+                            >
+                                <Link size={13} style={{ marginRight: 4 }} /> {t('studentsPage.link_rubrics')}
+                            </button>
+                            <button
+                                type="button"
+                                role="menuitem"
+                                className="btn btn-ghost btn-sm"
+                                style={{ width: '100%', justifyContent: 'flex-start' }}
+                                onClick={() => {
+                                    setMergeClassId(classMenuTarget.id);
+                                    setMergeTargetId('');
+                                    setClassMenu(null);
+                                }}
+                            >
+                                {t('studentsPage.action_merge')}
+                            </button>
+                            <button
+                                type="button"
+                                role="menuitem"
+                                className="btn btn-ghost btn-sm text-red"
+                                style={{ width: '100%', justifyContent: 'flex-start' }}
+                                onClick={() => {
+                                    setDeleteClassId(classMenuTarget.id);
+                                    setClassMenu(null);
+                                }}
+                            >
+                                {t('studentsPage.action_delete')}
+                            </button>
+                        </div>,
+                        document.body
+                    )}
             </div>
         </>
     );

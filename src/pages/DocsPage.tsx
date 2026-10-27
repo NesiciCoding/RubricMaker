@@ -715,6 +715,7 @@ function GettingStartedTab() {
                         t('docs.gs_classes_item_year'),
                         t('docs.gs_classes_item_track'),
                         t('docs.gs_classes_item_student_track'),
+                        t('docs.gs_classes_item_menu'),
                         t('docs.gs_classes_item_color'),
                     ]}
                 />

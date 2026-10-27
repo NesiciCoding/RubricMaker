@@ -50,7 +50,12 @@ export { DEFAULT_SETTINGS, withSettingsDefaults };
  * today) rather than crashing type-narrowed code that assumes a valid enum member.
  */
 export function sanitizeClassYears(classes: Class[]): Class[] {
-    return classes.map((c) => (c.year && !SCHOOL_YEARS.includes(c.year) ? { ...c, year: undefined } : c));
+    return classes.map((c) => {
+        const year = c.year && !SCHOOL_YEARS.includes(c.year) ? undefined : c.year;
+        const years = c.years?.filter((y) => SCHOOL_YEARS.includes(y));
+        if (year === c.year && years?.length === c.years?.length) return c;
+        return { ...c, year, years: years?.length ? years : undefined };
+    });
 }
 
 // ─── Default Grade Scales ──────────────────────────────────────────────────────

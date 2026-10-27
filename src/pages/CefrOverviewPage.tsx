@@ -22,6 +22,7 @@ import {
 import { PROGRESS_STATUS_COLOR, progressStatusLabelKey } from '../utils/cefrOrdinal';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
 import { VO_TRACK_LABELS, VO_TRACK_DEFAULT_CEFR, getTrackBadgeColor, getEffectiveVoTrack } from '../data/voTracks';
+import { getEffectiveSchoolYear } from '../data/schoolYears';
 import type { CefrSkill } from '../types';
 
 export default function CefrOverviewPage() {
@@ -86,7 +87,7 @@ export default function CefrOverviewPage() {
                         rubrics,
                         selfAssessments,
                         analysisResults,
-                        sCls?.year,
+                        getEffectiveSchoolYear(s, sCls),
                         getEffectiveVoTrack(s, sCls),
                         tests,
                         studentTests,
@@ -122,7 +123,7 @@ export default function CefrOverviewPage() {
                       rubrics,
                       selfAssessments,
                       analysisResults,
-                      cls?.year,
+                      getEffectiveSchoolYear(student, cls),
                       effectiveTrack,
                       tests,
                       studentTests,
@@ -135,7 +136,7 @@ export default function CefrOverviewPage() {
             rubrics,
             selfAssessments,
             analysisResults,
-            cls?.year,
+            cls,
             effectiveTrack,
             tests,
             studentTests,
@@ -701,18 +702,21 @@ export default function CefrOverviewPage() {
                                                         {cls.name}
                                                     </span>
                                                 )}
-                                                {cls?.voTrack && (
+                                                {effectiveTrack && (
                                                     <span
                                                         style={{
                                                             fontSize: 10,
                                                             fontWeight: 700,
                                                             padding: '2px 6px',
                                                             borderRadius: 4,
-                                                            background: getTrackBadgeColor(cls),
+                                                            background: getTrackBadgeColor({
+                                                                color: cls?.color,
+                                                                voTrack: effectiveTrack,
+                                                            }),
                                                             color: '#fff',
                                                         }}
                                                     >
-                                                        {VO_TRACK_LABELS[cls.voTrack]}
+                                                        {VO_TRACK_LABELS[effectiveTrack]}
                                                     </span>
                                                 )}
                                                 {targetLevel && (

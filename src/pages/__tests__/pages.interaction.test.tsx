@@ -243,6 +243,9 @@ vi.mock('../../data/voTracks', () => ({
     VO_TRACK_COLORS: { havo: '#blue', vwo: '#purple' },
     VO_TRACK_DEFAULT_CEFR: { havo: 'B1', vwo: 'B2' },
     getEffectiveVoTrack: vi.fn((s, c) => s?.voTrack ?? c?.voTrack),
+    getClassVoTracks: vi.fn((c) => (c?.voTracks?.length ? c.voTracks : c?.voTrack ? [c.voTrack] : [])),
+    getTrackBadgeColor: vi.fn((e) => e?.color ?? (e?.voTrack ? '#000' : undefined)),
+    classHasVoTrack: vi.fn((c, t) => (c?.voTracks?.length ? c.voTracks : c?.voTrack ? [c.voTrack] : []).includes(t)),
 }));
 
 vi.mock('../../store/storage', () => ({
