@@ -179,21 +179,71 @@ export interface LinkedStandard {
 }
 
 /**
+ * What a mastery target measures. Rows written before grammar/CEFR targets existed omit the
+ * field entirely and are treated as `'standard'` — see `StandardMasteryTarget.scope`.
+ */
+export type MasteryTargetScope = 'standard' | 'grammar' | 'cefr';
+
+/** Fields shared by every scoped mastery target, whether it measures a standard, grammar item or skill. */
+interface MasteryTargetBase {
+    id: string;
+    year: SchoolYear;
+    /** Undefined for groep-7/8 (uniform across tracks; see SCHOOL_YEAR_HAS_TRACK). */
+    voTrack?: VoTrack;
+    updatedAt?: string;
+}
+
+/**
  * Expected mastery % for one linked standard at one (year, track) — configured once globally per
  * standard, reused everywhere that standard is linked across rubrics (not per rubric criterion).
  */
-export interface StandardMasteryTarget {
-    id: string;
+export interface StandardMasteryTarget extends MasteryTargetBase {
+    /** Omitted by rows written before scoped targets existed — treated as `'standard'`. */
+    scope?: 'standard';
     standardGuid: string;
     /** Denormalized for display without re-resolving the standard from a rubric. */
     standardDescription: string;
     standardSetTitle: string;
-    year: SchoolYear;
-    /** Undefined for groep-7/8 (uniform across tracks; see SCHOOL_YEAR_HAS_TRACK). */
-    voTrack?: VoTrack;
     targetPercentage: number;
-    updatedAt?: string;
 }
+
+/**
+ * Expected mastery % for one `GrammarItem` at one (year, track). Achievement is the blended
+ * cross-domain estimate from `grammarMasteryPercentage` (tests, flashcards, writing), not a single
+ * rubric criterion — see `utils/masteryTargetAnalysis.ts`.
+ */
+export interface GrammarMasteryTarget extends MasteryTargetBase {
+    scope: 'grammar';
+    grammarItemId: string;
+    /** Denormalized grammar labels so the settings table never has to re-resolve the taxonomy. */
+    grammarItemLabel: string;
+    grammarCategoryLabel: string;
+    targetPercentage: number;
+}
+
+/**
+ * Expected CEFR level for one skill at one (year, track), overriding the uniform curriculum range
+ * from `CEFR_TRACK_YEAR_TARGETS`. The fine-grained sub-level scale matches that table's precision;
+ * comparison against a student's coarser achieved `CefrLevel` lives in `compareLevelToTarget`.
+ */
+export interface CefrSkillTarget extends MasteryTargetBase {
+    scope: 'cefr';
+    cefrSkill: CefrSkill;
+    targetLevel: CefrSubLevel;
+}
+
+/** One teacher-configured target, discriminated by `scope`. */
+export type MasteryTarget = StandardMasteryTarget | GrammarMasteryTarget | CefrSkillTarget;
+
+/**
+ * `Omit` distributes over unions rather than collapsing them, so each scope keeps its own required
+ * fields when a new target is created (the store assigns `id`/`updatedAt`).
+ */
+export type NewMasteryTarget = MasteryTarget extends infer T
+    ? T extends MasteryTarget
+        ? Omit<T, 'id' | 'updatedAt'>
+        : never
+    : never;
 
 export interface RubricCriterion {
     id: string;

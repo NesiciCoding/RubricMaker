@@ -105,7 +105,7 @@ All app state lives in `AppContext` (`src/context/AppContext.tsx`). Do not intro
 - `useAuthoring()` — rubrics, grade scales, comment bank, question bank, templates
 - `useAssessment()` — tests, student tests, peer reviews, self-assessments, speaking sessions, analysis results
 - `useEssays()` — essay assignments/submissions/templates, messages, news flashes
-- `useFlashcards()` — flashcard decks/assignments/reviews, standard mastery targets
+- `useFlashcards()` — flashcard decks/assignments/reviews, mastery targets (standards, grammar items, CEFR skills)
 - `useSettings()` — settings, `updateSettings`, `getActiveGradeScale`
 - `usePlatform()` — auth, landing/session, database connection, schools, backup
 
@@ -260,16 +260,18 @@ Keep card descriptions short (one sentence, no jargon) and written from the user
 
 Non-exhaustive — pointers to the modules most likely to matter across files. For the complete, currently-maintained list see README.md's "Key utility modules" table (kept in sync per the documentation-maintenance rule above).
 
-| File                                                                  | Purpose                                                                                               |
-| --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `src/utils/gradeCalc.ts`                                              | Score aggregation and weighted scoring engine                                                         |
-| `src/utils/cefrStudentAggregator.ts`                                  | CEFR level computation across assessments                                                             |
-| `src/utils/syncMerge.ts` / `syncDiff.ts`                              | Cloud/local conflict resolution (last-write-wins) and collection diffing — see the Storage rule above |
-| `src/utils/placementRouting.ts` / `placementResult.ts`                | Placement-test section routing and provisional CEFR estimate                                          |
-| `supabase/functions/_shared/*.ts`                                     | Scoring, placement routing, staircase/Elo, seeded shuffle — shared by client and edge functions       |
-| `src/utils/masteryProfileAggregator.ts` / `learningPathAggregator.ts` | Cross-domain grammar mastery and rule-based (no AI) learning-path recommendations                     |
-| `src/utils/globalSearch.ts`                                           | Token-aware (`type:`/`class:`/`year:`/`track:`) app-wide search                                       |
-| `src/utils/docxExport.ts` / `docxTemplateExport.ts` / `pdfExport.ts`  | Export generation (raw and template-styled DOCX, PDF)                                                 |
-| `src/utils/textExtraction.ts`                                         | OCR (Tesseract) + DOCX parsing (Mammoth)                                                              |
-| `src/utils/flashcardScheduler.ts`                                     | Thin `ts-fsrs` wrapper (FSRS spaced repetition)                                                       |
-| `src/services/standardsApi.ts`                                        | Common Standards Project API (CCSS, NGSS)                                                             |
+| File                                                                  | Purpose                                                                                                |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `src/utils/gradeCalc.ts`                                              | Score aggregation and weighted scoring engine                                                          |
+| `src/utils/cefrStudentAggregator.ts`                                  | CEFR level computation across assessments                                                              |
+| `src/utils/syncMerge.ts` / `syncDiff.ts`                              | Cloud/local conflict resolution (last-write-wins) and collection diffing — see the Storage rule above  |
+| `src/utils/placementRouting.ts` / `placementResult.ts`                | Placement-test section routing and provisional CEFR estimate                                           |
+| `supabase/functions/_shared/*.ts`                                     | Scoring, placement routing, staircase/Elo, seeded shuffle — shared by client and edge functions        |
+| `src/utils/masteryProfileAggregator.ts` / `learningPathAggregator.ts` | Cross-domain grammar mastery and rule-based (no AI) learning-path recommendations                      |
+| `src/utils/grammarWeightCalibration.ts`                               | Deterministic, gated calibration of the grammar evidence blend (standard 45/35/20 until data is thick) |
+| `src/utils/cefrExpectationCalibration.ts` / `calibrationCohorts.ts`   | Gated ±1 sub-level CEFR expectation calibration and the shared per-(year, track) cohort builder        |
+| `src/utils/globalSearch.ts`                                           | Token-aware (`type:`/`class:`/`year:`/`track:`) app-wide search                                        |
+| `src/utils/docxExport.ts` / `docxTemplateExport.ts` / `pdfExport.ts`  | Export generation (raw and template-styled DOCX, PDF)                                                  |
+| `src/utils/textExtraction.ts`                                         | OCR (Tesseract) + DOCX parsing (Mammoth)                                                               |
+| `src/utils/flashcardScheduler.ts`                                     | Thin `ts-fsrs` wrapper (FSRS spaced repetition)                                                        |
+| `src/services/standardsApi.ts`                                        | Common Standards Project API (CCSS, NGSS)                                                              |

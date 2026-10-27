@@ -34,7 +34,7 @@ import type {
     FlashcardDeck,
     FlashcardAssignment,
     FlashcardReview,
-    StandardMasteryTarget,
+    MasteryTarget,
     NewsFlash,
     NewsFlashRead,
     QuestionBankItem,
@@ -1776,13 +1776,13 @@ export class SupabaseAdapter {
 
     // ── Standard mastery targets (CEFR/SLO progress by track/year) ───────────
 
-    async fetchStandardMasteryTargets(): Promise<StandardMasteryTarget[]> {
+    async fetchStandardMasteryTargets(): Promise<MasteryTarget[]> {
         const { data, error } = await this.db().from('standard_mastery_targets').select('data');
         if (error) throw error;
-        return (data ?? []).map((r) => r.data as StandardMasteryTarget);
+        return (data ?? []).map((r) => r.data as MasteryTarget);
     }
 
-    async upsertStandardMasteryTarget(t: StandardMasteryTarget): Promise<SyncResult> {
+    async upsertStandardMasteryTarget(t: MasteryTarget): Promise<SyncResult> {
         const { error } = await this.db()
             .from('standard_mastery_targets')
             .upsert({ id: t.id, owner_id: this.uid(), data: t }, { onConflict: 'id' });

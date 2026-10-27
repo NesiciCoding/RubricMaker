@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import StandardMasteryTargetModal from '../Standards/StandardMasteryTargetModal';
-import type { LinkedStandard, StandardMasteryTarget } from '../../types';
+import type { GrammarMasteryTarget, LinkedStandard, StandardMasteryTarget } from '../../types';
 
 const pickedStandard = vi.hoisted((): LinkedStandard => ({
     guid: 'st-1',
@@ -47,7 +47,7 @@ vi.mock('../../context/AppContext', () => ({
 }));
 
 vi.mock('react-i18next', () => ({
-    useTranslation: () => ({ t: (key: string) => key }),
+    useTranslation: () => ({ t: (key: string) => key, i18n: { language: 'en' } }),
 }));
 
 const existing: StandardMasteryTarget = {
@@ -181,6 +181,93 @@ describe('StandardMasteryTargetModal', () => {
         fireEvent.click(screen.getByRole('button', { name: 'common.close' }));
         fireEvent.click(screen.getByRole('button', { name: 'common.cancel' }));
         expect(onClose).toHaveBeenCalledTimes(2);
+    });
+
+    it('saves a grammar-item target with the canonical taxonomy labels', () => {
+        const onClose = vi.fn();
+        render(<StandardMasteryTargetModal onClose={onClose} />);
+
+        fireEvent.change(screen.getByLabelText('settings.mastery_target_scope_label'), {
+            target: { value: 'grammar' },
+        });
+        // Grammar targets do not need the standards API key.
+        expect(screen.queryByText('settings.mastery_target_needs_api_key')).not.toBeInTheDocument();
+        fireEvent.change(screen.getByLabelText('grammar.item_select_label'), {
+            target: { value: 'gr-present-simple-affirmative' },
+        });
+        fireEvent.change(screen.getByLabelText('studentsPage.form_school_year'), { target: { value: 'jaar-3' } });
+        fireEvent.change(screen.getByLabelText('voTrack.section_label'), { target: { value: 'vwo' } });
+        fireEvent.change(screen.getByLabelText('settings.mastery_target_percentage_label'), {
+            target: { value: '70' },
+        });
+
+        fireEvent.click(screen.getByRole('button', { name: 'common.save' }));
+        expect(mockAddStandardMasteryTarget).toHaveBeenCalledWith({
+            scope: 'grammar',
+            grammarItemId: 'gr-present-simple-affirmative',
+            grammarItemLabel: 'Affirmative (I work, she works)',
+            grammarCategoryLabel: 'Present Simple',
+            year: 'jaar-3',
+            voTrack: 'vwo',
+            targetPercentage: 70,
+        });
+        expect(onClose).toHaveBeenCalled();
+    });
+
+    it('saves a per-skill CEFR level target without a percentage', () => {
+        const onClose = vi.fn();
+        render(<StandardMasteryTargetModal onClose={onClose} />);
+
+        fireEvent.change(screen.getByLabelText('settings.mastery_target_scope_label'), {
+            target: { value: 'cefr' },
+        });
+        expect(screen.queryByLabelText('settings.mastery_target_percentage_label')).not.toBeInTheDocument();
+
+        fireEvent.change(screen.getByLabelText('studentsPage.form_school_year'), { target: { value: 'jaar-2' } });
+        fireEvent.change(screen.getByLabelText('voTrack.section_label'), { target: { value: 'havo' } });
+        fireEvent.change(screen.getByLabelText('settings.mastery_target_cefr_skill_label'), {
+            target: { value: 'writing' },
+        });
+        fireEvent.change(screen.getByLabelText('settings.mastery_target_cefr_level_label'), {
+            target: { value: 'b1-plus' },
+        });
+
+        fireEvent.click(screen.getByRole('button', { name: 'common.save' }));
+        expect(mockAddStandardMasteryTarget).toHaveBeenCalledWith({
+            scope: 'cefr',
+            cefrSkill: 'writing',
+            targetLevel: 'b1-plus',
+            year: 'jaar-2',
+            voTrack: 'havo',
+        });
+        expect(onClose).toHaveBeenCalled();
+    });
+
+    it('prefills a grammar target and locks its scope', () => {
+        const grammarExisting: GrammarMasteryTarget = {
+            id: 'mt-g',
+            scope: 'grammar',
+            grammarItemId: 'gr-present-simple-affirmative',
+            grammarItemLabel: 'Affirmative (I work, she works)',
+            grammarCategoryLabel: 'Present Simple',
+            year: 'jaar-3',
+            voTrack: 'vwo',
+            targetPercentage: 70,
+        };
+        render(<StandardMasteryTargetModal existing={grammarExisting} onClose={vi.fn()} />);
+
+        expect(screen.getByLabelText('settings.mastery_target_scope_label')).toBeDisabled();
+        expect((screen.getByLabelText('grammar.item_select_label') as HTMLSelectElement).value).toBe(
+            'gr-present-simple-affirmative'
+        );
+        expect((screen.getByLabelText('settings.mastery_target_percentage_label') as HTMLInputElement).value).toBe(
+            '70'
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: 'common.save' }));
+        expect(mockUpdateStandardMasteryTarget).toHaveBeenCalledWith(
+            expect.objectContaining({ id: 'mt-g', scope: 'grammar', targetPercentage: 70 })
+        );
     });
 
     it('reopens the picker via the change button and closes it without selecting', () => {

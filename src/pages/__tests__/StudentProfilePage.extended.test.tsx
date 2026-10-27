@@ -458,6 +458,18 @@ vi.mock('../../components/Statistics/ProfileTimelineChart', () => ({
 }));
 vi.mock('../../components/Recordings/RecordingPlayer', () => ({ default: () => null }));
 
+// The cohort calibration needs dozens of fully-observed items, so the calibrated branch of the
+// weight label is driven from here; everything else keeps the real deterministic implementation.
+const calibrationOverride = vi.hoisted(() => ({ value: null as null | Record<string, unknown> }));
+vi.mock('../../utils/grammarWeightCalibration', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../utils/grammarWeightCalibration')>();
+    return {
+        ...actual,
+        calibrateGrammarWeights: (rows: Parameters<typeof actual.calibrateGrammarWeights>[0]) =>
+            calibrationOverride.value ?? actual.calibrateGrammarWeights(rows),
+    };
+});
+
 const i18nLang = vi.hoisted(() => ({ value: 'en' }));
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
@@ -488,6 +500,7 @@ describe('StudentProfilePage extended coverage', () => {
         vi.clearAllMocks();
         mockTimelinePending.value = false;
         i18nLang.value = 'en';
+        calibrationOverride.value = null;
         Object.defineProperty(navigator, 'clipboard', {
             value: { writeText: mockClipboardWrite },
             configurable: true,
@@ -578,6 +591,27 @@ describe('StudentProfilePage extended coverage', () => {
         ).toBeGreaterThan(0);
         expect(screen.getAllByText('masteryProfile.writing_summary:{"pct":"90","count":1}').length).toBeGreaterThan(0);
         expect(screen.getAllByText('masteryProfile.no_data').length).toBeGreaterThan(0);
+    });
+
+    it('labels the standard weighting while the data is thin', () => {
+        renderAt('s1');
+        expect(
+            screen.getByText('masteryProfile.weights_standard:{"count":0,"writing":45,"test":35,"flashcards":20}')
+        ).toBeInTheDocument();
+    });
+
+    it('labels the calibrated weighting once the cohort has enough fully-observed items', () => {
+        calibrationOverride.value = {
+            weights: { writing: 0.58, test: 0.29, flashcards: 0.13 },
+            source: 'calibrated',
+            sampleCount: 87,
+            blend: 0.59,
+        };
+        renderAt('s1');
+        expect(
+            screen.getByText('masteryProfile.weights_calibrated:{"count":87,"writing":58,"test":29,"flashcards":13}')
+        ).toBeInTheDocument();
+        expect(screen.queryByText(/masteryProfile\.weights_standard/)).not.toBeInTheDocument();
     });
 
     it('renders the portfolio timeline with grade, speaking and self-assessment entries', () => {

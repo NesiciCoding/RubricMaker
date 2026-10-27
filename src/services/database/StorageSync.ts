@@ -44,7 +44,7 @@ import type {
     FlashcardDeck,
     FlashcardAssignment,
     FlashcardReview,
-    StandardMasteryTarget,
+    MasteryTarget,
     NewsFlash,
     NewsFlashRead,
     QuestionBankItem,
@@ -1289,7 +1289,7 @@ class StorageSyncService {
                     break;
                 case 'standardMasteryTarget':
                     if (action === 'upsert')
-                        result = await this.adapter.upsertStandardMasteryTarget(payload as StandardMasteryTarget);
+                        result = await this.adapter.upsertStandardMasteryTarget(payload as MasteryTarget);
                     else if (id) result = await this.adapter.deleteStandardMasteryTarget(id);
                     break;
                 case 'newsFlash':

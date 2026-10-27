@@ -37,6 +37,30 @@ export function cefrSubLevelOrdinal(level: CefrSubLevel): number {
     return CEFR_SUBLEVEL_ORDER.indexOf(level);
 }
 
+/** Coarse level a fine-grained sub-level belongs to ('b1-plus' → 'B1'); null for pre-a1, which has none. */
+const CEFR_SUBLEVEL_BASE: Record<CefrSubLevel, CefrLevel | null> = {
+    'pre-a1': null,
+    a1: 'A1',
+    'a1-plus': 'A1',
+    'a2-minus': 'A2',
+    a2: 'A2',
+    'a2-plus': 'A2',
+    'b1-minus': 'B1',
+    b1: 'B1',
+    'b1-plus': 'B1',
+    'b2-minus': 'B2',
+    b2: 'B2',
+    'b2-plus': 'B2',
+    'c1-minus': 'C1',
+    c1: 'C1',
+    'c1-plus': 'C1',
+    c2: 'C2',
+};
+
+export function cefrSubLevelBaseLevel(level: CefrSubLevel): CefrLevel | null {
+    return CEFR_SUBLEVEL_BASE[level];
+}
+
 export const CEFR_SUBLEVEL_LABELS: Record<CefrSubLevel, string> = {
     'pre-a1': 'Pre-A1',
     a1: 'A1',

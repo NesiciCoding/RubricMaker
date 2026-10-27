@@ -38,16 +38,28 @@ const LearningGoalChart = lazy(() => import('../components/Statistics/LearningGo
 const CefrProgressChart = lazy(() => import('../components/Statistics/CefrProgressChart'));
 const ProfileTimelineChart = lazy(() => import('../components/Statistics/ProfileTimelineChart'));
 import CefrTrackYearBand from '../components/CEFR/CefrTrackYearBand';
+import CefrSkillTargetList from '../components/CEFR/CefrSkillTargetList';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import CefrPlacementCard from '../components/CEFR/CefrPlacementCard';
 import { getCefrStudentOverview, aggregateCefrProgress } from '../utils/cefrStudentAggregator';
 import { getStudentMasteryProfile, withEvidenceOnly } from '../utils/masteryProfileAggregator';
 import { getWeakWritingCriteria } from '../utils/writingTrendAggregator';
 import { StudentWritingTrendsCard } from '../components/Essay/WritingTrendsCard';
+import { findGrammarTarget, getCefrSkillTargetProgress, withGrammarTargets } from '../utils/masteryTargetAnalysis';
+import {
+    MIN_CALIBRATION_SAMPLES,
+    GRAMMAR_EVIDENCE_WEIGHTS,
+    standardGrammarCalibration,
+} from '../utils/grammarWeightCalibration';
+import { buildCalibrationCohorts, cohortForStudent } from '../utils/calibrationCohorts';
+import { PROGRESS_STATUS_COLOR, progressStatusLabelKey } from '../utils/cefrOrdinal';
 import { CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
 import { VO_TRACK_LABELS, getTrackBadgeColor, getEffectiveVoTrack } from '../data/voTracks';
 import RecordingPlayer from '../components/Recordings/RecordingPlayer';
 import type { GradeScale, Rubric, SessionRecording, StudentRubric } from '../types';
+/** Safety valve: calibrating scans every student's evidence, so cap a huge school to a stable slice. */
+const CALIBRATION_COHORT_LIMIT = 200;
+
 export default function StudentProfilePage() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -156,20 +168,94 @@ export default function StudentProfilePage() {
         [student, studentRubrics, rubrics, essayAssignments]
     );
 
+    // Calibration is per (school year, VO track) — the same cell targets and the CEFR curriculum
+    // table use. Only the student's own cohort is built here; Settings shows every cohort. Standard
+    // weights and the curriculum ranges apply until each cohort's evidence clears its gate, and the
+    // fit is deterministic (sorted ids, fixed stream order, no randomness).
+    const cohort = useMemo(
+        () =>
+            cohortForStudent(
+                buildCalibrationCohorts(
+                    {
+                        students,
+                        classes,
+                        tests,
+                        studentTests,
+                        rubrics,
+                        studentRubrics,
+                        flashcardDecks,
+                        flashcardAssignments,
+                        flashcardReviews,
+                        selfAssessments,
+                        cefrAchieveThreshold: settings.cefrAchieveThreshold,
+                    },
+                    { limitPerCohort: CALIBRATION_COHORT_LIMIT, only: { year: cls?.year, voTrack: effectiveTrack } }
+                ),
+                student,
+                classes
+            ),
+        [
+            students,
+            classes,
+            student,
+            tests,
+            studentTests,
+            rubrics,
+            studentRubrics,
+            flashcardDecks,
+            flashcardAssignments,
+            flashcardReviews,
+            selfAssessments,
+            settings.cefrAchieveThreshold,
+            cls?.year,
+            effectiveTrack,
+        ]
+    );
+    // No cohort (a class without a school year) means nothing can be targeted or calibrated yet.
+    const grammarWeights = cohort?.grammar ?? standardGrammarCalibration();
+    const cefrExpectations = cohort?.cefr;
+
     const masteryProfile = useMemo(() => {
         if (!student) return [];
-        return withEvidenceOnly(
-            getStudentMasteryProfile(student.id, {
-                tests,
-                studentTests,
-                rubrics,
-                studentRubrics,
-                flashcardDecks,
-                flashcardAssignments,
-                flashcardReviews,
-            })
+        const rows = getStudentMasteryProfile(student.id, {
+            tests,
+            studentTests,
+            rubrics,
+            studentRubrics,
+            flashcardDecks,
+            flashcardAssignments,
+            flashcardReviews,
+        });
+        const evidenceRows = withEvidenceOnly(rows);
+        // A targeted item with no evidence yet is still worth showing: it tells the teacher the
+        // expectation exists but nothing has been practised or graded against it.
+        const targetedIds = new Set(evidenceRows.map((r) => r.itemId));
+        const targetedWithoutEvidence = rows.filter(
+            (r) =>
+                !targetedIds.has(r.itemId) &&
+                findGrammarTarget(standardMasteryTargets, r.itemId, cls?.year, effectiveTrack)
         );
-    }, [student, tests, studentTests, rubrics, studentRubrics, flashcardDecks, flashcardAssignments, flashcardReviews]);
+        return withGrammarTargets(
+            [...evidenceRows, ...targetedWithoutEvidence],
+            standardMasteryTargets,
+            cls?.year,
+            effectiveTrack,
+            { calibration: grammarWeights }
+        );
+    }, [
+        student,
+        tests,
+        studentTests,
+        rubrics,
+        studentRubrics,
+        flashcardDecks,
+        flashcardAssignments,
+        flashcardReviews,
+        standardMasteryTargets,
+        cls?.year,
+        effectiveTrack,
+        grammarWeights,
+    ]);
 
     const cefrSummary = useMemo(
         () =>
@@ -201,6 +287,16 @@ export default function StudentProfilePage() {
     );
     const trackYearProgress = cefrSummary?.trackYearProgress;
     const placementEstimate = cefrSummary?.placement;
+
+    const cefrSkillTargets = useMemo(
+        () =>
+            cefrSummary
+                ? getCefrSkillTargetProgress(cefrSummary.cells, standardMasteryTargets, cls?.year, effectiveTrack, {
+                      expectations: cefrExpectations,
+                  })
+                : [],
+        [cefrSummary, standardMasteryTargets, cls?.year, effectiveTrack, cefrExpectations]
+    );
 
     // ── CEFR progress ──────────────────────────────────────────────────────────
     // A student "achieves" a CEFR level when their average score meets the per-rubric threshold,
@@ -845,6 +941,11 @@ export default function StudentProfilePage() {
                                             />
                                         </div>
                                     )}
+                                    {cefrSkillTargets.length > 0 && (
+                                        <div style={{ marginTop: 16 }}>
+                                            <CefrSkillTargetList rows={cefrSkillTargets} />
+                                        </div>
+                                    )}
                                     <div
                                         style={{
                                             display: 'flex',
@@ -1310,8 +1411,31 @@ export default function StudentProfilePage() {
                 {activeTab === 'overview' && masteryProfile.length > 0 && (
                     <div className="card" style={{ marginTop: 24 }}>
                         <h3 style={{ marginBottom: 4 }}>{t('masteryProfile.title')}</h3>
-                        <p className="text-muted text-sm" style={{ marginBottom: 14 }}>
+                        <p className="text-muted text-sm" style={{ marginBottom: 6 }}>
                             {t('masteryProfile.intro')}
+                        </p>
+                        <p
+                            className="text-muted"
+                            style={{ fontSize: 11, marginBottom: 14 }}
+                            title={t('masteryProfile.weights_tooltip', {
+                                min: MIN_CALIBRATION_SAMPLES,
+                                count: grammarWeights.sampleCount,
+                                writing: Math.round(GRAMMAR_EVIDENCE_WEIGHTS.writing * 100),
+                                test: Math.round(GRAMMAR_EVIDENCE_WEIGHTS.test * 100),
+                                flashcards: Math.round(GRAMMAR_EVIDENCE_WEIGHTS.flashcards * 100),
+                            })}
+                        >
+                            {t(
+                                grammarWeights.source === 'calibrated'
+                                    ? 'masteryProfile.weights_calibrated'
+                                    : 'masteryProfile.weights_standard',
+                                {
+                                    count: grammarWeights.sampleCount,
+                                    writing: Math.round(grammarWeights.weights.writing * 100),
+                                    test: Math.round(grammarWeights.weights.test * 100),
+                                    flashcards: Math.round(grammarWeights.weights.flashcards * 100),
+                                }
+                            )}
                         </p>
                         <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
@@ -1329,49 +1453,102 @@ export default function StudentProfilePage() {
                                         <th style={{ textAlign: 'left', padding: '6px 8px' }}>
                                             {t('masteryProfile.col_writing')}
                                         </th>
+                                        <th style={{ textAlign: 'left', padding: '6px 8px' }}>
+                                            {t('masteryProfile.col_mastery')}
+                                        </th>
+                                        <th style={{ textAlign: 'left', padding: '6px 8px' }}>
+                                            {t('masteryProfile.col_target')}
+                                        </th>
+                                        <th style={{ textAlign: 'left', padding: '6px 8px' }}>
+                                            {t('masteryProfile.col_status')}
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {masteryProfile.map((row) => (
-                                        <tr key={row.itemId} style={{ borderBottom: '1px solid var(--border)' }}>
-                                            <td style={{ padding: '6px 8px' }}>
-                                                <div style={{ fontWeight: 600 }}>
-                                                    {lang === 'nl' ? row.labelNl : row.labelEn}
-                                                </div>
-                                                <div className="text-muted" style={{ fontSize: 11 }}>
-                                                    {(lang === 'nl' ? row.categoryLabelNl : row.categoryLabelEn) +
-                                                        ' · ' +
-                                                        row.level}
-                                                </div>
-                                            </td>
-                                            <td style={{ padding: '6px 8px' }}>
-                                                {row.test
-                                                    ? t('masteryProfile.test_summary', {
-                                                          correct: row.test.correctAttempts,
-                                                          attempts: row.test.attempts,
-                                                          pct: row.test.accuracyPct.toFixed(0),
-                                                      })
-                                                    : t('masteryProfile.no_data')}
-                                            </td>
-                                            <td style={{ padding: '6px 8px' }}>
-                                                {row.flashcards
-                                                    ? t('masteryProfile.flashcards_summary', {
-                                                          mastered: row.flashcards.masteredCount,
-                                                          total: row.flashcards.cardCount,
-                                                          due: row.flashcards.dueCount,
-                                                      })
-                                                    : t('masteryProfile.no_data')}
-                                            </td>
-                                            <td style={{ padding: '6px 8px' }}>
-                                                {row.writing
-                                                    ? t('masteryProfile.writing_summary', {
-                                                          pct: row.writing.avgPct.toFixed(0),
-                                                          count: row.writing.instances,
-                                                      })
-                                                    : t('masteryProfile.no_data')}
-                                            </td>
-                                        </tr>
-                                    ))}
+                                    {masteryProfile.map((entry) => {
+                                        const row = entry.row;
+                                        const breakdown = entry.breakdown;
+                                        const blendParts = [
+                                            breakdown.writingPct !== null
+                                                ? `${t('masteryProfile.col_writing')} ${breakdown.writingPct.toFixed(0)}%`
+                                                : null,
+                                            breakdown.testPct !== null
+                                                ? `${t('masteryProfile.col_test')} ${breakdown.testPct.toFixed(0)}%`
+                                                : null,
+                                            breakdown.flashcardPct !== null
+                                                ? `${t('masteryProfile.col_flashcards')} ${breakdown.flashcardPct.toFixed(
+                                                      0
+                                                  )}%`
+                                                : null,
+                                        ].filter(Boolean);
+                                        return (
+                                            <tr key={row.itemId} style={{ borderBottom: '1px solid var(--border)' }}>
+                                                <td style={{ padding: '6px 8px' }}>
+                                                    <div style={{ fontWeight: 600 }}>
+                                                        {lang === 'nl' ? row.labelNl : row.labelEn}
+                                                    </div>
+                                                    <div className="text-muted" style={{ fontSize: 11 }}>
+                                                        {(lang === 'nl' ? row.categoryLabelNl : row.categoryLabelEn) +
+                                                            ' · ' +
+                                                            row.level}
+                                                    </div>
+                                                </td>
+                                                <td style={{ padding: '6px 8px' }}>
+                                                    {row.test
+                                                        ? t('masteryProfile.test_summary', {
+                                                              correct: row.test.correctAttempts,
+                                                              attempts: row.test.attempts,
+                                                              pct: row.test.accuracyPct.toFixed(0),
+                                                          })
+                                                        : t('masteryProfile.no_data')}
+                                                </td>
+                                                <td style={{ padding: '6px 8px' }}>
+                                                    {row.flashcards
+                                                        ? t('masteryProfile.flashcards_summary', {
+                                                              mastered: row.flashcards.masteredCount,
+                                                              total: row.flashcards.cardCount,
+                                                              due: row.flashcards.dueCount,
+                                                          })
+                                                        : t('masteryProfile.no_data')}
+                                                </td>
+                                                <td style={{ padding: '6px 8px' }}>
+                                                    {row.writing
+                                                        ? t('masteryProfile.writing_summary', {
+                                                              pct: row.writing.avgPct.toFixed(0),
+                                                              count: row.writing.instances,
+                                                          })
+                                                        : t('masteryProfile.no_data')}
+                                                </td>
+                                                <td
+                                                    style={{ padding: '6px 8px', fontWeight: 600 }}
+                                                    title={blendParts.join(' · ')}
+                                                >
+                                                    {entry.masteryPct !== null
+                                                        ? `${entry.masteryPct.toFixed(0)}%`
+                                                        : t('masteryProfile.no_data')}
+                                                </td>
+                                                <td style={{ padding: '6px 8px' }}>
+                                                    {entry.targetPercentage !== undefined
+                                                        ? `${entry.targetPercentage}%`
+                                                        : t('masteryProfile.no_target')}
+                                                </td>
+                                                <td style={{ padding: '6px 8px' }}>
+                                                    {entry.status ? (
+                                                        <span
+                                                            style={{
+                                                                fontWeight: 700,
+                                                                color: PROGRESS_STATUS_COLOR[entry.status],
+                                                            }}
+                                                        >
+                                                            {t(progressStatusLabelKey(entry.status))}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-muted">—</span>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>

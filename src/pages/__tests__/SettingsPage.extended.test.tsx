@@ -83,6 +83,13 @@ vi.mock('../../context/useStore', () => ({
     useStoreActions: () => mockAppValue,
 }));
 
+// Cohort calibration is driven from here so the panel's calibrated and standard states are both
+// reachable without fabricating piles of evidence; the real builder has its own test file.
+const calibrationCohortsMock = vi.hoisted(() => ({ value: [] as unknown[] }));
+vi.mock('../../utils/calibrationCohorts', () => ({
+    buildCalibrationCohorts: () => calibrationCohortsMock.value,
+}));
+
 vi.mock('../../hooks/useDbStatus', () => ({
     useDbStatus: () => ({ isConnected: mockDbStatus.isConnected }),
 }));
@@ -139,6 +146,7 @@ describe('SettingsPage extended', () => {
         mockGradeScalesArr.length = 0;
         mockGradeScalesArr.push({ ...mockGradeScale });
         mockTargetsArr.length = 0;
+        calibrationCohortsMock.value = [];
         mockDbStatus.isConnected = false;
         mockVerifyPin.mockResolvedValue(true);
         mockIsHashed.mockReturnValue(true);
@@ -160,6 +168,91 @@ describe('SettingsPage extended', () => {
 
     // #615: AppContext applies the language on every route, so the page only records the choice.
     it('records a language pick as a choice instead of switching i18n itself', () => {
+        mockSettings.language = 'nl';
+        renderPage();
+        expect(mockChangeLanguage).not.toHaveBeenCalled();
+        fireEvent.change(document.getElementById('setting-language')!, { target: { value: 'fr' } });
+        expect(mockUpdateSettings).toHaveBeenCalledWith({ language: 'fr', languageChosen: true });
+    });
+
+    it('shows a calibrated cohort with its weights, evidence count and residual spread', () => {
+        calibrationCohortsMock.value = [
+            {
+                key: 'jaar-2|havo',
+                year: 'jaar-2',
+                voTrack: 'havo',
+                classNames: ['HAVO 2A'],
+                studentCount: 24,
+                grammar: {
+                    weights: { writing: 0.58, test: 0.29, flashcards: 0.13 },
+                    source: 'calibrated',
+                    sampleCount: 87,
+                    blend: 0.59,
+                    spread: { writing: 0, test: 2025, flashcards: 2025 },
+                },
+                cefr: [
+                    {
+                        skill: 'writing',
+                        source: 'calibrated',
+                        expectedRange: { min: 'a2-plus', max: 'a2-plus' },
+                        standardRange: { min: 'b1-minus', max: 'b1-minus' },
+                        studentCount: 18,
+                        agreement: 0.83,
+                        shift: -1,
+                    },
+                    { skill: 'reading', source: 'curriculum', studentCount: 4, agreement: 0, shift: 0 },
+                ],
+            },
+        ];
+        renderPage();
+        fireEvent.click(screen.getByText('settings.tab_teaching'));
+
+        expect(
+            screen.getByText('settings.calibration_grammar_weights:{"writing":58,"test":29,"flashcards":13}')
+        ).toBeInTheDocument();
+        expect(screen.getByText('settings.calibration_grammar_samples:{"samples":87,"min":40}')).toBeInTheDocument();
+        expect(screen.getByText('settings.calibration_cefr_shifted:{"count":1,"total":2}')).toBeInTheDocument();
+        expect(screen.getByText('Jaar 2')).toBeInTheDocument();
+        expect(screen.getByText('HAVO · HAVO 2A')).toBeInTheDocument();
+        // Spread is shown as a root-mean-square disagreement tooltip on the blend cell. The testing
+        // library's default normalizer collapses the newline between the two lines into a space.
+        expect(
+            screen.getByTitle(
+                'settings.calibration_spread_label:{"writing":"0.0","test":"45.0","flashcards":"45.0"} settings.calibration_spread_tooltip'
+            )
+        ).toBeInTheDocument();
+    });
+
+    it('shows a cohort on the standard values with the reason it has not calibrated', () => {
+        calibrationCohortsMock.value = [
+            {
+                key: 'jaar-3|vwo',
+                year: 'jaar-3',
+                voTrack: 'vwo',
+                classNames: ['VWO 3B'],
+                studentCount: 19,
+                grammar: {
+                    weights: { writing: 0.45, test: 0.35, flashcards: 0.2 },
+                    source: 'standard',
+                    sampleCount: 6,
+                    blend: 0,
+                    reason: 'insufficient-samples',
+                },
+                cefr: [{ skill: 'writing', source: 'curriculum', studentCount: 0, agreement: 0, shift: 0 }],
+            },
+        ];
+        renderPage();
+        fireEvent.click(screen.getByText('settings.tab_teaching'));
+
+        expect(screen.getAllByText('settings.calibration_standard').length).toBe(2);
+        expect(screen.getByText('settings.calibration_grammar_samples:{"samples":6,"min":40}')).toBeInTheDocument();
+        expect(
+            screen.getByTitle('settings.calibration_reason_insufficient:{"samples":6,"min":40}')
+        ).toBeInTheDocument();
+        expect(screen.getByTitle('settings.calibration_cefr_tooltip:{"min":10,"share":60}')).toBeInTheDocument();
+    });
+
+    it('switches i18n language to the stored setting on mount', () => {
         mockSettings.language = 'nl';
         renderPage();
         expect(mockChangeLanguage).not.toHaveBeenCalled();
