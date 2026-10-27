@@ -40,6 +40,14 @@ import {
 } from './periodReportExport';
 import type { PeriodReportInput } from './periodReportExport';
 import type { ReportCardData } from '../types';
+import { calcGradeSummary } from './gradeCalc';
+import {
+    TOTAL_POINTS_PERCENT,
+    WEIGHTED_PERCENT,
+    makeTotalPointsGrade,
+    makeTotalPointsRubric,
+    totalPointsScale,
+} from '../test-utils/totalPointsRubric';
 
 const mockRubric = {
     id: 'r1',
@@ -703,5 +711,37 @@ describe('exportReportCard', () => {
         };
         await exportReportCard(reportCard);
         expect(saveAs).toHaveBeenCalledOnce();
+    });
+});
+
+describe('periodReportExport on a total-points rubric', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    function reportTexts() {
+        return vi.mocked(TextRun).mock.calls.map((call) => (call[0] as { text?: string }).text ?? '');
+    }
+
+    it('reports the same percentage and letter as GradeStudent', async () => {
+        const rubric = makeTotalPointsRubric();
+        const sr = makeTotalPointsGrade();
+        const expected = calcGradeSummary(sr, rubric.criteria, totalPointsScale, rubric);
+        await exportPeriodReport({ ...baseInput, entries: [{ sr, rubric, scale: totalPointsScale }] });
+
+        expect(expected.modifiedPercentage).toBe(TOTAL_POINTS_PERCENT);
+        expect(reportTexts()).toContain(`${TOTAL_POINTS_PERCENT.toFixed(1)}%`);
+        expect(reportTexts()).toContain('B');
+        expect(reportTexts()).not.toContain(`${WEIGHTED_PERCENT.toFixed(1)}%`);
+    });
+
+    it('scores against the grade snapshot when the live rubric changed scoring mode', async () => {
+        const snapshot = makeTotalPointsRubric();
+        const live = makeTotalPointsRubric({ scoringMode: 'weighted-percentage' });
+        const sr = makeTotalPointsGrade({ rubricSnapshot: snapshot });
+        await exportPeriodReport({ ...baseInput, entries: [{ sr, rubric: live, scale: totalPointsScale }] });
+
+        expect(reportTexts()).toContain(`${TOTAL_POINTS_PERCENT.toFixed(1)}%`);
+        expect(reportTexts()).not.toContain(`${WEIGHTED_PERCENT.toFixed(1)}%`);
     });
 });
