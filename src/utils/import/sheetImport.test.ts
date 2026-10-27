@@ -110,10 +110,12 @@ describe('sheet import — the sample sheet', () => {
 
 describe('sheet import — rules', () => {
     it('recognises short band codes followed by a colon', () => {
-        expect(['IO:', ' B :', 'E:', 'Level 1:', 'IO', 'Note: x'].map(bandMarker)).toEqual([
+        expect(['IO:', ' B :', 'E:', 'Level 1:', 'IO', 'Note: x', 'Naam:', 'Date:'].map(bandMarker)).toEqual([
             'IO',
             'B',
             'E',
+            null,
+            null,
             null,
             null,
             null,
@@ -126,6 +128,9 @@ describe('sheet import — rules', () => {
             'Grammatica',
         ]);
         expect(repairLigatures(['e.g. version 6a', 'Dutch']).repaired).toBe(false);
+        // Abbreviations are not ligatures, however many a text has.
+        const abbreviations = ['o.a. spelling, d.w.z. de regels', 'm.a.w. ook i.p.v. dat'];
+        expect(repairLigatures(abbreviations)).toEqual({ texts: abbreviations, repaired: false });
     });
 
     it('reads numbered requirements on their own lines or joined by bars, up to the next field', () => {
@@ -156,6 +161,8 @@ describe('sheet import — rules', () => {
         ]);
         expect(tierNamesFromPipeLine('| Onderdeel | Mavo | Havo | VWO |', 3)).toEqual(['Mavo', 'Havo', 'VWO']);
         expect(tierNamesFromPipeLine('| Mavo |', 3)).toEqual([]);
+        // An empty header cell keeps its column, so VWO stays on the third tier.
+        expect(tierNamesFromPipeLine('| Onderdeel | Mavo | | VWO |', 3)).toEqual(['Mavo', '', 'VWO']);
     });
 
     it('fills in what a sheet leaves out and says so', () => {
@@ -197,11 +204,42 @@ describe('sheet import — rules', () => {
         expect(parsed.criteria[0].title).toBe('1');
     });
 
+    it('keeps each tier name on its own column when one header cell is empty', () => {
+        const cells = [[['a']], [['b']], [['c']]];
+        const parsed = draftToParsedRubric(
+            {
+                requirements: [],
+                tierNames: ['Mavo', '', 'VWO'],
+                bandCodes: ['B'],
+                criteria: [{ title: 'Spelling', cells }],
+                warnings: [],
+            },
+            'Toets jaar 1'
+        );
+        expect(parsed.tiered!.tiers.map((t) => [t.label, t.track])).toEqual([
+            ['Mavo', 'vmbo-tl'],
+            [undefined, undefined],
+            ['VWO', 'vwo'],
+        ]);
+        expect(parsed.warnings.map((w) => w.key)).toContain('importRubric.warn_sheet_tier_names');
+    });
+
     it('finds no sheet in a document without band codes or statements', () => {
         expect(
             parseSheetHtml('<table><tr><td>Criterion</td><td>Good</td></tr><tr><td>A</td><td>b</td></tr></table>')
         ).toBeNull();
         expect(parseSheetHtml('<table><tr><td>IO:</td></tr></table>')).toBeNull();
         expect(parseSheetPdf([{ page: 1, x: 10, y: 10, str: 'IO:' }])).toBeNull();
+        // Form labels above an ordinary rubric are not band markers.
+        expect(
+            parseSheetPdf([
+                { page: 1, x: 10, y: 10, str: 'Name:' },
+                { page: 1, x: 300, y: 10, str: 'Date:' },
+                { page: 1, x: 10, y: 40, str: 'Criterion' },
+                { page: 1, x: 300, y: 40, str: 'Excellent (4)' },
+                { page: 1, x: 10, y: 60, str: 'Spelling' },
+                { page: 1, x: 300, y: 60, str: 'No errors' },
+            ])
+        ).toBeNull();
     });
 });

@@ -26,7 +26,8 @@ export interface SheetDraft {
     warnings: ImportWarning[];
 }
 
-const BAND_MARKER = /^\s*([A-Za-z][A-Za-z0-9+-]{0,3})\s*:\s*$/;
+// Band codes are short uppercase codes ("IO", "B", "E"); a word like "Naam:" or "Date:" is a form label.
+const BAND_MARKER = /^\s*([A-Z][A-Z0-9+-]{0,3})\s*:\s*$/;
 const REQUIREMENTS_HEADING = /\b(verplicht\w*|eisen|voorwaarden|requirements?|vereisten)\b/i;
 const CHECKBOX_GLYPHS = /^[\s☐☑☒□■▢◻◼⬜•▪·-]+/u;
 
@@ -43,7 +44,8 @@ export function bandMarker(text: string): string | null {
 // Word exports that embed Calibri without a ToUnicode map for its ligature glyphs read back as
 // "beva.en" (tt), "HeeD" (ft) and "Gramma6ca" / "alOjd" (ti).
 const LIGATURE_FIXES: [RegExp, string][] = [
-    [/(?<=\p{Ll})\.(?=\p{Ll})/gu, 'tt'],
+    // Two letters either side, so abbreviations such as "o.a." and "d.w.z." stay as they are.
+    [/(?<=\p{Ll}{2})\.(?=\p{Ll}{2})/gu, 'tt'],
     [/(?<=\p{Ll})[O6](?=\p{Ll})/gu, 'ti'],
     [/(?<=\p{Ll})D(?=\p{Ll}|\b|$)/gu, 'ft'],
 ];
@@ -83,10 +85,15 @@ export function parseRequirements(lines: string[]): { requirements: string[]; us
     return { requirements, used };
 }
 
-/** The tier names of a "| Onderdeel | Mavo | Havo | VWO |" line: its last `count` cells. */
+/**
+ * The tier names of a "| Onderdeel | Mavo | Havo | VWO |" line: its last `count` cells. An empty
+ * cell stays in place (as '') so every name keeps its own column.
+ */
 export function tierNamesFromPipeLine(line: string, count: number): string[] {
-    const cells = line.split('|').map(cleanText).filter(Boolean);
-    return cells.length >= count ? cells.slice(-count) : [];
+    const cells = line.split('|').map(cleanText);
+    if (cells[0] === '') cells.shift();
+    if (cells.at(-1) === '') cells.pop();
+    return cells.length >= count && cells.some(Boolean) ? cells.slice(-count) : [];
 }
 
 const TRACK_PATTERNS: [RegExp, VoTrack][] = [
@@ -128,7 +135,7 @@ export function draftToParsedRubric(draft: SheetDraft, fallbackName: string): Pa
         const track = name && SCHOOL_YEAR_HAS_TRACK[year] ? trackFromName(name) : undefined;
         return { id: nanoid(), year, ...(track && { track }), ...(name && { label: name }) };
     });
-    if (draft.tierNames.length < columns) warnings.push({ key: 'importRubric.warn_sheet_tier_names' });
+    if (draft.tierNames.filter(Boolean).length < columns) warnings.push({ key: 'importRubric.warn_sheet_tier_names' });
 
     // Preset labels and colours for the familiar IO / B / E codes; any other code keeps only its code.
     const preset = bandPreset(draft.bandCodes.length);
@@ -355,7 +362,7 @@ export function parseSheetHtml(html: string): SheetDraft | null {
         if (pipe) tierNames = tierNamesFromPipeLine(pipe.text, columns);
     }
 
-    return finishDraft(builder, { title: titleLine?.text, requirements, tierNames: tierNames.filter(Boolean) });
+    return finishDraft(builder, { title: titleLine?.text, requirements, tierNames });
 }
 
 function finishDraft(
@@ -512,5 +519,5 @@ export function parseSheetPdf(rawItems: PdfTextItem[]): SheetDraft | null {
         for (const col of crit.cells)
             for (const bandList of col) bandList.forEach((s, i) => (bandList[i] = cleanStatement(s)));
 
-    return finishDraft(builder, { title, requirements, tierNames: tierNames.filter(Boolean) }, warnings);
+    return finishDraft(builder, { title, requirements, tierNames }, warnings);
 }
