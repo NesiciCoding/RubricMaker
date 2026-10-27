@@ -20,6 +20,9 @@ import { useDbStatus } from '../hooks/useDbStatus';
 import type { StoreData } from '../store/storage';
 import { getCefrStudentOverview } from '../utils/cefrStudentAggregator';
 import CefrTrackYearBand from '../components/CEFR/CefrTrackYearBand';
+import CefrSkillTargetList from '../components/CEFR/CefrSkillTargetList';
+import { getCefrSkillTargetProgress } from '../utils/masteryTargetAnalysis';
+import { buildCefrExpectations, cefrExpectationsForStudent } from '../utils/calibrationCohorts';
 import { VO_TRACK_LABELS, VO_TRACK_DEFAULT_CEFR, getTrackBadgeColor, getEffectiveVoTrack } from '../data/voTracks';
 import { CEFR_SKILL_LABELS } from '../data/cefrDescriptors';
 
@@ -35,6 +38,7 @@ const selectCefrOverviewData = (s: StoreData) => ({
     tests: s.tests,
     studentTests: s.studentTests,
     settings: s.settings,
+    standardMasteryTargets: s.standardMasteryTargets,
 });
 
 /**
@@ -58,6 +62,7 @@ export default function StudentCefrOverviewPage() {
         tests,
         studentTests,
         settings,
+        standardMasteryTargets,
     } = useStoreSelector(selectCefrOverviewData);
     // The roster domain hooks filtered soft-deleted rows; keep that behavior here.
     const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
@@ -120,6 +125,54 @@ export default function StudentCefrOverviewPage() {
             studentTests,
             settings.cefrAchieveThreshold,
         ]
+    );
+
+    // Cohort-calibrated expectations (bounded to one sub-level, deterministic) — the curriculum
+    // table applies whenever a cohort's evidence is too thin or sits on the band.
+    const cefrExpectations = useMemo(
+        () =>
+            student
+                ? cefrExpectationsForStudent(
+                      buildCefrExpectations(
+                          {
+                              students,
+                              classes,
+                              tests,
+                              studentTests,
+                              rubrics,
+                              studentRubrics,
+                              selfAssessments,
+                              cefrAchieveThreshold: settings.cefrAchieveThreshold,
+                          },
+                          { only: { year: cls?.year, voTrack: effectiveTrack } }
+                      ),
+                      student,
+                      classes
+                  )
+                : undefined,
+        [
+            students,
+            classes,
+            student,
+            tests,
+            studentTests,
+            rubrics,
+            studentRubrics,
+            selfAssessments,
+            settings.cefrAchieveThreshold,
+            cls?.year,
+            effectiveTrack,
+        ]
+    );
+
+    const cefrSkillTargets = useMemo(
+        () =>
+            overview
+                ? getCefrSkillTargetProgress(overview.cells, standardMasteryTargets, cls?.year, effectiveTrack, {
+                      expectations: cefrExpectations,
+                  })
+                : [],
+        [overview, standardMasteryTargets, cls?.year, effectiveTrack, cefrExpectations]
     );
 
     // No self-assessment descriptors at all means the confidence rate was never measurable;
@@ -340,6 +393,11 @@ export default function StudentCefrOverviewPage() {
                             achievedLevel={overview.trackYearProgress.achievedLevel}
                             status={overview.trackYearProgress.status}
                         />
+                        {cefrSkillTargets.length > 0 && (
+                            <div style={{ marginTop: 16 }}>
+                                <CefrSkillTargetList rows={cefrSkillTargets} />
+                            </div>
+                        )}
                     </div>
                 )}
 

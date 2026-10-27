@@ -19,7 +19,9 @@ import type {
     GradeScale,
     GradingTask,
     LinkedStandard,
+    MasteryTarget,
     Message,
+    NewMasteryTarget,
     NewsFlash,
     NewsFlashRead,
     NotificationDismissal,
@@ -30,7 +32,6 @@ import type {
     RubricVersion,
     SelfAssessment,
     SpeakingSession,
-    StandardMasteryTarget,
     Student,
     StudentRubric,
     StudentTest,
@@ -172,8 +173,8 @@ export type Action =
     | { type: 'ADD_FLASHCARD_DECK'; payload: FlashcardDeck }
     | { type: 'UPDATE_FLASHCARD_DECK'; payload: FlashcardDeck }
     | { type: 'DELETE_FLASHCARD_DECK'; id: string }
-    | { type: 'ADD_STANDARD_MASTERY_TARGET'; payload: StandardMasteryTarget }
-    | { type: 'UPDATE_STANDARD_MASTERY_TARGET'; payload: StandardMasteryTarget }
+    | { type: 'ADD_STANDARD_MASTERY_TARGET'; payload: MasteryTarget }
+    | { type: 'UPDATE_STANDARD_MASTERY_TARGET'; payload: MasteryTarget }
     | { type: 'DELETE_STANDARD_MASTERY_TARGET'; id: string }
     | { type: 'ADD_FLASHCARD_ASSIGNMENTS'; payload: FlashcardAssignment[] }
     | { type: 'SAVE_FLASHCARD_REVIEW'; payload: FlashcardReview }
@@ -1065,8 +1066,9 @@ export interface AppContextValue extends StoreData {
     addFlashcardDeck: (d: Omit<FlashcardDeck, 'id' | 'createdAt' | 'updatedAt'>) => FlashcardDeck;
     updateFlashcardDeck: (d: FlashcardDeck) => void;
     deleteFlashcardDeck: (id: string) => void;
-    addStandardMasteryTarget: (t: Omit<StandardMasteryTarget, 'id' | 'updatedAt'>) => StandardMasteryTarget;
-    updateStandardMasteryTarget: (t: StandardMasteryTarget) => void;
+    /** Adds a scoped (standard, grammar or CEFR skill) mastery target; the store assigns id/updatedAt. */
+    addStandardMasteryTarget: (t: NewMasteryTarget) => MasteryTarget;
+    updateStandardMasteryTarget: (t: MasteryTarget) => void;
     deleteStandardMasteryTarget: (id: string) => void;
     addFlashcardAssignments: (assignments: FlashcardAssignment[]) => void;
     saveFlashcardReview: (r: FlashcardReview) => void;

@@ -24,30 +24,19 @@ export interface LearningGoalAggregate {
     status?: ProgressStatus;
 }
 
-import { Rubric, StudentRubric, LinkedStandard, SchoolYear, VoTrack, StandardMasteryTarget } from '../types';
+import { Rubric, StudentRubric, LinkedStandard, SchoolYear, VoTrack, MasteryTarget } from '../types';
 import type { ProgressStatus } from './cefrOrdinal';
 import { criterionMaxPoints } from './gradeCalc';
 import { scoresSubItems, subItemEarned, subItemRange } from './subItems';
-
-function findMasteryTarget(
-    masteryTargets: StandardMasteryTarget[] | undefined,
-    guid: string,
-    schoolYear: SchoolYear | undefined,
-    voTrack: VoTrack | undefined
-): StandardMasteryTarget | undefined {
-    if (!masteryTargets || !schoolYear) return undefined;
-    return masteryTargets.find(
-        (t) => t.standardGuid === guid && t.year === schoolYear && (t.voTrack ?? undefined) === (voTrack ?? undefined)
-    );
-}
+import { findStandardTarget } from './masteryTargetAnalysis';
 
 function applyMasteryTarget(
     agg: LearningGoalAggregate,
-    masteryTargets: StandardMasteryTarget[] | undefined,
+    masteryTargets: MasteryTarget[] | undefined,
     schoolYear: SchoolYear | undefined,
     voTrack: VoTrack | undefined
 ): void {
-    const target = findMasteryTarget(masteryTargets, agg.guid, schoolYear, voTrack);
+    const target = findStandardTarget(masteryTargets, agg.guid, schoolYear, voTrack);
     if (!target) return;
     agg.targetPercentage = target.targetPercentage;
     agg.status =
@@ -62,7 +51,7 @@ export function getStudentGoalScores(
     studentId: string,
     studentRubrics: StudentRubric[],
     rubrics: Rubric[],
-    masteryTargets?: StandardMasteryTarget[],
+    masteryTargets?: MasteryTarget[],
     schoolYear?: SchoolYear,
     voTrack?: VoTrack
 ): LearningGoalAggregate[] {
@@ -234,7 +223,7 @@ export function getClassGoalScores(
     students: { id: string; classId: string }[],
     studentRubrics: StudentRubric[],
     rubrics: Rubric[],
-    masteryTargets?: StandardMasteryTarget[],
+    masteryTargets?: MasteryTarget[],
     schoolYear?: SchoolYear,
     voTrack?: VoTrack
 ): LearningGoalAggregate[] {

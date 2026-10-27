@@ -786,7 +786,7 @@ describe('AppContext reducer — grading, messages, flashcards, mastery, news', 
         };
         let state = run(makeState(), { type: 'ADD_STANDARD_MASTERY_TARGET', payload: target });
         state = run(state, { type: 'UPDATE_STANDARD_MASTERY_TARGET', payload: { ...target, targetPercentage: 80 } });
-        expect(state.standardMasteryTargets[0].targetPercentage).toBe(80);
+        expect(state.standardMasteryTargets[0]).toMatchObject({ targetPercentage: 80 });
         state = run(state, { type: 'DELETE_STANDARD_MASTERY_TARGET', id: 'mt1' });
         expect(state.standardMasteryTargets).toHaveLength(0);
     });
@@ -1264,6 +1264,7 @@ describe('AppContext reducer — connected mode and edge branches', () => {
                 type: 'ADD_STANDARD_MASTERY_TARGET',
                 payload: {
                     id: 'mt2',
+                    scope: 'standard',
                     standardGuid: 'g2',
                     standardDescription: 'd',
                     standardSetTitle: 's',
@@ -1273,7 +1274,10 @@ describe('AppContext reducer — connected mode and edge branches', () => {
             },
             {
                 type: 'UPDATE_STANDARD_MASTERY_TARGET',
-                payload: { ...base.standardMasteryTargets[0], targetPercentage: 85 },
+                payload: {
+                    ...(base.standardMasteryTargets[0] as StandardMasteryTarget),
+                    targetPercentage: 85,
+                },
             },
             { type: 'DELETE_STANDARD_MASTERY_TARGET', id: 'mt1' },
             { type: 'ADD_FLASHCARD_ASSIGNMENTS', payload: [{ ...base.flashcardAssignments[0], deckId: 'd2' }] },

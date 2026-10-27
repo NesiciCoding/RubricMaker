@@ -39,7 +39,15 @@ import { useConfirm } from '../hooks/useConfirm';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { isLocalMode } from '../store/storage';
 import { useDbStatus } from '../hooks/useDbStatus';
-import type { AppSettings, GradeScale, GradeRange, UserRole, StandardMasteryTarget } from '../types';
+import type {
+    AppSettings,
+    GradeScale,
+    GradeRange,
+    UserRole,
+    MasteryTarget,
+    GrammarMasteryTarget,
+    CefrSkillTarget,
+} from '../types';
 import { resolveUserRole } from '../utils/userRole';
 import { exportFullBackup } from '../store/storage';
 import { hasFloorRange } from '../utils/gradeCalc';
@@ -49,7 +57,13 @@ import BackupSettingsChanges from '../components/Settings/BackupSettingsChanges'
 import { hashPin, verifyPin, isHashed } from '../utils/pinHash';
 import { THEME_BUNDLES, ACCENT_PRESETS } from '../data/themes';
 import { SCHOOL_YEAR_LABELS } from '../data/schoolYears';
+import { MIN_CALIBRATION_SAMPLES } from '../utils/grammarWeightCalibration';
+import { MIN_CEFR_CALIBRATION_STUDENTS, CEFR_CALIBRATION_AGREEMENT } from '../utils/cefrExpectationCalibration';
+import { buildCalibrationCohorts } from '../utils/calibrationCohorts';
 import { VO_TRACK_LABELS } from '../data/voTracks';
+import { getGrammarItemById, grammarItemToFrameworkDescriptor } from '../data/grammarStandards';
+import { CEFR_SKILL_LABELS } from '../data/cefrDescriptors';
+import { CEFR_SUBLEVEL_LABELS } from '../utils/cefrOrdinal';
 
 type Tab = 'general' | 'teaching' | 'administration';
 
@@ -152,7 +166,7 @@ const ROLE_META: Record<
  * @returns The settings page UI as a JSX element
  */
 export default function SettingsPage() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const tour = usePageTourState('settings');
     const navigate = useNavigate();
     const {
@@ -165,6 +179,12 @@ export default function SettingsPage() {
         rubrics,
         standardMasteryTargets,
         settings,
+        tests,
+        studentTests,
+        selfAssessments,
+        flashcardDecks,
+        flashcardAssignments,
+        flashcardReviews,
     } = useStoreSelector((s) => ({
         students: s.students,
         classes: s.classes,
@@ -175,6 +195,12 @@ export default function SettingsPage() {
         rubrics: s.rubrics,
         standardMasteryTargets: s.standardMasteryTargets,
         settings: s.settings,
+        tests: s.tests,
+        studentTests: s.studentTests,
+        selfAssessments: s.selfAssessments,
+        flashcardDecks: s.flashcardDecks,
+        flashcardAssignments: s.flashcardAssignments,
+        flashcardReviews: s.flashcardReviews,
     }));
     // The roster domain hooks filtered soft-deleted rows; keep that behavior here.
     const students = React.useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
@@ -239,9 +265,44 @@ export default function SettingsPage() {
     const [deleteMasteryTargetId, setDeleteMasteryTargetId] = useState<string | null>(null);
     const [showCommentBank, setShowCommentBank] = useState(false);
     const [showTemplateUpload, setShowTemplateUpload] = useState(false);
-    const [editingMasteryTarget, setEditingMasteryTarget] = useState<StandardMasteryTarget | 'new' | null>(null);
+    const [editingMasteryTarget, setEditingMasteryTarget] = useState<MasteryTarget | 'new' | null>(null);
     const [accentInput, setAccentInput] = useState(settings.accentColor || '#37b49c');
     const [accentError, setAccentError] = useState(false);
+
+    // Calibration status: the grammar blend and the CEFR expectations calibrate themselves per
+    // (school year, VO track) once a cohort's evidence clears its gate, and stay on the standard
+    // values until then. Computed only while the Teaching tab is open so opening Settings stays
+    // cheap; deterministic for a given store (sorted ids, fixed stream order, closed-form fits).
+    const calibrationCohorts = React.useMemo(() => {
+        if (!isUserPlus || activeTab !== 'teaching') return [];
+        return buildCalibrationCohorts({
+            students,
+            classes,
+            tests,
+            studentTests,
+            rubrics,
+            studentRubrics,
+            flashcardDecks,
+            flashcardAssignments,
+            flashcardReviews,
+            selfAssessments,
+            cefrAchieveThreshold: settings.cefrAchieveThreshold,
+        });
+    }, [
+        isUserPlus,
+        activeTab,
+        students,
+        classes,
+        tests,
+        studentTests,
+        rubrics,
+        studentRubrics,
+        flashcardDecks,
+        flashcardAssignments,
+        flashcardReviews,
+        selfAssessments,
+        settings.cefrAchieveThreshold,
+    ]);
 
     // ─── Role switch helpers ─────────────────────────────────────────────────────
 
@@ -513,6 +574,65 @@ export default function SettingsPage() {
         const key = `settings.scale_name_${gs.id.replace(/-/g, '_')}`;
         const translated = t(key);
         return translated !== key ? translated : gs.name;
+    }
+
+    // ─── Mastery target table helpers ────────────────────────────────────────────
+
+    const uiLang = i18n.language.startsWith('nl') ? 'nl' : 'en';
+
+    function isGrammarTarget(t: MasteryTarget): t is GrammarMasteryTarget {
+        return t.scope === 'grammar';
+    }
+
+    function isCefrTarget(t: MasteryTarget): t is CefrSkillTarget {
+        return t.scope === 'cefr';
+    }
+
+    function masteryTargetScopeLabel(target: MasteryTarget): string {
+        return t(`settings.mastery_target_scope_${target.scope ?? 'standard'}`);
+    }
+
+    function masteryTargetValue(target: MasteryTarget): string {
+        return isCefrTarget(target) ? CEFR_SUBLEVEL_LABELS[target.targetLevel] : `${target.targetPercentage}%`;
+    }
+
+    /** Goal column: live taxonomy labels where possible so grammar rows follow the UI language. */
+    function masteryTargetGoal(target: MasteryTarget): React.ReactNode {
+        if (isGrammarTarget(target)) {
+            const item = getGrammarItemById(target.grammarItemId);
+            // Resolve the category through the taxonomy too, so a renamed category translates with the UI.
+            const category = item ? grammarItemToFrameworkDescriptor(item.id) : undefined;
+            const categoryLabel = category
+                ? uiLang === 'nl'
+                    ? category.categoryLabelNl
+                    : category.categoryLabelEn
+                : target.grammarCategoryLabel;
+            return (
+                <div>
+                    <div style={{ fontWeight: 600 }}>
+                        {item ? (uiLang === 'nl' ? item.labelNl : item.labelEn) : target.grammarItemLabel}
+                    </div>
+                    <div className="text-muted text-xs">
+                        {categoryLabel}
+                        {item ? ` · ${item.level}` : ''}
+                    </div>
+                </div>
+            );
+        }
+        if (isCefrTarget(target)) {
+            return (
+                <div>
+                    <div style={{ fontWeight: 600 }}>{CEFR_SKILL_LABELS[target.cefrSkill][uiLang]}</div>
+                    <div className="text-muted text-xs">{t('settings.mastery_target_cefr_row_hint')}</div>
+                </div>
+            );
+        }
+        return (
+            <div>
+                <div style={{ fontWeight: 600 }}>{target.standardDescription}</div>
+                <div className="text-muted text-xs">{target.standardSetTitle}</div>
+            </div>
+        );
     }
 
     // ─── Tab navigation helper ───────────────────────────────────────────────────
@@ -1247,20 +1367,22 @@ export default function SettingsPage() {
                                 <table className="data-table" style={{ marginTop: 12 }}>
                                     <thead>
                                         <tr>
-                                            <th>{t('settings.mastery_target_standard_label')}</th>
+                                            <th>{t('settings.mastery_target_goal_label')}</th>
+                                            <th>{t('settings.mastery_target_scope_label')}</th>
                                             <th>{t('studentsPage.form_school_year')}</th>
                                             <th>{t('voTrack.section_label')}</th>
-                                            <th>{t('settings.mastery_target_percentage_label')}</th>
+                                            <th>{t('settings.mastery_target_target_label')}</th>
                                             <th className="sr-only">{t('common.actions')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {standardMasteryTargets.map((target) => (
                                             <tr key={target.id}>
-                                                <td>{target.standardDescription}</td>
+                                                <td>{masteryTargetGoal(target)}</td>
+                                                <td>{masteryTargetScopeLabel(target)}</td>
                                                 <td>{SCHOOL_YEAR_LABELS[target.year]}</td>
                                                 <td>{target.voTrack ? VO_TRACK_LABELS[target.voTrack] : '—'}</td>
-                                                <td>{target.targetPercentage}%</td>
+                                                <td>{masteryTargetValue(target)}</td>
                                                 <td style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
                                                     <button
                                                         type="button"
@@ -1283,6 +1405,150 @@ export default function SettingsPage() {
                                     </tbody>
                                 </table>
                             )}
+
+                            {/* Calibration status — why a cohort is on the standard values or has
+                                moved off them. Read-only: the fits are recomputed from evidence. */}
+                            <div
+                                style={{ marginTop: 20, borderTop: '1px solid var(--border)', paddingTop: 16 }}
+                                data-testid="calibration-status"
+                            >
+                                <h4 style={{ margin: 0 }}>{t('settings.calibration_title')}</h4>
+                                <p className="text-muted text-sm" style={{ marginTop: 4, marginBottom: 0 }}>
+                                    {t('settings.calibration_help')}
+                                </p>
+                                {calibrationCohorts.length === 0 ? (
+                                    <p className="text-muted text-sm" style={{ marginTop: 12 }}>
+                                        {t('settings.calibration_empty')}
+                                    </p>
+                                ) : (
+                                    <table className="data-table" style={{ marginTop: 12 }}>
+                                        <thead>
+                                            <tr>
+                                                <th>{t('settings.calibration_col_cohort')}</th>
+                                                <th>{t('settings.calibration_col_students')}</th>
+                                                <th>{t('settings.calibration_col_grammar')}</th>
+                                                <th>{t('settings.calibration_col_cefr')}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {calibrationCohorts.map((cohort) => {
+                                                const grammar = cohort.grammar;
+                                                const spread = grammar.spread;
+                                                const spreadTitle = spread
+                                                    ? `${t('settings.calibration_spread_label', {
+                                                          writing: Math.sqrt(spread.writing).toFixed(1),
+                                                          test: Math.sqrt(spread.test).toFixed(1),
+                                                          flashcards: Math.sqrt(spread.flashcards).toFixed(1),
+                                                      })}\n${t('settings.calibration_spread_tooltip')}`
+                                                    : undefined;
+                                                const grammarTitle =
+                                                    grammar.source === 'calibrated'
+                                                        ? spreadTitle
+                                                        : [
+                                                              grammar.reason === 'degenerate-fit'
+                                                                  ? t('settings.calibration_reason_degenerate')
+                                                                  : t('settings.calibration_reason_insufficient', {
+                                                                        samples: grammar.sampleCount,
+                                                                        min: MIN_CALIBRATION_SAMPLES,
+                                                                    }),
+                                                              spreadTitle,
+                                                          ]
+                                                              .filter(Boolean)
+                                                              .join('\n');
+                                                const shifted = cohort.cefr.filter((c) => c.source === 'calibrated');
+                                                const cefrTitle =
+                                                    shifted.length > 0
+                                                        ? [
+                                                              ...shifted.map((c) =>
+                                                                  t('settings.calibration_cefr_shift_entry', {
+                                                                      skill: CEFR_SKILL_LABELS[c.skill][uiLang],
+                                                                      from:
+                                                                          c.standardRange &&
+                                                                          CEFR_SUBLEVEL_LABELS[c.standardRange.min],
+                                                                      to:
+                                                                          c.expectedRange &&
+                                                                          CEFR_SUBLEVEL_LABELS[c.expectedRange.min],
+                                                                  })
+                                                              ),
+                                                              t('settings.calibration_cefr_tooltip', {
+                                                                  min: MIN_CEFR_CALIBRATION_STUDENTS,
+                                                                  share: Math.round(CEFR_CALIBRATION_AGREEMENT * 100),
+                                                              }),
+                                                          ].join('\n')
+                                                        : t('settings.calibration_cefr_tooltip', {
+                                                              min: MIN_CEFR_CALIBRATION_STUDENTS,
+                                                              share: Math.round(CEFR_CALIBRATION_AGREEMENT * 100),
+                                                          });
+                                                return (
+                                                    <tr key={cohort.key}>
+                                                        <td>
+                                                            <div style={{ fontWeight: 600 }}>
+                                                                {SCHOOL_YEAR_LABELS[cohort.year]}
+                                                            </div>
+                                                            <div className="text-muted text-xs">
+                                                                {cohort.voTrack ? VO_TRACK_LABELS[cohort.voTrack] : '—'}
+                                                                {cohort.classNames.length > 0
+                                                                    ? ` · ${cohort.classNames.join(', ')}`
+                                                                    : ''}
+                                                            </div>
+                                                        </td>
+                                                        <td>{cohort.studentCount}</td>
+                                                        <td title={grammarTitle} style={{ cursor: 'help' }}>
+                                                            {grammar.source === 'calibrated' ? (
+                                                                <>
+                                                                    <div style={{ fontWeight: 600 }}>
+                                                                        {t('settings.calibration_grammar_weights', {
+                                                                            writing: Math.round(
+                                                                                grammar.weights.writing * 100
+                                                                            ),
+                                                                            test: Math.round(
+                                                                                grammar.weights.test * 100
+                                                                            ),
+                                                                            flashcards: Math.round(
+                                                                                grammar.weights.flashcards * 100
+                                                                            ),
+                                                                        })}
+                                                                    </div>
+                                                                    <div className="text-muted text-xs">
+                                                                        {t('settings.calibration_grammar_samples', {
+                                                                            samples: grammar.sampleCount,
+                                                                            min: MIN_CALIBRATION_SAMPLES,
+                                                                        })}
+                                                                    </div>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <div>{t('settings.calibration_standard')}</div>
+                                                                    <div className="text-muted text-xs">
+                                                                        {t('settings.calibration_grammar_samples', {
+                                                                            samples: grammar.sampleCount,
+                                                                            min: MIN_CALIBRATION_SAMPLES,
+                                                                        })}
+                                                                    </div>
+                                                                </>
+                                                            )}
+                                                        </td>
+                                                        <td title={cefrTitle} style={{ cursor: 'help' }}>
+                                                            {shifted.length > 0 ? (
+                                                                <div style={{ fontWeight: 600 }}>
+                                                                    {t('settings.calibration_cefr_shifted', {
+                                                                        count: shifted.length,
+                                                                        total: cohort.cefr.length,
+                                                                    })}
+                                                                </div>
+                                                            ) : (
+                                                                <span className="text-muted">
+                                                                    {t('settings.calibration_standard')}
+                                                                </span>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </div>
                         </div>
 
                         {/* Comment Bank */}
