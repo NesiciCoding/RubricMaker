@@ -92,14 +92,20 @@ export default function CefrSkillTargetList({ rows }: Props) {
                                     )}
                                 </td>
                                 <td style={cellStyle}>
-                                    <span
-                                        style={{
-                                            fontWeight: 700,
-                                            color: PROGRESS_STATUS_COLOR[row.status],
-                                        }}
-                                    >
-                                        {t(progressStatusLabelKey(row.status))}
-                                    </span>
+                                    {/* 'no-data' uses the dim colour, which fails AA contrast when bold at
+                                        this size — keep it muted and regular weight like the dashes. */}
+                                    {row.status === 'no-data' ? (
+                                        <span className="text-muted">{t(progressStatusLabelKey(row.status))}</span>
+                                    ) : (
+                                        <span
+                                            style={{
+                                                fontWeight: 700,
+                                                color: PROGRESS_STATUS_COLOR[row.status],
+                                            }}
+                                        >
+                                            {t(progressStatusLabelKey(row.status))}
+                                        </span>
+                                    )}
                                 </td>
                             </tr>
                         ))}

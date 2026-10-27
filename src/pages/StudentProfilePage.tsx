@@ -1533,7 +1533,13 @@ export default function StudentProfilePage() {
                                                         : t('masteryProfile.no_target')}
                                                 </td>
                                                 <td style={{ padding: '6px 8px' }}>
-                                                    {entry.status ? (
+                                                    {/* 'no-data' uses the dim colour, which fails AA contrast when bold at
+                                                        this size — keep it muted and regular weight like the dashes. */}
+                                                    {entry.status === 'no-data' ? (
+                                                        <span className="text-muted">
+                                                            {t(progressStatusLabelKey(entry.status))}
+                                                        </span>
+                                                    ) : entry.status ? (
                                                         <span
                                                             style={{
                                                                 fontWeight: 700,
