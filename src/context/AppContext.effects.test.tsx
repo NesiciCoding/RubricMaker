@@ -105,6 +105,7 @@ vi.mock('../store/storage', () => ({
     deleteRubricVersions: vi.fn(),
     stripAudioForOfflineCache: vi.fn((srs) => srs),
     saveRubrics: vi.fn(),
+    saveFolders: vi.fn(),
     saveStudents: vi.fn(),
     saveClasses: vi.fn(),
     saveStudentRubrics: vi.fn(),

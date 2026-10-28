@@ -6746,6 +6746,20 @@ drop policy if exists "folders_owner_delete" on public.folders;
 create policy "folders_owner_delete" on public.folders
   for delete using (auth.uid() = owner_id);
 
+-- Publish the table so StorageSync's postgres_changes subscription on `folders` fires on
+-- other devices. Same guarded pattern as 047/052/067/075 — ALTER PUBLICATION ... ADD TABLE
+-- has no IF NOT EXISTS form and errors on a table that's already a member.
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'folders'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.folders;
+  END IF;
+END $$;
+
 -- Register the new table with the owner-data registry so nightly backups and
 -- "Delete all my database data" cover it (#631). Redefined here per supabase/CLAUDE.md;
 -- the list is otherwise identical to 079_owner_data_registry.sql.

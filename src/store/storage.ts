@@ -1487,6 +1487,13 @@ export function importFullBackup(json: string, currentSettings?: AppSettings): b
                 saveRubrics(data.rubrics as Rubric[]);
             else console.warn('[importFullBackup] rubrics failed validation — skipped');
         }
+        if (data.folders !== undefined) {
+            // Folder definitions must survive a restore: without them the rubrics and tests
+            // that carry a folderId would come back unfiled (and the folders themselves
+            // would be gone), since nothing else rebuilds them.
+            if (isObjectArray(data.folders)) saveFolders(data.folders as Folder[]);
+            else console.warn('[importFullBackup] folders failed validation — skipped');
+        }
         if (data.students !== undefined) {
             if (isObjectArray(data.students)) saveStudents(data.students as Student[]);
             else console.warn('[importFullBackup] students failed validation — skipped');

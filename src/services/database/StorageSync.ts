@@ -1081,6 +1081,7 @@ class StorageSyncService {
                 ])
             ).find((r) => !r.success);
             const ups = [
+                ...state.folders.map((f) => this.adapter.upsertFolder(f)),
                 ...state.studentRubrics.map((sr) =>
                     this.feedbackAudioSync.prepareForPush(sr).then((p) => this.adapter.upsertStudentRubric(p))
                 ),

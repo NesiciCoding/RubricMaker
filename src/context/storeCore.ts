@@ -1207,6 +1207,7 @@ export { LOCAL_MODE_KEY, MIGRATION_DONE_KEY } from '../store/storage';
 
 export const COLLECTION_SAVERS: Partial<Record<keyof StoreData, (m: StoreData) => void | Promise<void>>> = {
     rubrics: (m) => saveRubrics(m.rubrics),
+    folders: (m) => saveFolders(m.folders),
     students: (m) => saveStudents(m.students),
     classes: (m) => saveClasses(m.classes),
     studentRubrics: (m) => saveStudentRubricsCache(m.studentRubrics),

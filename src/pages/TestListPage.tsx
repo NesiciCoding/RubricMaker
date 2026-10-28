@@ -414,7 +414,11 @@ export default function TestListPage() {
                         <div className="empty-state">
                             <ClipboardCheck size={40} />
                             <h3>{activeFolder === ALL_FOLDERS ? t('tests.no_tests') : t('folders.empty')}</h3>
-                            <p className="text-muted text-sm">{t('tests.create_first_instruction')}</p>
+                            <p className="text-muted text-sm">
+                                {activeFolder === ALL_FOLDERS
+                                    ? t('tests.create_first_instruction')
+                                    : t('folders.empty_hint')}
+                            </p>
                             <button className="btn btn-primary" onClick={() => navigate('/tests/new')}>
                                 <Plus size={16} /> {t('tests.new_test')}
                             </button>
