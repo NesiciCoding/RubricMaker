@@ -22,6 +22,7 @@ const loadStoreValue = vi.hoisted(() => ({ current: null as ReturnType<typeof mo
 
 const mockEmptyState = vi.hoisted(() => (): StoreData => ({
     rubrics: [],
+    folders: [],
     students: [],
     classes: [],
     studentRubrics: [],
@@ -104,6 +105,7 @@ vi.mock('../store/storage', () => ({
     deleteRubricVersions: vi.fn(),
     stripAudioForOfflineCache: vi.fn((srs) => srs),
     saveRubrics: vi.fn(),
+    saveFolders: vi.fn(),
     saveStudents: vi.fn(),
     saveClasses: vi.fn(),
     saveStudentRubrics: vi.fn(),

@@ -29,6 +29,8 @@ import { nanoid } from '../utils/nanoid';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
 import TestAssignmentModal from '../components/Tests/TestAssignmentModal';
+import FolderTile, { FOLDER_DROP_PREFIX } from '../components/Folders/FolderTile';
+import FolderNameModal from '../components/Folders/FolderNameModal';
 import TestSubmissionImportModal from '../components/Tests/TestSubmissionImportModal';
 import ExamScanCaptureModal from '../components/Tests/ExamScanCaptureModal';
 import ClassAverageAdjuster from '../components/Tests/ClassAverageAdjuster';
@@ -36,8 +38,9 @@ import ItemAnalysisPanel from '../components/Tests/ItemAnalysisPanel';
 import PlacementAnalysisPanel from '../components/Tests/PlacementAnalysisPanel';
 import GenerateTestModal from '../components/Tests/GenerateTestModal';
 import ExamBookletExportPanel from '../components/Tests/ExamBookletExportPanel';
-import type { Test, StudentTest, CohortFilter as CohortFilterValue } from '../types';
+import type { Folder, Test, StudentTest, CohortFilter as CohortFilterValue } from '../types';
 import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
+import { ALL_FOLDERS, countInFolder, filterByFolder, foldersForKind, nextFolderOrder } from '../utils/folders';
 import { getCohortStudentIds, isAllCohorts, ALL_COHORTS } from '../utils/cohortAggregator';
 import { isGeneratorTest } from '../utils/placementGenerator';
 import CohortFilter from '../components/CohortFilter';
@@ -58,6 +61,8 @@ export default function TestListPage() {
         studentTests,
         settings,
         gradeScales,
+        // `= []` guards page tests and older local snapshots that predate the collection.
+        folders = [],
     } = useStoreSelector((s) => ({
         students: s.students,
         classes: s.classes,
@@ -66,39 +71,78 @@ export default function TestListPage() {
         studentTests: s.studentTests,
         settings: s.settings,
         gradeScales: s.gradeScales,
+        folders: s.folders,
     }));
     // The roster domain hooks filtered soft-deleted rows; archived students must not
     // appear in cohort filters or per-student statistics.
     const students = React.useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
-    const { addTest, updateTest, deleteTest, saveStudentTest } = useStoreActions();
+    const { addTest, updateTest, deleteTest, saveStudentTest, addFolder, updateFolder, deleteFolder } =
+        useStoreActions();
 
     const activeStyleTemplate = exportTemplates.find((t) => t.kind === 'style' && t.id === settings.styleTemplateId);
     const [cohortFilter, setCohortFilter] = useState<CohortFilterValue>(ALL_COHORTS);
     const [view, setView] = useState<'cards' | 'list'>('cards');
+    const [activeFolder, setActiveFolder] = useState<string>(ALL_FOLDERS);
+    const [folderModal, setFolderModal] = useState<{ folder?: Folder } | null>(null);
     const allCohorts = isAllCohorts(cohortFilter);
     const cohortStudentIds = React.useMemo(
         () => getCohortStudentIds(students, classes, cohortFilter),
         [students, classes, cohortFilter]
     );
+    const testFolders = foldersForKind(folders, 'test');
     const visibleTests = React.useMemo(() => {
-        const sorted = sortByDisplayOrder(tests);
+        const sorted = filterByFolder(sortByDisplayOrder(tests), activeFolder);
         if (allCohorts) return sorted;
         const cohortTestIds = new Set(
             studentTests.filter((st) => cohortStudentIds.has(st.studentId)).map((st) => st.testId)
         );
         return sorted.filter((test) => cohortTestIds.has(test.id));
-    }, [tests, studentTests, cohortStudentIds, allCohorts]);
-    const reorderable = allCohorts;
+    }, [tests, studentTests, cohortStudentIds, allCohorts, activeFolder]);
+    const reorderable = allCohorts && activeFolder === ALL_FOLDERS;
 
     function handleDragEnd(result: DropResult) {
-        if (!result.destination || !reorderable) return;
-        if (result.destination.index === result.source.index) return;
-        for (const [test, order] of reorderDisplayOrder(visibleTests, result.source.index, result.destination.index)) {
+        const destination = result.destination;
+        if (!destination) return;
+        if (destination.droppableId.startsWith(FOLDER_DROP_PREFIX)) {
+            const folderId = destination.droppableId.slice(FOLDER_DROP_PREFIX.length);
+            const test = visibleTests[result.source.index];
+            if (!test || test.folderId === folderId) return;
+            updateTest({ ...test, folderId });
+            const folder = testFolders.find((f) => f.id === folderId);
+            if (folder) showToast(t('folders.moved_toast', { name: folder.name }), 'success');
+            return;
+        }
+        if (destination.droppableId !== 'test-list' || !reorderable) return;
+        if (destination.index === result.source.index) return;
+        for (const [test, order] of reorderDisplayOrder(visibleTests, result.source.index, destination.index)) {
             if (test.displayOrder !== order) updateTest({ ...test, displayOrder: order });
         }
     }
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
     const { showToast } = useToast();
+
+    function submitFolderName(name: string) {
+        const editing = folderModal?.folder;
+        if (editing) {
+            updateFolder({ ...editing, name });
+        } else {
+            const folder = addFolder({ name, kind: 'test', displayOrder: nextFolderOrder(folders, 'test') });
+            setActiveFolder(folder.id);
+        }
+        setFolderModal(null);
+    }
+
+    async function handleDeleteFolder(folder: Folder) {
+        const ok = await confirm({
+            title: t('folders.delete_title'),
+            message: t('folders.delete_warning', { name: folder.name }),
+            confirmLabel: t('common.delete'),
+            danger: true,
+        });
+        if (!ok) return;
+        deleteFolder(folder.id, 'test');
+        if (activeFolder === folder.id) setActiveFolder(ALL_FOLDERS);
+    }
     const [assigningTestId, setAssigningTestId] = useState<string | null>(null);
     const [importingTestId, setImportingTestId] = useState<string | null>(null);
     const [scanningTestId, setScanningTestId] = useState<string | null>(null);
@@ -341,104 +385,135 @@ export default function TestListPage() {
                         />
                     </div>
                 </div>
-                {visibleTests.length === 0 ? (
-                    <div className="empty-state">
-                        <ClipboardCheck size={40} />
-                        <h3>{t('tests.no_tests')}</h3>
-                        <p className="text-muted text-sm">{t('tests.create_first_instruction')}</p>
-                        <button className="btn btn-primary" onClick={() => navigate('/tests/new')}>
-                            <Plus size={16} /> {t('tests.new_test')}
+                <DragDropContext onDragEnd={handleDragEnd}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
+                        <button
+                            type="button"
+                            className={`btn btn-sm ${activeFolder === ALL_FOLDERS ? 'btn-primary' : 'btn-secondary'}`}
+                            aria-pressed={activeFolder === ALL_FOLDERS}
+                            onClick={() => setActiveFolder(ALL_FOLDERS)}
+                        >
+                            <LayoutGrid size={14} /> {t('folders.all')}
+                        </button>
+                        {testFolders.map((folder) => (
+                            <FolderTile
+                                key={folder.id}
+                                folder={folder}
+                                count={countInFolder(tests, folder.id)}
+                                active={activeFolder === folder.id}
+                                onOpen={(id) => setActiveFolder((current) => (current === id ? ALL_FOLDERS : id))}
+                                onRename={(f) => setFolderModal({ folder: f })}
+                                onDelete={handleDeleteFolder}
+                            />
+                        ))}
+                        <button type="button" className="btn btn-secondary btn-sm" onClick={() => setFolderModal({})}>
+                            <Plus size={14} /> {t('folders.new_folder')}
                         </button>
                     </div>
-                ) : view === 'list' ? (
-                    <div style={{ overflowX: 'auto' }}>
-                        <table className="data-table">
-                            <thead>
-                                <tr>
-                                    <th>{t('tests.col_name')}</th>
-                                    <th>{t('tests.col_questions')}</th>
-                                    <th>{t('tests.col_submitted')}</th>
-                                    <th>{t('tests.col_avg')}</th>
-                                    <th>{t('common.actions')}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {visibleTests.map((test) => {
-                                    const relevantStudentTests = studentTests.filter((st) => st.testId === test.id);
-                                    const submittedCount = new Set(relevantStudentTests.map((st) => st.studentId)).size;
-                                    const avgPct =
-                                        relevantStudentTests.length > 0
-                                            ? Math.round(calcClassAveragePercentage(relevantStudentTests, test))
-                                            : null;
-                                    return (
-                                        <tr
-                                            key={test.id}
-                                            style={{ cursor: 'pointer' }}
-                                            onClick={() => navigate(`/tests/${test.id}`)}
-                                        >
-                                            <td style={{ fontWeight: 500 }}>{test.name}</td>
-                                            <td>{test.questions.length}</td>
-                                            <td>{submittedCount}</td>
-                                            <td>{avgPct !== null ? `${avgPct}%` : '—'}</td>
-                                            <td onClick={(e) => e.stopPropagation()}>
-                                                <div style={{ display: 'flex', gap: 4 }}>
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-ghost btn-icon btn-sm"
-                                                        title={t('tests.action_edit')}
-                                                        aria-label={t('tests.action_edit')}
-                                                        onClick={() => navigate(`/tests/${test.id}`)}
-                                                    >
-                                                        <Edit2 size={14} />
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-ghost btn-icon btn-sm"
-                                                        title={t('tests.action_assign')}
-                                                        aria-label={t('tests.action_assign')}
-                                                        disabled={test.questions.length === 0 && !isGeneratorTest(test)}
-                                                        onClick={() => requestAssign(test)}
-                                                    >
-                                                        <Send size={14} />
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-ghost btn-icon btn-sm"
-                                                        title={t('tests.monitor.action_monitor')}
-                                                        aria-label={t('tests.monitor.action_monitor')}
-                                                        onClick={() => navigate(`/tests/${test.id}/monitor`)}
-                                                    >
-                                                        <Radio size={14} />
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-ghost btn-icon btn-sm"
-                                                        title={t('tests.action_duplicate')}
-                                                        aria-label={t('tests.action_duplicate')}
-                                                        onClick={() => handleDuplicate(test.id)}
-                                                    >
-                                                        <Copy size={14} />
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-ghost btn-icon btn-sm"
-                                                        title={t('tests.action_delete')}
-                                                        aria-label={t('tests.action_delete')}
-                                                        style={{ color: 'var(--red)' }}
-                                                        onClick={() => handleDelete(test.id, test.name)}
-                                                    >
-                                                        <Trash2 size={14} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                ) : (
-                    <DragDropContext onDragEnd={handleDragEnd}>
+                    {visibleTests.length === 0 ? (
+                        <div className="empty-state">
+                            <ClipboardCheck size={40} />
+                            <h3>{activeFolder === ALL_FOLDERS ? t('tests.no_tests') : t('folders.empty')}</h3>
+                            <p className="text-muted text-sm">
+                                {activeFolder === ALL_FOLDERS
+                                    ? t('tests.create_first_instruction')
+                                    : t('folders.empty_hint')}
+                            </p>
+                            <button className="btn btn-primary" onClick={() => navigate('/tests/new')}>
+                                <Plus size={16} /> {t('tests.new_test')}
+                            </button>
+                        </div>
+                    ) : view === 'list' ? (
+                        <div style={{ overflowX: 'auto' }}>
+                            <table className="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>{t('tests.col_name')}</th>
+                                        <th>{t('tests.col_questions')}</th>
+                                        <th>{t('tests.col_submitted')}</th>
+                                        <th>{t('tests.col_avg')}</th>
+                                        <th>{t('common.actions')}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {visibleTests.map((test) => {
+                                        const relevantStudentTests = studentTests.filter((st) => st.testId === test.id);
+                                        const submittedCount = new Set(relevantStudentTests.map((st) => st.studentId))
+                                            .size;
+                                        const avgPct =
+                                            relevantStudentTests.length > 0
+                                                ? Math.round(calcClassAveragePercentage(relevantStudentTests, test))
+                                                : null;
+                                        return (
+                                            <tr
+                                                key={test.id}
+                                                style={{ cursor: 'pointer' }}
+                                                onClick={() => navigate(`/tests/${test.id}`)}
+                                            >
+                                                <td style={{ fontWeight: 500 }}>{test.name}</td>
+                                                <td>{test.questions.length}</td>
+                                                <td>{submittedCount}</td>
+                                                <td>{avgPct !== null ? `${avgPct}%` : '—'}</td>
+                                                <td onClick={(e) => e.stopPropagation()}>
+                                                    <div style={{ display: 'flex', gap: 4 }}>
+                                                        <button
+                                                            type="button"
+                                                            className="btn btn-ghost btn-icon btn-sm"
+                                                            title={t('tests.action_edit')}
+                                                            aria-label={t('tests.action_edit')}
+                                                            onClick={() => navigate(`/tests/${test.id}`)}
+                                                        >
+                                                            <Edit2 size={14} />
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            className="btn btn-ghost btn-icon btn-sm"
+                                                            title={t('tests.action_assign')}
+                                                            aria-label={t('tests.action_assign')}
+                                                            disabled={
+                                                                test.questions.length === 0 && !isGeneratorTest(test)
+                                                            }
+                                                            onClick={() => requestAssign(test)}
+                                                        >
+                                                            <Send size={14} />
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            className="btn btn-ghost btn-icon btn-sm"
+                                                            title={t('tests.monitor.action_monitor')}
+                                                            aria-label={t('tests.monitor.action_monitor')}
+                                                            onClick={() => navigate(`/tests/${test.id}/monitor`)}
+                                                        >
+                                                            <Radio size={14} />
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            className="btn btn-ghost btn-icon btn-sm"
+                                                            title={t('tests.action_duplicate')}
+                                                            aria-label={t('tests.action_duplicate')}
+                                                            onClick={() => handleDuplicate(test.id)}
+                                                        >
+                                                            <Copy size={14} />
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            className="btn btn-ghost btn-icon btn-sm"
+                                                            title={t('tests.action_delete')}
+                                                            aria-label={t('tests.action_delete')}
+                                                            style={{ color: 'var(--red)' }}
+                                                            onClick={() => handleDelete(test.id, test.name)}
+                                                        >
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
                         <Droppable droppableId="test-list">
                             {(droppableProvided) => (
                                 <div
@@ -476,8 +551,7 @@ export default function TestListPage() {
                                                         style={{
                                                             cursor: 'pointer',
                                                             transition: 'border-color var(--transition)',
-                                                            flex: '1 1 320px',
-                                                            maxWidth: 480,
+                                                            flex: '0 1 400px',
                                                             ...dragProvided.draggableProps.style,
                                                         }}
                                                         onMouseEnter={(e) =>
@@ -1047,7 +1121,17 @@ export default function TestListPage() {
                                 </div>
                             )}
                         </Droppable>
-                    </DragDropContext>
+                    )}
+                </DragDropContext>
+
+                {folderModal && (
+                    <FolderNameModal
+                        title={folderModal.folder ? t('folders.rename_title') : t('folders.new_folder')}
+                        submitLabel={folderModal.folder ? t('folders.rename') : t('folders.create')}
+                        initialName={folderModal.folder?.name}
+                        onSubmit={submitFolderName}
+                        onClose={() => setFolderModal(null)}
+                    />
                 )}
 
                 <ConfirmDialog {...confirmDialogProps} />

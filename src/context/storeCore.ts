@@ -16,6 +16,8 @@ import type {
     FlashcardAssignment,
     FlashcardDeck,
     FlashcardReview,
+    Folder,
+    FolderKind,
     GradeScale,
     GradingTask,
     LinkedStandard,
@@ -65,6 +67,7 @@ import {
     saveNewsFlashReads,
     saveNewsFlashes,
     saveNotificationDismissals,
+    saveFolders,
     savePeerReviews,
     saveQuestionBank,
     saveRubrics,
@@ -114,6 +117,9 @@ export type Action =
     | { type: 'ADD_RUBRIC'; payload: Rubric }
     | { type: 'UPDATE_RUBRIC'; payload: Rubric }
     | { type: 'DELETE_RUBRIC'; id: string }
+    | { type: 'ADD_FOLDER'; payload: Folder }
+    | { type: 'UPDATE_FOLDER'; payload: Folder }
+    | { type: 'DELETE_FOLDER'; id: string; kind: FolderKind }
     | { type: 'ADD_STUDENT'; payload: Student }
     | { type: 'UPDATE_STUDENT'; payload: Student }
     | { type: 'DELETE_STUDENT'; id: string }
@@ -243,6 +249,30 @@ export function reducer(state: StoreData, action: Action): StoreData {
             const next = [...state.rubrics, action.payload];
             if (isOffline()) saveRubrics(next);
             return { ...state, rubrics: next };
+        }
+        case 'ADD_FOLDER': {
+            const next = [...state.folders, action.payload];
+            if (isOffline()) saveFolders(next);
+            return { ...state, folders: next };
+        }
+        case 'UPDATE_FOLDER': {
+            const next = state.folders.map((f) => (f.id === action.payload.id ? action.payload : f));
+            if (isOffline()) saveFolders(next);
+            return { ...state, folders: next };
+        }
+        case 'DELETE_FOLDER': {
+            // The folder goes, its contents stay: items are unfiled so a deleted folder can
+            // never orphan them, and only the rows that actually pointed at it get new objects.
+            const folders = state.folders.filter((f) => f.id !== action.id);
+            if (isOffline()) saveFolders(folders);
+            if (action.kind === 'test') {
+                const tests = state.tests.map((t) => (t.folderId === action.id ? { ...t, folderId: undefined } : t));
+                if (isOffline()) saveTests(tests);
+                return { ...state, folders, tests };
+            }
+            const rubrics = state.rubrics.map((r) => (r.folderId === action.id ? { ...r, folderId: undefined } : r));
+            if (isOffline()) saveRubrics(rubrics);
+            return { ...state, folders, rubrics };
         }
         case 'UPDATE_RUBRIC': {
             // Auto-versioning happens in the `updateRubric` action creator, not here —
@@ -950,6 +980,9 @@ export interface AppContextValue extends StoreData {
     addRubric: (r: Omit<Rubric, 'id' | 'createdAt' | 'updatedAt'>) => Rubric;
     updateRubric: (r: Rubric) => void;
     deleteRubric: (id: string) => void;
+    addFolder: (f: Omit<Folder, 'id' | 'createdAt' | 'updatedAt'>) => Folder;
+    updateFolder: (f: Folder) => void;
+    deleteFolder: (id: string, kind: FolderKind) => void;
     addStudent: (s: Omit<Student, 'id'>) => Student;
     updateStudent: (s: Student) => void;
     deleteStudent: (id: string) => void;
@@ -1174,6 +1207,7 @@ export { LOCAL_MODE_KEY, MIGRATION_DONE_KEY } from '../store/storage';
 
 export const COLLECTION_SAVERS: Partial<Record<keyof StoreData, (m: StoreData) => void | Promise<void>>> = {
     rubrics: (m) => saveRubrics(m.rubrics),
+    folders: (m) => saveFolders(m.folders),
     students: (m) => saveStudents(m.students),
     classes: (m) => saveClasses(m.classes),
     studentRubrics: (m) => saveStudentRubricsCache(m.studentRubrics),

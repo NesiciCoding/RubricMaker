@@ -652,6 +652,20 @@ export interface DocumentAnalysisResult {
     updatedAt?: string;
 }
 
+/** Which list a folder belongs to; the rubric and test trees stay separate. */
+export type FolderKind = 'rubric' | 'test';
+
+/** A flat, named group of rubrics or tests (issue #850). Items point at it through `folderId`. */
+export interface Folder {
+    id: string;
+    name: string;
+    kind: FolderKind;
+    /** Manual sort position in the folder row; undefined sorts last by createdAt */
+    displayOrder?: number;
+    createdAt: string;
+    updatedAt?: string;
+}
+
 export interface Rubric {
     id: string;
     name: string;
@@ -677,6 +691,8 @@ export interface Rubric {
     vocabularyItems?: VocabularyItem[];
     /** Manual sort position in list views (RubricList, Activity Dashboard); undefined sorts last by createdAt */
     displayOrder?: number;
+    /** Folder this rubric is filed under in RubricList; undefined means it sits in the full list */
+    folderId?: string;
     /** When true, every teacher in the owner's school can view (read-only) this rubric */
     sharedWithSchool?: boolean;
     /** Comparative grading: max matchups per student for this rubric (0/undefined = unlimited) */
@@ -1458,6 +1474,8 @@ export interface Test {
     updatedAt?: string;
     /** Manual sort position in list views (TestListPage, Activity Dashboard); undefined sorts last by createdAt */
     displayOrder?: number;
+    /** Folder this test is filed under in TestListPage; undefined means it sits in the full list */
+    folderId?: string;
     /** 'assessment' (default when unset, for back-compat with existing tests) is graded/due-dated as today; 'practice' is ungraded, retakeable, and feeds a separate practice-progress view instead of the graded CEFR chart; 'placement' presents sections sequentially via routing rules and produces a provisional CEFR estimate instead of a graded score (roadmap Phase 25) */
     mode?: 'practice' | 'assessment' | 'placement';
     /** Only meaningful for mode: 'placement'. 'mst' (default when unset) is the branching-sections engine (routing rules, roadmap 25.1); 'staircase' is the per-question adaptive ladder (roadmap 25.3) — sections become CEFR-level question pools instead of routing stages; 'generator' pulls questions live from the question bank at runtime instead of a pre-authored pool, server-authoritative (roadmap 27.1). */

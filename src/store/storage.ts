@@ -1,5 +1,6 @@
 import type {
     Rubric,
+    Folder,
     Student,
     Class,
     StudentRubric,
@@ -881,6 +882,7 @@ export const DEFAULT_COMMENT_BANK: CommentBankItem[] = [
 
 const KEYS = {
     rubrics: 'rm_rubrics',
+    folders: 'rm_folders',
     students: 'rm_students',
     classes: 'rm_classes',
     studentRubrics: 'rm_student_rubrics',
@@ -1126,6 +1128,7 @@ export function mergeLegacyCommentSnippets(snippets: CommentSnippet[], bank: Com
 // ─── Store ─────────────────────────────────────────────────────────────────────
 
 export interface StoreData {
+    folders: Folder[];
     rubrics: Rubric[];
     students: Student[];
     classes: Class[];
@@ -1182,6 +1185,7 @@ export function loadStore(): StoreData {
 
     return {
         rubrics,
+        folders: load<Folder[]>(KEYS.folders, []),
         students: load<Student[]>(KEYS.students, []),
         classes: sanitizeClassYears(load<Class[]>(KEYS.classes, [{ id: 'default', name: 'Default Class' }])),
         studentRubrics: load<StudentRubric[]>(KEYS.studentRubrics, []),
@@ -1218,6 +1222,9 @@ export function loadStore(): StoreData {
 
 export function saveRubrics(rubrics: Rubric[]) {
     save(KEYS.rubrics, rubrics);
+}
+export function saveFolders(folders: Folder[]) {
+    save(KEYS.folders, folders);
 }
 export function saveStudents(students: Student[]) {
     save(KEYS.students, students);
@@ -1484,6 +1491,13 @@ export function importFullBackup(json: string, currentSettings?: AppSettings): b
             )
                 saveRubrics(data.rubrics as Rubric[]);
             else console.warn('[importFullBackup] rubrics failed validation — skipped');
+        }
+        if (data.folders !== undefined) {
+            // Folder definitions must survive a restore: without them the rubrics and tests
+            // that carry a folderId would come back unfiled (and the folders themselves
+            // would be gone), since nothing else rebuilds them.
+            if (isObjectArray(data.folders)) saveFolders(data.folders as Folder[]);
+            else console.warn('[importFullBackup] folders failed validation — skipped');
         }
         if (data.students !== undefined) {
             if (isObjectArray(data.students)) saveStudents(data.students as Student[]);

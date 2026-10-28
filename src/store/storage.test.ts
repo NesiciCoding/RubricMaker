@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
     loadStore,
     saveRubrics,
+    saveFolders,
     saveStudents,
     saveClasses,
     saveStudentRubrics,
@@ -454,6 +455,7 @@ describe('exportFullBackup', () => {
     it('includes all keys', () => {
         const data = JSON.parse(exportFullBackup());
         expect(data).toHaveProperty('rubrics');
+        expect(data).toHaveProperty('folders');
         expect(data).toHaveProperty('students');
         expect(data).toHaveProperty('classes');
         expect(data).toHaveProperty('settings');
@@ -530,6 +532,29 @@ describe('importFullBackup', () => {
         const result = importFullBackup(backup);
         expect(result).toBe(true);
         expect(loadStore().rubrics[0].id).toBe('r1');
+    });
+
+    it('restores folder definitions, so filed rubrics and tests stay filed (#850)', () => {
+        const folder = {
+            id: 'f1',
+            name: 'Essays',
+            kind: 'rubric' as const,
+            displayOrder: 0,
+            createdAt: '2024-01-01T00:00:00.000Z',
+        };
+        saveFolders([folder]);
+        saveRubrics([{ ...makeRubric('r1'), folderId: 'f1' }]);
+        const backup = exportFullBackup();
+
+        localStorage.clear();
+        expect(importFullBackup(backup)).toBe(true);
+        expect(loadStore().folders).toEqual([folder]);
+        expect(loadStore().rubrics[0].folderId).toBe('f1');
+    });
+
+    it('skips invalid folders instead of aborting the restore', () => {
+        expect(importFullBackup(JSON.stringify({ folders: [{ name: 'no id' }] }))).toBe(true);
+        expect(loadStore().folders).toEqual([]);
     });
 
     it('returns false on invalid JSON', () => {

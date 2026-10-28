@@ -14,6 +14,7 @@ vi.mock('../hooks/useToast', () => ({
 
 const mockEmptyState = vi.hoisted(() => (): StoreData => ({
     rubrics: [],
+    folders: [],
     students: [],
     classes: [],
     studentRubrics: [],

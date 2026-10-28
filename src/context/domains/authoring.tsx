@@ -5,6 +5,8 @@ import type {
     CefrLevel,
     CommentBankItem,
     ExportTemplate,
+    Folder,
+    FolderKind,
     GradeScale,
     LinkedStandard,
     QuestionBankItem,
@@ -23,6 +25,7 @@ import { logAuditEvent } from '../../services/database/AuditLogger';
 export type AuthoringValue = Pick<
     AppContextValue,
     | 'rubrics'
+    | 'folders'
     | 'gradeScales'
     | 'favoriteStandards'
     | 'commentBank'
@@ -32,6 +35,9 @@ export type AuthoringValue = Pick<
     | 'addRubric'
     | 'updateRubric'
     | 'deleteRubric'
+    | 'addFolder'
+    | 'updateFolder'
+    | 'deleteFolder'
     | 'addGradeScale'
     | 'updateGradeScale'
     | 'deleteGradeScale'
@@ -71,6 +77,9 @@ export type AuthoringActions = Pick<
     | 'addRubric'
     | 'updateRubric'
     | 'deleteRubric'
+    | 'addFolder'
+    | 'updateFolder'
+    | 'deleteFolder'
     | 'addGradeScale'
     | 'updateGradeScale'
     | 'deleteGradeScale'
@@ -118,6 +127,15 @@ export function createAuthoringActions(ctx: StoreActionsCtx): AuthoringActions {
         logAuditEvent('grade', 'rubric_edit', 'rubric', r.id);
     };
     const deleteRubric = (id: string) => dispatch({ type: 'DELETE_RUBRIC', id });
+    const addFolder = (f: Omit<Folder, 'id' | 'createdAt' | 'updatedAt'>): Folder => {
+        const now = new Date().toISOString();
+        const folder: Folder = { ...f, id: nanoid(), createdAt: now, updatedAt: now };
+        dispatch({ type: 'ADD_FOLDER', payload: folder });
+        return folder;
+    };
+    const updateFolder = (f: Folder) =>
+        dispatch({ type: 'UPDATE_FOLDER', payload: { ...f, updatedAt: new Date().toISOString() } });
+    const deleteFolder = (id: string, kind: FolderKind) => dispatch({ type: 'DELETE_FOLDER', id, kind });
     const addGradeScale = (gs: Omit<GradeScale, 'id'>): GradeScale => {
         const scale: GradeScale = { ...gs, id: nanoid() };
         dispatch({ type: 'ADD_GRADE_SCALE', payload: scale });
@@ -261,6 +279,9 @@ export function createAuthoringActions(ctx: StoreActionsCtx): AuthoringActions {
         addRubric,
         updateRubric,
         deleteRubric,
+        addFolder,
+        updateFolder,
+        deleteFolder,
         addGradeScale,
         updateGradeScale,
         deleteGradeScale,
@@ -298,6 +319,7 @@ export function useAuthoringValue(state: StoreData, actions: AuthoringActions): 
     return useMemo(
         () => ({
             rubrics: state.rubrics,
+            folders: state.folders,
             gradeScales: state.gradeScales,
             favoriteStandards: state.favoriteStandards,
             commentBank: state.commentBank,
@@ -309,6 +331,7 @@ export function useAuthoringValue(state: StoreData, actions: AuthoringActions): 
         [
             actions,
             state.rubrics,
+            state.folders,
             state.gradeScales,
             state.favoriteStandards,
             state.commentBank,

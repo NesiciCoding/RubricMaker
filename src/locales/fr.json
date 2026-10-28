@@ -4271,7 +4271,8 @@
         "gr_tiered_item_feedback": "La notation comparative et les retours aux élèves (portail et liens partagés) n'affichent eux aussi que les énoncés du niveau de chaque élève.",
         "an_export_item_tiered": "Les grilles à niveaux différenciés s'exportent (PDF, DOCX et DOCX modèle) dans la mise en page de la feuille papier : exigences, une barre Élève / Niveau / Verdict, puis pour chaque critère une colonne par niveau avec les énoncés de chaque bande sous forme de cases à cocher. Une grille vierge affiche tous les niveaux, en paysage et un critère par page en DOCX. Une grille notée n'affiche que le niveau de l'élève, avec les énoncés cochés, la bande choisie par critère, les exigences remplies ou non et le verdict. Un modèle de tableau ne fournit que la couleur de l'en-tête. L'aperçu dans l'éditeur et le lien d'aperçu partagé montrent la même mise en page.",
         "gr_tiered_item_pairing": "La notation comparative associe par défaut les élèves d'un même niveau, pour qu'ils soient évalués selon les mêmes énoncés, et affiche le niveau de chaque élève. Un élève dont le niveau n'est pas encore connu n'est associé qu'une fois celui-ci connu. Passez à l'association entre niveaux dans la session (Associer : entre niveaux) ou dans les réglages de niveaux de la grille ; la progression compte alors les paires de toute la classe, dans la limite de comparaisons de chaque élève.",
-        "rb_import_export_item_tiered": "Importez une feuille par niveaux — une grille Word ou PDF avec une colonne par niveau (p. ex. Mavo / Havo / VWO), des bandes marquées d'un code court suivi de deux-points (IO:, B:, E:) et leurs énoncés dessous — et elle devient une grille à niveaux différenciés : colonnes, bandes, exigences et tous les énoncés, avec les noms des critères lus dans le tableau, le texte voisin ou une étiquette flottante. Les filières viennent des noms de colonnes et l'année du titre ou du nom de fichier ; l'aperçu d'import montre la feuille et ce qu'il faut vérifier."
+        "rb_import_export_item_tiered": "Importez une feuille par niveaux — une grille Word ou PDF avec une colonne par niveau (p. ex. Mavo / Havo / VWO), des bandes marquées d'un code court suivi de deux-points (IO:, B:, E:) et leurs énoncés dessous — et elle devient une grille à niveaux différenciés : colonnes, bandes, exigences et tous les énoncés, avec les noms des critères lus dans le tableau, le texte voisin ou une étiquette flottante. Les filières viennent des noms de colonnes et l'année du titre ou du nom de fichier ; l'aperçu d'import montre la feuille et ce qu'il faut vérifier.",
+        "rb_folders_body": "Les rubriques peuvent être regroupées dans des dossiers : créez-en un au-dessus de la liste, glissez une carte de rubrique sur un dossier pour la classer, puis cliquez sur un dossier pour n’afficher que ses rubriques. Supprimer un dossier conserve les rubriques qu’il contient — elles reviennent dans la liste complète."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",
@@ -5011,5 +5012,25 @@
         "tiered_tier": "Niveau :",
         "tiered_verdict": "Verdict :",
         "tiered_chosen": "choisi"
+    },
+    "folders": {
+        "all": "Tout",
+        "new_folder": "Nouveau dossier",
+        "folder_name": "Nom du dossier",
+        "folder_name_placeholder": "Ex. Année 1",
+        "create": "Créer le dossier",
+        "rename": "Renommer",
+        "rename_title": "Renommer le dossier",
+        "delete": "Supprimer le dossier",
+        "delete_title": "Supprimer le dossier ?",
+        "delete_warning": "« {{name}} » sera supprimé. Les rubriques et tests qu’il contient sont conservés et reviennent dans la liste complète.",
+        "empty": "Ce dossier est vide",
+        "empty_hint": "Glissez une carte sur un dossier pour la classer.",
+        "moved_toast": "Déplacé vers {{name}}",
+        "created_toast": "Dossier « {{name}} » créé",
+        "deleted_toast": "Dossier « {{name}} » supprimé",
+        "items_count_one": "{{count}} élément",
+        "items_count_other": "{{count}} éléments",
+        "renamed_toast": "Dossier renommé"
     }
 }

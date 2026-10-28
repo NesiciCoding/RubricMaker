@@ -4271,7 +4271,8 @@
         "gr_tiered_item_feedback": "Comparative grading and student feedback (portal and shared links) also show each student only their own tier's statements.",
         "an_export_item_tiered": "Tiered rubrics export (PDF, DOCX and template DOCX) in the layout of the paper sheet: requirements, a Student / Tier / Verdict bar, then per criterion a column per tier with each band's statements as checkboxes. A blank rubric prints every tier, in landscape and one criterion per page in DOCX. A graded rubric prints only the student's tier, with ticked statements, the chosen band per criterion, the requirements met or not, and the verdict. A table template only lends its header colour. The rubric preview in the builder and the shared preview link show the same layout.",
         "gr_tiered_item_pairing": "Comparative grading pairs students within the same tier by default, so both are judged against the same statements, and shows each student's tier. A student whose tier isn't known yet isn't paired until it is. Switch to pairing across tiers in the session (Pair: across tiers) or in the rubric's tiered setup; progress then counts pairs across the whole class, up to each student's comparison limit.",
-        "rb_import_export_item_tiered": "Import a tiered sheet — a Word or PDF rubric with a column per tier (e.g. Mavo / Havo / VWO), bands marked by a short code and colon (IO:, B:, E:) and their statements below — and it becomes a tiered rubric: tier columns, bands, requirements and every statement, with criterion names read from the table, the text beside it or a floating label. Tracks come from the column names and the year from the title or file name; the import preview shows the sheet and says what to check."
+        "rb_import_export_item_tiered": "Import a tiered sheet — a Word or PDF rubric with a column per tier (e.g. Mavo / Havo / VWO), bands marked by a short code and colon (IO:, B:, E:) and their statements below — and it becomes a tiered rubric: tier columns, bands, requirements and every statement, with criterion names read from the table, the text beside it or a floating label. Tracks come from the column names and the year from the title or file name; the import preview shows the sheet and says what to check.",
+        "rb_folders_body": "Rubrics can be grouped into folders: create one above the list, drag a rubric card onto a folder to file it, and click a folder to see only its rubrics. Deleting a folder keeps the rubrics inside it — they move back into the full list."
     },
     "studentProfile": {
         "tab_overview": "Overview",
@@ -5011,5 +5012,25 @@
         "tiered_tier": "Tier:",
         "tiered_verdict": "Verdict:",
         "tiered_chosen": "chosen"
+    },
+    "folders": {
+        "all": "All",
+        "new_folder": "New folder",
+        "folder_name": "Folder name",
+        "folder_name_placeholder": "e.g. Year 1",
+        "create": "Create folder",
+        "rename": "Rename",
+        "rename_title": "Rename folder",
+        "delete": "Delete folder",
+        "delete_title": "Delete folder?",
+        "delete_warning": "“{{name}}” will be deleted. The rubrics and tests inside it are kept and move back into the full list.",
+        "empty": "This folder is empty",
+        "empty_hint": "Drag a card onto a folder to file it.",
+        "moved_toast": "Moved to {{name}}",
+        "created_toast": "Folder “{{name}}” created",
+        "deleted_toast": "Folder “{{name}}” deleted",
+        "items_count_one": "{{count}} item",
+        "items_count_other": "{{count}} items",
+        "renamed_toast": "Folder renamed"
     }
 }

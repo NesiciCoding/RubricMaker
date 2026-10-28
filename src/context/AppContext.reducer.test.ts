@@ -2,7 +2,7 @@ import React from 'react';
 import { render } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { reducer, recordAutoVersion, summarizeAction, flushToLocalStorage, useContextOrThrow } from './storeCore';
-import { deleteRubricVersions, upsertRubricVersion } from '../store/storage';
+import { deleteRubricVersions, saveFolders, upsertRubricVersion } from '../store/storage';
 import type { StoreData } from '../store/storage';
 import { DEFAULT_FORMAT } from '../types';
 import type {
@@ -43,6 +43,7 @@ vi.mock('../store/storage', () => {
     const names = [
         'loadStore',
         'saveRubrics',
+        'saveFolders',
         'saveStudents',
         'saveClasses',
         'saveStudentRubrics',
@@ -161,6 +162,7 @@ const studentRubric: StudentRubric = {
 function makeState(overrides: Partial<StoreData> = {}): StoreData {
     return {
         rubrics: [rubric],
+        folders: [],
         students: [student],
         classes: [cls],
         studentRubrics: [studentRubric],
@@ -1462,6 +1464,12 @@ describe('AppContext reducer — connected mode and edge branches', () => {
     it('skips the blob sweep when only unrelated collections changed', async () => {
         await flushToLocalStorage(makeState(), new Set(['rubrics']));
         expect(pruneOrphanedBlobs).not.toHaveBeenCalled();
+    });
+
+    it('caches folders in the offline snapshot, so a synced folder survives an offline reload (#850)', async () => {
+        const folder = { id: 'f1', name: 'Essays', kind: 'rubric' as const, createdAt: now };
+        await flushToLocalStorage(makeState({ folders: [folder] }), new Set(['folders']));
+        expect(saveFolders).toHaveBeenCalledWith([folder]);
     });
 
     it('throws when a context hook is used outside its provider', () => {
