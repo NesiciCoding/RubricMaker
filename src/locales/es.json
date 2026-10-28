@@ -4266,7 +4266,8 @@
         "gr_tiered_item_feedback": "La calificación comparativa y la retroalimentación al alumno (portal y enlaces compartidos) también muestran a cada alumno solo los enunciados de su nivel.",
         "an_export_item_tiered": "Las rúbricas por niveles se exportan (PDF, DOCX y DOCX con plantilla) con el formato de la hoja en papel: requisitos, una barra Alumno / Nivel / Veredicto y, por cada criterio, una columna por nivel con los enunciados de cada banda como casillas. Una rúbrica en blanco muestra todos los niveles, en horizontal y con un criterio por página en DOCX. Una rúbrica calificada muestra solo el nivel del alumno, con los enunciados marcados, la banda elegida por criterio, si se cumplen los requisitos y el veredicto. Una plantilla de tabla solo aporta el color del encabezado. La vista previa del editor y el enlace de vista previa compartido muestran el mismo formato.",
         "gr_tiered_item_pairing": "La calificación comparativa empareja por defecto a alumnos del mismo nivel, para que se evalúen con los mismos enunciados, y muestra el nivel de cada alumno. Un alumno cuyo nivel aún no se conoce no se empareja hasta que se conozca. Cambia a emparejar entre niveles en la sesión (Emparejar: entre niveles) o en la configuración por niveles de la rúbrica; el progreso cuenta entonces las parejas de toda la clase, hasta el límite de comparaciones de cada alumno.",
-        "rb_import_export_item_tiered": "Importa una hoja por niveles — una rúbrica de Word o PDF con una columna por nivel (p. ej. Mavo / Havo / VWO), bandas marcadas con un código corto y dos puntos (IO:, B:, E:) y sus enunciados debajo — y se convierte en una rúbrica por niveles: columnas, bandas, requisitos y todos los enunciados, con los nombres de criterios leídos de la tabla, del texto contiguo o de una etiqueta flotante. Los itinerarios salen de los nombres de columna y el curso del título o del nombre de archivo; la vista previa de importación muestra la hoja y qué revisar."
+        "rb_import_export_item_tiered": "Importa una hoja por niveles — una rúbrica de Word o PDF con una columna por nivel (p. ej. Mavo / Havo / VWO), bandas marcadas con un código corto y dos puntos (IO:, B:, E:) y sus enunciados debajo — y se convierte en una rúbrica por niveles: columnas, bandas, requisitos y todos los enunciados, con los nombres de criterios leídos de la tabla, del texto contiguo o de una etiqueta flotante. Los itinerarios salen de los nombres de columna y el curso del título o del nombre de archivo; la vista previa de importación muestra la hoja y qué revisar.",
+        "rb_folders_body": "Las rúbricas se pueden agrupar en carpetas: crea una encima de la lista, arrastra una tarjeta de rúbrica a una carpeta para archivarla y haz clic en una carpeta para ver solo sus rúbricas. Al eliminar una carpeta, las rúbricas que contiene se conservan y vuelven a la lista completa."
     },
     "studentProfile": {
         "tab_overview": "Resumen",
@@ -5006,5 +5007,25 @@
         "tiered_tier": "Nivel:",
         "tiered_verdict": "Veredicto:",
         "tiered_chosen": "elegido"
+    },
+    "folders": {
+        "all": "Todos",
+        "new_folder": "Nueva carpeta",
+        "folder_name": "Nombre de la carpeta",
+        "folder_name_placeholder": "Ej. Curso 1",
+        "create": "Crear carpeta",
+        "rename": "Renombrar",
+        "rename_title": "Renombrar carpeta",
+        "delete": "Eliminar carpeta",
+        "delete_title": "¿Eliminar la carpeta?",
+        "delete_warning": "Se eliminará «{{name}}». Las rúbricas y pruebas que contiene se conservan y vuelven a la lista completa.",
+        "empty": "Esta carpeta está vacía",
+        "empty_hint": "Arrastra una tarjeta a una carpeta para archivarla.",
+        "moved_toast": "Movido a {{name}}",
+        "created_toast": "Carpeta «{{name}}» creada",
+        "deleted_toast": "Carpeta «{{name}}» eliminada",
+        "items_count_one": "{{count}} elemento",
+        "items_count_other": "{{count}} elementos",
+        "renamed_toast": "Carpeta renombrada"
     }
 }

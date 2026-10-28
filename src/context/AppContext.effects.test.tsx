@@ -22,6 +22,7 @@ const loadStoreValue = vi.hoisted(() => ({ current: null as ReturnType<typeof mo
 
 const mockEmptyState = vi.hoisted(() => (): StoreData => ({
     rubrics: [],
+    folders: [],
     students: [],
     classes: [],
     studentRubrics: [],

@@ -20,6 +20,7 @@ import {
 import { logEvent } from '../logging/clientLogger';
 import type {
     Rubric,
+    Folder,
     RubricVersion,
     Student,
     Class,
@@ -99,6 +100,7 @@ class StorageSyncService {
     // column) — one subscription covers both, since a refresh re-fetches the whole table.
     private static readonly REALTIME_TABLES: Array<{ table: string; filterColumn: string }> = [
         { table: 'rubrics', filterColumn: 'owner_id' },
+        { table: 'folders', filterColumn: 'owner_id' },
         { table: 'classes', filterColumn: 'owner_id' },
         { table: 'students', filterColumn: 'owner_id' },
         { table: 'student_rubrics', filterColumn: 'grader_id' },
@@ -137,6 +139,7 @@ class StorageSyncService {
     // realtime-subscribed table NOT listed here (e.g. user_settings) degrades to a full hydrate.
     private static readonly PARTIAL_HYDRATE_TABLES = new Set<string>([
         'rubrics',
+        'folders',
         'classes',
         'students',
         'student_rubrics',
@@ -629,7 +632,7 @@ class StorageSyncService {
 
     private static readonly HYDRATE_TIMEOUT_MS = 8000;
     // Number of fetches tracked across both hydrate waves — a unit test pins done === total.
-    static readonly HYDRATE_FETCH_COUNT = 34;
+    static readonly HYDRATE_FETCH_COUNT = 35;
     private hydrationGeneration = 0;
     private hydrateProgress: { done: number; total: number } | null = null;
 
@@ -684,6 +687,7 @@ class StorageSyncService {
         try {
             const [
                 rubrics,
+                folders,
                 classes,
                 students,
                 studentRubrics,
@@ -711,6 +715,7 @@ class StorageSyncService {
                 gen,
                 skipFailed(fetchErrors, [
                     this.adapter.fetchRubrics(),
+                    this.adapter.fetchFolders(),
                     this.adapter.fetchClasses(),
                     this.adapter.fetchStudents(),
                     this.adapter.fetchStudentRubrics(),
@@ -840,6 +845,7 @@ class StorageSyncService {
 
             const result: Partial<StoreData> = {
                 rubrics: migratedRubrics,
+                folders,
                 classes: classes?.length ? classes : undefined,
                 students,
                 studentRubrics,
@@ -939,6 +945,9 @@ class StorageSyncService {
                                 result.rubrics = r.map(migrateLegacyRubricVersions);
                             })
                         );
+                        break;
+                    case 'folders':
+                        jobs.push(a.fetchFolders().then((x) => void (result.folders = x)));
                         break;
                     case 'classes':
                         jobs.push(
@@ -1146,6 +1155,10 @@ class StorageSyncService {
                 case 'rubric':
                     if (action === 'upsert') result = await this.adapter.upsertRubric(payload as Rubric);
                     else if (id) result = await this.adapter.deleteRubric(id);
+                    break;
+                case 'folder':
+                    if (action === 'upsert') result = await this.adapter.upsertFolder(payload as Folder);
+                    else if (id) result = await this.adapter.deleteFolder(id);
                     break;
                 case 'rubricVersion':
                     // Delete here mirrors the local per-rubric auto-version cap (a single

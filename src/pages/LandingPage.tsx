@@ -49,6 +49,12 @@ const TEACHER_FEATURES = [
         color: '#3b82f6',
     },
     {
+        icon: Layers,
+        title: 'Folders',
+        desc: 'Group rubrics and tests into named folders and drag cards between them.',
+        color: '#0ea5e9',
+    },
+    {
         icon: Users,
         title: 'Smart Grading',
         desc: 'Grade quickly with a comment bank, voice dictation, keyboard shortcuts, anchored inline comments on submissions, audio feedback, and a card or grid view — plus side-by-side and group grading.',

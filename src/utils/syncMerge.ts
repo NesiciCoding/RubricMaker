@@ -161,6 +161,12 @@ const COLLECTIONS: CollectionSpec[] = [
         getUpdatedAt: (t: { updatedAt?: string }) => t.updatedAt,
     },
     {
+        key: 'folders',
+        entity: 'folder',
+        getId: (f: { id: string }) => f.id,
+        getUpdatedAt: (f: { updatedAt?: string }) => f.updatedAt,
+    },
+    {
         key: 'studentTests',
         entity: 'studentTest',
         getId: (st: { id: string }) => st.id,

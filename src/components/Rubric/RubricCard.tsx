@@ -128,8 +128,9 @@ function RubricCard({
                     style={{
                         cursor: 'pointer',
                         transition: 'border-color var(--transition)',
-                        flex: '1 1 320px',
-                        maxWidth: 480,
+                        // Fixed basis, no grow: tiles stay the same width on every row (a growing
+                        // basis made the last row's cards wider than the full ones above it).
+                        flex: '0 1 400px',
                         ...dragProvided.draggableProps.style,
                     }}
                     onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}

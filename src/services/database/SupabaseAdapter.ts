@@ -1,6 +1,7 @@
 import { createClient, SupabaseClient, Session, AuthChangeEvent } from '@supabase/supabase-js';
 import type {
     Rubric,
+    Folder,
     RubricVersion,
     Student,
     Class,
@@ -628,6 +629,35 @@ export class SupabaseAdapter {
 
     async deleteRubric(id: string): Promise<SyncResult> {
         const { error } = await this.db().from('rubrics').delete().eq('id', id).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── Folders (#850) ────────────────────────────────────────────────────────
+
+    async fetchFolders(): Promise<Folder[]> {
+        const { data, error } = await this.db().from('folders').select('data').eq('owner_id', this.uid());
+        if (error) throw error;
+        return (data ?? []).map((r) => r.data as Folder);
+    }
+
+    async upsertFolder(f: Folder): Promise<SyncResult> {
+        const { error } = await this.db()
+            .from('folders')
+            .upsert(
+                {
+                    id: f.id,
+                    owner_id: this.uid(),
+                    created_at: f.createdAt,
+                    updated_at: f.updatedAt ?? f.createdAt,
+                    data: f,
+                },
+                { onConflict: 'id' }
+            );
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteFolder(id: string): Promise<SyncResult> {
+        const { error } = await this.db().from('folders').delete().eq('id', id).eq('owner_id', this.uid());
         return error ? { success: false, error: error.message } : { success: true };
     }
 

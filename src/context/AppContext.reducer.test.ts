@@ -161,6 +161,7 @@ const studentRubric: StudentRubric = {
 function makeState(overrides: Partial<StoreData> = {}): StoreData {
     return {
         rubrics: [rubric],
+        folders: [],
         students: [student],
         classes: [cls],
         studentRubrics: [studentRubric],

@@ -517,6 +517,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
 
         diff(prev.rubrics, state.rubrics, 'rubric', (r) => r.id);
+        diff(prev.folders, state.folders, 'folder', (f) => f.id);
         diff(prev.classes, state.classes, 'class', (c) => c.id);
         diff(prev.students, state.students, 'student', (s) => s.id);
         diff(prev.studentRubrics, state.studentRubrics, 'studentRubric', (sr) => sr.id);

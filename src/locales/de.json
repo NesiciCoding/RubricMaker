@@ -4266,7 +4266,8 @@
         "gr_tiered_item_feedback": "Vergleichendes Bewerten und das Schülerfeedback (Portal und geteilte Links) zeigen jedem Schüler ebenfalls nur die Aussagen seines Niveaus.",
         "an_export_item_tiered": "Gestufte Bewertungsraster werden (PDF, DOCX und DOCX-Vorlage) im Layout des Papierbogens exportiert: Voraussetzungen, eine Leiste Schüler / Niveau / Urteil, dann pro Kriterium eine Spalte je Niveau mit den Aussagen jeder Stufe als Kontrollkästchen. Ein leeres Raster zeigt alle Niveaus, im Querformat und im DOCX ein Kriterium pro Seite. Ein bewertetes Raster zeigt nur das Niveau des Schülers, mit angekreuzten Aussagen, der gewählten Stufe je Kriterium, ob die Voraussetzungen erfüllt sind, und dem Urteil. Eine Tabellenvorlage liefert nur die Farbe der Kopfzeile. Die Vorschau im Editor und der geteilte Vorschaulink zeigen dasselbe Layout.",
         "gr_tiered_item_pairing": "Vergleichendes Bewerten paart standardmäßig Schüler desselben Niveaus, damit beide an denselben Aussagen gemessen werden, und zeigt das Niveau jedes Schülers. Ein Schüler, dessen Niveau noch nicht feststeht, wird erst gepaart, wenn es bekannt ist. Wechsle in der Sitzung (Paaren: über Niveaus hinweg) oder in den Niveau-Einstellungen des Rasters zum Paaren über Niveaus; der Fortschritt zählt dann Paare aus der ganzen Klasse, bis zum Vergleichslimit jedes Schülers.",
-        "rb_import_export_item_tiered": "Importiere einen gestuften Bogen — ein Word- oder PDF-Raster mit einer Spalte pro Niveau (z. B. Mavo / Havo / VWO), Stufen mit kurzem Kürzel und Doppelpunkt (IO:, B:, E:) und ihren Aussagen darunter — und er wird ein gestuftes Bewertungsraster: Niveauspalten, Stufen, Voraussetzungen und alle Aussagen, mit Kriteriennamen aus der Tabelle, dem Text daneben oder einem schwebenden Label. Zweige ergeben sich aus den Spaltennamen, das Jahr aus Titel oder Dateiname; die Importvorschau zeigt den Bogen und was zu prüfen ist."
+        "rb_import_export_item_tiered": "Importiere einen gestuften Bogen — ein Word- oder PDF-Raster mit einer Spalte pro Niveau (z. B. Mavo / Havo / VWO), Stufen mit kurzem Kürzel und Doppelpunkt (IO:, B:, E:) und ihren Aussagen darunter — und er wird ein gestuftes Bewertungsraster: Niveauspalten, Stufen, Voraussetzungen und alle Aussagen, mit Kriteriennamen aus der Tabelle, dem Text daneben oder einem schwebenden Label. Zweige ergeben sich aus den Spaltennamen, das Jahr aus Titel oder Dateiname; die Importvorschau zeigt den Bogen und was zu prüfen ist.",
+        "rb_folders_body": "Rubriken lassen sich in Ordnern gruppieren: Lege über der Liste einen Ordner an, ziehe eine Rubrikkarte auf einen Ordner und klicke auf einen Ordner, um nur dessen Rubriken zu sehen. Beim Löschen eines Ordners bleiben die enthaltenen Rubriken erhalten — sie erscheinen wieder in der vollständigen Liste."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",
@@ -5006,5 +5007,25 @@
         "tiered_tier": "Niveau:",
         "tiered_verdict": "Urteil:",
         "tiered_chosen": "gewählt"
+    },
+    "folders": {
+        "all": "Alle",
+        "new_folder": "Neuer Ordner",
+        "folder_name": "Ordnername",
+        "folder_name_placeholder": "z. B. Jahrgang 1",
+        "create": "Ordner erstellen",
+        "rename": "Umbenennen",
+        "rename_title": "Ordner umbenennen",
+        "delete": "Ordner löschen",
+        "delete_title": "Ordner löschen?",
+        "delete_warning": "„{{name}}“ wird gelöscht. Die enthaltenen Rubriken und Tests bleiben erhalten und erscheinen wieder in der vollständigen Liste.",
+        "empty": "Dieser Ordner ist leer",
+        "empty_hint": "Ziehe eine Karte auf einen Ordner, um sie abzulegen.",
+        "moved_toast": "Nach {{name}} verschoben",
+        "created_toast": "Ordner „{{name}}“ erstellt",
+        "deleted_toast": "Ordner „{{name}}“ gelöscht",
+        "items_count_one": "{{count}} Element",
+        "items_count_other": "{{count}} Elemente",
+        "renamed_toast": "Ordner umbenannt"
     }
 }

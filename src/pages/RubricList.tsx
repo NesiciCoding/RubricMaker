@@ -17,6 +17,7 @@ import {
     ClipboardPaste,
     Check,
     Layers,
+    FolderPlus,
     Users2,
     X,
     LayoutGrid,
@@ -31,7 +32,7 @@ import { useToast } from '../hooks/useToast';
 import { storageSync } from '../services/database';
 import { addToPendingQueue } from '../store/storage';
 import { DEFAULT_FORMAT } from '../types';
-import type { Rubric } from '../types';
+import type { Folder, Rubric } from '../types';
 import type { VoTrack, CefrLevel, CohortFilter as CohortFilterValue } from '../types';
 import { VO_TRACKS, VO_TRACK_LABELS, VO_TRACK_COLORS, VO_TRACK_DEFAULT_CEFR } from '../data/voTracks';
 import { CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
@@ -39,6 +40,8 @@ import CefrBadge from '../components/CEFR/CefrBadge';
 import ImportRubricModal from '../components/Rubric/ImportRubricModal';
 import NewRubricChooserModal from '../components/Rubric/NewRubricChooserModal';
 import RubricCard, { type RubricCardActions } from '../components/Rubric/RubricCard';
+import FolderTile, { FOLDER_DROP_PREFIX } from '../components/Folders/FolderTile';
+import FolderNameModal from '../components/Folders/FolderNameModal';
 import Modal from '../components/ui/Modal';
 import SegmentedToggle from '../components/ui/SegmentedToggle';
 import type { ParsedRubric } from '../utils/rubricImport';
@@ -46,6 +49,7 @@ import { encodeRubricShareCode, decodeRubricShareCode } from '../utils/rubricImp
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
 import { sortByDisplayOrder, reorderDisplayOrder, displayOrderAfter } from '../utils/displayOrder';
+import { ALL_FOLDERS, countInFolder, filterByFolder, foldersForKind, nextFolderOrder } from '../utils/folders';
 import { cloneRubricForCopy, type RubricInput } from '../utils/rubricClone';
 import { getCohortStudentIds, isAllCohorts, ALL_COHORTS } from '../utils/cohortAggregator';
 import CohortFilter from '../components/CohortFilter';
@@ -62,13 +66,27 @@ export default function RubricList() {
     const { studentRubrics, createGroupStudentRubrics } = useGrading();
     const { peerReviews } = useAssessment();
 
-    const { rubrics, gradeScales = [], addRubric, updateRubric, deleteRubric, userTemplates } = useAuthoring();
+    const {
+        rubrics,
+        // `= []` guards page tests and older local snapshots that predate the collection.
+        folders = [],
+        gradeScales = [],
+        addRubric,
+        updateRubric,
+        deleteRubric,
+        addFolder,
+        updateFolder,
+        deleteFolder,
+        userTemplates,
+    } = useAuthoring();
     const { settings } = useSettings();
 
     const [search, setSearch] = useState('');
     const [view, setView] = useState<'cards' | 'list'>('cards');
     const [subjectFilter, setSubjectFilter] = useState<string>('all');
     const [cohortFilter, setCohortFilter] = useState<CohortFilterValue>(ALL_COHORTS);
+    const [activeFolder, setActiveFolder] = useState<string>(ALL_FOLDERS);
+    const [folderModal, setFolderModal] = useState<{ folder?: Folder } | null>(null);
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
     const [showImport, setShowImport] = useState(false);
     const [showNewChooser, setShowNewChooser] = useState(false);
@@ -315,7 +333,8 @@ export default function RubricList() {
     const uniqueSubjects = Array.from(new Set(rubrics.map((r) => r.subject).filter(Boolean))).sort();
 
     const cohortStudentIds = getCohortStudentIds(students, classes, cohortFilter);
-    const filtered = sortByDisplayOrder(rubrics).filter((r) => {
+    const rubricFolders = foldersForKind(folders, 'rubric');
+    const filtered = filterByFolder(sortByDisplayOrder(rubrics), activeFolder).filter((r) => {
         if (pendingDeleteIds.has(r.id)) return false;
         const matchesSearch =
             r.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -329,13 +348,55 @@ export default function RubricList() {
     // ponytail: reordering only writes back when the list is unfiltered (and nothing is hidden pending
     // deletion), so dragged positions map 1:1 onto displayOrder
     const reorderable =
-        !search.trim() && subjectFilter === 'all' && isAllCohorts(cohortFilter) && pendingDeleteIds.size === 0;
+        !search.trim() &&
+        subjectFilter === 'all' &&
+        isAllCohorts(cohortFilter) &&
+        pendingDeleteIds.size === 0 &&
+        activeFolder === ALL_FOLDERS;
 
     function handleDragEnd(result: DropResult) {
-        if (!result.destination || !reorderable) return;
-        for (const [rubric, order] of reorderDisplayOrder(filtered, result.source.index, result.destination.index)) {
+        const destination = result.destination;
+        if (!destination) return;
+        if (destination.droppableId.startsWith(FOLDER_DROP_PREFIX)) {
+            const folderId = destination.droppableId.slice(FOLDER_DROP_PREFIX.length);
+            const rubric = filtered[result.source.index];
+            if (!rubric || rubric.folderId === folderId) return;
+            updateRubric({ ...rubric, folderId });
+            const folder = rubricFolders.find((f) => f.id === folderId);
+            if (folder) showToast(t('folders.moved_toast', { name: folder.name }), 'success');
+            return;
+        }
+        if (destination.droppableId !== 'rubric-list' || !reorderable) return;
+        if (destination.index === result.source.index) return;
+        for (const [rubric, order] of reorderDisplayOrder(filtered, result.source.index, destination.index)) {
             if (rubric.displayOrder !== order) updateRubric({ ...rubric, displayOrder: order });
         }
+    }
+
+    function submitFolderName(name: string) {
+        const editing = folderModal?.folder;
+        if (editing) {
+            updateFolder({ ...editing, name });
+            showToast(t('folders.renamed_toast'), 'success');
+        } else {
+            const folder = addFolder({ name, kind: 'rubric', displayOrder: nextFolderOrder(folders, 'rubric') });
+            setActiveFolder(folder.id);
+            showToast(t('folders.created_toast', { name }), 'success');
+        }
+        setFolderModal(null);
+    }
+
+    async function handleDeleteFolder(folder: Folder) {
+        const ok = await confirm({
+            title: t('folders.delete_title'),
+            message: t('folders.delete_warning', { name: folder.name }),
+            confirmLabel: t('common.delete'),
+            danger: true,
+        });
+        if (!ok) return;
+        deleteFolder(folder.id, 'rubric');
+        if (activeFolder === folder.id) setActiveFolder(ALL_FOLDERS);
+        showToast(t('folders.deleted_toast', { name: folder.name }), 'success');
     }
 
     const openDifferentiate = useCallback((rubricId: string) => {
@@ -542,110 +603,138 @@ export default function RubricList() {
                     </div>
                 </div>
 
-                {filtered.length === 0 ? (
-                    <div className="empty-state">
-                        <BookOpen size={40} />
-                        <h3>{t('rubricList.no_rubrics')}</h3>
-                        <p className="text-muted text-sm">{t('rubricList.create_first_instruction')}</p>
-                        <button className="btn btn-primary" onClick={() => setShowNewChooser(true)}>
-                            <Plus size={16} /> {t('rubricList.create_rubric')}
+                <DragDropContext onDragEnd={handleDragEnd}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
+                        <button
+                            type="button"
+                            className={`btn btn-sm ${activeFolder === ALL_FOLDERS ? 'btn-primary' : 'btn-secondary'}`}
+                            aria-pressed={activeFolder === ALL_FOLDERS}
+                            onClick={() => setActiveFolder(ALL_FOLDERS)}
+                        >
+                            <LayoutGrid size={14} /> {t('folders.all')}
+                        </button>
+                        {rubricFolders.map((folder) => (
+                            <FolderTile
+                                key={folder.id}
+                                folder={folder}
+                                count={countInFolder(rubrics, folder.id)}
+                                active={activeFolder === folder.id}
+                                onOpen={(id) => setActiveFolder((current) => (current === id ? ALL_FOLDERS : id))}
+                                onRename={(f) => setFolderModal({ folder: f })}
+                                onDelete={handleDeleteFolder}
+                            />
+                        ))}
+                        <button type="button" className="btn btn-secondary btn-sm" onClick={() => setFolderModal({})}>
+                            <FolderPlus size={14} /> {t('folders.new_folder')}
                         </button>
                     </div>
-                ) : view === 'list' ? (
-                    <div style={{ overflowX: 'auto' }}>
-                        <table className="data-table">
-                            <thead>
-                                <tr>
-                                    <th>{t('rubricList.col_name')}</th>
-                                    <th>{t('rubricList.col_subject')}</th>
-                                    <th>{t('rubricList.col_criteria')}</th>
-                                    <th>{t('rubricList.col_levels')}</th>
-                                    <th>{t('rubricList.col_graded')}</th>
-                                    <th>{t('rubricList.col_cefr')}</th>
-                                    <th>{t('common.actions')}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filtered.map((r) => {
-                                    const gradedCount = gradedCountByRubric.get(r.id) ?? 0;
-                                    return (
-                                        <tr
-                                            key={r.id}
-                                            style={{ cursor: 'pointer' }}
-                                            onClick={() => navigate(`/rubrics/${r.id}`)}
-                                        >
-                                            <td style={{ fontWeight: 500 }}>{r.name}</td>
-                                            <td className="text-muted text-sm">{r.subject || '—'}</td>
-                                            <td>{r.criteria.length}</td>
-                                            <td>{r.criteria[0]?.levels.length ?? 0}</td>
-                                            <td>{gradedCount}</td>
-                                            <td>
-                                                {r.cefrTargetLevel ? (
-                                                    <CefrBadge level={r.cefrTargetLevel} size="sm" />
-                                                ) : (
-                                                    '—'
-                                                )}
-                                            </td>
-                                            <td onClick={(e) => e.stopPropagation()}>
-                                                <div style={{ display: 'flex', gap: 4 }}>
-                                                    <button
-                                                        className="btn btn-ghost btn-icon btn-sm"
-                                                        title={t('rubricList.action_edit')}
-                                                        aria-label={t('rubricList.action_edit')}
-                                                        onClick={() => navigate(`/rubrics/${r.id}`)}
-                                                    >
-                                                        <Edit2 size={14} />
-                                                    </button>
-                                                    <button
-                                                        className="btn btn-ghost btn-icon btn-sm"
-                                                        title={t('rubricList.grade_students')}
-                                                        aria-label={t('rubricList.grade_students')}
-                                                        onClick={() => navigate('/students')}
-                                                    >
-                                                        <Users size={14} />
-                                                    </button>
-                                                    <button
-                                                        className="btn btn-ghost btn-icon btn-sm"
-                                                        title={t('rubricList.action_compare')}
-                                                        aria-label={t('rubricList.action_compare')}
-                                                        onClick={() => {
-                                                            const activeClass = classes.find(
-                                                                (c) => c.id === settings.activeClassId
-                                                            );
-                                                            navigate(
-                                                                `/grade-comparative/${activeClass ? activeClass.id : 'all'}/${r.id}`
-                                                            );
-                                                        }}
-                                                    >
-                                                        <GitCompare size={14} />
-                                                    </button>
-                                                    <button
-                                                        className="btn btn-ghost btn-icon btn-sm"
-                                                        title={t('rubricList.action_duplicate')}
-                                                        aria-label={t('rubricList.action_duplicate')}
-                                                        onClick={() => handleDuplicate(r.id)}
-                                                    >
-                                                        <Copy size={14} />
-                                                    </button>
-                                                    <button
-                                                        className="btn btn-ghost btn-icon btn-sm"
-                                                        title={t('rubricList.action_delete')}
-                                                        aria-label={t('rubricList.action_delete')}
-                                                        style={{ color: 'var(--red)' }}
-                                                        onClick={() => requestDelete(r)}
-                                                    >
-                                                        <Trash2 size={14} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                ) : (
-                    <DragDropContext onDragEnd={handleDragEnd}>
+                    {filtered.length === 0 ? (
+                        <div className="empty-state">
+                            <BookOpen size={40} />
+                            <h3>{activeFolder === ALL_FOLDERS ? t('rubricList.no_rubrics') : t('folders.empty')}</h3>
+                            <p className="text-muted text-sm">
+                                {activeFolder === ALL_FOLDERS
+                                    ? t('rubricList.create_first_instruction')
+                                    : t('folders.empty_hint')}
+                            </p>
+                            <button className="btn btn-primary" onClick={() => setShowNewChooser(true)}>
+                                <Plus size={16} /> {t('rubricList.create_rubric')}
+                            </button>
+                        </div>
+                    ) : view === 'list' ? (
+                        <div style={{ overflowX: 'auto' }}>
+                            <table className="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>{t('rubricList.col_name')}</th>
+                                        <th>{t('rubricList.col_subject')}</th>
+                                        <th>{t('rubricList.col_criteria')}</th>
+                                        <th>{t('rubricList.col_levels')}</th>
+                                        <th>{t('rubricList.col_graded')}</th>
+                                        <th>{t('rubricList.col_cefr')}</th>
+                                        <th>{t('common.actions')}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filtered.map((r) => {
+                                        const gradedCount = gradedCountByRubric.get(r.id) ?? 0;
+                                        return (
+                                            <tr
+                                                key={r.id}
+                                                style={{ cursor: 'pointer' }}
+                                                onClick={() => navigate(`/rubrics/${r.id}`)}
+                                            >
+                                                <td style={{ fontWeight: 500 }}>{r.name}</td>
+                                                <td className="text-muted text-sm">{r.subject || '—'}</td>
+                                                <td>{r.criteria.length}</td>
+                                                <td>{r.criteria[0]?.levels.length ?? 0}</td>
+                                                <td>{gradedCount}</td>
+                                                <td>
+                                                    {r.cefrTargetLevel ? (
+                                                        <CefrBadge level={r.cefrTargetLevel} size="sm" />
+                                                    ) : (
+                                                        '—'
+                                                    )}
+                                                </td>
+                                                <td onClick={(e) => e.stopPropagation()}>
+                                                    <div style={{ display: 'flex', gap: 4 }}>
+                                                        <button
+                                                            className="btn btn-ghost btn-icon btn-sm"
+                                                            title={t('rubricList.action_edit')}
+                                                            aria-label={t('rubricList.action_edit')}
+                                                            onClick={() => navigate(`/rubrics/${r.id}`)}
+                                                        >
+                                                            <Edit2 size={14} />
+                                                        </button>
+                                                        <button
+                                                            className="btn btn-ghost btn-icon btn-sm"
+                                                            title={t('rubricList.grade_students')}
+                                                            aria-label={t('rubricList.grade_students')}
+                                                            onClick={() => navigate('/students')}
+                                                        >
+                                                            <Users size={14} />
+                                                        </button>
+                                                        <button
+                                                            className="btn btn-ghost btn-icon btn-sm"
+                                                            title={t('rubricList.action_compare')}
+                                                            aria-label={t('rubricList.action_compare')}
+                                                            onClick={() => {
+                                                                const activeClass = classes.find(
+                                                                    (c) => c.id === settings.activeClassId
+                                                                );
+                                                                navigate(
+                                                                    `/grade-comparative/${activeClass ? activeClass.id : 'all'}/${r.id}`
+                                                                );
+                                                            }}
+                                                        >
+                                                            <GitCompare size={14} />
+                                                        </button>
+                                                        <button
+                                                            className="btn btn-ghost btn-icon btn-sm"
+                                                            title={t('rubricList.action_duplicate')}
+                                                            aria-label={t('rubricList.action_duplicate')}
+                                                            onClick={() => handleDuplicate(r.id)}
+                                                        >
+                                                            <Copy size={14} />
+                                                        </button>
+                                                        <button
+                                                            className="btn btn-ghost btn-icon btn-sm"
+                                                            title={t('rubricList.action_delete')}
+                                                            aria-label={t('rubricList.action_delete')}
+                                                            style={{ color: 'var(--red)' }}
+                                                            onClick={() => requestDelete(r)}
+                                                        >
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
                         <Droppable droppableId="rubric-list">
                             {(droppableProvided) => (
                                 <div
@@ -679,8 +768,8 @@ export default function RubricList() {
                                 </div>
                             )}
                         </Droppable>
-                    </DragDropContext>
-                )}
+                    )}
+                </DragDropContext>
 
                 {sharedWithMe.length > 0 && (
                     <div style={{ marginTop: 32 }}>
@@ -844,6 +933,16 @@ export default function RubricList() {
                 )}
 
                 {showImport && <ImportRubricModal onClose={() => setShowImport(false)} onImport={handleImport} />}
+
+                {folderModal && (
+                    <FolderNameModal
+                        title={folderModal.folder ? t('folders.rename_title') : t('folders.new_folder')}
+                        submitLabel={folderModal.folder ? t('folders.rename') : t('folders.create')}
+                        initialName={folderModal.folder?.name}
+                        onSubmit={submitFolderName}
+                        onClose={() => setFolderModal(null)}
+                    />
+                )}
 
                 {groupModalRubric && (
                     <Modal titleId="group-grade-title" onClose={() => setGroupModalRubric(null)} maxWidth={480}>
