@@ -33,6 +33,7 @@ import { useDbStatus } from '../hooks/useDbStatus';
 import { useActiveClassCohorts } from '../hooks/useActiveClassCohorts';
 import { useToast } from '../hooks/useToast';
 import Papa from 'papaparse';
+import { staleCohortOverridePatch } from '../utils/cohortOverrides';
 import { CSV_UNPARSE_OPTIONS } from '../utils/csvOptions';
 import { downloadCsv } from '../utils/csvDownload';
 import { findDuplicateStudent, isValidEmail, studentExportRows } from '../utils/studentValidation';
@@ -406,7 +407,7 @@ export default function StudentsPage() {
         if (!c || !renameClassVal.trim()) return;
         const years = SCHOOL_YEARS.filter((y) => renameClassYears.includes(y));
         const tracks = renameClassTracksVisible ? VO_TRACKS.filter((track) => renameClassTracks.includes(track)) : [];
-        updateClass({
+        const updatedClass: Class = {
             ...c,
             name: renameClassVal.trim(),
             // The singular fields stay the class's primary/default cohort for every surface that
@@ -416,7 +417,14 @@ export default function StudentsPage() {
             voTrack: tracks[0],
             voTracks: tracks.length ? tracks : undefined,
             color: renameClassColor || undefined,
-        });
+        };
+        updateClass(updatedClass);
+        // Dropping a year or track strands the overrides of students pinned to it, and the picker
+        // disappears once a single option is left, so the mismatch would go unnoticed.
+        for (const s of students.filter((st) => st.classId === c.id)) {
+            const patch = staleCohortOverridePatch(s, updatedClass);
+            if (patch) updateStudent({ ...s, ...patch });
+        }
         setRenameClassId(null);
     }
 

@@ -791,6 +791,56 @@ describe('StudentsPage extended', () => {
         );
     });
 
+    it('clears a school-year tag the class no longer teaches', () => {
+        renderPage();
+        // Class F mixes groep 7 & 8; Sara is tagged to the second of the two.
+        fireEvent.click(screen.getAllByLabelText('studentsPage.action_class_menu')[5]);
+        fireEvent.click(screen.getByText('studentsPage.action_rename'));
+        fireEvent.click(
+            within(screen.getByRole('group', { name: 'studentsPage.form_school_year' })).getByRole('button', {
+                name: 'Groep 8',
+            })
+        );
+        fireEvent.click(screen.getByText('common.save'));
+        expect(mockUpdateClass).toHaveBeenCalledWith(expect.objectContaining({ years: ['groep-7'] }));
+        expect(mockUpdateStudent).toHaveBeenCalledTimes(1);
+        const payload = mockUpdateStudent.mock.calls[0][0] as Student;
+        expect(payload.id).toBe('s9');
+        // Written as an explicit undefined so the stored tag is cleared, not merely ignored.
+        expect('schoolYear' in payload).toBe(true);
+        expect(payload.schoolYear).toBeUndefined();
+    });
+
+    it('clears a VO-track tag the class no longer teaches', () => {
+        renderPage();
+        // Class E mixes HAVO and VMBO-TL; Rick is pinned to the second of the two.
+        fireEvent.click(screen.getAllByLabelText('studentsPage.action_class_menu')[4]);
+        fireEvent.click(screen.getByText('studentsPage.action_rename'));
+        fireEvent.click(
+            within(screen.getByRole('group', { name: 'voTrack.section_label' })).getByRole('button', {
+                name: 'VMBO-TL',
+            })
+        );
+        fireEvent.click(screen.getByText('common.save'));
+        expect(mockUpdateClass).toHaveBeenCalledWith(
+            expect.objectContaining({ years: ['jaar-3'], voTracks: ['havo'], voTrack: 'havo' })
+        );
+        expect(mockUpdateStudent).toHaveBeenCalledTimes(1);
+        const payload = mockUpdateStudent.mock.calls[0][0] as Student;
+        expect(payload.id).toBe('s8');
+        expect('voTrack' in payload).toBe(true);
+        expect(payload.voTrack).toBeUndefined();
+    });
+
+    it('leaves student tags alone when the class keeps every year and track', () => {
+        renderPage();
+        fireEvent.click(screen.getAllByLabelText('studentsPage.action_class_menu')[4]);
+        fireEvent.click(screen.getByText('studentsPage.action_rename'));
+        fireEvent.click(screen.getByText('common.save'));
+        expect(mockUpdateClass).toHaveBeenCalled();
+        expect(mockUpdateStudent).not.toHaveBeenCalled();
+    });
+
     it('renames a class without touching year/track/color (undefined fallbacks)', () => {
         renderPage();
         fireEvent.click(screen.getAllByLabelText('studentsPage.action_class_menu')[0]);

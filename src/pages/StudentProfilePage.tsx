@@ -463,18 +463,23 @@ export default function StudentProfilePage() {
                             </span>
                             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                 <FileText size={14} /> {cls?.name || t('studentProfile.unknown_class')}
-                                {cls?.voTrack && (
+                                {/* The student's own track, not the class's primary one, so a pinned
+                                    student never shows a sibling track's label here. */}
+                                {effectiveTrack && (
                                     <span
                                         style={{
                                             fontSize: 10,
                                             fontWeight: 700,
                                             padding: '2px 6px',
                                             borderRadius: 4,
-                                            background: getTrackBadgeColor(cls),
+                                            background: getTrackBadgeColor({
+                                                color: cls?.color,
+                                                voTrack: effectiveTrack,
+                                            }),
                                             color: '#fff',
                                         }}
                                     >
-                                        {VO_TRACK_LABELS[cls.voTrack]}
+                                        {VO_TRACK_LABELS[effectiveTrack]}
                                     </span>
                                 )}
                             </span>

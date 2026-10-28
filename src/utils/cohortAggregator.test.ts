@@ -57,6 +57,53 @@ describe('getCohortStudentIds', () => {
         expect(ids.has('solo')).toBe(false);
     });
 
+    it('narrows a mixed-year class to the student’s own year when they are tagged', () => {
+        const mixedClass: Class = { id: 'm1', name: 'Groep 7/8', years: ['groep-7', 'groep-8'] };
+        const roster: Student[] = [
+            { id: 'y7', name: 'Groep 7 pupil', classId: 'm1', schoolYear: 'groep-7' },
+            { id: 'y8', name: 'Groep 8 pupil', classId: 'm1', schoolYear: 'groep-8' },
+            { id: 'untagged', name: 'Untagged pupil', classId: 'm1' },
+        ];
+
+        const ids = getCohortStudentIds(roster, [mixedClass], { voTrack: 'all', year: 'groep-8' });
+
+        expect(ids.has('y8')).toBe(true);
+        expect(ids.has('y7')).toBe(false);
+        // No tag of their own, so the student follows the class and counts in either cohort.
+        expect(ids.has('untagged')).toBe(true);
+    });
+
+    it('narrows a mixed-track class to the student’s own track when they are pinned', () => {
+        const mixedClass: Class = { id: 'm2', name: 'VMBO-TL/HAVO', voTracks: ['vmbo-tl', 'havo'], voTrack: 'vmbo-tl' };
+        const roster: Student[] = [
+            { id: 'tl', name: 'VMBO-TL pupil', classId: 'm2', voTrack: 'vmbo-tl' },
+            { id: 'havo', name: 'HAVO pupil', classId: 'm2', voTrack: 'havo' },
+        ];
+
+        const ids = getCohortStudentIds(roster, [mixedClass], { voTrack: 'havo', year: 'all' });
+
+        expect(ids.has('havo')).toBe(true);
+        expect(ids.has('tl')).toBe(false);
+    });
+
+    it('matches a past membership on the class alone, since the tag describes the student’s current class', () => {
+        const mixedClass: Class = { id: 'm3', name: 'Groep 7/8', years: ['groep-7', 'groep-8'] };
+        const current: Class = { id: 'c9', name: 'Havo 3A', year: 'jaar-3', voTrack: 'havo' };
+        const roster: Student[] = [
+            {
+                id: 'moved',
+                name: 'Moved on',
+                classId: 'c9',
+                schoolYear: 'jaar-3',
+                pastClassMemberships: [{ classId: 'm3', leftAt: '2026-01-01' }],
+            },
+        ];
+
+        const ids = getCohortStudentIds(roster, [mixedClass, current], { voTrack: 'all', year: 'groep-7' });
+
+        expect(ids.has('moved')).toBe(true);
+    });
+
     it('excludes classes whose year does not match the filter', () => {
         const classesWithYear: Class[] = [...classes, { id: 'c4', name: 'Havo 4A', year: 'jaar-4', voTrack: 'havo' }];
         const ids = getCohortStudentIds([{ id: 's4', name: 'Older year', classId: 'c4' }], classesWithYear, {

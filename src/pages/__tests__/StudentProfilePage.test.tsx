@@ -177,6 +177,35 @@ describe('StudentProfilePage', () => {
         expect(screen.getAllByText('Essay Rubric').length).toBeGreaterThan(0);
     });
 
+    it('badges the student’s own VO track, not the class’s primary one', () => {
+        const student = mockAppValue.students[0];
+        const cls = mockAppValue.classes[0];
+        // Mixed class: VMBO-TL is the class default, Alice is pinned to HAVO.
+        mockAppValue.students = [{ ...student, voTrack: 'havo' }];
+        mockAppValue.classes = [{ ...cls, voTrack: 'vmbo-tl', voTracks: ['vmbo-tl', 'havo'] }];
+        try {
+            renderAt('s1');
+            expect(screen.getByText('HAVO')).toBeInTheDocument();
+            expect(screen.queryByText('VMBO-TL')).not.toBeInTheDocument();
+        } finally {
+            mockAppValue.students = [student];
+            mockAppValue.classes = [cls];
+        }
+    });
+
+    it('falls back to the class default track when the student carries no tag of their own', () => {
+        const cls = mockAppValue.classes[0];
+        // The class's default is the first of its tracks in VO_TRACKS order, matching saveClassRename.
+        mockAppValue.classes = [{ ...cls, voTrack: 'vmbo-tl', voTracks: ['vmbo-tl', 'havo'] }];
+        try {
+            renderAt('s1');
+            expect(screen.getByText('VMBO-TL')).toBeInTheDocument();
+            expect(screen.queryByText('HAVO')).not.toBeInTheDocument();
+        } finally {
+            mockAppValue.classes = [cls];
+        }
+    });
+
     it('switches to the portfolio tab', () => {
         renderAt('s1');
         // Tab buttons use dynamic key `studentProfile.tab_overview` / `studentProfile.tab_portfolio`.
