@@ -137,6 +137,13 @@ export interface GrammarCategory {
 }
 
 /** A single item inside a level — awarded via checkbox or scored via points */
+/**
+ * How a criterion's sub-items are used. 'points': each sub-item scores, added to the level's base points
+ * and capped to the level's range. 'checklist': sub-items are evidence statements the teacher ticks; they never
+ * change the score and stay ticked when the level changes.
+ */
+export type SubItemMode = 'points' | 'checklist';
+
 export interface SubItem {
     id: string;
     label: string;
@@ -144,6 +151,8 @@ export interface SubItem {
     minPoints?: number;
     maxPoints?: number;
     linkedStandards?: LinkedStandard[];
+    /** Tiered rubrics: the tier (column) this statement belongs to. Unset means it applies to every tier. */
+    tierId?: string;
 }
 
 export interface RubricLevel {
@@ -155,6 +164,8 @@ export interface RubricLevel {
     subItems: SubItem[]; // optional fine-grain checklist (alongside range)
     /** CEFR level this performance level maps to. Used for per-criterion CEFR aggregation. */
     cefrLevel?: CefrLevel;
+    /** Tiered rubrics: the band this level is derived from. Level ids are rekeyed on copy; band ids are not. */
+    bandId?: string;
 }
 
 export interface LinkedStandard {
@@ -168,21 +179,71 @@ export interface LinkedStandard {
 }
 
 /**
+ * What a mastery target measures. Rows written before grammar/CEFR targets existed omit the
+ * field entirely and are treated as `'standard'` — see `StandardMasteryTarget.scope`.
+ */
+export type MasteryTargetScope = 'standard' | 'grammar' | 'cefr';
+
+/** Fields shared by every scoped mastery target, whether it measures a standard, grammar item or skill. */
+interface MasteryTargetBase {
+    id: string;
+    year: SchoolYear;
+    /** Undefined for groep-7/8 (uniform across tracks; see SCHOOL_YEAR_HAS_TRACK). */
+    voTrack?: VoTrack;
+    updatedAt?: string;
+}
+
+/**
  * Expected mastery % for one linked standard at one (year, track) — configured once globally per
  * standard, reused everywhere that standard is linked across rubrics (not per rubric criterion).
  */
-export interface StandardMasteryTarget {
-    id: string;
+export interface StandardMasteryTarget extends MasteryTargetBase {
+    /** Omitted by rows written before scoped targets existed — treated as `'standard'`. */
+    scope?: 'standard';
     standardGuid: string;
     /** Denormalized for display without re-resolving the standard from a rubric. */
     standardDescription: string;
     standardSetTitle: string;
-    year: SchoolYear;
-    /** Undefined for groep-7/8 (uniform across tracks; see SCHOOL_YEAR_HAS_TRACK). */
-    voTrack?: VoTrack;
     targetPercentage: number;
-    updatedAt?: string;
 }
+
+/**
+ * Expected mastery % for one `GrammarItem` at one (year, track). Achievement is the blended
+ * cross-domain estimate from `grammarMasteryPercentage` (tests, flashcards, writing), not a single
+ * rubric criterion — see `utils/masteryTargetAnalysis.ts`.
+ */
+export interface GrammarMasteryTarget extends MasteryTargetBase {
+    scope: 'grammar';
+    grammarItemId: string;
+    /** Denormalized grammar labels so the settings table never has to re-resolve the taxonomy. */
+    grammarItemLabel: string;
+    grammarCategoryLabel: string;
+    targetPercentage: number;
+}
+
+/**
+ * Expected CEFR level for one skill at one (year, track), overriding the uniform curriculum range
+ * from `CEFR_TRACK_YEAR_TARGETS`. The fine-grained sub-level scale matches that table's precision;
+ * comparison against a student's coarser achieved `CefrLevel` lives in `compareLevelToTarget`.
+ */
+export interface CefrSkillTarget extends MasteryTargetBase {
+    scope: 'cefr';
+    cefrSkill: CefrSkill;
+    targetLevel: CefrSubLevel;
+}
+
+/** One teacher-configured target, discriminated by `scope`. */
+export type MasteryTarget = StandardMasteryTarget | GrammarMasteryTarget | CefrSkillTarget;
+
+/**
+ * `Omit` distributes over unions rather than collapsing them, so each scope keeps its own required
+ * fields when a new target is created (the store assigns `id`/`updatedAt`).
+ */
+export type NewMasteryTarget = MasteryTarget extends infer T
+    ? T extends MasteryTarget
+        ? Omit<T, 'id' | 'updatedAt'>
+        : never
+    : never;
 
 export interface RubricCriterion {
     id: string;
@@ -201,6 +262,8 @@ export interface RubricCriterion {
     cefrSkill?: CefrSkill;
     /** When group-graded (StudentRubric.groupId), unset/true fans this criterion's entry out to every group member; false keeps it individually scored per student. */
     collaborative?: boolean;
+    /** Undefined means 'points', the behaviour of every criterion created before modes existed. */
+    subItemMode?: SubItemMode;
 }
 
 export type GradeScaleType = 'letter' | 'percentage' | 'points' | 'pass-fail' | 'custom';
@@ -618,6 +681,51 @@ export interface Rubric {
     sharedWithSchool?: boolean;
     /** Comparative grading: max matchups per student for this rubric (0/undefined = unlimited) */
     comparativeMatchupLimit?: number;
+    /** Present when this is a tiered rubric: one column per tier, the same bands (levels) in each. */
+    tiered?: TieredConfig;
+}
+
+/**
+ * One shared level of a tiered rubric, e.g. IO / B / E. Ordered worst → best in TieredConfig.bands;
+ * every criterion has one level per band (RubricLevel.bandId).
+ */
+export interface RubricBand {
+    /** Rubric-local and never rekeyed, so copies and share codes keep levels and grades attached. */
+    id: string;
+    /** Short code shown on buttons and exports, e.g. 'IO'. */
+    code: string;
+    label: string;
+    /** Points every criterion's level for this band is worth; strictly increasing worst → best. */
+    points: number;
+    /** Lowest overall percentage that earns this band as the final verdict; defaults to the midpoint rule. */
+    minPercentage?: number;
+    color?: string;
+}
+
+/** A column of a tiered rubric: a school year, optionally narrowed to one VO track. */
+export interface RubricTier {
+    id: string;
+    year: SchoolYear;
+    /** Only for years that have tracks (SCHOOL_YEAR_HAS_TRACK). */
+    track?: VoTrack;
+    /** Header override, e.g. 'Mavo' for jaar-1 vmbo-tl. */
+    label?: string;
+}
+
+/** A must-pass condition ("verplichte eis"); failing one caps the computed verdict at the lowest band. */
+export interface TieredRequirement {
+    id: string;
+    text: string;
+}
+
+export interface TieredConfig {
+    /** Left → right. */
+    tiers: RubricTier[];
+    /** Worst → best. */
+    bands: RubricBand[];
+    requirements?: TieredRequirement[];
+    /** Comparative grading: pair students only within the same tier (default) or across tiers. */
+    comparativePairing?: 'tier' | 'all';
 }
 
 /**
@@ -641,6 +749,8 @@ export interface UserTemplate {
     subject: string;
     description?: string;
     criteria: RubricCriterion[];
+    /** Set when the template was saved from a tiered rubric, so rubrics made from it are tiered too. */
+    tiered?: TieredConfig;
     savedAt: string;
 }
 
@@ -775,6 +885,12 @@ export interface StudentRubric {
     groupId?: string;
     /** ISO timestamp set when the grade was soft-deleted by a teacher; presence hides it from grading/analytics. */
     deletedAt?: string;
+    /** Tiered rubrics: the tier this grade was given in, kept so a later track change doesn't rewrite it. */
+    tierId?: string;
+    /** Tiered rubrics: requirement id → met. Only an explicit false counts as unmet. */
+    requirementsMet?: Record<string, boolean>;
+    /** Tiered rubrics: a band id the teacher chose as the final verdict instead of the computed one. */
+    verdictOverride?: string;
 }
 
 export interface CommentSnippet {

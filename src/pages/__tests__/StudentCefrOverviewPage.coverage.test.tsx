@@ -309,7 +309,8 @@ describe('StudentCefrOverviewPage coverage', () => {
         expect(gridProps.lang).toBe('en');
         // Evidence section with skill labels and sources.
         expect(screen.getByText('cefrOverview.evidence_title')).toBeInTheDocument();
-        expect(screen.getByText('Reading')).toBeInTheDocument();
+        // Skill labels now appear both in the evidence list and the per-skill target table.
+        expect(screen.getAllByText('Reading').length).toBeGreaterThan(0);
         expect(screen.getByText('Essay Rubric')).toBeInTheDocument();
         expect(screen.getByText('Listening Test')).toBeInTheDocument();
         expect(
@@ -389,7 +390,7 @@ describe('StudentCefrOverviewPage coverage', () => {
         mockI18n.language = 'nl';
         renderAt();
         expect(gridProps.lang).toBe('nl');
-        expect(screen.getByText('Lezen')).toBeInTheDocument();
+        expect(screen.getAllByText('Lezen').length).toBeGreaterThan(0);
     });
 
     it('navigates to the learning path, vocabulary, and back to the profile', () => {

@@ -8,7 +8,10 @@ import type {
     StudentRubric,
     Modifier,
     Rubric,
+    SubItemMode,
 } from '../types';
+import { scoresSubItems, subItemEarned } from './subItems';
+import { DEFAULT_BAND_COLOR, tieredVerdict, type TieredVerdict } from './tieredRubric';
 
 // ─── Score Calculation ─────────────────────────────────────────────────────────
 
@@ -53,25 +56,14 @@ export function calcEntryPoints(entry: ScoreEntry, criterion: RubricCriterion): 
     // Iterating all levels would inflate the score with stale subItemScores
     // left over from previously selected levels (e.g. after comparative grading
     // changes a student's level, old scores must not carry over).
-    const subItemTotal = level.subItems.reduce((sum, si) => {
-        if (entry.subItemScores && entry.subItemScores[si.id] !== undefined) {
-            return sum + entry.subItemScores[si.id];
-        }
-        // Fallback for older rubrics/entries that used strict checkboxes
-        if (entry.checkedSubItems.includes(si.id)) {
-            return sum + (si.maxPoints ?? si.points ?? 0);
-        }
-        return sum;
-    }, 0);
+    const subItemTotal = level.subItems.reduce((sum, si) => sum + subItemEarned(entry, si), 0);
 
     // selectedPoints: teacher chosen value within [min, max] range
     const rangePoints = entry.selectedPoints ?? level.minPoints;
 
-    const hasAnySubItems = criterion.levels.some((l) => l.subItems.length > 0);
-
     // Both branches stay inside the selected level's range: a selectedPoints left over from a
     // previously selected level must not score below the new level's minimum.
-    if (hasAnySubItems) {
+    if (scoresSubItems(criterion)) {
         return Math.max(level.minPoints, Math.min(subItemTotal + rangePoints, level.maxPoints));
     }
     return Math.max(level.minPoints, Math.min(level.maxPoints, rangePoints));
@@ -79,14 +71,19 @@ export function calcEntryPoints(entry: ScoreEntry, criterion: RubricCriterion): 
 
 /**
  * Merge a patch into a score entry. Choosing a different level drops the points picked
- * within the old level's range, so the card and the total never disagree.
+ * within the old level's range, so the card and the total never disagree. Checklist ticks
+ * are evidence across all levels and survive the change.
  */
-export function patchScoreEntry(entry: ScoreEntry, patch: Partial<ScoreEntry>): ScoreEntry {
+export function patchScoreEntry(
+    entry: ScoreEntry,
+    patch: Partial<ScoreEntry>,
+    mode: SubItemMode = 'points'
+): ScoreEntry {
     const next = { ...entry, ...patch };
     if ('levelId' in patch && patch.levelId !== entry.levelId) {
         if (!('selectedPoints' in patch)) next.selectedPoints = undefined;
         if (!('subItemScores' in patch)) next.subItemScores = undefined;
-        if (!('checkedSubItems' in patch)) next.checkedSubItems = [];
+        if (!('checkedSubItems' in patch) && mode === 'points') next.checkedSubItems = [];
     }
     return next;
 }
@@ -237,13 +234,15 @@ export interface GradeSummary {
     gradeColor: string;
     gradedCount: number;
     totalCriteria: number;
+    /** Tiered rubrics: the band given as the final verdict and why; letterGrade is its code. */
+    verdict?: TieredVerdict;
 }
 
 export function calcGradeSummary(
     sr: StudentRubric,
     criteria: RubricCriterion[],
     scale: GradeScale | null,
-    rubric?: Pick<Rubric, 'scoringMode' | 'totalMaxPoints'>
+    rubric?: Partial<Pick<Rubric, 'scoringMode' | 'totalMaxPoints' | 'tiered'>>
 ): GradeSummary {
     // A grade keeps the scale it was given with; only records saved before snapshots existed fall
     // back to the caller's (live) scale.
@@ -253,7 +252,9 @@ export function calcGradeSummary(
 
     // In 'total-points' mode use the teacher-configured max; otherwise use calc max
     const configuredMax =
-        rubric?.scoringMode === 'total-points' && rubric.totalMaxPoints > 0 ? rubric.totalMaxPoints : calculatedMax;
+        rubric?.scoringMode === 'total-points' && rubric.totalMaxPoints && rubric.totalMaxPoints > 0
+            ? rubric.totalMaxPoints
+            : calculatedMax;
 
     // totalMaxPoints can be configured below the raw maximum, which would push past 100%.
     const pct = clamp(
@@ -276,6 +277,12 @@ export function calcGradeSummary(
         (e) => !!e.levelId || e.overridePoints !== undefined || e.singlePointOutcome !== undefined
     ).length;
 
+    // A tiered rubric's verdict is one of its bands, not a grade-scale letter. A caller's rubric is
+    // authoritative (a grade moved onto a standard rubric has no verdict); only callers that pass
+    // none fall back to the snapshot saved with the grade.
+    const tiered = rubric ? rubric.tiered : sr.rubricSnapshot?.tiered;
+    const verdict = tiered ? (tieredVerdict(sr, tiered, modified) ?? undefined) : undefined;
+
     return {
         rawScore: raw,
         maxRawScore: calculatedMax,
@@ -283,10 +290,15 @@ export function calcGradeSummary(
         percentage: pct,
         modifiedPercentage: modified,
         modifiedPoints,
-        letterGrade: gradeScale ? calcLetterGrade(modified, gradeScale) : '—',
-        gradeColor: gradeScale ? calcGradeColor(modified, gradeScale) : '#6b7280',
+        letterGrade: verdict ? verdict.band.code : gradeScale ? calcLetterGrade(modified, gradeScale) : '—',
+        gradeColor: verdict
+            ? (verdict.band.color ?? DEFAULT_BAND_COLOR)
+            : gradeScale
+              ? calcGradeColor(modified, gradeScale)
+              : '#6b7280',
         gradedCount,
         totalCriteria: criteria.length,
+        ...(verdict && { verdict }),
     };
 }
 

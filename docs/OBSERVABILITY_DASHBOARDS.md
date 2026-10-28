@@ -21,10 +21,14 @@ how to extend them.
 | Warning rate             | `sum(rate({job=~"webserver\|docker"} \|~ "(?i)warn" [5m]))`                                        | Same idea as the error rate panel, one severity down.                                                                                                                      |
 | Recent errors & warnings | `{job=~"webserver\|docker"} \|~ "(?i)(error\|warn\|exception\|traceback)"`                         | Raw log lines — click through from a spike in the panels above to read what actually happened.                                                                             |
 
-If `RUBRICMAKER_LOG_DIR` doesn't point at any `*access*.log` / `*error*.log`
-files (see `.env.observability.example`), the `webserver` job has nothing to
-scrape and these panels stay empty — that's an Alloy config issue, not a
-Grafana one. Use **Explore** with the Loki datasource to confirm log lines
+Alloy reads `*access*.log` / `*error*.log` files under `RUBRICMAKER_LOG_DIR`,
+plus HestiaCP's `<domain>.log` access logs in any `logs/` or `domains/` dir
+below it. If there are none (see `.env.observability.example`), the
+`webserver` job has nothing to scrape and these panels stay empty — that's an
+Alloy config issue, not a Grafana one. The `docker` job only covers the
+compose projects in `ALLOY_DOCKER_PROJECTS` (default `rubricmaker`, this
+repo's combined stack); add the official Supabase stack's project name to see
+its containers. Use **Explore** with the Loki datasource to confirm log lines
 are arriving before debugging the dashboard.
 
 ---
@@ -36,7 +40,10 @@ Grafana. Set `SUPABASE_DB_HOST` (and the other `SUPABASE_DB_*` vars) in
 `.env.observability` so its health check can pass. Panels populate only while
 the app is built with `VITE_STRESS_TEST_LOGGING=true` — see README →
 "Stress-test logging" for what gets logged and the privacy guarantees
-(ids/counts/durations only, never free-text content).
+(ids/counts/durations only, never free-text content). `client_logs` has
+row-level security; migration `092_monitoring_dashboard_reads.sql` adds the
+read policy for `pg_monitor`, so the role in `SUPABASE_DB_USER` needs
+`IN ROLE pg_monitor` (a `GRANT SELECT` alone still returns no rows).
 
 If those variables are unset the datasource stays listed but its health check
 fails, so these panels cannot query `client_logs` — expected for deployments
@@ -123,11 +130,21 @@ the UI, so they survive a `docker compose down -v`.
 
 ## 3. Application Usage & Data Health
 
-**Source:** the "Supabase Postgres (client_logs)" datasource (despite the
-name, it reaches the whole Supabase schema). No app instrumentation required —
-this dashboard reads the domain tables directly, so it works for any
-deployment with a reachable database (including existing/legacy data),
-regardless of `VITE_STRESS_TEST_LOGGING`.
+**Source:** the "Supabase Postgres (client_logs)" datasource, through the
+`monitoring.app_*` functions (migration `092_monitoring_dashboard_reads.sql`).
+No app instrumentation required, so it works for any deployment with a
+reachable database (including existing/legacy data), regardless of
+`VITE_STRESS_TEST_LOGGING`.
+
+The app's tables have row-level security keyed on the signed-in user, so a
+plain query from Grafana's database role sees no rows. The functions run as
+their owner and return only what the panels show: counts, per-day counts,
+latest timestamps, per-school totals and the top graders' display names (or a
+masked email initial). They live in the `monitoring` schema, which the REST
+API does not expose, and only `pg_monitor` members may call them, so the role
+in `SUPABASE_DB_USER` needs `IN ROLE pg_monitor` and nothing else. New panels
+need a new function in a migration; don't query the tables directly or give
+the role `BYPASSRLS`.
 
 | Panel                            | What it shows                                                                                                                                                                                                                                                                                         |
 | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -140,8 +157,8 @@ regardless of `VITE_STRESS_TEST_LOGGING`.
 | Latest activity per domain       | Most recent write per domain — spot a domain whose last activity is stale.                                                                                                                                                                                                                            |
 
 Many of the jsonb-document tables (`student_rubrics`, `tests`,
-`student_tests`, `flashcard_*`) have no real `created_at` column, so these
-panels cast the ISO timestamps inside the `data` jsonb (`data->>'gradedAt'`,
+`student_tests`, `flashcard_*`) have no real `created_at` column, so the
+functions cast the ISO timestamps inside the `data` jsonb (`data->>'gradedAt'`,
 `data->>'startedAt'`, `data->>'updatedAt'`). The queries are defensive
 (`IS NOT NULL` + `COALESCE` fallbacks) so rows missing a field are simply
 excluded rather than erroring.

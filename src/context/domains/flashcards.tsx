@@ -1,7 +1,7 @@
 // Generated from src/context/AppContext.tsx by the domain-split refactor.
 import React, { createContext, useMemo, ReactNode } from 'react';
 import { AppContextValue, StoreActionsCtx, useContextOrThrow } from '../storeCore';
-import type { FlashcardAssignment, FlashcardDeck, FlashcardReview, StandardMasteryTarget } from '../../types';
+import type { FlashcardAssignment, FlashcardDeck, FlashcardReview, MasteryTarget, NewMasteryTarget } from '../../types';
 import { StoreData } from '../../store/storage';
 import { nanoid } from '../../utils/nanoid';
 import { loadDb } from '../../services/database/lazyDb';
@@ -64,12 +64,12 @@ export function createFlashcardsActions(ctx: StoreActionsCtx): FlashcardsActions
     const deleteFlashcardDeck = (id: string) => {
         dispatch({ type: 'DELETE_FLASHCARD_DECK', id });
     };
-    const addStandardMasteryTarget = (t: Omit<StandardMasteryTarget, 'id' | 'updatedAt'>): StandardMasteryTarget => {
-        const target: StandardMasteryTarget = { ...t, id: nanoid(), updatedAt: new Date().toISOString() };
+    const addStandardMasteryTarget = (t: NewMasteryTarget): MasteryTarget => {
+        const target: MasteryTarget = { ...t, id: nanoid(), updatedAt: new Date().toISOString() } as MasteryTarget;
         dispatch({ type: 'ADD_STANDARD_MASTERY_TARGET', payload: target });
         return target;
     };
-    const updateStandardMasteryTarget = (t: StandardMasteryTarget) => {
+    const updateStandardMasteryTarget = (t: MasteryTarget) => {
         dispatch({ type: 'UPDATE_STANDARD_MASTERY_TARGET', payload: t });
     };
     const deleteStandardMasteryTarget = (id: string) => {

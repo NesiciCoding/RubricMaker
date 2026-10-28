@@ -187,6 +187,14 @@ describe('SettingsPage', () => {
         expect(screen.getByText('settings.mastery_targets_empty')).toBeInTheDocument();
     });
 
+    it('explains that there is nothing to calibrate without year-bearing classes', () => {
+        renderPage();
+        fireEvent.click(screen.getByText('settings.tab_teaching'));
+        expect(screen.getByTestId('calibration-status')).toBeInTheDocument();
+        expect(screen.getByText('settings.calibration_title')).toBeInTheDocument();
+        expect(screen.getByText('settings.calibration_empty')).toBeInTheDocument();
+    });
+
     it('opens the mastery target modal from the add button', () => {
         renderPage();
         fireEvent.click(screen.getByText('settings.tab_teaching'));

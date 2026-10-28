@@ -26,7 +26,7 @@ import type {
     FlashcardDeck,
     FlashcardAssignment,
     FlashcardReview,
-    StandardMasteryTarget,
+    MasteryTarget,
     NewsFlash,
     NewsFlashRead,
     RubricVersion,
@@ -1151,7 +1151,7 @@ export interface StoreData {
     flashcardDecks: FlashcardDeck[];
     flashcardAssignments: FlashcardAssignment[];
     flashcardReviews: FlashcardReview[];
-    standardMasteryTargets: StandardMasteryTarget[];
+    standardMasteryTargets: MasteryTarget[];
     newsFlashes: NewsFlash[];
     newsFlashReads: NewsFlashRead[];
     questionBank: QuestionBankItem[];
@@ -1206,7 +1206,7 @@ export function loadStore(): StoreData {
         flashcardDecks: load<FlashcardDeck[]>(KEYS.flashcardDecks, []),
         flashcardAssignments: load<FlashcardAssignment[]>(KEYS.flashcardAssignments, []),
         flashcardReviews: load<FlashcardReview[]>(KEYS.flashcardReviews, []),
-        standardMasteryTargets: load<StandardMasteryTarget[]>(KEYS.standardMasteryTargets, []),
+        standardMasteryTargets: load<MasteryTarget[]>(KEYS.standardMasteryTargets, []),
         newsFlashes: load<NewsFlash[]>(KEYS.newsFlashes, []),
         newsFlashReads: load<NewsFlashRead[]>(KEYS.newsFlashReads, []),
         questionBank: load<QuestionBankItem[]>(KEYS.questionBank, []),
@@ -1386,7 +1386,7 @@ export function saveFlashcardAssignments(assignments: FlashcardAssignment[]) {
 export function saveFlashcardReviews(reviews: FlashcardReview[]) {
     save(KEYS.flashcardReviews, reviews);
 }
-export function saveStandardMasteryTargets(targets: StandardMasteryTarget[]) {
+export function saveStandardMasteryTargets(targets: MasteryTarget[]) {
     save(KEYS.standardMasteryTargets, targets);
 }
 export function saveMessages(messages: Message[]) {
@@ -1675,16 +1675,29 @@ export function importFullBackup(json: string, currentSettings?: AppSettings): b
         if (data.standardMasteryTargets !== undefined) {
             if (
                 Array.isArray(data.standardMasteryTargets) &&
-                data.standardMasteryTargets.every(
-                    (t) =>
-                        isPlainObject(t) &&
-                        typeof (t as Record<string, unknown>).id === 'string' &&
-                        typeof (t as Record<string, unknown>).standardGuid === 'string' &&
-                        typeof (t as Record<string, unknown>).year === 'string' &&
-                        typeof (t as Record<string, unknown>).targetPercentage === 'number'
-                )
+                data.standardMasteryTargets.every((t) => {
+                    if (!isPlainObject(t)) return false;
+                    const target = t as Record<string, unknown>;
+                    if (typeof target.id !== 'string' || typeof target.year !== 'string') return false;
+                    // Legacy rows predate scopes and are standards by definition.
+                    switch (target.scope) {
+                        case undefined:
+                        case 'standard':
+                            return (
+                                typeof target.standardGuid === 'string' && typeof target.targetPercentage === 'number'
+                            );
+                        case 'grammar':
+                            return (
+                                typeof target.grammarItemId === 'string' && typeof target.targetPercentage === 'number'
+                            );
+                        case 'cefr':
+                            return typeof target.cefrSkill === 'string' && typeof target.targetLevel === 'string';
+                        default:
+                            return false;
+                    }
+                })
             )
-                saveStandardMasteryTargets(data.standardMasteryTargets as StandardMasteryTarget[]);
+                saveStandardMasteryTargets(data.standardMasteryTargets as MasteryTarget[]);
             else console.warn('[importFullBackup] standardMasteryTargets failed validation — skipped');
         }
         if (data.newsFlashes !== undefined) {

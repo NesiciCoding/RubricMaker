@@ -11,6 +11,7 @@ import type {
 import type { TiptapEditorHandle } from '../Editor/TiptapEditor';
 import CriterionDetailPanel from './CriterionDetailPanel';
 import { storageSync } from '../../services/database';
+import { subItemMode, tickCount } from '../../utils/subItems';
 
 /** Criterion index → chord letter (A, B, … Z, then A2, B2 … as a safe fallback). */
 function letterFor(index: number): string {
@@ -87,6 +88,7 @@ export default function GradingGrid({
                         const levels = orderedLevels(c);
                         const letter = letterFor(ci);
                         const focused = focusedIdx === ci;
+                        const isChecklist = subItemMode(c) === 'checklist';
                         return (
                             <React.Fragment key={c.id}>
                                 <tr className={focused ? 'grid-row-focused' : undefined}>
@@ -96,7 +98,25 @@ export default function GradingGrid({
                                                 {letter}
                                             </span>
                                             <div style={{ minWidth: 0 }}>
-                                                <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{c.title}</div>
+                                                <button
+                                                    type="button"
+                                                    aria-expanded={focused}
+                                                    title={t('gradeStudent.grid_toggle_details')}
+                                                    onClick={() => setFocusedIdx(focused ? null : ci)}
+                                                    style={{
+                                                        background: 'none',
+                                                        border: 'none',
+                                                        padding: 0,
+                                                        font: 'inherit',
+                                                        color: 'inherit',
+                                                        cursor: 'pointer',
+                                                        textAlign: 'start',
+                                                        fontWeight: 700,
+                                                        fontSize: '0.9rem',
+                                                    }}
+                                                >
+                                                    {c.title}
+                                                </button>
                                                 {fmt.showWeights && (
                                                     <span
                                                         className="badge badge-blue"
@@ -169,6 +189,11 @@ export default function GradingGrid({
                                                     </div>
                                                     {fmt.showPoints && (
                                                         <div className="grid-cell-points">{pointsLabel}</div>
+                                                    )}
+                                                    {isChecklist && level.subItems.length > 0 && (
+                                                        <div className="grid-cell-ticks">
+                                                            {t('gradeStudent.grid_ticks', tickCount(level, entry))}
+                                                        </div>
                                                     )}
                                                     {level.description ? (
                                                         <div className="grid-cell-desc">{level.description}</div>

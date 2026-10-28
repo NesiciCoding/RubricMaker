@@ -18,6 +18,7 @@ import { CEFR_DESCRIPTORS, CEFR_SKILLS, CEFR_LEVELS } from '../data/cefrDescript
 import { getCefrTargetRange } from '../data/cefrTrackYearTargets';
 import { compareToRange, cefrLevelOrdinal, type ProgressStatus } from './cefrOrdinal';
 import { calcGradeSummary, criterionMaxPoints } from './gradeCalc';
+import { scoresSubItems, subItemEarned, subItemRange } from './subItems';
 import { autoScoreResponse, calcStudentTestRawPoints, calcTestMaxPoints, calcTestPercentage } from './testCalc';
 import { estimatePlacement, type PlacementPathStep } from './placementResult';
 
@@ -434,15 +435,10 @@ export function getCefrStudentOverview(
                     pointsEarned.set(std.guid, (pointsEarned.get(std.guid) ?? 0) + criterionEarned);
                     pointsMax.set(std.guid, (pointsMax.get(std.guid) ?? 0) + criterionMax);
                 });
-            } else if (selectedLevel && selectedLevel.subItems?.length > 0) {
+            } else if (selectedLevel && scoresSubItems(criterion) && (selectedLevel.subItems?.length ?? 0) > 0) {
                 selectedLevel.subItems.forEach((si) => {
-                    const siMax = si.maxPoints ?? si.points ?? 0;
-                    let siEarned = 0;
-                    if (entry.subItemScores?.[si.id] !== undefined) {
-                        siEarned = entry.subItemScores[si.id];
-                    } else if (entry.checkedSubItems.includes(si.id)) {
-                        siEarned = si.points ?? siMax;
-                    }
+                    const siMax = subItemRange(si).max;
+                    const siEarned = subItemEarned(entry, si);
                     if (si.linkedStandards?.length) {
                         si.linkedStandards.forEach((std) => {
                             standardInfo.set(std.guid, std);

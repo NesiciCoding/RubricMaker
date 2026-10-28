@@ -234,22 +234,23 @@ describe('domain action creators', () => {
         let targetId = '';
         act(() => {
             const target = result.current.addStandardMasteryTarget({
+                scope: 'standard',
                 standardGuid: 'g1',
                 standardDescription: 'd',
                 standardSetTitle: 's',
                 year: 'jaar-1',
                 targetPercentage: 80,
-            } as StandardMasteryTarget);
+            });
             targetId = target.id;
         });
         expect(result.current.standardMasteryTargets).toHaveLength(1);
         act(() => {
             result.current.updateStandardMasteryTarget({
-                ...result.current.standardMasteryTargets[0],
+                ...(result.current.standardMasteryTargets[0] as StandardMasteryTarget),
                 targetPercentage: 90,
             });
         });
-        expect(result.current.standardMasteryTargets[0].targetPercentage).toBe(90);
+        expect(result.current.standardMasteryTargets[0]).toMatchObject({ targetPercentage: 90 });
 
         act(() => {
             result.current.addFlashcardAssignments([

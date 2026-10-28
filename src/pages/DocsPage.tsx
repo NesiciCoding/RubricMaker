@@ -786,10 +786,27 @@ function RubricsTab() {
                 <FeatureList
                     items={[
                         t('docs.rb_level_options_item_checklist'),
+                        t('docs.rb_level_options_item_sub_item_editing'),
                         t('docs.rb_level_options_item_ranges'),
                         t('docs.rb_level_options_item_modifiers'),
                     ]}
                 />
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.rb_tiered_title')}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 12 }}>
+                    {t('docs.rb_tiered_intro')}
+                </p>
+                <FeatureList
+                    items={[
+                        t('docs.rb_tiered_item_tiers'),
+                        t('docs.rb_tiered_item_bands'),
+                        t('docs.rb_tiered_item_grid'),
+                        t('docs.rb_tiered_item_requirements'),
+                    ]}
+                />
+                <InfoBox>{t('docs.rb_tiered_note')}</InfoBox>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.rb_standards_title')}
@@ -836,6 +853,7 @@ function RubricsTab() {
                     items={[
                         t('docs.rb_import_export_item_import'),
                         t('docs.rb_import_export_item_docx'),
+                        t('docs.rb_import_export_item_tiered'),
                         t('docs.rb_import_export_item_export'),
                         t('docs.rb_import_export_item_share_code'),
                     ]}
@@ -990,6 +1008,18 @@ function GradingTab() {
                         t('docs.gr_scoring_item_feedback_only'),
                         t('docs.gr_scoring_item_anchor'),
                         t('docs.gr_scoring_item_nothing_scored'),
+                    ]}
+                />
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.gr_tiered_title')}
+                </h3>
+                <FeatureList
+                    items={[
+                        t('docs.gr_tiered_item_tier'),
+                        t('docs.gr_tiered_item_verdict'),
+                        t('docs.gr_tiered_item_pairing'),
+                        t('docs.gr_tiered_item_feedback'),
                     ]}
                 />
 
@@ -1441,6 +1471,12 @@ function GradingTab() {
                     {t('docs.gr_portal_read_aloud_body')}
                 </p>
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.gr_portal_sub_items_title')}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
+                    {t('docs.gr_portal_sub_items_body')}
+                </p>
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.gr_portal_progress_title')}
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
@@ -1775,6 +1811,7 @@ function AnalyticsTab() {
                     items={[
                         t('docs.an_export_item_pdf'),
                         t('docs.an_export_item_docx', { interpolation: { prefix: '⟦', suffix: '⟧' } }),
+                        t('docs.an_export_item_tiered'),
                         t('docs.an_export_item_csv'),
                         t('docs.an_export_item_csv_presets'),
                         t('docs.an_export_item_period'),

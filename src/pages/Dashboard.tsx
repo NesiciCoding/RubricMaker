@@ -291,14 +291,14 @@ export default function Dashboard() {
         const gradesByStudent = new Map<string, { pct: number; gradedAt: string; rubricId: string }[]>();
         for (const sr of studentRubrics) {
             if (sr.notHandedIn || !sr.gradedAt) continue;
-            const rubric = rubrics.find((r) => r.id === sr.rubricId) ?? sr.rubricSnapshot;
+            const rubric = sr.rubricSnapshot ?? rubrics.find((r) => r.id === sr.rubricId);
             if (!rubric) continue;
             const resolvedScaleId = rubric.gradeScaleId ?? scale?.id;
             const sc =
                 resolvedScaleId && resolvedScaleId !== 'none'
                     ? (gradeScales.find((g) => g.id === resolvedScaleId) ?? null)
                     : null;
-            const summary = calcGradeSummary(sr, rubric.criteria, sc);
+            const summary = calcGradeSummary(sr, rubric.criteria, sc, rubric);
             const list = gradesByStudent.get(sr.studentId) ?? [];
             list.push({ pct: summary.modifiedPercentage, gradedAt: sr.gradedAt, rubricId: sr.rubricId });
             gradesByStudent.set(sr.studentId, list);

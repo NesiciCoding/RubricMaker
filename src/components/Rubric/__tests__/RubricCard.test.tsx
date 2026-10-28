@@ -116,6 +116,44 @@ describe('RubricCard', () => {
         expect(i18nMock.useTranslationCalls).toBe(rendersAfterMount + 1);
     });
 
+    it('offers a per-track copy only for a rubric that is not tiered', () => {
+        const card = (rubric: Rubric) => (
+            <DragDropContext onDragEnd={noop}>
+                <Droppable droppableId="rubric-list">
+                    {(provided) => (
+                        <div ref={provided.innerRef} {...provided.droppableProps}>
+                            <RubricCard
+                                rubric={rubric}
+                                index={0}
+                                reorderable={false}
+                                gradedCount={0}
+                                dbConnected={false}
+                                isCopied={false}
+                                isPreviewCopied={false}
+                                classStudents={noStudents}
+                                hasActiveClass={false}
+                                actions={noopActions}
+                            />
+                            {provided.placeholder}
+                        </div>
+                    )}
+                </Droppable>
+            </DragDropContext>
+        );
+        const { rerender } = render(card(r1));
+        expect(screen.getByLabelText('voTrack.differentiate_title')).toBeInTheDocument();
+        rerender(
+            card({
+                ...r1,
+                tiered: {
+                    tiers: [{ id: 'havo', year: 'jaar-1', track: 'havo' }],
+                    bands: [{ id: 'b', code: 'B', label: '', points: 1 }],
+                },
+            })
+        );
+        expect(screen.queryByLabelText('voTrack.differentiate_title')).toBeNull();
+    });
+
     it('shows the graded-students count passed in as a prop', () => {
         render(<Harness />);
         expect(screen.getAllByText('rubricList.students_graded_badge:{"count":0}').length).toBe(2);

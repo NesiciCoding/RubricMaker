@@ -19,7 +19,9 @@ import type {
     GradeScale,
     GradingTask,
     LinkedStandard,
+    MasteryTarget,
     Message,
+    NewMasteryTarget,
     NewsFlash,
     NewsFlashRead,
     NotificationDismissal,
@@ -30,7 +32,6 @@ import type {
     RubricVersion,
     SelfAssessment,
     SpeakingSession,
-    StandardMasteryTarget,
     Student,
     StudentRubric,
     StudentTest,
@@ -172,8 +173,8 @@ export type Action =
     | { type: 'ADD_FLASHCARD_DECK'; payload: FlashcardDeck }
     | { type: 'UPDATE_FLASHCARD_DECK'; payload: FlashcardDeck }
     | { type: 'DELETE_FLASHCARD_DECK'; id: string }
-    | { type: 'ADD_STANDARD_MASTERY_TARGET'; payload: StandardMasteryTarget }
-    | { type: 'UPDATE_STANDARD_MASTERY_TARGET'; payload: StandardMasteryTarget }
+    | { type: 'ADD_STANDARD_MASTERY_TARGET'; payload: MasteryTarget }
+    | { type: 'UPDATE_STANDARD_MASTERY_TARGET'; payload: MasteryTarget }
     | { type: 'DELETE_STANDARD_MASTERY_TARGET'; id: string }
     | { type: 'ADD_FLASHCARD_ASSIGNMENTS'; payload: FlashcardAssignment[] }
     | { type: 'SAVE_FLASHCARD_REVIEW'; payload: FlashcardReview }
@@ -351,13 +352,25 @@ export function reducer(state: StoreData, action: Action): StoreData {
                     state.rubrics.find((r) => r.id === payload.rubricId)?.criteria ??
                     [];
                 const collaborativeIds = new Set(criteria.filter((c) => c.collaborative !== false).map((c) => c.id));
+                // On a tiered rubric a grade only shows its own tier's statements, so a sibling keeps
+                // its ticks on other tiers' statements instead of losing them to the fan-out.
+                const statementTier = new Map(
+                    criteria.flatMap((c) => c.levels.flatMap((l) => l.subItems.map((si) => [si.id, si.tierId])))
+                );
+                const fromOtherTier = (id: string) => {
+                    const tier = statementTier.get(id);
+                    return !!payload.tierId && !!tier && tier !== payload.tierId;
+                };
                 next = next.map((sr) => {
                     if (sr.groupId !== payload.groupId || sr.id === payload.id) return sr;
-                    const mergedEntries = payload.entries.map((entry) =>
-                        collaborativeIds.has(entry.criterionId)
-                            ? entry
-                            : (sr.entries.find((e) => e.criterionId === entry.criterionId) ?? entry)
-                    );
+                    const mergedEntries = payload.entries.map((entry) => {
+                        const own = sr.entries.find((e) => e.criterionId === entry.criterionId);
+                        if (!collaborativeIds.has(entry.criterionId)) return own ?? entry;
+                        const kept = own?.checkedSubItems?.filter(fromOtherTier) ?? [];
+                        if (!kept.length) return entry;
+                        const shared = (entry.checkedSubItems ?? []).filter((id) => !fromOtherTier(id));
+                        return { ...entry, checkedSubItems: [...shared, ...kept] };
+                    });
                     return {
                         ...sr,
                         entries: mergedEntries,
@@ -1053,8 +1066,9 @@ export interface AppContextValue extends StoreData {
     addFlashcardDeck: (d: Omit<FlashcardDeck, 'id' | 'createdAt' | 'updatedAt'>) => FlashcardDeck;
     updateFlashcardDeck: (d: FlashcardDeck) => void;
     deleteFlashcardDeck: (id: string) => void;
-    addStandardMasteryTarget: (t: Omit<StandardMasteryTarget, 'id' | 'updatedAt'>) => StandardMasteryTarget;
-    updateStandardMasteryTarget: (t: StandardMasteryTarget) => void;
+    /** Adds a scoped (standard, grammar or CEFR skill) mastery target; the store assigns id/updatedAt. */
+    addStandardMasteryTarget: (t: NewMasteryTarget) => MasteryTarget;
+    updateStandardMasteryTarget: (t: MasteryTarget) => void;
     deleteStandardMasteryTarget: (id: string) => void;
     addFlashcardAssignments: (assignments: FlashcardAssignment[]) => void;
     saveFlashcardReview: (r: FlashcardReview) => void;
