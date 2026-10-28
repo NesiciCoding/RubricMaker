@@ -15,6 +15,7 @@ import { loadDb } from '../../services/database/lazyDb';
 import { loadSupabaseConfig } from '../../services/database/supabaseConfig';
 import { isLocalMode, loadPendingQueue, removePendingWrites } from '../../store/storage';
 import { eraseStudentFromStore, pendingWritesForStudent } from '../../utils/eraseStudent';
+import { staleCohortOverridePatch } from '../../utils/cohortOverrides';
 import { logAuditEvent } from '../../services/database/AuditLogger';
 
 export type RosterValue = Pick<
@@ -145,10 +146,15 @@ export function createRosterActions(ctx: StoreActionsCtx): RosterActions {
         dispatch({ type: 'DELETE_CLASS', id });
     };
     const mergeClasses = (sourceClassId: string, targetClassId: string) => {
-        const studentsToMove = getState().students.filter((s) => s.classId === sourceClassId);
-        studentsToMove.forEach((s) => updateStudent({ ...s, classId: targetClassId }));
-        const sourceClass = getState().classes.find((c) => c.id === sourceClassId);
         const targetClass = getState().classes.find((c) => c.id === targetClassId);
+        const studentsToMove = getState().students.filter((s) => s.classId === sourceClassId);
+        // Arriving from a wider class, a student can carry a year or track the target doesn't teach;
+        // clear those overrides so nobody stays tagged outside their class's own cohorts.
+        studentsToMove.forEach((s) => {
+            const patch = staleCohortOverridePatch(s, targetClass);
+            updateStudent({ ...s, classId: targetClassId, ...(patch ?? {}) });
+        });
+        const sourceClass = getState().classes.find((c) => c.id === sourceClassId);
         if (sourceClass && targetClass) {
             const sourceRubricIds = sourceClass.rubricIds ?? [];
             const targetRubricIds = targetClass.rubricIds ?? [];

@@ -1,6 +1,16 @@
-import type { Class, EssayAssignment, FlashcardDeck, NewsFlash, Rubric, Student, Test, VoTrack } from '../types';
-import { SCHOOL_YEAR_LABELS } from '../data/schoolYears';
-import { VO_TRACK_LABELS } from '../data/voTracks';
+import type {
+    Class,
+    EssayAssignment,
+    FlashcardDeck,
+    NewsFlash,
+    Rubric,
+    SchoolYear,
+    Student,
+    Test,
+    VoTrack,
+} from '../types';
+import { SCHOOL_YEAR_LABELS, formatClassYears, getClassYears, getEffectiveSchoolYear } from '../data/schoolYears';
+import { VO_TRACK_LABELS, getClassVoTracks, getEffectiveVoTrack } from '../data/voTracks';
 import { htmlToPlainText } from '../hooks/useTTS';
 
 // Keyed by object reference (not content string) so a stale cache never outlives its
@@ -147,16 +157,19 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
         return !!className && normalize(className).includes(normalizedClassFilter);
     };
 
-    const matchesYear = (classId: string | undefined) => {
+    const matchesYear = (classId: string | undefined, studentYear?: SchoolYear) => {
         if (!normalizedYearFilter) return true;
-        const year = classId ? classById.get(classId)?.year : undefined;
-        return !!year && normalize(year).includes(normalizedYearFilter);
+        // A mixed-year class matches on any of its years; a tagged student on their own year.
+        const years = studentYear ? [studentYear] : getClassYears(classId ? classById.get(classId) : undefined);
+        return years.some((y) => normalize(y).includes(normalizedYearFilter));
     };
 
     const matchesTrack = (classId: string | undefined, studentVoTrack?: VoTrack) => {
         if (!normalizedTrackFilter) return true;
-        const effective = studentVoTrack ?? (classId ? classById.get(classId)?.voTrack : undefined);
-        return !!effective && normalize(effective).includes(normalizedTrackFilter);
+        const tracks = studentVoTrack
+            ? [studentVoTrack]
+            : getClassVoTracks(classId ? classById.get(classId) : undefined);
+        return tracks.some((tr) => normalize(tr).includes(normalizedTrackFilter));
     };
 
     const results: SearchResult[] = [];
@@ -243,16 +256,17 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
         for (const s of data.students) {
             if (s.anonymizedAt) continue;
             const cls = classById.get(s.classId);
-            const effectiveTrack = s.voTrack ?? cls?.voTrack;
+            const effectiveTrack = getEffectiveVoTrack(s, cls);
+            const effectiveYear = getEffectiveSchoolYear(s, cls);
             if (
                 matchesText(
                     s.name,
                     s.studentNumber,
-                    cls?.year ? SCHOOL_YEAR_LABELS[cls.year] : undefined,
+                    effectiveYear ? SCHOOL_YEAR_LABELS[effectiveYear] : undefined,
                     effectiveTrack ? VO_TRACK_LABELS[effectiveTrack] : undefined
                 ) &&
                 matchesClass(s.classId) &&
-                matchesYear(s.classId) &&
+                matchesYear(s.classId, s.schoolYear) &&
                 matchesTrack(s.classId, s.voTrack)
             ) {
                 addResult({
@@ -271,8 +285,10 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
             if (
                 matchesText(
                     c.name,
-                    c.year ? SCHOOL_YEAR_LABELS[c.year] : undefined,
-                    c.voTrack ? VO_TRACK_LABELS[c.voTrack] : undefined
+                    formatClassYears(c),
+                    getClassVoTracks(c)
+                        .map((tr) => VO_TRACK_LABELS[tr])
+                        .join(' ')
                 ) &&
                 matchesClass(c.id) &&
                 matchesYear(c.id) &&

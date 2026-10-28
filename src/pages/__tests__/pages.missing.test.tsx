@@ -118,6 +118,8 @@ vi.mock('../../data/voTracks', () => ({
     VO_TRACK_DEFAULT_CEFR: {},
     getTrackBadgeColor: vi.fn(() => '#000'),
     getEffectiveVoTrack: vi.fn((s, c) => s?.voTrack ?? c?.voTrack),
+    getClassVoTracks: vi.fn((c) => (c?.voTracks?.length ? c.voTracks : c?.voTrack ? [c.voTrack] : [])),
+    classHasVoTrack: vi.fn((c, t) => (c?.voTracks?.length ? c.voTracks : c?.voTrack ? [c.voTrack] : []).includes(t)),
 }));
 
 vi.mock('../../utils/cefrStudentAggregator', () => ({

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { VO_TRACKS } from '../data/voTracks';
+import { VO_TRACKS, getClassVoTracks } from '../data/voTracks';
 import { SCHOOL_YEAR_LABELS, getAvailableSchoolYears } from '../data/schoolYears';
 import type { Class, CohortFilter as CohortFilterValue } from '../types';
 
@@ -15,7 +15,7 @@ export default function CohortFilter({
 }) {
     const { t } = useTranslation();
     const yearOptions = getAvailableSchoolYears(classes);
-    const hasTracks = classes.some((c) => c.voTrack);
+    const hasTracks = classes.some((c) => getClassVoTracks(c).length > 0);
     if (yearOptions.length === 0 && !hasTracks) return null;
 
     return (

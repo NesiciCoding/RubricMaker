@@ -55,6 +55,7 @@ import { buildCalibrationCohorts, cohortForStudent } from '../utils/calibrationC
 import { PROGRESS_STATUS_COLOR, progressStatusLabelKey } from '../utils/cefrOrdinal';
 import { CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
 import { VO_TRACK_LABELS, getTrackBadgeColor, getEffectiveVoTrack } from '../data/voTracks';
+import { getEffectiveSchoolYear } from '../data/schoolYears';
 import RecordingPlayer from '../components/Recordings/RecordingPlayer';
 import type { GradeScale, Rubric, SessionRecording, StudentRubric } from '../types';
 /** Safety valve: calibrating scans every student's evidence, so cap a huge school to a stable slice. */
@@ -160,10 +161,10 @@ export default function StudentProfilePage() {
             studentRubrics,
             rubrics,
             standardMasteryTargets,
-            cls?.year,
+            getEffectiveSchoolYear(student, cls),
             effectiveTrack
         );
-    }, [student, studentRubrics, rubrics, standardMasteryTargets, cls?.year, effectiveTrack]);
+    }, [student, studentRubrics, rubrics, standardMasteryTargets, cls, effectiveTrack]);
 
     const writingTrends = useMemo(
         () => (student ? getWeakWritingCriteria(student.id, studentRubrics, rubrics, essayAssignments) : []),
@@ -268,7 +269,7 @@ export default function StudentProfilePage() {
                       rubrics,
                       selfAssessments,
                       undefined,
-                      cls?.year,
+                      getEffectiveSchoolYear(student, cls),
                       effectiveTrack,
                       tests,
                       studentTests,
@@ -280,7 +281,7 @@ export default function StudentProfilePage() {
             studentRubrics,
             rubrics,
             selfAssessments,
-            cls?.year,
+            cls,
             effectiveTrack,
             tests,
             studentTests,
@@ -560,18 +561,23 @@ export default function StudentProfilePage() {
                             </span>
                             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                 <FileText size={14} /> {cls?.name || t('studentProfile.unknown_class')}
-                                {cls?.voTrack && (
+                                {/* The student's own track, not the class's primary one, so a pinned
+                                    student never shows a sibling track's label here. */}
+                                {effectiveTrack && (
                                     <span
                                         style={{
                                             fontSize: 10,
                                             fontWeight: 700,
                                             padding: '2px 6px',
                                             borderRadius: 4,
-                                            background: getTrackBadgeColor(cls),
+                                            background: getTrackBadgeColor({
+                                                color: cls?.color,
+                                                voTrack: effectiveTrack,
+                                            }),
                                             color: '#fff',
                                         }}
                                     >
-                                        {VO_TRACK_LABELS[cls.voTrack]}
+                                        {VO_TRACK_LABELS[effectiveTrack]}
                                     </span>
                                 )}
                             </span>

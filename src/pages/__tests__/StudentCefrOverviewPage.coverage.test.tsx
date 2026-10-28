@@ -323,6 +323,16 @@ describe('StudentCefrOverviewPage coverage', () => {
         expect(screen.getByTestId('standards-panel')).toBeInTheDocument();
     });
 
+    it('badges the student’s own track so it agrees with the target level beside it', () => {
+        // Mixed class: VMBO-TL is the class default, Alice is pinned to HAVO (CEFR target B1).
+        mockState.students = [{ ...mockStudent, voTrack: 'havo' }];
+        mockState.classes = [{ ...mockClass, voTrack: 'vmbo-tl', voTracks: ['vmbo-tl', 'havo'] }];
+        renderAt();
+        expect(screen.getByText('HAVO')).toBeInTheDocument();
+        expect(screen.queryByText('VMBO-TL')).not.toBeInTheDocument();
+        expect(gridProps.targetLevel as string).toBe('B1'); // VO_TRACK_DEFAULT_CEFR['havo']
+    });
+
     it('copies the share link and reverts after 2 seconds', () => {
         vi.useFakeTimers();
         renderAt();
@@ -356,7 +366,10 @@ describe('StudentCefrOverviewPage coverage', () => {
 
     it('shows the empty grid when there is no CEFR data and hides radar/evidence/panels', () => {
         mockGetOverview.mockReturnValue(emptyOverview);
-        mockState.classes = [{ id: 'c1', name: 'Class A' }]; // no voTrack → no target badge
+        // No track on the class *or* the student → no target badge and no track badge. Clearing the
+        // student's own tag matters now the badge follows the effective track rather than the class.
+        mockState.students = [{ id: 's1', name: 'Alice', classId: 'c1' }];
+        mockState.classes = [{ id: 'c1', name: 'Class A' }];
         renderAt();
         expect(screen.getByText('cefrOverview.empty_no_cefr')).toBeInTheDocument();
         // hasAnyData false → the grid is replaced by the empty state.

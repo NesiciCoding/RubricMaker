@@ -29,17 +29,38 @@ export const VO_TRACK_DEFAULT_CEFR: Record<VoTrack, CefrLevel> = {
     vwo: 'B2',
 };
 
-/** True when two tracks are the same or immediate neighbours in VO_TRACKS — used to bound a per-student track override to the class default. */
-export function isAdjacentTrack(a: VoTrack, b: VoTrack): boolean {
-    return Math.abs(VO_TRACKS.indexOf(a) - VO_TRACKS.indexOf(b)) <= 1;
-}
-
 /** Custom color if set, else the track's swatch; undefined when neither is available. */
-export function getTrackBadgeColor(entity: { color?: string; voTrack?: VoTrack }): string | undefined {
-    return entity.color ?? (entity.voTrack ? VO_TRACK_COLORS[entity.voTrack] : undefined);
+export function getTrackBadgeColor(entity: {
+    color?: string;
+    voTrack?: VoTrack;
+    voTracks?: VoTrack[];
+}): string | undefined {
+    const track = entity.voTrack ?? entity.voTracks?.[0];
+    return entity.color ?? (track ? VO_TRACK_COLORS[track] : undefined);
 }
 
-/** A student's own track override, falling back to their class's default track. */
-export function getEffectiveVoTrack(student?: { voTrack?: VoTrack }, cls?: { voTrack?: VoTrack }): VoTrack | undefined {
-    return student?.voTrack ?? cls?.voTrack;
+/**
+ * Every track in a class, in VO_TRACKS order. Falls back to the single legacy `voTrack` field so
+ * classes stored before heterogeneous-class support keep working untouched.
+ */
+export function getClassVoTracks(cls?: { voTrack?: VoTrack; voTracks?: VoTrack[] }): VoTrack[] {
+    if (!cls) return [];
+    const tracks = cls.voTracks?.length ? cls.voTracks : cls.voTrack ? [cls.voTrack] : [];
+    return VO_TRACKS.filter((t) => tracks.includes(t));
+}
+
+/** True when the class holds this track (its own track, or one of the tracks it mixes). */
+export function classHasVoTrack(cls: { voTrack?: VoTrack; voTracks?: VoTrack[] } | undefined, track: VoTrack): boolean {
+    return getClassVoTracks(cls).includes(track);
+}
+
+/**
+ * A student's own track override, falling back to their class's primary track. A heterogeneous
+ * class leaves the primary track as the class default until the student is assigned one.
+ */
+export function getEffectiveVoTrack(
+    student?: { voTrack?: VoTrack },
+    cls?: { voTrack?: VoTrack; voTracks?: VoTrack[] }
+): VoTrack | undefined {
+    return student?.voTrack ?? getClassVoTracks(cls)[0];
 }

@@ -937,6 +937,39 @@ describe('domain action creators', () => {
         expect(result.current.students[0].classId).toBe(c2);
     });
 
+    it('clears a merged student’s year and track tags that the target class does not teach', () => {
+        const { result } = renderHook(() => useRoster(), { wrapper });
+        let wide = '',
+            narrow = '';
+        act(() => {
+            // The source mixes two years and two tracks; the target teaches only groep-7 / VMBO-TL.
+            wide = result.current.addClass({
+                name: 'Groep 7/8 · VMBO-TL/HAVO',
+                year: 'groep-7',
+                years: ['groep-7', 'groep-8'],
+                voTrack: 'vmbo-tl',
+                voTracks: ['vmbo-tl', 'havo'],
+            }).id;
+            narrow = result.current.addClass({ name: 'Groep 7', year: 'groep-7', voTrack: 'vmbo-tl' }).id;
+            result.current.addStudent({ name: 'Pinned', classId: wide, schoolYear: 'groep-8', voTrack: 'havo' });
+            result.current.addStudent({ name: 'Fits', classId: wide, schoolYear: 'groep-7', voTrack: 'vmbo-tl' });
+        });
+
+        act(() => {
+            result.current.mergeClasses(wide, narrow);
+        });
+
+        const pinned = result.current.students.find((s) => s.name === 'Pinned')!;
+        const fits = result.current.students.find((s) => s.name === 'Fits')!;
+        expect(pinned.classId).toBe(narrow);
+        expect(pinned.schoolYear).toBeUndefined();
+        expect(pinned.voTrack).toBeUndefined();
+        // A tag the target class does teach survives the merge untouched.
+        expect(fits.classId).toBe(narrow);
+        expect(fits.schoolYear).toBe('groep-7');
+        expect(fits.voTrack).toBe('vmbo-tl');
+    });
+
     it('saves a rubric self-assessment on an existing student rubric', () => {
         const { result } = renderHook(() => ({ ...useRoster(), ...useAuthoring() }), { wrapper });
         act(() => {

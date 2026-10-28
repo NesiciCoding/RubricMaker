@@ -24,6 +24,7 @@ import CefrSkillTargetList from '../components/CEFR/CefrSkillTargetList';
 import { getCefrSkillTargetProgress } from '../utils/masteryTargetAnalysis';
 import { buildCefrExpectations, cefrExpectationsForStudent } from '../utils/calibrationCohorts';
 import { VO_TRACK_LABELS, VO_TRACK_DEFAULT_CEFR, getTrackBadgeColor, getEffectiveVoTrack } from '../data/voTracks';
+import { getEffectiveSchoolYear } from '../data/schoolYears';
 import { CEFR_SKILL_LABELS } from '../data/cefrDescriptors';
 
 // Module-scope selector: stable identity so useStoreSelector's snapshot cache
@@ -106,7 +107,7 @@ export default function StudentCefrOverviewPage() {
                       rubrics,
                       selfAssessments,
                       analysisResults,
-                      cls?.year,
+                      getEffectiveSchoolYear(student, cls),
                       effectiveTrack,
                       tests,
                       studentTests,
@@ -119,7 +120,7 @@ export default function StudentCefrOverviewPage() {
             rubrics,
             selfAssessments,
             analysisResults,
-            cls?.year,
+            cls,
             effectiveTrack,
             tests,
             studentTests,
@@ -259,18 +260,22 @@ export default function StudentCefrOverviewPage() {
                         <h2 style={{ margin: '0 0 6px', fontSize: '1.4rem' }}>{student.name}</h2>
                         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
                             {cls && <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{cls.name}</span>}
-                            {cls?.voTrack && (
+                            {/* The student's own track, so the badge agrees with the target level beside it. */}
+                            {effectiveTrack && (
                                 <span
                                     style={{
                                         fontSize: 10,
                                         fontWeight: 700,
                                         padding: '2px 6px',
                                         borderRadius: 4,
-                                        background: getTrackBadgeColor(cls),
+                                        background: getTrackBadgeColor({
+                                            color: cls?.color,
+                                            voTrack: effectiveTrack,
+                                        }),
                                         color: '#fff',
                                     }}
                                 >
-                                    {VO_TRACK_LABELS[cls.voTrack]}
+                                    {VO_TRACK_LABELS[effectiveTrack]}
                                 </span>
                             )}
                             {targetLevel && (

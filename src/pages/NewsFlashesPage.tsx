@@ -332,155 +332,164 @@ export default function NewsFlashesPage() {
             </div>
 
             {draft && (
-                <Modal
-                    titleId="news-flash-modal-title"
-                    onClose={() => setDraft(null)}
-                    maxWidth={640}
-                    style={{ maxHeight: '88vh', overflowY: 'auto' }}
-                >
-                    <h2 id="news-flash-modal-title" style={{ marginTop: 0 }}>
-                        {draft.id ? t('newsFlashes.edit_title') : t('newsFlashes.new_flash')}
-                    </h2>
-                    <div className="form-group">
-                        <label htmlFor="nf-title">{t('newsFlashes.field_title')}</label>
-                        <input
-                            id="nf-title"
-                            type="text"
-                            value={draft.title}
-                            onChange={(e) => setDraft({ ...draft, title: e.target.value })}
-                            autoFocus
-                        />
+                <Modal titleId="news-flash-modal-title" onClose={() => setDraft(null)} maxWidth={640}>
+                    <div className="modal-header">
+                        <h3 id="news-flash-modal-title">
+                            {draft.id ? t('newsFlashes.edit_title') : t('newsFlashes.new_flash')}
+                        </h3>
+                        <button
+                            type="button"
+                            className="btn btn-ghost btn-icon"
+                            onClick={() => setDraft(null)}
+                            aria-label={t('common.close', 'Close')}
+                        >
+                            ✕
+                        </button>
                     </div>
-                    <div className="form-group">
-                        <label htmlFor="nf-summary">{t('newsFlashes.field_summary')}</label>
-                        <textarea
-                            id="nf-summary"
-                            rows={2}
-                            value={draft.summary}
-                            onChange={(e) => setDraft({ ...draft, summary: e.target.value })}
-                        />
-                        <p className="text-muted text-xs" style={{ marginTop: 4 }}>
-                            {t('newsFlashes.field_summary_hint')}
-                        </p>
-                    </div>
-                    <div className="form-group">
-                        <label htmlFor="nf-content">{t('newsFlashes.field_content')}</label>
-                        <TiptapEditor
-                            content={draft.content}
-                            onChange={(content) => setDraft({ ...draft, content })}
-                            placeholder={t('newsFlashes.field_content_placeholder')}
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label htmlFor="nf-url">{t('newsFlashes.field_url')}</label>
-                        <input
-                            id="nf-url"
-                            type="text"
-                            inputMode="url"
-                            autoComplete="url"
-                            placeholder="https://…"
-                            value={draft.url}
-                            aria-invalid={urlError || undefined}
-                            aria-describedby={urlError ? 'nf-url-error' : undefined}
-                            onChange={(e) => {
-                                setDraft({ ...draft, url: e.target.value });
-                                setUrlError(false);
-                            }}
-                            onBlur={() => {
-                                const url = normalizeLinkUrl(draft.url);
-                                if (url && url !== draft.url) setDraft({ ...draft, url });
-                                else if (draft.url.trim() && !url) setUrlError(true);
-                            }}
-                        />
-                        {urlError && (
-                            <div
-                                id="nf-url-error"
-                                role="alert"
-                                className="text-xs"
-                                style={{ color: 'var(--red)', marginTop: 4 }}
-                            >
-                                {t('newsFlashes.error_invalid_url')}
-                            </div>
-                        )}
-                    </div>
-                    <div className="grid-2" style={{ gap: 12 }}>
-                        <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label htmlFor="nf-kind">{t('newsFlashes.field_kind')}</label>
-                            <select
-                                id="nf-kind"
-                                value={draft.kind}
-                                onChange={(e) => setDraft({ ...draft, kind: e.target.value as NewsFlashKind })}
-                            >
-                                <option value="article">{t('newsFlashes.kind_article')}</option>
-                                <option value="book">{t('newsFlashes.kind_book')}</option>
-                                <option value="video">{t('newsFlashes.kind_video')}</option>
-                            </select>
+                    <div className="modal-body">
+                        <div className="form-group">
+                            <label htmlFor="nf-title">{t('newsFlashes.field_title')}</label>
+                            <input
+                                id="nf-title"
+                                type="text"
+                                value={draft.title}
+                                onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+                                autoFocus
+                            />
                         </div>
-                        <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label htmlFor="nf-cefr">{t('cefr.target_level_label')}</label>
-                            <select
-                                id="nf-cefr"
-                                value={draft.cefrLevel}
-                                onChange={(e) => setDraft({ ...draft, cefrLevel: e.target.value as CefrLevel | '' })}
-                            >
-                                <option value="">{t('cefr.no_level')}</option>
-                                {CEFR_LEVELS.map((lvl) => (
-                                    <option key={lvl} value={lvl}>
-                                        {lvl}
-                                    </option>
-                                ))}
-                            </select>
+                        <div className="form-group">
+                            <label htmlFor="nf-summary">{t('newsFlashes.field_summary')}</label>
+                            <textarea
+                                id="nf-summary"
+                                rows={2}
+                                value={draft.summary}
+                                onChange={(e) => setDraft({ ...draft, summary: e.target.value })}
+                            />
+                            <p className="text-muted text-xs" style={{ marginTop: 4 }}>
+                                {t('newsFlashes.field_summary_hint')}
+                            </p>
                         </div>
-                    </div>
-                    <div className="form-group">
-                        <label htmlFor="nf-tags">{t('newsFlashes.field_tags')}</label>
-                        <input
-                            id="nf-tags"
-                            type="text"
-                            placeholder={t('newsFlashes.field_tags_placeholder')}
-                            value={draft.tags}
-                            onChange={(e) => setDraft({ ...draft, tags: e.target.value })}
-                        />
-                    </div>
-                    <div className="grid-2" style={{ gap: 12 }}>
-                        <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label htmlFor="nf-linked-type">{t('newsFlashes.field_linked_resource')}</label>
-                            <select
-                                id="nf-linked-type"
-                                value={draft.linkedResourceType}
-                                onChange={(e) =>
-                                    setDraft({
-                                        ...draft,
-                                        linkedResourceType: e.target.value as NewsFlashLinkedResourceType | '',
-                                        linkedResourceId: '',
-                                    })
-                                }
-                            >
-                                <option value="">{t('newsFlashes.linked_none')}</option>
-                                <option value="flashcardDeck">{t('newsFlashes.linked_flashcardDeck')}</option>
-                                <option value="test">{t('newsFlashes.linked_test')}</option>
-                                <option value="rubric">{t('newsFlashes.linked_rubric')}</option>
-                            </select>
+                        <div className="form-group">
+                            <label htmlFor="nf-content">{t('newsFlashes.field_content')}</label>
+                            <TiptapEditor
+                                content={draft.content}
+                                onChange={(content) => setDraft({ ...draft, content })}
+                                placeholder={t('newsFlashes.field_content_placeholder')}
+                            />
                         </div>
-                        {draft.linkedResourceType && (
-                            <div className="form-group" style={{ marginBottom: 0 }}>
-                                <label htmlFor="nf-linked-id">{t('newsFlashes.field_linked_item')}</label>
-                                <select
-                                    id="nf-linked-id"
-                                    value={draft.linkedResourceId}
-                                    onChange={(e) => setDraft({ ...draft, linkedResourceId: e.target.value })}
+                        <div className="form-group">
+                            <label htmlFor="nf-url">{t('newsFlashes.field_url')}</label>
+                            <input
+                                id="nf-url"
+                                type="text"
+                                inputMode="url"
+                                autoComplete="url"
+                                placeholder="https://…"
+                                value={draft.url}
+                                aria-invalid={urlError || undefined}
+                                aria-describedby={urlError ? 'nf-url-error' : undefined}
+                                onChange={(e) => {
+                                    setDraft({ ...draft, url: e.target.value });
+                                    setUrlError(false);
+                                }}
+                                onBlur={() => {
+                                    const url = normalizeLinkUrl(draft.url);
+                                    if (url && url !== draft.url) setDraft({ ...draft, url });
+                                    else if (draft.url.trim() && !url) setUrlError(true);
+                                }}
+                            />
+                            {urlError && (
+                                <div
+                                    id="nf-url-error"
+                                    role="alert"
+                                    className="text-xs"
+                                    style={{ color: 'var(--red)', marginTop: 4 }}
                                 >
-                                    <option value="">{t('newsFlashes.linked_item_placeholder')}</option>
-                                    {linkedOptions.map((opt) => (
-                                        <option key={opt.value} value={opt.value}>
-                                            {opt.label}
+                                    {t('newsFlashes.error_invalid_url')}
+                                </div>
+                            )}
+                        </div>
+                        <div className="grid-2" style={{ gap: 12 }}>
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label htmlFor="nf-kind">{t('newsFlashes.field_kind')}</label>
+                                <select
+                                    id="nf-kind"
+                                    value={draft.kind}
+                                    onChange={(e) => setDraft({ ...draft, kind: e.target.value as NewsFlashKind })}
+                                >
+                                    <option value="article">{t('newsFlashes.kind_article')}</option>
+                                    <option value="book">{t('newsFlashes.kind_book')}</option>
+                                    <option value="video">{t('newsFlashes.kind_video')}</option>
+                                </select>
+                            </div>
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label htmlFor="nf-cefr">{t('cefr.target_level_label')}</label>
+                                <select
+                                    id="nf-cefr"
+                                    value={draft.cefrLevel}
+                                    onChange={(e) =>
+                                        setDraft({ ...draft, cefrLevel: e.target.value as CefrLevel | '' })
+                                    }
+                                >
+                                    <option value="">{t('cefr.no_level')}</option>
+                                    {CEFR_LEVELS.map((lvl) => (
+                                        <option key={lvl} value={lvl}>
+                                            {lvl}
                                         </option>
                                     ))}
                                 </select>
                             </div>
-                        )}
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="nf-tags">{t('newsFlashes.field_tags')}</label>
+                            <input
+                                id="nf-tags"
+                                type="text"
+                                placeholder={t('newsFlashes.field_tags_placeholder')}
+                                value={draft.tags}
+                                onChange={(e) => setDraft({ ...draft, tags: e.target.value })}
+                            />
+                        </div>
+                        <div className="grid-2" style={{ gap: 12 }}>
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label htmlFor="nf-linked-type">{t('newsFlashes.field_linked_resource')}</label>
+                                <select
+                                    id="nf-linked-type"
+                                    value={draft.linkedResourceType}
+                                    onChange={(e) =>
+                                        setDraft({
+                                            ...draft,
+                                            linkedResourceType: e.target.value as NewsFlashLinkedResourceType | '',
+                                            linkedResourceId: '',
+                                        })
+                                    }
+                                >
+                                    <option value="">{t('newsFlashes.linked_none')}</option>
+                                    <option value="flashcardDeck">{t('newsFlashes.linked_flashcardDeck')}</option>
+                                    <option value="test">{t('newsFlashes.linked_test')}</option>
+                                    <option value="rubric">{t('newsFlashes.linked_rubric')}</option>
+                                </select>
+                            </div>
+                            {draft.linkedResourceType && (
+                                <div className="form-group" style={{ marginBottom: 0 }}>
+                                    <label htmlFor="nf-linked-id">{t('newsFlashes.field_linked_item')}</label>
+                                    <select
+                                        id="nf-linked-id"
+                                        value={draft.linkedResourceId}
+                                        onChange={(e) => setDraft({ ...draft, linkedResourceId: e.target.value })}
+                                    >
+                                        <option value="">{t('newsFlashes.linked_item_placeholder')}</option>
+                                        {linkedOptions.map((opt) => (
+                                            <option key={opt.value} value={opt.value}>
+                                                {opt.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+                        </div>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 18 }}>
+                    <div className="modal-footer">
                         <button type="button" className="btn btn-ghost" onClick={() => setDraft(null)}>
                             {t('common.cancel')}
                         </button>
