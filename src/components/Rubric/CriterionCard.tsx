@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import {
     Plus,
     Trash2,
-    GripVertical,
     GripHorizontal,
     ChevronUp,
     ChevronDown,
@@ -30,6 +29,7 @@ import { useToast } from '../../hooks/useToast';
 import { createSubItem, splitIntoSubItemLabels, subItemMode } from '../../utils/subItems';
 import SubItemListEditor from './SubItemListEditor';
 import TieredCriterionGrid from './TieredCriterionGrid';
+import CardGrip from '../ui/CardGrip';
 
 export type CriterionStandardTarget =
     { type: 'criterion'; cid: string } | { type: 'subitem'; cid: string; lid: string; sid: string };
@@ -140,17 +140,15 @@ export default memo(function CriterionCard({
                             marginBottom: 14,
                         }}
                     >
+                        {/* Up / grip / down. Only the grip is the drag handle: the arrows used to sit
+                            inside it, so they were buttons nested in a role="button" element and a
+                            press on one could start a drag. */}
                         <div
-                            {...provided.dragHandleProps}
-                            aria-label={t('rubricBuilder.drag_reorder_criterion', {
-                                name: criterion.title || t('rubricBuilder.untitled'),
-                            })}
                             style={{
                                 display: 'flex',
                                 flexDirection: 'column',
                                 gap: 2,
                                 paddingTop: 4,
-                                cursor: 'grab',
                             }}
                         >
                             <button
@@ -161,13 +159,13 @@ export default memo(function CriterionCard({
                             >
                                 <ChevronUp size={14} />
                             </button>
-                            <GripVertical
+                            <CardGrip
+                                {...provided.dragHandleProps}
+                                label={t('rubricBuilder.drag_reorder_criterion', {
+                                    name: criterion.title || t('rubricBuilder.untitled'),
+                                })}
                                 size={16}
-                                style={{
-                                    color: 'var(--text-dim)',
-                                    alignSelf: 'center',
-                                }}
-                                aria-hidden="true"
+                                style={{ alignSelf: 'center', padding: 3, margin: 0 }}
                             />
                             <button
                                 className="btn btn-ghost btn-icon btn-sm"

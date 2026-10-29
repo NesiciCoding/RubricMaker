@@ -36,8 +36,8 @@ import {
     RemoveFormatting,
     Unlink,
     FileText,
-    GripVertical,
 } from 'lucide-react';
+import CardGrip from '../ui/CardGrip';
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -665,12 +665,7 @@ export default function EssayEditor({
 
             {editable && showDragHandle && (
                 <DragHandle editor={editor}>
-                    <GripVertical
-                        size={14}
-                        color="var(--text-dim)"
-                        style={{ cursor: 'grab' }}
-                        aria-label={t('editor.dragToReorder')}
-                    />
+                    <CardGrip label={t('editor.dragToReorder')} size={14} style={{ padding: 2, margin: 0 }} />
                 </DragHandle>
             )}
 

@@ -67,6 +67,7 @@ import type {
     LinkedFrameworkDescriptor,
     CefrLevel,
 } from '../../types';
+import CardGrip from '../ui/CardGrip';
 
 interface Props {
     question: TestQuestion;
@@ -507,22 +508,18 @@ export default function QuestionEditor({
         <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {/* Drag handle */}
-                    {/* The handle carries the label as text rather than aria-label: outside a
-                        Droppable it has no role, and a name on a role-less div is invalid (#697). */}
-                    <div
+                    {/* Drag handle. Outside a Droppable (the question-bank modal) it has no role,
+                        and a name on a role-less element is invalid (#697) — so the name is only
+                        an aria-label when dnd supplied the role, and is text otherwise. */}
+                    <CardGrip
                         {...(dragHandleProps ?? {})}
-                        style={{
-                            cursor: 'grab',
-                            color: 'var(--text-muted)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            padding: '2px 0',
-                        }}
+                        label={dragHandleProps ? t('tests.drag_question') : undefined}
+                        size={16}
+                        style={{ padding: '2px 0', margin: 0, color: 'var(--text-muted)' }}
                     >
                         <GripVertical size={16} aria-hidden="true" />
-                        <span className="sr-only">{t('tests.drag_question')}</span>
-                    </div>
+                        {!dragHandleProps && <span className="sr-only">{t('tests.drag_question')}</span>}
+                    </CardGrip>
                     <span className="badge badge-blue">{t('tests.question_number', { number: index + 1 })}</span>
                 </div>
                 <div style={{ display: 'flex', gap: 4 }}>
