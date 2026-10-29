@@ -12,14 +12,24 @@ vi.mock('react-router-dom', async () => {
 
 const mockAddDeck = vi.fn();
 const mockDeleteDeck = vi.fn();
+const mockUpdateDeck = vi.fn();
+const mockAddFolder = vi.fn();
+const mockUpdateFolder = vi.fn();
+const mockDeleteFolder = vi.fn();
 let mockDecks: FlashcardDeck[] = [];
 let mockAssignments: FlashcardAssignment[] = [];
+let mockFolders: { id: string; name: string; kind: string; createdAt: string }[] = [];
 
 const makeAppValue = () => ({
     flashcardDecks: mockDecks,
     flashcardAssignments: mockAssignments,
     addFlashcardDeck: mockAddDeck,
+    updateFlashcardDeck: mockUpdateDeck,
     deleteFlashcardDeck: mockDeleteDeck,
+    folders: mockFolders,
+    addFolder: mockAddFolder,
+    updateFolder: mockUpdateFolder,
+    deleteFolder: mockDeleteFolder,
     students: [],
     studentRubrics: [],
     settings: {
@@ -64,8 +74,12 @@ describe('FlashcardsPage', () => {
         mockNavigate.mockClear();
         mockAddDeck.mockClear();
         mockDeleteDeck.mockClear();
+        mockUpdateDeck.mockReset();
+        mockAddFolder.mockReset();
+        mockDeleteFolder.mockReset();
         mockDecks = [];
         mockAssignments = [];
+        mockFolders = [];
         mockAddDeck.mockImplementation((deck: Partial<FlashcardDeck>) => ({
             id: 'deck-new',
             name: deck.name ?? '',
@@ -235,5 +249,65 @@ describe('FlashcardsPage', () => {
         const { default: FlashcardsPage } = await import('../FlashcardsPage');
         renderWithRouter(<FlashcardsPage />);
         expect(screen.getByText('Weekly vocabulary from the reading unit')).toBeInTheDocument();
+    });
+});
+
+describe('FlashcardsPage folders', () => {
+    const folder = { id: 'deck-f1', name: 'Term 1', kind: 'flashcard', createdAt: '2024-01-01T00:00:00Z' };
+    const deckB: FlashcardDeck = {
+        id: 'd2',
+        name: 'Week 2 Words',
+        cards: [],
+        createdAt: '2024-03-01T00:00:00Z',
+    };
+
+    beforeEach(() => {
+        mockNavigate.mockClear();
+        mockUpdateDeck.mockReset();
+        mockAddFolder.mockReset();
+        mockDeleteFolder.mockReset();
+        mockFolders = [folder];
+        mockAssignments = [];
+    });
+
+    it('counts filed decks on the tile and filters to the folder when it is clicked', async () => {
+        mockDecks = [{ ...deckA, folderId: 'deck-f1' }, deckB];
+        const { default: FlashcardsPage } = await import('../FlashcardsPage');
+        renderWithRouter(<FlashcardsPage />);
+
+        expect(screen.getByText('folders.items_count:{"count":1}')).toBeInTheDocument();
+        expect(screen.getByText('Week 2 Words')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByText('Term 1'));
+
+        expect(screen.getByText('Week 1 Words')).toBeInTheDocument();
+        expect(screen.queryByText('Week 2 Words')).not.toBeInTheDocument();
+    });
+
+    it('creates a flashcard folder that is separate from the rubric and test trees', async () => {
+        mockDecks = [deckA];
+        mockAddFolder.mockReturnValue({ ...folder, id: 'deck-f-new', name: 'Term 2' });
+        const { default: FlashcardsPage } = await import('../FlashcardsPage');
+        renderWithRouter(<FlashcardsPage />);
+
+        fireEvent.click(screen.getByText('folders.new_folder'));
+        fireEvent.change(screen.getByLabelText('folders.folder_name'), { target: { value: 'Term 2' } });
+        fireEvent.click(screen.getByText('folders.create'));
+
+        expect(mockAddFolder).toHaveBeenCalledWith({ name: 'Term 2', kind: 'flashcard', displayOrder: 0 });
+    });
+
+    it('unfiles the decks but keeps them when the folder is deleted', async () => {
+        mockDecks = [{ ...deckA, folderId: 'deck-f1' }];
+        const { default: FlashcardsPage } = await import('../FlashcardsPage');
+        renderWithRouter(<FlashcardsPage />);
+
+        fireEvent.click(screen.getByLabelText('folders.delete'));
+        await act(async () => {
+            fireEvent.click(screen.getByText('common.delete'));
+        });
+
+        expect(mockDeleteFolder).toHaveBeenCalledWith('deck-f1', 'flashcard');
+        expect(mockDeleteDeck).not.toHaveBeenCalled();
     });
 });
