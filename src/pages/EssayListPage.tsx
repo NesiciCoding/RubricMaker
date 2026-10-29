@@ -147,8 +147,14 @@ export default function EssayListPage() {
                                                         className="card"
                                                         style={{
                                                             transition: 'border-color var(--transition)',
-                                                            flex: '1 1 320px',
-                                                            maxWidth: 480,
+                                                            // Fixed basis, no grow: every tile keeps the same
+                                                            // width on every row. minWidth 0 is required — a
+                                                            // flex item's automatic minimum is its min-content
+                                                            // width, so a long title would stretch the card past
+                                                            // the basis and overflow the page.
+                                                            flex: '0 1 400px',
+                                                            minWidth: 0,
+                                                            maxWidth: '100%',
                                                             ...dragProvided.draggableProps.style,
                                                         }}
                                                     >
@@ -174,13 +180,21 @@ export default function EssayListPage() {
                                                                         style={{
                                                                             cursor: 'grab',
                                                                             color: 'var(--text-dim)',
-                                                                            marginTop: 3,
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            flexShrink: 0,
+                                                                            // Padding (cancelled by the negative
+                                                                            // margin) grows the grab area around
+                                                                            // the corner glyph to a 25px target.
+                                                                            padding: 5,
+                                                                            margin: '-1px 0 0 -5px',
+                                                                            touchAction: 'none',
                                                                         }}
                                                                     >
                                                                         <GripVertical size={15} />
                                                                     </span>
                                                                 )}
-                                                                <div>
+                                                                <div style={{ minWidth: 0 }}>
                                                                     <h3>{first.title}</h3>
                                                                     <div
                                                                         className="text-muted text-xs"

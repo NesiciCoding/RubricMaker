@@ -104,8 +104,14 @@ export default function FlashcardsPage() {
                                     style={{
                                         position: 'relative',
                                         transition: 'border-color var(--transition)',
-                                        flex: '1 1 320px',
-                                        maxWidth: 480,
+                                        // Fixed basis, no grow: tiles stay the same width on every
+                                        // row. minWidth 0 keeps that basis honest — a flex item's
+                                        // automatic minimum is its min-content width, and the
+                                        // card header is a nowrap-safe flex row, so without it a
+                                        // long deck name could stretch the card and overflow.
+                                        flex: '0 1 400px',
+                                        minWidth: 0,
+                                        maxWidth: '100%',
                                     }}
                                     onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
                                     onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}

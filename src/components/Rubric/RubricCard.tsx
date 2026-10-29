@@ -130,7 +130,12 @@ function RubricCard({
                         transition: 'border-color var(--transition)',
                         // Fixed basis, no grow: tiles stay the same width on every row (a growing
                         // basis made the last row's cards wider than the full ones above it).
+                        // minWidth 0 keeps that basis honest — a flex item's automatic minimum is
+                        // its min-content width, so the nowrap (`.truncate`) description used to
+                        // stretch its card to the width of the whole sentence.
                         flex: '0 1 400px',
+                        minWidth: 0,
+                        maxWidth: '100%',
                         ...dragProvided.draggableProps.style,
                     }}
                     onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
@@ -161,7 +166,14 @@ function RubricCard({
                                     style={{
                                         cursor: 'grab',
                                         color: 'var(--text-dim)',
-                                        marginTop: 3,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        flexShrink: 0,
+                                        // Padding (cancelled by the negative margin) grows the grab
+                                        // area around the corner glyph to a 25px touch target.
+                                        padding: 5,
+                                        margin: '-1px 0 0 -5px',
+                                        touchAction: 'none',
                                     }}
                                 >
                                     <GripVertical size={15} />
