@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
@@ -64,7 +65,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
 function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: number) => void }) {
     if (toasts.length === 0) return null;
-    return (
+    // Portalled to <body>: a fixed toast inside page content is positioned against the nearest
+    // transformed ancestor (any `.fade-in` ending on a transform) instead of the viewport (#1017).
+    return createPortal(
         <div
             style={{
                 position: 'fixed',
@@ -80,7 +83,8 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
             {toasts.map((t) => (
                 <ToastItem key={t.id} toast={t} onDismiss={onDismiss} />
             ))}
-        </div>
+        </div>,
+        document.body
     );
 }
 

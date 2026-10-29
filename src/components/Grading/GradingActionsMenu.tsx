@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Settings } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -40,7 +41,11 @@ export default function GradingActionsMenu({ actions }: { actions: GradingAction
     useEffect(() => {
         if (!open) return;
         const onDown = (e: MouseEvent) => {
-            if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+            const target = e.target as Node;
+            // The menu renders in a portal (see below), so it is not inside wrapRef: without this
+            // second check a mousedown on an item would close the menu before its click landed.
+            if (menuRef.current?.contains(target) || wrapRef.current?.contains(target)) return;
+            setOpen(false);
         };
         const onKey = (e: KeyboardEvent) => {
             if (e.key === 'Escape') closeMenu();
@@ -101,46 +106,52 @@ export default function GradingActionsMenu({ actions }: { actions: GradingAction
             >
                 <Settings size={15} />
             </button>
-            {open && coords && (
-                <div
-                    ref={menuRef}
-                    className="card"
-                    role="menu"
-                    onKeyDown={onMenuKeyDown}
-                    style={{
-                        position: 'fixed',
-                        right: coords.right,
-                        top: coords.top,
-                        zIndex: 200,
-                        padding: 4,
-                        minWidth: 210,
-                        boxShadow: 'var(--shadow-lg)',
-                    }}
-                >
-                    {actions.map((a) => (
-                        <button
-                            key={a.key}
-                            type="button"
-                            role="menuitem"
-                            className="btn btn-ghost btn-sm"
-                            style={{
-                                width: '100%',
-                                justifyContent: 'flex-start',
-                                gap: 8,
-                                color: a.danger ? 'var(--red)' : a.active ? 'var(--accent)' : undefined,
-                            }}
-                            onClick={() => {
-                                closeMenu(false);
-                                a.onClick();
-                            }}
-                        >
-                            {a.icon}
-                            {a.label}
-                            {a.active && <span style={{ marginLeft: 'auto', color: 'var(--accent)' }}>✓</span>}
-                        </button>
-                    ))}
-                </div>
-            )}
+            {open &&
+                coords &&
+                // Portalled to <body>: a fixed-position menu inside page content is positioned
+                // against the nearest transformed ancestor (any `.fade-in` that ends on a
+                // transform) instead of the viewport — see #1017.
+                createPortal(
+                    <div
+                        ref={menuRef}
+                        className="card"
+                        role="menu"
+                        onKeyDown={onMenuKeyDown}
+                        style={{
+                            position: 'fixed',
+                            right: coords.right,
+                            top: coords.top,
+                            zIndex: 200,
+                            padding: 4,
+                            minWidth: 210,
+                            boxShadow: 'var(--shadow-lg)',
+                        }}
+                    >
+                        {actions.map((a) => (
+                            <button
+                                key={a.key}
+                                type="button"
+                                role="menuitem"
+                                className="btn btn-ghost btn-sm"
+                                style={{
+                                    width: '100%',
+                                    justifyContent: 'flex-start',
+                                    gap: 8,
+                                    color: a.danger ? 'var(--red)' : a.active ? 'var(--accent)' : undefined,
+                                }}
+                                onClick={() => {
+                                    closeMenu(false);
+                                    a.onClick();
+                                }}
+                            >
+                                {a.icon}
+                                {a.label}
+                                {a.active && <span style={{ marginLeft: 'auto', color: 'var(--accent)' }}>✓</span>}
+                            </button>
+                        ))}
+                    </div>,
+                    document.body
+                )}
         </div>
     );
 }

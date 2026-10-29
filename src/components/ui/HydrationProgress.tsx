@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { Loader } from 'lucide-react';
 import { loadDb } from '../../services/database/lazyDb';
@@ -32,7 +33,9 @@ export function HydrationProgress() {
     if (!progress) return null;
     const pct = Math.min(100, Math.round((progress.done / progress.total) * 100));
 
-    return (
+    // Portalled to <body>: a fixed banner inside page content is positioned against the nearest
+    // transformed ancestor (any `.fade-in` ending on a transform) instead of the viewport (#1017).
+    return createPortal(
         <div
             role="status"
             aria-live="polite"
@@ -78,6 +81,7 @@ export function HydrationProgress() {
             <div style={{ marginTop: '0.4rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                 {t('toast.sync_hydrating_hint')}
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

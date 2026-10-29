@@ -1,4 +1,5 @@
 import { useState, useSyncExternalStore } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { subscribe, getUpdateSW, getUpdateVersion } from '../../pwaUpdateStore';
 import { PWA_UPDATE_NOTES } from '../../pwaChangelog';
@@ -13,7 +14,9 @@ export function UpdateAvailableToast() {
 
     if (!updateSW || version === dismissedVersion) return null;
 
-    return (
+    // Portalled to <body>: a fixed toast inside page content is positioned against the nearest
+    // transformed ancestor (any `.fade-in` ending on a transform) instead of the viewport (#1017).
+    return createPortal(
         <div
             role="status"
             style={{
@@ -76,6 +79,7 @@ export function UpdateAvailableToast() {
                     {t('pwa.update_available_report_issue')}
                 </a>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

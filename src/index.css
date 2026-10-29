@@ -1359,6 +1359,10 @@ select.input-error {
     }
 }
 
+/* Ends on `transform: none`, not `translateY(0)`. A value that keeps a transform — even an
+   identity one — makes the element a containing block for every `position: fixed` descendant, so
+   overlays inside page content got pinned to this box instead of the viewport (#1017). Overlays
+   are portalled to <body> now; never end an animation here on a transform. */
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -1367,7 +1371,7 @@ select.input-error {
 
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: none;
     }
 }
 
