@@ -64,6 +64,19 @@ section() { printf '\n%s== %s ==%s\n' "$C_B" "$1" "$C_OFF"; }
 have() { command -v "$1" >/dev/null 2>&1; }
 as_root() { [[ $EUID -eq 0 ]]; }
 
+# GNU coreutils' `timeout` is missing on macOS and BSD. The audit normally runs on the Linux host,
+# but it is also run from developer machines, so run unbounded rather than fail where it is absent.
+with_timeout() {
+    local secs="$1"
+    shift
+    if have timeout; then timeout "$secs" "$@"; else "$@"; fi
+}
+
+# Epoch seconds for a certificate's `notAfter` ("Sep  1 12:00:00 2026 GMT"): GNU date -d, BSD date -j.
+epoch_of() {
+    date -d "$1" +%s 2>/dev/null || date -j -f '%b %d %H:%M:%S %Y %Z' "$1" +%s 2>/dev/null
+}
+
 # Value of KEY in a dotenv file, without sourcing it (the file may contain shell metacharacters).
 env_value() {
     local file="$1" key="$2"
@@ -92,11 +105,11 @@ DB_USER="supabase_admin"
 psql_q() {
     local envargs=(-e PGHOST=127.0.0.1)
     [[ -n "${PGPASSWORD_ENV:-}" ]] && envargs+=(-e PGPASSWORD)
-    PGPASSWORD="${PGPASSWORD_ENV:-}" timeout 30 docker exec "${envargs[@]}" "$DB_CONTAINER" \
+    PGPASSWORD="${PGPASSWORD_ENV:-}" with_timeout 30 docker exec "${envargs[@]}" "$DB_CONTAINER" \
         psql -w -U "$DB_USER" -d postgres -XAtq -v ON_ERROR_STOP=1 -F '|' -c "$1" 2>/dev/null
 }
 
-printf '%sRubricMaker live-stack audit — %s on %s%s\n' "$C_B" "$(date -Is)" "$(hostname)" "$C_OFF"
+printf '%sRubricMaker live-stack audit — %s on %s%s\n' "$C_B" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(hostname)" "$C_OFF"
 as_root || info "Not running as root: SSH, firewall, OOM-history and service checks may be incomplete."
 
 # ── Stack ─────────────────────────────────────────────────────────────────────────────────────────
@@ -131,7 +144,9 @@ info "App URL: ${APP_URL:-<unset>}   API URL: ${API_URL:-<unset>}"
 # ── Secrets and auth config ───────────────────────────────────────────────────────────────────────
 section "Secrets and auth config (#930)"
 if [[ -n "$ENV_FILE" && -r "$ENV_FILE" ]]; then
-    mode="$(stat -c '%a' "$ENV_FILE")"
+    # GNU stat takes -c, BSD/macOS stat takes -f. The audit runs on a Linux host, but its
+    # tests run on developer machines too — a failed stat must not abort the checks.
+    mode="$(stat -c '%a' "$ENV_FILE" 2>/dev/null || stat -f '%Lp' "$ENV_FILE" 2>/dev/null || echo '?')"
     if [[ "${mode: -1}" =~ [4-7] ]]; then
         fail "$ENV_FILE is world-readable (mode $mode)" "chmod 600 $ENV_FILE"
     else
@@ -229,9 +244,10 @@ for u in "$APP_URL" "$API_URL"; do
     loc="$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' --max-time 10 "http://$host/" || true)"
     if [[ "$loc" =~ ^30[1278]\ https:// ]]; then pass "http://$host redirects to HTTPS"; else warn "http://$host does not redirect to HTTPS ($loc)"; fi
     if have openssl; then
-        end="$(echo | timeout 10 openssl s_client -servername "$host" -connect "$host:443" 2>/dev/null | openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2)"
-        if [[ -n "$end" ]]; then
-            days=$((($(date -d "$end" +%s) - $(date +%s)) / 86400))
+        end="$(echo | with_timeout 10 openssl s_client -servername "$host" -connect "$host:443" 2>/dev/null | openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2)"
+        end_epoch="$(epoch_of "$end")"
+        if [[ -n "$end_epoch" ]]; then
+            days=$((($end_epoch - $(date +%s)) / 86400))
             if [[ $days -lt 14 ]]; then warn "TLS certificate for $host expires in $days days"; else pass "TLS certificate for $host valid for $days more days"; fi
         fi
     fi
@@ -352,7 +368,7 @@ done < <(for path in / /var/lib/docker "${SUPABASE_DIR:-}"; do
     df -P "$path" | awk 'NR==2{print $6" "$5" "$4}'
 done | sort -u)
 if [[ -n "$SUPABASE_DIR" && -d "$SUPABASE_DIR/volumes/storage" ]]; then
-    info "Uploads (volumes/storage): $(timeout 60 du -sh "$SUPABASE_DIR/volumes/storage" 2>/dev/null | cut -f1)"
+    info "Uploads (volumes/storage): $(with_timeout 60 du -sh "$SUPABASE_DIR/volumes/storage" 2>/dev/null | cut -f1)"
 fi
 
 # ── Postgres ──────────────────────────────────────────────────────────────────────────────────────
