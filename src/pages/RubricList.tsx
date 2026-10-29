@@ -1025,110 +1025,108 @@ export default function RubricList() {
                 )}
 
                 {differentiateId && (
-                    <div className="modal-overlay" onClick={() => setDifferentiateId(null)}>
-                        <div className="modal" style={{ maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>
-                            <div className="modal-header">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                    <Layers size={18} style={{ color: 'var(--accent)' }} />
-                                    <div>
-                                        <div style={{ fontWeight: 600, fontSize: 15 }}>
-                                            {t('voTrack.differentiate_title')}
-                                        </div>
-                                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                                            {t('voTrack.differentiate_subtitle')}
-                                        </div>
+                    <Modal titleId="rubric-differentiate-title" onClose={() => setDifferentiateId(null)} maxWidth={480}>
+                        <div className="modal-header">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <Layers size={18} style={{ color: 'var(--accent)' }} />
+                                <div>
+                                    <h3 id="rubric-differentiate-title" style={{ fontWeight: 600, fontSize: 15 }}>
+                                        {t('voTrack.differentiate_title')}
+                                    </h3>
+                                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                                        {t('voTrack.differentiate_subtitle')}
                                     </div>
                                 </div>
-                                <button
-                                    className="btn btn-ghost btn-icon"
-                                    aria-label={t('common.close')}
-                                    onClick={() => setDifferentiateId(null)}
-                                >
-                                    ✕
-                                </button>
                             </div>
-                            <div className="modal-body">
-                                <div
-                                    style={{
-                                        background: 'var(--bg-elevated)',
-                                        borderRadius: 8,
-                                        padding: '10px 14px',
-                                        marginBottom: 18,
-                                        fontSize: 13,
-                                        color: 'var(--text-muted)',
-                                    }}
-                                >
+                            <button
+                                className="btn btn-ghost btn-icon"
+                                aria-label={t('common.close')}
+                                onClick={() => setDifferentiateId(null)}
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div className="modal-body">
+                            <div
+                                style={{
+                                    background: 'var(--bg-elevated)',
+                                    borderRadius: 8,
+                                    padding: '10px 14px',
+                                    marginBottom: 18,
+                                    fontSize: 13,
+                                    color: 'var(--text-muted)',
+                                }}
+                            >
+                                <strong style={{ color: 'var(--text)' }}>
+                                    {rubrics.find((r) => r.id === differentiateId)?.name}
+                                </strong>
+                            </div>
+
+                            <div className="form-group" style={{ marginBottom: 18 }}>
+                                <label>{t('voTrack.target_track')}</label>
+                                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 6 }}>
+                                    {VO_TRACKS.map((track) => (
+                                        <button
+                                            key={track}
+                                            className={`btn btn-sm ${diffTrack === track ? 'btn-primary' : 'btn-ghost'}`}
+                                            style={
+                                                diffTrack !== track
+                                                    ? {
+                                                          borderColor: VO_TRACK_COLORS[track],
+                                                          color: VO_TRACK_COLORS[track],
+                                                      }
+                                                    : {}
+                                            }
+                                            onClick={() => {
+                                                setDiffTrack(track);
+                                                setDiffCefr(VO_TRACK_DEFAULT_CEFR[track]);
+                                            }}
+                                        >
+                                            {VO_TRACK_LABELS[track]}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="form-group">
+                                <label>{t('voTrack.suggested_cefr')}</label>
+                                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
+                                    {(['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as CefrLevel[]).map((level) => (
+                                        <button
+                                            key={level}
+                                            className={`btn btn-sm ${diffCefr === level ? 'btn-primary' : 'btn-ghost'}`}
+                                            style={
+                                                diffCefr !== level
+                                                    ? {
+                                                          borderColor: CEFR_LEVEL_COLORS[level],
+                                                          color: CEFR_LEVEL_COLORS[level],
+                                                      }
+                                                    : {}
+                                            }
+                                            onClick={() => setDiffCefr(level)}
+                                        >
+                                            {level}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div style={{ marginTop: 10, fontSize: 12, color: 'var(--text-muted)' }}>
+                                    {t('rubricList.variant_name_label')}{' '}
                                     <strong style={{ color: 'var(--text)' }}>
-                                        {rubrics.find((r) => r.id === differentiateId)?.name}
+                                        {rubrics.find((r) => r.id === differentiateId)?.name} (
+                                        {VO_TRACK_LABELS[diffTrack]})
                                     </strong>
                                 </div>
-
-                                <div className="form-group" style={{ marginBottom: 18 }}>
-                                    <label>{t('voTrack.target_track')}</label>
-                                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 6 }}>
-                                        {VO_TRACKS.map((track) => (
-                                            <button
-                                                key={track}
-                                                className={`btn btn-sm ${diffTrack === track ? 'btn-primary' : 'btn-ghost'}`}
-                                                style={
-                                                    diffTrack !== track
-                                                        ? {
-                                                              borderColor: VO_TRACK_COLORS[track],
-                                                              color: VO_TRACK_COLORS[track],
-                                                          }
-                                                        : {}
-                                                }
-                                                onClick={() => {
-                                                    setDiffTrack(track);
-                                                    setDiffCefr(VO_TRACK_DEFAULT_CEFR[track]);
-                                                }}
-                                            >
-                                                {VO_TRACK_LABELS[track]}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div className="form-group">
-                                    <label>{t('voTrack.suggested_cefr')}</label>
-                                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
-                                        {(['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as CefrLevel[]).map((level) => (
-                                            <button
-                                                key={level}
-                                                className={`btn btn-sm ${diffCefr === level ? 'btn-primary' : 'btn-ghost'}`}
-                                                style={
-                                                    diffCefr !== level
-                                                        ? {
-                                                              borderColor: CEFR_LEVEL_COLORS[level],
-                                                              color: CEFR_LEVEL_COLORS[level],
-                                                          }
-                                                        : {}
-                                                }
-                                                onClick={() => setDiffCefr(level)}
-                                            >
-                                                {level}
-                                            </button>
-                                        ))}
-                                    </div>
-                                    <div style={{ marginTop: 10, fontSize: 12, color: 'var(--text-muted)' }}>
-                                        {t('rubricList.variant_name_label')}{' '}
-                                        <strong style={{ color: 'var(--text)' }}>
-                                            {rubrics.find((r) => r.id === differentiateId)?.name} (
-                                            {VO_TRACK_LABELS[diffTrack]})
-                                        </strong>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="modal-footer">
-                                <button className="btn btn-secondary" onClick={() => setDifferentiateId(null)}>
-                                    {t('common.cancel')}
-                                </button>
-                                <button className="btn btn-primary" onClick={handleDifferentiate}>
-                                    <Layers size={14} /> {t('voTrack.action_create')}
-                                </button>
                             </div>
                         </div>
-                    </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-secondary" onClick={() => setDifferentiateId(null)}>
+                                {t('common.cancel')}
+                            </button>
+                            <button className="btn btn-primary" onClick={handleDifferentiate}>
+                                <Layers size={14} /> {t('voTrack.action_create')}
+                            </button>
+                        </div>
+                    </Modal>
                 )}
 
                 {showCodeImport && (
@@ -1210,151 +1208,146 @@ export default function RubricList() {
 
             {/* ── Share with colleague modal ── */}
             {shareModal && (
-                <div
-                    className="modal-overlay"
-                    onClick={() => {
+                <Modal
+                    titleId="rubric-share-title"
+                    onClose={() => {
                         setShareModal(null);
                         setShareStatus('idle');
                     }}
+                    maxWidth={480}
                 >
-                    <div className="modal" style={{ maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>
-                        <div className="modal-header">
-                            <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <Users2 size={16} /> {t('rubricList.share_modal_title')}
-                            </h3>
-                            <button
-                                className="btn btn-ghost btn-icon"
-                                aria-label={t('common.close')}
-                                onClick={() => {
-                                    setShareModal(null);
-                                    setShareStatus('idle');
-                                }}
-                            >
-                                <X size={16} />
-                            </button>
-                        </div>
-                        <div className="modal-body">
-                            <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
-                                {t('rubricList.share_modal_desc', { rubric: shareModal.rubricName })}
-                            </p>
-
-                            <label
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 8,
-                                    marginBottom: 16,
-                                    padding: '8px 10px',
-                                    background: 'var(--bg-elevated)',
-                                    borderRadius: 8,
-                                    cursor: 'pointer',
-                                }}
-                            >
-                                <input
-                                    type="checkbox"
-                                    checked={
-                                        rubrics.find((r) => r.id === shareModal.rubricId)?.sharedWithSchool ?? false
-                                    }
-                                    onChange={(e) => toggleSharedWithSchool(shareModal.rubricId, e.target.checked)}
-                                />
-                                <span style={{ fontSize: '0.85rem' }}>{t('rubricList.share_with_department')}</span>
-                            </label>
-                            <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-                                <input
-                                    type="email"
-                                    placeholder={t('rubricList.share_email_placeholder')}
-                                    value={shareEmail}
-                                    onChange={(e) => {
-                                        setShareEmail(e.target.value);
-                                        setShareStatus('idle');
-                                    }}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleShare()}
-                                    style={{ flex: 1 }}
-                                    autoFocus
-                                />
-                                <select
-                                    value={shareMode}
-                                    onChange={(e) => setShareMode(e.target.value as 'read' | 'edit')}
-                                    style={{ width: 100 }}
-                                >
-                                    <option value="read">{t('rubricList.share_mode_read')}</option>
-                                    <option value="edit">{t('rubricList.share_mode_edit')}</option>
-                                </select>
-                            </div>
-                            {shareStatus === 'success' && (
-                                <p style={{ color: 'var(--green)', fontSize: '0.85rem', marginBottom: 8 }}>
-                                    {t('rubricList.share_success')}
-                                </p>
-                            )}
-                            {shareStatus === 'notfound' && (
-                                <p style={{ color: 'var(--red)', fontSize: '0.85rem', marginBottom: 8 }}>
-                                    {t('rubricList.share_notfound', { email: shareErrorMsg })}
-                                </p>
-                            )}
-                            {shareStatus === 'error' && (
-                                <p style={{ color: 'var(--red)', fontSize: '0.85rem', marginBottom: 8 }}>
-                                    {shareErrorMsg}
-                                </p>
-                            )}
-
-                            {/* Current shares */}
-                            {shareListLoading && <p className="text-muted text-sm">{t('admin.users_loading')}</p>}
-                            {shareList.length > 0 && (
-                                <div style={{ marginBottom: 16 }}>
-                                    <p
-                                        className="text-xs text-muted"
-                                        style={{ marginBottom: 8, textTransform: 'uppercase', fontWeight: 600 }}
-                                    >
-                                        {t('rubricList.share_shared_with')}
-                                    </p>
-                                    {shareList.map((s) => (
-                                        <div
-                                            key={s.userId}
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: 8,
-                                                padding: '6px 0',
-                                                borderBottom: '1px solid var(--border)',
-                                            }}
-                                        >
-                                            <div style={{ flex: 1, fontSize: '0.875rem' }}>
-                                                {s.email ?? s.displayName ?? s.userId}
-                                            </div>
-                                            <span className="badge">{s.mode}</span>
-                                            <button
-                                                className="btn btn-ghost btn-icon btn-sm"
-                                                aria-label={t('rubricList.action_unshare')}
-                                                style={{ color: 'var(--red)' }}
-                                                onClick={() => handleUnshare(s.userId)}
-                                            >
-                                                <Trash2 size={13} />
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                        <div className="modal-footer">
-                            <button
-                                className="btn btn-secondary"
-                                onClick={() => {
-                                    setShareModal(null);
-                                    setShareStatus('idle');
-                                }}
-                            >
-                                {t('common.close')}
-                            </button>
-                            <button
-                                className="btn btn-primary"
-                                disabled={!shareEmail.trim() || shareStatus === 'loading'}
-                                onClick={handleShare}
-                            >
-                                <Users2 size={14} /> {shareStatus === 'loading' ? '…' : t('rubricList.share_btn')}
-                            </button>
-                        </div>
+                    <div className="modal-header">
+                        <h3 id="rubric-share-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <Users2 size={16} /> {t('rubricList.share_modal_title')}
+                        </h3>
+                        <button
+                            className="btn btn-ghost btn-icon"
+                            aria-label={t('common.close')}
+                            onClick={() => {
+                                setShareModal(null);
+                                setShareStatus('idle');
+                            }}
+                        >
+                            <X size={16} />
+                        </button>
                     </div>
-                </div>
+                    <div className="modal-body">
+                        <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
+                            {t('rubricList.share_modal_desc', { rubric: shareModal.rubricName })}
+                        </p>
+
+                        <label
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 8,
+                                marginBottom: 16,
+                                padding: '8px 10px',
+                                background: 'var(--bg-elevated)',
+                                borderRadius: 8,
+                                cursor: 'pointer',
+                            }}
+                        >
+                            <input
+                                type="checkbox"
+                                checked={rubrics.find((r) => r.id === shareModal.rubricId)?.sharedWithSchool ?? false}
+                                onChange={(e) => toggleSharedWithSchool(shareModal.rubricId, e.target.checked)}
+                            />
+                            <span style={{ fontSize: '0.85rem' }}>{t('rubricList.share_with_department')}</span>
+                        </label>
+                        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                            <input
+                                type="email"
+                                placeholder={t('rubricList.share_email_placeholder')}
+                                value={shareEmail}
+                                onChange={(e) => {
+                                    setShareEmail(e.target.value);
+                                    setShareStatus('idle');
+                                }}
+                                onKeyDown={(e) => e.key === 'Enter' && handleShare()}
+                                style={{ flex: 1 }}
+                                autoFocus
+                            />
+                            <select
+                                value={shareMode}
+                                onChange={(e) => setShareMode(e.target.value as 'read' | 'edit')}
+                                style={{ width: 100 }}
+                            >
+                                <option value="read">{t('rubricList.share_mode_read')}</option>
+                                <option value="edit">{t('rubricList.share_mode_edit')}</option>
+                            </select>
+                        </div>
+                        {shareStatus === 'success' && (
+                            <p style={{ color: 'var(--green)', fontSize: '0.85rem', marginBottom: 8 }}>
+                                {t('rubricList.share_success')}
+                            </p>
+                        )}
+                        {shareStatus === 'notfound' && (
+                            <p style={{ color: 'var(--red)', fontSize: '0.85rem', marginBottom: 8 }}>
+                                {t('rubricList.share_notfound', { email: shareErrorMsg })}
+                            </p>
+                        )}
+                        {shareStatus === 'error' && (
+                            <p style={{ color: 'var(--red)', fontSize: '0.85rem', marginBottom: 8 }}>{shareErrorMsg}</p>
+                        )}
+
+                        {/* Current shares */}
+                        {shareListLoading && <p className="text-muted text-sm">{t('admin.users_loading')}</p>}
+                        {shareList.length > 0 && (
+                            <div style={{ marginBottom: 16 }}>
+                                <p
+                                    className="text-xs text-muted"
+                                    style={{ marginBottom: 8, textTransform: 'uppercase', fontWeight: 600 }}
+                                >
+                                    {t('rubricList.share_shared_with')}
+                                </p>
+                                {shareList.map((s) => (
+                                    <div
+                                        key={s.userId}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 8,
+                                            padding: '6px 0',
+                                            borderBottom: '1px solid var(--border)',
+                                        }}
+                                    >
+                                        <div style={{ flex: 1, fontSize: '0.875rem' }}>
+                                            {s.email ?? s.displayName ?? s.userId}
+                                        </div>
+                                        <span className="badge">{s.mode}</span>
+                                        <button
+                                            className="btn btn-ghost btn-icon btn-sm"
+                                            aria-label={t('rubricList.action_unshare')}
+                                            style={{ color: 'var(--red)' }}
+                                            onClick={() => handleUnshare(s.userId)}
+                                        >
+                                            <Trash2 size={13} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    <div className="modal-footer">
+                        <button
+                            className="btn btn-secondary"
+                            onClick={() => {
+                                setShareModal(null);
+                                setShareStatus('idle');
+                            }}
+                        >
+                            {t('common.close')}
+                        </button>
+                        <button
+                            className="btn btn-primary"
+                            disabled={!shareEmail.trim() || shareStatus === 'loading'}
+                            onClick={handleShare}
+                        >
+                            <Users2 size={14} /> {shareStatus === 'loading' ? '…' : t('rubricList.share_btn')}
+                        </button>
+                    </div>
+                </Modal>
             )}
         </>
     );
