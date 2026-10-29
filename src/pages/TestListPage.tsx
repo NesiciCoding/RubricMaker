@@ -31,7 +31,8 @@ import CardTile from '../components/ui/CardTile';
 import CardGrip from '../components/ui/CardGrip';
 import { useConfirm } from '../hooks/useConfirm';
 import TestAssignmentModal from '../components/Tests/TestAssignmentModal';
-import FolderTile, { FOLDER_DROP_PREFIX } from '../components/Folders/FolderTile';
+import FolderBar from '../components/Folders/FolderBar';
+import { FOLDER_DROP_PREFIX } from '../components/Folders/FolderTile';
 import FolderNameModal from '../components/Folders/FolderNameModal';
 import TestSubmissionImportModal from '../components/Tests/TestSubmissionImportModal';
 import ExamScanCaptureModal from '../components/Tests/ExamScanCaptureModal';
@@ -388,30 +389,16 @@ export default function TestListPage() {
                     </div>
                 </div>
                 <DragDropContext onDragEnd={handleDragEnd}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
-                        <button
-                            type="button"
-                            className={`btn btn-sm ${activeFolder === ALL_FOLDERS ? 'btn-primary' : 'btn-secondary'}`}
-                            aria-pressed={activeFolder === ALL_FOLDERS}
-                            onClick={() => setActiveFolder(ALL_FOLDERS)}
-                        >
-                            <LayoutGrid size={14} /> {t('folders.all')}
-                        </button>
-                        {testFolders.map((folder) => (
-                            <FolderTile
-                                key={folder.id}
-                                folder={folder}
-                                count={countInFolder(tests, folder.id)}
-                                active={activeFolder === folder.id}
-                                onOpen={(id) => setActiveFolder((current) => (current === id ? ALL_FOLDERS : id))}
-                                onRename={(f) => setFolderModal({ folder: f })}
-                                onDelete={handleDeleteFolder}
-                            />
-                        ))}
-                        <button type="button" className="btn btn-secondary btn-sm" onClick={() => setFolderModal({})}>
-                            <Plus size={14} /> {t('folders.new_folder')}
-                        </button>
-                    </div>
+                    <FolderBar
+                        folders={testFolders}
+                        activeFolder={activeFolder}
+                        countFor={(id) => countInFolder(tests, id)}
+                        // Clicking the open folder again returns to the unfiltered list.
+                        onOpen={(id) => setActiveFolder((current) => (current === id ? ALL_FOLDERS : id))}
+                        onRename={(f) => setFolderModal({ folder: f })}
+                        onDelete={handleDeleteFolder}
+                        onCreate={() => setFolderModal({})}
+                    />
                     {visibleTests.length === 0 ? (
                         <div className="empty-state">
                             <ClipboardCheck size={40} />

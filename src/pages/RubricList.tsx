@@ -17,7 +17,6 @@ import {
     ClipboardPaste,
     Check,
     Layers,
-    FolderPlus,
     Users2,
     X,
     LayoutGrid,
@@ -40,7 +39,8 @@ import CefrBadge from '../components/CEFR/CefrBadge';
 import ImportRubricModal from '../components/Rubric/ImportRubricModal';
 import NewRubricChooserModal from '../components/Rubric/NewRubricChooserModal';
 import RubricCard, { type RubricCardActions } from '../components/Rubric/RubricCard';
-import FolderTile, { FOLDER_DROP_PREFIX } from '../components/Folders/FolderTile';
+import FolderBar from '../components/Folders/FolderBar';
+import { FOLDER_DROP_PREFIX } from '../components/Folders/FolderTile';
 import FolderNameModal from '../components/Folders/FolderNameModal';
 import Modal from '../components/ui/Modal';
 import SegmentedToggle from '../components/ui/SegmentedToggle';
@@ -605,30 +605,16 @@ export default function RubricList() {
                 </div>
 
                 <DragDropContext onDragEnd={handleDragEnd}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
-                        <button
-                            type="button"
-                            className={`btn btn-sm ${activeFolder === ALL_FOLDERS ? 'btn-primary' : 'btn-secondary'}`}
-                            aria-pressed={activeFolder === ALL_FOLDERS}
-                            onClick={() => setActiveFolder(ALL_FOLDERS)}
-                        >
-                            <LayoutGrid size={14} /> {t('folders.all')}
-                        </button>
-                        {rubricFolders.map((folder) => (
-                            <FolderTile
-                                key={folder.id}
-                                folder={folder}
-                                count={countInFolder(rubrics, folder.id)}
-                                active={activeFolder === folder.id}
-                                onOpen={(id) => setActiveFolder((current) => (current === id ? ALL_FOLDERS : id))}
-                                onRename={(f) => setFolderModal({ folder: f })}
-                                onDelete={handleDeleteFolder}
-                            />
-                        ))}
-                        <button type="button" className="btn btn-secondary btn-sm" onClick={() => setFolderModal({})}>
-                            <FolderPlus size={14} /> {t('folders.new_folder')}
-                        </button>
-                    </div>
+                    <FolderBar
+                        folders={rubricFolders}
+                        activeFolder={activeFolder}
+                        countFor={(id) => countInFolder(rubrics, id)}
+                        // Clicking the open folder again returns to the unfiltered list.
+                        onOpen={(id) => setActiveFolder((current) => (current === id ? ALL_FOLDERS : id))}
+                        onRename={(f) => setFolderModal({ folder: f })}
+                        onDelete={handleDeleteFolder}
+                        onCreate={() => setFolderModal({})}
+                    />
                     {filtered.length === 0 ? (
                         <div className="empty-state">
                             <BookOpen size={40} />
