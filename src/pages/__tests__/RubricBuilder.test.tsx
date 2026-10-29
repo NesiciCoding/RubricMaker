@@ -1890,13 +1890,14 @@ describe('RubricBuilder', () => {
         expect(screen.getByPlaceholderText('rubricBuilder.placeholder_criterion_name')).toBeInTheDocument();
     });
 
-    it('previews an empty rubric and closes the preview via the overlay', () => {
+    it('previews an empty rubric and closes the preview via Escape', () => {
         appOverrides = { rubrics: [{ ...mockRubricEmpty, id: 'r1' }] };
         renderEdit();
         fireEvent.click(screen.getByText('rubricBuilder.action_preview'));
         expect(screen.getByText('rubricBuilder.preview_title')).toBeInTheDocument();
-        const overlay = document.querySelector('.modal-overlay') as HTMLElement;
-        fireEvent.click(overlay);
+        // The preview is the shared Radix-backed Modal, so it closes on Escape; backdrop dismissal
+        // is Radix's own outside-interaction detection, covered by Modal.test.tsx.
+        fireEvent.keyDown(document.body, { key: 'Escape' });
         expect(screen.queryByText('rubricBuilder.preview_title')).not.toBeInTheDocument();
     });
 
@@ -1913,8 +1914,8 @@ describe('RubricBuilder', () => {
         fireEvent.click(screen.getByText('rubricBuilder.action_link_standard'));
         fireEvent.click(screen.getByText('rubricBuilder.action_close'));
         fireEvent.click(screen.getByText('rubricBuilder.action_link_standard'));
-        // Click the modal overlay itself to dismiss.
-        fireEvent.click(document.querySelectorAll('.modal-overlay')[0] as HTMLElement);
+        // Dismiss with Escape, which the shared Modal wires to onClose.
+        fireEvent.keyDown(document.body, { key: 'Escape' });
         expect(screen.queryByText('rubricBuilder.standards_modal_title')).not.toBeInTheDocument();
         // Reopen and close via the header ✕.
         fireEvent.click(screen.getByText('rubricBuilder.action_link_standard'));
@@ -1947,10 +1948,10 @@ describe('RubricBuilder', () => {
         expect(screen.getByText('rubricBuilder.sync_dialog_title')).toBeInTheDocument();
         fireEvent.click(screen.getByLabelText('common.close'));
         expect(screen.queryByText('rubricBuilder.sync_dialog_title')).not.toBeInTheDocument();
-        // Save again (button now reads "saved") and close via the overlay.
+        // Save again (button now reads "saved") and close via Escape.
         fireEvent.click(screen.getByText('rubricBuilder.action_saved'));
         expect(screen.getByText('rubricBuilder.sync_dialog_title')).toBeInTheDocument();
-        fireEvent.click(document.querySelectorAll('.modal-overlay')[0] as HTMLElement);
+        fireEvent.keyDown(document.body, { key: 'Escape' });
         expect(screen.queryByText('rubricBuilder.sync_dialog_title')).not.toBeInTheDocument();
     });
 
@@ -2368,14 +2369,14 @@ describe('RubricBuilder', () => {
         appOverrides = { rubrics: [mockRubricNoNotation] };
         renderEdit();
         fireEvent.click(screen.getByText('rubricBuilder.action_preview'));
-        const overlay = document.querySelector('.modal-overlay') as HTMLElement;
-        expect(within(overlay).getByText('[ns2]')).toBeInTheDocument();
-        expect(overlay.textContent).toContain('lg1');
-        expect(overlay.textContent).toContain('ns1');
-        fireEvent.click(within(overlay).getByText('rubricBuilder.preview_standards_description'));
-        expect(within(overlay).getByText(/Legacy no notation/)).toBeInTheDocument();
-        expect(within(overlay).getByText(/No notation standard/)).toBeInTheDocument();
-        expect(within(overlay).getByText('Sub no notation')).toBeInTheDocument();
+        const dialog = screen.getByRole('dialog');
+        expect(within(dialog).getByText('[ns2]')).toBeInTheDocument();
+        expect(dialog.textContent).toContain('lg1');
+        expect(dialog.textContent).toContain('ns1');
+        fireEvent.click(within(dialog).getByText('rubricBuilder.preview_standards_description'));
+        expect(within(dialog).getByText(/Legacy no notation/)).toBeInTheDocument();
+        expect(within(dialog).getByText(/No notation standard/)).toBeInTheDocument();
+        expect(within(dialog).getByText('Sub no notation')).toBeInTheDocument();
     });
 
     it('does not re-serialize the criteria tree when typing in an unrelated field (#670)', () => {
@@ -2520,6 +2521,9 @@ describe('RubricBuilder — tiered rubrics', () => {
         expect(screen.getAllByText('Mavo').length).toBeGreaterThan(0);
 
         save();
+        // Saving with existing grades opens the snapshot-sync dialog, which is a real modal now: it
+        // hides the page behind it, so dismiss it before carrying on.
+        fireEvent.click(screen.getByText('rubricBuilder.sync_dialog_skip'));
         const saved = lastSaved();
         expect(saved.tiered?.bands.map((b) => b.code)).toEqual(['IO', 'B', 'E']);
         expect(saved.format.levelOrder).toBe('worst-first');

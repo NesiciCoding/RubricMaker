@@ -6,24 +6,13 @@ import { describe, expect, it } from 'vitest';
  * Dialogs have one owner: `components/ui/Modal.tsx` (Radix) and its sibling `ConfirmDialog.tsx`.
  *
  * Hand-rolled `role="dialog"` overlays repeatedly shipped without a focus trap, Escape-to-close or
- * focus restoration (#533), so this guard keeps the migration a ratchet: the files below still hold
- * raw overlays and are scheduled in batches, and no *new* one can land.
+ * focus restoration (#533). The migration is complete — every page renders the shared primitive —
+ * so this guard has no allowlist left: a raw overlay anywhere else fails the build.
  */
 const srcRoot = resolve(__dirname, '..');
 
 /** The two Radix-backed primitives — they are where `.modal-overlay` is supposed to appear. */
 const PRIMITIVES = new Set(['components/ui/Modal.tsx', 'components/ui/ConfirmDialog.tsx']);
-
-/**
- * Remaining hand-rolled dialogs, by batch. Delete entries as each batch migrates; never add one.
- * Batch 1 (done): pages/StudentsPage.tsx — six dialogs.
- * Batch 2 (done): pages/RubricList.tsx — differentiate + share; pages/ActivityDashboardPage.tsx — assign.
- */
-const PENDING_MIGRATION = new Set([
-    // Batch 3 — builders.
-    'pages/RubricBuilder.tsx', // preview, standards picker, sync dialog
-    'components/Tests/QuestionEditor.tsx', // standards picker
-]);
 
 function sourceFiles(dir: string): string[] {
     return readdirSync(dir).flatMap((entry) => {
@@ -66,7 +55,7 @@ function offenders(): string[] {
     return sourceFiles(srcRoot)
         .map((path) => ({ source: readFileSync(path, 'utf8'), rel: relative(srcRoot, path) }))
         .filter(({ source, rel }) => {
-            if (PRIMITIVES.has(rel) || PENDING_MIGRATION.has(rel)) return false;
+            if (PRIMITIVES.has(rel)) return false;
             const rawOverlay = /className="modal-overlay"/.test(source);
             const rawDialogRole = /role="dialog"|aria-modal=/.test(source);
             return rawOverlay || rawDialogRole;
@@ -83,9 +72,12 @@ describe('modal usage', () => {
         // Batch 1 (#533): six raw overlays became <Modal>, which is what gives them the focus
         // trap, Escape and focus restoration they never had.
         ['pages/StudentsPage.tsx', 7], // add-student + the six migrated dialogs
-        // Batch 2 (#533): differentiate + share on the rubric list, assign on the dashboard.
-        ['pages/RubricList.tsx', 3], // group grade, code import + the two migrated dialogs
+        // Batch 2: differentiate + share on the rubric list, assign on the dashboard.
+        ['pages/RubricList.tsx', 4],
         ['pages/ActivityDashboardPage.tsx', 1],
+        // Batch 3: preview, standards picker and sync on the builder, standards on the question editor.
+        ['pages/RubricBuilder.tsx', 5],
+        ['components/Tests/QuestionEditor.tsx', 1],
     ])('keeps %s on the shared primitive', (rel, minimum) => {
         const page = sourceText(rel);
         expect(page).not.toContain('className="modal-overlay"');
