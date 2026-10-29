@@ -1383,8 +1383,11 @@ select.input-error {
     }
 }
 
+/* No `forwards` fill on purpose: a retained `transform` (even translateY(0)) makes the
+   element the containing block for `position: fixed` descendants, which breaks the
+   drag-and-drop preview and any fixed-position popover opened inside a page. */
 .fade-in {
-    animation: fadeIn 0.25s ease forwards;
+    animation: fadeIn 0.25s ease;
 }
 
 /* ─── Print-only elements (hidden on screen) ────────────────────────────────── */

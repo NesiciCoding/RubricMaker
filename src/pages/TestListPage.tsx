@@ -551,7 +551,12 @@ export default function TestListPage() {
                                                         style={{
                                                             cursor: 'pointer',
                                                             transition: 'border-color var(--transition)',
+                                                            // Fixed basis so every tile keeps the same width; minWidth 0
+                                                            // stops a nowrap (`.truncate`) description from stretching
+                                                            // the card to the width of the sentence.
                                                             flex: '0 1 400px',
+                                                            minWidth: 0,
+                                                            maxWidth: '100%',
                                                             ...dragProvided.draggableProps.style,
                                                         }}
                                                         onMouseEnter={(e) =>
@@ -583,7 +588,15 @@ export default function TestListPage() {
                                                                         style={{
                                                                             cursor: 'grab',
                                                                             color: 'var(--text-dim)',
-                                                                            marginTop: 3,
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            flexShrink: 0,
+                                                                            // Padding (cancelled by the negative margin)
+                                                                            // grows the grab area around the corner glyph
+                                                                            // to a 25px target.
+                                                                            padding: 5,
+                                                                            margin: '-1px 0 0 -5px',
+                                                                            touchAction: 'none',
                                                                         }}
                                                                     >
                                                                         <GripVertical size={15} />

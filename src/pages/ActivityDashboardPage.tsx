@@ -431,44 +431,70 @@ export default function ActivityDashboardPage() {
                                                                         zIndex: 1,
                                                                         background: 'var(--bg-card)',
                                                                         padding: '8px 12px',
+                                                                        width: 200,
                                                                         maxWidth: 200,
                                                                         overflow: 'hidden',
-                                                                        textOverflow: 'ellipsis',
-                                                                        whiteSpace: 'nowrap',
                                                                     }}
                                                                     title={activity.name}
                                                                 >
-                                                                    <span
-                                                                        {...dragProvided.dragHandleProps}
-                                                                        aria-label={t('rubricList.drag_to_reorder')}
+                                                                    {/* A table cell sizes to its content, so the name needs its
+                                                                        own capped, truncating box — otherwise a long activity
+                                                                        name widens the sticky column and pushes the class
+                                                                        columns into horizontal scroll. */}
+                                                                    <div
                                                                         style={{
-                                                                            cursor: 'grab',
-                                                                            color: 'var(--text-dim)',
-                                                                            marginRight: 6,
-                                                                            display: 'inline-flex',
-                                                                            verticalAlign: 'middle',
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            gap: 2,
+                                                                            minWidth: 0,
+                                                                            maxWidth: 200,
+                                                                            overflow: 'hidden',
                                                                         }}
                                                                     >
-                                                                        <GripVertical size={13} />
-                                                                    </span>
-                                                                    <button
-                                                                        type="button"
-                                                                        className="btn btn-ghost btn-sm"
-                                                                        style={{
-                                                                            padding: 0,
-                                                                            color: 'var(--accent)',
-                                                                            fontWeight: 500,
-                                                                        }}
-                                                                        onClick={() => {
-                                                                            if (activity.kind === 'rubric')
-                                                                                navigate(`/rubrics/${activity.id}`);
-                                                                            else if (activity.kind === 'test')
-                                                                                navigate(`/tests/${activity.id}`);
-                                                                            else navigate(`/essays/${activity.id}`);
-                                                                        }}
-                                                                    >
-                                                                        {activity.name}
-                                                                    </button>
+                                                                        <span
+                                                                            {...dragProvided.dragHandleProps}
+                                                                            aria-label={t('rubricList.drag_to_reorder')}
+                                                                            style={{
+                                                                                cursor: 'grab',
+                                                                                color: 'var(--text-dim)',
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                flexShrink: 0,
+                                                                                // Padding (cancelled by the negative
+                                                                                // margin) grows the grab area around the
+                                                                                // glyph to a 23px target.
+                                                                                padding: 5,
+                                                                                margin: '-5px 1px -5px -5px',
+                                                                                touchAction: 'none',
+                                                                            }}
+                                                                        >
+                                                                            <GripVertical size={13} />
+                                                                        </span>
+                                                                        <button
+                                                                            type="button"
+                                                                            className="btn btn-ghost btn-sm"
+                                                                            style={{
+                                                                                padding: 0,
+                                                                                color: 'var(--accent)',
+                                                                                fontWeight: 500,
+                                                                                display: 'block',
+                                                                                minWidth: 0,
+                                                                                overflow: 'hidden',
+                                                                                textOverflow: 'ellipsis',
+                                                                                whiteSpace: 'nowrap',
+                                                                                textAlign: 'left',
+                                                                            }}
+                                                                            onClick={() => {
+                                                                                if (activity.kind === 'rubric')
+                                                                                    navigate(`/rubrics/${activity.id}`);
+                                                                                else if (activity.kind === 'test')
+                                                                                    navigate(`/tests/${activity.id}`);
+                                                                                else navigate(`/essays/${activity.id}`);
+                                                                            }}
+                                                                        >
+                                                                            {activity.name}
+                                                                        </button>
+                                                                    </div>
                                                                 </td>
 
                                                                 {visibleClasses.map((cls) => {
