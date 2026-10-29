@@ -1620,382 +1620,389 @@ export default function StudentsPage() {
 
                 {/* Class Management Modals */}
                 {renameClassId && (
-                    <div className="modal-overlay" onClick={() => setRenameClassId(null)}>
-                        <div className="modal" onClick={(e) => e.stopPropagation()}>
-                            <div className="modal-header">
-                                <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <GraduationCap size={18} style={{ color: 'var(--accent)' }} />
-                                    {t('voTrack.class_settings_title')}
-                                </h3>
-                                <button className="btn btn-ghost btn-icon" onClick={() => setRenameClassId(null)}>
-                                    ✕
-                                </button>
+                    <Modal titleId="students-class-settings-title" onClose={() => setRenameClassId(null)}>
+                        <div className="modal-header">
+                            <h3
+                                id="students-class-settings-title"
+                                style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+                            >
+                                <GraduationCap size={18} style={{ color: 'var(--accent)' }} />
+                                {t('voTrack.class_settings_title')}
+                            </h3>
+                            <button
+                                className="btn btn-ghost btn-icon"
+                                onClick={() => setRenameClassId(null)}
+                                aria-label={t('common.close', 'Close')}
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div className="modal-body">
+                            <div className="form-group" style={{ marginBottom: 14 }}>
+                                <label>{t('studentsPage.form_new_name')}</label>
+                                <input
+                                    type="text"
+                                    value={renameClassVal}
+                                    onChange={(e) => setRenameClassVal(e.target.value)}
+                                    autoFocus
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && renameClassVal.trim()) saveClassRename();
+                                    }}
+                                />
                             </div>
-                            <div className="modal-body">
-                                <div className="form-group" style={{ marginBottom: 14 }}>
-                                    <label>{t('studentsPage.form_new_name')}</label>
-                                    <input
-                                        type="text"
-                                        value={renameClassVal}
-                                        onChange={(e) => setRenameClassVal(e.target.value)}
-                                        autoFocus
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter' && renameClassVal.trim()) saveClassRename();
-                                        }}
-                                    />
-                                </div>
+                            <div style={{ marginBottom: 14 }}>
+                                <ToggleChipGroup
+                                    label={t('studentsPage.form_school_year')}
+                                    options={SCHOOL_YEARS.map((year) => ({
+                                        value: year,
+                                        label: SCHOOL_YEAR_LABELS[year],
+                                    }))}
+                                    values={renameClassYears}
+                                    onToggle={toggleRenameClassYear}
+                                    hint={t('studentsPage.form_school_years_hint')}
+                                />
+                            </div>
+                            {renameClassTracksVisible && (
                                 <div style={{ marginBottom: 14 }}>
                                     <ToggleChipGroup
-                                        label={t('studentsPage.form_school_year')}
-                                        options={SCHOOL_YEARS.map((year) => ({
-                                            value: year,
-                                            label: SCHOOL_YEAR_LABELS[year],
+                                        label={t('voTrack.section_label')}
+                                        options={VO_TRACKS.map((track) => ({
+                                            value: track,
+                                            label: VO_TRACK_LABELS[track],
+                                            activeColor: VO_TRACK_COLORS[track],
                                         }))}
-                                        values={renameClassYears}
-                                        onToggle={toggleRenameClassYear}
-                                        hint={t('studentsPage.form_school_years_hint')}
+                                        values={renameClassTracks}
+                                        onToggle={toggleRenameClassTrack}
+                                        hint={t('studentsPage.form_class_tracks_hint')}
                                     />
                                 </div>
-                                {renameClassTracksVisible && (
-                                    <div style={{ marginBottom: 14 }}>
-                                        <ToggleChipGroup
-                                            label={t('voTrack.section_label')}
-                                            options={VO_TRACKS.map((track) => ({
-                                                value: track,
-                                                label: VO_TRACK_LABELS[track],
-                                                activeColor: VO_TRACK_COLORS[track],
-                                            }))}
-                                            values={renameClassTracks}
-                                            onToggle={toggleRenameClassTrack}
-                                            hint={t('studentsPage.form_class_tracks_hint')}
-                                        />
-                                    </div>
-                                )}
-                                <div className="form-group">
-                                    <label htmlFor="class-rename-color">{t('studentsPage.form_class_color')}</label>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                        <input
-                                            id="class-rename-color"
-                                            type="color"
-                                            value={renameClassColor || '#94a3b8'}
-                                            onChange={(e) => setRenameClassColor(e.target.value)}
-                                            style={{ width: 44, height: 32, padding: 0, border: 'none' }}
-                                        />
-                                        {renameClassColor && (
-                                            <button
-                                                type="button"
-                                                className="btn btn-ghost btn-sm"
-                                                onClick={() => setRenameClassColor('')}
-                                            >
-                                                {t('common.clear')}
-                                            </button>
-                                        )}
-                                    </div>
+                            )}
+                            <div className="form-group">
+                                <label htmlFor="class-rename-color">{t('studentsPage.form_class_color')}</label>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <input
+                                        id="class-rename-color"
+                                        type="color"
+                                        value={renameClassColor || '#94a3b8'}
+                                        onChange={(e) => setRenameClassColor(e.target.value)}
+                                        style={{ width: 44, height: 32, padding: 0, border: 'none' }}
+                                    />
+                                    {renameClassColor && (
+                                        <button
+                                            type="button"
+                                            className="btn btn-ghost btn-sm"
+                                            onClick={() => setRenameClassColor('')}
+                                        >
+                                            {t('common.clear')}
+                                        </button>
+                                    )}
                                 </div>
                             </div>
-                            <div className="modal-footer">
-                                <button className="btn btn-secondary" onClick={() => setRenameClassId(null)}>
-                                    {t('common.cancel')}
-                                </button>
-                                <button
-                                    className="btn btn-primary"
-                                    disabled={!renameClassVal.trim()}
-                                    onClick={saveClassRename}
-                                >
-                                    {t('common.save')}
-                                </button>
-                            </div>
                         </div>
-                    </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-secondary" onClick={() => setRenameClassId(null)}>
+                                {t('common.cancel')}
+                            </button>
+                            <button
+                                className="btn btn-primary"
+                                disabled={!renameClassVal.trim()}
+                                onClick={saveClassRename}
+                            >
+                                {t('common.save')}
+                            </button>
+                        </div>
+                    </Modal>
                 )}
 
                 {mergeClassId && (
-                    <div
-                        className="modal-overlay"
-                        onClick={() => {
+                    <Modal
+                        titleId="students-merge-class-title"
+                        onClose={() => {
                             setMergeClassId(null);
                             setMergeConfirming(false);
                         }}
                     >
-                        <div className="modal" onClick={(e) => e.stopPropagation()}>
-                            <div className="modal-header">
-                                <h3>{t('studentsPage.merge_class_title')}</h3>
-                                <button className="btn btn-ghost btn-icon" onClick={() => setMergeClassId(null)}>
-                                    ✕
-                                </button>
-                            </div>
-                            <div className="modal-body">
-                                <p style={{ marginBottom: 16 }}>
-                                    <Trans
-                                        i18nKey="studentsPage.merge_class_description"
-                                        values={{ className: classes.find((c) => c.id === mergeClassId)?.name }}
-                                    >
-                                        Select the target class to move all students into. The current class (
-                                        <strong>{'{{className}}'}</strong>) will be deleted.
-                                    </Trans>
-                                </p>
-                                <div className="form-group">
-                                    <label>{t('studentsPage.form_target_class')}</label>
-                                    <select
-                                        value={mergeTargetId}
-                                        onChange={(e) => {
-                                            setMergeTargetId(e.target.value);
-                                            setMergeConfirming(false);
-                                        }}
-                                    >
-                                        <option value="" disabled>
-                                            {t('studentsPage.select_class_placeholder')}
-                                        </option>
-                                        {classes
-                                            .filter((c) => c.id !== mergeClassId)
-                                            .map((c) => (
-                                                <option key={c.id} value={c.id}>
-                                                    {c.name}
-                                                </option>
-                                            ))}
-                                    </select>
-                                </div>
-                            </div>
-                            {mergeConfirming && (
-                                <div
-                                    style={{
-                                        margin: '0 0 12px',
-                                        padding: 12,
-                                        background: 'var(--bg-elevated)',
-                                        borderRadius: 8,
-                                        border: '1px solid var(--red)',
-                                        fontSize: '0.875rem',
+                        <div className="modal-header">
+                            <h3 id="students-merge-class-title">{t('studentsPage.merge_class_title')}</h3>
+                            <button
+                                className="btn btn-ghost btn-icon"
+                                onClick={() => setMergeClassId(null)}
+                                aria-label={t('common.close', 'Close')}
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div className="modal-body">
+                            <p style={{ marginBottom: 16 }}>
+                                <Trans
+                                    i18nKey="studentsPage.merge_class_description"
+                                    values={{ className: classes.find((c) => c.id === mergeClassId)?.name }}
+                                >
+                                    Select the target class to move all students into. The current class (
+                                    <strong>{'{{className}}'}</strong>) will be deleted.
+                                </Trans>
+                            </p>
+                            <div className="form-group">
+                                <label>{t('studentsPage.form_target_class')}</label>
+                                <select
+                                    value={mergeTargetId}
+                                    onChange={(e) => {
+                                        setMergeTargetId(e.target.value);
+                                        setMergeConfirming(false);
                                     }}
                                 >
-                                    <Trans
-                                        i18nKey="studentsPage.merge_confirm_description"
-                                        values={{
-                                            source: classes.find((c) => c.id === mergeClassId)?.name,
-                                            target: classes.find((c) => c.id === mergeTargetId)?.name,
-                                        }}
-                                    >
-                                        All students from <strong>{'{{source}}'}</strong> will be moved into{' '}
-                                        <strong>{'{{target}}'}</strong>. The source class will be deleted. This cannot
-                                        be undone.
-                                    </Trans>
-                                </div>
-                            )}
-                            <div className="modal-footer">
+                                    <option value="" disabled>
+                                        {t('studentsPage.select_class_placeholder')}
+                                    </option>
+                                    {classes
+                                        .filter((c) => c.id !== mergeClassId)
+                                        .map((c) => (
+                                            <option key={c.id} value={c.id}>
+                                                {c.name}
+                                            </option>
+                                        ))}
+                                </select>
+                            </div>
+                        </div>
+                        {mergeConfirming && (
+                            <div
+                                style={{
+                                    margin: '0 0 12px',
+                                    padding: 12,
+                                    background: 'var(--bg-elevated)',
+                                    borderRadius: 8,
+                                    border: '1px solid var(--red)',
+                                    fontSize: '0.875rem',
+                                }}
+                            >
+                                <Trans
+                                    i18nKey="studentsPage.merge_confirm_description"
+                                    values={{
+                                        source: classes.find((c) => c.id === mergeClassId)?.name,
+                                        target: classes.find((c) => c.id === mergeTargetId)?.name,
+                                    }}
+                                >
+                                    All students from <strong>{'{{source}}'}</strong> will be moved into{' '}
+                                    <strong>{'{{target}}'}</strong>. The source class will be deleted. This cannot be
+                                    undone.
+                                </Trans>
+                            </div>
+                        )}
+                        <div className="modal-footer">
+                            <button
+                                className="btn btn-secondary"
+                                onClick={() => {
+                                    setMergeClassId(null);
+                                    setMergeConfirming(false);
+                                }}
+                            >
+                                {t('common.cancel')}
+                            </button>
+                            {!mergeConfirming ? (
                                 <button
-                                    className="btn btn-secondary"
+                                    className="btn btn-primary"
+                                    disabled={!mergeTargetId}
+                                    onClick={() => setMergeConfirming(true)}
+                                >
+                                    {t('studentsPage.action_merge_classes')}
+                                </button>
+                            ) : (
+                                <button
+                                    className="btn btn-danger"
                                     onClick={() => {
+                                        mergeClasses(mergeClassId!, mergeTargetId);
+                                        setSelectedCohorts((prev) =>
+                                            prev.includes(mergeClassId!)
+                                                ? [
+                                                      ...new Set(
+                                                          prev.map((id) => (id === mergeClassId ? mergeTargetId : id))
+                                                      ),
+                                                  ]
+                                                : prev
+                                        );
                                         setMergeClassId(null);
                                         setMergeConfirming(false);
                                     }}
                                 >
-                                    {t('common.cancel')}
+                                    {t('studentsPage.merge_confirm_action')}
                                 </button>
-                                {!mergeConfirming ? (
-                                    <button
-                                        className="btn btn-primary"
-                                        disabled={!mergeTargetId}
-                                        onClick={() => setMergeConfirming(true)}
-                                    >
-                                        {t('studentsPage.action_merge_classes')}
-                                    </button>
-                                ) : (
-                                    <button
-                                        className="btn btn-danger"
-                                        onClick={() => {
-                                            mergeClasses(mergeClassId!, mergeTargetId);
-                                            setSelectedCohorts((prev) =>
-                                                prev.includes(mergeClassId!)
-                                                    ? [
-                                                          ...new Set(
-                                                              prev.map((id) =>
-                                                                  id === mergeClassId ? mergeTargetId : id
-                                                              )
-                                                          ),
-                                                      ]
-                                                    : prev
-                                            );
-                                            setMergeClassId(null);
-                                            setMergeConfirming(false);
-                                        }}
-                                    >
-                                        {t('studentsPage.merge_confirm_action')}
-                                    </button>
-                                )}
-                            </div>
+                            )}
                         </div>
-                    </div>
+                    </Modal>
                 )}
 
                 {deleteClassId && (
-                    <div className="modal-overlay" onClick={() => setDeleteClassId(null)}>
-                        <div className="modal" onClick={(e) => e.stopPropagation()}>
-                            <div className="modal-header">
-                                <h3>{t('studentsPage.delete_class_title')}</h3>
-                                <button className="btn btn-ghost btn-icon" onClick={() => setDeleteClassId(null)}>
-                                    ✕
-                                </button>
-                            </div>
-                            <div className="modal-body">
-                                <p>
-                                    <Trans
-                                        i18nKey="studentsPage.delete_class_confirmation"
-                                        values={{ className: classes.find((c) => c.id === deleteClassId)?.name }}
-                                    >
-                                        Are you sure you want to delete <strong>{'{{className}}'}</strong>?
-                                    </Trans>
-                                </p>
+                    <Modal titleId="students-delete-class-title" onClose={() => setDeleteClassId(null)}>
+                        <div className="modal-header">
+                            <h3 id="students-delete-class-title">{t('studentsPage.delete_class_title')}</h3>
+                            <button
+                                className="btn btn-ghost btn-icon"
+                                onClick={() => setDeleteClassId(null)}
+                                aria-label={t('common.close', 'Close')}
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div className="modal-body">
+                            <p>
+                                <Trans
+                                    i18nKey="studentsPage.delete_class_confirmation"
+                                    values={{ className: classes.find((c) => c.id === deleteClassId)?.name }}
+                                >
+                                    Are you sure you want to delete <strong>{'{{className}}'}</strong>?
+                                </Trans>
+                            </p>
 
-                                <div
-                                    style={{
-                                        background: 'var(--red-soft)',
-                                        color: 'var(--red)',
-                                        padding: '12px 16px',
-                                        borderRadius: 8,
-                                        marginTop: 16,
-                                        fontSize: '0.9rem',
-                                    }}
-                                >
-                                    <strong>{t('studentsPage.warning_label')}</strong>{' '}
-                                    {t('studentsPage.delete_class_warning', {
-                                        count: students.filter((s) => s.classId === deleteClassId).length,
-                                    })}
-                                </div>
-                            </div>
-                            <div className="modal-footer">
-                                <button className="btn btn-secondary" onClick={() => setDeleteClassId(null)}>
-                                    {t('common.cancel')}
-                                </button>
-                                <button
-                                    className="btn btn-primary"
-                                    style={{ background: 'var(--red)', borderColor: 'var(--red)' }}
-                                    onClick={() => {
-                                        deleteClass(deleteClassId!, true);
-                                        setSelectedCohorts((prev) => prev.filter((id) => id !== deleteClassId));
-                                        setDeleteClassId(null);
-                                    }}
-                                >
-                                    {t('common.delete')}
-                                </button>
+                            <div
+                                style={{
+                                    background: 'var(--red-soft)',
+                                    color: 'var(--red)',
+                                    padding: '12px 16px',
+                                    borderRadius: 8,
+                                    marginTop: 16,
+                                    fontSize: '0.9rem',
+                                }}
+                            >
+                                <strong>{t('studentsPage.warning_label')}</strong>{' '}
+                                {t('studentsPage.delete_class_warning', {
+                                    count: students.filter((s) => s.classId === deleteClassId).length,
+                                })}
                             </div>
                         </div>
-                    </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-secondary" onClick={() => setDeleteClassId(null)}>
+                                {t('common.cancel')}
+                            </button>
+                            <button
+                                className="btn btn-primary"
+                                style={{ background: 'var(--red)', borderColor: 'var(--red)' }}
+                                onClick={() => {
+                                    deleteClass(deleteClassId!, true);
+                                    setSelectedCohorts((prev) => prev.filter((id) => id !== deleteClassId));
+                                    setDeleteClassId(null);
+                                }}
+                            >
+                                {t('common.delete')}
+                            </button>
+                        </div>
+                    </Modal>
                 )}
 
                 {confirmDeleteStudent && (
-                    <div className="modal-overlay" onClick={() => setConfirmDeleteStudent(null)}>
-                        <div className="modal" onClick={(e) => e.stopPropagation()}>
-                            <div className="modal-header">
-                                <h3>
-                                    {t('studentsPage.delete_student_title') ||
-                                        /* v8 ignore next -- t always returns a string */ 'Delete Student'}
-                                </h3>
-                                <button
-                                    className="btn btn-ghost btn-icon"
-                                    onClick={() => setConfirmDeleteStudent(null)}
-                                >
-                                    ✕
-                                </button>
-                            </div>
-                            <div className="modal-body">
-                                <p>
-                                    <Trans
-                                        i18nKey="studentsPage.delete_student_confirmation"
-                                        values={{
-                                            studentName: students.find((s) => s.id === confirmDeleteStudent)?.name,
-                                        }}
-                                    >
-                                        Are you sure you want to delete <strong>{'{{studentName}}'}</strong>?
-                                    </Trans>
-                                </p>
-                                <div
-                                    style={{
-                                        background: 'var(--red-soft)',
-                                        color: 'var(--red)',
-                                        padding: '12px 16px',
-                                        borderRadius: 8,
-                                        marginTop: 16,
-                                        fontSize: '0.9rem',
+                    <Modal titleId="students-delete-student-title" onClose={() => setConfirmDeleteStudent(null)}>
+                        <div className="modal-header">
+                            <h3 id="students-delete-student-title">
+                                {t('studentsPage.delete_student_title') ||
+                                    /* v8 ignore next -- t always returns a string */ 'Delete Student'}
+                            </h3>
+                            <button
+                                className="btn btn-ghost btn-icon"
+                                onClick={() => setConfirmDeleteStudent(null)}
+                                aria-label={t('common.close', 'Close')}
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div className="modal-body">
+                            <p>
+                                <Trans
+                                    i18nKey="studentsPage.delete_student_confirmation"
+                                    values={{
+                                        studentName: students.find((s) => s.id === confirmDeleteStudent)?.name,
                                     }}
                                 >
-                                    <strong>
-                                        {t('studentsPage.warning_label') ||
-                                            /* v8 ignore next -- t always returns a string */ 'Warning:'}
-                                    </strong>{' '}
-                                    {t('studentsPage.delete_student_warning') ||
-                                        /* v8 ignore next -- t always returns a string */
-                                        'This will permanently delete all grades and rubrics associated with this student.'}
-                                </div>
-                            </div>
-                            <div className="modal-footer">
-                                <button className="btn btn-secondary" onClick={() => setConfirmDeleteStudent(null)}>
-                                    {t('common.cancel')}
-                                </button>
-                                <button
-                                    className="btn btn-primary"
-                                    style={{ background: 'var(--red)', borderColor: 'var(--red)' }}
-                                    onClick={() => {
-                                        deleteStudent(confirmDeleteStudent);
-                                        setConfirmDeleteStudent(null);
-                                    }}
-                                >
-                                    {t('common.delete')}
-                                </button>
+                                    Are you sure you want to delete <strong>{'{{studentName}}'}</strong>?
+                                </Trans>
+                            </p>
+                            <div
+                                style={{
+                                    background: 'var(--red-soft)',
+                                    color: 'var(--red)',
+                                    padding: '12px 16px',
+                                    borderRadius: 8,
+                                    marginTop: 16,
+                                    fontSize: '0.9rem',
+                                }}
+                            >
+                                <strong>
+                                    {t('studentsPage.warning_label') ||
+                                        /* v8 ignore next -- t always returns a string */ 'Warning:'}
+                                </strong>{' '}
+                                {t('studentsPage.delete_student_warning') ||
+                                    /* v8 ignore next -- t always returns a string */
+                                    'This will permanently delete all grades and rubrics associated with this student.'}
                             </div>
                         </div>
-                    </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-secondary" onClick={() => setConfirmDeleteStudent(null)}>
+                                {t('common.cancel')}
+                            </button>
+                            <button
+                                className="btn btn-primary"
+                                style={{ background: 'var(--red)', borderColor: 'var(--red)' }}
+                                onClick={() => {
+                                    deleteStudent(confirmDeleteStudent);
+                                    setConfirmDeleteStudent(null);
+                                }}
+                            >
+                                {t('common.delete')}
+                            </button>
+                        </div>
+                    </Modal>
                 )}
 
                 {summaryStudentId && (
-                    <div className="modal-overlay" onClick={() => setSummaryStudentId(null)}>
-                        <div
-                            className="modal"
-                            style={{ maxWidth: 560, width: '100%' }}
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className="modal-header">
-                                <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <ClipboardCopy size={17} style={{ color: 'var(--accent)' }} />
-                                    {students.find((s) => s.id === summaryStudentId)?.name} — Rubric Summary
-                                </h3>
-                                <button className="btn btn-ghost btn-icon" onClick={() => setSummaryStudentId(null)}>
-                                    ✕
-                                </button>
-                            </div>
-                            <div className="modal-body">
-                                <textarea
-                                    readOnly
-                                    value={summaryText}
-                                    rows={16}
-                                    style={{
-                                        width: '100%',
-                                        fontFamily: 'monospace',
-                                        fontSize: '0.82rem',
-                                        resize: 'vertical',
-                                        background: 'var(--bg-elevated)',
-                                        border: '1px solid var(--border)',
-                                        borderRadius: 8,
-                                        padding: 12,
-                                        color: 'var(--text)',
-                                    }}
-                                    onClick={(e) => (e.target as HTMLTextAreaElement).select()}
-                                />
-                            </div>
-                            <div className="modal-footer">
-                                <button className="btn btn-secondary" onClick={() => setSummaryStudentId(null)}>
-                                    Close
-                                </button>
-                                <button
-                                    className={`btn ${copied ? 'btn-secondary' : 'btn-primary'}`}
-                                    onClick={() =>
-                                        navigator.clipboard.writeText(summaryText).then(() => setCopied(true))
-                                    }
-                                >
-                                    <ClipboardCopy size={14} />
-                                    {copied ? 'Copied!' : 'Copy to clipboard'}
-                                </button>
-                            </div>
+                    <Modal
+                        titleId="students-summary-title"
+                        onClose={() => setSummaryStudentId(null)}
+                        maxWidth={560}
+                        style={{ width: '100%' }}
+                    >
+                        <div className="modal-header">
+                            <h3 id="students-summary-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <ClipboardCopy size={17} style={{ color: 'var(--accent)' }} />
+                                {students.find((s) => s.id === summaryStudentId)?.name} — Rubric Summary
+                            </h3>
+                            <button
+                                className="btn btn-ghost btn-icon"
+                                onClick={() => setSummaryStudentId(null)}
+                                aria-label={t('common.close', 'Close')}
+                            >
+                                ✕
+                            </button>
                         </div>
-                    </div>
+                        <div className="modal-body">
+                            <textarea
+                                readOnly
+                                value={summaryText}
+                                rows={16}
+                                style={{
+                                    width: '100%',
+                                    fontFamily: 'monospace',
+                                    fontSize: '0.82rem',
+                                    resize: 'vertical',
+                                    background: 'var(--bg-elevated)',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: 8,
+                                    padding: 12,
+                                    color: 'var(--text)',
+                                }}
+                                onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+                            />
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-secondary" onClick={() => setSummaryStudentId(null)}>
+                                Close
+                            </button>
+                            <button
+                                className={`btn ${copied ? 'btn-secondary' : 'btn-primary'}`}
+                                onClick={() => navigator.clipboard.writeText(summaryText).then(() => setCopied(true))}
+                            >
+                                <ClipboardCopy size={14} />
+                                {copied ? 'Copied!' : 'Copy to clipboard'}
+                            </button>
+                        </div>
+                    </Modal>
                 )}
 
                 {passwordSlips && (
@@ -2003,89 +2010,91 @@ export default function StudentsPage() {
                 )}
 
                 {showLinkRubrics && linkClass && (
-                    <div className="modal-overlay" onClick={() => setShowLinkRubrics(false)}>
-                        <div className="modal" onClick={(e) => e.stopPropagation()}>
-                            <div className="modal-header">
-                                <h3>{t('studentsPage.link_rubrics_title', { className: linkClass.name })}</h3>
-                                <button className="btn btn-ghost btn-icon" onClick={() => setShowLinkRubrics(false)}>
-                                    ✕
-                                </button>
-                            </div>
-                            <div className="modal-body">
-                                <p style={{ marginBottom: 16, color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                                    Select which rubrics are available for students in this class. If none are selected,
-                                    all rubrics will be shown.
-                                </p>
-                                {rubrics.length === 0 ? (
-                                    <div className="empty-state">
-                                        <BookOpen size={28} />
-                                        <p>No rubrics yet. Create a rubric first.</p>
-                                    </div>
-                                ) : (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                        {rubrics.map((r) => {
-                                            const linked = (linkClass.rubricIds ?? []).includes(r.id);
-                                            return (
-                                                <label
-                                                    key={r.id}
-                                                    style={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: 10,
-                                                        padding: '10px 12px',
-                                                        borderRadius: 8,
-                                                        cursor: 'pointer',
-                                                        background: linked ? 'var(--accent-soft)' : 'var(--bg-2)',
-                                                        border: `1px solid ${linked ? 'var(--accent)' : 'var(--border)'}`,
-                                                    }}
-                                                >
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={linked}
-                                                        onChange={() => toggleClassRubric(r.id)}
-                                                        style={{
-                                                            width: 16,
-                                                            height: 16,
-                                                            accentColor: 'var(--accent)',
-                                                            flexShrink: 0,
-                                                        }}
-                                                    />
-                                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                                        <div style={{ fontWeight: 500, fontSize: '0.92rem' }}>
-                                                            {r.name}
-                                                        </div>
-                                                        {r.subject && (
-                                                            <div
-                                                                style={{
-                                                                    fontSize: '0.78rem',
-                                                                    color: 'var(--text-muted)',
-                                                                }}
-                                                            >
-                                                                {r.subject}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </label>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                            </div>
-                            <div className="modal-footer">
-                                <button
-                                    className="btn btn-secondary"
-                                    onClick={() => {
-                                        updateClass({ ...linkClass, rubricIds: [] });
-                                    }}
-                                >
-                                    Clear all
-                                </button>
-                                <button className="btn btn-primary" onClick={() => setShowLinkRubrics(false)}>
-                                    Done
-                                </button>
-                            </div>
+                    <Modal titleId="students-link-rubrics-title" onClose={() => setShowLinkRubrics(false)}>
+                        <div className="modal-header">
+                            <h3 id="students-link-rubrics-title">
+                                {t('studentsPage.link_rubrics_title', { className: linkClass.name })}
+                            </h3>
+                            <button
+                                className="btn btn-ghost btn-icon"
+                                onClick={() => setShowLinkRubrics(false)}
+                                aria-label={t('common.close', 'Close')}
+                            >
+                                ✕
+                            </button>
                         </div>
-                    </div>
+                        <div className="modal-body">
+                            <p style={{ marginBottom: 16, color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                                Select which rubrics are available for students in this class. If none are selected, all
+                                rubrics will be shown.
+                            </p>
+                            {rubrics.length === 0 ? (
+                                <div className="empty-state">
+                                    <BookOpen size={28} />
+                                    <p>No rubrics yet. Create a rubric first.</p>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                    {rubrics.map((r) => {
+                                        const linked = (linkClass.rubricIds ?? []).includes(r.id);
+                                        return (
+                                            <label
+                                                key={r.id}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 10,
+                                                    padding: '10px 12px',
+                                                    borderRadius: 8,
+                                                    cursor: 'pointer',
+                                                    background: linked ? 'var(--accent-soft)' : 'var(--bg-2)',
+                                                    border: `1px solid ${linked ? 'var(--accent)' : 'var(--border)'}`,
+                                                }}
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={linked}
+                                                    onChange={() => toggleClassRubric(r.id)}
+                                                    style={{
+                                                        width: 16,
+                                                        height: 16,
+                                                        accentColor: 'var(--accent)',
+                                                        flexShrink: 0,
+                                                    }}
+                                                />
+                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                    <div style={{ fontWeight: 500, fontSize: '0.92rem' }}>{r.name}</div>
+                                                    {r.subject && (
+                                                        <div
+                                                            style={{
+                                                                fontSize: '0.78rem',
+                                                                color: 'var(--text-muted)',
+                                                            }}
+                                                        >
+                                                            {r.subject}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </label>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                        <div className="modal-footer">
+                            <button
+                                className="btn btn-secondary"
+                                onClick={() => {
+                                    updateClass({ ...linkClass, rubricIds: [] });
+                                }}
+                            >
+                                Clear all
+                            </button>
+                            <button className="btn btn-primary" onClick={() => setShowLinkRubrics(false)}>
+                                Done
+                            </button>
+                        </div>
+                    </Modal>
                 )}
 
                 {/* Class options menu — portaled to the body and positioned against the trigger, so
