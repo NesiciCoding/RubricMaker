@@ -5025,6 +5025,7 @@
         "move_into_subfolder": "Una carpeta no puede moverse a su propia subcarpeta",
         "move_too_deep": "Demasiado profundo para anidar ahí",
         "move_no_folders": "Aún no hay carpetas",
+        "location_title": "En la carpeta: {{path}}",
         "folder_name": "Nombre de la carpeta",
         "folder_name_placeholder": "Ej. Curso 1",
         "create": "Crear carpeta",

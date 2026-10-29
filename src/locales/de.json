@@ -5025,6 +5025,7 @@
         "move_into_subfolder": "Ein Ordner kann nicht in einen eigenen Unterordner verschoben werden",
         "move_too_deep": "Zu tief, um dort zu verschachteln",
         "move_no_folders": "Noch keine Ordner",
+        "location_title": "Im Ordner: {{path}}",
         "folder_name": "Ordnername",
         "folder_name_placeholder": "z. B. Jahrgang 1",
         "create": "Ordner erstellen",

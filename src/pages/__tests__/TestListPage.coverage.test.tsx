@@ -76,6 +76,13 @@ const mockUpdateFolder = vi.fn();
 const mockFolders = [
     { id: 'unit', name: 'Unit tests', kind: 'test' as const, createdAt: '2026-01-01T00:00:00.000Z' },
     { id: 'vocab', name: 'Vocabulary', kind: 'test' as const, createdAt: '2026-01-02T00:00:00.000Z' },
+    {
+        id: 'reading',
+        name: 'Reading',
+        kind: 'test' as const,
+        parentId: 'unit',
+        createdAt: '2026-01-03T00:00:00.000Z',
+    },
 ];
 
 const mockUseApp: Record<string, unknown> = {
@@ -196,6 +203,12 @@ describe('TestListPage coverage', () => {
         fireEvent.click(screen.getAllByRole('button', { name: 'folders.move_to' })[1]);
         fireEvent.click(screen.getByRole('menuitem', { name: 'Unit tests' }));
         expect(mockUpdateFolder).toHaveBeenCalledWith(expect.objectContaining({ id: 'vocab', parentId: 'unit' }));
+    });
+
+    it('shows the folder path on a test card that is filed away', () => {
+        mockUseApp.tests = [{ ...testOne, folderId: 'reading' }];
+        loadPage();
+        expect(screen.getByText('Unit tests / Reading')).toBeInTheDocument();
     });
 
     it('filters tests by cohort year', () => {

@@ -5025,6 +5025,7 @@
         "move_into_subfolder": "A folder can’t move into its own subfolder",
         "move_too_deep": "Too deep to nest there",
         "move_no_folders": "No folders yet",
+        "location_title": "In folder: {{path}}",
         "folder_name": "Folder name",
         "folder_name_placeholder": "e.g. Year 1",
         "create": "Create folder",

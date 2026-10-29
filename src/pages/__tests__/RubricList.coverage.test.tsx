@@ -73,6 +73,13 @@ const mockDeleteFolder = vi.fn();
 const mockFolders = [
     { id: 'year1', name: 'Year 1', kind: 'rubric' as const, createdAt: '2026-01-01T00:00:00.000Z' },
     { id: 'year2', name: 'Year 2', kind: 'rubric' as const, createdAt: '2026-01-02T00:00:00.000Z' },
+    {
+        id: 'essays',
+        name: 'Essays',
+        kind: 'rubric' as const,
+        parentId: 'year1',
+        createdAt: '2026-01-03T00:00:00.000Z',
+    },
 ];
 const mockUpdateRubric = vi.fn();
 const mockDeleteRubric = vi.fn();
@@ -635,6 +642,13 @@ it('moves a folder into another folder from its tile menu', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'folders.move_to' })[1]);
     fireEvent.click(screen.getByRole('menuitem', { name: 'Year 1' }));
     expect(mockUpdateFolder).toHaveBeenCalledWith(expect.objectContaining({ id: 'year2', parentId: 'year1' }));
+});
+
+it('shows the folder path on a card that is filed away', () => {
+    mockRubricsArr.push({ ...mockRubric, id: 'r7', name: 'Filed Rubric', folderId: 'essays', displayOrder: 7 });
+    renderPage();
+    expect(screen.getByText('Year 1 / Essays')).toBeInTheDocument();
+    mockRubricsArr.pop();
 });
 
 it('closes the group modal via its cancel button', () => {

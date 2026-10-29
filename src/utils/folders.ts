@@ -36,6 +36,16 @@ export function folderPath(folders: Folder[], folderId: string): Folder[] {
     return path;
 }
 
+/**
+ * The folder's full path as one label — “Year 1 / Essays” — so a card can say where it lives
+ * without the reader having to walk the tree. Undefined when the item is unfiled.
+ */
+export function folderPathLabel(folders: Folder[], folderId?: string): string | undefined {
+    if (!folderId) return undefined;
+    const path = folderPath(folders, folderId);
+    return path.length > 0 ? path.map((folder) => folder.name).join(' / ') : undefined;
+}
+
 /** 1 for a top-level folder, 2 for its child, and 0 for an id that is not in `folders`. */
 export function folderDepth(folders: Folder[], folderId: string): number {
     return folderPath(folders, folderId).length;

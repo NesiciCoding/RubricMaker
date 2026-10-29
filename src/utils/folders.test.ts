@@ -11,6 +11,7 @@ import {
     filterByFolder,
     folderDepth,
     folderPath,
+    folderPathLabel,
     foldersForKind,
     itemsInFolder,
     nextFolderOrder,
@@ -94,6 +95,24 @@ describe('folderPath / folderDepth', () => {
         expect(folderDepth(tree, 'c')).toBe(3);
         const cyclic = [folder({ id: 'x', parentId: 'y' }), folder({ id: 'y', parentId: 'x' })];
         expect(folderDepth(cyclic, 'x')).toBe(2);
+    });
+});
+
+describe('folderPathLabel', () => {
+    const tree = [
+        folder({ id: 'a', name: 'Year 1' }),
+        folder({ id: 'b', name: 'Essays', parentId: 'a' }),
+        folder({ id: 'c', name: 'Drafts', parentId: 'b' }),
+    ];
+
+    it('joins the whole path so a card can name where it lives', () => {
+        expect(folderPathLabel(tree, 'c')).toBe('Year 1 / Essays / Drafts');
+        expect(folderPathLabel(tree, 'a')).toBe('Year 1');
+    });
+
+    it('is undefined for an unfiled item or a folder that no longer exists', () => {
+        expect(folderPathLabel(tree, undefined)).toBeUndefined();
+        expect(folderPathLabel(tree, 'gone')).toBeUndefined();
     });
 });
 

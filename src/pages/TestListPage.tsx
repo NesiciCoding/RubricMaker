@@ -32,6 +32,7 @@ import { useFolderDropTarget } from '../hooks/useFolderDropTarget';
 import TestAssignmentModal from '../components/Tests/TestAssignmentModal';
 import FolderBar from '../components/Folders/FolderBar';
 import MoveToMenu from '../components/Folders/MoveToMenu';
+import FolderLocationBadge from '../components/Folders/FolderLocationBadge';
 import { FOLDER_DROP_PREFIX } from '../components/Folders/FolderTile';
 import FolderNameModal from '../components/Folders/FolderNameModal';
 import TestSubmissionImportModal from '../components/Tests/TestSubmissionImportModal';
@@ -43,7 +44,7 @@ import GenerateTestModal from '../components/Tests/GenerateTestModal';
 import ExamBookletExportPanel from '../components/Tests/ExamBookletExportPanel';
 import type { Folder, Test, StudentTest, CohortFilter as CohortFilterValue } from '../types';
 import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
-import { ALL_FOLDERS, filterByFolder, foldersForKind, nextFolderOrder } from '../utils/folders';
+import { ALL_FOLDERS, filterByFolder, folderPathLabel, foldersForKind, nextFolderOrder } from '../utils/folders';
 import { getCohortStudentIds, isAllCohorts, ALL_COHORTS } from '../utils/cohortAggregator';
 import { isGeneratorTest } from '../utils/placementGenerator';
 import CohortFilter from '../components/CohortFilter';
@@ -710,6 +711,11 @@ export default function TestListPage() {
                                                                 marginBottom: 14,
                                                             }}
                                                         >
+                                                            {folderPathLabel(testFolders, test.folderId) && (
+                                                                <FolderLocationBadge
+                                                                    path={folderPathLabel(testFolders, test.folderId)!}
+                                                                />
+                                                            )}
                                                             <span className="badge badge-blue">
                                                                 {t('tests.question_count', {
                                                                     count: test.questions.length,

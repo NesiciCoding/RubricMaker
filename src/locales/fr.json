@@ -5025,6 +5025,7 @@
         "move_into_subfolder": "Un dossier ne peut pas être déplacé dans son propre sous-dossier",
         "move_too_deep": "Trop profond pour être imbriqué ici",
         "move_no_folders": "Pas encore de dossiers",
+        "location_title": "Dans le dossier : {{path}}",
         "folder_name": "Nom du dossier",
         "folder_name_placeholder": "Ex. Année 1",
         "create": "Créer le dossier",

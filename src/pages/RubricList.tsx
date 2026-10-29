@@ -51,7 +51,7 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
 import { useFolderDropTarget } from '../hooks/useFolderDropTarget';
 import { sortByDisplayOrder, reorderDisplayOrder, displayOrderAfter } from '../utils/displayOrder';
-import { ALL_FOLDERS, filterByFolder, foldersForKind, nextFolderOrder } from '../utils/folders';
+import { ALL_FOLDERS, filterByFolder, folderPathLabel, foldersForKind, nextFolderOrder } from '../utils/folders';
 import { cloneRubricForCopy, type RubricInput } from '../utils/rubricClone';
 import { getCohortStudentIds, isAllCohorts, ALL_COHORTS } from '../utils/cohortAggregator';
 import CohortFilter from '../components/CohortFilter';
@@ -798,6 +798,7 @@ export default function RubricList() {
                                             classStudents={classStudents}
                                             hasActiveClass={!!settings.activeClassId}
                                             actions={cardActions}
+                                            folderLabel={folderPathLabel(rubricFolders, r.folderId)}
                                             moveMenuFor={(rubric) => (
                                                 <MoveToMenu
                                                     folders={rubricFolders}

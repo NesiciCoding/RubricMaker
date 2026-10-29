@@ -5025,6 +5025,7 @@
         "move_into_subfolder": "Een map kan niet in een eigen submap worden verplaatst",
         "move_too_deep": "Te diep om daar te nesten",
         "move_no_folders": "Nog geen mappen",
+        "location_title": "In map: {{path}}",
         "folder_name": "Mapnaam",
         "folder_name_placeholder": "Bijv. Leerjaar 1",
         "create": "Map aanmaken",
