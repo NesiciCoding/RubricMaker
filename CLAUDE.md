@@ -30,7 +30,11 @@ npm run coverage     # Coverage report (thresholds: 65% lines/statements, 60% fu
 npx vitest run src/utils/gradeCalc.test.ts
 npx vitest run -t "test name substring"
 
-# Playwright e2e (testDir: e2e/specs, baseURL http://localhost:5173 — needs `npm run dev` running separately)
+# Playwright e2e (testDir: e2e/specs; starts its own dev server on this checkout's port — 5173 for the
+# first checkout, a stable neighbour for any other worktree, so two suites never share a server.
+# `E2E_PORT=<n>` picks a port, `E2E_BASE_URL=<origin>` tests an already-running server of your
+# choice, `E2E_REUSE_SERVER=1` attaches to a server on the port — but only one that serves *this*
+# checkout (it advertises itself in the x-rm-checkout header; e2e/global-setup.ts compares it).
 npm run e2e              # all specs, chromium + firefox projects
 npm run e2e:chromium      # chromium only, faster local loop
 npm run e2e -- e2e/specs/04-grading.spec.ts   # single spec

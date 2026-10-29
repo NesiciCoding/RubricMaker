@@ -37,6 +37,16 @@ export default tseslint.config(
     },
   },
   {
+    // Playwright fixtures are not React components: `async ({}, use) => …` is the documented
+    // fixture signature (the destructured pattern is parsed statically for dependencies) and the
+    // third `use` argument is not a React hook, so those two rules only produce false positives.
+    files: ['e2e/**/*.{ts,tsx}'],
+    rules: {
+      'no-empty-pattern': 'off',
+      'react-hooks/rules-of-hooks': 'off',
+    },
+  },
+  {
     // Tests compose domain hooks explicitly; subscribing a single renderHook to more than
     // three domains re-renders the probe on unrelated domain changes and defeats the
     // isolation it exists to verify. Such tests should select exactly the slices they read

@@ -1,5 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 import quarantine from './e2e/quarantine.json' with { type: 'json' };
+import { APP_ORIGIN, DEV_SERVER_PORT, reuseExistingServer } from './e2e/appUrl';
 
 // Flaky-spec quarantine: specs listed in e2e/quarantine.json (as
 // "<file>.spec.ts" with a reason) are excluded from every gating project so
@@ -10,6 +11,9 @@ const quarantinePatterns = quarantine.map((q) => `**/${q.spec}`);
 
 export default defineConfig({
     testDir: './e2e/specs',
+    // Fails the run when the port answers for a different checkout (#1015) instead of quietly
+    // testing another worktree's code.
+    globalSetup: './e2e/global-setup.ts',
     fullyParallel: true,
     forbidOnly: !!process.env.CI,
     retries: process.env.CI ? 2 : 0,
@@ -21,7 +25,9 @@ export default defineConfig({
         ['junit', { outputFile: 'playwright-results/results.xml' }],
     ],
     use: {
-        baseURL: 'http://localhost:5173',
+        // This checkout's own origin: 5173 for the first checkout, a stable neighbour for extra
+        // worktrees. E2E_PORT or E2E_BASE_URL override it.
+        baseURL: APP_ORIGIN,
         screenshot: 'only-on-failure',
         video: 'retain-on-failure',
         trace: 'on-first-retry',
@@ -180,10 +186,18 @@ export default defineConfig({
             testMatch: quarantinePatterns,
         },
     ],
-    webServer: {
-        command: 'npm run dev',
-        url: 'http://localhost:5173',
-        reuseExistingServer: !process.env.CI,
-        timeout: 60_000,
-    },
+    // With an explicit E2E_BASE_URL the suite must not start (or need) a local server.
+    webServer: process.env.E2E_BASE_URL
+        ? undefined
+        : {
+              // --strictPort: if something else already holds the port, fail instead of silently
+              // moving to another one that Playwright would never wait for.
+              command: `npm run dev -- --port ${DEV_SERVER_PORT} --strictPort`,
+              url: APP_ORIGIN,
+              // Never default to reusing a server: it used to be the local default, and a server on
+              // a fixed port from another checkout then made every run a false green (#1015).
+              // Reuse is opt-in (E2E_REUSE_SERVER=1) and still has to pass the checkout stamp.
+              reuseExistingServer: reuseExistingServer(process.env),
+              timeout: 60_000,
+          },
 });

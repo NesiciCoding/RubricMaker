@@ -3,6 +3,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { VitePWA } from 'vite-plugin-pwa';
+import { checkoutStamp } from './e2e/appUrl.ts';
 
 export default defineConfig({
     plugins: [
@@ -100,6 +101,12 @@ export default defineConfig({
         }),
     ],
     base: './',
+    // Advertise which checkout this dev server is serving. The e2e suite compares this stamp with
+    // its own root, so a server left running from another worktree can't silently pass the run
+    // against the wrong code (#1015). Vite resolves its root from cwd, so cwd is the served tree.
+    server: {
+        headers: { 'x-rm-checkout': checkoutStamp(process.cwd()) },
+    },
     // @supabase/supabase-js is only reachable via a nested dynamic import now
     // (AppContext -> services/database/lazyDb.ts -> import('./index')), which the
     // dev-server's dependency pre-bundler can miss during its initial scan — the

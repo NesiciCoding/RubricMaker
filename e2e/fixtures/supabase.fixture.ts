@@ -18,6 +18,7 @@
  */
 import { test as base, type Page } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
+import { APP_ORIGIN } from '../appUrl';
 
 // ── Supabase local-dev defaults (produced by `supabase start`) ────────────────
 
@@ -31,7 +32,7 @@ export const SUPABASE_SERVICE_KEY =
     process.env.SUPABASE_TEST_SERVICE_KEY ??
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hj04zWl196z2-SBc0';
 
-const APP_URL = 'http://localhost:5173';
+const APP_URL = APP_ORIGIN;
 
 /** Local Supabase Postgres connection (from `supabase start`'s default [db] port). */
 const DB_URL = process.env.SUPABASE_TEST_DB_URL ?? 'postgresql://postgres:postgres@localhost:54322/postgres';
@@ -407,8 +408,8 @@ export const test = base.extend<SupabaseFixtures>({
     colleagueEmail: [
         // Playwright requires the first param to be a (possibly empty) destructuring
         // pattern; it parses this statically to detect fixture dependencies, so it
-        // cannot be renamed to a plain identifier.
-        // eslint-disable-next-line no-empty-pattern
+        // cannot be renamed to a plain identifier. (`no-empty-pattern` is off for e2e/ — see
+        // eslint.config.js.)
         async ({}, run) => {
             const email = makeTestEmail();
             await run(email);
