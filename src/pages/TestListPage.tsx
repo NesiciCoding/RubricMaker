@@ -13,7 +13,6 @@ import {
     Upload,
     Radio,
     FileDown,
-    GripVertical,
     Sparkles,
     LayoutGrid,
     List,
@@ -27,6 +26,9 @@ import { useToast } from '../hooks/useToast';
 import { logAuditEvent } from '../services/database/AuditLogger';
 import { nanoid } from '../utils/nanoid';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import CardGrid from '../components/ui/CardGrid';
+import CardTile from '../components/ui/CardTile';
+import CardGrip from '../components/ui/CardGrip';
 import { useConfirm } from '../hooks/useConfirm';
 import TestAssignmentModal from '../components/Tests/TestAssignmentModal';
 import FolderTile, { FOLDER_DROP_PREFIX } from '../components/Folders/FolderTile';
@@ -516,16 +518,7 @@ export default function TestListPage() {
                     ) : (
                         <Droppable droppableId="test-list">
                             {(droppableProvided) => (
-                                <div
-                                    ref={droppableProvided.innerRef}
-                                    {...droppableProvided.droppableProps}
-                                    style={{
-                                        // ponytail: flex-wrap, not CSS grid — see RubricList for why @hello-pangea/dnd needs this
-                                        display: 'flex',
-                                        flexWrap: 'wrap',
-                                        gap: 16,
-                                    }}
-                                >
+                                <CardGrid ref={droppableProvided.innerRef} {...droppableProvided.droppableProps}>
                                     {visibleTests.map((test, idx) => {
                                         const totalPoints = test.questions.reduce((sum, q) => sum + (q.points || 0), 0);
                                         const isOverdue = !!test.dueDate && new Date(test.dueDate) < new Date();
@@ -544,27 +537,14 @@ export default function TestListPage() {
                                                 isDragDisabled={!reorderable}
                                             >
                                                 {(dragProvided) => (
-                                                    <div
+                                                    <CardTile
                                                         ref={dragProvided.innerRef}
                                                         {...dragProvided.draggableProps}
-                                                        className="card"
+                                                        hoverable
                                                         style={{
                                                             cursor: 'pointer',
-                                                            transition: 'border-color var(--transition)',
-                                                            // Fixed basis so every tile keeps the same width; minWidth 0
-                                                            // stops a nowrap (`.truncate`) description from stretching
-                                                            // the card to the width of the sentence.
-                                                            flex: '0 1 400px',
-                                                            minWidth: 0,
-                                                            maxWidth: '100%',
                                                             ...dragProvided.draggableProps.style,
                                                         }}
-                                                        onMouseEnter={(e) =>
-                                                            (e.currentTarget.style.borderColor = 'var(--accent)')
-                                                        }
-                                                        onMouseLeave={(e) =>
-                                                            (e.currentTarget.style.borderColor = 'var(--border)')
-                                                        }
                                                     >
                                                         <div
                                                             style={{
@@ -582,25 +562,10 @@ export default function TestListPage() {
                                                                 }}
                                                             >
                                                                 {reorderable && (
-                                                                    <span
+                                                                    <CardGrip
                                                                         {...dragProvided.dragHandleProps}
-                                                                        aria-label={t('rubricList.drag_to_reorder')}
-                                                                        style={{
-                                                                            cursor: 'grab',
-                                                                            color: 'var(--text-dim)',
-                                                                            display: 'flex',
-                                                                            alignItems: 'center',
-                                                                            flexShrink: 0,
-                                                                            // Padding (cancelled by the negative margin)
-                                                                            // grows the grab area around the corner glyph
-                                                                            // to a 25px target.
-                                                                            padding: 5,
-                                                                            margin: '-1px 0 0 -5px',
-                                                                            touchAction: 'none',
-                                                                        }}
-                                                                    >
-                                                                        <GripVertical size={15} />
-                                                                    </span>
+                                                                        label={t('rubricList.drag_to_reorder')}
+                                                                    />
                                                                 )}
                                                                 <div>
                                                                     <h3>{test.name}</h3>
@@ -1125,13 +1090,13 @@ export default function TestListPage() {
                                                                 </div>
                                                             </div>
                                                         )}
-                                                    </div>
+                                                    </CardTile>
                                                 )}
                                             </Draggable>
                                         );
                                     })}
                                     {droppableProvided.placeholder}
-                                </div>
+                                </CardGrid>
                             )}
                         </Droppable>
                     )}

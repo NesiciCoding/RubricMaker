@@ -47,6 +47,7 @@ import SegmentedToggle from '../components/ui/SegmentedToggle';
 import type { ParsedRubric } from '../utils/rubricImport';
 import { encodeRubricShareCode, decodeRubricShareCode } from '../utils/rubricImport';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import CardGrid from '../components/ui/CardGrid';
 import { useConfirm } from '../hooks/useConfirm';
 import { sortByDisplayOrder, reorderDisplayOrder, displayOrderAfter } from '../utils/displayOrder';
 import { ALL_FOLDERS, countInFolder, filterByFolder, foldersForKind, nextFolderOrder } from '../utils/folders';
@@ -737,18 +738,7 @@ export default function RubricList() {
                     ) : (
                         <Droppable droppableId="rubric-list">
                             {(droppableProvided) => (
-                                <div
-                                    ref={droppableProvided.innerRef}
-                                    {...droppableProvided.droppableProps}
-                                    style={{
-                                        // ponytail: flex-wrap, not CSS grid — @hello-pangea/dnd computes displacement from
-                                        // sibling bounding rects and doesn't support grid track layout, so cross-row drags
-                                        // would animate incorrectly and couldn't drop between two cards in a different row
-                                        display: 'flex',
-                                        flexWrap: 'wrap',
-                                        gap: 16,
-                                    }}
-                                >
+                                <CardGrid ref={droppableProvided.innerRef} {...droppableProvided.droppableProps}>
                                     {filtered.map((r, idx) => (
                                         <RubricCard
                                             key={r.id}
@@ -765,7 +755,7 @@ export default function RubricList() {
                                         />
                                     ))}
                                     {droppableProvided.placeholder}
-                                </div>
+                                </CardGrid>
                             )}
                         </Droppable>
                     )}

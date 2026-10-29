@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LayoutGrid, GripVertical, ClipboardList, Plus, X } from 'lucide-react';
+import { LayoutGrid, ClipboardList, Plus, X } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { useTranslation } from 'react-i18next';
 import PageTour from '../components/Tour/PageTour';
@@ -10,6 +10,7 @@ import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { getActivityRows, buildDashboardMatrix } from '../utils/activityDashboardAggregator';
 import { getClassStandardsCoverage } from '../utils/standardsCoverageAggregator';
 import ClassCoverageGapPanel from '../components/Standards/ClassCoverageGapPanel';
+import CardGrip from '../components/ui/CardGrip';
 import { reorderDisplayOrder } from '../utils/displayOrder';
 import { VO_TRACKS } from '../data/voTracks';
 import { SCHOOL_YEAR_LABELS, getAvailableSchoolYears } from '../data/schoolYears';
@@ -451,25 +452,14 @@ export default function ActivityDashboardPage() {
                                                                             overflow: 'hidden',
                                                                         }}
                                                                     >
-                                                                        <span
+                                                                        <CardGrip
                                                                             {...dragProvided.dragHandleProps}
-                                                                            aria-label={t('rubricList.drag_to_reorder')}
-                                                                            style={{
-                                                                                cursor: 'grab',
-                                                                                color: 'var(--text-dim)',
-                                                                                display: 'flex',
-                                                                                alignItems: 'center',
-                                                                                flexShrink: 0,
-                                                                                // Padding (cancelled by the negative
-                                                                                // margin) grows the grab area around the
-                                                                                // glyph to a 23px target.
-                                                                                padding: 5,
-                                                                                margin: '-5px 1px -5px -5px',
-                                                                                touchAction: 'none',
-                                                                            }}
-                                                                        >
-                                                                            <GripVertical size={13} />
-                                                                        </span>
+                                                                            label={t('rubricList.drag_to_reorder')}
+                                                                            size={13}
+                                                                            // Table cells are tighter than cards, so
+                                                                            // cancel the padding vertically as well.
+                                                                            style={{ margin: '-5px 1px -5px -5px' }}
+                                                                        />
                                                                         <button
                                                                             type="button"
                                                                             className="btn btn-ghost btn-sm"
