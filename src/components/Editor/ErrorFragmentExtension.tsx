@@ -132,7 +132,7 @@ export const ErrorFragment = Node.create<ErrorFragmentOptions>({
 
             pill.addEventListener('click', (e) => {
                 e.stopPropagation();
-                closePopover = openPillPopover(pill, 'error-fragment-popover', (popover, close) => {
+                closePopover = openPillPopover(pill, 'error-fragment-popover pill-popover--wide', (popover, close) => {
                     const textLabel = document.createElement('div');
                     textLabel.className = 'error-fragment-popover-label';
                     textLabel.textContent = o.textLabel;

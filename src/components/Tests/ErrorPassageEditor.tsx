@@ -143,19 +143,6 @@ export default function ErrorPassageEditor({ passage, onChange }: Props) {
                 .${ERROR_PILL_CLASS}.error.missing { outline: 2px dashed var(--red); }
                 .${ERROR_PILL_CLASS}.fine { background: color-mix(in srgb, var(--green) 18%, transparent); color: var(--green); }
                 .error-fragment-hint { font-weight: 500; font-size: 0.8em; opacity: 0.85; }
-                .error-fragment-popover {
-                    position: fixed;
-                    z-index: 1000;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 8px;
-                    min-width: 240px;
-                    padding: 10px;
-                    background: var(--bg-elevated);
-                    border: 1px solid var(--border);
-                    border-radius: 8px;
-                    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
-                }
                 .error-fragment-popover-section, .error-fragment-popover-list { display: flex; flex-direction: column; gap: 6px; }
                 .error-fragment-popover-row { display: flex; gap: 6px; }
                 .error-fragment-popover-label { font-size: 0.75rem; color: var(--text-muted); }

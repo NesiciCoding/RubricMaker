@@ -1286,6 +1286,31 @@ select.input-error {
     color: var(--accent);
 }
 
+/* ─── Pill popovers (cloze gap, error fragment, hot text) ──────────────────────
+   Opened from a TipTap node view by Editor/pillPopover.ts and appended to <body>, so they are the
+   same floating panel whichever editor owns them and `position: fixed` resolves against the
+   viewport rather than an editor's transformed ancestor (#1017, #1022). The editor-specific
+   `.cloze-gap-popover` / `.error-fragment-popover` / `.hot-text-popover` classes only style the
+   contents. */
+.pill-popover {
+    position: fixed;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 220px;
+    padding: 10px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+
+/* The error-fragment popover holds two inputs in a row and needs more room. */
+.pill-popover--wide {
+    min-width: 240px;
+}
+
 /* ─── Empty state ────────────────────────────────────────────────────────────── */
 .empty-state {
     display: flex;

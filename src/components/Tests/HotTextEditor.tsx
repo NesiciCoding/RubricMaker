@@ -124,19 +124,6 @@ export default function HotTextEditor({ passage, correctIndices, onChange, inser
                     background: color-mix(in srgb, var(--green) 18%, transparent);
                     color: var(--green);
                 }
-                .hot-text-popover {
-                    position: fixed;
-                    z-index: 1000;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 8px;
-                    min-width: 220px;
-                    padding: 10px;
-                    background: var(--bg-elevated);
-                    border: 1px solid var(--border);
-                    border-radius: 8px;
-                    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
-                }
                 .hot-text-popover-label { font-size: 0.75rem; color: var(--text-muted); }
                 .hot-text-popover-input {
                     box-sizing: border-box;
