@@ -31,6 +31,7 @@ import { useConfirm } from '../hooks/useConfirm';
 import { useFolderDropTarget } from '../hooks/useFolderDropTarget';
 import TestAssignmentModal from '../components/Tests/TestAssignmentModal';
 import FolderBar from '../components/Folders/FolderBar';
+import MoveToMenu from '../components/Folders/MoveToMenu';
 import { FOLDER_DROP_PREFIX } from '../components/Folders/FolderTile';
 import FolderNameModal from '../components/Folders/FolderNameModal';
 import TestSubmissionImportModal from '../components/Tests/TestSubmissionImportModal';
@@ -135,6 +136,20 @@ export default function TestListPage() {
     }
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
     const { showToast } = useToast();
+
+    function moveFolder(folder: Folder, parentId: string | undefined) {
+        if (folder.parentId === parentId) return;
+        updateFolder({
+            ...folder,
+            parentId,
+            displayOrder: nextFolderOrder(folders, 'test', parentId),
+        });
+    }
+
+    function moveTest(test: Test, folderId: string | undefined) {
+        if ((test.folderId ?? undefined) === folderId) return;
+        updateTest({ ...test, folderId });
+    }
 
     function submitFolderName(name: string) {
         const editing = folderModal?.folder;
@@ -416,6 +431,7 @@ export default function TestListPage() {
                         onCreate={(parentId) => setFolderModal({ parentId })}
                         onRename={(f) => setFolderModal({ folder: f })}
                         onDelete={handleDeleteFolder}
+                        onMoveFolder={moveFolder}
                     />
                     {visibleTests.length === 0 ? (
                         <div className="empty-state">
@@ -639,6 +655,13 @@ export default function TestListPage() {
                                                                 </div>
                                                             </div>
                                                             <div style={{ display: 'flex', gap: 4 }}>
+                                                                <MoveToMenu
+                                                                    folders={testFolders}
+                                                                    kind="test"
+                                                                    currentFolderId={test.folderId}
+                                                                    rootLabel={t('folders.move_to_unfiled')}
+                                                                    onMove={(folderId) => moveTest(test, folderId)}
+                                                                />
                                                                 <button
                                                                     type="button"
                                                                     className="btn btn-ghost btn-icon btn-sm"

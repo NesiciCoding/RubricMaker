@@ -70,7 +70,10 @@ const mockAddFolder = vi.fn((f: { name: string; kind: string; parentId?: string 
 }));
 const mockUpdateFolder = vi.fn();
 const mockDeleteFolder = vi.fn();
-const mockFolders = [{ id: 'year1', name: 'Year 1', kind: 'rubric' as const, createdAt: '2026-01-01T00:00:00.000Z' }];
+const mockFolders = [
+    { id: 'year1', name: 'Year 1', kind: 'rubric' as const, createdAt: '2026-01-01T00:00:00.000Z' },
+    { id: 'year2', name: 'Year 2', kind: 'rubric' as const, createdAt: '2026-01-02T00:00:00.000Z' },
+];
 const mockUpdateRubric = vi.fn();
 const mockDeleteRubric = vi.fn();
 const mockCreateGroupStudentRubrics = vi.fn(() => [{ studentId: 's1' }]);
@@ -616,6 +619,22 @@ it('creates a subfolder inside the folder that is open', () => {
     expect(mockAddFolder).toHaveBeenCalledWith(
         expect.objectContaining({ name: 'Essays', kind: 'rubric', parentId: 'year1', displayOrder: 0 })
     );
+});
+
+it('files a rubric into a folder from its card menu', () => {
+    renderPage();
+    // The folder tiles come first in the DOM, so the first menu inside a card is after both tiles.
+    const menus = screen.getAllByRole('button', { name: 'folders.move_to' });
+    fireEvent.click(menus[2]);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Year 2' }));
+    expect(mockUpdateRubric).toHaveBeenCalledWith(expect.objectContaining({ id: 'r1', folderId: 'year2' }));
+});
+
+it('moves a folder into another folder from its tile menu', () => {
+    renderPage();
+    fireEvent.click(screen.getAllByRole('button', { name: 'folders.move_to' })[1]);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Year 1' }));
+    expect(mockUpdateFolder).toHaveBeenCalledWith(expect.objectContaining({ id: 'year2', parentId: 'year1' }));
 });
 
 it('closes the group modal via its cancel button', () => {

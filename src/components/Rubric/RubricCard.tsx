@@ -46,6 +46,11 @@ interface RubricCardProps {
     classStudents: Student[];
     hasActiveClass: boolean;
     actions: RubricCardActions;
+    /**
+     * The card's “Move to…” menu. A render prop rather than an element so the page can keep it a
+     * stable callback — the card is memoised, and a fresh element per render would defeat that.
+     */
+    moveMenuFor?: (rubric: Rubric) => React.ReactNode;
 }
 
 // The per-card speaking-session picker used to map every student into an <option> for all 300+
@@ -115,6 +120,7 @@ function RubricCard({
     classStudents,
     hasActiveClass,
     actions,
+    moveMenuFor,
 }: RubricCardProps) {
     const { t } = useTranslation();
 
@@ -275,6 +281,7 @@ function RubricCard({
                                     <Layers size={14} />
                                 </button>
                             )}
+                            {moveMenuFor?.(rubric)}
                             <button
                                 className="btn btn-ghost btn-icon btn-sm"
                                 title={t('rubricList.action_duplicate')}

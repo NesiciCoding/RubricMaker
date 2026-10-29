@@ -40,6 +40,7 @@ import ImportRubricModal from '../components/Rubric/ImportRubricModal';
 import NewRubricChooserModal from '../components/Rubric/NewRubricChooserModal';
 import RubricCard, { type RubricCardActions } from '../components/Rubric/RubricCard';
 import FolderBar from '../components/Folders/FolderBar';
+import MoveToMenu from '../components/Folders/MoveToMenu';
 import { FOLDER_DROP_PREFIX } from '../components/Folders/FolderTile';
 import FolderNameModal from '../components/Folders/FolderNameModal';
 import Modal from '../components/ui/Modal';
@@ -387,6 +388,34 @@ export default function RubricList() {
         }
     }
 
+    function moveFolder(folder: Folder, parentId: string | undefined) {
+        if (folder.parentId === parentId) return;
+        updateFolder({
+            ...folder,
+            parentId,
+            displayOrder: nextFolderOrder(folders, 'rubric', parentId),
+        });
+        const target = parentId ? rubricFolders.find((f) => f.id === parentId) : undefined;
+        showToast(
+            target
+                ? t('folders.moved_toast', { name: target.name })
+                : t('folders.moved_toast', { name: t('folders.move_to_root') }),
+            'success'
+        );
+    }
+
+    function moveRubric(rubric: Rubric, folderId: string | undefined) {
+        if ((rubric.folderId ?? undefined) === folderId) return;
+        updateRubric({ ...rubric, folderId });
+        const target = folderId ? rubricFolders.find((f) => f.id === folderId) : undefined;
+        showToast(
+            target
+                ? t('folders.moved_toast', { name: target.name })
+                : t('folders.moved_toast', { name: t('folders.move_to_unfiled') }),
+            'success'
+        );
+    }
+
     function submitFolderName(name: string) {
         const editing = folderModal?.folder;
         if (editing) {
@@ -633,6 +662,7 @@ export default function RubricList() {
                         onCreate={(parentId) => setFolderModal({ parentId })}
                         onRename={(f) => setFolderModal({ folder: f })}
                         onDelete={handleDeleteFolder}
+                        onMoveFolder={moveFolder}
                     />
                     {filtered.length === 0 ? (
                         <div className="empty-state">
@@ -768,6 +798,15 @@ export default function RubricList() {
                                             classStudents={classStudents}
                                             hasActiveClass={!!settings.activeClassId}
                                             actions={cardActions}
+                                            moveMenuFor={(rubric) => (
+                                                <MoveToMenu
+                                                    folders={rubricFolders}
+                                                    kind="rubric"
+                                                    currentFolderId={rubric.folderId}
+                                                    rootLabel={t('folders.move_to_unfiled')}
+                                                    onMove={(folderId) => moveRubric(rubric, folderId)}
+                                                />
+                                            )}
                                         />
                                     ))}
                                     {droppableProvided.placeholder}

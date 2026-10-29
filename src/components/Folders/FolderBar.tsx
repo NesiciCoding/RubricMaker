@@ -4,6 +4,7 @@ import { ChevronRight, FolderPlus, LayoutGrid } from 'lucide-react';
 import type { Folder, FolderKind } from '../../types';
 import { ALL_FOLDERS, MAX_FOLDER_DEPTH, childFolders, countInFolderTree, folderPath } from '../../utils/folders';
 import FolderTile from './FolderTile';
+import MoveToMenu from './MoveToMenu';
 
 export interface FolderBarProps {
     folders: Folder[];
@@ -17,6 +18,8 @@ export interface FolderBarProps {
     onCreate: (parentId: string | undefined) => void;
     onRename: (folder: Folder) => void;
     onDelete: (folder: Folder) => void;
+    /** Re-parent a folder; when omitted the tiles get no “Move to…” action. */
+    onMoveFolder?: (folder: Folder, parentId: string | undefined) => void;
 }
 
 /**
@@ -36,6 +39,7 @@ export default function FolderBar({
     onCreate,
     onRename,
     onDelete,
+    onMoveFolder,
 }: FolderBarProps) {
     const { t } = useTranslation();
     const barRef = useRef<HTMLDivElement>(null);
@@ -121,6 +125,18 @@ export default function FolderBar({
                         onOpen={onSelect}
                         onRename={onRename}
                         onDelete={onDelete}
+                        moveMenu={
+                            onMoveFolder && (
+                                <MoveToMenu
+                                    folders={folders}
+                                    kind={kind}
+                                    movingFolderId={folder.id}
+                                    currentFolderId={parentId}
+                                    rootLabel={t('folders.move_to_root')}
+                                    onMove={(target) => onMoveFolder(folder, target)}
+                                />
+                            )
+                        }
                     />
                 ))}
                 <button

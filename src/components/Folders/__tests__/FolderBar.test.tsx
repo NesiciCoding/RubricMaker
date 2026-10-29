@@ -47,6 +47,7 @@ function renderBar(overrides: Partial<React.ComponentProps<typeof FolderBar>> = 
         onCreate: vi.fn(),
         onRename: vi.fn(),
         onDelete: vi.fn(),
+        onMoveFolder: vi.fn(),
         ...overrides,
     };
     const view = render(<FolderBar {...props} />);
@@ -133,6 +134,15 @@ describe('FolderBar', () => {
         rerender({ activeFolderId: 'year1' });
         expect(document.activeElement).toBe(outside);
         outside.remove();
+    });
+
+    it('re-parents a folder from the menu on its tile', () => {
+        const { props } = renderBar();
+        // Year 1 already holds three levels, so nothing may go into it without breaking the limit;
+        // Year 2 is a leaf and can move inside Year 1.
+        fireEvent.click(screen.getAllByRole('button', { name: 'folders.move_to' })[1]);
+        fireEvent.click(screen.getByRole('menuitem', { name: 'Year 1' }));
+        expect(props.onMoveFolder).toHaveBeenCalledWith(expect.objectContaining({ id: 'year2' }), 'year1');
     });
 
     it('falls back to the top level when the selected folder is gone', () => {
