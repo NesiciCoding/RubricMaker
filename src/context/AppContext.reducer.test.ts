@@ -1478,3 +1478,60 @@ describe('AppContext reducer — connected mode and edge branches', () => {
         expect(() => render(React.createElement(Probe))).toThrow('Probe must be used within AppProvider');
     });
 });
+
+describe('AppContext reducer — deleting a folder unfiles the list that owns it', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    const essayRow = {
+        rubricId: 'r1',
+        studentId: 's1',
+        teacherKey: 'tk1',
+        title: 'Filed essay',
+        readOnlyAfterSubmit: false,
+        createdAt: now,
+        folderId: 'f-essay',
+    };
+
+    it('keeps essays but clears their folder when an essay folder is deleted', () => {
+        const folder = { id: 'f-essay', name: 'Term 1', kind: 'essay' as const, createdAt: now };
+        const next = run(makeState({ folders: [folder], essayAssignments: [essayRow] }), {
+            type: 'DELETE_FOLDER',
+            id: 'f-essay',
+            kind: 'essay',
+        });
+
+        expect(next.folders).toEqual([]);
+        expect(next.essayAssignments).toHaveLength(1);
+        expect(next.essayAssignments[0].folderId).toBeUndefined();
+        // Rubrics are a different kind's list and must come through untouched.
+        expect(next.rubrics).toEqual(makeState().rubrics);
+    });
+
+    it('leaves decks filed under a different folder alone', () => {
+        const folder = { id: 'f-keep', name: 'Keep', kind: 'flashcard' as const, createdAt: now };
+        const other = { id: 'f-other', name: 'Other', kind: 'flashcard' as const, createdAt: now };
+        const decks = [
+            { id: 'd1', name: 'Deck in keep', cards: [], createdAt: now, folderId: 'f-keep' },
+            { id: 'd2', name: 'Deck in other', cards: [], createdAt: now, folderId: 'f-other' },
+            { id: 'd3', name: 'Unfiled deck', cards: [], createdAt: now },
+        ];
+        const next = run(makeState({ folders: [folder, other], flashcardDecks: decks }), {
+            type: 'DELETE_FOLDER',
+            id: 'f-other',
+            kind: 'flashcard',
+        });
+
+        expect(next.folders.map((f) => f.id)).toEqual(['f-keep']);
+        expect(next.flashcardDecks.map((d) => d.folderId)).toEqual(['f-keep', undefined, undefined]);
+        expect(next.flashcardDecks.map((d) => d.name)).toEqual(['Deck in keep', 'Deck in other', 'Unfiled deck']);
+    });
+
+    it('still unfiles rubrics for a rubric folder', () => {
+        const folder = { id: 'f-rubric', name: 'Rubrics', kind: 'rubric' as const, createdAt: now };
+        const state = makeState({ folders: [folder], rubrics: [{ ...makeState().rubrics[0], folderId: 'f-rubric' }] });
+        const next = run(state, { type: 'DELETE_FOLDER', id: 'f-rubric', kind: 'rubric' });
+
+        expect(next.folders).toEqual([]);
+        expect(next.rubrics[0].folderId).toBeUndefined();
+    });
+});

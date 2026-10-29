@@ -2,6 +2,10 @@ import { useTranslation } from 'react-i18next';
 import { Droppable } from '@hello-pangea/dnd';
 import { Folder as FolderIcon, Pencil, Trash2 } from 'lucide-react';
 import type { Folder } from '../../types';
+import CardTile from '../ui/CardTile';
+
+/** Folder tiles are deliberately narrower than list tiles, so several fit on one row. */
+export const FOLDER_TILE_WIDTH = 220;
 
 export const FOLDER_DROP_PREFIX = 'folder-drop:';
 
@@ -32,22 +36,19 @@ export default function FolderTile({
             {(provided, snapshot) => {
                 const dropHover = snapshot.isDraggingOver || isDropTarget;
                 return (
-                    <div
+                    <CardTile
                         ref={provided.innerRef}
                         {...provided.droppableProps}
+                        width={FOLDER_TILE_WIDTH}
                         // Read by useFolderDropTarget to resolve the tile under the dragging pointer.
                         data-drop-folder-id={folder.id}
-                        className="card"
                         style={{
-                            flex: '0 1 220px',
                             padding: 10,
                             display: 'flex',
                             flexDirection: 'column',
                             gap: 4,
                             borderColor: dropHover || active ? 'var(--accent)' : 'var(--border)',
                             background: dropHover ? 'var(--accent-soft)' : active ? 'var(--bg-elevated)' : undefined,
-                            transition: 'border-color var(--transition)',
-                            minWidth: 0,
                         }}
                     >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
@@ -98,7 +99,7 @@ export default function FolderTile({
                             {t('folders.items_count', { count })}
                         </div>
                         {provided.placeholder}
-                    </div>
+                    </CardTile>
                 );
             }}
         </Droppable>

@@ -53,6 +53,9 @@ const mockSubmission: EssaySubmission = {
 const mockNavigate = vi.fn();
 const mockDeleteEssayGroup = vi.fn();
 const mockUpdateEssayGroup = vi.fn();
+const mockAddFolder = vi.fn();
+const mockUpdateFolder = vi.fn();
+const mockDeleteFolder = vi.fn();
 
 let appOverrides: Record<string, unknown> = {};
 
@@ -67,6 +70,10 @@ const makeAppContextMock = () => ({
     rubrics: [mockRubric],
     deleteEssayGroup: mockDeleteEssayGroup,
     updateEssayGroup: mockUpdateEssayGroup,
+    folders: [] as { id: string; name: string; kind: string; createdAt: string }[],
+    addFolder: mockAddFolder,
+    updateFolder: mockUpdateFolder,
+    deleteFolder: mockDeleteFolder,
     students: mockStudents,
     classes: mockClasses,
     settings: mockSettings,
@@ -104,6 +111,9 @@ describe('EssayListPage', () => {
         mockOnlineSubmissions = new Map();
         mockNavigate.mockClear();
         mockDeleteEssayGroup.mockClear();
+        mockUpdateEssayGroup.mockClear();
+        mockAddFolder.mockClear();
+        mockDeleteFolder.mockClear();
     });
 
     it('shows the empty state when there are no essays', async () => {
@@ -165,5 +175,81 @@ describe('EssayListPage', () => {
             fireEvent.click(screen.getByTitle('tests.action_delete'));
         });
         expect(screen.getByText(/^essays\.delete_essay_warning/)).toHaveTextContent('"count":1');
+    });
+});
+
+describe('EssayListPage folders', () => {
+    const folder = { id: 'f1', name: 'Term 1', kind: 'essay', createdAt: '2024-01-01T00:00:00Z' };
+    const secondEssay: EssayAssignment = {
+        ...mockAssignment,
+        studentId: 's2',
+        teacherKey: 'tk2',
+        title: 'Second Essay',
+    };
+
+    beforeEach(() => {
+        appOverrides = {};
+        mockOnlineSubmissions = new Map();
+        mockAddFolder.mockReset();
+        mockUpdateFolder.mockReset();
+        mockDeleteFolder.mockReset();
+    });
+
+    it('counts the essays in a folder and filters the list when its tile is clicked', async () => {
+        appOverrides = {
+            essayAssignments: [{ ...mockAssignment, folderId: 'f1' }, secondEssay],
+            folders: [folder],
+        };
+        const { default: EssayListPage } = await import('../EssayListPage');
+        renderWithRouter(<EssayListPage />);
+
+        expect(screen.getByText('folders.items_count:{"count":1}')).toBeInTheDocument();
+        expect(screen.getByText('Second Essay')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByText('Term 1'));
+
+        expect(screen.getByText('My Essay')).toBeInTheDocument();
+        expect(screen.queryByText('Second Essay')).not.toBeInTheDocument();
+    });
+
+    it('says the folder is empty instead of showing the list-wide empty state', async () => {
+        appOverrides = { essayAssignments: [secondEssay], folders: [folder] };
+        const { default: EssayListPage } = await import('../EssayListPage');
+        renderWithRouter(<EssayListPage />);
+
+        fireEvent.click(screen.getByText('Term 1'));
+
+        expect(screen.getByText('folders.empty')).toBeInTheDocument();
+        expect(screen.queryByText('essays.no_essays')).not.toBeInTheDocument();
+    });
+
+    it('creates an essay folder from the folder bar', async () => {
+        mockAddFolder.mockReturnValue({ ...folder, id: 'f-new', name: 'Term 2' });
+        const { default: EssayListPage } = await import('../EssayListPage');
+        renderWithRouter(<EssayListPage />);
+
+        fireEvent.click(screen.getByText('folders.new_folder'));
+        fireEvent.change(screen.getByLabelText('folders.folder_name'), { target: { value: 'Term 2' } });
+        fireEvent.click(screen.getByText('folders.create'));
+
+        // The kind keeps the essay tree separate from the rubric and test trees.
+        expect(mockAddFolder).toHaveBeenCalledWith({ name: 'Term 2', kind: 'essay', displayOrder: 0 });
+    });
+
+    it('deletes a folder without touching the essays inside it', async () => {
+        appOverrides = {
+            essayAssignments: [{ ...mockAssignment, folderId: 'f1' }],
+            folders: [folder],
+        };
+        const { default: EssayListPage } = await import('../EssayListPage');
+        renderWithRouter(<EssayListPage />);
+
+        fireEvent.click(screen.getByLabelText('folders.delete'));
+        await act(async () => {
+            fireEvent.click(screen.getByText('common.delete'));
+        });
+
+        expect(mockDeleteFolder).toHaveBeenCalledWith('f1', 'essay');
+        expect(mockDeleteEssayGroup).not.toHaveBeenCalled();
     });
 });

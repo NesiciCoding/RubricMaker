@@ -652,10 +652,10 @@ export interface DocumentAnalysisResult {
     updatedAt?: string;
 }
 
-/** Which list a folder belongs to; the rubric and test trees stay separate. */
-export type FolderKind = 'rubric' | 'test';
+/** Which list a folder belongs to; each list keeps its own tree of folders. */
+export type FolderKind = 'rubric' | 'test' | 'essay' | 'flashcard';
 
-/** A flat, named group of rubrics or tests (issue #850). Items point at it through `folderId`. */
+/** A flat, named group of rubrics, tests, essays or flashcard decks (issue #850). Items point at it through `folderId`. */
 export interface Folder {
     id: string;
     name: string;
@@ -1165,6 +1165,12 @@ export interface EssayAssignment {
      * matching on rubricId, which a teacher can reuse across unrelated essays.
      */
     sourceTeacherKey?: string;
+    /**
+     * Folder this essay is filed under in EssayListPage; undefined means it sits in the full list.
+     * Stored on every row of a teacherKey group (the list groups by teacherKey), so filing an
+     * essay patches the whole group rather than a single student's row.
+     */
+    folderId?: string;
 }
 
 /** Saved essay configuration not yet assigned to any student — used to prepare assignments in advance */
@@ -1737,6 +1743,8 @@ export interface FlashcardDeck {
     ownerStudentId?: string;
     /** A student-owned deck the student pushed to their teacher's library (Phase 41.4). */
     sharedWithTeacher?: boolean;
+    /** Folder this deck is filed under in the teacher's Flashcards list; undefined = full list. */
+    folderId?: string;
 }
 
 /** One row per assigned student, keyed `${deckId}:${studentId}` (same composite pattern as EssayAssignment) */
