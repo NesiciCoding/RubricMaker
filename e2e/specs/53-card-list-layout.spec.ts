@@ -14,8 +14,8 @@
  */
 import type { Page } from '@playwright/test';
 import { test, expect } from '../fixtures/app.fixture';
-import { buildRubric } from '../fixtures/data.factory';
-import type { EssayAssignment, FlashcardDeck, Test as RmTest } from '../../src/types';
+import { buildClass, buildRubric } from '../fixtures/data.factory';
+import type { EssayAssignment, FlashcardDeck, Folder, Test as RmTest } from '../../src/types';
 
 /** Long enough that a nowrap sentence would dwarf any reasonable card. */
 const LONG_DESCRIPTION =
@@ -27,6 +27,14 @@ const LONG_TITLE = 'Essay 3 — a deliberately long assignment title that keeps 
 
 const LONG_DECK_NAME =
     'A deck name that is far longer than a card and should wrap inside it instead of resizing the card';
+
+/** Long enough that an unclipped name would widen the dashboard's sticky first column. */
+const LONG_ACTIVITY_NAME =
+    'Rubric 4 — presentatie over de Industriële Revolutie met bronvermelding, beeldanalyse en een ' +
+    'mondelinge toelichting van ten minste vijf minuten voor de hele klas';
+
+const LONG_FOLDER_NAME =
+    'Hoofdstuk 3 — alle oefenrubrics voor de schrijfopdracht over duurzame energie en klimaatbeleid';
 
 interface CardMetrics {
     widths: number[];
@@ -52,6 +60,59 @@ async function measureCards(page: Page): Promise<CardMetrics> {
             overflow: {
                 page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
                 list: list ? list.scrollWidth - list.clientWidth : 0,
+                viewport: window.innerWidth,
+            },
+        };
+    });
+}
+
+interface DashboardMetrics {
+    headerWidth: number;
+    cellWidth: number;
+    /** How far the name is clipped: 0 would mean it widened its cell instead. */
+    nameClipped: number;
+    overflow: { page: number; grid: number; viewport: number };
+}
+
+/** Measures the dashboard's sticky activity column and the wrapper that may scroll sideways. */
+async function measureDashboard(page: Page, activityName: string): Promise<DashboardMetrics> {
+    await page.locator('table').first().waitFor({ state: 'visible' });
+    return page.evaluate((name) => {
+        const grid = document.querySelector('[data-tour="ad-grid"]');
+        const header = document.querySelector('th[data-tour="ad-activity"]');
+        const nameButton = [...document.querySelectorAll('td button')].find((button) =>
+            (button.textContent ?? '').startsWith(name.slice(0, 20))
+        );
+        const cell = nameButton?.closest('tr')?.querySelector('td');
+        return {
+            headerWidth: header ? Math.round(header.getBoundingClientRect().width) : -1,
+            cellWidth: cell ? Math.round(cell.getBoundingClientRect().width) : -1,
+            nameClipped: nameButton ? nameButton.scrollWidth - nameButton.clientWidth : -1,
+            overflow: {
+                page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+                grid: grid ? grid.scrollWidth - grid.clientWidth : 0,
+                viewport: window.innerWidth,
+            },
+        };
+    }, activityName);
+}
+
+interface FolderRowMetrics {
+    widths: number[];
+    overflow: { page: number; row: number; viewport: number };
+}
+
+/** Measures the folder tiles above a list and the row they wrap in. */
+async function measureFolderRow(page: Page): Promise<FolderRowMetrics> {
+    await page.locator('[data-drop-folder-id]').first().waitFor({ state: 'visible' });
+    return page.evaluate(() => {
+        const tiles = [...document.querySelectorAll('[data-drop-folder-id]')];
+        const row = tiles[0]?.parentElement;
+        return {
+            widths: tiles.map((tile) => Math.round(tile.getBoundingClientRect().width)),
+            overflow: {
+                page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+                row: row ? row.scrollWidth - row.clientWidth : 0,
                 viewport: window.innerWidth,
             },
         };
@@ -177,5 +238,92 @@ test.describe('Card lists stay inside the page and keep their tile width', () =>
         await appPage.waitForSelector('.main-area');
 
         expectTidyRow(await measureCards(appPage), 'flashcards');
+    });
+
+    test('folder tiles keep their compact width and stay on one row despite a long folder name', async ({
+        appPage,
+        seedStorage,
+    }) => {
+        // Six folders plus the "All" and "New folder" buttons: more than fits on one line at a
+        // wide viewport only if the tiles themselves are allowed to stretch.
+        const names = [
+            LONG_FOLDER_NAME,
+            'Leesvaardigheid',
+            'Schrijfvaardigheid',
+            'Spreken',
+            'Kijk- en luisteren',
+            'Grammatica',
+        ];
+        const folders: Folder[] = names.map((name, index) => ({
+            id: `layout-folder-${index}`,
+            name,
+            kind: 'rubric',
+            displayOrder: index,
+            createdAt: '2024-01-01T00:00:00.000Z',
+        }));
+        await seedStorage({
+            rm_folders: folders,
+            rm_rubrics: [buildRubric({ id: 'layout-folder-r1', name: 'Filed rubric', folderId: folders[0].id })],
+        });
+
+        await appPage.goto('/#/rubrics');
+        await appPage.reload();
+        await appPage.waitForSelector('.main-area');
+
+        const metrics = await measureFolderRow(appPage);
+        expect(metrics.widths.length, 'folders: expected every folder tile to render').toBe(names.length);
+        expect(metrics.overflow.page, 'folders: the page scrolls horizontally').toBeLessThanOrEqual(1);
+        expect(metrics.overflow.row, 'folders: the folder row scrolls horizontally').toBeLessThanOrEqual(1);
+        for (const width of metrics.widths) {
+            // The basis, not a pinned 220: tiles may shrink on a narrow viewport but must never
+            // stretch to swallow the row (the bug: five folders, one tile as wide as the page).
+            expect(
+                width,
+                `folders: a tile stretched past its compact width (${metrics.widths.join(', ')})`
+            ).toBeLessThanOrEqual(220);
+            expect(width, `folders: a tile collapsed to nothing (${metrics.widths.join(', ')})`).toBeGreaterThan(120);
+        }
+    });
+
+    test('the dashboard caps its activity column and keeps the table inside the page', async ({
+        appPage,
+        seedStorage,
+    }) => {
+        const classes = [
+            buildClass({ id: 'layout-ad-c1', name: 'Jaar 1 A' }),
+            buildClass({ id: 'layout-ad-c2', name: 'Jaar 1 B' }),
+        ];
+        await seedStorage({
+            rm_classes: classes,
+            rm_rubrics: [
+                buildRubric({ id: 'layout-ad-r1', name: LONG_ACTIVITY_NAME }),
+                buildRubric({ id: 'layout-ad-r2', name: 'Short rubric' }),
+            ],
+            rm_tests: [
+                {
+                    id: 'layout-ad-t1',
+                    name: `${LONG_ACTIVITY_NAME} (toets)`,
+                    questions: [],
+                    requireSEB: false,
+                    shuffleQuestions: false,
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                },
+            ],
+        });
+
+        await appPage.goto('/#/activity-dashboard');
+        await appPage.reload();
+        await appPage.waitForSelector('.main-area');
+
+        const metrics = await measureDashboard(appPage, LONG_ACTIVITY_NAME);
+        expect(metrics.overflow.page, 'dashboard: the page scrolls horizontally').toBeLessThanOrEqual(1);
+        // Two class columns of 130px fit a desktop viewport beside a 200px activity column, so
+        // the wrapper must not scroll: a wider first column is what used to trigger it.
+        expect(metrics.overflow.grid, 'dashboard: the table scrolls sideways with two classes').toBeLessThanOrEqual(1);
+        expect(metrics.headerWidth, 'dashboard: the activity header widened').toBeLessThanOrEqual(201);
+        expect(metrics.cellWidth, 'dashboard: the activity cell widened').toBeLessThanOrEqual(201);
+        expect(metrics.cellWidth, 'dashboard: the activity cell vanished').toBeGreaterThan(0);
+        // The name has to be clipped, not allowed to set the column width.
+        expect(metrics.nameClipped, 'dashboard: the long name is not ellipsised').toBeGreaterThan(0);
     });
 });
