@@ -67,6 +67,12 @@ function makeStudentTest(id: string, testId: string, studentId: string): Student
 
 const mockUpdateTest = vi.fn();
 const mockDeleteTest = vi.fn();
+const mockAddFolder = vi.fn((f: { name: string; kind: string; parentId?: string }) => ({
+    id: 'new-folder',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    ...f,
+}));
+const mockFolders = [{ id: 'unit', name: 'Unit tests', kind: 'test' as const, createdAt: '2026-01-01T00:00:00.000Z' }];
 
 const mockUseApp: Record<string, unknown> = {
     tests: [testOne],
@@ -79,6 +85,10 @@ const mockUseApp: Record<string, unknown> = {
     exportTemplates: [],
     updateTest: mockUpdateTest,
     deleteTest: mockDeleteTest,
+    folders: mockFolders,
+    addFolder: mockAddFolder,
+    updateFolder: vi.fn(),
+    deleteFolder: vi.fn(),
 };
 
 vi.mock('../../context/AppContext', () => ({
@@ -128,8 +138,8 @@ vi.mock('@hello-pangea/dnd', () => ({
         capturedOnDragEnd = onDragEnd;
         return React.createElement(React.Fragment, null, children);
     },
-    Droppable: ({ children }: { children: (p: unknown) => React.ReactNode }) =>
-        children({ innerRef: vi.fn(), droppableProps: {}, placeholder: null }),
+    Droppable: ({ children }: { children: (p: unknown, s: unknown) => React.ReactNode }) =>
+        children({ innerRef: vi.fn(), droppableProps: {}, placeholder: null }, { isDraggingOver: false }),
     Draggable: ({ children }: { children: (p: unknown) => React.ReactNode }) =>
         children({ innerRef: vi.fn(), draggableProps: {}, dragHandleProps: {} }),
 }));
@@ -154,6 +164,19 @@ describe('TestListPage coverage', () => {
         mockUseApp.studentTests = [];
         const mod = await import('../TestListPage');
         PageComp = mod.default;
+    });
+
+    it('creates a subfolder inside the folder that is open', () => {
+        loadPage();
+        fireEvent.click(screen.getByRole('button', { name: 'Unit tests' }));
+        expect(screen.getByRole('navigation', { name: 'folders.path_label' })).toBeInTheDocument();
+        fireEvent.click(screen.getByText(/folders.new_subfolder/));
+        fireEvent.change(screen.getByLabelText('folders.folder_name'), { target: { value: 'Reading' } });
+        fireEvent.click(screen.getByText('folders.create'));
+
+        expect(mockAddFolder).toHaveBeenCalledWith(
+            expect.objectContaining({ name: 'Reading', kind: 'test', parentId: 'unit', displayOrder: 0 })
+        );
     });
 
     it('filters tests by cohort year', () => {

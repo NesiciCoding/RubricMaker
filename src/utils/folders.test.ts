@@ -1,6 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import type { Folder } from '../types';
-import { ALL_FOLDERS, countInFolder, filterByFolder, foldersForKind, itemsInFolder, nextFolderOrder } from './folders';
+import {
+    ALL_FOLDERS,
+    MAX_FOLDER_DEPTH,
+    canNestFolder,
+    childFolders,
+    countInFolder,
+    countInFolderTree,
+    descendantFolderIds,
+    filterByFolder,
+    folderDepth,
+    folderPath,
+    foldersForKind,
+    itemsInFolder,
+    nextFolderOrder,
+} from './folders';
 
 function folder(overrides: Partial<Folder> = {}): Folder {
     return {
@@ -26,6 +40,89 @@ describe('foldersForKind', () => {
             folder({ id: 'c', displayOrder: 1, createdAt: '2026-03-03T00:00:00.000Z' }),
         ];
         expect(foldersForKind(folders, 'rubric').map((f) => f.id)).toEqual(['b', 'c', 'a']);
+    });
+});
+
+describe('childFolders', () => {
+    const tree = [
+        folder({ id: 'root-a', displayOrder: 1 }),
+        folder({ id: 'root-b', displayOrder: 0 }),
+        folder({ id: 'a-child', parentId: 'root-a' }),
+        folder({ id: 'a-child-2', parentId: 'root-a', displayOrder: 0 }),
+        folder({ id: 'test-root', kind: 'test' }),
+        folder({ id: 'test-child', kind: 'test', parentId: 'root-a' }),
+    ];
+
+    it('returns only the siblings at the requested level, in display order', () => {
+        expect(childFolders(tree, 'rubric').map((f) => f.id)).toEqual(['root-b', 'root-a']);
+        expect(childFolders(tree, 'rubric', 'root-a').map((f) => f.id)).toEqual(['a-child-2', 'a-child']);
+    });
+
+    it('never mixes the rubric and test trees, even when parent ids collide', () => {
+        expect(childFolders(tree, 'test', 'root-a').map((f) => f.id)).toEqual(['test-child']);
+    });
+
+    it('returns nothing for a leaf folder', () => {
+        expect(childFolders(tree, 'rubric', 'a-child')).toEqual([]);
+    });
+});
+
+describe('folderPath / folderDepth', () => {
+    const tree = [
+        folder({ id: 'a', name: 'A' }),
+        folder({ id: 'b', name: 'B', parentId: 'a' }),
+        folder({ id: 'c', name: 'C', parentId: 'b' }),
+        folder({ id: 'orphan', name: 'Orphan', parentId: 'gone' }),
+    ];
+
+    it('walks from the top-level folder down to the requested one', () => {
+        expect(folderPath(tree, 'c').map((f) => f.name)).toEqual(['A', 'B', 'C']);
+        expect(folderPath(tree, 'a').map((f) => f.name)).toEqual(['A']);
+    });
+
+    it('degrades to the part of the chain that still exists', () => {
+        expect(folderPath(tree, 'orphan').map((f) => f.name)).toEqual(['Orphan']);
+    });
+
+    it('returns an empty path for an unknown id', () => {
+        expect(folderPath(tree, 'missing')).toEqual([]);
+        expect(folderDepth(tree, 'missing')).toBe(0);
+    });
+
+    it('counts levels from one, and protects against a parent cycle', () => {
+        expect(folderDepth(tree, 'a')).toBe(1);
+        expect(folderDepth(tree, 'c')).toBe(3);
+        const cyclic = [folder({ id: 'x', parentId: 'y' }), folder({ id: 'y', parentId: 'x' })];
+        expect(folderDepth(cyclic, 'x')).toBe(2);
+    });
+});
+
+describe('descendantFolderIds', () => {
+    const tree = [
+        folder({ id: 'a' }),
+        folder({ id: 'b', parentId: 'a' }),
+        folder({ id: 'c', parentId: 'b' }),
+        folder({ id: 'd' }),
+    ];
+
+    it('reaches every level below the folder, without the folder itself', () => {
+        expect(descendantFolderIds(tree, 'a')).toEqual(['b', 'c']);
+        expect(descendantFolderIds(tree, 'c')).toEqual([]);
+    });
+});
+
+describe('countInFolderTree', () => {
+    const folders = [folder({ id: 'a' }), folder({ id: 'b', parentId: 'a' }), folder({ id: 'c' })];
+    const items = [{ id: 'r1', folderId: 'a' }, { id: 'r2', folderId: 'b' }, { id: 'r3', folderId: 'c' }, { id: 'r4' }];
+
+    it('counts what is filed in the folder and in its subfolders', () => {
+        expect(countInFolderTree(items, folders, 'a')).toBe(2);
+        expect(countInFolderTree(items, folders, 'b')).toBe(1);
+        expect(countInFolderTree(items, folders, 'c')).toBe(1);
+    });
+
+    it('ignores unfiled items and empty trees', () => {
+        expect(countInFolderTree(items, folders, 'missing')).toBe(0);
     });
 });
 
@@ -63,5 +160,54 @@ describe('nextFolderOrder', () => {
 
     it('starts at zero when nothing is placed yet', () => {
         expect(nextFolderOrder([], 'rubric')).toBe(0);
+    });
+
+    it('only looks at siblings, so a subfolder starts its own sequence', () => {
+        const folders = [folder({ id: 'parent' }), folder({ id: 'sibling', parentId: 'parent', displayOrder: 2 })];
+        expect(nextFolderOrder(folders, 'rubric', 'parent')).toBe(3);
+    });
+});
+
+describe('canNestFolder', () => {
+    const tree = [
+        folder({ id: 'a' }),
+        folder({ id: 'b', parentId: 'a' }),
+        folder({ id: 'c', parentId: 'b' }),
+        folder({ id: 'd' }),
+    ];
+
+    it('allows a move into an unrelated folder, and back to the top level', () => {
+        expect(canNestFolder(tree, 'a', 'd')).toBe(true);
+        expect(canNestFolder(tree, 'c')).toBe(true);
+    });
+
+    it('refuses to make a folder its own parent or its own descendant', () => {
+        expect(canNestFolder(tree, 'a', 'a')).toBe(false);
+        expect(canNestFolder(tree, 'a', 'c')).toBe(false);
+    });
+
+    it('refuses a target that does not exist', () => {
+        expect(canNestFolder(tree, 'a', 'gone')).toBe(false);
+    });
+
+    it('refuses a move that would push the subtree past the depth limit', () => {
+        // `deep` sits at level 4 already, so nothing may go into it.
+        const deepTree = [
+            folder({ id: 'l1' }),
+            folder({ id: 'l2', parentId: 'l1' }),
+            folder({ id: 'l3', parentId: 'l2' }),
+            folder({ id: 'l4', parentId: 'l3' }),
+            folder({ id: 'other' }),
+        ];
+        expect(folderDepth(deepTree, 'l4')).toBe(MAX_FOLDER_DEPTH);
+        expect(canNestFolder(deepTree, 'other', 'l4')).toBe(false);
+        expect(canNestFolder(deepTree, 'other', 'l3')).toBe(true);
+    });
+
+    it('counts the whole moving subtree, not just the folder', () => {
+        // Moving `a` (which holds b and c, two levels deep) under a level-2 folder would end at 5.
+        const target = [folder({ id: 't1' }), folder({ id: 't2', parentId: 't1' })];
+        expect(canNestFolder([...tree, ...target], 'a', 't2')).toBe(false);
+        expect(canNestFolder([...tree, ...target], 'a', 't1')).toBe(true);
     });
 });

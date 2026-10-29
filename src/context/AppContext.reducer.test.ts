@@ -221,6 +221,39 @@ describe('AppContext reducer — rubrics, students, classes', () => {
         expect(vi.mocked(deleteRubricVersions)).toHaveBeenCalledWith('r1');
     });
 
+    it('moves a deleted folder\u2019s subfolders up to where it sat, and unfiles its rubrics', () => {
+        const rubricInFolder = { ...rubric, folderId: 'child' };
+        let state = makeState({
+            rubrics: [rubricInFolder],
+            folders: [
+                { id: 'parent', name: 'Year 1', kind: 'rubric', createdAt: '2026-01-01T00:00:00.000Z' },
+                {
+                    id: 'child',
+                    name: 'Essays',
+                    kind: 'rubric',
+                    parentId: 'parent',
+                    createdAt: '2026-01-01T00:00:00.000Z',
+                },
+                {
+                    id: 'grandchild',
+                    name: 'Drafts',
+                    kind: 'rubric',
+                    parentId: 'child',
+                    createdAt: '2026-01-01T00:00:00.000Z',
+                },
+                { id: 'elsewhere', name: 'Unrelated', kind: 'rubric', createdAt: '2026-01-01T00:00:00.000Z' },
+            ],
+        });
+
+        state = run(state, { type: 'DELETE_FOLDER', id: 'child', kind: 'rubric' });
+
+        expect(state.folders.map((f) => f.id)).toEqual(['parent', 'grandchild', 'elsewhere']);
+        // The grandchild moves up to its grandparent rather than pointing at a folder that is gone.
+        expect(state.folders.find((f) => f.id === 'grandchild')?.parentId).toBe('parent');
+        expect(state.folders.find((f) => f.id === 'parent')?.parentId).toBeUndefined();
+        expect(state.rubrics[0].folderId).toBeUndefined();
+    });
+
     it('deletes a rubric together with its grades and peer reviews, leaving other rubrics alone', () => {
         const grade = (id: string, rubricId: string) =>
             ({ id, rubricId, studentId: 's1', entries: [], overallComment: '', isPeerReview: false }) as never;

@@ -5016,6 +5016,7 @@
     "folders": {
         "all": "All",
         "new_folder": "New folder",
+        "new_subfolder": "New subfolder",
         "folder_name": "Folder name",
         "folder_name_placeholder": "e.g. Year 1",
         "create": "Create folder",
@@ -5023,14 +5024,18 @@
         "rename_title": "Rename folder",
         "delete": "Delete folder",
         "delete_title": "Delete folder?",
-        "delete_warning": "“{{name}}” will be deleted. The rubrics and tests inside it are kept and move back into the full list.",
+        "delete_warning": "“{{name}}” will be deleted. The rubrics and tests inside it are kept and move back into the full list, and any folders inside it move up one level.",
         "empty": "This folder is empty",
         "empty_hint": "Drag a card onto a folder to file it.",
         "moved_toast": "Moved to {{name}}",
         "created_toast": "Folder “{{name}}” created",
         "deleted_toast": "Folder “{{name}}” deleted",
+        "path_label": "Folder path",
+        "max_depth": "Folders can nest four levels deep",
         "items_count_one": "{{count}} item",
         "items_count_other": "{{count}} items",
+        "subfolder_count_one": "{{count}} folder",
+        "subfolder_count_other": "{{count}} folders",
         "renamed_toast": "Folder renamed"
     }
 }

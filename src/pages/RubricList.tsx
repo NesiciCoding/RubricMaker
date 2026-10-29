@@ -17,7 +17,6 @@ import {
     ClipboardPaste,
     Check,
     Layers,
-    FolderPlus,
     Users2,
     X,
     LayoutGrid,
@@ -40,7 +39,8 @@ import CefrBadge from '../components/CEFR/CefrBadge';
 import ImportRubricModal from '../components/Rubric/ImportRubricModal';
 import NewRubricChooserModal from '../components/Rubric/NewRubricChooserModal';
 import RubricCard, { type RubricCardActions } from '../components/Rubric/RubricCard';
-import FolderTile, { FOLDER_DROP_PREFIX } from '../components/Folders/FolderTile';
+import FolderBar from '../components/Folders/FolderBar';
+import { FOLDER_DROP_PREFIX } from '../components/Folders/FolderTile';
 import FolderNameModal from '../components/Folders/FolderNameModal';
 import Modal from '../components/ui/Modal';
 import SegmentedToggle from '../components/ui/SegmentedToggle';
@@ -50,7 +50,7 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
 import { useFolderDropTarget } from '../hooks/useFolderDropTarget';
 import { sortByDisplayOrder, reorderDisplayOrder, displayOrderAfter } from '../utils/displayOrder';
-import { ALL_FOLDERS, countInFolder, filterByFolder, foldersForKind, nextFolderOrder } from '../utils/folders';
+import { ALL_FOLDERS, filterByFolder, foldersForKind, nextFolderOrder } from '../utils/folders';
 import { cloneRubricForCopy, type RubricInput } from '../utils/rubricClone';
 import { getCohortStudentIds, isAllCohorts, ALL_COHORTS } from '../utils/cohortAggregator';
 import CohortFilter from '../components/CohortFilter';
@@ -87,7 +87,8 @@ export default function RubricList() {
     const [subjectFilter, setSubjectFilter] = useState<string>('all');
     const [cohortFilter, setCohortFilter] = useState<CohortFilterValue>(ALL_COHORTS);
     const [activeFolder, setActiveFolder] = useState<string>(ALL_FOLDERS);
-    const [folderModal, setFolderModal] = useState<{ folder?: Folder } | null>(null);
+    // `parentId` is where a new folder is created: the folder you are inside of, if any.
+    const [folderModal, setFolderModal] = useState<{ folder?: Folder; parentId?: string } | null>(null);
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
     const [showImport, setShowImport] = useState(false);
     const [showNewChooser, setShowNewChooser] = useState(false);
@@ -392,7 +393,13 @@ export default function RubricList() {
             updateFolder({ ...editing, name });
             showToast(t('folders.renamed_toast'), 'success');
         } else {
-            const folder = addFolder({ name, kind: 'rubric', displayOrder: nextFolderOrder(folders, 'rubric') });
+            const parentId = folderModal?.parentId;
+            const folder = addFolder({
+                name,
+                kind: 'rubric',
+                parentId,
+                displayOrder: nextFolderOrder(folders, 'rubric', parentId),
+            });
             setActiveFolder(folder.id);
             showToast(t('folders.created_toast', { name }), 'success');
         }
@@ -616,32 +623,17 @@ export default function RubricList() {
                     </div>
                 </div>
 
-                <DragDropContext onBeforeCapture={startFolderDrop} onDragEnd={handleDragEnd}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
-                        <button
-                            type="button"
-                            className={`btn btn-sm ${activeFolder === ALL_FOLDERS ? 'btn-primary' : 'btn-secondary'}`}
-                            aria-pressed={activeFolder === ALL_FOLDERS}
-                            onClick={() => setActiveFolder(ALL_FOLDERS)}
-                        >
-                            <LayoutGrid size={14} /> {t('folders.all')}
-                        </button>
-                        {rubricFolders.map((folder) => (
-                            <FolderTile
-                                key={folder.id}
-                                folder={folder}
-                                count={countInFolder(rubrics, folder.id)}
-                                active={activeFolder === folder.id}
-                                isDropTarget={dropFolderId === folder.id}
-                                onOpen={(id) => setActiveFolder((current) => (current === id ? ALL_FOLDERS : id))}
-                                onRename={(f) => setFolderModal({ folder: f })}
-                                onDelete={handleDeleteFolder}
-                            />
-                        ))}
-                        <button type="button" className="btn btn-secondary btn-sm" onClick={() => setFolderModal({})}>
-                            <FolderPlus size={14} /> {t('folders.new_folder')}
-                        </button>
-                    </div>
+                <DragDropContext onDragEnd={handleDragEnd}>
+                    <FolderBar
+                        folders={folders}
+                        kind="rubric"
+                        activeFolderId={activeFolder}
+                        items={rubrics}
+                        onSelect={setActiveFolder}
+                        onCreate={(parentId) => setFolderModal({ parentId })}
+                        onRename={(f) => setFolderModal({ folder: f })}
+                        onDelete={handleDeleteFolder}
+                    />
                     {filtered.length === 0 ? (
                         <div className="empty-state">
                             <BookOpen size={40} />
@@ -950,7 +942,13 @@ export default function RubricList() {
 
                 {folderModal && (
                     <FolderNameModal
-                        title={folderModal.folder ? t('folders.rename_title') : t('folders.new_folder')}
+                        title={
+                            folderModal.folder
+                                ? t('folders.rename_title')
+                                : folderModal.parentId
+                                  ? t('folders.new_subfolder')
+                                  : t('folders.new_folder')
+                        }
                         submitLabel={folderModal.folder ? t('folders.rename') : t('folders.create')}
                         initialName={folderModal.folder?.name}
                         onSubmit={submitFolderName}

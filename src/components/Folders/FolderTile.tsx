@@ -8,6 +8,8 @@ export const FOLDER_DROP_PREFIX = 'folder-drop:';
 export interface FolderTileProps {
     folder: Folder;
     count: number;
+    /** Folders directly inside this one; shown as a second line so a nested folder reads as nested. */
+    subfolderCount?: number;
     active: boolean;
     /** Highlight from the pointer tracker: the card being dragged is over this tile. */
     isDropTarget?: boolean;
@@ -20,8 +22,8 @@ export interface FolderTileProps {
 export default function FolderTile({
     folder,
     count,
+    subfolderCount = 0,
     active,
-    isDropTarget = false,
     onOpen,
     onRename,
     onDelete,
@@ -99,8 +101,13 @@ export default function FolderTile({
                         </div>
                         {provided.placeholder}
                     </div>
-                );
-            }}
+                    <div className="text-muted text-xs" style={{ paddingLeft: 22 }}>
+                        {t('folders.items_count', { count })}
+                        {subfolderCount > 0 && <> · {t('folders.subfolder_count', { count: subfolderCount })}</>}
+                    </div>
+                    {provided.placeholder}
+                </div>
+            )}
         </Droppable>
     );
 }

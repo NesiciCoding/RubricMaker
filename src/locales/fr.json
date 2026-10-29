@@ -5016,6 +5016,7 @@
     "folders": {
         "all": "Tout",
         "new_folder": "Nouveau dossier",
+        "new_subfolder": "Nouveau sous-dossier",
         "folder_name": "Nom du dossier",
         "folder_name_placeholder": "Ex. Année 1",
         "create": "Créer le dossier",
@@ -5023,14 +5024,18 @@
         "rename_title": "Renommer le dossier",
         "delete": "Supprimer le dossier",
         "delete_title": "Supprimer le dossier ?",
-        "delete_warning": "« {{name}} » sera supprimé. Les rubriques et tests qu’il contient sont conservés et reviennent dans la liste complète.",
+        "delete_warning": "« {{name}} » sera supprimé. Les rubriques et tests qu’il contient sont conservés et reviennent dans la liste complète ; les dossiers qu’il contient remontent d’un niveau.",
         "empty": "Ce dossier est vide",
         "empty_hint": "Glissez une carte sur un dossier pour la classer.",
         "moved_toast": "Déplacé vers {{name}}",
         "created_toast": "Dossier « {{name}} » créé",
         "deleted_toast": "Dossier « {{name}} » supprimé",
+        "path_label": "Chemin du dossier",
+        "max_depth": "Les dossiers peuvent être imbriqués sur quatre niveaux",
         "items_count_one": "{{count}} élément",
         "items_count_other": "{{count}} éléments",
+        "subfolder_count_one": "{{count}} dossier",
+        "subfolder_count_other": "{{count}} dossiers",
         "renamed_toast": "Dossier renommé"
     }
 }

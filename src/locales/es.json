@@ -5016,6 +5016,7 @@
     "folders": {
         "all": "Todos",
         "new_folder": "Nueva carpeta",
+        "new_subfolder": "Nueva subcarpeta",
         "folder_name": "Nombre de la carpeta",
         "folder_name_placeholder": "Ej. Curso 1",
         "create": "Crear carpeta",
@@ -5023,14 +5024,18 @@
         "rename_title": "Renombrar carpeta",
         "delete": "Eliminar carpeta",
         "delete_title": "¿Eliminar la carpeta?",
-        "delete_warning": "Se eliminará «{{name}}». Las rúbricas y pruebas que contiene se conservan y vuelven a la lista completa.",
+        "delete_warning": "Se eliminará «{{name}}». Las rúbricas y pruebas que contiene se conservan y vuelven a la lista completa, y las carpetas que contiene suben un nivel.",
         "empty": "Esta carpeta está vacía",
         "empty_hint": "Arrastra una tarjeta a una carpeta para archivarla.",
         "moved_toast": "Movido a {{name}}",
         "created_toast": "Carpeta «{{name}}» creada",
         "deleted_toast": "Carpeta «{{name}}» eliminada",
+        "path_label": "Ruta de carpetas",
+        "max_depth": "Las carpetas pueden anidarse hasta cuatro niveles",
         "items_count_one": "{{count}} elemento",
         "items_count_other": "{{count}} elementos",
+        "subfolder_count_one": "{{count}} carpeta",
+        "subfolder_count_other": "{{count}} carpetas",
         "renamed_toast": "Carpeta renombrada"
     }
 }

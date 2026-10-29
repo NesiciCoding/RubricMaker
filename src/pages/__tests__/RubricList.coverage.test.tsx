@@ -63,6 +63,14 @@ const mockStudentRubric: StudentRubric = {
 };
 
 const mockAddRubric = vi.fn((_r: Rubric) => ({ ...mockRubric, id: 'new-r' }));
+const mockAddFolder = vi.fn((f: { name: string; kind: string; parentId?: string }) => ({
+    id: 'new-folder',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    ...f,
+}));
+const mockUpdateFolder = vi.fn();
+const mockDeleteFolder = vi.fn();
+const mockFolders = [{ id: 'year1', name: 'Year 1', kind: 'rubric' as const, createdAt: '2026-01-01T00:00:00.000Z' }];
 const mockUpdateRubric = vi.fn();
 const mockDeleteRubric = vi.fn();
 const mockCreateGroupStudentRubrics = vi.fn(() => [{ studentId: 's1' }]);
@@ -93,6 +101,10 @@ const mockAppValue = {
     deleteRubric: mockDeleteRubric,
     createGroupStudentRubrics: mockCreateGroupStudentRubrics,
     userTemplates: [],
+    folders: mockFolders,
+    addFolder: mockAddFolder,
+    updateFolder: mockUpdateFolder,
+    deleteFolder: mockDeleteFolder,
 };
 
 vi.mock('../../context/AppContext', () => ({
@@ -144,8 +156,8 @@ vi.mock('@hello-pangea/dnd', () => ({
         dndOnBeforeCapture.handler = onBeforeCapture;
         return React.createElement(React.Fragment, null, children);
     },
-    Droppable: ({ children }: { children: (p: unknown) => React.ReactNode }) =>
-        children({ innerRef: vi.fn(), droppableProps: {}, placeholder: null }),
+    Droppable: ({ children }: { children: (p: unknown, s: unknown) => React.ReactNode }) =>
+        children({ innerRef: vi.fn(), droppableProps: {}, placeholder: null }, { isDraggingOver: false }),
     Draggable: ({ children }: { children: (p: unknown) => React.ReactNode }) =>
         children({ innerRef: vi.fn(), draggableProps: {}, dragHandleProps: {} }),
 }));
@@ -589,6 +601,21 @@ it('renders the no-subject dash in the list view', () => {
     fireEvent.click(screen.getByText('common.view_list'));
     expect(screen.getAllByText('—').length).toBeGreaterThan(0);
     mockRubricsArr.pop();
+});
+
+it('creates a subfolder inside the folder that is open', () => {
+    renderPage();
+    // Walk into the folder; the bar now shows a breadcrumb and offers a subfolder.
+    fireEvent.click(screen.getByRole('button', { name: 'Year 1' }));
+    expect(screen.getByRole('navigation', { name: 'folders.path_label' })).toBeInTheDocument();
+    fireEvent.click(screen.getByText(/folders.new_subfolder/));
+
+    fireEvent.change(screen.getByLabelText('folders.folder_name'), { target: { value: 'Essays' } });
+    fireEvent.click(screen.getByText('folders.create'));
+
+    expect(mockAddFolder).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'Essays', kind: 'rubric', parentId: 'year1', displayOrder: 0 })
+    );
 });
 
 it('closes the group modal via its cancel button', () => {
