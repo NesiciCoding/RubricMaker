@@ -43,6 +43,7 @@ import {
 import ExamBookletExportPanel from '../components/Tests/ExamBookletExportPanel';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
+import { EmptyState } from '../components/ui/EmptyState';
 
 /** `Class A_period_reports.zip` for a named class, otherwise undefined so the export module names the zip. */
 function classZipName(className: string | undefined, kind: string): string | undefined {
@@ -955,15 +956,9 @@ export default function ExportPage() {
                         style={{ display: collapsedSections.has('rubricStudents') ? 'none' : undefined }}
                     >
                         {!rubric ? (
-                            <div className="empty-state">
-                                <FileText size={32} />
-                                <p>{t('exportPage.no_rubric')}</p>
-                            </div>
+                            <EmptyState icon={FileText} description={t('exportPage.no_rubric')} />
                         ) : gradedStudents.length === 0 ? (
-                            <div className="empty-state">
-                                <Users size={32} />
-                                <p>{t('exportPage.no_students')}</p>
-                            </div>
+                            <EmptyState icon={Users} description={t('exportPage.no_students')} />
                         ) : (
                             <>
                                 <div
@@ -1324,10 +1319,7 @@ export default function ExportPage() {
                         style={{ display: collapsedSections.has('examBooklet') ? 'none' : undefined }}
                     >
                         {tests.length === 0 ? (
-                            <div className="empty-state">
-                                <ClipboardList size={32} />
-                                <p>{t('tests.no_tests')}</p>
-                            </div>
+                            <EmptyState icon={ClipboardList} description={t('tests.no_tests')} />
                         ) : (
                             <>
                                 <div className="form-group" style={{ marginBottom: 12 }}>

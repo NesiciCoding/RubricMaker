@@ -80,6 +80,7 @@ import { useConfirm } from '../hooks/useConfirm';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import PageTour from '../components/Tour/PageTour';
 import { getRubricBuilderTourSteps } from '../data/TutorialSteps';
+import { EmptyState } from '../components/ui/EmptyState';
 
 function newLevel(min = 0, max = 0, label = ''): RubricLevel {
     return {
@@ -139,13 +140,11 @@ export default function RubricBuilder() {
         <>
             <Topbar title={t('rubricBuilder.edit_rubric')} />
             <div className="page-content fade-in">
-                <div className="empty-state">
-                    <FileText size={40} aria-hidden="true" />
-                    <h3>{t('rubricBuilder.not_found')}</h3>
+                <EmptyState icon={FileText} title={t('rubricBuilder.not_found')}>
                     <button className="btn btn-secondary" onClick={() => navigate('/rubrics')}>
                         <ArrowLeft size={16} /> {t('common.back')}
                     </button>
-                </div>
+                </EmptyState>
             </div>
         </>
     );
@@ -1645,12 +1644,14 @@ function RubricBuilderEditor() {
                         </DragDropContext>
 
                         {criteria.length === 0 && (
-                            <div className="empty-state">
-                                <p>{t('rubricBuilder.empty_state_criteria')}</p>
-                                <button className="btn btn-primary" onClick={appendCriterion}>
-                                    <Plus size={16} /> {t('rubricBuilder.action_add_first_criterion')}
-                                </button>
-                            </div>
+                            <EmptyState
+                                description={t('rubricBuilder.empty_state_criteria')}
+                                action={{
+                                    label: t('rubricBuilder.action_add_first_criterion'),
+                                    icon: Plus,
+                                    onClick: appendCriterion,
+                                }}
+                            />
                         )}
                     </div>
 

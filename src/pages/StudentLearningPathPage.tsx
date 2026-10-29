@@ -20,6 +20,7 @@ import {
 import { CEFR_SKILL_LABELS } from '../data/cefrDescriptors';
 import { getGrammarItemById } from '../data/grammarStandards';
 import type { InterventionFlag } from '../types';
+import { EmptyState } from '../components/ui/EmptyState';
 
 export default function StudentLearningPathPage() {
     const { id } = useParams();
@@ -150,10 +151,7 @@ export default function StudentLearningPathPage() {
                     }
                 />
                 <div className="page-content fade-in">
-                    <div className="empty-state">
-                        <Users size={32} />
-                        <p>{t('learningPath.student_not_found')}</p>
-                    </div>
+                    <EmptyState icon={Users} description={t('learningPath.student_not_found')} />
                 </div>
             </>
         );
@@ -226,18 +224,18 @@ export default function StudentLearningPathPage() {
                     </p>
 
                     {recommendations.length === 0 ? (
-                        <div className="empty-state" style={{ padding: '32px 20px' }}>
-                            <BookOpen size={28} style={{ opacity: 0.4 }} />
-                            {/* An ungraded student has no class average to trail, so 'nothing to
-                                recommend yet' must not be phrased as 'not trailing'. */}
-                            <p>
-                                {t(
-                                    achievedRubricIds.size > 0
-                                        ? 'learningPath.recommendations_empty'
-                                        : 'learningPath.recommendations_no_graded_work'
-                                )}
-                            </p>
-                        </div>
+                        // An ungraded student has no class average to trail, so 'nothing to
+                        // recommend yet' must not be phrased as 'not trailing'.
+                        <EmptyState
+                            icon={BookOpen}
+                            iconSize={28}
+                            style={{ padding: '32px 20px' }}
+                            description={t(
+                                achievedRubricIds.size > 0
+                                    ? 'learningPath.recommendations_empty'
+                                    : 'learningPath.recommendations_no_graded_work'
+                            )}
+                        />
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                             {recommendations.map((rec) => {
@@ -308,10 +306,12 @@ export default function StudentLearningPathPage() {
                     </p>
 
                     {grammarRecommendations.length === 0 ? (
-                        <div className="empty-state" style={{ padding: '32px 20px' }}>
-                            <PenSquare size={28} style={{ opacity: 0.4 }} />
-                            <p>{t('grammar.no_recommendations')}</p>
-                        </div>
+                        <EmptyState
+                            icon={PenSquare}
+                            iconSize={28}
+                            style={{ padding: '32px 20px' }}
+                            description={t('grammar.no_recommendations')}
+                        />
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                             {grammarRecommendations.map((rec) => {
@@ -417,10 +417,12 @@ export default function StudentLearningPathPage() {
                     </p>
 
                     {allFlags.length === 0 ? (
-                        <div className="empty-state" style={{ padding: '32px 20px' }}>
-                            <AlertTriangle size={28} style={{ opacity: 0.4 }} />
-                            <p>{t('learningPath.interventions_empty')}</p>
-                        </div>
+                        <EmptyState
+                            icon={AlertTriangle}
+                            iconSize={28}
+                            style={{ padding: '32px 20px' }}
+                            description={t('learningPath.interventions_empty')}
+                        />
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                             {allFlags.map((flag, idx) => (

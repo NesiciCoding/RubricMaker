@@ -17,6 +17,7 @@ import { computeDeckInsights } from '../utils/flashcardInsights';
 import { generateQuestionsFromDeck } from '../utils/deckToQuestions';
 import type { FlashcardCard, FlashcardDeck } from '../types';
 import type { ParsedFlashcard } from '../utils/flashcardImport';
+import { EmptyState } from '../components/ui/EmptyState';
 
 const AUTOSAVE_DELAY_MS = 700;
 
@@ -98,12 +99,11 @@ export default function FlashcardDeckPage() {
             <>
                 <Topbar title={t('flashcards.deck_title')} />
                 <div className="page-content">
-                    <div className="empty-state">
-                        <h3>{t('flashcards.deck_not_found')}</h3>
+                    <EmptyState title={t('flashcards.deck_not_found')} titleLevel={2}>
                         <button className="btn btn-secondary" onClick={() => navigate('/flashcards')}>
                             <ArrowLeft size={15} /> {t('common.back')}
                         </button>
-                    </div>
+                    </EmptyState>
                 </div>
             </>
         );

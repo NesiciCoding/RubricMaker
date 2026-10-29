@@ -76,6 +76,7 @@ import {
 import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
 import { generateStudentPassword } from '../utils/studentPassword';
 import { sanitizeFilename, stripCommentHtml } from '../utils/exportDataPrep';
+import { EmptyState } from '../components/ui/EmptyState';
 
 const sortHeaderButtonStyle: React.CSSProperties = {
     display: 'block',
@@ -1057,27 +1058,25 @@ export default function StudentsPage() {
                             />
                         </div>
                         {filteredStudents.length === 0 ? (
-                            <div className="empty-state">
-                                <UsersIcon size={40} />
-                                <h3>
-                                    {studentSearch
-                                        ? t('studentsPage.no_students_match')
-                                        : t('studentsPage.no_students')}
-                                </h3>
-                                {!studentSearch && (
-                                    <p className="text-muted text-sm">
-                                        {t(
-                                            'studentsPage.add_student_hint',
-                                            'Add students to this class to start grading.'
-                                        )}
-                                    </p>
-                                )}
-                                {!studentSearch && (
-                                    <button type="button" className="btn btn-primary btn-sm" onClick={openAddStudent}>
-                                        <Plus size={14} /> {t('studentsPage.add_student')}
-                                    </button>
-                                )}
-                            </div>
+                            <EmptyState
+                                icon={UsersIcon}
+                                title={
+                                    studentSearch ? t('studentsPage.no_students_match') : t('studentsPage.no_students')
+                                }
+                                description={
+                                    studentSearch
+                                        ? undefined
+                                        : t(
+                                              'studentsPage.add_student_hint',
+                                              'Add students to this class to start grading.'
+                                          )
+                                }
+                                action={
+                                    studentSearch
+                                        ? undefined
+                                        : { label: t('studentsPage.add_student'), icon: Plus, onClick: openAddStudent }
+                                }
+                            />
                         ) : (
                             <div style={{ overflowX: 'auto' }}>
                                 <table className="data-table">
@@ -2017,10 +2016,11 @@ export default function StudentsPage() {
                                     all rubrics will be shown.
                                 </p>
                                 {rubrics.length === 0 ? (
-                                    <div className="empty-state">
-                                        <BookOpen size={28} />
-                                        <p>No rubrics yet. Create a rubric first.</p>
-                                    </div>
+                                    <EmptyState
+                                        icon={BookOpen}
+                                        iconSize={28}
+                                        description="No rubrics yet. Create a rubric first."
+                                    />
                                 ) : (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                         {rubrics.map((r) => {

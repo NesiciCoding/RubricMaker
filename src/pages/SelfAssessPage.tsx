@@ -11,6 +11,7 @@ import { useAssessment, useAuthoring, useStudents } from '../context/AppContext'
 import { nanoid } from '../utils/nanoid';
 import { getCefrDescriptors, CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
 import type { CefrSkill, SelfAssessment, SelfAssessmentRating, LinkedCefrDescriptor, ConfidenceLevel } from '../types';
+import { EmptyState } from '../components/ui/EmptyState';
 
 export default function SelfAssessPage() {
     const { rubricId, studentId } = useParams();
@@ -153,10 +154,7 @@ export default function SelfAssessPage() {
                     }
                 />
                 <div className="page-content">
-                    <div className="empty-state">
-                        <AlertCircle size={36} />
-                        <p>{t('gradeStudent.error_not_found')}</p>
-                    </div>
+                    <EmptyState icon={AlertCircle} description={t('gradeStudent.error_not_found')} />
                 </div>
             </>
         );
@@ -174,10 +172,7 @@ export default function SelfAssessPage() {
                     }
                 />
                 <div className="page-content">
-                    <div className="empty-state">
-                        <BookOpen size={36} />
-                        <p>{t('selfAssess.no_descriptors')}</p>
-                    </div>
+                    <EmptyState icon={BookOpen} description={t('selfAssess.no_descriptors')} />
                 </div>
             </>
         );

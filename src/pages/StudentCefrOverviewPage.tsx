@@ -26,6 +26,7 @@ import { buildCefrExpectations, cefrExpectationsForStudent } from '../utils/cali
 import { VO_TRACK_LABELS, VO_TRACK_DEFAULT_CEFR, getTrackBadgeColor, getEffectiveVoTrack } from '../data/voTracks';
 import { getEffectiveSchoolYear } from '../data/schoolYears';
 import { CEFR_SKILL_LABELS } from '../data/cefrDescriptors';
+import { EmptyState } from '../components/ui/EmptyState';
 
 // Module-scope selector: stable identity so useStoreSelector's snapshot cache
 // never treats the selection as changed between unrelated renders.
@@ -216,13 +217,11 @@ export default function StudentCefrOverviewPage() {
                     }
                 />
                 <div className="page-content fade-in">
-                    <div className="empty-state">
-                        <Users size={32} />
-                        <p>{t('cefrOverview.student_not_found')}</p>
+                    <EmptyState icon={Users} description={t('cefrOverview.student_not_found')}>
                         <button className="btn btn-secondary btn-sm" onClick={() => navigate('/students')}>
                             {t('cefrOverview.back_to_profile')}
                         </button>
-                    </div>
+                    </EmptyState>
                 </div>
             </>
         );
@@ -452,10 +451,12 @@ export default function StudentCefrOverviewPage() {
                         </p>
 
                         {!hasAnyData ? (
-                            <div className="empty-state" style={{ padding: '32px 20px' }}>
-                                <BookOpen size={28} style={{ opacity: 0.4 }} />
-                                <p>{t('cefrOverview.empty_no_cefr')}</p>
-                            </div>
+                            <EmptyState
+                                icon={BookOpen}
+                                iconSize={28}
+                                style={{ padding: '32px 20px' }}
+                                description={t('cefrOverview.empty_no_cefr')}
+                            />
                         ) : (
                             <CefrOverviewGrid cells={overview.cells} targetLevel={targetLevel} lang={lang} />
                         )}

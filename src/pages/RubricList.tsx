@@ -47,6 +47,8 @@ import SegmentedToggle from '../components/ui/SegmentedToggle';
 import type { ParsedRubric } from '../utils/rubricImport';
 import { encodeRubricShareCode, decodeRubricShareCode } from '../utils/rubricImport';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import CardGrid from '../components/ui/CardGrid';
+import { EmptyState } from '../components/ui/EmptyState';
 import { useConfirm } from '../hooks/useConfirm';
 import { useFolderDropTarget } from '../hooks/useFolderDropTarget';
 import { sortByDisplayOrder, reorderDisplayOrder, displayOrderAfter } from '../utils/displayOrder';
@@ -643,18 +645,20 @@ export default function RubricList() {
                         </button>
                     </div>
                     {filtered.length === 0 ? (
-                        <div className="empty-state">
-                            <BookOpen size={40} />
-                            <h3>{activeFolder === ALL_FOLDERS ? t('rubricList.no_rubrics') : t('folders.empty')}</h3>
-                            <p className="text-muted text-sm">
-                                {activeFolder === ALL_FOLDERS
+                        <EmptyState
+                            icon={BookOpen}
+                            title={activeFolder === ALL_FOLDERS ? t('rubricList.no_rubrics') : t('folders.empty')}
+                            description={
+                                activeFolder === ALL_FOLDERS
                                     ? t('rubricList.create_first_instruction')
-                                    : t('folders.empty_hint')}
-                            </p>
-                            <button className="btn btn-primary" onClick={() => setShowNewChooser(true)}>
-                                <Plus size={16} /> {t('rubricList.create_rubric')}
-                            </button>
-                        </div>
+                                    : t('folders.empty_hint')
+                            }
+                            action={{
+                                label: t('rubricList.create_rubric'),
+                                icon: Plus,
+                                onClick: () => setShowNewChooser(true),
+                            }}
+                        />
                     ) : view === 'list' ? (
                         <div style={{ overflowX: 'auto' }}>
                             <table className="data-table">
@@ -751,18 +755,7 @@ export default function RubricList() {
                     ) : (
                         <Droppable droppableId="rubric-list">
                             {(droppableProvided) => (
-                                <div
-                                    ref={droppableProvided.innerRef}
-                                    {...droppableProvided.droppableProps}
-                                    style={{
-                                        // ponytail: flex-wrap, not CSS grid — @hello-pangea/dnd computes displacement from
-                                        // sibling bounding rects and doesn't support grid track layout, so cross-row drags
-                                        // would animate incorrectly and couldn't drop between two cards in a different row
-                                        display: 'flex',
-                                        flexWrap: 'wrap',
-                                        gap: 16,
-                                    }}
-                                >
+                                <CardGrid ref={droppableProvided.innerRef} {...droppableProvided.droppableProps}>
                                     {filtered.map((r, idx) => (
                                         <RubricCard
                                             key={r.id}
@@ -779,7 +772,7 @@ export default function RubricList() {
                                         />
                                     ))}
                                     {droppableProvided.placeholder}
-                                </div>
+                                </CardGrid>
                             )}
                         </Droppable>
                     )}

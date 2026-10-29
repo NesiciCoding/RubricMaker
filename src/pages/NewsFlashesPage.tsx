@@ -25,6 +25,7 @@ import TiptapEditor from '../components/Editor/TiptapEditor';
 import { htmlToPlainText } from '../hooks/useTTS';
 import type { CefrLevel, NewsFlash, NewsFlashKind, NewsFlashLinkedResourceType } from '../types';
 import { normalizeLinkUrl } from '../utils/safeUrl';
+import { EmptyState } from '../components/ui/EmptyState';
 
 const EMPTY_CONTENT_HTML = '<p></p>';
 
@@ -181,14 +182,12 @@ export default function NewsFlashesPage() {
             />
             <div className="page-content fade-in" data-tour="nf-content">
                 {sorted.length === 0 ? (
-                    <div className="empty-state">
-                        <Newspaper size={40} />
-                        <h3>{t('newsFlashes.no_flashes')}</h3>
-                        <p className="text-muted text-sm">{t('newsFlashes.create_first_instruction')}</p>
-                        <button className="btn btn-primary" onClick={openCreate}>
-                            <Plus size={16} /> {t('newsFlashes.new_flash')}
-                        </button>
-                    </div>
+                    <EmptyState
+                        icon={Newspaper}
+                        title={t('newsFlashes.no_flashes')}
+                        description={t('newsFlashes.create_first_instruction')}
+                        action={{ label: t('newsFlashes.new_flash'), icon: Plus, onClick: openCreate }}
+                    />
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                         {sorted.map((flash) => {

@@ -11,6 +11,7 @@ import { usePageTourState } from '../hooks/usePageTourState';
 import { computeDeckInsights } from '../utils/flashcardInsights';
 import { FlashcardCardSkeleton } from '../components/ui/Skeleton';
 import type { FlashcardCardState, FlashcardDeck, FlashcardReview } from '../types';
+import { EmptyState } from '../components/ui/EmptyState';
 
 export default function StudentFlashcardStudyPage() {
     const { studentId, deckId } = useParams<{ studentId: string; deckId: string }>();
@@ -174,9 +175,7 @@ export default function StudentFlashcardStudyPage() {
                 {loading ? (
                     <FlashcardCardSkeleton fullPage={false} />
                 ) : !deck && fetchFailed ? (
-                    <div className="empty-state">
-                        <AlertTriangle size={32} />
-                        <h2>{t('flashcards.deck_load_error')}</h2>
+                    <EmptyState icon={AlertTriangle} title={t('flashcards.deck_load_error')} titleLevel={2}>
                         <button
                             type="button"
                             className="btn btn-secondary btn-sm"
@@ -184,11 +183,9 @@ export default function StudentFlashcardStudyPage() {
                         >
                             <RefreshCw size={14} /> {t('flashcards.retry_button')}
                         </button>
-                    </div>
+                    </EmptyState>
                 ) : !deck ? (
-                    <div className="empty-state">
-                        <h2>{t('flashcards.deck_not_found')}</h2>
-                    </div>
+                    <EmptyState title={t('flashcards.deck_not_found')} titleLevel={2} />
                 ) : (
                     <>
                         {insights && (

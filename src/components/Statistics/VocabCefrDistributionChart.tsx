@@ -3,6 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } fro
 import { useTranslation } from 'react-i18next';
 import { CEFR_LEVELS, CEFR_LEVEL_COLORS } from '../../data/cefrDescriptors';
 import type { CefrLevel } from '../../types';
+import { EmptyState } from '../ui/EmptyState';
 
 export interface VocabDistributionEntry {
     /** Display label for this row (student or class name) */
@@ -22,11 +23,7 @@ export default function VocabCefrDistributionChart({ entries, height = 320 }: Pr
     const visibleEntries = entries.filter((e) => e.totalWords > 0);
 
     if (visibleEntries.length === 0) {
-        return (
-            <div className="empty-state">
-                <p>{t('vocabProfile.empty_chart')}</p>
-            </div>
-        );
+        return <EmptyState description={t('vocabProfile.empty_chart')} />;
     }
 
     const data = visibleEntries.map((entry) => {
