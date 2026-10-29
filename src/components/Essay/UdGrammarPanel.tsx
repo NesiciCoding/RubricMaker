@@ -3,6 +3,7 @@ import type { UdGrammarState } from '../../hooks/useUdGrammarProfile';
 import { Skeleton } from '../ui/Skeleton';
 import { CEFR_LEVEL_COLORS } from '../../data/cefrDescriptors';
 import type { CefrLevel } from '../../types';
+import { textOnTheme } from '../../utils/contrastCheck';
 
 const LEVELS: CefrLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 
@@ -50,7 +51,12 @@ export default function UdGrammarPanel({ state }: { state: UdGrammarState }) {
             {LEVELS.filter((l) => profile.results[l].distinct > 0).map((lvl) => (
                 <div key={lvl}>
                     <div
-                        style={{ fontSize: '0.8rem', fontWeight: 600, color: CEFR_LEVEL_COLORS[lvl], marginBottom: 4 }}
+                        style={{
+                            fontSize: '0.8rem',
+                            fontWeight: 600,
+                            color: textOnTheme(CEFR_LEVEL_COLORS[lvl]),
+                            marginBottom: 4,
+                        }}
                     >
                         {lvl} · {profile.results[lvl].constructionCount}
                     </div>

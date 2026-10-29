@@ -122,7 +122,7 @@ function ToolbarBtn({ active, onClick, title, disabled, children }: ToolbarBtnPr
                 alignItems: 'center',
                 justifyContent: 'center',
                 background: active ? 'var(--accent-soft)' : 'transparent',
-                color: active ? 'var(--accent)' : 'var(--text)',
+                color: active ? 'var(--accent-text)' : 'var(--text)',
                 opacity: disabled ? 0.4 : 1,
                 flexShrink: 0,
             }}
@@ -724,7 +724,7 @@ export default function EssayEditor({
                     <button
                         type="button"
                         className="btn btn-ghost btn-sm"
-                        style={{ fontSize: '0.72rem', padding: '2px 8px', color: 'var(--red)' }}
+                        style={{ fontSize: '0.72rem', padding: '2px 8px', color: 'var(--red-text)' }}
                         onClick={() => editor.chain().focus().deleteTable().run()}
                     >
                         Delete table

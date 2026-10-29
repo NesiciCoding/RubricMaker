@@ -30,7 +30,7 @@ export default function SebGate({ requireSEB, children }: SebGateProps) {
             }}
         >
             <div style={{ maxWidth: 480, textAlign: 'center' }}>
-                <ShieldAlert size={48} style={{ color: 'var(--red)', marginBottom: 16 }} />
+                <ShieldAlert size={48} style={{ color: 'var(--red-text)', marginBottom: 16 }} />
                 <h2 style={{ marginBottom: 8, color: 'var(--text)' }}>{t('tests.taking.seb_blocked_title')}</h2>
                 <p style={{ color: 'var(--text-muted)', marginBottom: 8 }}>{t('tests.taking.seb_blocked_desc')}</p>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>

@@ -117,7 +117,7 @@ export default function TieredConfigPanel({ config, onChange }: Props) {
                                         onClick={() => setTiers(tiers.filter((x) => x.id !== tier.id))}
                                         title={t('rubricBuilder.tiered_remove_tier', { name })}
                                         aria-label={t('rubricBuilder.tiered_remove_tier', { name })}
-                                        style={{ color: 'var(--red)' }}
+                                        style={{ color: 'var(--red-text)' }}
                                     >
                                         <Trash2 size={13} />
                                     </button>
@@ -218,7 +218,7 @@ export default function TieredConfigPanel({ config, onChange }: Props) {
                                         onClick={() => setBands(bands.filter((x) => x.id !== band.id))}
                                         title={t('rubricBuilder.tiered_remove_band', { name })}
                                         aria-label={t('rubricBuilder.tiered_remove_band', { name })}
-                                        style={{ color: 'var(--red)' }}
+                                        style={{ color: 'var(--red-text)' }}
                                     >
                                         <Trash2 size={13} />
                                     </button>
@@ -271,7 +271,7 @@ export default function TieredConfigPanel({ config, onChange }: Props) {
                         }
                         title={t('rubricBuilder.tiered_remove_requirement', { n: i + 1 })}
                         aria-label={t('rubricBuilder.tiered_remove_requirement', { n: i + 1 })}
-                        style={{ color: 'var(--red)' }}
+                        style={{ color: 'var(--red-text)' }}
                     >
                         <Trash2 size={13} />
                     </button>
@@ -318,7 +318,7 @@ export default function TieredConfigPanel({ config, onChange }: Props) {
             {issues.length > 0 && (
                 <ul
                     role="alert"
-                    style={{ margin: '10px 0 0', paddingLeft: 18, color: 'var(--red)', fontSize: '0.8rem' }}
+                    style={{ margin: '10px 0 0', paddingLeft: 18, color: 'var(--red-text)', fontSize: '0.8rem' }}
                 >
                     {issues.map((issue) => (
                         <li key={issue}>{t(`rubricBuilder.tiered_issue_${issue}`)}</li>

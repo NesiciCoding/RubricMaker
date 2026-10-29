@@ -774,7 +774,7 @@ export default function StudentPortalPage() {
                         padding: '8px 24px',
                         textAlign: 'center',
                         fontSize: '0.8rem',
-                        color: 'var(--accent)',
+                        color: 'var(--accent-text)',
                         fontWeight: 600,
                     }}
                 >
@@ -823,7 +823,7 @@ export default function StudentPortalPage() {
                                 fontSize: '0.9rem',
                             }}
                         >
-                            <GraduationCap size={18} style={{ color: 'var(--accent)' }} />{' '}
+                            <GraduationCap size={18} style={{ color: 'var(--accent-text)' }} />{' '}
                             {t('studentPortal.brand_name')}
                         </span>
                         <button
@@ -1044,7 +1044,7 @@ export default function StudentPortalPage() {
                             borderRadius: 10,
                             padding: '12px 16px',
                             fontSize: '0.875rem',
-                            color: 'var(--red)',
+                            color: 'var(--red-text)',
                             display: 'flex',
                             gap: 8,
                             alignItems: 'center',
@@ -1124,7 +1124,10 @@ export default function StudentPortalPage() {
                                             }}
                                         >
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                <Layers size={16} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+                                                <Layers
+                                                    size={16}
+                                                    style={{ color: 'var(--accent-text)', flexShrink: 0 }}
+                                                />
                                                 <div>
                                                     <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>
                                                         {a.deckName}
@@ -1134,7 +1137,7 @@ export default function StudentPortalPage() {
                                                             count: deck?.cards.length ?? a.cardCount,
                                                         })}
                                                         {insights && insights.dueCount > 0 && (
-                                                            <span style={{ color: 'var(--red)', marginLeft: 8 }}>
+                                                            <span style={{ color: 'var(--red-text)', marginLeft: 8 }}>
                                                                 {t('flashcards.due_count', {
                                                                     count: insights.dueCount,
                                                                 })}
@@ -1338,7 +1341,7 @@ export default function StudentPortalPage() {
                                             padding: '12px 14px',
                                         }}
                                     >
-                                        <UserCheck size={16} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+                                        <UserCheck size={16} style={{ color: 'var(--accent-text)', flexShrink: 0 }} />
                                         <div>
                                             <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{rubric.name}</div>
                                             <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
@@ -1376,7 +1379,7 @@ export default function StudentPortalPage() {
                                                 background: 'var(--bg)',
                                             }}
                                         >
-                                            <TrendingUp size={15} style={{ color: 'var(--accent)' }} />
+                                            <TrendingUp size={15} style={{ color: 'var(--accent-text)' }} />
                                             <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{skillLabel}</span>
                                             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                                                 {t('learningPath.gap_summary', {
@@ -1413,7 +1416,7 @@ export default function StudentPortalPage() {
                                                 background: 'var(--bg)',
                                             }}
                                         >
-                                            <PenSquare size={15} style={{ color: 'var(--accent)' }} />
+                                            <PenSquare size={15} style={{ color: 'var(--accent-text)' }} />
                                             <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{itemLabel}</span>
                                             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                                                 {t('grammar.recommend_streak', {
@@ -1443,7 +1446,7 @@ export default function StudentPortalPage() {
                                             background: 'var(--bg)',
                                         }}
                                     >
-                                        <AlertTriangle size={15} style={{ color: 'var(--accent)' }} />
+                                        <AlertTriangle size={15} style={{ color: 'var(--accent-text)' }} />
                                         <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>
                                             {learningPathFlagLabel(flag)}
                                         </span>
@@ -1907,7 +1910,7 @@ function TestCard({
         >
             <ListChecks
                 size={18}
-                style={{ color: done ? 'var(--green)' : 'var(--accent)', flexShrink: 0, marginTop: 2 }}
+                style={{ color: done ? 'var(--green-text)' : 'var(--accent-text)', flexShrink: 0, marginTop: 2 }}
             />
             <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: 4 }}>{row.testName}</div>
@@ -1915,7 +1918,7 @@ function TestCard({
                     {chips}
                 </div>
                 {done ? (
-                    <div style={{ fontSize: '0.8rem', color: 'var(--green)', fontWeight: 500 }}>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--green-text)', fontWeight: 500 }}>
                         {t('studentPortal.test_submitted')}
                         {row.submission?.submittedAt
                             ? ` · ${new Date(row.submission.submittedAt).toLocaleDateString()}`
@@ -1926,7 +1929,11 @@ function TestCard({
                         <div
                             style={{
                                 fontSize: '0.8rem',
-                                color: expired ? 'var(--red)' : dueSoon ? 'var(--yellow)' : 'var(--text-muted)',
+                                color: expired
+                                    ? 'var(--red-text)'
+                                    : dueSoon
+                                      ? 'var(--yellow-text)'
+                                      : 'var(--text-muted)',
                                 fontWeight: dueSoon || expired ? 600 : 400,
                             }}
                         >
@@ -1941,7 +1948,7 @@ function TestCard({
                     )
                 )}
                 {openError && (
-                    <div style={{ fontSize: '0.78rem', color: 'var(--red)', marginTop: 4 }}>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--red-text)', marginTop: 4 }}>
                         {t('studentPortal.test_open_error')}
                     </div>
                 )}
@@ -2037,7 +2044,11 @@ function EssayCard({ row, href, t }: { row: StudentEssayAssignmentSummary; href:
         >
             <FileText
                 size={18}
-                style={{ color: row.submission ? 'var(--green)' : 'var(--accent)', flexShrink: 0, marginTop: 2 }}
+                style={{
+                    color: row.submission ? 'var(--green-text)' : 'var(--accent-text)',
+                    flexShrink: 0,
+                    marginTop: 2,
+                }}
             />
             <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: 4 }}>{row.title}</div>
@@ -2059,7 +2070,7 @@ function EssayCard({ row, href, t }: { row: StudentEssayAssignmentSummary; href:
                     {chips}
                 </div>
                 {row.submission && (
-                    <div style={{ fontSize: '0.8rem', color: 'var(--green)', fontWeight: 500 }}>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--green-text)', fontWeight: 500 }}>
                         {t('studentPortal.essay_submitted_words', {
                             date: new Date(row.submission.submittedAt).toLocaleDateString(),
                             wordCount: row.submission.wordCount,
@@ -2070,7 +2081,7 @@ function EssayCard({ row, href, t }: { row: StudentEssayAssignmentSummary; href:
                     <div
                         style={{
                             fontSize: '0.8rem',
-                            color: expired ? 'var(--red)' : dueSoon ? 'var(--yellow)' : 'var(--text-muted)',
+                            color: expired ? 'var(--red-text)' : dueSoon ? 'var(--yellow-text)' : 'var(--text-muted)',
                             fontWeight: dueSoon || expired ? 600 : 400,
                         }}
                     >
@@ -2136,7 +2147,7 @@ function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string
                 gap: 10,
             }}
         >
-            <div style={{ color: 'var(--accent)', flexShrink: 0 }}>{icon}</div>
+            <div style={{ color: 'var(--accent-text)', flexShrink: 0 }}>{icon}</div>
             <div>
                 <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>{value}</div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{label}</div>

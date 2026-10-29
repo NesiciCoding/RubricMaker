@@ -127,7 +127,7 @@ export default function GradingActionsMenu({ actions }: { actions: GradingAction
                                 width: '100%',
                                 justifyContent: 'flex-start',
                                 gap: 8,
-                                color: a.danger ? 'var(--red)' : a.active ? 'var(--accent)' : undefined,
+                                color: a.danger ? 'var(--red-text)' : a.active ? 'var(--accent-text)' : undefined,
                             }}
                             onClick={() => {
                                 closeMenu(false);
@@ -136,7 +136,7 @@ export default function GradingActionsMenu({ actions }: { actions: GradingAction
                         >
                             {a.icon}
                             {a.label}
-                            {a.active && <span style={{ marginLeft: 'auto', color: 'var(--accent)' }}>✓</span>}
+                            {a.active && <span style={{ marginLeft: 'auto', color: 'var(--accent-text)' }}>✓</span>}
                         </button>
                     ))}
                 </div>

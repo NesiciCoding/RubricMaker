@@ -77,7 +77,7 @@ function TrendBadge({ count, t }: { count: number; t: TFunction }) {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 2,
-                color: 'var(--green)',
+                color: 'var(--green-text)',
                 fontSize: '0.75rem',
                 fontWeight: 700,
             }}
@@ -535,7 +535,7 @@ export default function Dashboard() {
                     >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                             <div style={{ background: 'var(--accent-soft)', padding: 10, borderRadius: 10 }}>
-                                <BookOpen size={20} style={{ color: 'var(--accent)' }} />
+                                <BookOpen size={20} style={{ color: 'var(--accent-text)' }} />
                             </div>
                             <div>
                                 <div style={{ fontSize: '1.8rem', fontWeight: 700 }}>{rubrics.length}</div>
@@ -553,7 +553,7 @@ export default function Dashboard() {
                     >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                             <div style={{ background: 'rgba(34,197,94,0.12)', padding: 10, borderRadius: 10 }}>
-                                <Users size={20} style={{ color: 'var(--green)' }} />
+                                <Users size={20} style={{ color: 'var(--green-text)' }} />
                             </div>
                             <div>
                                 <div style={{ fontSize: '1.8rem', fontWeight: 700 }}>{students.length}</div>
@@ -572,7 +572,7 @@ export default function Dashboard() {
                     >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                             <div style={{ background: 'rgba(139,92,246,0.12)', padding: 10, borderRadius: 10 }}>
-                                <TrendingUp size={20} style={{ color: 'var(--purple)' }} />
+                                <TrendingUp size={20} style={{ color: 'var(--purple-text)' }} />
                             </div>
                             <div>
                                 <div style={{ fontSize: '1.8rem', fontWeight: 700 }}>{completedCount}</div>
@@ -595,7 +595,7 @@ export default function Dashboard() {
                     >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                             <div style={{ background: 'rgba(201,133,31,0.12)', padding: 10, borderRadius: 10 }}>
-                                <ClipboardList size={20} style={{ color: 'var(--yellow)' }} />
+                                <ClipboardList size={20} style={{ color: 'var(--yellow-text)' }} />
                             </div>
                             <div>
                                 <div style={{ fontSize: '1.8rem', fontWeight: 700 }}>{needsGrading.length}</div>
@@ -612,8 +612,8 @@ export default function Dashboard() {
                 {atRiskStudents.length > 0 && (
                     <div className="card" style={{ marginBottom: 20, borderLeft: '4px solid var(--red)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                            <AlertTriangle size={16} style={{ color: 'var(--red)' }} />
-                            <h3 style={{ margin: 0, color: 'var(--red)' }}>At-Risk Students</h3>
+                            <AlertTriangle size={16} style={{ color: 'var(--red-text)' }} />
+                            <h3 style={{ margin: 0, color: 'var(--red-text)' }}>At-Risk Students</h3>
                             <span className="text-muted text-xs" style={{ marginLeft: 4 }}>
                                 (scored below 55% on 2+ recent assessments)
                             </span>
@@ -632,7 +632,7 @@ export default function Dashboard() {
                                         style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}
                                     >
                                         <span style={{ fontWeight: 600 }}>{student.name}</span>
-                                        <span style={{ color: 'var(--red)', fontSize: '0.78rem' }}>
+                                        <span style={{ color: 'var(--red-text)', fontSize: '0.78rem' }}>
                                             {recentPct.toFixed(0)}%
                                         </span>
                                         {feedbackAge.has(student.id) && feedbackAge.get(student.id)! >= 7 && (
@@ -870,9 +870,15 @@ export default function Dashboard() {
                                                 >
                                                     <div style={{ flexShrink: 0 }}>
                                                         {item.type === 'grading' ? (
-                                                            <CheckCircle size={16} style={{ color: 'var(--green)' }} />
+                                                            <CheckCircle
+                                                                size={16}
+                                                                style={{ color: 'var(--green-text)' }}
+                                                            />
                                                         ) : (
-                                                            <BookOpen size={16} style={{ color: 'var(--accent)' }} />
+                                                            <BookOpen
+                                                                size={16}
+                                                                style={{ color: 'var(--accent-text)' }}
+                                                            />
                                                         )}
                                                     </div>
                                                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -911,7 +917,7 @@ export default function Dashboard() {
                                                                         >
                                                                             <Clock
                                                                                 size={11}
-                                                                                style={{ color: 'var(--red)' }}
+                                                                                style={{ color: 'var(--red-text)' }}
                                                                             />
                                                                         </span>
                                                                     );
@@ -1019,19 +1025,19 @@ export default function Dashboard() {
                                     {
                                         label: t('dashboard.action_create_rubric'),
                                         icon: BookOpen,
-                                        color: 'var(--accent)',
+                                        color: 'var(--accent-text)',
                                         path: '/rubrics/new',
                                     },
                                     {
                                         label: t('dashboard.action_add_student'),
                                         icon: Users,
-                                        color: 'var(--green)',
+                                        color: 'var(--green-text)',
                                         path: '/students',
                                     },
                                     {
                                         label: t('dashboard.action_upload_attachment'),
                                         icon: FileText,
-                                        color: 'var(--purple)',
+                                        color: 'var(--purple-text)',
                                         path: '/attachments',
                                     },
                                 ].map(({ label, icon: Icon, color, path }) => (
@@ -1097,7 +1103,7 @@ export default function Dashboard() {
                                                 </div>
                                                 <button
                                                     className="btn btn-ghost btn-icon btn-sm"
-                                                    style={{ color: 'var(--red)', flexShrink: 0 }}
+                                                    style={{ color: 'var(--red-text)', flexShrink: 0 }}
                                                     title={t('dashboard.remove_template')}
                                                     onClick={(e) => {
                                                         e.stopPropagation();

@@ -82,7 +82,7 @@ export default function OpenAnswerInsightsPanel({ text, targetLevel, vocabularyI
                             {vocabularyItems.map((item, i) => (
                                 <li
                                     key={item.id}
-                                    style={{ color: checklist[i].found ? 'var(--green)' : 'var(--text-muted)' }}
+                                    style={{ color: checklist[i].found ? 'var(--green-text)' : 'var(--text-muted)' }}
                                 >
                                     {checklist[i].found ? '✓' : '✗'} {item.phrase}
                                 </li>

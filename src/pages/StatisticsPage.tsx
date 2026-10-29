@@ -1241,7 +1241,7 @@ export default function StatisticsPage() {
                                                     style={{
                                                         fontSize: '1.1rem',
                                                         fontWeight: 700,
-                                                        color: 'var(--accent)',
+                                                        color: 'var(--accent-text)',
                                                         minWidth: 42,
                                                         textAlign: 'right',
                                                     }}
@@ -1255,22 +1255,22 @@ export default function StatisticsPage() {
                                                     {
                                                         label: t('statistics.stat_average'),
                                                         value: `${stats.average.toFixed(1)}%`,
-                                                        color: 'var(--green)',
+                                                        color: 'var(--green-text)',
                                                     },
                                                     {
                                                         label: t('statistics.stat_median'),
                                                         value: `${stats.median.toFixed(1)}%`,
-                                                        color: 'var(--purple)',
+                                                        color: 'var(--purple-text)',
                                                     },
                                                     {
                                                         label: t('statistics.stat_highest'),
                                                         value: `${stats.highest.toFixed(1)}%`,
-                                                        color: 'var(--teal, #14b8a6)',
+                                                        color: 'var(--teal-text, #0c6e64)',
                                                     },
                                                     {
                                                         label: t('statistics.stat_lowest'),
                                                         value: `${stats.lowest.toFixed(1)}%`,
-                                                        color: 'var(--yellow)',
+                                                        color: 'var(--yellow-text)',
                                                     },
                                                 ].map(({ label, value, color }) => (
                                                     <div

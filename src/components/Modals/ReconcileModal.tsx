@@ -55,7 +55,7 @@ export default function ReconcileModal({ item, onConfirm, onClose }: Props) {
                                         textAlign: 'right',
                                         fontSize: '0.85rem',
                                         fontWeight: 600,
-                                        color: 'var(--accent)',
+                                        color: 'var(--accent-text)',
                                     }}
                                 >
                                     {((c.baselinePoints + c.secondMarkerPoints) / 2).toFixed(1)}

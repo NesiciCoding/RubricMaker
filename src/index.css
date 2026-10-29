@@ -15,24 +15,36 @@
     --border: #332e26;
     --border-light: #433c31;
 
-    /* text */
+    /* text — body copy is AAA (>=7:1) on every surface, secondary text >=5.5:1 and
+       tertiary text >=4.5:1, so no label falls below AA (#533). contrastPalette.test.ts
+       reads these very values and fails if a pair drops under its floor. */
     --text: #f1ebdf;
     --text-muted: #b4aa99;
-    --text-dim: #867c6e;
+    --text-dim: #958c7f;
 
-    /* accent - CSS variables for dynamic themes */
+    /* accent - CSS variables for dynamic themes. `--accent` is the fill (buttons, chips);
+       `--accent-text` is the same colour made safe for normal text on these surfaces. When
+       settings pick another accent, AppContext recomputes both from the accent (#533). */
     --accent: #37b49c;
+    --accent-text: #5fc3b0;
     --accent-hover: #2f9c87;
     --accent-fg: #0e1512;
     --accent-soft: #1c3a35;
     --accent-glow: rgba(55, 180, 156, 0.4);
 
-    /* semantic */
+    /* semantic. The `-text` variants are the same hue made safe for text on the surfaces and on
+       the 15% badge tints, exactly like --accent-text (#533). */
     --green: #46b783;
+    --green-text: #46b783;
     --yellow: #e3a648;
+    --yellow-text: #e3a648;
     --red: #e07a62;
+    --red-text: #e38772;
     --purple: #8b5cf6;
+    --purple-text: #a986f8;
     --teal: #14b8a6;
+    --teal-text: #14b8a6;
+    --blue-text: #629bf8;
 
     /* sizing */
     --radius: 10px;
@@ -63,16 +75,25 @@
     --border: #e7decf;
     --border-light: #d9ceba;
     --text: #2b2722;
-    --text-muted: #6e655a;
-    --text-dim: #9c9081;
+    --text-muted: #635b51;
+    --text-dim: #70685d;
     --accent: #0e7c6b;
+    --accent-text: #09564a;
     --accent-hover: #0b6657;
     --accent-fg: #ffffff;
     --accent-soft: #e2f0ed;
     --accent-glow: rgba(14, 124, 107, 0.3);
     --green: #2e9e6b;
+    --green-text: #1f6b49;
     --yellow: #c9851f;
+    --yellow-text: #855814;
     --red: #c9543c;
+    --red-text: #9d422f;
+    --purple: #8b5cf6;
+    --purple-text: #6a46bb;
+    --teal: #14b8a6;
+    --teal-text: #0c6e64;
+    --blue-text: #2a5eb1;
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
     --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.1);
@@ -101,7 +122,7 @@ body,
 }
 
 a {
-    color: var(--accent);
+    color: var(--accent-text);
     text-decoration: none;
 }
 
@@ -282,7 +303,7 @@ h3 {
 
 .nav-rail-item.active {
     background: var(--accent-soft);
-    color: var(--accent);
+    color: var(--accent-text);
 }
 
 .nav-rail-item .badge-dot {
@@ -359,7 +380,7 @@ h3 {
 
 .nav-item.active {
     background: var(--accent-soft);
-    color: var(--accent);
+    color: var(--accent-text);
 }
 
 .nav-item svg {
@@ -532,7 +553,7 @@ h3 {
 
 .btn-secondary:hover {
     border-color: var(--accent);
-    color: var(--accent);
+    color: var(--accent-text);
 }
 
 .btn-ghost {
@@ -548,7 +569,7 @@ h3 {
 
 .btn-danger {
     background: transparent;
-    color: var(--red);
+    color: var(--red-text);
     border-color: var(--red);
 }
 
@@ -699,7 +720,7 @@ select.input-error {
 
 .field-error {
     font-size: 0.8rem;
-    color: var(--red);
+    color: var(--red-text);
     margin-top: 2px;
 }
 
@@ -716,27 +737,27 @@ select.input-error {
 
 .badge-blue {
     background: rgba(59, 130, 246, 0.15);
-    color: var(--accent);
+    color: var(--blue-text);
 }
 
 .badge-green {
     background: rgba(34, 197, 94, 0.15);
-    color: var(--green);
+    color: var(--green-text);
 }
 
 .badge-yellow {
     background: rgba(245, 158, 11, 0.15);
-    color: var(--yellow);
+    color: var(--yellow-text);
 }
 
 .badge-red {
     background: rgba(239, 68, 68, 0.15);
-    color: var(--red);
+    color: var(--red-text);
 }
 
 .badge-purple {
     background: rgba(139, 92, 246, 0.15);
-    color: var(--purple);
+    color: var(--purple-text);
 }
 
 /* ─── Table ─────────────────────────────────────────────────────────────────── */
@@ -951,7 +972,7 @@ select.input-error {
 }
 
 .tab-btn.active {
-    color: var(--accent);
+    color: var(--accent-text);
     border-bottom-color: var(--accent);
 }
 
@@ -1244,7 +1265,7 @@ select.input-error {
     padding: 1px 5px;
     border-radius: 3px;
     background: var(--accent-soft);
-    color: var(--accent);
+    color: var(--accent-text);
     flex-shrink: 0;
     letter-spacing: 0.03em;
 }
@@ -1283,7 +1304,7 @@ select.input-error {
 .drop-zone.drag-over {
     border-color: var(--accent);
     background: var(--accent-soft);
-    color: var(--accent);
+    color: var(--accent-text);
 }
 
 /* ─── Empty state ────────────────────────────────────────────────────────────── */
@@ -1734,7 +1755,7 @@ select.input-error {
 }
 
 .settings-tab.active {
-    color: var(--accent);
+    color: var(--accent-text);
     border-bottom-color: var(--accent);
     /* Subtle tinted background makes the active tab immediately scannable */
     background: color-mix(in srgb, var(--accent) 8%, transparent);
@@ -1772,19 +1793,19 @@ select.input-error {
 
 .role-badge-admin {
     background: color-mix(in srgb, var(--accent) 15%, transparent);
-    color: var(--accent);
+    color: var(--accent-text);
     border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
 .role-badge-teacher {
     background: color-mix(in srgb, var(--green) 15%, transparent);
-    color: var(--green);
+    color: var(--green-text);
     border: 1px solid color-mix(in srgb, var(--green) 35%, transparent);
 }
 
 .role-badge-student {
     background: color-mix(in srgb, var(--yellow) 15%, transparent);
-    color: var(--yellow);
+    color: var(--yellow-text);
     border: 1px solid color-mix(in srgb, var(--yellow) 35%, transparent);
 }
 
@@ -2031,7 +2052,7 @@ select.input-error {
 
 .toolbar-btn.active {
     background: var(--accent-soft);
-    color: var(--accent);
+    color: var(--accent-text);
 }
 
 .toolbar-divider {

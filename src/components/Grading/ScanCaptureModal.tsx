@@ -158,7 +158,7 @@ export default function ScanCaptureModal({ defaultLang, userWords, onInsert, onC
             style={{ width: '95vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column', padding: 24 }}
         >
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-                <ScanLine size={20} style={{ color: 'var(--accent)' }} />
+                <ScanLine size={20} style={{ color: 'var(--accent-text)' }} />
                 <h3 id="scan-dialog-title" style={{ margin: 0, flex: 1 }}>
                     {t('scan.title')}
                 </h3>
@@ -246,8 +246,8 @@ export default function ScanCaptureModal({ defaultLang, userWords, onInsert, onC
                             alignItems: 'flex-start',
                         }}
                     >
-                        <AlertTriangle size={16} style={{ color: 'var(--red)', flexShrink: 0, marginTop: 2 }} />
-                        <p style={{ margin: 0, color: 'var(--red)', fontSize: '0.9rem' }}>{errorMsg}</p>
+                        <AlertTriangle size={16} style={{ color: 'var(--red-text)', flexShrink: 0, marginTop: 2 }} />
+                        <p style={{ margin: 0, color: 'var(--red-text)', fontSize: '0.9rem' }}>{errorMsg}</p>
                     </div>
                 )}
 

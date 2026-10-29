@@ -198,7 +198,9 @@ export default function NewsFlashesPage() {
                                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
                                         <div style={{ flex: 1, minWidth: 0 }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                <span style={{ color: 'var(--accent)' }}>{KIND_ICONS[flash.kind]}</span>
+                                                <span style={{ color: 'var(--accent-text)' }}>
+                                                    {KIND_ICONS[flash.kind]}
+                                                </span>
                                                 <h3 style={{ margin: 0 }}>{flash.title}</h3>
                                             </div>
                                             {flash.summary && (
@@ -317,7 +319,7 @@ export default function NewsFlashesPage() {
                                                 className="btn btn-ghost btn-icon btn-sm"
                                                 title={t('newsFlashes.action_delete')}
                                                 aria-label={t('newsFlashes.action_delete')}
-                                                style={{ color: 'var(--red)' }}
+                                                style={{ color: 'var(--red-text)' }}
                                                 onClick={() => handleDelete(flash)}
                                             >
                                                 <Trash2 size={14} />
@@ -403,7 +405,7 @@ export default function NewsFlashesPage() {
                                     id="nf-url-error"
                                     role="alert"
                                     className="text-xs"
-                                    style={{ color: 'var(--red)', marginTop: 4 }}
+                                    style={{ color: 'var(--red-text)', marginTop: 4 }}
                                 >
                                     {t('newsFlashes.error_invalid_url')}
                                 </div>

@@ -15,7 +15,7 @@ export default function Avatar({ name, size, fontSize, style }: AvatarProps) {
                 height: size,
                 borderRadius: '50%',
                 background: 'var(--accent-soft)',
-                color: 'var(--accent)',
+                color: 'var(--accent-text)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',

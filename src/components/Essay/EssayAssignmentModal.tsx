@@ -249,7 +249,7 @@ export default function EssayAssignmentModal({
                 }}
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <FileText size={18} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                    <FileText size={18} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
                     <h2 id="essay-assignment-title" style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>
                         {assignmentScope === 'class'
                             ? t('essay_assignment.modal_title_class', { count: classStudents.length })
@@ -325,7 +325,7 @@ export default function EssayAssignmentModal({
                                 id="ea-min-words-error"
                                 role="alert"
                                 className="text-xs"
-                                style={{ color: 'var(--red)', marginTop: 4 }}
+                                style={{ color: 'var(--red-text)', marginTop: 4 }}
                             >
                                 {t(limitErrors.minWords)}
                             </div>
@@ -354,7 +354,7 @@ export default function EssayAssignmentModal({
                                 id="ea-max-words-error"
                                 role="alert"
                                 className="text-xs"
-                                style={{ color: 'var(--red)', marginTop: 4 }}
+                                style={{ color: 'var(--red-text)', marginTop: 4 }}
                             >
                                 {t(limitErrors.maxWords)}
                             </div>
@@ -383,7 +383,7 @@ export default function EssayAssignmentModal({
                                 id="ea-time-limit-error"
                                 role="alert"
                                 className="text-xs"
-                                style={{ color: 'var(--red)', marginTop: 4 }}
+                                style={{ color: 'var(--red-text)', marginTop: 4 }}
                             >
                                 {t(limitErrors.timeLimitMinutes)}
                             </div>
@@ -477,7 +477,7 @@ export default function EssayAssignmentModal({
                                 onChange={(e) => setEmbedDb(e.target.checked)}
                                 style={{ accentColor: 'var(--accent)' }}
                             />
-                            <Database size={13} style={{ color: 'var(--accent)' }} />
+                            <Database size={13} style={{ color: 'var(--accent-text)' }} />
                             {t('essay_assignment.db_embed_label')}
                         </label>
                         {embedDb && (
@@ -514,7 +514,7 @@ export default function EssayAssignmentModal({
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: 4,
-                                    color: 'var(--red)',
+                                    color: 'var(--red-text)',
                                     fontSize: '0.8rem',
                                 }}
                             >

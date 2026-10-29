@@ -41,7 +41,7 @@ export function ConfirmDialog({
                             {danger && (
                                 <AlertTriangle
                                     size={18}
-                                    style={{ color: 'var(--red)', flexShrink: 0 }}
+                                    style={{ color: 'var(--red-text)', flexShrink: 0 }}
                                     aria-hidden="true"
                                 />
                             )}

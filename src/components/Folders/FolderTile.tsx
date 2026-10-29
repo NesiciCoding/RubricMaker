@@ -53,7 +53,7 @@ export default function FolderTile({
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
                             <FolderIcon
                                 size={16}
-                                style={{ color: 'var(--accent)', flexShrink: 0 }}
+                                style={{ color: 'var(--accent-text)', flexShrink: 0 }}
                                 aria-hidden="true"
                             />
                             <button
@@ -88,7 +88,7 @@ export default function FolderTile({
                                 className="btn btn-ghost btn-icon btn-sm"
                                 title={t('folders.delete')}
                                 aria-label={t('folders.delete')}
-                                style={{ color: 'var(--red)' }}
+                                style={{ color: 'var(--red-text)' }}
                                 onClick={() => onDelete(folder)}
                             >
                                 <Trash2 size={13} />

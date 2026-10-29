@@ -84,7 +84,7 @@ export default function QuestionBankImportModal({ onImport, onClose }: Props) {
                     }}
                 >
                     <div style={{ display: 'flex', gap: 6, alignItems: 'center', fontWeight: 600, marginBottom: 4 }}>
-                        <AlertTriangle size={14} style={{ color: 'var(--yellow)' }} />
+                        <AlertTriangle size={14} style={{ color: 'var(--yellow-text)' }} />
                         {t('questionBank.import_warnings_title')}
                     </div>
                     <ul style={{ margin: 0, paddingLeft: 20 }}>

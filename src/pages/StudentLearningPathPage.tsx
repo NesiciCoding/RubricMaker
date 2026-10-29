@@ -218,7 +218,7 @@ export default function StudentLearningPathPage() {
 
                 <div data-tour="slp-recs" className="card" style={{ marginBottom: 24 }}>
                     <h3 style={{ marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <TrendingUp size={18} style={{ color: 'var(--accent)' }} />
+                        <TrendingUp size={18} style={{ color: 'var(--accent-text)' }} />
                         {t('learningPath.recommendations_title')}
                     </h3>
                     <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
@@ -300,7 +300,7 @@ export default function StudentLearningPathPage() {
 
                 <div className="card" style={{ marginBottom: 24 }}>
                     <h3 style={{ marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <PenSquare size={18} style={{ color: 'var(--accent)' }} />
+                        <PenSquare size={18} style={{ color: 'var(--accent-text)' }} />
                         {t('grammar.recommendations_title')}
                     </h3>
                     <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
@@ -409,7 +409,7 @@ export default function StudentLearningPathPage() {
 
                 <div className="card">
                     <h3 style={{ marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <AlertTriangle size={18} style={{ color: 'var(--accent)' }} />
+                        <AlertTriangle size={18} style={{ color: 'var(--accent-text)' }} />
                         {t('learningPath.interventions_title')}
                     </h3>
                     <p className="text-muted text-sm" style={{ marginBottom: 16 }}>

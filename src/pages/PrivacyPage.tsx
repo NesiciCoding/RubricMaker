@@ -9,7 +9,7 @@ import Topbar from '../components/Layout/Topbar';
 const LINK_STYLE: React.CSSProperties = {
     color: 'var(--text)',
     textDecoration: 'underline',
-    textDecorationColor: 'var(--accent)',
+    textDecorationColor: 'var(--accent-text)',
     textUnderlineOffset: 2,
 };
 
@@ -42,7 +42,7 @@ export default function PrivacyPage({ studentPortalPath }: { studentPortalPath?:
                         justifyContent: 'center',
                     }}
                 >
-                    <Shield size={22} style={{ color: 'var(--accent)' }} />
+                    <Shield size={22} style={{ color: 'var(--accent-text)' }} />
                 </div>
                 <div>
                     <h2 style={{ margin: 0 }}>Privacy &amp; Gegevensbescherming</h2>

@@ -84,7 +84,7 @@ export type ProgressStatus = 'ahead' | 'on-track' | 'behind' | 'no-data';
 
 export const PROGRESS_STATUS_COLOR: Record<ProgressStatus, string> = {
     ahead: 'var(--green)',
-    'on-track': 'var(--accent)',
+    'on-track': 'var(--accent-text)',
     behind: 'var(--red)',
     'no-data': 'var(--text-dim)',
 };

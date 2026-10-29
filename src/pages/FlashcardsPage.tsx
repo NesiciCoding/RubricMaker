@@ -152,7 +152,7 @@ export default function FlashcardsPage() {
                                                             fontWeight: 700,
                                                             background:
                                                                 'var(--green-soft, color-mix(in srgb, var(--green) 14%, transparent))',
-                                                            color: 'var(--green)',
+                                                            color: 'var(--green-text)',
                                                         }}
                                                     >
                                                         {t('studentDecks.from_student_badge')}
@@ -177,7 +177,7 @@ export default function FlashcardsPage() {
                                                         className="btn btn-ghost btn-icon btn-sm"
                                                         title={t('flashcards.action_delete')}
                                                         aria-label={t('flashcards.action_delete')}
-                                                        style={{ color: 'var(--red)' }}
+                                                        style={{ color: 'var(--red-text)' }}
                                                         onClick={() => handleDelete(deck.id, deck.name)}
                                                     >
                                                         <Trash2 size={14} />

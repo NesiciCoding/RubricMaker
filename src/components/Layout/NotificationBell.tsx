@@ -229,7 +229,7 @@ export default function NotificationBell() {
                                     <span
                                         style={{
                                             ...pillStyle,
-                                            color: 'var(--accent)',
+                                            color: 'var(--accent-text)',
                                             background: 'color-mix(in srgb, var(--accent) 10%, transparent)',
                                         }}
                                     >

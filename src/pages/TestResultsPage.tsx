@@ -147,7 +147,11 @@ function formatStudentResponse(
                             style={{
                                 fontWeight: 600,
                                 textDecoration: 'underline',
-                                color: !studentAnswer ? 'var(--text-muted)' : correct ? 'var(--green)' : 'var(--red)',
+                                color: !studentAnswer
+                                    ? 'var(--text-muted)'
+                                    : correct
+                                      ? 'var(--green-text)'
+                                      : 'var(--red-text)',
                             }}
                         >
                             {studentAnswer || '___'}
@@ -178,7 +182,11 @@ function formatStudentResponse(
                             <span
                                 style={{
                                     fontWeight: 600,
-                                    color: !chosen ? 'var(--text-muted)' : correct ? 'var(--green)' : 'var(--red)',
+                                    color: !chosen
+                                        ? 'var(--text-muted)'
+                                        : correct
+                                          ? 'var(--green-text)'
+                                          : 'var(--red-text)',
                                 }}
                             >
                                 {chosen?.text ?? '___'}
@@ -211,7 +219,11 @@ function formatStudentResponse(
                             <span
                                 style={{
                                     fontWeight: 600,
-                                    color: !chosen ? 'var(--text-muted)' : correct ? 'var(--green)' : 'var(--red)',
+                                    color: !chosen
+                                        ? 'var(--text-muted)'
+                                        : correct
+                                          ? 'var(--green-text)'
+                                          : 'var(--red-text)',
                                 }}
                             >
                                 {chosen?.right ?? '___'}
@@ -239,7 +251,7 @@ function formatStudentResponse(
                         <span
                             style={{
                                 fontWeight: 600,
-                                color: items[i]?.id === id ? 'var(--green)' : 'var(--red)',
+                                color: items[i]?.id === id ? 'var(--green-text)' : 'var(--red-text)',
                             }}
                         >
                             {i + 1}. {itemsById.get(id)?.text}
@@ -271,7 +283,11 @@ function formatStudentResponse(
                             <span
                                 style={{
                                     fontWeight: 600,
-                                    color: !chosen ? 'var(--text-muted)' : correct ? 'var(--green)' : 'var(--red)',
+                                    color: !chosen
+                                        ? 'var(--text-muted)'
+                                        : correct
+                                          ? 'var(--green-text)'
+                                          : 'var(--red-text)',
                                 }}
                             >
                                 {chosen?.label ?? '___'}
@@ -335,7 +351,7 @@ function formatStudentResponse(
                                 key={i}
                                 style={{
                                     fontWeight: 600,
-                                    color: matched[i] ? 'var(--green)' : 'var(--red)',
+                                    color: matched[i] ? 'var(--green-text)' : 'var(--red-text)',
                                 }}
                             >
                                 {word}{' '}
@@ -375,7 +391,7 @@ function formatStudentResponse(
                                 background: isSelected
                                     ? 'color-mix(in srgb, var(--accent) 20%, transparent)'
                                     : 'transparent',
-                                color: match ? 'var(--green)' : 'var(--red)',
+                                color: match ? 'var(--green-text)' : 'var(--red-text)',
                                 border: isSelected ? '1px solid var(--accent)' : '1px solid transparent',
                             }}
                         >
@@ -858,9 +874,12 @@ export default function TestResultsPage() {
                                     </div>
                                     {autoScored &&
                                         (isCorrect ? (
-                                            <CheckCircle2 size={20} style={{ color: 'var(--green)', flexShrink: 0 }} />
+                                            <CheckCircle2
+                                                size={20}
+                                                style={{ color: 'var(--green-text)', flexShrink: 0 }}
+                                            />
                                         ) : (
-                                            <XCircle size={20} style={{ color: 'var(--red)', flexShrink: 0 }} />
+                                            <XCircle size={20} style={{ color: 'var(--red-text)', flexShrink: 0 }} />
                                         ))}
                                 </div>
 

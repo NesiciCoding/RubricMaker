@@ -231,7 +231,10 @@ export default function ImportRubricModal({ onClose, onImport }: Props) {
                             gap: 16,
                         }}
                     >
-                        <Loader size={32} style={{ color: 'var(--accent)', animation: 'spin 1s linear infinite' }} />
+                        <Loader
+                            size={32}
+                            style={{ color: 'var(--accent-text)', animation: 'spin 1s linear infinite' }}
+                        />
                         <div style={{ fontWeight: 500 }}>{t('importRubric.parsing')}</div>
                         <div className="text-muted text-sm">{t('importRubric.parsing_sub')}</div>
                     </div>

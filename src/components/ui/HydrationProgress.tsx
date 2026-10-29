@@ -53,7 +53,7 @@ export function HydrationProgress() {
             }}
         >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Loader className="spin" size={16} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+                <Loader className="spin" size={16} style={{ color: 'var(--accent-text)', flexShrink: 0 }} />
                 <span style={{ flex: 1 }}>{t('toast.sync_hydrating')}</span>
                 <span style={{ color: 'var(--text-muted)' }}>{pct}%</span>
             </div>

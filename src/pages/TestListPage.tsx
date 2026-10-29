@@ -514,7 +514,7 @@ export default function TestListPage() {
                                                             className="btn btn-ghost btn-icon btn-sm"
                                                             title={t('tests.action_delete')}
                                                             aria-label={t('tests.action_delete')}
-                                                            style={{ color: 'var(--red)' }}
+                                                            style={{ color: 'var(--red-text)' }}
                                                             onClick={() => handleDelete(test.id, test.name)}
                                                         >
                                                             <Trash2 size={14} />
@@ -675,7 +675,7 @@ export default function TestListPage() {
                                                                     className="btn btn-ghost btn-icon btn-sm"
                                                                     title={t('tests.action_delete')}
                                                                     aria-label={t('tests.action_delete')}
-                                                                    style={{ color: 'var(--red)' }}
+                                                                    style={{ color: 'var(--red-text)' }}
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
                                                                         handleDelete(test.id, test.name);

@@ -542,7 +542,7 @@ export default function QuestionEditor({
                             type="button"
                             className="btn btn-ghost btn-icon btn-sm"
                             aria-label={t('tests.remove_question')}
-                            style={{ color: 'var(--red)' }}
+                            style={{ color: 'var(--red-text)' }}
                             onClick={onRemove}
                         >
                             <Trash2 size={14} />
@@ -717,7 +717,7 @@ export default function QuestionEditor({
                                                 : setCorrectOption(option.id)
                                         }
                                         style={{
-                                            color: option.isCorrect ? 'var(--green)' : 'var(--text-muted)',
+                                            color: option.isCorrect ? 'var(--green-text)' : 'var(--text-muted)',
                                             flexShrink: 0,
                                         }}
                                     >
@@ -746,7 +746,7 @@ export default function QuestionEditor({
                                             })
                                         }
                                         style={{
-                                            color: option.imageUrl ? 'var(--accent)' : 'var(--text-muted)',
+                                            color: option.imageUrl ? 'var(--accent-text)' : 'var(--text-muted)',
                                             flexShrink: 0,
                                         }}
                                     >
@@ -769,7 +769,7 @@ export default function QuestionEditor({
                                         style={{
                                             color:
                                                 option.audioUrl || option.spokenText
-                                                    ? 'var(--accent)'
+                                                    ? 'var(--accent-text)'
                                                     : 'var(--text-muted)',
                                             flexShrink: 0,
                                         }}
@@ -780,7 +780,7 @@ export default function QuestionEditor({
                                         type="button"
                                         className="btn btn-ghost btn-icon btn-sm"
                                         aria-label={t('tests.remove_option')}
-                                        style={{ color: 'var(--red)' }}
+                                        style={{ color: 'var(--red-text)' }}
                                         disabled={question.options!.length <= 1}
                                         onClick={() => removeOption(option.id)}
                                     >
@@ -906,7 +906,7 @@ export default function QuestionEditor({
                                     question.correctBoolean === true
                                         ? '1px solid var(--green)'
                                         : '1px solid var(--border)',
-                                color: question.correctBoolean === true ? 'var(--green)' : 'var(--text)',
+                                color: question.correctBoolean === true ? 'var(--green-text)' : 'var(--text)',
                                 fontWeight: question.correctBoolean === true ? 700 : 400,
                             }}
                         >
@@ -927,7 +927,7 @@ export default function QuestionEditor({
                                     question.correctBoolean === false
                                         ? '1px solid var(--green)'
                                         : '1px solid var(--border)',
-                                color: question.correctBoolean === false ? 'var(--green)' : 'var(--text)',
+                                color: question.correctBoolean === false ? 'var(--green-text)' : 'var(--text)',
                                 fontWeight: question.correctBoolean === false ? 700 : 400,
                             }}
                         >
@@ -1164,7 +1164,7 @@ export default function QuestionEditor({
                                 type="button"
                                 className="btn btn-ghost btn-icon btn-sm"
                                 aria-label={t('tests.remove_option')}
-                                style={{ color: 'var(--red)' }}
+                                style={{ color: 'var(--red-text)' }}
                                 disabled={question.matchingPairs!.length <= 1}
                                 onClick={() => removeMatchingPair(pair.id)}
                             >
@@ -1222,7 +1222,7 @@ export default function QuestionEditor({
                                 type="button"
                                 className="btn btn-ghost btn-icon btn-sm"
                                 aria-label={t('tests.remove_option')}
-                                style={{ color: 'var(--red)' }}
+                                style={{ color: 'var(--red-text)' }}
                                 disabled={question.orderItems!.length <= 1}
                                 onClick={() => removeOrderItem(item.id)}
                             >
@@ -1260,7 +1260,7 @@ export default function QuestionEditor({
                                     type="button"
                                     className="btn btn-ghost btn-icon btn-sm"
                                     aria-label={t('tests.remove_option')}
-                                    style={{ color: 'var(--red)' }}
+                                    style={{ color: 'var(--red-text)' }}
                                     disabled={question.categories!.length <= 1}
                                     onClick={() => removeCategory(cat.id)}
                                 >
@@ -1300,7 +1300,7 @@ export default function QuestionEditor({
                                     type="button"
                                     className="btn btn-ghost btn-icon btn-sm"
                                     aria-label={t('tests.remove_option')}
-                                    style={{ color: 'var(--red)' }}
+                                    style={{ color: 'var(--red-text)' }}
                                     disabled={question.categorizeItems!.length <= 1}
                                     onClick={() => removeCategorizeItem(item.id)}
                                 >
@@ -1659,8 +1659,8 @@ export default function QuestionEditor({
                                 fontSize: '0.8rem',
                             }}
                         >
-                            <BookOpen size={13} style={{ color: 'var(--accent)' }} />
-                            <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
+                            <BookOpen size={13} style={{ color: 'var(--accent-text)' }} />
+                            <span style={{ color: 'var(--accent-text)', fontWeight: 600 }}>
                                 {std.statementNotation ?? std.guid}
                             </span>
                             <span
@@ -1698,8 +1698,8 @@ export default function QuestionEditor({
                                 fontSize: '0.8rem',
                             }}
                         >
-                            <GraduationCap size={13} style={{ color: 'var(--accent)' }} />
-                            <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{descriptor.level}</span>
+                            <GraduationCap size={13} style={{ color: 'var(--accent-text)' }} />
+                            <span style={{ color: 'var(--accent-text)', fontWeight: 600 }}>{descriptor.level}</span>
                             <span
                                 style={{
                                     color: 'var(--text)',

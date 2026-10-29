@@ -194,7 +194,7 @@ export default function EssayImportModal({
                     }}
                 >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <Upload size={18} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                        <Upload size={18} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
                         <h2 id="essay-import-title" style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>
                             Import essay — {studentName}
                         </h2>
@@ -213,8 +213,8 @@ export default function EssayImportModal({
                         textAlign: 'center',
                     }}
                 >
-                    <CheckCircle size={40} style={{ color: 'var(--green)' }} />
-                    <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--green)' }}>
+                    <CheckCircle size={40} style={{ color: 'var(--green-text)' }} />
+                    <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--green-text)' }}>
                         Essay imported successfully!
                     </div>
                     <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
@@ -228,7 +228,7 @@ export default function EssayImportModal({
                                 gap: 6,
                                 fontSize: '0.8rem',
                                 fontWeight: 600,
-                                color: 'var(--red)',
+                                color: 'var(--red-text)',
                                 background: 'color-mix(in srgb, var(--red) 10%, transparent)',
                                 border: '1px solid var(--red)',
                                 borderRadius: 6,
@@ -246,7 +246,7 @@ export default function EssayImportModal({
                                 gap: 6,
                                 fontSize: '0.8rem',
                                 fontWeight: 600,
-                                color: 'var(--yellow)',
+                                color: 'var(--yellow-text)',
                                 background: 'color-mix(in srgb, var(--yellow) 10%, transparent)',
                                 border: '1px solid var(--yellow)',
                                 borderRadius: 6,
@@ -280,7 +280,7 @@ export default function EssayImportModal({
                 }}
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Upload size={18} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                    <Upload size={18} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
                     <h2 id="essay-import-title" style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>
                         Import essay — {studentName}
                     </h2>
@@ -309,7 +309,7 @@ export default function EssayImportModal({
                                 border: 'none',
                                 background: 'none',
                                 fontWeight: tab === t ? 700 : 400,
-                                color: tab === t ? 'var(--accent)' : 'var(--text-muted)',
+                                color: tab === t ? 'var(--accent-text)' : 'var(--text-muted)',
                                 borderBottom: tab === t ? '2px solid var(--accent)' : '2px solid transparent',
                                 cursor: 'pointer',
                                 display: 'flex',
@@ -362,7 +362,7 @@ export default function EssayImportModal({
                                     border: '1px solid var(--red)',
                                     borderRadius: 8,
                                     fontSize: '0.8rem',
-                                    color: 'var(--red)',
+                                    color: 'var(--red-text)',
                                 }}
                             >
                                 {dbError}
@@ -429,7 +429,7 @@ export default function EssayImportModal({
                                                             alignItems: 'center',
                                                             gap: 3,
                                                             fontWeight: 600,
-                                                            color: 'var(--red)',
+                                                            color: 'var(--red-text)',
                                                             background:
                                                                 'color-mix(in srgb, var(--red) 10%, transparent)',
                                                             border: '1px solid var(--red)',
@@ -447,7 +447,7 @@ export default function EssayImportModal({
                                                             alignItems: 'center',
                                                             gap: 3,
                                                             fontWeight: 600,
-                                                            color: 'var(--yellow)',
+                                                            color: 'var(--yellow-text)',
                                                             background:
                                                                 'color-mix(in srgb, var(--yellow) 10%, transparent)',
                                                             border: '1px solid var(--yellow)',
@@ -470,7 +470,7 @@ export default function EssayImportModal({
                                         {onDeleteSubmission && (
                                             <button
                                                 className="btn btn-ghost btn-icon btn-sm"
-                                                style={{ color: 'var(--red)' }}
+                                                style={{ color: 'var(--red-text)' }}
                                                 title={t('tooltips.delete_submission')}
                                                 disabled={!!importingId || !!deletingId}
                                                 onClick={() => handleDelete(sub)}
@@ -517,7 +517,7 @@ export default function EssayImportModal({
                                     border: '1px solid var(--red)',
                                     borderRadius: 8,
                                     fontSize: '0.8rem',
-                                    color: 'var(--red)',
+                                    color: 'var(--red-text)',
                                 }}
                             >
                                 {error}

@@ -142,7 +142,7 @@ export default function GlobalSearch({ onClose, growFrom }: Props) {
                                                 style={{
                                                     marginLeft: 6,
                                                     fontSize: 10,
-                                                    color: 'var(--accent)',
+                                                    color: 'var(--accent-text)',
                                                     border: '1px solid var(--accent)',
                                                     borderRadius: 8,
                                                     padding: '0 6px',
