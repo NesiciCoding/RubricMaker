@@ -36,6 +36,7 @@ import {
     RemoveFormatting,
     Unlink,
     FileText,
+    GripVertical,
 } from 'lucide-react';
 import CardGrip from '../ui/CardGrip';
 
@@ -665,7 +666,14 @@ export default function EssayEditor({
 
             {editable && showDragHandle && (
                 <DragHandle editor={editor}>
-                    <CardGrip label={t('editor.dragToReorder')} size={14} style={{ padding: 2, margin: 0 }} />
+                    {/* TipTap owns the drag, so this grip gets no `dragHandleProps` and therefore no
+                        role — a name is carried by sr-only text rather than an invalid `aria-label`
+                        on a role-less span (#697). `touch-action: none` lives on `.drag-handle` so
+                        the wrapper's 4px padding cannot start a browser pan. */}
+                    <CardGrip size={14} style={{ padding: 2, margin: 0 }}>
+                        <GripVertical size={14} aria-hidden="true" />
+                        <span className="sr-only">{t('editor.dragToReorder')}</span>
+                    </CardGrip>
                 </DragHandle>
             )}
 

@@ -165,7 +165,16 @@ export default memo(function CriterionCard({
                                     name: criterion.title || t('rubricBuilder.untitled'),
                                 })}
                                 size={16}
-                                style={{ alignSelf: 'center', padding: 3, margin: 0 }}
+                                // 16px glyph + 3px padding is 22px; the minimums complete the
+                                // 25px touch target the cards get from their 5px padding.
+                                style={{
+                                    alignSelf: 'center',
+                                    padding: 3,
+                                    margin: 0,
+                                    minWidth: 25,
+                                    minHeight: 25,
+                                    justifyContent: 'center',
+                                }}
                             />
                             <button
                                 className="btn btn-ghost btn-icon btn-sm"

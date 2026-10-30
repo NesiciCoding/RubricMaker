@@ -868,7 +868,16 @@ export default function StudentsPage() {
                                                             {...classDragProvided.dragHandleProps}
                                                             label={t('rubricList.drag_to_reorder')}
                                                             size={13}
-                                                            style={{ padding: '0 2px', margin: 0 }}
+                                                            // A 13px glyph in a row this tight: the
+                                                            // padding alone never reaches 25px, so the
+                                                            // minimums set the target.
+                                                            style={{
+                                                                padding: '0 2px',
+                                                                margin: 0,
+                                                                minWidth: 25,
+                                                                minHeight: 25,
+                                                                justifyContent: 'center',
+                                                            }}
                                                         />
                                                         <button
                                                             type="button"
