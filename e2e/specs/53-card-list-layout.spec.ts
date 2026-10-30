@@ -71,6 +71,8 @@ interface DashboardMetrics {
     cellWidth: number;
     /** How far the name is clipped: 0 would mean it widened its cell instead. */
     nameClipped: number;
+    /** Computed text-overflow of the name button; clipping without this elides mid-glyph. */
+    nameTextOverflow: string;
     overflow: { page: number; grid: number; viewport: number };
 }
 
@@ -88,6 +90,7 @@ async function measureDashboard(page: Page, activityName: string): Promise<Dashb
             headerWidth: header ? Math.round(header.getBoundingClientRect().width) : -1,
             cellWidth: cell ? Math.round(cell.getBoundingClientRect().width) : -1,
             nameClipped: nameButton ? nameButton.scrollWidth - nameButton.clientWidth : -1,
+            nameTextOverflow: nameButton ? getComputedStyle(nameButton).textOverflow : '',
             overflow: {
                 page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
                 grid: grid ? grid.scrollWidth - grid.clientWidth : 0,
@@ -283,6 +286,13 @@ test.describe('Card lists stay inside the page and keep their tile width', () =>
             ).toBeLessThanOrEqual(220);
             expect(width, `folders: a tile collapsed to nothing (${metrics.widths.join(', ')})`).toBeGreaterThan(120);
         }
+        // Bounds alone pass an uneven row — [150, 220, 220, 220, 220, 220] is inside them — so the
+        // tiles are also required to agree with each other. A responsive shrink moves them together;
+        // one tile stretching while its neighbours don't is the regression.
+        expect(
+            Math.max(...metrics.widths) - Math.min(...metrics.widths),
+            `folders: tile widths are inconsistent (${metrics.widths.join(', ')})`
+        ).toBeLessThanOrEqual(1);
     });
 
     test('the dashboard caps its activity column and keeps the table inside the page', async ({
@@ -323,7 +333,10 @@ test.describe('Card lists stay inside the page and keep their tile width', () =>
         expect(metrics.headerWidth, 'dashboard: the activity header widened').toBeLessThanOrEqual(201);
         expect(metrics.cellWidth, 'dashboard: the activity cell widened').toBeLessThanOrEqual(201);
         expect(metrics.cellWidth, 'dashboard: the activity cell vanished').toBeGreaterThan(0);
-        // The name has to be clipped, not allowed to set the column width.
-        expect(metrics.nameClipped, 'dashboard: the long name is not ellipsised').toBeGreaterThan(0);
+        // The name has to be clipped, not allowed to set the column width — and clipped with an
+        // ellipsis: `scrollWidth > clientWidth` is true for any overflow, so on its own it would
+        // still pass if `text-overflow` were dropped and the name were cut mid-glyph.
+        expect(metrics.nameClipped, 'dashboard: the long name is not clipped').toBeGreaterThan(0);
+        expect(metrics.nameTextOverflow, 'dashboard: the long name has no ellipsis style').toBe('ellipsis');
     });
 });
