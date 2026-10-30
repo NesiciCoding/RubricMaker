@@ -540,6 +540,26 @@ describe('RubricBuilder', () => {
         expect(mockNavigate).toHaveBeenCalledWith('/rubrics/new-r', { replace: true });
     });
 
+    it('does not leave the saved-badge timer running once the page unmounts', () => {
+        // Saving a new rubric navigates away in the same tick, so the badge's 2s timer used to
+        // outlive the component. Under the coverage run it then fired after jsdom was torn down,
+        // and Vitest failed the job on `ReferenceError: window is not defined`.
+        const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+        const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
+        const { unmount } = renderNew();
+        fireEvent.change(screen.getByPlaceholderText('rubricBuilder.placeholder_name'), {
+            target: { value: 'Badge Timer' },
+        });
+        fireEvent.click(screen.getByText('rubricBuilder.action_save'));
+        const badgeCall = setTimeoutSpy.mock.calls.findIndex(([, delay]) => delay === 2000);
+        expect(badgeCall, 'save should schedule the badge auto-hide').toBeGreaterThan(-1);
+        const badgeTimer = setTimeoutSpy.mock.results[badgeCall].value;
+        unmount();
+        expect(clearTimeoutSpy).toHaveBeenCalledWith(badgeTimer);
+        setTimeoutSpy.mockRestore();
+        clearTimeoutSpy.mockRestore();
+    });
+
     it('stays clean under StrictMode, where effects run twice on mount', () => {
         // The dev double-invoke used to flip the mount-skip ref and mark a pristine form dirty,
         // so leaving an untouched rubric raised the 'unsaved changes' dialog.

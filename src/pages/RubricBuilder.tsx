@@ -280,6 +280,8 @@ function RubricBuilderEditor() {
         tiered,
     });
     const savedSnapshotRef = useRef<{ formSnapshot: string; criteriaSnapshot: string } | null>(null);
+    // handle for the "Saved" badge's auto-hide, cleared on unmount below
+    const savedBadgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [isDirty, setIsDirty] = useState(false);
     useEffect(() => {
         if (savedSnapshotRef.current === null) {
@@ -291,6 +293,16 @@ function RubricBuilderEditor() {
                 criteriaSnapshot !== savedSnapshotRef.current.criteriaSnapshot
         );
     }, [formSnapshot, criteriaSnapshot]);
+    // The badge's timer must not outlive the page. Saving a *new* rubric navigates away in the
+    // same tick, so the pending timeout would otherwise call setSaved on an unmounted tree — which
+    // under jsdom lands after the environment is torn down and surfaces as an unhandled
+    // `ReferenceError: window is not defined` that fails the whole run.
+    useEffect(
+        () => () => {
+            if (savedBadgeTimerRef.current !== null) clearTimeout(savedBadgeTimerRef.current);
+        },
+        []
+    );
     const { dialogProps: unsavedDialogProps } = useUnsavedChangesGuard(isDirty);
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
 
@@ -486,7 +498,11 @@ function RubricBuilderEditor() {
             navigate(`/rubrics/${newR.id}`, { replace: true });
         }
         setSaved(true);
-        setTimeout(() => setSaved(false), 2000);
+        if (savedBadgeTimerRef.current !== null) clearTimeout(savedBadgeTimerRef.current);
+        savedBadgeTimerRef.current = setTimeout(() => {
+            savedBadgeTimerRef.current = null;
+            setSaved(false);
+        }, 2000);
     }, [
         name,
         subject,
