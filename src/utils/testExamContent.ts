@@ -409,11 +409,11 @@ export const SCAN_QR_INSET_MM = 6;
 const SCAN_MARKER_SAFETY_PAD_MM = 2;
 
 /**
- * Top/bottom page margin (mm) that answer sheets need when `scanMarkers` is on, so the fiducials
- * and the per-page QR code (both drawn inside the page's repeating header/footer band, see
- * withoutBrowserPrintChrome in pdfExport.ts) sit entirely within that band instead of bleeding into
- * the real content below/above it. The default PRINT_MARGIN_MM (10mm) is too small for either: the
- * fiducials' own inset+size is 14mm, and the QR's is 24mm — both larger than a 10mm margin.
+ * Top/bottom page margin (mm) reserved on every answer sheet, so the fiducials and the per-page QR
+ * code (drawn inside the page's repeating header/footer band, see withoutBrowserPrintChrome in
+ * pdfExport.ts) fit when markers are printed, and so a markerless sheet has exactly the same layout
+ * as one with markers. The default PRINT_MARGIN_MM (10mm) is too small for either marker: the
+ * fiducials' own inset+size is 14mm, and the QR's is 24mm.
  */
 export function scanMarkerMarginsMm(): { top: number; bottom: number } {
     const markers = fiducialMarkers();
@@ -435,13 +435,47 @@ export interface AnswerBlockGeometry {
     number: number;
     space: AnswerSpaceSpec;
     x: number;
+    /** Top of the block in mm from the top of its printed page. */
     y: number;
     width: number;
-    /** Estimated block height in mm, from ANSWER_SPACE_HEIGHT_MM — a content-flow hint, not a page-break-aware final coordinate (a 'long' block's actual printed height depends on where the page breaks). */
+    /**
+     * Exact printed block height in mm. Every renderer gives the block a fixed height of exactly
+     * this size, so the y positions below are authoritative print coordinates rather than a flow
+     * estimate that drifts as content is laid out.
+     */
     height: number;
 }
 
-const ANSWER_SHEET_HEADER_HEIGHT_MM = 40;
+/** Content below the first page's title/name header, in mm from the physical page top. */
+export const ANSWER_SHEET_FIRST_BLOCK_MM = 56;
+
+/**
+ * Space reserved at the bottom of every printed page for the teacher's print footer (rendered on the
+ * sheet's last page only). Reserving it on every page keeps block positions independent of where
+ * the footer lands, so the scanner's block geometry cannot drift.
+ */
+export const ANSWER_SHEET_FOOTER_MM = 12;
+
+/**
+ * Printable header/footer band reserved around answer-sheet content, in mm. This is deliberately the
+ * same whether scan markers are printed or not: the wide band is always reserved, and markers simply
+ * draw inside it when enabled. A markerless sheet therefore has identical block geometry to one
+ * with markers, so the scanner never has to infer which layout was printed.
+ */
+export function answerSheetPageMargins(): { top: number; bottom: number } {
+    return scanMarkerMarginsMm();
+}
+
+/** Padding above/below an answer block's contents, in mm. */
+export const ANSWER_BLOCK_PADDING_MM = 2;
+/** Fixed height of the printed question-number line at the top of an answer block, in mm. */
+export const ANSWER_NUMBER_LINE_MM = 4;
+/**
+ * Offset from a block's top edge to the start of its answer space, in mm. Both renderers and the
+ * scanner's per-cell crops (choiceCellRects) use this, so a bubble row is scanned where it was
+ * actually printed rather than a question-number line too high.
+ */
+export const ANSWER_SPACE_TOP_MM = ANSWER_BLOCK_PADDING_MM + ANSWER_NUMBER_LINE_MM;
 
 /** Height of the ruled writing box for a 'long' (open-answer) question, in mm — shared by both renderers so the HTML box and the DOCX lined table stay the same size. */
 export const LONG_ANSWER_HEIGHT_MM = 130;
@@ -452,32 +486,33 @@ export const CHOICE_CELL_WIDTH_MM = 11;
 /** Gap between adjacent MC/choice bubble cells, in mm — shared by the HTML/DOCX renderers and the scan-region pixel mapping (examScanRegions.ts) so a scanned sheet's bubble positions match what was actually printed. */
 export const CHOICE_CELL_GAP_MM = 4;
 
-/** Estimated mm height per AnswerSpaceKind, used only to compute the running `y` flow hint below. */
+/** Fixed printed height per answer-space kind, including the block's padding and question number. Kept in sync with answerBlockHtml/answerSpaceHtml in testExamExportHtml.ts. */
 const ANSWER_SPACE_HEIGHT_MM: Record<AnswerSpaceKind, number> = {
-    choice: 12,
-    short: 18,
-    long: LONG_ANSWER_HEIGHT_MM,
-    numeric: 12,
-    subitems: 8,
-    none: 8,
+    choice: 20,
+    short: 20,
+    long: LONG_ANSWER_HEIGHT_MM + 10,
+    numeric: 14,
+    subitems: 10,
+    none: 12,
 };
 
+/** Fixed height of one numbered sub-item line, in mm — shared with the renderer so the block height and the printed lines can't drift. */
+export const SUBITEM_LINE_MM = 5;
+
 function blockHeightMm(space: AnswerSpaceSpec): number {
-    if (space.kind === 'subitems') return 6 + (space.subItemCount ?? 1) * ANSWER_SPACE_HEIGHT_MM.subitems;
+    if (space.kind === 'subitems') return ANSWER_SPACE_HEIGHT_MM.subitems + (space.subItemCount ?? 1) * SUBITEM_LINE_MM;
     return ANSWER_SPACE_HEIGHT_MM[space.kind];
 }
 
 /**
- * Content-aware, per-question layout of the answer sheet: each question gets an AnswerSpaceSpec
- * (empty bubbles, short lines, a half-page box, ...) plus an approximate mm position/height. The
- * `y` values assume a simple single-column top-to-bottom flow and do NOT simulate page breaks, so
- * they're a structural hint for a future OCR pass (roughly where things are, in question order)
- * rather than exact final print coordinates.
+ * Content-aware, per-question layout of the answer sheet, as one continuous flow. Each question
+ * gets an AnswerSpaceSpec (empty bubbles, short lines, a half-page box, ...) and an exact printed
+ * height. Use `answerSheetPages()` for the page-break-aware layout used by printing and scanning.
  */
 export function answerSheetGeometry(test: Test): AnswerBlockGeometry[] {
     const { margin, width } = EXAM_PAGE_MM;
     const blocks: AnswerBlockGeometry[] = [];
-    let y = ANSWER_SHEET_HEADER_HEIGHT_MM;
+    let y = ANSWER_SHEET_FIRST_BLOCK_MM;
     for (const group of groupQuestionsBySection(test)) {
         for (const { question, number } of group.questions) {
             const space = answerSpaceFor(question);
@@ -489,22 +524,63 @@ export function answerSheetGeometry(test: Test): AnswerBlockGeometry[] {
     return blocks;
 }
 
+export interface AnswerSheetPage {
+    /** 1-based printed page number. */
+    pageNumber: number;
+    blocks: AnswerBlockGeometry[];
+}
+
+/**
+ * The authoritative page-break-aware answer-sheet layout. Blocks are packed in question order and
+ * never split across pages; each page's block `y` is its absolute position from that page's top.
+ * Both the renderer and the scanner use this function, so a scanned page N maps onto exactly the
+ * blocks that were printed on page N. The layout does not depend on scan markers being printed.
+ */
+export function answerSheetPages(test: Test): AnswerSheetPage[] {
+    const margins = answerSheetPageMargins();
+    const bottomLimit = EXAM_PAGE_MM.height - margins.bottom - ANSWER_SHEET_FOOTER_MM;
+    const pages: AnswerSheetPage[] = [];
+    let blocks: AnswerBlockGeometry[] = [];
+    let y = ANSWER_SHEET_FIRST_BLOCK_MM;
+
+    for (const block of answerSheetGeometry(test)) {
+        if (blocks.length > 0 && y + block.height > bottomLimit) {
+            pages.push({ pageNumber: pages.length + 1, blocks });
+            blocks = [];
+            y = margins.top;
+        }
+        blocks.push({ ...block, y });
+        y += block.height;
+    }
+    pages.push({ pageNumber: pages.length + 1, blocks });
+    return pages;
+}
+
+export function answerSheetPageCount(test: Test): number {
+    return answerSheetPages(test).length;
+}
+
 export interface AnswerSheetQrPayload {
     testId: string;
     studentId?: string;
     sheetType: 'answer';
+    /** Total printed pages of this student's answer sheet, when known. */
+    pages?: number;
+}
+
+export interface AnswerSheetQrOptions {
+    pages?: number;
 }
 
 /**
- * JSON payload encoded into an answer sheet's QR marker (repeated on every page of the sheet, so it
- * carries no page number — a scanner recovers page order from scan order), for a future
- * scan-ingestion step to identify the sheet. This is a plain identifier, not a signed/verifiable credential — anyone
- * who can read the QR (e.g. a photo of a handed-out sheet) can reconstruct or forge one. A future
- * ingestion step must not treat a scanned `studentId` as proof of who submitted the sheet; it needs
- * its own authentication (e.g. requiring the submitting teacher's session, or cross-checking against
- * an expected roster) before accepting scanned answers as that student's.
+ * JSON payload encoded into an answer sheet's QR marker. It repeats on every page of the sheet
+ * (no page number): a scanner groups pages by the student id and recovers page order from scan
+ * order. This is a plain identifier, not a signed/verifiable credential — anyone who can read the
+ * QR (e.g. a photo of a handed-out sheet) can reconstruct or forge one. Ingestion must treat a
+ * scanned `studentId` as a prefilled suggestion for the teacher, never as proof of submission.
  */
-export function answerSheetQrPayload(testId: string, studentId?: string): string {
+export function answerSheetQrPayload(testId: string, studentId?: string, opts: AnswerSheetQrOptions = {}): string {
     const payload: AnswerSheetQrPayload = { testId, studentId, sheetType: 'answer' };
+    if (opts.pages !== undefined) payload.pages = opts.pages;
     return JSON.stringify(payload);
 }
