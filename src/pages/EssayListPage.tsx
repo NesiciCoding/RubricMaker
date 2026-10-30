@@ -8,11 +8,19 @@ import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import { useAuthoring, useClasses, useEssays, useStudents } from '../context/AppContext';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import CardGrid from '../components/ui/CardGrid';
+import CardTile from '../components/ui/CardTile';
+import CardGrip from '../components/ui/CardGrip';
+import FolderBar from '../components/Folders/FolderBar';
+import FolderNameModal from '../components/Folders/FolderNameModal';
+import { useToast } from '../hooks/useToast';
 import { useConfirm } from '../hooks/useConfirm';
+import { useFolderDropTarget } from '../hooks/useFolderDropTarget';
 import { useOnlineEssaySubmissions } from '../hooks/useOnlineEssaySubmissions';
 import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
 import { getCohortStudentIds, isAllCohorts, ALL_COHORTS } from '../utils/cohortAggregator';
-import type { CohortFilter as CohortFilterValue } from '../types';
+import { ALL_FOLDERS, countInFolder, filterByFolder, foldersForKind, nextFolderOrder } from '../utils/folders';
+import type { CohortFilter as CohortFilterValue, Folder } from '../types';
 import CohortFilter from '../components/CohortFilter';
 
 export default function EssayListPage() {
@@ -22,17 +30,30 @@ export default function EssayListPage() {
     const { students } = useStudents();
     const { classes } = useClasses();
 
-    const { rubrics } = useAuthoring();
+    const {
+        rubrics,
+        // `= []` guards page tests and older local snapshots that predate the collection.
+        folders = [],
+        addFolder,
+        updateFolder,
+        deleteFolder,
+    } = useAuthoring();
     const { essayAssignments, essaySubmissions, deleteEssayGroup, updateEssayGroup } = useEssays();
     const onlineEssaySubmissions = useOnlineEssaySubmissions();
 
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
+    const { showToast } = useToast();
     const [cohortFilter, setCohortFilter] = React.useState<CohortFilterValue>(ALL_COHORTS);
+    const [activeFolder, setActiveFolder] = React.useState<string>(ALL_FOLDERS);
+    const [folderModal, setFolderModal] = React.useState<{ folder?: Folder } | null>(null);
+    const { dropFolderId, startFolderDrop, endFolderDrop } = useFolderDropTarget();
     const cohortStudentIds = React.useMemo(
         () => getCohortStudentIds(students, classes, cohortFilter),
         [students, classes, cohortFilter]
     );
-    const reorderable = isAllCohorts(cohortFilter);
+    // Reordering writes displayOrder back by index, so it only runs while the list is
+    // unfiltered — under a cohort or folder filter the index would not be the list's position.
+    const reorderable = isAllCohorts(cohortFilter) && activeFolder === ALL_FOLDERS;
 
     const groups = React.useMemo(() => {
         const byKey = new Map<string, typeof essayAssignments>();
@@ -45,6 +66,7 @@ export default function EssayListPage() {
             teacherKey,
             rows,
             displayOrder: rows[0]?.displayOrder,
+            folderId: rows[0]?.folderId,
             // v8 ignore next line — grouped rows always have ≥1 row with a createdAt
             createdAt: rows[0]?.createdAt ?? '',
         }));
@@ -53,12 +75,62 @@ export default function EssayListPage() {
         );
     }, [essayAssignments, cohortFilter, cohortStudentIds]);
 
+    const essayFolders = foldersForKind(folders, 'essay');
+    const visibleGroups = filterByFolder(groups, activeFolder);
+
+    function fileIntoFolder(teacherKey: string | undefined, folderId: string) {
+        const group = groups.find((g) => g.teacherKey === teacherKey);
+        if (!group || group.folderId === folderId) return;
+        // Every assignment row of the group carries the folder, so the group stays together.
+        updateEssayGroup(group.teacherKey, { folderId });
+        const folder = essayFolders.find((f) => f.id === folderId);
+        if (folder) showToast(t('folders.moved_toast', { name: folder.name }), 'success');
+    }
+
     function handleDragEnd(result: DropResult) {
+        // The pointer decides which folder was under the card: @hello-pangea/dnd only sees the
+        // dragged card's centre, which never reaches a folder tile from a corner grab.
+        const pointerFolderId = endFolderDrop();
+        // `reason` guards Escape: a cancelled drag still reports where the pointer was.
+        if (pointerFolderId && result.reason === 'DROP') {
+            fileIntoFolder(visibleGroups[result.source.index]?.teacherKey, pointerFolderId);
+            return;
+        }
         if (!result.destination || !reorderable) return;
         if (result.destination.index === result.source.index) return;
-        for (const [group, order] of reorderDisplayOrder(groups, result.source.index, result.destination.index)) {
+        for (const [group, order] of reorderDisplayOrder(
+            visibleGroups,
+            result.source.index,
+            result.destination.index
+        )) {
             if (group.displayOrder !== order) updateEssayGroup(group.teacherKey, { displayOrder: order });
         }
+    }
+
+    function submitFolderName(name: string) {
+        const editing = folderModal?.folder;
+        if (editing) {
+            updateFolder({ ...editing, name });
+            showToast(t('folders.renamed_toast'), 'success');
+        } else {
+            const folder = addFolder({ name, kind: 'essay', displayOrder: nextFolderOrder(folders, 'essay') });
+            setActiveFolder(folder.id);
+            showToast(t('folders.created_toast', { name }), 'success');
+        }
+        setFolderModal(null);
+    }
+
+    async function handleDeleteFolder(folder: Folder) {
+        const ok = await confirm({
+            title: t('folders.delete_title'),
+            message: t('folders.delete_warning_other', { name: folder.name }),
+            confirmLabel: t('common.delete'),
+            danger: true,
+        });
+        if (!ok) return;
+        deleteFolder(folder.id, 'essay');
+        if (activeFolder === folder.id) setActiveFolder(ALL_FOLDERS);
+        showToast(t('folders.deleted_toast', { name: folder.name }), 'success');
     }
 
     // Offline (pasted-code) submissions come from the hydrated essaySubmissions; online hand-ins
@@ -106,7 +178,7 @@ export default function EssayListPage() {
                 <div data-tour="el-filters" style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
                     <CohortFilter classes={classes} value={cohortFilter} onChange={setCohortFilter} />
                 </div>
-                {groups.length === 0 ? (
+                {groups.length === 0 && essayFolders.length === 0 ? (
                     <div className="empty-state">
                         <FileText size={40} />
                         <h3>{t('essays.no_essays')}</h3>
@@ -116,210 +188,209 @@ export default function EssayListPage() {
                         </button>
                     </div>
                 ) : (
-                    <DragDropContext onDragEnd={handleDragEnd}>
-                        <Droppable droppableId="essay-list">
-                            {(droppableProvided) => (
-                                <div
-                                    ref={droppableProvided.innerRef}
-                                    {...droppableProvided.droppableProps}
-                                    style={{
-                                        // ponytail: flex-wrap, not CSS grid — see RubricList for why @hello-pangea/dnd needs this
-                                        display: 'flex',
-                                        flexWrap: 'wrap',
-                                        gap: 16,
-                                    }}
-                                >
-                                    {groups.map(({ teacherKey, rows }, idx) => {
-                                        const first = rows[0];
-                                        const rubric = rubrics.find((r) => r.id === first.rubricId);
-                                        const submitted = submittedCount(teacherKey);
-                                        return (
-                                            <Draggable
-                                                key={teacherKey}
-                                                draggableId={teacherKey}
-                                                index={idx}
-                                                isDragDisabled={!reorderable}
-                                            >
-                                                {(dragProvided) => (
-                                                    <div
-                                                        ref={dragProvided.innerRef}
-                                                        {...dragProvided.draggableProps}
-                                                        className="card"
-                                                        style={{
-                                                            transition: 'border-color var(--transition)',
-                                                            // Fixed basis, no grow: every tile keeps the same
-                                                            // width on every row. minWidth 0 is required — a
-                                                            // flex item's automatic minimum is its min-content
-                                                            // width, so a long title would stretch the card past
-                                                            // the basis and overflow the page.
-                                                            flex: '0 1 400px',
-                                                            minWidth: 0,
-                                                            maxWidth: '100%',
-                                                            ...dragProvided.draggableProps.style,
-                                                        }}
-                                                    >
-                                                        <div
-                                                            style={{
-                                                                display: 'flex',
-                                                                justifyContent: 'space-between',
-                                                                alignItems: 'flex-start',
-                                                                marginBottom: 12,
-                                                            }}
+                    <DragDropContext onBeforeCapture={startFolderDrop} onDragEnd={handleDragEnd}>
+                        <FolderBar
+                            folders={essayFolders}
+                            activeFolder={activeFolder}
+                            countFor={(folderId) => countInFolder(groups, folderId)}
+                            dropFolderId={dropFolderId}
+                            onOpen={(id) => setActiveFolder((current) => (current === id ? ALL_FOLDERS : id))}
+                            onRename={(folder) => setFolderModal({ folder })}
+                            onDelete={handleDeleteFolder}
+                            onCreate={() => setFolderModal({})}
+                        />
+                        {visibleGroups.length === 0 ? (
+                            <div className="empty-state">
+                                <FileText size={40} />
+                                <h3>{t('folders.empty')}</h3>
+                                <p className="text-muted text-sm">{t('folders.empty_hint')}</p>
+                            </div>
+                        ) : (
+                            <Droppable droppableId="essay-list">
+                                {(droppableProvided) => (
+                                    <CardGrid ref={droppableProvided.innerRef} {...droppableProvided.droppableProps}>
+                                        {visibleGroups.map(({ teacherKey, rows }, idx) => {
+                                            const first = rows[0];
+                                            const rubric = rubrics.find((r) => r.id === first.rubricId);
+                                            const submitted = submittedCount(teacherKey);
+                                            return (
+                                                <Draggable
+                                                    key={teacherKey}
+                                                    draggableId={teacherKey}
+                                                    index={idx}
+                                                    isDragDisabled={!reorderable}
+                                                >
+                                                    {(dragProvided) => (
+                                                        <CardTile
+                                                            ref={dragProvided.innerRef}
+                                                            {...dragProvided.draggableProps}
+                                                            style={dragProvided.draggableProps.style}
                                                         >
                                                             <div
                                                                 style={{
                                                                     display: 'flex',
+                                                                    justifyContent: 'space-between',
                                                                     alignItems: 'flex-start',
-                                                                    gap: 6,
+                                                                    marginBottom: 12,
                                                                 }}
                                                             >
-                                                                {reorderable && (
-                                                                    <span
-                                                                        {...dragProvided.dragHandleProps}
-                                                                        aria-label={t('rubricList.drag_to_reorder')}
-                                                                        style={{
-                                                                            cursor: 'grab',
-                                                                            color: 'var(--text-dim)',
-                                                                            display: 'flex',
-                                                                            alignItems: 'center',
-                                                                            flexShrink: 0,
-                                                                            // Padding (cancelled by the negative
-                                                                            // margin) grows the grab area around
-                                                                            // the corner glyph to a 25px target.
-                                                                            padding: 5,
-                                                                            margin: '-1px 0 0 -5px',
-                                                                            touchAction: 'none',
-                                                                        }}
-                                                                    >
-                                                                        <GripVertical size={15} />
-                                                                    </span>
-                                                                )}
-                                                                <div style={{ minWidth: 0 }}>
-                                                                    <h3>{first.title}</h3>
-                                                                    <div
-                                                                        className="text-muted text-xs"
-                                                                        style={{ marginTop: 2 }}
-                                                                    >
-                                                                        {new Date(first.createdAt).toLocaleDateString()}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div style={{ display: 'flex', gap: 4 }}>
-                                                                <button
-                                                                    type="button"
-                                                                    className="btn btn-ghost btn-icon btn-sm"
-                                                                    title={t('tests.action_edit')}
-                                                                    aria-label={t('tests.action_edit')}
-                                                                    onClick={() => navigate(`/essays/${teacherKey}`)}
-                                                                >
-                                                                    <Edit2 size={14} />
-                                                                </button>
-                                                                <button
-                                                                    type="button"
-                                                                    className="btn btn-ghost btn-icon btn-sm"
-                                                                    title={t('tests.action_delete')}
-                                                                    aria-label={t('tests.action_delete')}
-                                                                    style={{ color: 'var(--red)' }}
-                                                                    onClick={() =>
-                                                                        handleDelete(teacherKey, first.title)
-                                                                    }
-                                                                >
-                                                                    <Trash2 size={14} />
-                                                                </button>
-                                                            </div>
-                                                        </div>
-
-                                                        <div
-                                                            style={{
-                                                                display: 'flex',
-                                                                gap: 8,
-                                                                flexWrap: 'wrap',
-                                                                marginBottom: 14,
-                                                            }}
-                                                        >
-                                                            {rubric && (
-                                                                <span className="badge badge-blue">{rubric.name}</span>
-                                                            )}
-                                                            <span className="badge badge-purple">
-                                                                {t('essays.assigned_students_title')}: {rows.length}
-                                                            </span>
-                                                            <div
-                                                                style={{
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    gap: 6,
-                                                                    minWidth: 120,
-                                                                }}
-                                                            >
-                                                                <span className="text-muted text-xs">
-                                                                    {t('essays.submission_status_submitted')}
-                                                                </span>
                                                                 <div
-                                                                    role="progressbar"
-                                                                    aria-valuenow={
-                                                                        // v8 ignore next line — grouped rows always have at least one row
-                                                                        rows.length
-                                                                            ? Math.round(
-                                                                                  (submitted / rows.length) * 100
-                                                                              )
-                                                                            : 0
-                                                                    }
-                                                                    aria-valuemin={0}
-                                                                    aria-valuemax={100}
                                                                     style={{
-                                                                        flex: 1,
-                                                                        height: 6,
-                                                                        borderRadius: 3,
-                                                                        background: 'var(--border)',
-                                                                        overflow: 'hidden',
+                                                                        display: 'flex',
+                                                                        alignItems: 'flex-start',
+                                                                        gap: 6,
                                                                     }}
                                                                 >
-                                                                    <div
-                                                                        style={{
-                                                                            height: '100%',
-                                                                            width: `${
-                                                                                // v8 ignore next line — grouped rows always have at least one row
-                                                                                rows.length
-                                                                                    ? (submitted / rows.length) * 100
-                                                                                    : 0
-                                                                            }%`,
-                                                                            background: 'var(--green, #22c55e)',
-                                                                        }}
-                                                                    />
+                                                                    {reorderable && (
+                                                                        <CardGrip
+                                                                            {...dragProvided.dragHandleProps}
+                                                                            label={t('rubricList.drag_to_reorder')}
+                                                                        />
+                                                                    )}
+                                                                    <div style={{ minWidth: 0 }}>
+                                                                        <h3>{first.title}</h3>
+                                                                        <div
+                                                                            className="text-muted text-xs"
+                                                                            style={{ marginTop: 2 }}
+                                                                        >
+                                                                            {new Date(
+                                                                                first.createdAt
+                                                                            ).toLocaleDateString()}
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
-                                                                <span className="text-muted text-xs">
-                                                                    {submitted}/{rows.length}
-                                                                </span>
+                                                                <div style={{ display: 'flex', gap: 4 }}>
+                                                                    <button
+                                                                        type="button"
+                                                                        className="btn btn-ghost btn-icon btn-sm"
+                                                                        title={t('tests.action_edit')}
+                                                                        aria-label={t('tests.action_edit')}
+                                                                        onClick={() =>
+                                                                            navigate(`/essays/${teacherKey}`)
+                                                                        }
+                                                                    >
+                                                                        <Edit2 size={14} />
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        className="btn btn-ghost btn-icon btn-sm"
+                                                                        title={t('tests.action_delete')}
+                                                                        aria-label={t('tests.action_delete')}
+                                                                        style={{ color: 'var(--red)' }}
+                                                                        onClick={() =>
+                                                                            handleDelete(teacherKey, first.title)
+                                                                        }
+                                                                    >
+                                                                        <Trash2 size={14} />
+                                                                    </button>
+                                                                </div>
                                                             </div>
-                                                        </div>
 
-                                                        <div style={{ display: 'flex', gap: 8 }}>
-                                                            <button
-                                                                type="button"
-                                                                className="btn btn-primary btn-sm"
-                                                                style={{ flex: '1 1 auto' }}
-                                                                onClick={() => navigate(`/essays/${teacherKey}`)}
+                                                            <div
+                                                                style={{
+                                                                    display: 'flex',
+                                                                    gap: 8,
+                                                                    flexWrap: 'wrap',
+                                                                    marginBottom: 14,
+                                                                }}
                                                             >
-                                                                <Edit2 size={14} /> {t('tests.action_edit')}
-                                                            </button>
-                                                            <Link
-                                                                to={`/essays/${teacherKey}/monitor`}
-                                                                className="btn btn-secondary btn-sm"
-                                                                style={{ flex: '1 1 auto' }}
-                                                            >
-                                                                <Radio size={14} /> {t('essays.action_monitor')}
-                                                            </Link>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </Draggable>
-                                        );
-                                    })}
-                                    {droppableProvided.placeholder}
-                                </div>
-                            )}
-                        </Droppable>
+                                                                {rubric && (
+                                                                    <span className="badge badge-blue">
+                                                                        {rubric.name}
+                                                                    </span>
+                                                                )}
+                                                                <span className="badge badge-purple">
+                                                                    {t('essays.assigned_students_title')}: {rows.length}
+                                                                </span>
+                                                                <div
+                                                                    style={{
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: 6,
+                                                                        minWidth: 120,
+                                                                    }}
+                                                                >
+                                                                    <span className="text-muted text-xs">
+                                                                        {t('essays.submission_status_submitted')}
+                                                                    </span>
+                                                                    <div
+                                                                        role="progressbar"
+                                                                        aria-valuenow={
+                                                                            // v8 ignore next line — grouped rows always have at least one row
+                                                                            rows.length
+                                                                                ? Math.round(
+                                                                                      (submitted / rows.length) * 100
+                                                                                  )
+                                                                                : 0
+                                                                        }
+                                                                        aria-valuemin={0}
+                                                                        aria-valuemax={100}
+                                                                        style={{
+                                                                            flex: 1,
+                                                                            height: 6,
+                                                                            borderRadius: 3,
+                                                                            background: 'var(--border)',
+                                                                            overflow: 'hidden',
+                                                                        }}
+                                                                    >
+                                                                        <div
+                                                                            style={{
+                                                                                height: '100%',
+                                                                                width: `${
+                                                                                    // v8 ignore next line — grouped rows always have at least one row
+                                                                                    rows.length
+                                                                                        ? (submitted / rows.length) *
+                                                                                          100
+                                                                                        : 0
+                                                                                }%`,
+                                                                                background: 'var(--green, #22c55e)',
+                                                                            }}
+                                                                        />
+                                                                    </div>
+                                                                    <span className="text-muted text-xs">
+                                                                        {submitted}/{rows.length}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+
+                                                            <div style={{ display: 'flex', gap: 8 }}>
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-primary btn-sm"
+                                                                    style={{ flex: '1 1 auto' }}
+                                                                    onClick={() => navigate(`/essays/${teacherKey}`)}
+                                                                >
+                                                                    <Edit2 size={14} /> {t('tests.action_edit')}
+                                                                </button>
+                                                                <Link
+                                                                    to={`/essays/${teacherKey}/monitor`}
+                                                                    className="btn btn-secondary btn-sm"
+                                                                    style={{ flex: '1 1 auto' }}
+                                                                >
+                                                                    <Radio size={14} /> {t('essays.action_monitor')}
+                                                                </Link>
+                                                            </div>
+                                                        </CardTile>
+                                                    )}
+                                                </Draggable>
+                                            );
+                                        })}
+                                        {droppableProvided.placeholder}
+                                    </CardGrid>
+                                )}
+                            </Droppable>
+                        )}
                     </DragDropContext>
+                )}
+
+                {folderModal && (
+                    <FolderNameModal
+                        title={folderModal.folder ? t('folders.rename_title') : t('folders.new_folder')}
+                        submitLabel={folderModal.folder ? t('folders.rename') : t('folders.create')}
+                        initialName={folderModal.folder?.name}
+                        onSubmit={submitFolderName}
+                        onClose={() => setFolderModal(null)}
+                    />
                 )}
 
                 <ConfirmDialog {...confirmDialogProps} />

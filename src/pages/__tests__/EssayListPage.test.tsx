@@ -53,8 +53,37 @@ const mockSubmission: EssaySubmission = {
 const mockNavigate = vi.fn();
 const mockDeleteEssayGroup = vi.fn();
 const mockUpdateEssayGroup = vi.fn();
+const mockAddFolder = vi.fn();
+const mockUpdateFolder = vi.fn();
+const mockDeleteFolder = vi.fn();
 
 let appOverrides: Record<string, unknown> = {};
+
+// Stands in for the drag machinery so a test can start a drag and end it with a given reason.
+const dnd = vi.hoisted(() => ({
+    onDragEnd: null as unknown as (r: unknown) => void,
+    onBeforeCapture: null as unknown as () => void,
+}));
+
+vi.mock('@hello-pangea/dnd', () => ({
+    DragDropContext: ({
+        children,
+        onBeforeCapture,
+        onDragEnd,
+    }: {
+        children: React.ReactNode;
+        onBeforeCapture: () => void;
+        onDragEnd: (r: unknown) => void;
+    }) => {
+        dnd.onDragEnd = onDragEnd;
+        dnd.onBeforeCapture = onBeforeCapture;
+        return React.createElement(React.Fragment, null, children);
+    },
+    Droppable: ({ children }: { children: (p: unknown, s: unknown) => React.ReactNode }) =>
+        children({ innerRef: vi.fn(), droppableProps: {}, placeholder: null }, { isDraggingOver: false }),
+    Draggable: ({ children }: { children: (p: unknown, s: unknown) => React.ReactNode }) =>
+        children({ innerRef: vi.fn(), draggableProps: {}, dragHandleProps: {} }, { isDragging: false }),
+}));
 
 vi.mock('react-router-dom', async () => {
     const actual = await vi.importActual('react-router-dom');
@@ -67,6 +96,10 @@ const makeAppContextMock = () => ({
     rubrics: [mockRubric],
     deleteEssayGroup: mockDeleteEssayGroup,
     updateEssayGroup: mockUpdateEssayGroup,
+    folders: [] as { id: string; name: string; kind: string; createdAt: string }[],
+    addFolder: mockAddFolder,
+    updateFolder: mockUpdateFolder,
+    deleteFolder: mockDeleteFolder,
     students: mockStudents,
     classes: mockClasses,
     settings: mockSettings,
@@ -104,6 +137,9 @@ describe('EssayListPage', () => {
         mockOnlineSubmissions = new Map();
         mockNavigate.mockClear();
         mockDeleteEssayGroup.mockClear();
+        mockUpdateEssayGroup.mockClear();
+        mockAddFolder.mockClear();
+        mockDeleteFolder.mockClear();
     });
 
     it('shows the empty state when there are no essays', async () => {
@@ -165,5 +201,121 @@ describe('EssayListPage', () => {
             fireEvent.click(screen.getByTitle('tests.action_delete'));
         });
         expect(screen.getByText(/^essays\.delete_essay_warning/)).toHaveTextContent('"count":1');
+    });
+});
+
+describe('EssayListPage folders', () => {
+    const folder = { id: 'f1', name: 'Term 1', kind: 'essay', createdAt: '2024-01-01T00:00:00Z' };
+    const secondEssay: EssayAssignment = {
+        ...mockAssignment,
+        studentId: 's2',
+        teacherKey: 'tk2',
+        title: 'Second Essay',
+    };
+
+    beforeEach(() => {
+        appOverrides = {};
+        mockOnlineSubmissions = new Map();
+        mockAddFolder.mockReset();
+        mockUpdateFolder.mockReset();
+        mockDeleteFolder.mockReset();
+    });
+
+    it('counts the essays in a folder and filters the list when its tile is clicked', async () => {
+        appOverrides = {
+            essayAssignments: [{ ...mockAssignment, folderId: 'f1' }, secondEssay],
+            folders: [folder],
+        };
+        const { default: EssayListPage } = await import('../EssayListPage');
+        renderWithRouter(<EssayListPage />);
+
+        expect(screen.getByText('folders.items_count:{"count":1}')).toBeInTheDocument();
+        expect(screen.getByText('Second Essay')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByText('Term 1'));
+
+        expect(screen.getByText('My Essay')).toBeInTheDocument();
+        expect(screen.queryByText('Second Essay')).not.toBeInTheDocument();
+    });
+
+    it('says the folder is empty instead of showing the list-wide empty state', async () => {
+        appOverrides = { essayAssignments: [secondEssay], folders: [folder] };
+        const { default: EssayListPage } = await import('../EssayListPage');
+        renderWithRouter(<EssayListPage />);
+
+        fireEvent.click(screen.getByText('Term 1'));
+
+        expect(screen.getByText('folders.empty')).toBeInTheDocument();
+        expect(screen.queryByText('essays.no_essays')).not.toBeInTheDocument();
+    });
+
+    it('creates an essay folder from the folder bar', async () => {
+        mockAddFolder.mockReturnValue({ ...folder, id: 'f-new', name: 'Term 2' });
+        const { default: EssayListPage } = await import('../EssayListPage');
+        renderWithRouter(<EssayListPage />);
+
+        fireEvent.click(screen.getByText('folders.new_folder'));
+        fireEvent.change(screen.getByLabelText('folders.folder_name'), { target: { value: 'Term 2' } });
+        fireEvent.click(screen.getByText('folders.create'));
+
+        // The kind keeps the essay tree separate from the rubric and test trees.
+        expect(mockAddFolder).toHaveBeenCalledWith({ name: 'Term 2', kind: 'essay', displayOrder: 0 });
+    });
+
+    it('files an essay group on a real drop over a folder tile but not on a cancelled drag', async () => {
+        const { default: EssayListPage } = await import('../EssayListPage');
+        renderWithRouter(<EssayListPage />);
+
+        const tile = document.createElement('div');
+        tile.setAttribute('data-drop-folder-id', 'f1');
+        const label = document.createElement('span');
+        tile.appendChild(label);
+        document.body.appendChild(tile);
+        // jsdom has no layout, and with it no elementFromPoint at all; stand in for the hit test.
+        Object.defineProperty(document, 'elementFromPoint', {
+            configurable: true,
+            writable: true,
+            value: () => label,
+        });
+
+        const dragOntoTile = () => {
+            act(() => dnd.onBeforeCapture());
+            act(() => {
+                window.dispatchEvent(new MouseEvent('mousemove', { clientX: 5, clientY: 5 }));
+            });
+        };
+
+        // Escape ends the drag with reason CANCEL and a null destination; the pointer is still there.
+        dragOntoTile();
+        act(() => {
+            dnd.onDragEnd({ source: { index: 0, droppableId: 'essay-list' }, destination: null, reason: 'CANCEL' });
+        });
+        expect(mockUpdateEssayGroup).not.toHaveBeenCalled();
+
+        dragOntoTile();
+        act(() => {
+            dnd.onDragEnd({ source: { index: 0, droppableId: 'essay-list' }, destination: null, reason: 'DROP' });
+        });
+        expect(mockUpdateEssayGroup).toHaveBeenCalledWith('tk1', { folderId: 'f1' });
+
+        Reflect.deleteProperty(document, 'elementFromPoint');
+        tile.remove();
+    });
+
+    it('deletes a folder without touching the essays inside it', async () => {
+        appOverrides = {
+            essayAssignments: [{ ...mockAssignment, folderId: 'f1' }],
+            folders: [folder],
+        };
+        const { default: EssayListPage } = await import('../EssayListPage');
+        renderWithRouter(<EssayListPage />);
+
+        fireEvent.click(screen.getByLabelText('folders.delete'));
+        await act(async () => {
+            fireEvent.click(screen.getByText('common.delete'));
+        });
+
+        expect(mockDeleteFolder).toHaveBeenCalledWith('f1', 'essay');
+        expect(mockDeleteEssayGroup).not.toHaveBeenCalled();
     });
 });
