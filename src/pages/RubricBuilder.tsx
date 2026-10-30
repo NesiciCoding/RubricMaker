@@ -431,14 +431,15 @@ function RubricBuilderEditor() {
         }
     }
 
-    function handlePrint() {
-        /* v8 ignore next -- orientation is required on RubricFormat */
-        const orientation = format.orientation || 'portrait';
-        const style = document.createElement('style');
-        style.textContent = `@page { size: A4 ${orientation}; }`;
-        document.head.appendChild(style);
-        window.print();
-        document.head.removeChild(style);
+    async function handlePrint() {
+        // `window.print()` on the editor itself printed whatever happened to be on screen — one
+        // viewport of the builder, sidebar and all (#1004). Printing now goes through the same
+        // blank-rubric document as "PDF", which paginates the whole rubric in a print frame.
+        try {
+            await exportRubricGridPdf(getRubricData());
+        } catch {
+            showToast(t('toast.export_error'), 'error');
+        }
     }
 
     const handleSave = useCallback(() => {
@@ -1047,7 +1048,7 @@ function RubricBuilderEditor() {
                                 style={{ justifyContent: 'flex-start' }}
                                 onClick={() => {
                                     setShowExportMenu(false);
-                                    handlePrint();
+                                    void handlePrint();
                                 }}
                             >
                                 <Printer size={14} /> {t('rubricBuilder.action_print')}

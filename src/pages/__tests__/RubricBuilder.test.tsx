@@ -892,13 +892,29 @@ describe('RubricBuilder', () => {
         expect(createObjectURL).toHaveBeenCalled();
     });
 
-    it('prints the rubric', () => {
+    it('prints the whole rubric, not the visible editor (#1004)', async () => {
         renderEdit();
-        const printSpy = vi.spyOn(window, 'print').mockImplementation(() => {});
+        // The editor used to call window.print() on the app itself, which only ever produced the
+        // current viewport. Printing now goes through the blank-rubric document the PDF export
+        // writes, so the page gets the finished sheet with the criteria on it.
+        const appPrintSpy = vi.spyOn(window, 'print').mockImplementation(() => {});
         fireEvent.click(screen.getByText('rubricBuilder.action_export'));
         fireEvent.click(screen.getByText('rubricBuilder.action_print'));
-        expect(printSpy).toHaveBeenCalled();
-        printSpy.mockRestore();
+
+        await waitFor(() => expect(mockExportPdf).toHaveBeenCalled());
+        expect(mockExportPdf.mock.calls[0][0]).toEqual(
+            expect.objectContaining({ name: mockRubric.name, criteria: expect.any(Array) })
+        );
+        expect(appPrintSpy).not.toHaveBeenCalled();
+        appPrintSpy.mockRestore();
+    });
+
+    it('shows an error toast when printing fails', async () => {
+        mockExportPdf.mockRejectedValueOnce(new Error('blocked'));
+        renderEdit();
+        fireEvent.click(screen.getByText('rubricBuilder.action_export'));
+        fireEvent.click(screen.getByText('rubricBuilder.action_print'));
+        await waitFor(() => expect(mockShowToast).toHaveBeenCalledWith('toast.export_error', 'error'));
     });
 
     // ── Standards picker (with API key configured) ───────────────────────────────
