@@ -93,8 +93,9 @@ esac`
     return stack;
 }
 
-function run(extraEnv: Record<string, string> = {}) {
+function run(extraEnv: Record<string, string> = {}, extraStubs: Record<string, string> = {}) {
     const stack = setup();
+    for (const [name, text] of Object.entries(extraStubs)) stub(name, text);
     rmSync(join(work, 'exec.log'), { force: true });
     return spawnSync('bash', [script, '--supabase-dir', stack], {
         encoding: 'utf8',
@@ -128,6 +129,9 @@ describe('scripts/audit-live-stack.sh', () => {
         expect(out).toMatch(/\[PASS\] shared_buffers is 2048 MB/);
         expect(out).toMatch(/\[PASS\] Connections: 12 of 100/);
         expect(out).toMatch(/\[FAIL\] Only HestiaCP's v-backup-users is scheduled/);
+        // The stubbed openssl prints nothing, so the expiry probe has nothing to parse. Saying so
+        // beats reporting a certificate that expires today.
+        expect(out).toMatch(/\[WARN\] Could not read the TLS certificate expiry for/);
     });
 
     it('exits non-zero when something fails', () => {
@@ -154,6 +158,23 @@ describe('scripts/audit-live-stack.sh', () => {
         const dockerCalls = [...code.matchAll(/\bdocker\s+([a-z]+)/g)].map((m) => m[1]);
         for (const sub of dockerCalls) expect(['info', 'inspect', 'ps', 'stats', 'exec', 'group']).toContain(sub);
         expect(code).not.toMatch(/systemctl\s+(stop|start|restart|disable|enable|mask)\b/);
+    });
+});
+
+describe('scripts/audit-live-stack.sh when stat cannot report the .env mode', () => {
+    // GNU stat takes -c, BSD/macOS stat takes -f; a host whose stat answers neither used to print
+    // an empty mode, which did not match [4-7] and so passed the world-readable check.
+    const result = run({}, { stat: 'exit 1' });
+    // Later describes share work/bin, so the stubbed stat must not leak into them.
+    rmSync(join(work, 'bin', 'stat'), { force: true });
+
+    it('reports the permissions as unknown instead of passing them', () => {
+        expect(result.stdout).toMatch(/\[WARN\] Could not read the permissions on .*\.env/);
+        expect(result.stdout).not.toMatch(/\[PASS\] .*\.env is not world-readable/);
+    });
+
+    it('still runs the rest of the secret checks', () => {
+        expect(result.stdout).toMatch(/\[FAIL\] Upstream example values still in use: POSTGRES_PASSWORD/);
     });
 });
 

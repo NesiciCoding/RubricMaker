@@ -97,8 +97,15 @@ fi
 BACKUP="$DST.bak-$(date +%Y%m%d-%H%M%S)"
 cp -a "$DST" "$BACKUP" || die "could not back up $DST"
 echo "Backup: $BACKUP"
-mapfile -t old_backups < <(ls -1d "$DST".bak-* 2>/dev/null | sort | head -n -"$KEEP_BACKUPS")
-for b in "${old_backups[@]}"; do rm -rf -- "$b"; done
+# Keep the newest $KEEP_BACKUPS backups. Deliberately no `mapfile` and no `head -n -N`: the
+# deploy normally runs on Linux, but this script is also exercised by the test suite on macOS,
+# where bash 3.2 has no mapfile and BSD head rejects a negative line count.
+old_backups=()
+while IFS= read -r b; do
+    [[ -n "$b" ]] && old_backups+=("$b")
+done < <(ls -1d "$DST".bak-* 2>/dev/null | sort)
+surplus=$(( ${#old_backups[@]} - KEEP_BACKUPS ))
+for ((i = 0; i < surplus; i++)); do rm -rf -- "${old_backups[$i]}"; done
 restore_hint() {
     echo "To restore the previous functions:" >&2
     echo "  rm -rf '$DST' && cp -a '$BACKUP' '$DST' && docker restart $FUNCTIONS_CONTAINER" >&2
