@@ -29,6 +29,7 @@ import EssayEditor from '../Editor/EssayEditor';
 import ClozeGapEditor from './ClozeGapEditor';
 import HotTextEditor from './HotTextEditor';
 import StandardsPickerModal from '../Standards/StandardsPickerModal';
+import Modal from '../ui/Modal';
 import CefrPickerModal from '../CEFR/CefrPickerModal';
 import HelpPopover from './HelpPopover';
 import AudioUrlStatus from './AudioUrlStatus';
@@ -1792,30 +1793,28 @@ export default function QuestionEditor({
                     onClose={() => setPickingStandard(false)}
                 />
             ) : pickingStandard && !settings.standardsApiKey ? (
-                <div className="modal-overlay" onClick={() => setPickingStandard(false)}>
-                    <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 460 }}>
-                        <div className="modal-header">
-                            <h3>
-                                <AlertCircle size={16} /> {t('rubricBuilder.standards_modal_title')}
-                            </h3>
-                            <button
-                                className="btn btn-ghost btn-icon"
-                                aria-label={t('common.close')}
-                                onClick={() => setPickingStandard(false)}
-                            >
-                                ✕
-                            </button>
-                        </div>
-                        <div className="modal-body">
-                            <p>{t('tests.standards_api_key_required')}</p>
-                        </div>
-                        <div className="modal-footer">
-                            <button className="btn btn-secondary" onClick={() => setPickingStandard(false)}>
-                                {t('rubricBuilder.action_close')}
-                            </button>
-                        </div>
+                <Modal titleId="question-standards-title" onClose={() => setPickingStandard(false)} maxWidth={460}>
+                    <div className="modal-header">
+                        <h3 id="question-standards-title">
+                            <AlertCircle size={16} /> {t('rubricBuilder.standards_modal_title')}
+                        </h3>
+                        <button
+                            className="btn btn-ghost btn-icon"
+                            aria-label={t('common.close')}
+                            onClick={() => setPickingStandard(false)}
+                        >
+                            ✕
+                        </button>
                     </div>
-                </div>
+                    <div className="modal-body">
+                        <p>{t('tests.standards_api_key_required')}</p>
+                    </div>
+                    <div className="modal-footer">
+                        <button className="btn btn-secondary" onClick={() => setPickingStandard(false)}>
+                            {t('rubricBuilder.action_close')}
+                        </button>
+                    </div>
+                </Modal>
             ) : null}
 
             {pickingCefr && (

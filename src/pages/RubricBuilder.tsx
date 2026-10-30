@@ -1907,94 +1907,87 @@ function RubricBuilderEditor() {
 
                 {/* Preview Modal */}
                 {showPreview && (
-                    <div className="modal-overlay" onClick={() => setShowPreview(false)}>
+                    <Modal
+                        titleId="rubric-preview-title"
+                        onClose={() => setShowPreview(false)}
+                        maxWidth="90vw"
+                        style={{ padding: 24 }}
+                    >
                         <div
                             style={{
-                                background: 'var(--bg-card)',
-                                borderRadius: 'var(--radius-lg)',
-                                padding: 24,
-                                maxWidth: '90vw',
-                                maxHeight: '90vh',
-                                overflow: 'auto',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                marginBottom: 16,
+                                gap: 12,
                             }}
-                            onClick={(e) => e.stopPropagation()}
                         >
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    marginBottom: 16,
-                                    gap: 12,
-                                }}
-                            >
-                                <h3>{t('rubricBuilder.preview_title')}</h3>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    {criteria.some(
-                                        (c) => c.linkedStandard || (c.linkedStandards && c.linkedStandards.length > 0)
-                                    ) && (
+                            <h3 id="rubric-preview-title">{t('rubricBuilder.preview_title')}</h3>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                {criteria.some(
+                                    (c) => c.linkedStandard || (c.linkedStandards && c.linkedStandards.length > 0)
+                                ) && (
+                                    <div
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 4,
+                                            fontSize: '0.75rem',
+                                            color: 'var(--text-muted)',
+                                        }}
+                                    >
+                                        {t('rubricBuilder.preview_standards_label')}
                                         <div
                                             style={{
                                                 display: 'flex',
-                                                alignItems: 'center',
-                                                gap: 4,
-                                                fontSize: '0.75rem',
-                                                color: 'var(--text-muted)',
+                                                background: 'var(--bg-elevated)',
+                                                borderRadius: 6,
+                                                padding: 2,
+                                                marginLeft: 4,
                                             }}
                                         >
-                                            {t('rubricBuilder.preview_standards_label')}
-                                            <div
-                                                style={{
-                                                    display: 'flex',
-                                                    background: 'var(--bg-elevated)',
-                                                    borderRadius: 6,
-                                                    padding: 2,
-                                                    marginLeft: 4,
-                                                }}
+                                            <button
+                                                className={`btn btn-sm ${!showPreviewStdDesc ? 'btn-white shadow-sm' : 'btn-ghost'}`}
+                                                onClick={() => setShowPreviewStdDesc(false)}
+                                                style={{ fontSize: '0.72rem', padding: '2px 8px' }}
                                             >
-                                                <button
-                                                    className={`btn btn-sm ${!showPreviewStdDesc ? 'btn-white shadow-sm' : 'btn-ghost'}`}
-                                                    onClick={() => setShowPreviewStdDesc(false)}
-                                                    style={{ fontSize: '0.72rem', padding: '2px 8px' }}
-                                                >
-                                                    {t('rubricBuilder.preview_standards_code')}
-                                                </button>
-                                                <button
-                                                    className={`btn btn-sm ${showPreviewStdDesc ? 'btn-white shadow-sm' : 'btn-ghost'}`}
-                                                    onClick={() => setShowPreviewStdDesc(true)}
-                                                    style={{ fontSize: '0.72rem', padding: '2px 8px' }}
-                                                >
-                                                    {t('rubricBuilder.preview_standards_description')}
-                                                </button>
-                                            </div>
+                                                {t('rubricBuilder.preview_standards_code')}
+                                            </button>
+                                            <button
+                                                className={`btn btn-sm ${showPreviewStdDesc ? 'btn-white shadow-sm' : 'btn-ghost'}`}
+                                                onClick={() => setShowPreviewStdDesc(true)}
+                                                style={{ fontSize: '0.72rem', padding: '2px 8px' }}
+                                            >
+                                                {t('rubricBuilder.preview_standards_description')}
+                                            </button>
                                         </div>
-                                    )}
-                                    <button className="btn btn-ghost btn-sm" onClick={() => setShowPreview(false)}>
-                                        ✕ {t('rubricBuilder.action_close')}
-                                    </button>
-                                </div>
+                                    </div>
+                                )}
+                                <button className="btn btn-ghost btn-sm" onClick={() => setShowPreview(false)}>
+                                    ✕ {t('rubricBuilder.action_close')}
+                                </button>
                             </div>
-                            {tiered ? (
-                                <>
-                                    <h2 style={{ margin: '0 0 12px', fontSize: '1.2rem' }}>
-                                        {name || t('rubricBuilder.placeholder_name').replace('...', '')}
-                                    </h2>
-                                    <TieredSheetView
-                                        sheet={buildTieredSheet({ name, subject, criteria, tiered, format })!}
-                                        headerColor={format.headerColor}
-                                        headerTextColor={format.headerTextColor}
-                                    />
-                                </>
-                            ) : (
-                                <RubricPreviewTable
-                                    name={name || t('rubricBuilder.placeholder_name').replace('...', '')}
-                                    criteria={criteria}
-                                    format={format}
-                                    showDescriptions={showPreviewStdDesc}
-                                />
-                            )}
                         </div>
-                    </div>
+                        {tiered ? (
+                            <>
+                                <h2 style={{ margin: '0 0 12px', fontSize: '1.2rem' }}>
+                                    {name || t('rubricBuilder.placeholder_name').replace('...', '')}
+                                </h2>
+                                <TieredSheetView
+                                    sheet={buildTieredSheet({ name, subject, criteria, tiered, format })!}
+                                    headerColor={format.headerColor}
+                                    headerTextColor={format.headerTextColor}
+                                />
+                            </>
+                        ) : (
+                            <RubricPreviewTable
+                                name={name || t('rubricBuilder.placeholder_name').replace('...', '')}
+                                criteria={criteria}
+                                format={format}
+                                showDescriptions={showPreviewStdDesc}
+                            />
+                        )}
+                    </Modal>
                 )}
 
                 {/* Standards Picker Modal */}
@@ -2008,70 +2001,68 @@ function RubricBuilderEditor() {
                         onClose={() => setPickingStandardFor(null)}
                     />
                 ) : pickingStandardFor && !settings.standardsApiKey ? (
-                    <div className="modal-overlay" onClick={() => setPickingStandardFor(null)}>
-                        <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 460 }}>
-                            <div className="modal-header">
-                                <h3>
-                                    <BookOpen size={16} /> {t('rubricBuilder.standards_modal_title')}
-                                </h3>
-                                <button
-                                    className="btn btn-ghost btn-icon"
-                                    aria-label={t('common.close')}
-                                    onClick={() => setPickingStandardFor(null)}
-                                >
-                                    ✕
-                                </button>
-                            </div>
-                            <div className="modal-body">
-                                <p style={{ marginBottom: 12 }}>
-                                    <Trans i18nKey="rubricBuilder.standards_modal_desc">
-                                        To link academic standards you need a{' '}
-                                        <strong>Common Standards Project API key</strong>.
-                                    </Trans>
-                                </p>
-                                <ol style={{ paddingLeft: 20, lineHeight: 2, fontSize: '0.9rem' }}>
-                                    <li>
-                                        <Trans i18nKey="rubricBuilder.standards_step_register">
-                                            Register at{' '}
-                                            <a
-                                                href="https://commonstandardsproject.com"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                style={{ color: 'var(--accent)' }}
-                                            >
-                                                commonstandardsproject.com
-                                            </a>
-                                        </Trans>
-                                    </li>
-                                    <li>{t('rubricBuilder.standards_step_copy')}</li>
-                                    <li>
-                                        <Trans i18nKey="rubricBuilder.standards_step_cors">
-                                            Add your app URL to the <strong>CORS Allowed Origins</strong> list
-                                        </Trans>
-                                    </li>
-                                    <li>
-                                        <Trans i18nKey="rubricBuilder.standards_step_paste">
-                                            Paste the key in <strong>Settings → Standards Integration</strong>
-                                        </Trans>
-                                    </li>
-                                </ol>
-                            </div>
-                            <div className="modal-footer">
-                                <button className="btn btn-secondary" onClick={() => setPickingStandardFor(null)}>
-                                    {t('rubricBuilder.action_close')}
-                                </button>
-                                <button
-                                    className="btn btn-primary"
-                                    onClick={() => {
-                                        setPickingStandardFor(null);
-                                        navigate('/settings');
-                                    }}
-                                >
-                                    {t('rubricBuilder.action_open_settings')}
-                                </button>
-                            </div>
+                    <Modal titleId="rubric-standards-title" onClose={() => setPickingStandardFor(null)} maxWidth={460}>
+                        <div className="modal-header">
+                            <h3 id="rubric-standards-title">
+                                <BookOpen size={16} /> {t('rubricBuilder.standards_modal_title')}
+                            </h3>
+                            <button
+                                className="btn btn-ghost btn-icon"
+                                aria-label={t('common.close')}
+                                onClick={() => setPickingStandardFor(null)}
+                            >
+                                ✕
+                            </button>
                         </div>
-                    </div>
+                        <div className="modal-body">
+                            <p style={{ marginBottom: 12 }}>
+                                <Trans i18nKey="rubricBuilder.standards_modal_desc">
+                                    To link academic standards you need a{' '}
+                                    <strong>Common Standards Project API key</strong>.
+                                </Trans>
+                            </p>
+                            <ol style={{ paddingLeft: 20, lineHeight: 2, fontSize: '0.9rem' }}>
+                                <li>
+                                    <Trans i18nKey="rubricBuilder.standards_step_register">
+                                        Register at{' '}
+                                        <a
+                                            href="https://commonstandardsproject.com"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            style={{ color: 'var(--accent)' }}
+                                        >
+                                            commonstandardsproject.com
+                                        </a>
+                                    </Trans>
+                                </li>
+                                <li>{t('rubricBuilder.standards_step_copy')}</li>
+                                <li>
+                                    <Trans i18nKey="rubricBuilder.standards_step_cors">
+                                        Add your app URL to the <strong>CORS Allowed Origins</strong> list
+                                    </Trans>
+                                </li>
+                                <li>
+                                    <Trans i18nKey="rubricBuilder.standards_step_paste">
+                                        Paste the key in <strong>Settings → Standards Integration</strong>
+                                    </Trans>
+                                </li>
+                            </ol>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-secondary" onClick={() => setPickingStandardFor(null)}>
+                                {t('rubricBuilder.action_close')}
+                            </button>
+                            <button
+                                className="btn btn-primary"
+                                onClick={() => {
+                                    setPickingStandardFor(null);
+                                    navigate('/settings');
+                                }}
+                            >
+                                {t('rubricBuilder.action_open_settings')}
+                            </button>
+                        </div>
+                    </Modal>
                 ) : null}
 
                 {/* Framework Picker Modal */}
@@ -2280,43 +2271,41 @@ function RubricBuilderEditor() {
             )}
 
             {syncDialogRubric && (
-                <div className="modal-overlay" onClick={() => setSyncDialogRubric(null)}>
-                    <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 420 }}>
-                        <div className="modal-header">
-                            <h3>{t('rubricBuilder.sync_dialog_title')}</h3>
-                            <button
-                                className="btn btn-ghost btn-icon"
-                                aria-label={t('common.close')}
-                                onClick={() => setSyncDialogRubric(null)}
-                            >
-                                ✕
-                            </button>
-                        </div>
-                        <div className="modal-body">
-                            <p>
-                                {t('rubricBuilder.sync_dialog_body', {
-                                    count:
-                                        studentRubrics.filter((sr) => sr.rubricId === syncDialogRubric.id).length +
-                                        peerReviews.filter((pr) => pr.rubricId === syncDialogRubric.id).length,
-                                })}
-                            </p>
-                        </div>
-                        <div className="modal-footer">
-                            <button className="btn btn-secondary" onClick={() => setSyncDialogRubric(null)}>
-                                {t('rubricBuilder.sync_dialog_skip')}
-                            </button>
-                            <button
-                                className="btn btn-primary"
-                                onClick={() => {
-                                    syncRubricSnapshot(syncDialogRubric.id, syncDialogRubric);
-                                    setSyncDialogRubric(null);
-                                }}
-                            >
-                                {t('rubricBuilder.sync_dialog_confirm')}
-                            </button>
-                        </div>
+                <Modal titleId="rubric-sync-title" onClose={() => setSyncDialogRubric(null)} maxWidth={420}>
+                    <div className="modal-header">
+                        <h3 id="rubric-sync-title">{t('rubricBuilder.sync_dialog_title')}</h3>
+                        <button
+                            className="btn btn-ghost btn-icon"
+                            aria-label={t('common.close')}
+                            onClick={() => setSyncDialogRubric(null)}
+                        >
+                            ✕
+                        </button>
                     </div>
-                </div>
+                    <div className="modal-body">
+                        <p>
+                            {t('rubricBuilder.sync_dialog_body', {
+                                count:
+                                    studentRubrics.filter((sr) => sr.rubricId === syncDialogRubric.id).length +
+                                    peerReviews.filter((pr) => pr.rubricId === syncDialogRubric.id).length,
+                            })}
+                        </p>
+                    </div>
+                    <div className="modal-footer">
+                        <button className="btn btn-secondary" onClick={() => setSyncDialogRubric(null)}>
+                            {t('rubricBuilder.sync_dialog_skip')}
+                        </button>
+                        <button
+                            className="btn btn-primary"
+                            onClick={() => {
+                                syncRubricSnapshot(syncDialogRubric.id, syncDialogRubric);
+                                setSyncDialogRubric(null);
+                            }}
+                        >
+                            {t('rubricBuilder.sync_dialog_confirm')}
+                        </button>
+                    </div>
+                </Modal>
             )}
             <ConfirmDialog {...unsavedDialogProps} />
             <ConfirmDialog {...confirmDialogProps} />

@@ -10,6 +10,7 @@ import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { getActivityRows, buildDashboardMatrix } from '../utils/activityDashboardAggregator';
 import { getClassStandardsCoverage } from '../utils/standardsCoverageAggregator';
 import ClassCoverageGapPanel from '../components/Standards/ClassCoverageGapPanel';
+import Modal from '../components/ui/Modal';
 import { reorderDisplayOrder } from '../utils/displayOrder';
 import { VO_TRACKS } from '../data/voTracks';
 import { SCHOOL_YEAR_LABELS, getAvailableSchoolYears } from '../data/schoolYears';
@@ -667,54 +668,52 @@ export default function ActivityDashboardPage() {
             </div>
 
             {assignTaskCell && (
-                <div className="modal-overlay" onClick={() => setAssignTaskCell(null)}>
-                    <div className="modal" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
-                        <div className="modal-header">
-                            <h3>{t('gradingTasks.modal_title')}</h3>
-                            <button
-                                className="btn btn-ghost btn-icon"
-                                aria-label={t('common.close')}
-                                onClick={() => setAssignTaskCell(null)}
-                            >
-                                <X size={16} />
-                            </button>
+                <Modal titleId="grading-task-title" onClose={() => setAssignTaskCell(null)} maxWidth={420}>
+                    <div className="modal-header">
+                        <h3 id="grading-task-title">{t('gradingTasks.modal_title')}</h3>
+                        <button
+                            className="btn btn-ghost btn-icon"
+                            aria-label={t('common.close')}
+                            onClick={() => setAssignTaskCell(null)}
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
+                    <div className="modal-body">
+                        <div className="form-group">
+                            <label htmlFor="grading-task-teacher">{t('gradingTasks.teacher_label')}</label>
+                            <input
+                                id="grading-task-teacher"
+                                type="text"
+                                autoFocus
+                                value={assignTeacherName}
+                                onChange={(e) => setAssignTeacherName(e.target.value)}
+                                placeholder={t('gradingTasks.teacher_placeholder')}
+                            />
                         </div>
-                        <div className="modal-body">
-                            <div className="form-group">
-                                <label htmlFor="grading-task-teacher">{t('gradingTasks.teacher_label')}</label>
-                                <input
-                                    id="grading-task-teacher"
-                                    type="text"
-                                    autoFocus
-                                    value={assignTeacherName}
-                                    onChange={(e) => setAssignTeacherName(e.target.value)}
-                                    placeholder={t('gradingTasks.teacher_placeholder')}
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="grading-task-due-date">{t('gradingTasks.due_date_label')}</label>
-                                <input
-                                    id="grading-task-due-date"
-                                    type="date"
-                                    value={assignDueDate}
-                                    onChange={(e) => setAssignDueDate(e.target.value)}
-                                />
-                            </div>
-                        </div>
-                        <div className="modal-footer">
-                            <button className="btn btn-secondary" onClick={() => setAssignTaskCell(null)}>
-                                {t('common.cancel')}
-                            </button>
-                            <button
-                                className="btn btn-primary"
-                                disabled={!assignTeacherName.trim()}
-                                onClick={handleAssignTasks}
-                            >
-                                {t('gradingTasks.action_assign')}
-                            </button>
+                        <div className="form-group">
+                            <label htmlFor="grading-task-due-date">{t('gradingTasks.due_date_label')}</label>
+                            <input
+                                id="grading-task-due-date"
+                                type="date"
+                                value={assignDueDate}
+                                onChange={(e) => setAssignDueDate(e.target.value)}
+                            />
                         </div>
                     </div>
-                </div>
+                    <div className="modal-footer">
+                        <button className="btn btn-secondary" onClick={() => setAssignTaskCell(null)}>
+                            {t('common.cancel')}
+                        </button>
+                        <button
+                            className="btn btn-primary"
+                            disabled={!assignTeacherName.trim()}
+                            onClick={handleAssignTasks}
+                        >
+                            {t('gradingTasks.action_assign')}
+                        </button>
+                    </div>
+                </Modal>
             )}
         </>
     );

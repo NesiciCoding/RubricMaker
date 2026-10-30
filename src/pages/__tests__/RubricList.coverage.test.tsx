@@ -371,10 +371,12 @@ describe('RubricList coverage', () => {
         expect(screen.queryByPlaceholderText('tooltips.paste_share_code')).not.toBeInTheDocument();
     });
 
-    it('closes the differentiate modal via overlay, close button, and picks a CEFR level', () => {
+    it('closes the differentiate modal via Escape, close button, and picks a CEFR level', () => {
         renderPage();
+        // The differentiate dialog is the shared Radix-backed Modal now, so it closes on Escape.
+        // Backdrop dismissal is Radix's own outside-interaction detection, covered by Modal.test.tsx.
         fireEvent.click(screen.getAllByTitle('voTrack.differentiate_title')[0]);
-        fireEvent.click(document.querySelector('.modal-overlay') as HTMLElement);
+        fireEvent.keyDown(document.body, { key: 'Escape' });
         expect(screen.queryByText('voTrack.action_create')).not.toBeInTheDocument();
 
         fireEvent.click(screen.getAllByTitle('voTrack.differentiate_title')[0]);
@@ -498,9 +500,9 @@ describe('RubricList coverage', () => {
             await waitFor(() => expect(screen.getByText('Unknown error')).toBeInTheDocument());
         });
 
-        it('closes the share modal via overlay, header close, and footer close', async () => {
+        it('closes the share modal via Escape, header close, and footer close', async () => {
             await openShare();
-            fireEvent.click(document.querySelector('.modal-overlay') as HTMLElement);
+            fireEvent.keyDown(document.body, { key: 'Escape' });
             expect(screen.queryByText('rubricList.share_modal_title')).not.toBeInTheDocument();
 
             await openShare();
