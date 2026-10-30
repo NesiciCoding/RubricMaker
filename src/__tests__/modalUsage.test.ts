@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { join, relative, resolve } from 'node:path';
+import { join, relative, resolve, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
@@ -15,17 +15,26 @@ const srcRoot = resolve(__dirname, '..');
 const PRIMITIVES = new Set(['components/ui/Modal.tsx', 'components/ui/ConfirmDialog.tsx']);
 
 /**
- * Remaining hand-rolled dialogs, by batch. Delete entries as each batch migrates; never add one.
+ * Remaining hand-rolled dialogs, by batch: file → the raw overlays it holds today. Delete entries
+ * as each batch migrates and lower a count as its dialogs convert; never raise one. Exempting the
+ * whole file would let a second hand-rolled dialog land beside the recorded one.
  * Batch 1 (done): pages/StudentsPage.tsx — six dialogs.
  */
-const PENDING_MIGRATION = new Set([
+const PENDING_MIGRATION = new Map([
     // Batch 2 — lists and the dashboard.
-    'pages/RubricList.tsx', // differentiate + delete
-    'pages/ActivityDashboardPage.tsx', // assign grading task
+    ['pages/RubricList.tsx', 2], // differentiate + delete
+    ['pages/ActivityDashboardPage.tsx', 1], // assign grading task
     // Batch 3 — builders.
-    'pages/RubricBuilder.tsx', // preview, standards picker, sync dialog
-    'components/Tests/QuestionEditor.tsx', // standards picker
+    ['pages/RubricBuilder.tsx', 3], // preview, standards picker, sync dialog
+    ['components/Tests/QuestionEditor.tsx', 1], // standards picker
 ]);
+
+/** A raw overlay: the hand-rolled markup `ui/Modal` and `ui/ConfirmDialog` replaced. */
+const RAW_DIALOG = /className="modal-overlay"|role="dialog"|aria-modal=/g;
+
+function rawDialogs(source: string): number {
+    return source.match(RAW_DIALOG)?.length ?? 0;
+}
 
 function sourceFiles(dir: string): string[] {
     return readdirSync(dir).flatMap((entry) => {
@@ -37,21 +46,35 @@ function sourceFiles(dir: string): string[] {
     });
 }
 
+/**
+ * Paths are compared against allowlists written with `/`, so normalize `relative`'s output —
+ * Windows joins with `\` and would otherwise flag the primitives themselves.
+ */
+function scanned(): { rel: string; dialogs: number }[] {
+    return sourceFiles(srcRoot).map((path) => ({
+        rel: relative(srcRoot, path).split(sep).join('/'),
+        dialogs: rawDialogs(readFileSync(path, 'utf8')),
+    }));
+}
+
 function offenders(): string[] {
-    return sourceFiles(srcRoot)
-        .map((path) => ({ source: readFileSync(path, 'utf8'), rel: relative(srcRoot, path) }))
-        .filter(({ source, rel }) => {
-            if (PRIMITIVES.has(rel) || PENDING_MIGRATION.has(rel)) return false;
-            const rawOverlay = /className="modal-overlay"/.test(source);
-            const rawDialogRole = /role="dialog"|aria-modal=/.test(source);
-            return rawOverlay || rawDialogRole;
-        })
+    return scanned()
+        .filter(({ rel, dialogs }) => !PRIMITIVES.has(rel) && !PENDING_MIGRATION.has(rel) && dialogs > 0)
         .map(({ rel }) => rel);
 }
 
 describe('modal usage', () => {
     it('does not hand-roll a dialog outside the two Radix primitives', () => {
         expect(offenders()).toEqual([]);
+    });
+
+    it('holds each pending file to the dialogs it already had', () => {
+        // The allowlist is a ratchet, not an exemption: a fifth overlay added to a file that is
+        // still pending fails here instead of slipping through a whole-file skip.
+        const counts = new Map(scanned().map(({ rel, dialogs }) => [rel, dialogs]));
+        for (const [rel, allowed] of PENDING_MIGRATION) {
+            expect(counts.get(rel), rel).toBeLessThanOrEqual(allowed);
+        }
     });
 
     it('keeps the students page on the shared primitive', () => {
