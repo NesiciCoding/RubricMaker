@@ -15,6 +15,7 @@
  */
 import { test, expect, SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_KEY } from '../fixtures/supabase.fixture';
 import { StudentEssayPage, buildShortCode } from '../pages/StudentEssayPage';
+import { APP_ORIGIN } from '../appUrl';
 
 // ── Shared admin headers ──────────────────────────────────────────────────────
 
@@ -316,7 +317,7 @@ test.describe('Admin dashboard tabs (require admin role)', () => {
         // role='admin' — the "first user ever becomes admin" trigger can't be
         // relied on once other tests (e.g. the short-code flow above) create
         // users first on the same fresh stack.
-        await adminSupabasePage.goto('http://localhost:5173/#/admin');
+        await adminSupabasePage.goto(`${APP_ORIGIN}/#/admin`);
         await adminSupabasePage.waitForSelector('.page-content', { timeout: 15_000 });
 
         // "Users" tab is active by default — wait for loading to resolve.
@@ -328,7 +329,7 @@ test.describe('Admin dashboard tabs (require admin role)', () => {
     });
 
     test('Schools tab resolves and does not stay stuck on loading', async ({ adminSupabasePage }) => {
-        await adminSupabasePage.goto('http://localhost:5173/#/admin');
+        await adminSupabasePage.goto(`${APP_ORIGIN}/#/admin`);
         await adminSupabasePage.waitForSelector('.page-content', { timeout: 15_000 });
 
         // Click the Schools tab
@@ -394,7 +395,7 @@ test.describe('protect_role_changes trigger (migration 030)', () => {
                 body: JSON.stringify({
                     type: 'magiclink',
                     email: testUserEmail,
-                    redirect_to: 'http://localhost:5173',
+                    redirect_to: APP_ORIGIN,
                 }),
             });
             if (!linkRes.ok) {
@@ -425,7 +426,7 @@ test.describe('protect_role_changes trigger (migration 030)', () => {
 
             // Drive the magic-link flow so supabase-js stores the session.
             await page.goto(actionLink, { waitUntil: 'commit' });
-            await page.waitForURL('http://localhost:5173/**', { timeout: 15_000 });
+            await page.waitForURL(`${APP_ORIGIN}/**`, { timeout: 15_000 });
             await page.waitForFunction(
                 () => Object.keys(localStorage).some((k) => k.startsWith('sb-') && k.endsWith('-auth-token')),
                 { timeout: 60_000, polling: 300 }

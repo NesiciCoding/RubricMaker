@@ -28,6 +28,7 @@ import { test, expect, SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_KEY } f
 import { buildClass, buildStudent } from '../fixtures/data.factory';
 import { StudentTestPage } from '../pages/StudentTestPage';
 import type { Test as RmTest } from '../../src/types';
+import { APP_ORIGIN } from '../appUrl';
 
 const adminHeaders = {
     'Content-Type': 'application/json',
@@ -93,7 +94,7 @@ test.describe('Live monitor — test kind', () => {
 
         // Teacher: navigate to the live monitor — a fresh navigation + reload so
         // AppContext re-hydrates the test/class/student rows just inserted directly.
-        await supabasePage.goto(`http://localhost:5173/#/tests/${rmTest.id}/monitor`);
+        await supabasePage.goto(`${APP_ORIGIN}/#/tests/${rmTest.id}/monitor`);
         await supabasePage.reload();
         await supabasePage.waitForSelector('.main-area', { timeout: 20_000 });
         await supabasePage.waitForLoadState('networkidle', { timeout: 15_000 });
@@ -202,7 +203,7 @@ test.describe('Live monitor — test kind', () => {
         });
 
         // Teacher: open the live monitor BEFORE the hand-in.
-        await supabasePage.goto(`http://localhost:5173/#/tests/${rmTest.id}/monitor`);
+        await supabasePage.goto(`${APP_ORIGIN}/#/tests/${rmTest.id}/monitor`);
         await supabasePage.reload();
         await supabasePage.waitForSelector('.main-area', { timeout: 20_000 });
         await supabasePage.waitForLoadState('networkidle', { timeout: 15_000 });
@@ -320,7 +321,7 @@ test.describe('Live monitor — test kind', () => {
         }
 
         // ── Teacher: open the monitor after the fact ─────────────────────────────
-        await supabasePage.goto(`http://localhost:5173/#/tests/${rmTest.id}/monitor`);
+        await supabasePage.goto(`${APP_ORIGIN}/#/tests/${rmTest.id}/monitor`);
         await supabasePage.reload();
         await supabasePage.waitForSelector('.main-area', { timeout: 20_000 });
         await supabasePage.waitForLoadState('networkidle', { timeout: 15_000 });
@@ -333,7 +334,7 @@ test.describe('Live monitor — test kind', () => {
         // ── The same persisted student_tests row drives the results surface ─────
         // Open the test list: the card shows the submitted count, and the Results
         // panel lists the attempt — with no student tab anywhere.
-        await supabasePage.goto('http://localhost:5173/#/tests');
+        await supabasePage.goto(`${APP_ORIGIN}/#/tests`);
         await supabasePage.reload();
         await supabasePage.waitForSelector('.main-area', { timeout: 20_000 });
         await supabasePage.waitForLoadState('networkidle', { timeout: 15_000 });
@@ -383,7 +384,7 @@ test.describe('Live monitor — test kind', () => {
         });
 
         // Teacher: open the live monitor so the session channel is subscribed.
-        await supabasePage.goto(`http://localhost:5173/#/tests/${rmTest.id}/monitor`);
+        await supabasePage.goto(`${APP_ORIGIN}/#/tests/${rmTest.id}/monitor`);
         await supabasePage.reload();
         await supabasePage.waitForSelector('.main-area', { timeout: 20_000 });
         await supabasePage.waitForLoadState('networkidle', { timeout: 15_000 });
@@ -498,7 +499,7 @@ test.describe('Live monitor — test kind', () => {
 
         // Teacher: the monitor derives 'late' from the persisted student_tests row
         // (submittedAt after dueDate) — no live session involved.
-        await supabasePage.goto(`http://localhost:5173/#/tests/${rmTest.id}/monitor`);
+        await supabasePage.goto(`${APP_ORIGIN}/#/tests/${rmTest.id}/monitor`);
         await supabasePage.reload();
         await supabasePage.waitForSelector('.main-area', { timeout: 20_000 });
         await supabasePage.waitForLoadState('networkidle', { timeout: 15_000 });
@@ -585,7 +586,7 @@ test.describe('Live monitor — test kind', () => {
             expect(rows.map((r) => r.data.attemptNumber).sort((a, b) => a - b)).toEqual([1, 2]);
 
             // The teacher's results panel lists the second attempt with its label.
-            await supabasePage.goto('http://localhost:5173/#/tests');
+            await supabasePage.goto(`${APP_ORIGIN}/#/tests`);
             await supabasePage.reload();
             await supabasePage.waitForSelector('.main-area', { timeout: 20_000 });
             await supabasePage.waitForLoadState('networkidle', { timeout: 15_000 });

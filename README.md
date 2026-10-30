@@ -170,7 +170,7 @@ npm run typecheck    # TypeScript check (run before commits)
 npm run lint         # ESLint
 npm run test         # Vitest unit tests
 npm run coverage     # Coverage report
-npm run e2e          # Playwright end-to-end tests
+npm run e2e          # Playwright end-to-end tests (starts its own dev server, see below)
 
 # Supabase local dev (optional)
 npm run db:start     # Start local Supabase stack
@@ -181,6 +181,22 @@ npm run db:reset     # Reset and re-apply all migrations
 npm run loadtest              # default 'load' profile (~50 VUs)
 npm run loadtest:stress       # climb VUs to find the breaking point
 ```
+
+### End-to-end tests and their dev server
+
+Playwright starts and stops its own dev server, on a port derived from the checkout path: 5173 for
+the first checkout, a stable neighbour for any extra worktree, so two suites can run side by side
+without sharing a server. It never attaches to a server it did not start unless you ask it to.
+
+| Variable           | Effect                                                                                    |
+| ------------------ | ----------------------------------------------------------------------------------------- |
+| `E2E_PORT`         | Use this port instead of the derived one                                                  |
+| `E2E_BASE_URL`     | Test an already-running origin (a preview deployment, a remote stack) and start no server |
+| `E2E_REUSE_SERVER` | `1` attaches to a server already on the port — only if it serves _this_ checkout          |
+
+Every dev server advertises the checkout it serves in an `x-rm-checkout` header, and the suite
+refuses to run when the stamp doesn't match. That is deliberate: a fixed port meant a second
+worktree's dev server could answer instead, and the whole run then passed against different code.
 
 New to the codebase? See the [Development Guide](https://github.com/NesiciCoding/RubricMaker/wiki/Development-Guide) and [Architecture](https://github.com/NesiciCoding/RubricMaker/wiki/Architecture) wiki pages.
 

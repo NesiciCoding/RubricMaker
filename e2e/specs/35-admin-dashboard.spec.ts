@@ -1,5 +1,6 @@
 import { test, expect } from '../fixtures/supabase.fixture';
 import { SUPABASE_URL, SUPABASE_SERVICE_KEY, makeTestEmail } from '../fixtures/supabase.fixture';
+import { APP_ORIGIN } from '../appUrl';
 
 const adminHeaders = {
     'Content-Type': 'application/json',
@@ -62,7 +63,7 @@ test.describe('Admin dashboard — Schools tab', () => {
         testUserEmail,
     }) => {
         await leaveCurrentSchool(testUserEmail);
-        await supabasePage.goto('http://localhost:5173/#/admin');
+        await supabasePage.goto(`${APP_ORIGIN}/#/admin`);
         await supabasePage.waitForSelector('.page-content', { timeout: 15_000 });
         await supabasePage.getByRole('button', { name: 'Schools' }).click();
         await expect(supabasePage.getByText(/loading schools/i)).not.toBeVisible({ timeout: 15_000 });
@@ -107,7 +108,7 @@ test.describe('Admin dashboard — Users tab', () => {
         const bystanderId = await createBystanderUser(bystanderEmail);
 
         try {
-            await adminSupabasePage.goto('http://localhost:5173/#/admin');
+            await adminSupabasePage.goto(`${APP_ORIGIN}/#/admin`);
             await adminSupabasePage.waitForSelector('.page-content', { timeout: 15_000 });
             await expect(adminSupabasePage.getByText(/loading users/i)).not.toBeVisible({ timeout: 15_000 });
 

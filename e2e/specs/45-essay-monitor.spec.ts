@@ -19,6 +19,7 @@ import { test, expect, SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_KEY } f
 import { buildClass, buildStudent } from '../fixtures/data.factory';
 import { StudentEssayPage } from '../pages/StudentEssayPage';
 import type { Browser } from '@playwright/test';
+import { APP_ORIGIN } from '../appUrl';
 
 const adminHeaders = {
     'Content-Type': 'application/json',
@@ -150,7 +151,7 @@ test.describe('Live monitor — essay kind', () => {
         ]);
 
         // ── Teacher: open the live essay monitor ─────────────────────────────
-        await supabasePage.goto(`http://localhost:5173/#/essays/${teacherKey}/monitor`);
+        await supabasePage.goto(`${APP_ORIGIN}/#/essays/${teacherKey}/monitor`);
         await supabasePage.reload();
         await supabasePage.waitForSelector('.main-area', { timeout: 20_000 });
         await supabasePage.waitForLoadState('networkidle', { timeout: 15_000 });
@@ -226,7 +227,7 @@ test.describe('Live monitor — essay kind', () => {
         const { teacherKey, student } = await seedEssayAssignment(ownerId, runId, 'Live Essay Submit');
 
         // ── Teacher: open the live essay monitor ────────────────────────────────
-        await supabasePage.goto(`http://localhost:5173/#/essays/${teacherKey}/monitor`);
+        await supabasePage.goto(`${APP_ORIGIN}/#/essays/${teacherKey}/monitor`);
         await supabasePage.reload();
         await supabasePage.waitForSelector('.main-area', { timeout: 20_000 });
         await supabasePage.waitForLoadState('networkidle', { timeout: 15_000 });
@@ -283,7 +284,7 @@ test.describe('Live monitor — essay kind', () => {
         const { teacherKey } = await seedEssayAssignment(ownerId, runId, 'Live Essay Nudge');
 
         // ── Teacher: open the live essay monitor ────────────────────────────────
-        await supabasePage.goto(`http://localhost:5173/#/essays/${teacherKey}/monitor`);
+        await supabasePage.goto(`${APP_ORIGIN}/#/essays/${teacherKey}/monitor`);
         await supabasePage.reload();
         await supabasePage.waitForSelector('.main-area', { timeout: 20_000 });
         await supabasePage.waitForLoadState('networkidle', { timeout: 15_000 });
@@ -348,7 +349,7 @@ test.describe('Live monitor — essay kind', () => {
         }
 
         // ── Teacher: open the monitor after the fact ─────────────────────────────
-        await supabasePage.goto(`http://localhost:5173/#/essays/${teacherKey}/monitor`);
+        await supabasePage.goto(`${APP_ORIGIN}/#/essays/${teacherKey}/monitor`);
         await supabasePage.reload();
         await supabasePage.waitForSelector('.main-area', { timeout: 20_000 });
         await supabasePage.waitForLoadState('networkidle', { timeout: 15_000 });
@@ -364,7 +365,7 @@ test.describe('Live monitor — essay kind', () => {
         // so the badge never saw essay_submissions. useOnlineEssaySubmissions fixes
         // that — open the builder for this assignment and the badge must show
         // Submitted with no student tab anywhere.
-        await supabasePage.goto(`http://localhost:5173/#/essays/${teacherKey}`);
+        await supabasePage.goto(`${APP_ORIGIN}/#/essays/${teacherKey}`);
         await supabasePage.reload();
         await supabasePage.waitForSelector('.main-area', { timeout: 20_000 });
         await supabasePage.waitForLoadState('networkidle', { timeout: 15_000 });
@@ -372,7 +373,7 @@ test.describe('Live monitor — essay kind', () => {
         await expect(supabasePage.getByText('Submitted', { exact: true }).first()).toBeVisible({ timeout: 10_000 });
 
         // The essay list page shows the same hand-in in its submitted progress (1/1).
-        await supabasePage.goto('http://localhost:5173/#/essays');
+        await supabasePage.goto(`${APP_ORIGIN}/#/essays`);
         await supabasePage.reload();
         await supabasePage.waitForSelector('.main-area', { timeout: 20_000 });
         await supabasePage.waitForLoadState('networkidle', { timeout: 15_000 });
@@ -393,7 +394,7 @@ test.describe('Live monitor — essay kind', () => {
         const { teacherKey } = await seedEssayAssignment(ownerId, runId, 'Live Essay Presence');
 
         // ── Teacher: open the live essay monitor ─────────────────────────────────
-        await supabasePage.goto(`http://localhost:5173/#/essays/${teacherKey}/monitor`);
+        await supabasePage.goto(`${APP_ORIGIN}/#/essays/${teacherKey}/monitor`);
         await supabasePage.reload();
         await supabasePage.waitForSelector('.main-area', { timeout: 20_000 });
         await supabasePage.waitForLoadState('networkidle', { timeout: 15_000 });
@@ -455,7 +456,7 @@ test.describe('Live monitor — essay kind', () => {
         const { teacherKey } = await seedEssayAssignment(ownerId, runId, 'Live Essay Idle');
 
         // ── Teacher: open the live essay monitor ─────────────────────────────────
-        await supabasePage.goto(`http://localhost:5173/#/essays/${teacherKey}/monitor`);
+        await supabasePage.goto(`${APP_ORIGIN}/#/essays/${teacherKey}/monitor`);
         await supabasePage.reload();
         await supabasePage.waitForSelector('.main-area', { timeout: 20_000 });
         await supabasePage.waitForLoadState('networkidle', { timeout: 15_000 });
