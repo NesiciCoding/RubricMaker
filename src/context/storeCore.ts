@@ -265,14 +265,39 @@ export function reducer(state: StoreData, action: Action): StoreData {
             // never orphan them, and only the rows that actually pointed at it get new objects.
             const folders = state.folders.filter((f) => f.id !== action.id);
             if (isOffline()) saveFolders(folders);
-            if (action.kind === 'test') {
-                const tests = state.tests.map((t) => (t.folderId === action.id ? { ...t, folderId: undefined } : t));
-                if (isOffline()) saveTests(tests);
-                return { ...state, folders, tests };
+            // Every row of an essay group carries the group's folderId, so all of them are
+            // unfiled together — otherwise half a group would vanish from the unfiled list.
+            const unfile = <T extends { folderId?: string }>(items: T[]): T[] =>
+                items.map((item) => (item.folderId === action.id ? { ...item, folderId: undefined } : item));
+            switch (action.kind) {
+                case 'rubric': {
+                    const rubrics = unfile(state.rubrics);
+                    if (isOffline()) saveRubrics(rubrics);
+                    return { ...state, folders, rubrics };
+                }
+                case 'test': {
+                    const tests = unfile(state.tests);
+                    if (isOffline()) saveTests(tests);
+                    return { ...state, folders, tests };
+                }
+                case 'essay': {
+                    const essayAssignments = unfile(state.essayAssignments);
+                    if (isOffline()) saveEssayAssignments(essayAssignments);
+                    return { ...state, folders, essayAssignments };
+                }
+                case 'flashcard': {
+                    const flashcardDecks = unfile(state.flashcardDecks);
+                    if (isOffline()) saveFlashcardDecks(flashcardDecks);
+                    return { ...state, folders, flashcardDecks };
+                }
+                default: {
+                    // No `default: rubrics` fallback: a new FolderKind must be handled above, or
+                    // its items stay filed under a folder that no longer exists while rubrics
+                    // that were never in this folder get unfiled. This line fails typecheck first.
+                    const unhandled: never = action.kind;
+                    throw new Error(`DELETE_FOLDER: unhandled folder kind ${String(unhandled)}`);
+                }
             }
-            const rubrics = state.rubrics.map((r) => (r.folderId === action.id ? { ...r, folderId: undefined } : r));
-            if (isOffline()) saveRubrics(rubrics);
-            return { ...state, folders, rubrics };
         }
         case 'UPDATE_RUBRIC': {
             // Auto-versioning happens in the `updateRubric` action creator, not here —
