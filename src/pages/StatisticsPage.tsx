@@ -50,6 +50,7 @@ import { compareClasses, buildMultiClassTrend, getInsights } from '../utils/clas
 import { ChartSkeleton } from '../components/ui/Skeleton';
 import { STATS_PRESETS, type PresetChartPoint } from '../utils/statsChartPresets';
 import { liveStudentRubrics, rubricGradesInScope } from '../utils/liveStudentRubrics';
+import { EmptyState } from '../components/ui/EmptyState';
 
 const STUDENT_COLORS = ['var(--purple)', 'var(--green)', 'var(--yellow)', 'var(--red)'];
 
@@ -968,15 +969,9 @@ export default function StatisticsPage() {
                 {chartsReady && viewMode === 'compare' && (
                     <>
                         {compareClassIds.length < 2 ? (
-                            <div className="empty-state">
-                                <TrendingUp size={36} />
-                                <p>{t('statistics.compare.prompt')}</p>
-                            </div>
+                            <EmptyState icon={TrendingUp} description={t('statistics.compare.prompt')} />
                         ) : comparisonResults.length === 0 ? (
-                            <div className="empty-state">
-                                <TrendingUp size={36} />
-                                <p>{t('statistics.compare.no_data')}</p>
-                            </div>
+                            <EmptyState icon={TrendingUp} description={t('statistics.compare.no_data')} />
                         ) : (
                             <>
                                 {/* Class average bar chart */}
@@ -1168,10 +1163,7 @@ export default function StatisticsPage() {
                         )}
 
                         {summaries.length === 0 ? (
-                            <div className="empty-state">
-                                <TrendingUp size={36} />
-                                <p>{t('statistics.no_students')}</p>
-                            </div>
+                            <EmptyState icon={TrendingUp} description={t('statistics.no_students')} />
                         ) : (
                             <>
                                 {/* Stat cards */}
@@ -1361,11 +1353,10 @@ export default function StatisticsPage() {
                                         </div>
                                         {distributionMode === 'letter' ? (
                                             stats.distribution.length === 0 ? (
-                                                <div className="empty-state" style={{ height: 280 }}>
-                                                    <p className="text-muted text-sm">
-                                                        {t('statistics.no_grade_scale')}
-                                                    </p>
-                                                </div>
+                                                <EmptyState
+                                                    style={{ height: 280 }}
+                                                    description={t('statistics.no_grade_scale')}
+                                                />
                                             ) : (
                                                 <ResponsiveContainer width="100%" height={280}>
                                                     <BarChart
@@ -1406,9 +1397,10 @@ export default function StatisticsPage() {
                                         ) : summaries.length >= 2 ? (
                                             <ScoreHistogram scores={summaries.map((s) => s.modifiedPercentage)} />
                                         ) : (
-                                            <div className="empty-state" style={{ height: 280 }}>
-                                                <p className="text-muted text-sm">{t('statistics.no_grade_scale')}</p>
-                                            </div>
+                                            <EmptyState
+                                                style={{ height: 280 }}
+                                                description={t('statistics.no_grade_scale')}
+                                            />
                                         )}
                                     </div>
 
@@ -1682,15 +1674,9 @@ export default function StatisticsPage() {
                 {chartsReady && viewMode === 'student' && (
                     <>
                         {!selectedStudentId ? (
-                            <div className="empty-state">
-                                <Users size={36} />
-                                <p>{t('statistics.select_student_prompt')}</p>
-                            </div>
+                            <EmptyState icon={Users} description={t('statistics.select_student_prompt')} />
                         ) : studentViewTableData.length === 0 && studentTestData.length === 0 ? (
-                            <div className="empty-state">
-                                <BookOpen size={36} />
-                                <p>{t('statistics.student_not_graded')}</p>
-                            </div>
+                            <EmptyState icon={BookOpen} description={t('statistics.student_not_graded')} />
                         ) : (
                             <>
                                 {/* Graded rubrics table */}

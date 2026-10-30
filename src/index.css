@@ -1298,7 +1298,9 @@ select.input-error {
     text-align: center;
 }
 
-.empty-state svg {
+/* The shell's own glyph only: a descendant selector also dimmed the icon inside the primary CTA,
+   which the button colours with --accent-fg. */
+.empty-state > svg {
     color: var(--text-dim);
 }
 

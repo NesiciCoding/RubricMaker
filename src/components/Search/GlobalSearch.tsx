@@ -5,6 +5,7 @@ import { Search, FileText, ClipboardList, User, Users, BookOpen, GraduationCap, 
 import Modal from '../ui/Modal';
 import { useStoreSelector } from '../../context/useStore';
 import { searchAll, type SearchResult, type SearchResultType } from '../../utils/globalSearch';
+import { EmptyState } from '../ui/EmptyState';
 
 const TYPE_ICONS: Record<SearchResultType, React.ComponentType<{ size?: number }>> = {
     rubric: FileText,
@@ -107,13 +108,9 @@ export default function GlobalSearch({ onClose, growFrom }: Props) {
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0' }}>
                 {query.trim() === '' ? (
-                    <div className="empty-state" style={{ padding: 32 }}>
-                        {t('search.hint')}
-                    </div>
+                    <EmptyState style={{ padding: 32 }} description={t('search.hint')} />
                 ) : results.length === 0 ? (
-                    <div className="empty-state" style={{ padding: 32 }}>
-                        {t('search.no_results')}
-                    </div>
+                    <EmptyState style={{ padding: 32 }} description={t('search.no_results')} />
                 ) : (
                     results.slice(0, 50).map((result) => {
                         const Icon = TYPE_ICONS[result.type];

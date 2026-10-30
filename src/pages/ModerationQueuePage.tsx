@@ -22,6 +22,7 @@ import {
 import { calcGradeSummary } from '../utils/gradeCalc';
 import type { DbUser } from '../services/database';
 import type { StudentRubric } from '../types';
+import { EmptyState } from '../components/ui/EmptyState';
 
 export default function ModerationQueuePage() {
     const { t } = useTranslation();
@@ -209,11 +210,11 @@ export default function ModerationQueuePage() {
                 {colleaguesLoading ? (
                     <InlineSkeleton rows={4} />
                 ) : queue.length === 0 ? (
-                    <div className="empty-state">
-                        <UserCheck size={40} />
-                        <h3>{t('coGrading.moderation_empty')}</h3>
-                        <p className="text-muted text-sm">{t('coGrading.moderation_empty_desc')}</p>
-                    </div>
+                    <EmptyState
+                        icon={UserCheck}
+                        title={t('coGrading.moderation_empty')}
+                        description={t('coGrading.moderation_empty_desc')}
+                    />
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                         {queue.map((item) => {

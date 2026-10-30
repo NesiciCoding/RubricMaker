@@ -15,6 +15,7 @@ import { VO_TRACKS } from '../data/voTracks';
 import { SCHOOL_YEAR_LABELS, getAvailableSchoolYears } from '../data/schoolYears';
 import type { VoTrack, SchoolYear } from '../types';
 import { nanoid } from '../utils/nanoid';
+import { EmptyState } from '../components/ui/EmptyState';
 
 const SECTION_LABELS: Record<string, string> = {
     rubric: 'activityDashboard.section_rubrics',
@@ -204,13 +205,15 @@ export default function ActivityDashboardPage() {
             <>
                 <Topbar title={t('activityDashboard.title')} />
                 <div className="page-content fade-in">
-                    <div className="empty-state">
-                        <LayoutGrid size={36} />
-                        <p>{t('activityDashboard.empty')}</p>
-                        <button className="btn btn-primary" onClick={() => navigate('/rubrics')}>
-                            <Plus size={16} /> {t('activityDashboard.create_cta')}
-                        </button>
-                    </div>
+                    <EmptyState
+                        icon={LayoutGrid}
+                        description={t('activityDashboard.empty')}
+                        action={{
+                            label: t('activityDashboard.create_cta'),
+                            icon: Plus,
+                            onClick: () => navigate('/rubrics'),
+                        }}
+                    />
                 </div>
             </>
         );

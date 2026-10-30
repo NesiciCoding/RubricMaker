@@ -7,6 +7,7 @@ import { parseDocxToRubric, parsePdfToRubric, parseJsonToRubric } from '../../ut
 import { DEFAULT_FORMAT, type RubricCriterion, type RubricLevel } from '../../types';
 import { buildTieredSheet } from '../../utils/tieredSheet';
 import TieredSheetView from './TieredSheetView';
+import { EmptyState } from '../ui/EmptyState';
 
 interface Props {
     onClose: () => void;
@@ -433,13 +434,16 @@ export default function ImportRubricModal({ onClose, onImport }: Props) {
                                 </table>
                             </div>
                         ) : (
-                            <div className="empty-state" style={{ padding: '24px 0' }}>
-                                <AlertTriangle size={28} />
-                                <p>{t('importRubric.none_detected')}</p>
+                            <EmptyState
+                                icon={AlertTriangle}
+                                iconSize={28}
+                                style={{ padding: '24px 0' }}
+                                description={t('importRubric.none_detected')}
+                            >
                                 <button className="btn btn-secondary btn-sm" onClick={() => setStage('upload')}>
                                     {t('importRubric.try_another')}
                                 </button>
-                            </div>
+                            </EmptyState>
                         )}
                     </>
                 )}
