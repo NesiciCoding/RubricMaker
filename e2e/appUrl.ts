@@ -50,4 +50,13 @@ export const CHECKOUT_STAMP = checkoutStamp(CHECKOUT_ROOT);
 /** Origin every spec navigates to (`page.goto(`${APP_ORIGIN}/#/...`)`, not a hardcoded port). */
 export const APP_ORIGIN = resolveOrigin(CHECKOUT_ROOT, process.env);
 
-export const DEV_SERVER_PORT = Number(new URL(APP_ORIGIN).port || '80');
+/**
+ * Port of an origin, with the default for the scheme when it has no explicit one. An external
+ * `E2E_BASE_URL` usually carries no port (`https://preview.example.test`), so this is the branch
+ * the assertions in `e2eOrigin.test.ts` have to exercise rather than assume the local shape.
+ */
+export function originPort(origin: string): number {
+    return Number(new URL(origin).port || '80');
+}
+
+export const DEV_SERVER_PORT = originPort(APP_ORIGIN);

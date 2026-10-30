@@ -4,6 +4,7 @@ import {
     portForCheckout,
     resolveOrigin,
     reuseExistingServer,
+    originPort,
     DEV_SERVER_PORT,
     APP_ORIGIN,
     CHECKOUT_STAMP,
@@ -46,7 +47,15 @@ describe('e2e origin', () => {
 
     it('exposes the resolved origin for this checkout', () => {
         expect(APP_ORIGIN).toBe(resolveOrigin(process.cwd(), process.env));
-        expect(DEV_SERVER_PORT).toBe(Number(new URL(APP_ORIGIN).port));
         expect(CHECKOUT_STAMP).toHaveLength(12);
+    });
+
+    // `playwright.config.ts` starts the dev server on this port, so it has to be the port of
+    // whichever origin is in play — including an external one, which carries none.
+    it('takes the port from the resolved origin in every mode', () => {
+        expect(originPort(resolveOrigin('/work/app', {}))).toBe(portForCheckout('/work/app'));
+        expect(originPort(resolveOrigin('/work/app', { E2E_PORT: '6000' }))).toBe(6000);
+        expect(originPort('https://preview.example.test')).toBe(80);
+        expect(DEV_SERVER_PORT).toBe(originPort(APP_ORIGIN));
     });
 });
