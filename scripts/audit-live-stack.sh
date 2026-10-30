@@ -73,8 +73,12 @@ with_timeout() {
 }
 
 # Epoch seconds for a certificate's `notAfter` ("Sep  1 12:00:00 2026 GMT"): GNU date -d, BSD date -j.
+# An empty value is rejected outright: `date -d ''` succeeds and means the start of today, which
+# would turn a failed TLS probe into a certificate that "expires today".
 epoch_of() {
-    date -d "$1" +%s 2>/dev/null || date -j -f '%b %d %H:%M:%S %Y %Z' "$1" +%s 2>/dev/null
+    local value="${1:-}"
+    [[ -n "${value// /}" ]] || return 1
+    date -d "$value" +%s 2>/dev/null || date -j -f '%b %d %H:%M:%S %Y %Z' "$value" +%s 2>/dev/null
 }
 
 # Value of KEY in a dotenv file, without sourcing it (the file may contain shell metacharacters).
@@ -146,8 +150,13 @@ section "Secrets and auth config (#930)"
 if [[ -n "$ENV_FILE" && -r "$ENV_FILE" ]]; then
     # GNU stat takes -c, BSD/macOS stat takes -f. The audit runs on a Linux host, but its
     # tests run on developer machines too — a failed stat must not abort the checks.
-    mode="$(stat -c '%a' "$ENV_FILE" 2>/dev/null || stat -f '%Lp' "$ENV_FILE" 2>/dev/null || echo '?')"
-    if [[ "${mode: -1}" =~ [4-7] ]]; then
+    mode="$(stat -c '%a' "$ENV_FILE" 2>/dev/null || stat -f '%Lp' "$ENV_FILE" 2>/dev/null || true)"
+    if [[ -z "$mode" ]]; then
+        # Neither stat flavour answered. Reporting PASS here would claim the file is safe without
+        # having looked at it, which is the failure mode this check exists to catch.
+        warn "Could not read the permissions on $ENV_FILE" \
+            "stat -c %a on GNU, stat -f %Lp on BSD; confirm by hand that only the stack user can read it."
+    elif [[ "${mode: -1}" =~ [4-7] ]]; then
         fail "$ENV_FILE is world-readable (mode $mode)" "chmod 600 $ENV_FILE"
     else
         pass "$ENV_FILE is not world-readable (mode $mode)"
@@ -249,6 +258,8 @@ for u in "$APP_URL" "$API_URL"; do
         if [[ -n "$end_epoch" ]]; then
             days=$((($end_epoch - $(date +%s)) / 86400))
             if [[ $days -lt 14 ]]; then warn "TLS certificate for $host expires in $days days"; else pass "TLS certificate for $host valid for $days more days"; fi
+        else
+            warn "Could not read the TLS certificate expiry for $host" "The probe returned no notAfter value ($(openssl version 2>/dev/null || echo 'openssl')); check the certificate by hand."
         fi
     fi
 done
