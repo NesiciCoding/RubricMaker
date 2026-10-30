@@ -18,6 +18,8 @@ export function UpdateAvailableToast() {
     // transformed ancestor (any `.fade-in` ending on a transform) instead of the viewport (#1017).
     return createPortal(
         <div
+            // `no-print`: the portal is outside #root, which is what the SlipSheet print rule hides.
+            className="no-print"
             role="status"
             style={{
                 position: 'fixed',

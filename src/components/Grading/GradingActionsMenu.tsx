@@ -112,9 +112,11 @@ export default function GradingActionsMenu({ actions }: { actions: GradingAction
                 // against the nearest transformed ancestor (any `.fade-in` that ends on a
                 // transform) instead of the viewport — see #1017.
                 createPortal(
+                    // `no-print`: the portal is outside the wrapper's `no-print`, and the grading
+                    // page prints from a menu item while this menu is still mounted.
                     <div
                         ref={menuRef}
-                        className="card"
+                        className="card no-print"
                         role="menu"
                         onKeyDown={onMenuKeyDown}
                         style={{

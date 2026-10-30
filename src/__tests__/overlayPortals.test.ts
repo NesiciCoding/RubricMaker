@@ -56,6 +56,20 @@ describe('fixed-position overlays', () => {
         expect(offenders()).toEqual([]);
     });
 
+    // Portalling moved these out of `#root`, which is the element the SlipSheet print rule hides.
+    // Anything that can be on screen while the user prints must hide itself.
+    const PRINTABLE_WHILE_VISIBLE = [
+        'components/Grading/GradingActionsMenu.tsx',
+        'context/ToastContext.tsx',
+        'components/ui/HydrationProgress.tsx',
+        'components/ui/UpdateAvailableToast.tsx',
+    ];
+
+    it.each(PRINTABLE_WHILE_VISIBLE)('%s is hidden from print output', (rel) => {
+        const source = readFileSync(resolve(srcRoot, rel), 'utf8');
+        expect(source).toMatch(/className="[^"]*\bno-print\b/);
+    });
+
     it('keeps the page-entrance animation off an identity transform', () => {
         const css = readFileSync(resolve(srcRoot, 'index.css'), 'utf8');
         const start = css.indexOf('@keyframes fadeIn');

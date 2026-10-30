@@ -68,7 +68,9 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
     // Portalled to <body>: a fixed toast inside page content is positioned against the nearest
     // transformed ancestor (any `.fade-in` ending on a transform) instead of the viewport (#1017).
     return createPortal(
+        // `no-print`: the portal is outside #root, which is what the SlipSheet print rule hides.
         <div
+            className="no-print"
             style={{
                 position: 'fixed',
                 bottom: '1.5rem',
