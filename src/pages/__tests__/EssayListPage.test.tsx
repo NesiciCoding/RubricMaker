@@ -59,6 +59,32 @@ const mockDeleteFolder = vi.fn();
 
 let appOverrides: Record<string, unknown> = {};
 
+// Stands in for the drag machinery so a test can start a drag and end it with a given reason.
+const dnd = vi.hoisted(() => ({
+    onDragEnd: null as unknown as (r: unknown) => void,
+    onBeforeCapture: null as unknown as () => void,
+}));
+
+vi.mock('@hello-pangea/dnd', () => ({
+    DragDropContext: ({
+        children,
+        onBeforeCapture,
+        onDragEnd,
+    }: {
+        children: React.ReactNode;
+        onBeforeCapture: () => void;
+        onDragEnd: (r: unknown) => void;
+    }) => {
+        dnd.onDragEnd = onDragEnd;
+        dnd.onBeforeCapture = onBeforeCapture;
+        return React.createElement(React.Fragment, null, children);
+    },
+    Droppable: ({ children }: { children: (p: unknown, s: unknown) => React.ReactNode }) =>
+        children({ innerRef: vi.fn(), droppableProps: {}, placeholder: null }, { isDraggingOver: false }),
+    Draggable: ({ children }: { children: (p: unknown, s: unknown) => React.ReactNode }) =>
+        children({ innerRef: vi.fn(), draggableProps: {}, dragHandleProps: {} }, { isDragging: false }),
+}));
+
 vi.mock('react-router-dom', async () => {
     const actual = await vi.importActual('react-router-dom');
     return { ...actual, useNavigate: () => mockNavigate };
@@ -234,6 +260,46 @@ describe('EssayListPage folders', () => {
 
         // The kind keeps the essay tree separate from the rubric and test trees.
         expect(mockAddFolder).toHaveBeenCalledWith({ name: 'Term 2', kind: 'essay', displayOrder: 0 });
+    });
+
+    it('files an essay group on a real drop over a folder tile but not on a cancelled drag', async () => {
+        const { default: EssayListPage } = await import('../EssayListPage');
+        renderWithRouter(<EssayListPage />);
+
+        const tile = document.createElement('div');
+        tile.setAttribute('data-drop-folder-id', 'f1');
+        const label = document.createElement('span');
+        tile.appendChild(label);
+        document.body.appendChild(tile);
+        // jsdom has no layout, and with it no elementFromPoint at all; stand in for the hit test.
+        Object.defineProperty(document, 'elementFromPoint', {
+            configurable: true,
+            writable: true,
+            value: () => label,
+        });
+
+        const dragOntoTile = () => {
+            act(() => dnd.onBeforeCapture());
+            act(() => {
+                window.dispatchEvent(new MouseEvent('mousemove', { clientX: 5, clientY: 5 }));
+            });
+        };
+
+        // Escape ends the drag with reason CANCEL and a null destination; the pointer is still there.
+        dragOntoTile();
+        act(() => {
+            dnd.onDragEnd({ source: { index: 0, droppableId: 'essay-list' }, destination: null, reason: 'CANCEL' });
+        });
+        expect(mockUpdateEssayGroup).not.toHaveBeenCalled();
+
+        dragOntoTile();
+        act(() => {
+            dnd.onDragEnd({ source: { index: 0, droppableId: 'essay-list' }, destination: null, reason: 'DROP' });
+        });
+        expect(mockUpdateEssayGroup).toHaveBeenCalledWith('tk1', { folderId: 'f1' });
+
+        Reflect.deleteProperty(document, 'elementFromPoint');
+        tile.remove();
     });
 
     it('deletes a folder without touching the essays inside it', async () => {
