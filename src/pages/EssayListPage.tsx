@@ -91,7 +91,8 @@ export default function EssayListPage() {
         // The pointer decides which folder was under the card: @hello-pangea/dnd only sees the
         // dragged card's centre, which never reaches a folder tile from a corner grab.
         const pointerFolderId = endFolderDrop();
-        if (pointerFolderId) {
+        // `reason` guards Escape: a cancelled drag still reports where the pointer was.
+        if (pointerFolderId && result.reason === 'DROP') {
             fileIntoFolder(visibleGroups[result.source.index]?.teacherKey, pointerFolderId);
             return;
         }

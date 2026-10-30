@@ -92,7 +92,9 @@ export default function FlashcardsPage() {
 
     function fileIntoFolder(deckId: string | undefined, folderId: string) {
         const deck = flashcardDecks.find((d) => d.id === deckId);
-        if (!deck || deck.folderId === folderId) return;
+        // A shared student deck is read-only for teachers: filing it would change local state and
+        // then be dropped by RLS on the next sync, so the card looked filed while it was not.
+        if (!deck || deck.ownerStudentId || deck.folderId === folderId) return;
         updateFlashcardDeck({ ...deck, folderId });
         const folder = deckFolders.find((f) => f.id === folderId);
         if (folder) showToast(t('folders.moved_toast', { name: folder.name }), 'success');
@@ -102,7 +104,9 @@ export default function FlashcardsPage() {
         // The pointer decides which folder was under the card: @hello-pangea/dnd only sees the
         // dragged card's centre, which never reaches a folder tile from a corner grab.
         const pointerFolderId = endFolderDrop();
-        if (pointerFolderId) fileIntoFolder(visibleDecks[result.source.index]?.id, pointerFolderId);
+        // `reason` guards Escape: a cancelled drag still reports where the pointer was.
+        if (pointerFolderId && result.reason === 'DROP')
+            fileIntoFolder(visibleDecks[result.source.index]?.id, pointerFolderId);
         // Decks keep their newest-first order, so a drop outside a folder changes nothing.
     }
 
@@ -187,7 +191,12 @@ export default function FlashcardsPage() {
                                                     .map((a) => a.studentId)
                                             ).size;
                                             return (
-                                                <Draggable key={deck.id} draggableId={deck.id} index={idx}>
+                                                <Draggable
+                                                    key={deck.id}
+                                                    draggableId={deck.id}
+                                                    index={idx}
+                                                    isDragDisabled={!!deck.ownerStudentId}
+                                                >
                                                     {(dragProvided) => (
                                                         <CardTile
                                                             ref={dragProvided.innerRef}
@@ -214,12 +223,15 @@ export default function FlashcardsPage() {
                                                                         minWidth: 0,
                                                                     }}
                                                                 >
-                                                                    {/* Above the stretched link, otherwise clicking the grip opens the deck. */}
-                                                                    <CardGrip
-                                                                        {...dragProvided.dragHandleProps}
-                                                                        label={t('folders.drag_to_file')}
-                                                                        style={{ position: 'relative', zIndex: 1 }}
-                                                                    />
+                                                                    {/* Above the stretched link, otherwise clicking the grip opens the deck.
+                                                                        A shared student deck cannot be filed, so it gets no grip. */}
+                                                                    {!deck.ownerStudentId && (
+                                                                        <CardGrip
+                                                                            {...dragProvided.dragHandleProps}
+                                                                            label={t('folders.drag_to_file')}
+                                                                            style={{ position: 'relative', zIndex: 1 }}
+                                                                        />
+                                                                    )}
                                                                     <div style={{ minWidth: 0 }}>
                                                                         <h3 style={{ margin: 0 }}>
                                                                             {deck.ownerStudentId ? (
