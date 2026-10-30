@@ -235,7 +235,7 @@ export default function AttachmentsPage() {
                                 return (
                                     <tr key={att.id}>
                                         <td style={{ fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                            <Paperclip size={14} style={{ color: 'var(--accent)' }} />
+                                            <Paperclip size={14} style={{ color: 'var(--accent-text)' }} />
                                             {att.name}
                                         </td>
                                         <td>
@@ -288,7 +288,7 @@ export default function AttachmentsPage() {
                                                 <button
                                                     className="btn btn-ghost btn-icon btn-sm"
                                                     aria-label={t('attachments.delete_title', 'Delete attachment')}
-                                                    style={{ color: 'var(--red)' }}
+                                                    style={{ color: 'var(--red-text)' }}
                                                     onClick={async () => {
                                                         const ok = await confirm({
                                                             title: t('attachments.delete_title', 'Delete attachment'),

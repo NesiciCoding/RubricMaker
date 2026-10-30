@@ -33,7 +33,7 @@ export default function SubItemFeedback({ criterion, entry }: { criterion: Rubri
                         <Check
                             size={13}
                             aria-hidden="true"
-                            style={{ flexShrink: 0, marginTop: 2, color: 'var(--accent)' }}
+                            style={{ flexShrink: 0, marginTop: 2, color: 'var(--accent-text)' }}
                         />
                         <span>
                             {si.label}

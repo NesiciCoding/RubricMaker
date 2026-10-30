@@ -58,6 +58,7 @@ import { VO_TRACK_LABELS, getTrackBadgeColor, getEffectiveVoTrack } from '../dat
 import { getEffectiveSchoolYear } from '../data/schoolYears';
 import RecordingPlayer from '../components/Recordings/RecordingPlayer';
 import type { GradeScale, Rubric, SessionRecording, StudentRubric } from '../types';
+import { textOnTheme } from '../utils/contrastCheck';
 /** Safety valve: calibrating scans every student's evidence, so cap a huge school to a stable slice. */
 const CALIBRATION_COHORT_LIMIT = 200;
 /** Frozen fallback for classes without a cohort, so it stays a stable `useMemo` dependency. */
@@ -618,7 +619,7 @@ export default function StudentProfilePage() {
                                 padding: '8px 18px',
                                 fontSize: '0.9rem',
                                 fontWeight: activeTab === tab ? 700 : 500,
-                                color: activeTab === tab ? 'var(--accent)' : 'var(--text-muted)',
+                                color: activeTab === tab ? 'var(--accent-text)' : 'var(--text-muted)',
                                 background: 'none',
                                 border: 'none',
                                 borderBottom: activeTab === tab ? '2px solid var(--accent)' : '2px solid transparent',
@@ -655,11 +656,11 @@ export default function StudentProfilePage() {
                                 {portfolioTimeline.map((entry, idx) => {
                                     const icon =
                                         entry.kind === 'grade' ? (
-                                            <FileText size={16} style={{ color: 'var(--accent)' }} />
+                                            <FileText size={16} style={{ color: 'var(--accent-text)' }} />
                                         ) : entry.kind === 'speaking' ? (
                                             <Mic size={16} style={{ color: 'var(--purple, #a855f7)' }} />
                                         ) : (
-                                            <ClipboardCheck size={16} style={{ color: 'var(--green)' }} />
+                                            <ClipboardCheck size={16} style={{ color: 'var(--green-text)' }} />
                                         );
                                     const kindLabel =
                                         entry.kind === 'grade'
@@ -875,7 +876,7 @@ export default function StudentProfilePage() {
                         <>
                             <div className="grid-3" style={{ marginBottom: 24 }}>
                                 <div className="card" style={{ borderTop: '3px solid var(--accent)' }}>
-                                    <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--accent)' }}>
+                                    <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--accent-text)' }}>
                                         {percentFormat.format(avgScore)}%
                                     </div>
                                     <div className="text-muted text-sm" style={{ marginTop: 4 }}>
@@ -883,7 +884,7 @@ export default function StudentProfilePage() {
                                     </div>
                                 </div>
                                 <div className="card" style={{ borderTop: '3px solid var(--green)' }}>
-                                    <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--green)' }}>
+                                    <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--green-text)' }}>
                                         {percentFormat.format(highestScore)}%
                                     </div>
                                     <div className="text-muted text-sm" style={{ marginTop: 4 }}>
@@ -891,7 +892,7 @@ export default function StudentProfilePage() {
                                     </div>
                                 </div>
                                 <div className="card" style={{ borderTop: '3px solid var(--purple)' }}>
-                                    <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--purple)' }}>
+                                    <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--purple-text)' }}>
                                         {history.length}
                                     </div>
                                     <div className="text-muted text-sm" style={{ marginTop: 4 }}>
@@ -921,7 +922,7 @@ export default function StudentProfilePage() {
                             {cefrProgress.length > 0 && (
                                 <div className="card" style={{ marginBottom: 24 }}>
                                     <h3 style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                        <BookOpen size={18} style={{ color: 'var(--accent)' }} />
+                                        <BookOpen size={18} style={{ color: 'var(--accent-text)' }} />
                                         {t('cefr.student_progress_title')}
                                         <span
                                             style={{
@@ -1020,7 +1021,7 @@ export default function StudentProfilePage() {
                                                             minWidth: 44,
                                                             textAlign: 'right',
                                                             color: entry.achieved
-                                                                ? CEFR_LEVEL_COLORS[entry.level]
+                                                                ? textOnTheme(CEFR_LEVEL_COLORS[entry.level])
                                                                 : 'var(--text-muted)',
                                                         }}
                                                     >
@@ -1036,9 +1037,9 @@ export default function StudentProfilePage() {
                                                                 ? `${CEFR_LEVEL_COLORS[entry.level]}22`
                                                                 : 'var(--bg-elevated)',
                                                             color: entry.achieved
-                                                                ? CEFR_LEVEL_COLORS[entry.level]
+                                                                ? textOnTheme(CEFR_LEVEL_COLORS[entry.level])
                                                                 : 'var(--text-muted)',
-                                                            border: `1px solid ${entry.achieved ? CEFR_LEVEL_COLORS[entry.level] : 'var(--border)'}`,
+                                                            border: `1px solid ${entry.achieved ? textOnTheme(CEFR_LEVEL_COLORS[entry.level]) : 'var(--border)'}`,
                                                             minWidth: 72,
                                                             textAlign: 'center',
                                                         }}
@@ -1110,7 +1111,7 @@ export default function StudentProfilePage() {
                                 return (
                                     <div className="card" style={{ marginBottom: 24 }}>
                                         <h3 style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                            <ClipboardCheck size={18} style={{ color: 'var(--accent)' }} />
+                                            <ClipboardCheck size={18} style={{ color: 'var(--accent-text)' }} />
                                             {t('selfAssess.comparison_title')}
                                         </h3>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -1583,7 +1584,7 @@ export default function StudentProfilePage() {
                                     }}
                                 >
                                     <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                        <Mic size={16} style={{ color: 'var(--accent)' }} />{' '}
+                                        <Mic size={16} style={{ color: 'var(--accent-text)' }} />{' '}
                                         {t('speaking.sessions_history')}
                                     </h3>
                                     <button

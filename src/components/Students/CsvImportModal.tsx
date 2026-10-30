@@ -315,7 +315,7 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                             <div
                                 style={{
                                     fontSize: '0.8rem',
-                                    color: 'var(--accent)',
+                                    color: 'var(--accent-text)',
                                     marginBottom: 12,
                                     padding: '8px 12px',
                                     background: 'var(--bg-elevated)',
@@ -490,18 +490,18 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                 <div className="modal-body">
                     <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
                         {summary.created > 0 && (
-                            <span style={{ color: 'var(--green)', fontWeight: 600 }}>
+                            <span style={{ color: 'var(--green-text)', fontWeight: 600 }}>
                                 <CheckCircle size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />
                                 {summary.created} {t('csv.summary_created')}
                             </span>
                         )}
                         {summary.updated > 0 && (
-                            <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
+                            <span style={{ color: 'var(--accent-text)', fontWeight: 600 }}>
                                 {summary.updated} {t('csv.summary_updated')}
                             </span>
                         )}
                         {summary.transferred > 0 && (
-                            <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
+                            <span style={{ color: 'var(--accent-text)', fontWeight: 600 }}>
                                 {summary.transferred} {t('csv.summary_transferred')}
                             </span>
                         )}

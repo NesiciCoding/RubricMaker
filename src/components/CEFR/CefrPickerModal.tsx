@@ -20,6 +20,7 @@ import type {
     LinkedFrameworkDescriptor,
     AssessmentFramework,
 } from '../../types';
+import { textOnTheme } from '../../utils/contrastCheck';
 
 type ActiveFramework = 'cefr' | AssessmentFramework;
 
@@ -134,7 +135,7 @@ export default function CefrPickerModal({
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <BookOpen size={18} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                    <BookOpen size={18} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
                     <div>
                         <div id="cefr-picker-title" style={{ fontWeight: 600, fontSize: 15 }}>
                             {t('framework.picker_title')}
@@ -169,7 +170,7 @@ export default function CefrPickerModal({
                             border: 'none',
                             borderBottom:
                                 activeFramework === tab.id ? '2px solid var(--accent)' : '2px solid transparent',
-                            color: activeFramework === tab.id ? 'var(--accent)' : 'var(--text-muted)',
+                            color: activeFramework === tab.id ? 'var(--accent-text)' : 'var(--text-muted)',
                             fontWeight: activeFramework === tab.id ? 600 : 400,
                             fontSize: 13,
                             padding: '10px 14px',
@@ -218,7 +219,10 @@ export default function CefrPickerModal({
                                 style={
                                     selectedLevel === level
                                         ? {}
-                                        : { borderColor: CEFR_LEVEL_COLORS[level], color: CEFR_LEVEL_COLORS[level] }
+                                        : {
+                                              borderColor: CEFR_LEVEL_COLORS[level],
+                                              color: textOnTheme(CEFR_LEVEL_COLORS[level]),
+                                          }
                                 }
                                 onClick={() => setSelectedLevel((prev) => (prev === level ? null : level))}
                             >
@@ -255,7 +259,10 @@ export default function CefrPickerModal({
                             style={
                                 selectedLevel === level
                                     ? {}
-                                    : { borderColor: CEFR_LEVEL_COLORS[level], color: CEFR_LEVEL_COLORS[level] }
+                                    : {
+                                          borderColor: CEFR_LEVEL_COLORS[level],
+                                          color: textOnTheme(CEFR_LEVEL_COLORS[level]),
+                                      }
                             }
                             onClick={() => setSelectedLevel((prev) => (prev === level ? null : level))}
                         >
@@ -325,7 +332,7 @@ export default function CefrPickerModal({
                                             style={{
                                                 fontWeight: 700,
                                                 fontSize: 13,
-                                                color: CEFR_LEVEL_COLORS[level],
+                                                color: textOnTheme(CEFR_LEVEL_COLORS[level]),
                                                 minWidth: 28,
                                             }}
                                         >

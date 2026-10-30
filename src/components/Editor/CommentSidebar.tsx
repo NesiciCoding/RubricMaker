@@ -93,7 +93,7 @@ export default function CommentSidebar({
                             <button
                                 type="button"
                                 className="btn btn-ghost btn-sm"
-                                style={{ fontSize: '0.72rem', padding: '2px 8px', color: 'var(--red)' }}
+                                style={{ fontSize: '0.72rem', padding: '2px 8px', color: 'var(--red-text)' }}
                                 onClick={() => onDelete(c.id)}
                             >
                                 <Trash2 size={12} /> {t('attachments.comment_delete')}

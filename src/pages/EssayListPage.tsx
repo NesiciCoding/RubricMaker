@@ -219,7 +219,7 @@ export default function EssayListPage() {
                                                                     className="btn btn-ghost btn-icon btn-sm"
                                                                     title={t('tests.action_delete')}
                                                                     aria-label={t('tests.action_delete')}
-                                                                    style={{ color: 'var(--red)' }}
+                                                                    style={{ color: 'var(--red-text)' }}
                                                                     onClick={() =>
                                                                         handleDelete(teacherKey, first.title)
                                                                     }

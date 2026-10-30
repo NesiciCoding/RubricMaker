@@ -143,7 +143,7 @@ function EmailGate({ adapter, onAuthenticated }: EmailGateProps) {
                 }}
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <Mail size={22} style={{ color: 'var(--accent)' }} />
+                    <Mail size={22} style={{ color: 'var(--accent-text)' }} />
                     <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>{t('essay.email_gate_title')}</h2>
                 </div>
                 <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
@@ -169,7 +169,7 @@ function EmailGate({ adapter, onAuthenticated }: EmailGateProps) {
                     }}
                     autoFocus
                 />
-                {error && <p style={{ margin: 0, color: 'var(--red)', fontSize: '0.825rem' }}>{error}</p>}
+                {error && <p style={{ margin: 0, color: 'var(--red-text)', fontSize: '0.825rem' }}>{error}</p>}
                 <button
                     onClick={handleStart}
                     disabled={busy}
@@ -689,7 +689,7 @@ export default function StudentEssayPage() {
                         alignItems: 'center',
                         gap: 8,
                         fontSize: '0.875rem',
-                        color: 'var(--accent)',
+                        color: 'var(--accent-text)',
                     }}
                 >
                     <Save size={14} style={{ flexShrink: 0 }} />
@@ -701,7 +701,7 @@ export default function StudentEssayPage() {
                             background: 'none',
                             border: 'none',
                             cursor: 'pointer',
-                            color: 'var(--accent)',
+                            color: 'var(--accent-text)',
                             fontSize: '0.8rem',
                             textDecoration: 'underline',
                         }}
@@ -831,7 +831,7 @@ export default function StudentEssayPage() {
                                 padding: '3px 9px',
                                 borderRadius: 999,
                                 background: 'var(--green-soft, color-mix(in srgb, var(--green) 14%, transparent))',
-                                color: 'var(--green)',
+                                color: 'var(--green-text)',
                             }}
                         >
                             <CheckCircle size={12} />
@@ -1104,7 +1104,7 @@ export default function StudentEssayPage() {
                                         fontSize: '0.7rem',
                                         fontWeight: 700,
                                         textTransform: 'uppercase',
-                                        color: 'var(--accent)',
+                                        color: 'var(--accent-text)',
                                         marginBottom: 6,
                                         letterSpacing: '0.05em',
                                     }}
@@ -1174,7 +1174,7 @@ export default function StudentEssayPage() {
                                     fontSize: '0.7rem',
                                     fontWeight: 700,
                                     textTransform: 'uppercase',
-                                    color: 'var(--accent)',
+                                    color: 'var(--accent-text)',
                                     letterSpacing: '0.05em',
                                     marginBottom: 6,
                                 }}

@@ -301,7 +301,7 @@ function RubricCard({
                                 className="btn btn-ghost btn-icon btn-sm"
                                 title={t('rubricList.action_delete')}
                                 aria-label={t('rubricList.action_delete')}
-                                style={{ color: 'var(--red)' }}
+                                style={{ color: 'var(--red-text)' }}
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     actions.onDelete(rubric);

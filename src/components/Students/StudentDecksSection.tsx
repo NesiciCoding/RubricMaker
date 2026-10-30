@@ -143,7 +143,7 @@ export default function StudentDecksSection({ studentId }: Props) {
                         gap: 8,
                     }}
                 >
-                    <Layers size={16} style={{ color: 'var(--accent)' }} /> {t('studentDecks.section_title')}
+                    <Layers size={16} style={{ color: 'var(--accent-text)' }} /> {t('studentDecks.section_title')}
                 </h2>
                 <button type="button" className="btn btn-primary btn-sm" onClick={startCreate}>
                     <Plus size={14} /> {t('studentDecks.create')}
@@ -151,7 +151,7 @@ export default function StudentDecksSection({ studentId }: Props) {
             </div>
 
             {loadError ? (
-                <p className="text-sm" style={{ margin: 0, color: 'var(--red)' }}>
+                <p className="text-sm" style={{ margin: 0, color: 'var(--red-text)' }}>
                     {t('studentDecks.load_error')}
                 </p>
             ) : decks.length === 0 ? (
@@ -181,7 +181,7 @@ export default function StudentDecksSection({ studentId }: Props) {
                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                                     {t('flashcards.card_count', { count: deck.cards.length })}
                                     {deck.sharedWithTeacher && (
-                                        <span style={{ color: 'var(--green)', marginLeft: 8 }}>
+                                        <span style={{ color: 'var(--green-text)', marginLeft: 8 }}>
                                             {t('studentDecks.shared_badge')}
                                         </span>
                                     )}
@@ -211,7 +211,9 @@ export default function StudentDecksSection({ studentId }: Props) {
                                     aria-pressed={deck.sharedWithTeacher ?? false}
                                     aria-label={t('studentDecks.share')}
                                     title={t('studentDecks.share')}
-                                    style={{ color: deck.sharedWithTeacher ? 'var(--green)' : 'var(--text-muted)' }}
+                                    style={{
+                                        color: deck.sharedWithTeacher ? 'var(--green-text)' : 'var(--text-muted)',
+                                    }}
                                     onClick={() => void toggleShare(deck)}
                                 >
                                     <Share2 size={14} />
@@ -221,7 +223,7 @@ export default function StudentDecksSection({ studentId }: Props) {
                                     className="btn btn-ghost btn-icon btn-sm"
                                     aria-label={t('common.delete')}
                                     title={t('common.delete')}
-                                    style={{ color: 'var(--red)' }}
+                                    style={{ color: 'var(--red-text)' }}
                                     onClick={() => void handleDelete(deck)}
                                 >
                                     <Trash2 size={14} />
@@ -363,7 +365,7 @@ function DeckEditor({
                             className="btn btn-ghost btn-icon btn-sm"
                             aria-label={t('flashcards.remove_card')}
                             title={t('flashcards.remove_card')}
-                            style={{ color: 'var(--red)', flexShrink: 0 }}
+                            style={{ color: 'var(--red-text)', flexShrink: 0 }}
                             onClick={() => removeRow(card.id)}
                         >
                             <Trash2 size={13} />

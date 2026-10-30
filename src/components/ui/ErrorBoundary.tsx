@@ -52,7 +52,7 @@ export class ErrorBoundary extends Component<Props, State> {
                     textAlign: 'center',
                 }}
             >
-                <AlertTriangle size={40} style={{ color: 'var(--yellow)' }} aria-hidden="true" />
+                <AlertTriangle size={40} style={{ color: 'var(--yellow-text)' }} aria-hidden="true" />
                 <h2 style={{ fontSize: '1.2rem', color: 'var(--text)' }}>{i18n.t('errors.boundary_title')}</h2>
                 <p style={{ color: 'var(--text-muted)', maxWidth: '400px', fontSize: '0.9rem' }}>
                     {i18n.t('errors.boundary_body')}

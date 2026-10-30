@@ -525,7 +525,7 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
                                                     type="button"
                                                     className="btn btn-ghost btn-icon btn-xs"
                                                     aria-label={t('common.delete')}
-                                                    style={{ color: 'var(--red)' }}
+                                                    style={{ color: 'var(--red-text)' }}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         handleDelete(item);

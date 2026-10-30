@@ -315,7 +315,7 @@ export default function ExamScanCaptureModal({ test, students, studentTests, onS
                         padding: '18px 20px 14px',
                     }}
                 >
-                    <ScanLine size={20} style={{ color: 'var(--accent)' }} />
+                    <ScanLine size={20} style={{ color: 'var(--accent-text)' }} />
                     <h3 id="exam-scan-dialog-title" style={{ margin: 0, flex: 1 }}>
                         {t('tests.scan.title')}
                     </h3>
@@ -473,9 +473,12 @@ export default function ExamScanCaptureModal({ test, students, studentTests, onS
                                 alignItems: 'flex-start',
                             }}
                         >
-                            <AlertTriangle size={16} style={{ color: 'var(--red)', flexShrink: 0, marginTop: 2 }} />
+                            <AlertTriangle
+                                size={16}
+                                style={{ color: 'var(--red-text)', flexShrink: 0, marginTop: 2 }}
+                            />
                             <div style={{ flex: 1 }}>
-                                <p style={{ margin: 0, color: 'var(--red)', fontSize: '0.9rem' }}>{errorMsg}</p>
+                                <p style={{ margin: 0, color: 'var(--red-text)', fontSize: '0.9rem' }}>{errorMsg}</p>
                                 <button
                                     className="btn btn-secondary btn-sm"
                                     style={{ marginTop: 8 }}
@@ -515,7 +518,7 @@ export default function ExamScanCaptureModal({ test, students, studentTests, onS
                                                     fontWeight: 700,
                                                     padding: '1px 8px',
                                                     borderRadius: 4,
-                                                    color: unscanned ? 'var(--text-muted)' : 'var(--accent)',
+                                                    color: unscanned ? 'var(--text-muted)' : 'var(--accent-text)',
                                                     background: 'var(--bg)',
                                                     border: '1px solid var(--border)',
                                                 }}
@@ -559,7 +562,7 @@ export default function ExamScanCaptureModal({ test, students, studentTests, onS
                                 alignItems: 'center',
                             }}
                         >
-                            <Check size={32} style={{ color: 'var(--green)' }} />
+                            <Check size={32} style={{ color: 'var(--green-text)' }} />
                             <p style={{ margin: 0, fontWeight: 600 }}>{t('tests.scan.save_success')}</p>
                         </div>
                     )}

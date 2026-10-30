@@ -605,7 +605,7 @@ export default function CefrOverviewPage() {
                                                 bg: 'rgba(148,163,184,0.12)',
                                             },
                                             {
-                                                color: 'var(--accent)',
+                                                color: 'var(--accent-text)',
                                                 label: t('cefr.legend_target_level'),
                                                 bg: 'transparent',
                                                 outline: true,
@@ -742,7 +742,11 @@ export default function CefrOverviewPage() {
                                     <div className="grid-3" style={{ marginBottom: 24 }}>
                                         <div className="card" style={{ borderTop: '3px solid var(--accent)' }}>
                                             <div
-                                                style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--accent)' }}
+                                                style={{
+                                                    fontSize: '1.6rem',
+                                                    fontWeight: 700,
+                                                    color: 'var(--accent-text)',
+                                                }}
                                             >
                                                 {overview.skillsWithRubricData}
                                             </div>
@@ -799,7 +803,7 @@ export default function CefrOverviewPage() {
                                 {overview && (
                                     <div className="card" style={{ marginBottom: 24 }}>
                                         <h3 style={{ marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                            <BookOpen size={18} style={{ color: 'var(--accent)' }} />
+                                            <BookOpen size={18} style={{ color: 'var(--accent-text)' }} />
                                             {t('cefrOverview.grid_title')}
                                         </h3>
                                         <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
@@ -827,7 +831,7 @@ export default function CefrOverviewPage() {
                                 {overview && overview.standardSets.length > 0 && (
                                     <div className="card" style={{ marginBottom: 24 }}>
                                         <h3 style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                            <Award size={18} style={{ color: 'var(--accent)' }} />
+                                            <Award size={18} style={{ color: 'var(--accent-text)' }} />
                                             {t('cefrOverview.standards_title')}
                                         </h3>
                                         <StandardsCoveragePanel standardSets={overview.standardSets} />

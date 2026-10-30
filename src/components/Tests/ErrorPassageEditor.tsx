@@ -122,7 +122,11 @@ export default function ErrorPassageEditor({ passage, onChange }: Props) {
                 <EditorContent editor={editor} />
             </div>
             {missing > 0 && (
-                <p role="alert" className="text-xs" style={{ margin: 0, padding: '0 10px 8px', color: 'var(--red)' }}>
+                <p
+                    role="alert"
+                    className="text-xs"
+                    style={{ margin: 0, padding: '0 10px 8px', color: 'var(--red-text)' }}
+                >
                     {t('tests.error_missing_corrections', { count: missing })}
                 </p>
             )}

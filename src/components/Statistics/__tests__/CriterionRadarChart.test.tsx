@@ -59,7 +59,7 @@ describe('CriterionRadarChart', () => {
             <CriterionRadarChart
                 data={threePoint.map((d) => ({ ...d, s1: 60 }))}
                 accentColor="#3b82f6"
-                selectedStudents={[{ id: 's1', name: 'Alice', color: 'var(--purple)' }]}
+                selectedStudents={[{ id: 's1', name: 'Alice', color: 'var(--purple-text)' }]}
             />
         );
         expect(container.querySelector('.recharts-legend-wrapper')).toBeTruthy();
@@ -72,7 +72,7 @@ describe('CriterionRadarChart', () => {
                 <CriterionRadarChart
                     data={data}
                     accentColor="#3b82f6"
-                    selectedStudents={[{ id: 's1', name: 'Alice', color: 'var(--purple)' }]}
+                    selectedStudents={[{ id: 's1', name: 'Alice', color: 'var(--purple-text)' }]}
                 />
             )
         ).not.toThrow();

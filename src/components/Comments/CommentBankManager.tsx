@@ -215,7 +215,7 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
                             aria-label={t('rubricList.share_with_department')}
                             title={t('rubricList.share_with_department')}
                             style={{
-                                color: item.sharedWithSchool ? 'var(--accent)' : undefined,
+                                color: item.sharedWithSchool ? 'var(--accent-text)' : undefined,
                             }}
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -242,7 +242,7 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
                             type="button"
                             className="btn btn-ghost btn-icon btn-xs"
                             aria-label={t('common.delete')}
-                            style={{ color: 'var(--red)' }}
+                            style={{ color: 'var(--red-text)' }}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 handleDelete(item);
@@ -259,7 +259,7 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
                             padding: '2px 6px',
                             borderRadius: 4,
                             background: 'var(--accent-soft)',
-                            color: 'var(--accent)',
+                            color: 'var(--accent-text)',
                             fontWeight: 500,
                             flexShrink: 0,
                         }}
@@ -418,7 +418,7 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
             style={{
                 justifyContent: 'space-between',
                 fontWeight: selectedTags.has(tag) ? 700 : 400,
-                color: selectedTags.has(tag) ? 'var(--accent)' : undefined,
+                color: selectedTags.has(tag) ? 'var(--accent-text)' : undefined,
             }}
             onClick={() => toggleTagFilter(tag)}
             aria-pressed={selectedTags.has(tag)}
@@ -496,7 +496,7 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
                         style={{
                             justifyContent: 'space-between',
                             fontWeight: selectedTags.size === 0 ? 700 : 400,
-                            color: selectedTags.size === 0 ? 'var(--accent)' : undefined,
+                            color: selectedTags.size === 0 ? 'var(--accent-text)' : undefined,
                         }}
                         onClick={() => setSelectedTags(new Set())}
                     >

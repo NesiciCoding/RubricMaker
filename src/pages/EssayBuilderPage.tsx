@@ -24,7 +24,7 @@ function FieldError({ id, messageKey }: { id: string; messageKey?: string }) {
     const { t } = useTranslation();
     if (!messageKey) return null;
     return (
-        <div id={id} role="alert" className="text-xs" style={{ color: 'var(--red)', marginTop: 4 }}>
+        <div id={id} role="alert" className="text-xs" style={{ color: 'var(--red-text)', marginTop: 4 }}>
             {t(messageKey)}
         </div>
     );
@@ -623,7 +623,7 @@ export default function EssayBuilderPage() {
                                 style={{ resize: 'vertical', fontFamily: 'inherit' }}
                             />
                         </div>
-                        {importError && <p style={{ color: 'var(--red)', fontSize: '0.85rem' }}>{importError}</p>}
+                        {importError && <p style={{ color: 'var(--red-text)', fontSize: '0.85rem' }}>{importError}</p>}
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 12 }}>
                             <button className="btn btn-secondary btn-sm" onClick={() => setImportOpen(false)}>
                                 {t('common.cancel')}

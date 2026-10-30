@@ -238,7 +238,7 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
                 }}
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <ClipboardCheck size={18} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                    <ClipboardCheck size={18} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
                     <h2 id="test-assignment-title" style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>
                         {t('tests.assignment_modal_title', { name: test.name })}
                     </h2>
@@ -316,7 +316,7 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
                                 onChange={(e) => setEmbedDb(e.target.checked)}
                                 style={{ accentColor: 'var(--accent)' }}
                             />
-                            <Database size={13} style={{ color: 'var(--accent)' }} />
+                            <Database size={13} style={{ color: 'var(--accent-text)' }} />
                             {t('essay_assignment.db_embed_label')}
                         </label>
                         {embedDb && (
@@ -363,7 +363,7 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 gap: 4,
-                                                color: 'var(--red)',
+                                                color: 'var(--red-text)',
                                                 fontSize: '0.8rem',
                                             }}
                                         >

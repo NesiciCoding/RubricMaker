@@ -361,7 +361,7 @@ export default function StudentSnapshotTable({
                                             cursor: 'pointer',
                                             border: 'none',
                                             background: 'none',
-                                            color: 'var(--red)',
+                                            color: 'var(--red-text)',
                                             fontWeight: 700,
                                             fontSize: '0.78rem',
                                         }}
@@ -436,7 +436,7 @@ export default function StudentSnapshotTable({
                         color: 'var(--text-muted)',
                     }}
                 >
-                    <AlertTriangle size={12} style={{ color: 'var(--red)' }} aria-hidden="true" />
+                    <AlertTriangle size={12} style={{ color: 'var(--red-text)' }} aria-hidden="true" />
                     {t('dashboard.snapshot_legend_needs_attention')}
                 </div>
             </div>

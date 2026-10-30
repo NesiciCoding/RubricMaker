@@ -52,7 +52,7 @@ export default function TableOfContentsSidebar({ data }: TableOfContentsSidebarP
                         cursor: 'pointer',
                         padding: '3px 0',
                         paddingLeft: (item.level - 1) * 10,
-                        color: item.isActive ? 'var(--accent)' : 'var(--text)',
+                        color: item.isActive ? 'var(--accent-text)' : 'var(--text)',
                         fontWeight: item.isActive ? 600 : 400,
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',

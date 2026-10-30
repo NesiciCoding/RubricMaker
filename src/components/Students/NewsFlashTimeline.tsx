@@ -68,7 +68,7 @@ export default function NewsFlashTimeline({ studentId, flashes, readFlashIds, on
                                     }}
                                 />
                             )}
-                            <span style={{ color: 'var(--accent)', flexShrink: 0, marginTop: 1 }}>
+                            <span style={{ color: 'var(--accent-text)', flexShrink: 0, marginTop: 1 }}>
                                 {KIND_ICONS[flash.kind]}
                             </span>
                             <div style={{ flex: 1, minWidth: 0 }}>
@@ -108,7 +108,7 @@ export default function NewsFlashTimeline({ studentId, flashes, readFlashIds, on
                                         {new Date(flash.createdAt).toLocaleDateString(i18n.language)}
                                     </span>
                                     {hasContent && (
-                                        <span className="text-xs" style={{ color: 'var(--accent)' }}>
+                                        <span className="text-xs" style={{ color: 'var(--accent-text)' }}>
                                             {expanded ? (
                                                 <ChevronUp size={11} style={{ verticalAlign: 'middle' }} />
                                             ) : (

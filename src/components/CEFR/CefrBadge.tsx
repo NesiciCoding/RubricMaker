@@ -2,6 +2,7 @@ import React from 'react';
 import { CEFR_LEVEL_COLORS } from '../../data/cefrDescriptors';
 import { cambridgeExamForLevel } from '../../data/cambridgeExams';
 import type { CefrLevel } from '../../types';
+import { textOnTheme } from '../../utils/contrastCheck';
 
 interface Props {
     level: CefrLevel;
@@ -45,7 +46,7 @@ export default function CefrBadge({
                 style={{
                     ...sizeStyle,
                     background: developing ? 'transparent' : color,
-                    color: developing ? color : '#fff',
+                    color: developing ? textOnTheme(CEFR_LEVEL_COLORS[level]) : '#fff',
                     border: developing ? `1.5px dashed ${color}` : '1.5px solid transparent',
                     display: 'inline-block',
                     letterSpacing: '0.03em',

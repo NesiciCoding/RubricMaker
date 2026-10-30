@@ -91,7 +91,7 @@ export default function TestSubmissionImportModal({ test, studentTests, onSave, 
                         textAlign: 'center',
                     }}
                 >
-                    <CheckCircle size={40} style={{ color: 'var(--green)' }} />
+                    <CheckCircle size={40} style={{ color: 'var(--green-text)' }} />
                     <div style={{ fontWeight: 700 }}>{t('tests.results.import_success')}</div>
                     <button className="btn btn-primary btn-sm" onClick={onClose}>
                         {t('common.close')}
@@ -145,7 +145,7 @@ export default function TestSubmissionImportModal({ test, studentTests, onSave, 
                             border: '1px solid var(--red)',
                             borderRadius: 8,
                             fontSize: '0.8rem',
-                            color: 'var(--red)',
+                            color: 'var(--red-text)',
                         }}
                     >
                         {error}

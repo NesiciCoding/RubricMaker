@@ -601,7 +601,7 @@ export default function TestBuilderPage() {
                             style={{ marginBottom: 20, borderColor: 'var(--yellow)', background: 'var(--bg-elevated)' }}
                         >
                             <p style={{ margin: 0, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <AlertCircle size={15} style={{ color: 'var(--yellow)' }} aria-hidden="true" />
+                                <AlertCircle size={15} style={{ color: 'var(--yellow-text)' }} aria-hidden="true" />
                                 {t('tests.issues_title')}
                             </p>
                             <ul style={{ margin: '8px 0 0', paddingLeft: 20, fontSize: '0.85rem' }}>
@@ -636,7 +636,7 @@ export default function TestBuilderPage() {
                             {nameError && (
                                 <p
                                     id="test-name-error"
-                                    style={{ color: 'var(--red)', fontSize: '0.8rem', marginTop: 4 }}
+                                    style={{ color: 'var(--red-text)', fontSize: '0.8rem', marginTop: 4 }}
                                 >
                                     <AlertCircle size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
                                     {nameError}
@@ -744,7 +744,7 @@ export default function TestBuilderPage() {
                                 {durationError && (
                                     <p
                                         id="test-duration-error"
-                                        style={{ color: 'var(--red)', fontSize: '0.8rem', marginTop: 4 }}
+                                        style={{ color: 'var(--red-text)', fontSize: '0.8rem', marginTop: 4 }}
                                     >
                                         <AlertCircle size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
                                         {durationError}
@@ -1021,7 +1021,7 @@ export default function TestBuilderPage() {
                                     {generatorLevelPoolWarnings.map(({ level, count }) => (
                                         <p
                                             key={level}
-                                            style={{ color: 'var(--yellow)', fontSize: '0.8125rem', margin: 0 }}
+                                            style={{ color: 'var(--yellow-text)', fontSize: '0.8125rem', margin: 0 }}
                                         >
                                             <AlertCircle
                                                 size={13}
@@ -1085,7 +1085,7 @@ export default function TestBuilderPage() {
                             ) : (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
                                     {routingCycleWarning && (
-                                        <p style={{ color: 'var(--yellow)', fontSize: '0.8125rem', margin: 0 }}>
+                                        <p style={{ color: 'var(--yellow-text)', fontSize: '0.8125rem', margin: 0 }}>
                                             <AlertCircle
                                                 size={13}
                                                 style={{ verticalAlign: 'middle', marginRight: 4 }}
@@ -1123,7 +1123,7 @@ export default function TestBuilderPage() {
                                                         type="button"
                                                         className="btn btn-ghost btn-icon btn-sm"
                                                         aria-label={t('tests.remove_section')}
-                                                        style={{ color: 'var(--red)', flexShrink: 0 }}
+                                                        style={{ color: 'var(--red-text)', flexShrink: 0 }}
                                                         onClick={() => removeSection(s.id)}
                                                     >
                                                         <Trash2 size={14} />
@@ -1352,7 +1352,7 @@ export default function TestBuilderPage() {
                                                                 {routingEnabled && !sectionHasAutoScorable && (
                                                                     <p
                                                                         style={{
-                                                                            color: 'var(--yellow)',
+                                                                            color: 'var(--yellow-text)',
                                                                             fontSize: '0.75rem',
                                                                             margin: 0,
                                                                         }}

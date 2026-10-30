@@ -153,7 +153,7 @@ export default function StudentFlashcardStudyPage() {
 
             <div style={{ maxWidth: 820, margin: '24px auto 0', padding: '0 24px' }}>
                 {isTeacherPreview && (
-                    <div className="text-sm" style={{ color: 'var(--accent)', fontWeight: 600, marginBottom: 12 }}>
+                    <div className="text-sm" style={{ color: 'var(--accent-text)', fontWeight: 600, marginBottom: 12 }}>
                         {t('flashcards.teacher_preview_no_save')}
                     </div>
                 )}
@@ -161,7 +161,7 @@ export default function StudentFlashcardStudyPage() {
                     <div
                         className="text-sm"
                         style={{
-                            color: 'var(--red)',
+                            color: 'var(--red-text)',
                             marginBottom: 12,
                             display: 'flex',
                             gap: 8,

@@ -36,7 +36,7 @@ export default function PresenceBadge({ presence, status }: PresenceBadgeProps) 
                 <span
                     title={t('tests.monitor.status.submitted')}
                     aria-label={t('tests.monitor.status.submitted')}
-                    style={{ display: 'inline-flex', color: 'var(--green)' }}
+                    style={{ display: 'inline-flex', color: 'var(--green-text)' }}
                 >
                     <Send size={12} />
                 </span>
@@ -54,7 +54,7 @@ export default function PresenceBadge({ presence, status }: PresenceBadgeProps) 
                 <span
                     title={t('tests.monitor.status.late')}
                     aria-label={t('tests.monitor.status.late')}
-                    style={{ display: 'inline-flex', color: 'var(--red)' }}
+                    style={{ display: 'inline-flex', color: 'var(--red-text)' }}
                 >
                     <Clock size={12} />
                 </span>
