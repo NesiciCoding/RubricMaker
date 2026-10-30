@@ -48,6 +48,7 @@ import type { ParsedRubric } from '../utils/rubricImport';
 import { encodeRubricShareCode, decodeRubricShareCode } from '../utils/rubricImport';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
+import { useFolderDropTarget } from '../hooks/useFolderDropTarget';
 import { sortByDisplayOrder, reorderDisplayOrder, displayOrderAfter } from '../utils/displayOrder';
 import { ALL_FOLDERS, countInFolder, filterByFolder, foldersForKind, nextFolderOrder } from '../utils/folders';
 import { cloneRubricForCopy, type RubricInput } from '../utils/rubricClone';
@@ -345,6 +346,7 @@ export default function RubricList() {
             studentRubrics.some((sr) => sr.rubricId === r.id && cohortStudentIds.has(sr.studentId));
         return matchesSearch && matchesSubject && matchesCohort;
     });
+    const { dropFolderId, startFolderDrop, endFolderDrop } = useFolderDropTarget();
     // ponytail: reordering only writes back when the list is unfiltered (and nothing is hidden pending
     // deletion), so dragged positions map 1:1 onto displayOrder
     const reorderable =
@@ -354,16 +356,27 @@ export default function RubricList() {
         pendingDeleteIds.size === 0 &&
         activeFolder === ALL_FOLDERS;
 
+    function fileIntoFolder(rubric: Rubric | undefined, folderId: string) {
+        if (!rubric || rubric.folderId === folderId) return;
+        updateRubric({ ...rubric, folderId });
+        const folder = rubricFolders.find((f) => f.id === folderId);
+        if (folder) showToast(t('folders.moved_toast', { name: folder.name }), 'success');
+    }
+
     function handleDragEnd(result: DropResult) {
+        // The pointer decides: @hello-pangea/dnd only sees the dragged card's centre, which never
+        // reaches a folder tile from a card grabbed by its corner handle.
+        const pointerFolderId = endFolderDrop();
+        // `reason` guards Escape: @hello-pangea/dnd calls onDragEnd with CANCEL and a null
+        // destination, and the pointer may well be resting on a tile at that moment.
+        if (pointerFolderId && result.reason === 'DROP') {
+            fileIntoFolder(filtered[result.source.index], pointerFolderId);
+            return;
+        }
         const destination = result.destination;
         if (!destination) return;
         if (destination.droppableId.startsWith(FOLDER_DROP_PREFIX)) {
-            const folderId = destination.droppableId.slice(FOLDER_DROP_PREFIX.length);
-            const rubric = filtered[result.source.index];
-            if (!rubric || rubric.folderId === folderId) return;
-            updateRubric({ ...rubric, folderId });
-            const folder = rubricFolders.find((f) => f.id === folderId);
-            if (folder) showToast(t('folders.moved_toast', { name: folder.name }), 'success');
+            fileIntoFolder(filtered[result.source.index], destination.droppableId.slice(FOLDER_DROP_PREFIX.length));
             return;
         }
         if (destination.droppableId !== 'rubric-list' || !reorderable) return;
@@ -603,7 +616,7 @@ export default function RubricList() {
                     </div>
                 </div>
 
-                <DragDropContext onDragEnd={handleDragEnd}>
+                <DragDropContext onBeforeCapture={startFolderDrop} onDragEnd={handleDragEnd}>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
                         <button
                             type="button"
@@ -619,6 +632,7 @@ export default function RubricList() {
                                 folder={folder}
                                 count={countInFolder(rubrics, folder.id)}
                                 active={activeFolder === folder.id}
+                                isDropTarget={dropFolderId === folder.id}
                                 onOpen={(id) => setActiveFolder((current) => (current === id ? ALL_FOLDERS : id))}
                                 onRename={(f) => setFolderModal({ folder: f })}
                                 onDelete={handleDeleteFolder}

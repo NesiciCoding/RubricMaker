@@ -28,6 +28,7 @@ import { logAuditEvent } from '../services/database/AuditLogger';
 import { nanoid } from '../utils/nanoid';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
+import { useFolderDropTarget } from '../hooks/useFolderDropTarget';
 import TestAssignmentModal from '../components/Tests/TestAssignmentModal';
 import FolderTile, { FOLDER_DROP_PREFIX } from '../components/Folders/FolderTile';
 import FolderNameModal from '../components/Folders/FolderNameModal';
@@ -99,17 +100,29 @@ export default function TestListPage() {
         return sorted.filter((test) => cohortTestIds.has(test.id));
     }, [tests, studentTests, cohortStudentIds, allCohorts, activeFolder]);
     const reorderable = allCohorts && activeFolder === ALL_FOLDERS;
+    const { dropFolderId, startFolderDrop, endFolderDrop } = useFolderDropTarget();
+
+    function fileIntoFolder(test: Test | undefined, folderId: string) {
+        if (!test || test.folderId === folderId) return;
+        updateTest({ ...test, folderId });
+        const folder = testFolders.find((f) => f.id === folderId);
+        if (folder) showToast(t('folders.moved_toast', { name: folder.name }), 'success');
+    }
 
     function handleDragEnd(result: DropResult) {
+        // Pointer-based: @hello-pangea/dnd only sees the dragged card's centre, which never reaches
+        // a folder tile from a card grabbed by its corner handle.
+        const pointerFolderId = endFolderDrop();
+        // `reason` guards Escape: @hello-pangea/dnd calls onDragEnd with CANCEL and a null
+        // destination, and the pointer may well be resting on a tile at that moment.
+        if (pointerFolderId && result.reason === 'DROP') {
+            fileIntoFolder(visibleTests[result.source.index], pointerFolderId);
+            return;
+        }
         const destination = result.destination;
         if (!destination) return;
         if (destination.droppableId.startsWith(FOLDER_DROP_PREFIX)) {
-            const folderId = destination.droppableId.slice(FOLDER_DROP_PREFIX.length);
-            const test = visibleTests[result.source.index];
-            if (!test || test.folderId === folderId) return;
-            updateTest({ ...test, folderId });
-            const folder = testFolders.find((f) => f.id === folderId);
-            if (folder) showToast(t('folders.moved_toast', { name: folder.name }), 'success');
+            fileIntoFolder(visibleTests[result.source.index], destination.droppableId.slice(FOLDER_DROP_PREFIX.length));
             return;
         }
         if (destination.droppableId !== 'test-list' || !reorderable) return;
@@ -385,7 +398,7 @@ export default function TestListPage() {
                         />
                     </div>
                 </div>
-                <DragDropContext onDragEnd={handleDragEnd}>
+                <DragDropContext onBeforeCapture={startFolderDrop} onDragEnd={handleDragEnd}>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
                         <button
                             type="button"
@@ -401,6 +414,7 @@ export default function TestListPage() {
                                 folder={folder}
                                 count={countInFolder(tests, folder.id)}
                                 active={activeFolder === folder.id}
+                                isDropTarget={dropFolderId === folder.id}
                                 onOpen={(id) => setActiveFolder((current) => (current === id ? ALL_FOLDERS : id))}
                                 onRename={(f) => setFolderModal({ folder: f })}
                                 onDelete={handleDeleteFolder}
