@@ -67,6 +67,23 @@ function makeStudentTest(id: string, testId: string, studentId: string): Student
 
 const mockUpdateTest = vi.fn();
 const mockDeleteTest = vi.fn();
+const mockAddFolder = vi.fn((f: { name: string; kind: string; parentId?: string }) => ({
+    id: 'new-folder',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    ...f,
+}));
+const mockUpdateFolder = vi.fn();
+const mockFolders = [
+    { id: 'unit', name: 'Unit tests', kind: 'test' as const, createdAt: '2026-01-01T00:00:00.000Z' },
+    { id: 'vocab', name: 'Vocabulary', kind: 'test' as const, createdAt: '2026-01-02T00:00:00.000Z' },
+    {
+        id: 'reading',
+        name: 'Reading',
+        kind: 'test' as const,
+        parentId: 'unit',
+        createdAt: '2026-01-03T00:00:00.000Z',
+    },
+];
 
 const mockUseApp: Record<string, unknown> = {
     tests: [testOne],
@@ -79,6 +96,10 @@ const mockUseApp: Record<string, unknown> = {
     exportTemplates: [],
     updateTest: mockUpdateTest,
     deleteTest: mockDeleteTest,
+    folders: mockFolders,
+    addFolder: mockAddFolder,
+    updateFolder: mockUpdateFolder,
+    deleteFolder: vi.fn(),
 };
 
 vi.mock('../../context/AppContext', () => ({
@@ -128,8 +149,8 @@ vi.mock('@hello-pangea/dnd', () => ({
         capturedOnDragEnd = onDragEnd;
         return React.createElement(React.Fragment, null, children);
     },
-    Droppable: ({ children }: { children: (p: unknown) => React.ReactNode }) =>
-        children({ innerRef: vi.fn(), droppableProps: {}, placeholder: null }),
+    Droppable: ({ children }: { children: (p: unknown, s: unknown) => React.ReactNode }) =>
+        children({ innerRef: vi.fn(), droppableProps: {}, placeholder: null }, { isDraggingOver: false }),
     Draggable: ({ children }: { children: (p: unknown) => React.ReactNode }) =>
         children({ innerRef: vi.fn(), draggableProps: {}, dragHandleProps: {} }),
 }));
@@ -154,6 +175,40 @@ describe('TestListPage coverage', () => {
         mockUseApp.studentTests = [];
         const mod = await import('../TestListPage');
         PageComp = mod.default;
+    });
+
+    it('creates a subfolder inside the folder that is open', () => {
+        loadPage();
+        fireEvent.click(screen.getByRole('button', { name: 'Unit tests' }));
+        expect(screen.getByRole('navigation', { name: 'folders.path_label' })).toBeInTheDocument();
+        fireEvent.click(screen.getByText(/folders.new_subfolder/));
+        fireEvent.change(screen.getByLabelText('folders.folder_name'), { target: { value: 'Reading' } });
+        fireEvent.click(screen.getByText('folders.create'));
+
+        expect(mockAddFolder).toHaveBeenCalledWith(
+            expect.objectContaining({ name: 'Reading', kind: 'test', parentId: 'unit', displayOrder: 0 })
+        );
+    });
+
+    it('files a test into a folder from its card menu', () => {
+        loadPage();
+        const menus = screen.getAllByRole('button', { name: 'folders.move_to' });
+        fireEvent.click(menus[2]);
+        fireEvent.click(screen.getByRole('menuitem', { name: 'Vocabulary' }));
+        expect(mockUpdateTest).toHaveBeenCalledWith(expect.objectContaining({ id: 't1', folderId: 'vocab' }));
+    });
+
+    it('moves a folder into another folder from its tile menu', () => {
+        loadPage();
+        fireEvent.click(screen.getAllByRole('button', { name: 'folders.move_to' })[1]);
+        fireEvent.click(screen.getByRole('menuitem', { name: 'Unit tests' }));
+        expect(mockUpdateFolder).toHaveBeenCalledWith(expect.objectContaining({ id: 'vocab', parentId: 'unit' }));
+    });
+
+    it('shows the folder path on a test card that is filed away', () => {
+        mockUseApp.tests = [{ ...testOne, folderId: 'reading' }];
+        loadPage();
+        expect(screen.getByText('Unit tests / Reading')).toBeInTheDocument();
     });
 
     it('filters tests by cohort year', () => {

@@ -30,7 +30,10 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
 import { useFolderDropTarget } from '../hooks/useFolderDropTarget';
 import TestAssignmentModal from '../components/Tests/TestAssignmentModal';
-import FolderTile, { FOLDER_DROP_PREFIX } from '../components/Folders/FolderTile';
+import FolderBar from '../components/Folders/FolderBar';
+import MoveToMenu from '../components/Folders/MoveToMenu';
+import FolderLocationBadge from '../components/Folders/FolderLocationBadge';
+import { FOLDER_DROP_PREFIX } from '../components/Folders/FolderTile';
 import FolderNameModal from '../components/Folders/FolderNameModal';
 import TestSubmissionImportModal from '../components/Tests/TestSubmissionImportModal';
 import ExamScanCaptureModal from '../components/Tests/ExamScanCaptureModal';
@@ -41,7 +44,7 @@ import GenerateTestModal from '../components/Tests/GenerateTestModal';
 import ExamBookletExportPanel from '../components/Tests/ExamBookletExportPanel';
 import type { Folder, Test, StudentTest, CohortFilter as CohortFilterValue } from '../types';
 import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
-import { ALL_FOLDERS, countInFolder, filterByFolder, foldersForKind, nextFolderOrder } from '../utils/folders';
+import { ALL_FOLDERS, filterByFolder, folderPathLabel, foldersForKind, nextFolderOrder } from '../utils/folders';
 import { getCohortStudentIds, isAllCohorts, ALL_COHORTS } from '../utils/cohortAggregator';
 import { isGeneratorTest } from '../utils/placementGenerator';
 import CohortFilter from '../components/CohortFilter';
@@ -84,7 +87,8 @@ export default function TestListPage() {
     const [cohortFilter, setCohortFilter] = useState<CohortFilterValue>(ALL_COHORTS);
     const [view, setView] = useState<'cards' | 'list'>('cards');
     const [activeFolder, setActiveFolder] = useState<string>(ALL_FOLDERS);
-    const [folderModal, setFolderModal] = useState<{ folder?: Folder } | null>(null);
+    // `parentId` is where a new folder is created: the folder you are inside of, if any.
+    const [folderModal, setFolderModal] = useState<{ folder?: Folder; parentId?: string } | null>(null);
     const allCohorts = isAllCohorts(cohortFilter);
     const cohortStudentIds = React.useMemo(
         () => getCohortStudentIds(students, classes, cohortFilter),
@@ -134,12 +138,32 @@ export default function TestListPage() {
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
     const { showToast } = useToast();
 
+    function moveFolder(folder: Folder, parentId: string | undefined) {
+        if (folder.parentId === parentId) return;
+        updateFolder({
+            ...folder,
+            parentId,
+            displayOrder: nextFolderOrder(folders, 'test', parentId),
+        });
+    }
+
+    function moveTest(test: Test, folderId: string | undefined) {
+        if ((test.folderId ?? undefined) === folderId) return;
+        updateTest({ ...test, folderId });
+    }
+
     function submitFolderName(name: string) {
         const editing = folderModal?.folder;
         if (editing) {
             updateFolder({ ...editing, name });
         } else {
-            const folder = addFolder({ name, kind: 'test', displayOrder: nextFolderOrder(folders, 'test') });
+            const parentId = folderModal?.parentId;
+            const folder = addFolder({
+                name,
+                kind: 'test',
+                parentId,
+                displayOrder: nextFolderOrder(folders, 'test', parentId),
+            });
             setActiveFolder(folder.id);
         }
         setFolderModal(null);
@@ -398,32 +422,18 @@ export default function TestListPage() {
                         />
                     </div>
                 </div>
-                <DragDropContext onBeforeCapture={startFolderDrop} onDragEnd={handleDragEnd}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
-                        <button
-                            type="button"
-                            className={`btn btn-sm ${activeFolder === ALL_FOLDERS ? 'btn-primary' : 'btn-secondary'}`}
-                            aria-pressed={activeFolder === ALL_FOLDERS}
-                            onClick={() => setActiveFolder(ALL_FOLDERS)}
-                        >
-                            <LayoutGrid size={14} /> {t('folders.all')}
-                        </button>
-                        {testFolders.map((folder) => (
-                            <FolderTile
-                                key={folder.id}
-                                folder={folder}
-                                count={countInFolder(tests, folder.id)}
-                                active={activeFolder === folder.id}
-                                isDropTarget={dropFolderId === folder.id}
-                                onOpen={(id) => setActiveFolder((current) => (current === id ? ALL_FOLDERS : id))}
-                                onRename={(f) => setFolderModal({ folder: f })}
-                                onDelete={handleDeleteFolder}
-                            />
-                        ))}
-                        <button type="button" className="btn btn-secondary btn-sm" onClick={() => setFolderModal({})}>
-                            <Plus size={14} /> {t('folders.new_folder')}
-                        </button>
-                    </div>
+                <DragDropContext onDragEnd={handleDragEnd}>
+                    <FolderBar
+                        folders={folders}
+                        kind="test"
+                        activeFolderId={activeFolder}
+                        items={tests}
+                        onSelect={setActiveFolder}
+                        onCreate={(parentId) => setFolderModal({ parentId })}
+                        onRename={(f) => setFolderModal({ folder: f })}
+                        onDelete={handleDeleteFolder}
+                        onMoveFolder={moveFolder}
+                    />
                     {visibleTests.length === 0 ? (
                         <div className="empty-state">
                             <ClipboardCheck size={40} />
@@ -646,6 +656,13 @@ export default function TestListPage() {
                                                                 </div>
                                                             </div>
                                                             <div style={{ display: 'flex', gap: 4 }}>
+                                                                <MoveToMenu
+                                                                    folders={testFolders}
+                                                                    kind="test"
+                                                                    currentFolderId={test.folderId}
+                                                                    rootLabel={t('folders.move_to_unfiled')}
+                                                                    onMove={(folderId) => moveTest(test, folderId)}
+                                                                />
                                                                 <button
                                                                     type="button"
                                                                     className="btn btn-ghost btn-icon btn-sm"
@@ -694,6 +711,11 @@ export default function TestListPage() {
                                                                 marginBottom: 14,
                                                             }}
                                                         >
+                                                            {folderPathLabel(testFolders, test.folderId) && (
+                                                                <FolderLocationBadge
+                                                                    path={folderPathLabel(testFolders, test.folderId)!}
+                                                                />
+                                                            )}
                                                             <span className="badge badge-blue">
                                                                 {t('tests.question_count', {
                                                                     count: test.questions.length,
@@ -1153,7 +1175,13 @@ export default function TestListPage() {
 
                 {folderModal && (
                     <FolderNameModal
-                        title={folderModal.folder ? t('folders.rename_title') : t('folders.new_folder')}
+                        title={
+                            folderModal.folder
+                                ? t('folders.rename_title')
+                                : folderModal.parentId
+                                  ? t('folders.new_subfolder')
+                                  : t('folders.new_folder')
+                        }
                         submitLabel={folderModal.folder ? t('folders.rename') : t('folders.create')}
                         initialName={folderModal.folder?.name}
                         onSubmit={submitFolderName}

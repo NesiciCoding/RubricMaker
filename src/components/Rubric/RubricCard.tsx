@@ -19,6 +19,7 @@ import {
 import { Draggable } from '@hello-pangea/dnd';
 import type { Rubric, Student } from '../../types';
 import CefrBadge from '../CEFR/CefrBadge';
+import FolderLocationBadge from '../Folders/FolderLocationBadge';
 import { encodeRubricShareCode } from '../../utils/rubricImport';
 
 export interface RubricCardActions {
@@ -46,6 +47,13 @@ interface RubricCardProps {
     classStudents: Student[];
     hasActiveClass: boolean;
     actions: RubricCardActions;
+    /**
+     * The card's “Move to…” menu. A render prop rather than an element so the page can keep it a
+     * stable callback — the card is memoised, and a fresh element per render would defeat that.
+     */
+    moveMenuFor?: (rubric: Rubric) => React.ReactNode;
+    /** Full folder path (“Year 1 / Essays”); undefined when the rubric is unfiled. */
+    folderLabel?: string;
 }
 
 // The per-card speaking-session picker used to map every student into an <option> for all 300+
@@ -115,6 +123,8 @@ function RubricCard({
     classStudents,
     hasActiveClass,
     actions,
+    moveMenuFor,
+    folderLabel,
 }: RubricCardProps) {
     const { t } = useTranslation();
 
@@ -275,6 +285,7 @@ function RubricCard({
                                     <Layers size={14} />
                                 </button>
                             )}
+                            {moveMenuFor?.(rubric)}
                             <button
                                 className="btn btn-ghost btn-icon btn-sm"
                                 title={t('rubricList.action_duplicate')}
@@ -320,6 +331,7 @@ function RubricCard({
                             marginBottom: 14,
                         }}
                     >
+                        {folderLabel && <FolderLocationBadge path={folderLabel} />}
                         <span className="badge badge-blue">
                             {t('rubricList.criteria_badge', { count: rubric.criteria.length })}
                         </span>
