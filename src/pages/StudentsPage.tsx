@@ -378,6 +378,9 @@ export default function StudentsPage() {
     // Context Menu State for Classes. The menu floats above the chip bar in a body portal — the
     // chip row scrolls horizontally, so an in-flow popover would be clipped by its overflow box.
     const [classMenu, setClassMenu] = useState<null | { id: string; top: number; right: number }>(null);
+    // The "⋯" button stays on the page while the dialogs it opens are up, so it — not the menu
+    // item that opens them — is what should get focus back when they close.
+    const [classMenuTrigger, setClassMenuTrigger] = useState<HTMLButtonElement | null>(null);
     const classMenuOpen = classMenu?.id ?? null;
     const classMenuTarget = classes.find((c) => c.id === classMenu?.id);
     const [gradeMenuOpen, setGradeMenuOpen] = useState<string | null>(null);
@@ -978,6 +981,7 @@ export default function StudentsPage() {
                                                                     return;
                                                                 }
                                                                 const rect = e.currentTarget.getBoundingClientRect();
+                                                                setClassMenuTrigger(e.currentTarget);
                                                                 setClassMenu({
                                                                     id: c.id,
                                                                     top: rect.bottom + 4,
@@ -1620,7 +1624,11 @@ export default function StudentsPage() {
 
                 {/* Class Management Modals */}
                 {renameClassId && (
-                    <Modal titleId="students-class-settings-title" onClose={() => setRenameClassId(null)}>
+                    <Modal
+                        titleId="students-class-settings-title"
+                        onClose={() => setRenameClassId(null)}
+                        returnFocusTo={classMenuTrigger}
+                    >
                         <div className="modal-header">
                             <h3
                                 id="students-class-settings-title"
@@ -1721,6 +1729,7 @@ export default function StudentsPage() {
                             setMergeClassId(null);
                             setMergeConfirming(false);
                         }}
+                        returnFocusTo={classMenuTrigger}
                     >
                         <div className="modal-header">
                             <h3 id="students-merge-class-title">{t('studentsPage.merge_class_title')}</h3>
@@ -1832,7 +1841,11 @@ export default function StudentsPage() {
                 )}
 
                 {deleteClassId && (
-                    <Modal titleId="students-delete-class-title" onClose={() => setDeleteClassId(null)}>
+                    <Modal
+                        titleId="students-delete-class-title"
+                        onClose={() => setDeleteClassId(null)}
+                        returnFocusTo={classMenuTrigger}
+                    >
                         <div className="modal-header">
                             <h3 id="students-delete-class-title">{t('studentsPage.delete_class_title')}</h3>
                             <button
@@ -2010,7 +2023,11 @@ export default function StudentsPage() {
                 )}
 
                 {showLinkRubrics && linkClass && (
-                    <Modal titleId="students-link-rubrics-title" onClose={() => setShowLinkRubrics(false)}>
+                    <Modal
+                        titleId="students-link-rubrics-title"
+                        onClose={() => setShowLinkRubrics(false)}
+                        returnFocusTo={classMenuTrigger}
+                    >
                         <div className="modal-header">
                             <h3 id="students-link-rubrics-title">
                                 {t('studentsPage.link_rubrics_title', { className: linkClass.name })}
