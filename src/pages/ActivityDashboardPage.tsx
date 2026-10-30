@@ -440,7 +440,10 @@ export default function ActivityDashboardPage() {
                                                                     {/* A table cell sizes to its content, so the name needs its
                                                                         own capped, truncating box — otherwise a long activity
                                                                         name widens the sticky column and pushes the class
-                                                                        columns into horizontal scroll. */}
+                                                                        columns into horizontal scroll. The box must not clip,
+                                                                        though: the handle's negative margin pulls part of its
+                                                                        23px grab area (and its focus ring) outside it, and the
+                                                                        button ellipsises on its own. */}
                                                                     <div
                                                                         style={{
                                                                             display: 'flex',
@@ -448,7 +451,6 @@ export default function ActivityDashboardPage() {
                                                                             gap: 2,
                                                                             minWidth: 0,
                                                                             maxWidth: 200,
-                                                                            overflow: 'hidden',
                                                                         }}
                                                                     >
                                                                         <span
