@@ -1,8 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import type { RgbaImage } from '../types';
-import { CHOICE_CELL_WIDTH_MM, CHOICE_CELL_GAP_MM, type AnswerBlockGeometry } from './testExamContent';
 import {
-    answerSheetFitsOnOnePage,
+    ANSWER_SPACE_TOP_MM,
+    CHOICE_CELL_WIDTH_MM,
+    CHOICE_CELL_GAP_MM,
+    type AnswerBlockGeometry,
+} from './testExamContent';
+import {
     choiceCellRects,
     mmRectToPixelRect,
     cropRegion,
@@ -43,27 +47,16 @@ function choiceBlock(overrides: Partial<AnswerBlockGeometry> = {}): AnswerBlockG
     };
 }
 
-describe('answerSheetFitsOnOnePage', () => {
-    it('is true for an empty geometry', () => {
-        expect(answerSheetFitsOnOnePage([])).toBe(true);
-    });
-
-    it('is true when the last block ends before the bottom margin', () => {
-        const blocks: AnswerBlockGeometry[] = [choiceBlock({ y: 40, height: 12 })];
-        expect(answerSheetFitsOnOnePage(blocks)).toBe(true);
-    });
-
-    it('is false once the last block runs past the page', () => {
-        const blocks: AnswerBlockGeometry[] = [choiceBlock({ y: 290, height: 20 })];
-        expect(answerSheetFitsOnOnePage(blocks)).toBe(false);
-    });
-});
-
 describe('choiceCellRects', () => {
-    it('lays out one cell per option letter, left to right with a fixed gap', () => {
+    it('lays out one cell per option letter below the printed question number, left to right with a fixed gap', () => {
         const cells = choiceCellRects(choiceBlock());
         expect(cells.map((c) => c.letter)).toEqual(['A', 'B']);
-        expect(cells[0].rect).toEqual({ x: 10, y: 40, width: CHOICE_CELL_WIDTH_MM, height: CHOICE_CELL_WIDTH_MM });
+        expect(cells[0].rect).toEqual({
+            x: 10,
+            y: 40 + ANSWER_SPACE_TOP_MM,
+            width: CHOICE_CELL_WIDTH_MM,
+            height: CHOICE_CELL_WIDTH_MM,
+        });
         expect(cells[1].rect.x).toBe(10 + CHOICE_CELL_WIDTH_MM + CHOICE_CELL_GAP_MM);
     });
 

@@ -8,12 +8,18 @@ import { escapeHtml, hasRichContent, promptToHtml, sanitizeFilename } from './ex
 import { plainQuestionPromptText } from './clozeParse';
 import { calcTestMaxPoints } from './testCalc';
 import {
+    ANSWER_BLOCK_PADDING_MM,
     ANSWER_LINE_SPACING_MM,
+    ANSWER_NUMBER_LINE_MM,
+    ANSWER_SHEET_FIRST_BLOCK_MM,
+    ANSWER_SHEET_FOOTER_MM,
     CHOICE_CELL_GAP_MM,
     CHOICE_CELL_WIDTH_MM,
     LONG_ANSWER_HEIGHT_MM,
     answerKeyText,
-    answerSheetGeometry,
+    answerSheetPageCount,
+    answerSheetPageMargins,
+    answerSheetPages,
     answerSheetQrPayload,
     categorizeBookletData,
     bankBookletTiles,
@@ -31,11 +37,12 @@ import {
     optionLetter,
     orderingBookletItems,
     partialCreditLadder,
-    scanMarkerMarginsMm,
     SCAN_QR_INSET_MM,
     SCAN_QR_SIZE_MM,
+    SUBITEM_LINE_MM,
     EXAM_BASE_FONT_PT,
     EXAM_BASE_LINE_SPACING,
+    type AnswerBlockGeometry,
     type AnswerSpaceSpec,
     type TestExamExportOptions,
 } from './testExamContent';
@@ -339,8 +346,8 @@ export function buildExamAttachmentHtml(test: Test): string {
 }
 
 /** Fiducials + QR for one answer sheet, as offsets inside withoutBrowserPrintChrome()'s repeated header (page coordinates minus the side margin), so they print on every page of that sheet. */
-async function scanMarkerHtml(test: Test, studentId?: string): Promise<string> {
-    const dataUrl = await QRCode.toDataURL(answerSheetQrPayload(test.id, studentId), {
+async function scanMarkerHtml(test: Test, studentId?: string, pageCount?: number): Promise<string> {
+    const dataUrl = await QRCode.toDataURL(answerSheetQrPayload(test.id, studentId, { pages: pageCount }), {
         width: 96,
         margin: 0,
     });
@@ -361,9 +368,7 @@ function answerSpaceHtml(space: AnswerSpaceSpec): string {
             // Bubble width and gap share CHOICE_CELL_WIDTH_MM/CHOICE_CELL_GAP_MM with the DOCX
             // renderer and examScanRegions.ts's choiceCellRects(), so a scanned sheet's bubble
             // positions match what was actually printed.
-            return `<div style="display:flex;gap:${CHOICE_CELL_GAP_MM}mm;margin-top:4px;flex-wrap:wrap">${(
-                space.optionLetters ?? []
-            )
+            return `<div style="display:flex;gap:${CHOICE_CELL_GAP_MM}mm;flex-wrap:wrap">${(space.optionLetters ?? [])
                 .map(
                     (l) =>
                         `<div style="box-sizing:border-box;width:${CHOICE_CELL_WIDTH_MM}mm;height:${CHOICE_CELL_WIDTH_MM}mm;border:1.5px solid #000;border-radius:${shape};display:flex;align-items:center;justify-content:center;font-size:11px">${l}</div>`
@@ -371,52 +376,75 @@ function answerSpaceHtml(space: AnswerSpaceSpec): string {
                 .join('')}</div>`;
         }
         case 'short':
-            return `<div style="margin-top:4px">
-        <div style="border-bottom:1px solid #000;height:20px"></div>
-        <div style="border-bottom:1px solid #000;height:20px;margin-top:4px"></div>
+            return `<div>
+        <div style="border-bottom:1px solid #000;height:18px"></div>
+        <div style="border-bottom:1px solid #000;height:18px;margin-top:4px"></div>
       </div>`;
         case 'long':
-            return `<div style="margin-top:6px;border:1px solid #000;height:${LONG_ANSWER_HEIGHT_MM}mm;width:100%;background-image:repeating-linear-gradient(to bottom, transparent, transparent ${ANSWER_LINE_SPACING_MM}mm, #9ca3af ${ANSWER_LINE_SPACING_MM}mm, #9ca3af calc(${ANSWER_LINE_SPACING_MM}mm + 0.4px))"></div>`;
+            return `<div style="border:1px solid #000;height:${LONG_ANSWER_HEIGHT_MM}mm;width:100%;background-image:repeating-linear-gradient(to bottom, transparent, transparent ${ANSWER_LINE_SPACING_MM}mm, #9ca3af ${ANSWER_LINE_SPACING_MM}mm, #9ca3af calc(${ANSWER_LINE_SPACING_MM}mm + 0.4px))"></div>`;
         case 'numeric':
-            return `<div style="margin-top:4px;border-bottom:1px solid #000;width:70px;height:20px"></div>`;
+            return `<div style="border-bottom:1px solid #000;width:70px;height:20px"></div>`;
         case 'subitems': {
             const n = space.subItemCount ?? 1;
-            return `<div style="margin-top:4px">${Array.from({ length: n }, (_, i) => i + 1)
+            return `<div>${Array.from({ length: n }, (_, i) => i + 1)
                 .map(
                     (i) =>
-                        `<div style="display:flex;gap:8px;align-items:baseline;margin-bottom:3px">
-            <span style="width:16px;font-size:11px;color:#6b7280">${i}</span>
-            <span style="flex:1;border-bottom:1px solid #000;height:16px"></span>
+                        `<div style="display:flex;gap:8px;align-items:flex-end;height:${SUBITEM_LINE_MM}mm;box-sizing:border-box">
+            <span style="width:16px;font-size:11px;line-height:1;color:#6b7280">${i}</span>
+            <span style="flex:1;border-bottom:1px solid #000;height:4mm"></span>
           </div>`
                 )
                 .join('')}</div>`;
         }
         case 'none':
         default:
-            return `<div style="margin-top:4px;font-size:11px;color:#6b7280;font-style:italic">${tx('recorded_answer_note')}</div>`;
+            return `<div style="font-size:11px;color:#6b7280;font-style:italic">${tx('recorded_answer_note')}</div>`;
     }
 }
 
-function answerBlockHtml(block: ReturnType<typeof answerSheetGeometry>[number]): string {
-    return `<div style="margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #e5e7eb;page-break-inside:avoid">
-    <div style="font-weight:700;font-size:12px">${block.number}</div>
+/**
+ * One answer block, rendered at exactly the height the scan layout says it occupies. Fixed heights
+ * (rather than natural content flow) are what make answerSheetPages() authoritative: the browser
+ * cannot re-paginate a page's blocks differently from the geometry a scan is matched against.
+ */
+function answerBlockHtml(block: AnswerBlockGeometry): string {
+    return `<div style="height:${block.height}mm;box-sizing:border-box;padding:${ANSWER_BLOCK_PADDING_MM}mm 0;border-bottom:1px solid #e5e7eb;page-break-inside:avoid;overflow:hidden">
+    <div style="height:${ANSWER_NUMBER_LINE_MM}mm;box-sizing:border-box;font-weight:700;font-size:12px;line-height:1;overflow:hidden">${block.number}</div>
     ${answerSpaceHtml(block.space)}
   </div>`;
 }
 
-async function answerSheetPageHtml(test: Test, options: TestExamExportOptions, student?: Student): Promise<string> {
-    const blocks = answerSheetGeometry(test).map(answerBlockHtml).join('');
+/** Renders one student's answer sheet as explicit, fixed-height printed pages that match answerSheetPages(). */
+async function answerSheetPagesHtml(test: Test, options: TestExamExportOptions, student?: Student): Promise<string> {
+    const layout = answerSheetPages(test);
+    const band = answerSheetPageMargins();
+    const firstPageHeaderHeight = ANSWER_SHEET_FIRST_BLOCK_MM - band.top;
 
-    return `<div class="print-page" style="padding-top:24px;color:#1e293b;background:#fff">
+    return layout
+        .map((page) => {
+            const header =
+                page.pageNumber === 1
+                    ? `<div style="height:${firstPageHeaderHeight}mm;box-sizing:border-box;overflow:hidden">
     ${richBlockHtml(test.printHeader)}
     <div style="text-align:right;font-weight:700;font-size:16px">${tx('answer_sheet_title')}</div>
     ${blackBannerHtml(test.name)}
     <div style="margin-top:16px;font-size:13px">
       <strong>${tx('candidate_name')}:</strong> ${student ? escapeHtml(student.name) : '______________________'}
     </div>
-    <div style="margin-top:16px">${blocks}</div>
-    ${richBlockHtml(test.printFooter)}
-  </div>`;
+  </div>`
+                    : '';
+            const breakStyle = page.pageNumber < layout.length ? 'page-break-after:always;' : '';
+            const footer =
+                page.pageNumber === layout.length
+                    ? `<div style="height:${ANSWER_SHEET_FOOTER_MM}mm;box-sizing:border-box;overflow:hidden">${richBlockHtml(
+                          test.printFooter
+                      )}</div>`
+                    : '';
+            return `<div class="print-page" style="color:#1e293b;background:#fff;${breakStyle}">${header}${page.blocks
+                .map(answerBlockHtml)
+                .join('')}${footer}</div>`;
+        })
+        .join('');
 }
 
 /** One margin-wrapped table per student (or a single blank sheet), so each sheet's scan markers repeat on all of its own pages and the next sheet starts on a fresh page. */
@@ -428,14 +456,15 @@ export async function buildAnswerSheetHtml(
     const sheets: (Student | undefined)[] = students.length > 0 ? students : [undefined];
     // Scan markers need a wider header/footer band than the default print margin, or they bleed
     // into the real content (see scanMarkerMarginsMm()'s doc comment).
-    const margins = options.scanMarkers ? scanMarkerMarginsMm() : undefined;
+    const band = answerSheetPageMargins();
+    const pageCount = answerSheetPageCount(test);
     const pages = await Promise.all(
         sheets.map(async (student, i) =>
-            withoutBrowserPrintChrome(await answerSheetPageHtml(test, options, student), {
-                headerExtra: options.scanMarkers ? await scanMarkerHtml(test, student?.id) : '',
+            withoutBrowserPrintChrome(await answerSheetPagesHtml(test, options, student), {
+                headerExtra: options.scanMarkers ? await scanMarkerHtml(test, student?.id, pageCount) : '',
                 breakAfter: i < sheets.length - 1,
-                headerHeightMm: margins?.top,
-                footerHeightMm: margins?.bottom,
+                headerHeightMm: band.top,
+                footerHeightMm: band.bottom,
             })
         )
     );

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { RgbaImage, Test, TestQuestion } from '../types';
-import { EXAM_PAGE_MM, answerSheetGeometry } from './testExamContent';
+import { EXAM_PAGE_MM, answerSheetGeometry, answerSheetPages } from './testExamContent';
 import { choiceCellRects } from './examScanRegions';
 
 const { recognizeImage } = vi.hoisted(() => ({ recognizeImage: vi.fn() }));
@@ -9,7 +9,12 @@ vi.mock('./textExtraction', () => ({ recognizeImage }));
 const { rgbaImageToDataUrl } = vi.hoisted(() => ({ rgbaImageToDataUrl: vi.fn(() => 'data:image/png;base64,region') }));
 vi.mock('./rgbaImageCanvas', () => ({ rgbaImageToDataUrl }));
 
-import { choiceLettersToResponse, detectScannedAnswers, UnsupportedAnswerSheetError } from './examScanAnswers';
+import {
+    choiceLettersToResponse,
+    detectScannedAnswers,
+    mergeScannedAnswers,
+    UnsupportedAnswerSheetError,
+} from './examScanAnswers';
 
 function q(overrides: Partial<TestQuestion> & Pick<TestQuestion, 'id' | 'type' | 'points' | 'prompt'>): TestQuestion {
     return { partialCredit: true, ...overrides };
@@ -159,14 +164,83 @@ describe('detectScannedAnswers', () => {
         expect(recognizeImage).not.toHaveBeenCalled();
     });
 
-    it('throws UnsupportedAnswerSheetError when the sheet would need more than one page', async () => {
+    it('reads only the blocks printed on the requested page of a multi-page sheet', async () => {
         const test = makeTest({
             questions: Array.from({ length: 5 }, (_, i) =>
                 q({ id: `q${i}`, type: 'open', points: 1, prompt: 'Write an essay' })
             ),
         });
-        const page = solidImage(PAGE_WIDTH, PAGE_HEIGHT, 255);
-        await expect(detectScannedAnswers(page, test)).rejects.toBeInstanceOf(UnsupportedAnswerSheetError);
-        expect(recognizeImage).not.toHaveBeenCalled();
+        const pages = answerSheetPages(test);
+        expect(pages.length).toBeGreaterThan(1);
+        expect(pages[1].blocks.map((b) => b.questionId)).toEqual(['q1']);
+
+        recognizeImage.mockResolvedValueOnce({ text: 'page two answer', confidence: 0.7, words: [] });
+        const results = await detectScannedAnswers(solidImage(PAGE_WIDTH, PAGE_HEIGHT, 255), test, 2);
+
+        expect(results).toEqual([
+            { questionId: 'q1', number: 2, response: 'page two answer', source: 'ocr', confidence: 0.7 },
+        ]);
+        expect(recognizeImage).toHaveBeenCalledTimes(1);
+    });
+
+    it('rejects a page number that the printed sheet does not have', async () => {
+        const test = makeTest({
+            questions: [
+                q({
+                    id: 'q1',
+                    type: 'multiple-choice',
+                    points: 1,
+                    prompt: 'P',
+                    options: [{ id: 'o1', text: 'A', isCorrect: true }],
+                }),
+            ],
+        });
+        await expect(detectScannedAnswers(solidImage(PAGE_WIDTH, PAGE_HEIGHT, 255), test, 2)).rejects.toBeInstanceOf(
+            UnsupportedAnswerSheetError
+        );
+    });
+});
+
+describe('mergeScannedAnswers', () => {
+    it('joins per-page results in printed question order', () => {
+        const test = makeTest({
+            questions: [
+                q({
+                    id: 'q1',
+                    type: 'multiple-choice',
+                    points: 1,
+                    prompt: 'One',
+                    options: [{ id: 'o1', text: 'A', isCorrect: true }],
+                }),
+                q({ id: 'q2', type: 'short-answer', points: 1, prompt: 'Two' }),
+                q({ id: 'q3', type: 'true-false', points: 1, prompt: 'Three' }),
+            ],
+        });
+        const merged = mergeScannedAnswers(test, [
+            [{ questionId: 'q1', number: 1, response: 'o1', source: 'bubble' }],
+            [
+                { questionId: 'q2', number: 2, response: 'answer', source: 'ocr', confidence: 0.9 },
+                { questionId: 'q3', number: 3, response: '', source: 'unscanned' },
+            ],
+        ]);
+
+        expect(merged.map((a) => [a.questionId, a.response])).toEqual([
+            ['q1', 'o1'],
+            ['q2', 'answer'],
+            ['q3', ''],
+        ]);
+    });
+
+    it('keeps a question that no scanned page covered as unscanned', () => {
+        const test = makeTest({
+            questions: [
+                q({ id: 'q1', type: 'true-false', points: 1, prompt: 'One' }),
+                q({ id: 'q2', type: 'true-false', points: 1, prompt: 'Two' }),
+            ],
+        });
+        const merged = mergeScannedAnswers(test, [
+            [{ questionId: 'q1', number: 1, response: 'true', source: 'bubble' }],
+        ]);
+        expect(merged[1]).toEqual({ questionId: 'q2', number: 2, response: '', source: 'unscanned' });
     });
 });
