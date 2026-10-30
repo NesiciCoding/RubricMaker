@@ -17,7 +17,6 @@ import {
     GraduationCap,
     ClipboardCopy,
     FileText,
-    GripVertical,
     KeyRound,
     ArrowUp,
     ArrowDown,
@@ -76,6 +75,7 @@ import {
 import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
 import { generateStudentPassword } from '../utils/studentPassword';
 import { sanitizeFilename, stripCommentHtml } from '../utils/exportDataPrep';
+import CardGrip from '../components/ui/CardGrip';
 
 const sortHeaderButtonStyle: React.CSSProperties = {
     display: 'block',
@@ -864,18 +864,21 @@ export default function StudentsPage() {
                                                             ...classDragProvided.draggableProps.style,
                                                         }}
                                                     >
-                                                        <span
+                                                        <CardGrip
                                                             {...classDragProvided.dragHandleProps}
-                                                            aria-label={t('rubricList.drag_to_reorder')}
+                                                            label={t('rubricList.drag_to_reorder')}
+                                                            size={13}
+                                                            // A 13px glyph in a row this tight: the
+                                                            // padding alone never reaches 25px, so the
+                                                            // minimums set the target.
                                                             style={{
-                                                                cursor: 'grab',
-                                                                color: 'var(--text-dim)',
-                                                                display: 'flex',
                                                                 padding: '0 2px',
+                                                                margin: 0,
+                                                                minWidth: 25,
+                                                                minHeight: 25,
+                                                                justifyContent: 'center',
                                                             }}
-                                                        >
-                                                            <GripVertical size={13} />
-                                                        </span>
+                                                        />
                                                         <button
                                                             type="button"
                                                             aria-pressed={selectedSet.has(c.id)}
