@@ -113,7 +113,9 @@ export default function TestListPage() {
         // Pointer-based: @hello-pangea/dnd only sees the dragged card's centre, which never reaches
         // a folder tile from a card grabbed by its corner handle.
         const pointerFolderId = endFolderDrop();
-        if (pointerFolderId) {
+        // `reason` guards Escape: @hello-pangea/dnd calls onDragEnd with CANCEL and a null
+        // destination, and the pointer may well be resting on a tile at that moment.
+        if (pointerFolderId && result.reason === 'DROP') {
             fileIntoFolder(visibleTests[result.source.index], pointerFolderId);
             return;
         }

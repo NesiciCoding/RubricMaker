@@ -21,10 +21,12 @@ export function useFolderDropTarget(): FolderDropTarget {
     const [dropFolderId, setDropFolderId] = useState<string | null>(null);
     const folderIdRef = useRef<string | null>(null);
     const draggingRef = useRef(false);
+    const pointerRef = useRef<{ clientX: number; clientY: number } | null>(null);
 
     useEffect(() => {
         const track = (clientX: number, clientY: number) => {
             if (!draggingRef.current) return;
+            pointerRef.current = { clientX, clientY };
             const tile = document.elementFromPoint(clientX, clientY)?.closest(`[${FOLDER_DROP_ATTRIBUTE}]`);
             const id = tile?.getAttribute(FOLDER_DROP_ATTRIBUTE) ?? null;
             if (id === folderIdRef.current) return;
@@ -36,18 +38,28 @@ export function useFolderDropTarget(): FolderDropTarget {
             const touch = event.touches[0];
             if (touch) track(touch.clientX, touch.clientY);
         };
+        // The tiles sit inside `.page-content`, which @hello-pangea/dnd auto-scrolls while the
+        // pointer stands still — the folder under the pointer then changes with no pointer event
+        // to notice it, so re-run the hit test at the last known position.
+        const onScroll = () => {
+            const pointer = pointerRef.current;
+            if (pointer) track(pointer.clientX, pointer.clientY);
+        };
         // Capture so the tracker still sees the move when a card or menu stops propagation.
         window.addEventListener('mousemove', onMouseMove, true);
         window.addEventListener('touchmove', onTouchMove, { capture: true, passive: true });
+        window.addEventListener('scroll', onScroll, { capture: true, passive: true });
         return () => {
             window.removeEventListener('mousemove', onMouseMove, true);
             window.removeEventListener('touchmove', onTouchMove, true);
+            window.removeEventListener('scroll', onScroll, true);
         };
     }, []);
 
     const startFolderDrop = useCallback(() => {
         draggingRef.current = true;
         folderIdRef.current = null;
+        pointerRef.current = null;
         setDropFolderId(null);
     }, []);
 
