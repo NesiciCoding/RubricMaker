@@ -1,11 +1,21 @@
 import type { FullConfig } from '@playwright/test';
-import { APP_ORIGIN, CHECKOUT_ROOT, CHECKOUT_STAMP } from './appUrl';
+import { APP_ORIGIN, CHECKOUT_ROOT, CHECKOUT_STAMP, loopbackCandidates, readCheckoutStamp } from './appUrl';
+
+/** How long the guard keeps probing for the server: 40 × 250 ms ≈ 10 s. */
+const STAMP_ATTEMPTS = 40;
+const STAMP_RETRY_MS = 250;
 
 /**
  * Refuse to run against a server that isn't serving this checkout (#1015).
  *
  * `reuseExistingServer` never catches this on its own: the suite used to point at a fixed port, so
  * a second worktree's dev server answered there and every spec passed against the wrong code.
+ *
+ * The probe retries rather than firing once. It runs right after Playwright's own readiness check,
+ * which uses a different HTTP client: in CI that check reached the dev server, then `fetch` to
+ * `127.0.0.1` was refused, and a single attempt turned that into a red run before a single spec
+ * executed. Retrying — across the loopback aliases — keeps the identity assertion strict without
+ * making it a timing race.
  */
 export default async function globalSetup(_config: FullConfig): Promise<void> {
     if (process.env.E2E_BASE_URL) {
@@ -15,17 +25,27 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
     }
 
     let served: string | null;
+    let answeredAt: string;
     try {
-        const response = await fetch(APP_ORIGIN, { headers: { accept: 'text/html' } });
-        served = response.headers.get('x-rm-checkout');
+        const check = await readCheckoutStamp(APP_ORIGIN, {
+            attempts: STAMP_ATTEMPTS,
+            delayMs: STAMP_RETRY_MS,
+        });
+        served = check.served;
+        answeredAt = check.origin;
     } catch (error) {
-        throw new Error(`e2e: nothing answered at ${APP_ORIGIN} (${(error as Error).message})`, { cause: error });
+        const tried = loopbackCandidates(APP_ORIGIN).join(', ');
+        throw new Error(
+            `e2e: nothing answered at ${APP_ORIGIN} after ${STAMP_ATTEMPTS} attempts (tried ${tried}) — ` +
+                `${(error as Error).message}`,
+            { cause: error }
+        );
     }
 
     if (served !== CHECKOUT_STAMP) {
         throw new Error(
             [
-                `e2e: ${APP_ORIGIN} is not serving this checkout — refusing to run.`,
+                `e2e: ${answeredAt} is not serving this checkout — refusing to run.`,
                 `  this checkout: ${CHECKOUT_ROOT} (stamp ${CHECKOUT_STAMP})`,
                 `  server stamp:  ${served ?? '<none>'}`,
                 '',

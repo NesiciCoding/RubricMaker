@@ -60,3 +60,73 @@ export function originPort(origin: string): number {
 }
 
 export const DEV_SERVER_PORT = originPort(APP_ORIGIN);
+
+function isLoopbackHost(hostname: string): boolean {
+    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || hostname === '[::1]';
+}
+
+/**
+ * Every spelling of a loopback origin worth probing, the configured one first.
+ *
+ * `localhost` resolves to whichever address family the resolver lists first (`::1` on many Linux
+ * images, `127.0.0.1` elsewhere) and a dev server started with `--host` binds exactly one of them.
+ * The HTTP clients involved disagree about falling back: Playwright's readiness probe tries both
+ * families, while Node's `fetch` (undici) can go straight for one. A single-family server plus a
+ * client that picks the other address is a refused connection even though the server is up — which
+ * is how the check failed in CI (#1015: the probe had reached the dev server, then `fetch` to
+ * `127.0.0.1:5324` was refused). The stamp is the identity that matters, so probe the loopback
+ * aliases too rather than trust one address.
+ */
+export function loopbackCandidates(origin: string): string[] {
+    const url = new URL(origin);
+    if (!isLoopbackHost(url.hostname)) return [origin];
+    const port = url.port ? `:${url.port}` : '';
+    return [...new Set([origin, `${url.protocol}//127.0.0.1${port}`, `${url.protocol}//[::1]${port}`])];
+}
+
+export interface OriginCheck {
+    /** Value of the `x-rm-checkout` header, or null when the server answered without one. */
+    served: string | null;
+    /** The spelling of the origin that answered. */
+    origin: string;
+}
+
+/**
+ * Read the checkout stamp a server advertises, retrying while the dev server comes up.
+ *
+ * One un-retried request is a race by construction: `globalSetup` runs immediately after
+ * Playwright's readiness probe, but through a different HTTP client (see `loopbackCandidates`).
+ * Bounded retries keep the guard strict about *identity* while giving a boot window and an
+ * address-family split room to resolve; a genuinely wrong (or absent) server still fails.
+ *
+ * Returns as soon as any candidate answers — a missing header is `null`, not an error.
+ */
+export async function readCheckoutStamp(
+    origin: string,
+    {
+        attempts = 1,
+        delayMs = 0,
+        fetchImpl = fetch,
+    }: { attempts?: number; delayMs?: number; fetchImpl?: typeof fetch } = {}
+): Promise<OriginCheck> {
+    const candidates = loopbackCandidates(origin);
+    let lastError: unknown = new Error(`nothing answered at ${origin}`);
+
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+        for (const candidate of candidates) {
+            try {
+                const response = await fetchImpl(candidate, { headers: { accept: 'text/html' } });
+                // Drain the body so the socket is released before the next probe.
+                if (typeof response.text === 'function') await response.text().catch(() => '');
+                return { served: response.headers.get('x-rm-checkout'), origin: candidate };
+            } catch (error) {
+                lastError = error;
+            }
+        }
+        if (attempt < attempts && delayMs > 0) {
+            await new Promise((done) => setTimeout(done, delayMs));
+        }
+    }
+
+    throw lastError;
+}

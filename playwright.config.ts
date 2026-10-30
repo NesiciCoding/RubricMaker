@@ -192,7 +192,10 @@ export default defineConfig({
         : {
               // --strictPort: if something else already holds the port, fail instead of silently
               // moving to another one that Playwright would never wait for.
-              command: `npm run dev -- --port ${DEV_SERVER_PORT} --strictPort`,
+              // --host 127.0.0.1: bind one address family explicitly. With the default `localhost`
+              // Vite binds whichever family resolves first (`[::1]` on many Linux images), and the
+              // identity probe in `e2e/global-setup.ts` then has to guess the same one (#1015).
+              command: `npm run dev -- --port ${DEV_SERVER_PORT} --strictPort --host 127.0.0.1`,
               url: APP_ORIGIN,
               // Never default to reusing a server: it used to be the local default, and a server on
               // a fixed port from another checkout then made every run a false green (#1015).
