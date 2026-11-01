@@ -267,7 +267,11 @@ describe('label grades', () => {
         const [fresh] = withLabelPassDefaults([{ id: 'j1' }], rows);
         expect(fresh.passFrom).toBe('B');
         expect(withLabelPassDefaults([{ id: 'j1', passFrom: '' }], rows)[0].passFrom).toBe('');
-        expect(withLabelPassDefaults([{ id: 'j1', passFrom: 'Gone' }], rows)[0].passFrom).toBeUndefined();
+        expect(withLabelPassDefaults([{ id: 'j1', passFrom: 'Gone' }], rows)[0].passFrom).toBe('B');
+        expect(
+            withLabelPassDefaults([{ id: 'j1', passFrom: 'Gone' }], [{ minPoints: 0, grades: { j1: 'IO' } }])[0]
+                .passFrom
+        ).toBeUndefined();
         expect(withLabelPassDefaults([{ id: 'j3' }], rows)[0].passFrom).toBeUndefined();
     });
 

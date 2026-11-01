@@ -368,9 +368,7 @@ function NormTableEditor({
                                             type="button"
                                             className="btn btn-ghost btn-icon btn-sm"
                                             aria-label={t('tests.norm.remove_row', { points: row.minPoints })}
-                                            onClick={() =>
-                                                onChange({ ...norm, rows: norm.rows.filter((_, i) => i !== index) })
-                                            }
+                                            onClick={() => setRows(norm.rows.filter((_, i) => i !== index))}
                                         >
                                             <Trash2 size={13} />
                                         </button>

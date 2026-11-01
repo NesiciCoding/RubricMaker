@@ -107,14 +107,16 @@ export function parseGradeCell(raw: string): number | string | null {
 }
 
 /**
- * Gives label columns a 'sufficient from' default (their second label, so B in IO/B/E) the first time
- * they have labels. An explicit '' means the teacher chose no pass mark and is kept.
+ * Gives label columns a 'sufficient from' default (their second label, so B in IO/B/E) when they first
+ * get labels or when the chosen label disappears from the column. An explicit '' means the teacher
+ * chose no pass mark and is kept.
  */
 export function withLabelPassDefaults(tiers: TestNormTier[], rows: TestNormTableRow[]): TestNormTier[] {
     return tiers.map((tier) => {
         const labels = tierLabels(rows, tier.id);
-        if (tier.passFrom === undefined && labels.length >= 2) return { ...tier, passFrom: labels[1] };
-        if (tier.passFrom && !labels.includes(tier.passFrom)) return { ...tier, passFrom: undefined };
+        const stale = !!tier.passFrom && !labels.includes(tier.passFrom);
+        if ((tier.passFrom === undefined || stale) && labels.length >= 2) return { ...tier, passFrom: labels[1] };
+        if (stale) return { ...tier, passFrom: undefined };
         return tier;
     });
 }

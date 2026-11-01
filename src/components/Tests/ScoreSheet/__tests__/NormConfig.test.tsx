@@ -136,6 +136,30 @@ describe('NormConfig', () => {
         expect(onChange.mock.lastCall![0].gradingNorm.tiers[0].passFrom).toBe('');
     });
 
+    it('clears the sufficient-from label when its last row is removed', () => {
+        const onChange = vi.fn();
+        render(
+            <Harness
+                initial={{
+                    gradingNorm: {
+                        type: 'table',
+                        tiers: [{ id: 'a', passFrom: 'E' }],
+                        rows: [
+                            { minPoints: 0, grades: { a: 'IO' } },
+                            { minPoints: 5, grades: { a: 'B' } },
+                            { minPoints: 8, grades: { a: 'E' } },
+                        ],
+                    },
+                }}
+                onChange={onChange}
+            />
+        );
+        fireEvent.click(screen.getByLabelText(/remove_row.*"points":8/));
+        const norm = onChange.mock.lastCall![0].gradingNorm;
+        expect(norm.rows).toHaveLength(2);
+        expect(norm.tiers[0].passFrom).toBe('B');
+    });
+
     it('pastes a table that mixes labels and numbers', () => {
         const onChange = vi.fn();
         render(
