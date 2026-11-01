@@ -148,19 +148,6 @@ export default function ClozeGapEditor({
                 }
                 .cloze-gap-stem { font-weight: 500; font-size: 0.8em; opacity: 0.8; margin-left: 4px; }
                 .cloze-gap-pill sup { font-size: 0.7em; opacity: 0.75; margin-left: 1px; }
-                .cloze-gap-popover {
-                    position: fixed;
-                    z-index: 1000;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 8px;
-                    min-width: 220px;
-                    padding: 10px;
-                    background: var(--bg-elevated);
-                    border: 1px solid var(--border);
-                    border-radius: 8px;
-                    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
-                }
                 .cloze-gap-popover-label { font-size: 0.75rem; color: var(--text-muted); }
                 .cloze-gap-popover-input {
                     box-sizing: border-box;
