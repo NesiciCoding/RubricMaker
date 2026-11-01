@@ -262,6 +262,33 @@ describe('EssayListPage folders', () => {
         expect(mockAddFolder).toHaveBeenCalledWith({ name: 'Term 2', kind: 'essay', displayOrder: 0 });
     });
 
+    it('creates a subfolder inside the folder that is open and shows its path', async () => {
+        appOverrides = { folders: [folder] };
+        mockAddFolder.mockReturnValue({ ...folder, id: 'f-sub', name: 'Drafts', parentId: 'f1' });
+        const { default: EssayListPage } = await import('../EssayListPage');
+        renderWithRouter(<EssayListPage />);
+
+        fireEvent.click(screen.getByText('Term 1'));
+        expect(screen.getByRole('navigation', { name: 'folders.path_label' })).toBeInTheDocument();
+        fireEvent.click(screen.getByText('folders.new_subfolder'));
+        fireEvent.change(screen.getByLabelText('folders.folder_name'), { target: { value: 'Drafts' } });
+        fireEvent.click(screen.getByText('folders.create'));
+
+        expect(mockAddFolder).toHaveBeenCalledWith({ name: 'Drafts', kind: 'essay', parentId: 'f1', displayOrder: 0 });
+    });
+
+    it('moves a folder into another folder from its tile menu', async () => {
+        const term2 = { ...folder, id: 'f2', name: 'Term 2' };
+        appOverrides = { folders: [folder, term2] };
+        const { default: EssayListPage } = await import('../EssayListPage');
+        renderWithRouter(<EssayListPage />);
+
+        fireEvent.click(screen.getAllByRole('button', { name: 'folders.move_to' })[1]);
+        fireEvent.click(screen.getByRole('menuitem', { name: 'Term 1' }));
+
+        expect(mockUpdateFolder).toHaveBeenCalledWith(expect.objectContaining({ id: 'f2', parentId: 'f1' }));
+    });
+
     it('files an essay group on a real drop over a folder tile but not on a cancelled drag', async () => {
         const { default: EssayListPage } = await import('../EssayListPage');
         renderWithRouter(<EssayListPage />);

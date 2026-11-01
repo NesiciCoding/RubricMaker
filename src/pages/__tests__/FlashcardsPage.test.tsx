@@ -335,6 +335,39 @@ describe('FlashcardsPage folders', () => {
         expect(mockAddFolder).toHaveBeenCalledWith({ name: 'Term 2', kind: 'flashcard', displayOrder: 0 });
     });
 
+    it('creates a subfolder inside the folder that is open and shows its path', async () => {
+        mockDecks = [deckA];
+        mockAddFolder.mockReturnValue({ ...folder, id: 'deck-f-sub', name: 'Verbs', parentId: 'deck-f1' });
+        const { default: FlashcardsPage } = await import('../FlashcardsPage');
+        renderWithRouter(<FlashcardsPage />);
+
+        fireEvent.click(screen.getByText('Term 1'));
+        expect(screen.getByRole('navigation', { name: 'folders.path_label' })).toBeInTheDocument();
+        fireEvent.click(screen.getByText('folders.new_subfolder'));
+        fireEvent.change(screen.getByLabelText('folders.folder_name'), { target: { value: 'Verbs' } });
+        fireEvent.click(screen.getByText('folders.create'));
+
+        expect(mockAddFolder).toHaveBeenCalledWith({
+            name: 'Verbs',
+            kind: 'flashcard',
+            parentId: 'deck-f1',
+            displayOrder: 0,
+        });
+    });
+
+    it('moves a folder into another folder from its tile menu', async () => {
+        mockDecks = [deckA];
+        mockFolders = [folder, { ...folder, id: 'deck-f2', name: 'Term 2' }];
+        mockUpdateFolder.mockReset();
+        const { default: FlashcardsPage } = await import('../FlashcardsPage');
+        renderWithRouter(<FlashcardsPage />);
+
+        fireEvent.click(screen.getAllByRole('button', { name: 'folders.move_to' })[1]);
+        fireEvent.click(screen.getByRole('menuitem', { name: 'Term 1' }));
+
+        expect(mockUpdateFolder).toHaveBeenCalledWith(expect.objectContaining({ id: 'deck-f2', parentId: 'deck-f1' }));
+    });
+
     it('files a deck on a real drop over a folder tile but not on a cancelled drag', async () => {
         mockDecks = [deckA];
         mockFolders = [{ id: 'deck-f1', name: 'Term 1', kind: 'flashcard', createdAt: '2024-02-01T00:00:00Z' }];

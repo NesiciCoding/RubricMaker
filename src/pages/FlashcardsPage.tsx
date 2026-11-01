@@ -111,6 +111,13 @@ export default function FlashcardsPage() {
         // Decks keep their newest-first order, so a drop outside a folder changes nothing.
     }
 
+    function moveFolder(folder: Folder, parentId: string | undefined) {
+        if (folder.parentId === parentId) return;
+        updateFolder({ ...folder, parentId, displayOrder: nextFolderOrder(folders, 'flashcard', parentId) });
+        const target = parentId ? folders.find((f) => f.id === parentId) : undefined;
+        showToast(t('folders.moved_toast', { name: target?.name ?? t('folders.move_to_root') }), 'success');
+    }
+
     function submitFolderName(name: string) {
         const editing = folderModal?.folder;
         if (editing) {
@@ -178,6 +185,7 @@ export default function FlashcardsPage() {
                             onCreate={(parentId) => setFolderModal({ parentId })}
                             onRename={(folder) => setFolderModal({ folder })}
                             onDelete={handleDeleteFolder}
+                            onMoveFolder={moveFolder}
                             dropFolderId={dropFolderId}
                         />
                         {visibleDecks.length === 0 ? (
