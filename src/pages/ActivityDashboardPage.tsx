@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LayoutGrid, GripVertical, ClipboardList, Plus, X } from 'lucide-react';
+import { LayoutGrid, ClipboardList, Plus, X } from 'lucide-react';
+import CardGrip from '../components/ui/CardGrip';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { useTranslation } from 'react-i18next';
 import PageTour from '../components/Tour/PageTour';
@@ -437,13 +438,11 @@ export default function ActivityDashboardPage() {
                                                                     }}
                                                                     title={activity.name}
                                                                 >
-                                                                    {/* A table cell sizes to its content, so the name needs its
-                                                                        own capped, truncating box — otherwise a long activity
-                                                                        name widens the sticky column and pushes the class
-                                                                        columns into horizontal scroll. The box must not clip,
-                                                                        though: the handle's negative margin pulls part of its
-                                                                        23px grab area (and its focus ring) outside it, and the
-                                                                        button ellipsises on its own. */}
+                                                                    {/* A table cell sizes to its content, so the name needs its own capped,
+                                                                        truncating box — otherwise a long activity name widens the sticky column
+                                                                        and pushes the class columns into horizontal scroll. The box must not clip,
+                                                                        though: the handle's negative margin pulls part of its grab area (and its
+                                                                        focus ring) outside it, and the button ellipsises on its own. */}
                                                                     <div
                                                                         style={{
                                                                             display: 'flex',
@@ -453,25 +452,13 @@ export default function ActivityDashboardPage() {
                                                                             maxWidth: 200,
                                                                         }}
                                                                     >
-                                                                        <span
+                                                                        <CardGrip
                                                                             {...dragProvided.dragHandleProps}
-                                                                            aria-label={t('rubricList.drag_to_reorder')}
-                                                                            style={{
-                                                                                cursor: 'grab',
-                                                                                color: 'var(--text-dim)',
-                                                                                display: 'flex',
-                                                                                alignItems: 'center',
-                                                                                flexShrink: 0,
-                                                                                // Padding (cancelled by the negative
-                                                                                // margin) grows the grab area around the
-                                                                                // glyph to a 23px target.
-                                                                                padding: 5,
-                                                                                margin: '-5px 1px -5px -5px',
-                                                                                touchAction: 'none',
-                                                                            }}
-                                                                        >
-                                                                            <GripVertical size={13} />
-                                                                        </span>
+                                                                            label={t('rubricList.drag_to_reorder')}
+                                                                            size={13}
+                                                                            // Table cells are tighter than cards, so cancel the padding vertically as well.
+                                                                            style={{ margin: '-5px 1px -5px -5px' }}
+                                                                        />
                                                                         <button
                                                                             type="button"
                                                                             className="btn btn-ghost btn-sm"

@@ -60,4 +60,44 @@ describe('Modal', () => {
         expect(screen.queryByRole('button', { name: 'inside' })).not.toBeInTheDocument();
         expect(opener).toHaveFocus();
     });
+
+    it('returns focus to returnFocusTo when whatever opened it is gone', async () => {
+        // A menu item opens the dialog and the menu unmounts in the same tick, so the captured
+        // opener is detached and Radix would drop focus on the body. The trigger outlives it.
+        function Harness() {
+            const [open, setOpen] = React.useState(false);
+            const [menuMounted, setMenuMounted] = React.useState(true);
+            const triggerRef = React.useRef<HTMLButtonElement>(null);
+            return (
+                <>
+                    <button ref={triggerRef}>class menu</button>
+                    {menuMounted && (
+                        <button
+                            onClick={() => {
+                                setOpen(true);
+                                setMenuMounted(false);
+                            }}
+                        >
+                            rename class
+                        </button>
+                    )}
+                    {open && (
+                        <Modal titleId="m-title" onClose={() => setOpen(false)} returnFocusTo={triggerRef.current}>
+                            <button>inside</button>
+                        </Modal>
+                    )}
+                </>
+            );
+        }
+        render(<Harness />);
+        const trigger = screen.getByRole('button', { name: 'class menu' });
+        const menuItem = screen.getByRole('button', { name: 'rename class' });
+        menuItem.focus();
+        fireEvent.click(menuItem);
+        expect(screen.queryByRole('button', { name: 'rename class' })).not.toBeInTheDocument();
+        fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
+        await act(() => new Promise((r) => setTimeout(r, 0)));
+        expect(screen.queryByRole('button', { name: 'inside' })).not.toBeInTheDocument();
+        expect(trigger).toHaveFocus();
+    });
 });

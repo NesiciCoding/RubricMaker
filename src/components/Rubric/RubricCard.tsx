@@ -12,13 +12,14 @@ import {
     Layers,
     Link2,
     Users2,
-    GripVertical,
     ExternalLink,
     UsersRound,
 } from 'lucide-react';
 import { Draggable } from '@hello-pangea/dnd';
 import type { Rubric, Student } from '../../types';
 import CefrBadge from '../CEFR/CefrBadge';
+import CardTile from '../ui/CardTile';
+import CardGrip from '../ui/CardGrip';
 import { encodeRubricShareCode } from '../../utils/rubricImport';
 
 export interface RubricCardActions {
@@ -121,25 +122,11 @@ function RubricCard({
     return (
         <Draggable draggableId={rubric.id} index={index} isDragDisabled={!reorderable}>
             {(dragProvided) => (
-                <div
+                <CardTile
                     ref={dragProvided.innerRef}
                     {...dragProvided.draggableProps}
-                    className="card"
-                    style={{
-                        cursor: 'pointer',
-                        transition: 'border-color var(--transition)',
-                        // Fixed basis, no grow: tiles stay the same width on every row (a growing
-                        // basis made the last row's cards wider than the full ones above it).
-                        // minWidth 0 keeps that basis honest — a flex item's automatic minimum is
-                        // its min-content width, so the nowrap (`.truncate`) description used to
-                        // stretch its card to the width of the whole sentence.
-                        flex: '0 1 400px',
-                        minWidth: 0,
-                        maxWidth: '100%',
-                        ...dragProvided.draggableProps.style,
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
+                    hoverable
+                    style={{ cursor: 'pointer', ...dragProvided.draggableProps.style }}
                 >
                     {/* The title gets its own full-width line so a long name wraps instead of
                         squeezing the action row off the card. */}
@@ -160,24 +147,7 @@ function RubricCard({
                             }}
                         >
                             {reorderable && (
-                                <span
-                                    {...dragProvided.dragHandleProps}
-                                    aria-label={t('rubricList.drag_to_reorder')}
-                                    style={{
-                                        cursor: 'grab',
-                                        color: 'var(--text-dim)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        flexShrink: 0,
-                                        // Padding (cancelled by the negative margin) grows the grab
-                                        // area around the corner glyph to a 25px touch target.
-                                        padding: 5,
-                                        margin: '-1px 0 0 -5px',
-                                        touchAction: 'none',
-                                    }}
-                                >
-                                    <GripVertical size={15} />
-                                </span>
+                                <CardGrip {...dragProvided.dragHandleProps} label={t('rubricList.drag_to_reorder')} />
                             )}
                             <div style={{ minWidth: 0 }}>
                                 <h3
@@ -379,7 +349,7 @@ function RubricCard({
                             )}
                         </div>
                     </div>
-                </div>
+                </CardTile>
             )}
         </Draggable>
     );

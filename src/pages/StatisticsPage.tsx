@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { TrendingUp, Users, BookOpen, Download, Maximize2, Printer, ChevronDown, ChevronUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -1856,48 +1857,52 @@ export default function StatisticsPage() {
             </div>
 
             {/* ── Fullscreen overlay ── */}
-            {criterionFullscreen && (
-                <div
-                    style={{
-                        position: 'fixed',
-                        inset: 0,
-                        zIndex: 1000,
-                        background: 'rgba(0,0,0,0.85)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: 32,
-                    }}
-                    onClick={() => setCriterionFullscreen(false)}
-                >
+            {criterionFullscreen &&
+                // Portalled to <body>: a fixed overlay inside page content is positioned against
+                // the nearest transformed ancestor instead of the viewport (#1017).
+                createPortal(
                     <div
                         style={{
-                            background: 'var(--bg-card)',
-                            borderRadius: 12,
-                            padding: 24,
-                            width: '100%',
-                            maxWidth: '95vw',
+                            position: 'fixed',
+                            inset: 0,
+                            zIndex: 1000,
+                            background: 'rgba(0,0,0,0.85)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: 32,
                         }}
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={() => setCriterionFullscreen(false)}
                     >
                         <div
                             style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                marginBottom: 16,
+                                background: 'var(--bg-card)',
+                                borderRadius: 12,
+                                padding: 24,
+                                width: '100%',
+                                maxWidth: '95vw',
                             }}
+                            onClick={(e) => e.stopPropagation()}
                         >
-                            <h3 style={{ margin: 0 }}>{t('statistics.criterion_avg')}</h3>
-                            <button className="btn btn-ghost btn-sm" onClick={() => setCriterionFullscreen(false)}>
-                                {t('statistics.action_close_fullscreen')}
-                            </button>
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    marginBottom: 16,
+                                }}
+                            >
+                                <h3 style={{ margin: 0 }}>{t('statistics.criterion_avg')}</h3>
+                                <button className="btn btn-ghost btn-sm" onClick={() => setCriterionFullscreen(false)}>
+                                    {t('statistics.action_close_fullscreen')}
+                                </button>
+                            </div>
+                            {renderCriterionChart(Math.min(window.innerHeight * 0.7, 600))}
                         </div>
-                        {renderCriterionChart(Math.min(window.innerHeight * 0.7, 600))}
-                    </div>
-                </div>
-            )}
+                    </div>,
+                    document.body
+                )}
         </>
     );
 }

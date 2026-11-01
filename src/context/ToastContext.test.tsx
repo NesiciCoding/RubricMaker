@@ -149,4 +149,24 @@ describe('ToastContext default value', () => {
         expect(screen.queryByText('Deleted')).toBeNull();
         vi.useRealTimers();
     });
+
+    it('portals toasts to <body>, out of reach of a transformed ancestor (#1017)', () => {
+        // A page wrapper that keeps a transform (the old `.fade-in`, which ended on
+        // `translateY(0)`) becomes the containing block for `position: fixed` descendants, so a
+        // toast rendered in place would be pinned to the page box instead of the viewport.
+        const { container } = render(
+            <div style={{ transform: 'translateY(0)' }} data-testid="transformed-page">
+                <ToastProvider>
+                    <TestConsumer />
+                </ToastProvider>
+            </div>
+        );
+        fireEvent.click(screen.getByText('show-success'));
+
+        const toast = screen.getByRole('alert');
+        expect(toast).toBeInTheDocument();
+        expect(container.querySelector('[role="alert"]')).toBeNull();
+        expect(document.body.contains(toast)).toBe(true);
+        expect(toast.closest('[data-testid="transformed-page"]')).toBeNull();
+    });
 });
