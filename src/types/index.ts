@@ -100,9 +100,9 @@ export interface LinkedCefrDescriptor {
 }
 
 /** Framework type for non-CEFR assessment frameworks */
-export type AssessmentFramework = 'ib' | 'blooms' | 'grammar';
+export type AssessmentFramework = 'ib' | 'blooms' | 'grammar' | 'slo';
 
-/** A descriptor from IB Learner Profile, Bloom's Taxonomy, or the grammar linker, linked to a rubric criterion */
+/** A descriptor from IB Learner Profile, Bloom's Taxonomy, the grammar linker or the SLO kerndoelen, linked to a rubric criterion */
 export interface LinkedFrameworkDescriptor {
     descriptorId: string;
     framework: AssessmentFramework;

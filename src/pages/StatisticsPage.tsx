@@ -277,6 +277,17 @@ export default function StatisticsPage() {
         /* v8 ignore stop */
     }, [rubric, filteredRubricStudentRubrics]);
 
+    const sloData = useMemo(() => {
+        const inCriteria = rubric?.criteria.some((c) => c.frameworkDescriptors?.some((fd) => fd.framework === 'slo'));
+        const inSnapshots = filteredRubricStudentRubrics.some((sr) =>
+            sr.rubricSnapshot?.criteria.some((c) => c.frameworkDescriptors?.some((fd) => fd.framework === 'slo'))
+        );
+        if (!inCriteria && !inSnapshots) return null;
+        /* v8 ignore start -- criteria is required on Rubric; a missing rubric is caught by the guard above */
+        return aggregateFrameworkScores('slo', filteredRubricStudentRubrics, rubric?.criteria ?? []);
+        /* v8 ignore stop */
+    }, [rubric, filteredRubricStudentRubrics]);
+
     const classGoals = useMemo(() => {
         if (selectedClassId === 'all') return [];
         const cls = classes.find((c) => c.id === selectedClassId);
@@ -1476,6 +1487,29 @@ export default function StatisticsPage() {
                                                         count: bucket?.count ?? 0,
                                                     };
                                                 })}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* SLO kerndoelen (English) — only the core goals this rubric links to */}
+                                {sloData && sloData.some((bucket) => bucket.count > 0) && summaries.length > 0 && (
+                                    <div className="card" style={{ marginBottom: 20 }}>
+                                        <h3 style={{ marginBottom: 16 }}>{t('statistics.slo_title')}</h3>
+                                        <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                            <FrameworkRoseChart
+                                                sectors={sloData
+                                                    .filter((bucket) => bucket.count > 0)
+                                                    .map((bucket) => ({
+                                                        id: bucket.categoryId,
+                                                        label:
+                                                            lang === 'nl'
+                                                                ? bucket.categoryLabelNl
+                                                                : bucket.categoryLabelEn,
+                                                        value: bucket.avgPercentage,
+                                                        color: bucket.categoryColor,
+                                                        count: bucket.count,
+                                                    }))}
                                             />
                                         </div>
                                     </div>

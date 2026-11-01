@@ -73,6 +73,17 @@ const ibDesc = {
     descriptionNl: 'Kritisch denken',
 };
 
+const sloDesc = {
+    descriptorId: 'slo-vo-35d',
+    framework: 'slo' as const,
+    categoryId: 'slo-vo-35',
+    categoryLabelEn: 'Secondary · Core goal 35',
+    categoryLabelNl: 'VO · Kerndoel 35',
+    categoryColor: '#ea580c',
+    descriptionEn: '35D — The pupil writes in English.',
+    descriptionNl: '35D — De leerling schrijft in de Engelse taal.',
+};
+
 const linkedStandard = {
     guid: 'g1',
     description: 'Can express ideas clearly',
@@ -88,7 +99,14 @@ const c1 = {
     frameworkDescriptors: [bloomsDesc],
     linkedStandards: [linkedStandard],
 };
-const c2 = { id: 'c2', title: 'Voice', description: '', weight: 40, levels: [l1, l2], frameworkDescriptors: [ibDesc] };
+const c2 = {
+    id: 'c2',
+    title: 'Voice',
+    description: '',
+    weight: 40,
+    levels: [l1, l2],
+    frameworkDescriptors: [ibDesc, sloDesc],
+};
 const c3r = { id: 'c3', title: 'Organisation', description: '', weight: 50, levels: [l1, l2] };
 const c4r = { id: 'c4', title: 'Language', description: '', weight: 50, levels: [l1, l2] };
 
@@ -533,14 +551,16 @@ describe('StatisticsPage extended', () => {
         expect(screen.queryByText('statistics.action_close_fullscreen')).not.toBeInTheDocument();
     });
 
-    it('renders blooms and ib framework charts, including the Dutch language path', async () => {
+    it('renders blooms, ib and slo framework charts, including the Dutch language path', async () => {
         h.i18n.language = 'nl';
         renderPage();
         await waitForCharts();
         expect(screen.getByText('statistics.blooms_title')).toBeInTheDocument();
         expect(screen.getByText('statistics.ib_title')).toBeInTheDocument();
+        expect(screen.getByText('statistics.slo_title')).toBeInTheDocument();
         // Dutch labels render when the language is nl.
         expect(screen.getAllByText(/Onthouden/).length).toBeGreaterThan(0);
+        expect(screen.getAllByText(/VO · Kerndoel 35/).length).toBeGreaterThan(0);
         h.i18n.language = 'en';
     });
 

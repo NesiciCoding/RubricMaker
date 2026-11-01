@@ -13,6 +13,7 @@ import {
 import { IB_ATTRIBUTES } from '../../data/ibLearnerProfile';
 import { BLOOM_LEVELS } from '../../data/bloomsTaxonomy';
 import { GRAMMAR_CATEGORIES } from '../../data/grammarStandards';
+import { SLO_KERNDOELEN, SLO_PHASES, sloGoalToFrameworkDescriptor, type SloPhase } from '../../data/sloKerndoelen';
 import type {
     CefrLevel,
     CefrSkill,
@@ -54,6 +55,7 @@ export default function CefrPickerModal({
     const [selectedLevel, setSelectedLevel] = useState<CefrLevel | null>(null);
     const [search, setSearch] = useState('');
     const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['B1', 'B2']));
+    const [selectedSloPhase, setSelectedSloPhase] = useState<SloPhase | null>(null);
 
     const linkedCefrIds = useMemo(() => new Set(linkedDescriptors.map((d) => d.descriptorId)), [linkedDescriptors]);
     const linkedFrameworkIds = useMemo(
@@ -81,6 +83,11 @@ export default function CefrPickerModal({
         }
         return map;
     }, [cefrFiltered]);
+
+    function matchesSearch(textEn: string, textNl: string) {
+        if (!search) return true;
+        return (lang === 'nl' ? textNl : textEn).toLowerCase().includes(search.toLowerCase());
+    }
 
     function toggleSection(key: string) {
         setExpandedSections((prev) => {
@@ -121,6 +128,7 @@ export default function CefrPickerModal({
         { id: 'ib', label: t('framework.ib_short') },
         { id: 'blooms', label: t('framework.blooms_short') },
         { id: 'grammar', label: t('framework.grammar_short') },
+        { id: 'slo', label: t('framework.slo_short') },
     ];
 
     return (
@@ -273,6 +281,39 @@ export default function CefrPickerModal({
                 </div>
             )}
 
+            {/* SLO: phase filter */}
+            {activeFramework === 'slo' && (
+                <div
+                    style={{
+                        padding: '12px 20px',
+                        borderBottom: '1px solid var(--border)',
+                        display: 'flex',
+                        gap: 4,
+                        flexWrap: 'wrap',
+                    }}
+                >
+                    <button
+                        type="button"
+                        className={`btn btn-sm ${!selectedSloPhase ? 'btn-primary' : 'btn-ghost'}`}
+                        aria-pressed={!selectedSloPhase}
+                        onClick={() => setSelectedSloPhase(null)}
+                    >
+                        {t('framework.slo_phase_all')}
+                    </button>
+                    {SLO_PHASES.map((phase) => (
+                        <button
+                            type="button"
+                            key={phase}
+                            className={`btn btn-sm ${selectedSloPhase === phase ? 'btn-primary' : 'btn-ghost'}`}
+                            aria-pressed={selectedSloPhase === phase}
+                            onClick={() => setSelectedSloPhase((prev) => (prev === phase ? null : phase))}
+                        >
+                            {t(`framework.slo_phase_${phase}`)}
+                        </button>
+                    ))}
+                </div>
+            )}
+
             {/* Search (all frameworks) */}
             <div style={{ padding: '10px 20px', borderBottom: '1px solid var(--border)' }}>
                 <div style={{ position: 'relative' }}>
@@ -383,94 +424,45 @@ export default function CefrPickerModal({
                 {activeFramework === 'ib' && (
                     <>
                         {IB_ATTRIBUTES.map((attr) => {
-                            const filtered = attr.descriptors.filter((d) => {
-                                if (!search) return true;
-                                const text = lang === 'nl' ? d.descriptionNl : d.descriptionEn;
-                                return text.toLowerCase().includes(search.toLowerCase());
-                            });
+                            const filtered = attr.descriptors.filter((d) =>
+                                matchesSearch(d.descriptionEn, d.descriptionNl)
+                            );
                             if (filtered.length === 0) return null;
-                            const expanded = expandedSections.has(attr.id);
-                            const linkedCount = filtered.filter((d) => linkedFrameworkIds.has(d.id)).length;
-
+                            const attrLabel = lang === 'nl' ? attr.labelNl : attr.labelEn;
                             return (
-                                <div key={attr.id}>
-                                    <button
-                                        style={{
-                                            width: '100%',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 10,
-                                            padding: '8px 20px',
-                                            background: 'var(--bg-elevated)',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            textAlign: 'left',
-                                            borderLeft: `4px solid ${attr.color}`,
-                                        }}
-                                        onClick={() => toggleSection(attr.id)}
-                                    >
-                                        <span
-                                            style={{
-                                                fontWeight: 700,
-                                                fontSize: 13,
-                                                color: attr.color,
-                                                flex: 1,
-                                            }}
-                                        >
-                                            {lang === 'nl' ? attr.labelNl : attr.labelEn}
-                                        </span>
-                                        {linkedCount > 0 && (
-                                            <span
-                                                style={{
-                                                    background: 'var(--accent)',
-                                                    color: '#fff',
-                                                    borderRadius: 10,
-                                                    padding: '1px 7px',
-                                                    fontSize: 11,
-                                                    fontWeight: 600,
-                                                }}
-                                            >
-                                                {linkedCount}
-                                            </span>
-                                        )}
-                                        {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                                    </button>
-                                    {expanded &&
-                                        filtered.map((descriptor) => {
-                                            const isLinked = linkedFrameworkIds.has(descriptor.id);
-                                            const text =
-                                                lang === 'nl' ? descriptor.descriptionNl : descriptor.descriptionEn;
-                                            return (
-                                                <DescriptorRow
-                                                    key={descriptor.id}
-                                                    isLinked={isLinked}
-                                                    text={text}
-                                                    sublabel={`IB — ${lang === 'nl' ? attr.labelNl : attr.labelEn}`}
-                                                    onClick={() =>
-                                                        toggleFramework({
-                                                            descriptorId: descriptor.id,
-                                                            framework: 'ib',
-                                                            categoryId: attr.id,
-                                                            categoryLabelEn: attr.labelEn,
-                                                            categoryLabelNl: attr.labelNl,
-                                                            categoryColor: attr.color,
-                                                            descriptionEn: descriptor.descriptionEn,
-                                                            descriptionNl: descriptor.descriptionNl,
-                                                        })
-                                                    }
-                                                />
-                                            );
-                                        })}
-                                </div>
+                                <CategorySection
+                                    key={attr.id}
+                                    color={attr.color}
+                                    label={attrLabel}
+                                    linkedCount={filtered.filter((d) => linkedFrameworkIds.has(d.id)).length}
+                                    expanded={expandedSections.has(attr.id)}
+                                    onToggle={() => toggleSection(attr.id)}
+                                >
+                                    {filtered.map((descriptor) => (
+                                        <DescriptorRow
+                                            key={descriptor.id}
+                                            isLinked={linkedFrameworkIds.has(descriptor.id)}
+                                            text={lang === 'nl' ? descriptor.descriptionNl : descriptor.descriptionEn}
+                                            sublabel={`IB — ${attrLabel}`}
+                                            onClick={() =>
+                                                toggleFramework({
+                                                    descriptorId: descriptor.id,
+                                                    framework: 'ib',
+                                                    categoryId: attr.id,
+                                                    categoryLabelEn: attr.labelEn,
+                                                    categoryLabelNl: attr.labelNl,
+                                                    categoryColor: attr.color,
+                                                    descriptionEn: descriptor.descriptionEn,
+                                                    descriptionNl: descriptor.descriptionNl,
+                                                })
+                                            }
+                                        />
+                                    ))}
+                                </CategorySection>
                             );
                         })}
                         {IB_ATTRIBUTES.every(
-                            (attr) =>
-                                !attr.descriptors.some((d) => {
-                                    if (!search) return true;
-                                    const text = lang === 'nl' ? d.descriptionNl : d.descriptionEn;
-                                    return text.toLowerCase().includes(search.toLowerCase());
-                                })
+                            (attr) => !attr.descriptors.some((d) => matchesSearch(d.descriptionEn, d.descriptionNl))
                         ) && <EmptyState style={{ padding: 40 }} description={t('cefr.no_results')} />}
                     </>
                 )}
@@ -479,108 +471,47 @@ export default function CefrPickerModal({
                 {activeFramework === 'blooms' && (
                     <>
                         {BLOOM_LEVELS.map((level) => {
-                            const filtered = level.descriptors.filter((d) => {
-                                if (!search) return true;
-                                const text = lang === 'nl' ? d.descriptionNl : d.descriptionEn;
-                                return text.toLowerCase().includes(search.toLowerCase());
-                            });
+                            const filtered = level.descriptors.filter((d) =>
+                                matchesSearch(d.descriptionEn, d.descriptionNl)
+                            );
                             if (filtered.length === 0) return null;
-                            const expanded = expandedSections.has(level.id);
-                            const linkedCount = filtered.filter((d) => linkedFrameworkIds.has(d.id)).length;
                             const levelLabel = lang === 'nl' ? level.labelNl : level.labelEn;
                             const verbs = lang === 'nl' ? level.verbsNl : level.verbsEn;
-
                             return (
-                                <div key={level.id}>
-                                    <button
-                                        style={{
-                                            width: '100%',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 10,
-                                            padding: '8px 20px',
-                                            background: 'var(--bg-elevated)',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            textAlign: 'left',
-                                            borderLeft: `4px solid ${level.color}`,
-                                        }}
-                                        onClick={() => toggleSection(level.id)}
-                                    >
-                                        <span
-                                            style={{
-                                                fontWeight: 700,
-                                                fontSize: 13,
-                                                color: level.color,
-                                                minWidth: 90,
-                                            }}
-                                        >
-                                            {level.order}. {levelLabel}
-                                        </span>
-                                        <span
-                                            style={{
-                                                fontSize: 11,
-                                                color: 'var(--text-muted)',
-                                                flex: 1,
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap',
-                                            }}
-                                        >
-                                            {verbs.slice(0, 4).join(', ')}…
-                                        </span>
-                                        {linkedCount > 0 && (
-                                            <span
-                                                style={{
-                                                    background: 'var(--accent)',
-                                                    color: '#fff',
-                                                    borderRadius: 10,
-                                                    padding: '1px 7px',
-                                                    fontSize: 11,
-                                                    fontWeight: 600,
-                                                }}
-                                            >
-                                                {linkedCount}
-                                            </span>
-                                        )}
-                                        {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                                    </button>
-                                    {expanded &&
-                                        filtered.map((descriptor) => {
-                                            const isLinked = linkedFrameworkIds.has(descriptor.id);
-                                            const text =
-                                                lang === 'nl' ? descriptor.descriptionNl : descriptor.descriptionEn;
-                                            return (
-                                                <DescriptorRow
-                                                    key={descriptor.id}
-                                                    isLinked={isLinked}
-                                                    text={text}
-                                                    sublabel={`Bloom's — ${levelLabel}`}
-                                                    onClick={() =>
-                                                        toggleFramework({
-                                                            descriptorId: descriptor.id,
-                                                            framework: 'blooms',
-                                                            categoryId: level.id,
-                                                            categoryLabelEn: level.labelEn,
-                                                            categoryLabelNl: level.labelNl,
-                                                            categoryColor: level.color,
-                                                            descriptionEn: descriptor.descriptionEn,
-                                                            descriptionNl: descriptor.descriptionNl,
-                                                        })
-                                                    }
-                                                />
-                                            );
-                                        })}
-                                </div>
+                                <CategorySection
+                                    key={level.id}
+                                    color={level.color}
+                                    label={`${level.order}. ${levelLabel}`}
+                                    hint={`${verbs.slice(0, 4).join(', ')}…`}
+                                    linkedCount={filtered.filter((d) => linkedFrameworkIds.has(d.id)).length}
+                                    expanded={expandedSections.has(level.id)}
+                                    onToggle={() => toggleSection(level.id)}
+                                >
+                                    {filtered.map((descriptor) => (
+                                        <DescriptorRow
+                                            key={descriptor.id}
+                                            isLinked={linkedFrameworkIds.has(descriptor.id)}
+                                            text={lang === 'nl' ? descriptor.descriptionNl : descriptor.descriptionEn}
+                                            sublabel={`Bloom's — ${levelLabel}`}
+                                            onClick={() =>
+                                                toggleFramework({
+                                                    descriptorId: descriptor.id,
+                                                    framework: 'blooms',
+                                                    categoryId: level.id,
+                                                    categoryLabelEn: level.labelEn,
+                                                    categoryLabelNl: level.labelNl,
+                                                    categoryColor: level.color,
+                                                    descriptionEn: descriptor.descriptionEn,
+                                                    descriptionNl: descriptor.descriptionNl,
+                                                })
+                                            }
+                                        />
+                                    ))}
+                                </CategorySection>
                             );
                         })}
                         {BLOOM_LEVELS.every(
-                            (level) =>
-                                !level.descriptors.some((d) => {
-                                    if (!search) return true;
-                                    const text = lang === 'nl' ? d.descriptionNl : d.descriptionEn;
-                                    return text.toLowerCase().includes(search.toLowerCase());
-                                })
+                            (level) => !level.descriptors.some((d) => matchesSearch(d.descriptionEn, d.descriptionNl))
                         ) && <EmptyState style={{ padding: 40 }} description={t('cefr.no_results')} />}
                     </>
                 )}
@@ -588,19 +519,14 @@ export default function CefrPickerModal({
                 {/* ── Grammar list ── */}
                 {activeFramework === 'grammar' &&
                     (() => {
-                        const matches = (labelEn: string, labelNl: string) => {
-                            if (!search) return true;
-                            const text = lang === 'nl' ? labelNl : labelEn;
-                            return text.toLowerCase().includes(search.toLowerCase());
-                        };
                         const visibleCategories = GRAMMAR_CATEGORIES.map((cat) => {
-                            const categoryMatches = matches(cat.labelEn, cat.labelNl);
+                            const categoryMatches = matchesSearch(cat.labelEn, cat.labelNl);
                             return {
                                 cat,
                                 items: cat.items.filter(
                                     (item) =>
                                         (!selectedLevel || item.level === selectedLevel) &&
-                                        (categoryMatches || matches(item.labelEn, item.labelNl))
+                                        (categoryMatches || matchesSearch(item.labelEn, item.labelNl))
                                 ),
                             };
                         }).filter((g) => g.items.length > 0);
@@ -610,73 +536,93 @@ export default function CefrPickerModal({
                         }
 
                         return visibleCategories.map(({ cat, items }) => {
-                            const expanded = expandedSections.has(cat.id);
-                            const linkedCount = items.filter((i) => linkedFrameworkIds.has(i.id)).length;
                             const catLabel = lang === 'nl' ? cat.labelNl : cat.labelEn;
                             return (
-                                <div key={cat.id}>
-                                    <button
-                                        type="button"
-                                        style={{
-                                            width: '100%',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 10,
-                                            padding: '8px 20px',
-                                            background: 'var(--bg-elevated)',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            textAlign: 'left',
-                                            borderLeft: `4px solid ${cat.color}`,
-                                        }}
-                                        onClick={() => toggleSection(cat.id)}
-                                    >
-                                        <span style={{ fontWeight: 700, fontSize: 13, color: cat.color, flex: 1 }}>
-                                            {catLabel}
-                                        </span>
-                                        {linkedCount > 0 && (
-                                            <span
-                                                style={{
-                                                    background: 'var(--accent)',
-                                                    color: '#fff',
-                                                    borderRadius: 10,
-                                                    padding: '1px 7px',
-                                                    fontSize: 11,
-                                                    fontWeight: 600,
-                                                }}
-                                            >
-                                                {linkedCount}
-                                            </span>
-                                        )}
-                                        {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                                    </button>
-                                    {expanded &&
-                                        items.map((item) => {
-                                            const isLinked = linkedFrameworkIds.has(item.id);
-                                            const text = lang === 'nl' ? item.labelNl : item.labelEn;
-                                            return (
-                                                <DescriptorRow
-                                                    key={item.id}
-                                                    isLinked={isLinked}
-                                                    text={text}
-                                                    sublabel={`${catLabel} · ${item.level}`}
-                                                    onClick={() =>
-                                                        toggleFramework({
-                                                            descriptorId: item.id,
-                                                            framework: 'grammar',
-                                                            categoryId: cat.id,
-                                                            categoryLabelEn: cat.labelEn,
-                                                            categoryLabelNl: cat.labelNl,
-                                                            categoryColor: cat.color,
-                                                            descriptionEn: item.labelEn,
-                                                            descriptionNl: item.labelNl,
-                                                            level: item.level,
-                                                        })
-                                                    }
-                                                />
-                                            );
-                                        })}
-                                </div>
+                                <CategorySection
+                                    key={cat.id}
+                                    color={cat.color}
+                                    label={catLabel}
+                                    linkedCount={items.filter((i) => linkedFrameworkIds.has(i.id)).length}
+                                    expanded={expandedSections.has(cat.id)}
+                                    onToggle={() => toggleSection(cat.id)}
+                                >
+                                    {items.map((item) => (
+                                        <DescriptorRow
+                                            key={item.id}
+                                            isLinked={linkedFrameworkIds.has(item.id)}
+                                            text={lang === 'nl' ? item.labelNl : item.labelEn}
+                                            sublabel={`${catLabel} · ${item.level}`}
+                                            onClick={() =>
+                                                toggleFramework({
+                                                    descriptorId: item.id,
+                                                    framework: 'grammar',
+                                                    categoryId: cat.id,
+                                                    categoryLabelEn: cat.labelEn,
+                                                    categoryLabelNl: cat.labelNl,
+                                                    categoryColor: cat.color,
+                                                    descriptionEn: item.labelEn,
+                                                    descriptionNl: item.labelNl,
+                                                    level: item.level,
+                                                })
+                                            }
+                                        />
+                                    ))}
+                                </CategorySection>
+                            );
+                        });
+                    })()}
+
+                {/* ── SLO kerndoelen list ── */}
+                {activeFramework === 'slo' &&
+                    (() => {
+                        const visibleKerndoelen = SLO_KERNDOELEN.filter(
+                            (kd) => !selectedSloPhase || kd.phase === selectedSloPhase
+                        )
+                            .map((kd) => {
+                                const kerndoelMatches = matchesSearch(
+                                    `${kd.labelEn} ${kd.titleEn}`,
+                                    `${kd.labelNl} ${kd.titleNl}`
+                                );
+                                return {
+                                    kd,
+                                    goals: kd.goals.filter(
+                                        (goal) =>
+                                            kerndoelMatches ||
+                                            matchesSearch(
+                                                `${goal.code} ${goal.descriptionEn}`,
+                                                `${goal.code} ${goal.descriptionNl}`
+                                            )
+                                    ),
+                                };
+                            })
+                            .filter((g) => g.goals.length > 0);
+
+                        if (visibleKerndoelen.length === 0) {
+                            return <EmptyState style={{ padding: 40 }} description={t('cefr.no_results')} />;
+                        }
+
+                        return visibleKerndoelen.map(({ kd, goals }) => {
+                            const kdLabel = lang === 'nl' ? kd.labelNl : kd.labelEn;
+                            return (
+                                <CategorySection
+                                    key={kd.id}
+                                    color={kd.color}
+                                    label={kdLabel}
+                                    hint={lang === 'nl' ? kd.titleNl : kd.titleEn}
+                                    linkedCount={goals.filter((g) => linkedFrameworkIds.has(g.id)).length}
+                                    expanded={expandedSections.has(kd.id)}
+                                    onToggle={() => toggleSection(kd.id)}
+                                >
+                                    {goals.map((goal) => (
+                                        <DescriptorRow
+                                            key={goal.id}
+                                            isLinked={linkedFrameworkIds.has(goal.id)}
+                                            text={`${goal.code} — ${lang === 'nl' ? goal.descriptionNl : goal.descriptionEn}`}
+                                            sublabel={`SLO — ${kdLabel}`}
+                                            onClick={() => toggleFramework(sloGoalToFrameworkDescriptor(kd, goal))}
+                                        />
+                                    ))}
+                                </CategorySection>
                             );
                         });
                     })()}
@@ -700,6 +646,75 @@ export default function CefrPickerModal({
                 </button>
             </div>
         </Modal>
+    );
+}
+
+interface CategorySectionProps {
+    color: string;
+    label: string;
+    /** Muted text after the label, e.g. Bloom's verbs or a kerndoel's statement. */
+    hint?: string;
+    linkedCount: number;
+    expanded: boolean;
+    onToggle: () => void;
+    children: React.ReactNode;
+}
+
+function CategorySection({ color, label, hint, linkedCount, expanded, onToggle, children }: CategorySectionProps) {
+    return (
+        <div>
+            <button
+                type="button"
+                aria-expanded={expanded}
+                style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: '8px 20px',
+                    background: 'var(--bg-elevated)',
+                    border: 'none',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    borderLeft: `4px solid ${color}`,
+                }}
+                onClick={onToggle}
+            >
+                <span style={{ fontWeight: 700, fontSize: 13, color: textOnTheme(color), flex: hint ? undefined : 1 }}>
+                    {label}
+                </span>
+                {hint && (
+                    <span
+                        style={{
+                            fontSize: 11,
+                            color: 'var(--text-muted)',
+                            flex: 1,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                        }}
+                    >
+                        {hint}
+                    </span>
+                )}
+                {linkedCount > 0 && (
+                    <span
+                        style={{
+                            background: 'var(--accent)',
+                            color: '#fff',
+                            borderRadius: 10,
+                            padding: '1px 7px',
+                            fontSize: 11,
+                            fontWeight: 600,
+                        }}
+                    >
+                        {linkedCount}
+                    </span>
+                )}
+                {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            </button>
+            {expanded && children}
+        </div>
     );
 }
 
