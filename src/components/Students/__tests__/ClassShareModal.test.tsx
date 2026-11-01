@@ -115,4 +115,56 @@ describe('ClassShareModal', () => {
         expect(await screen.findByText('classShare.shared_with_you')).toBeInTheDocument();
         expect(screen.queryByLabelText('classShare.email_label')).not.toBeInTheDocument();
     });
+
+    it('tells the owner they cannot share with their own account', async () => {
+        mockDb.addClassMemberByEmail.mockResolvedValue({ success: false, isSelf: true, error: 'x' });
+        render(<ClassShareModal classItem={cls} onClose={vi.fn()} />);
+        fireEvent.change(screen.getByLabelText('classShare.email_label'), { target: { value: 'me@school.nl' } });
+        fireEvent.click(screen.getByRole('button', { name: 'classShare.share_btn' }));
+        expect(await screen.findByText('classShare.cannot_share_self')).toBeInTheDocument();
+    });
+
+    it('re-enables sharing when the request rejects', async () => {
+        mockDb.addClassMemberByEmail.mockRejectedValue(new Error('Not connected'));
+        render(<ClassShareModal classItem={cls} onClose={vi.fn()} />);
+        fireEvent.change(screen.getByLabelText('classShare.email_label'), { target: { value: 'a@b.c' } });
+        fireEvent.click(screen.getByRole('button', { name: 'classShare.share_btn' }));
+        expect(await screen.findByText('classShare.failed:{"error":"Not connected"}')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'classShare.share_btn' })).toBeEnabled();
+    });
+
+    it('shows an error when loading co-teachers rejects', async () => {
+        mockDb.fetchClassMembers.mockRejectedValue(new Error('offline'));
+        render(<ClassShareModal classItem={cls} onClose={vi.fn()} />);
+        expect(await screen.findByText('classShare.failed:{"error":"offline"}')).toBeInTheDocument();
+    });
+
+    it('locks a co-teacher row while a change is in flight so a removal cannot be undone', async () => {
+        mockDb.fetchClassMembers.mockResolvedValue([bob]);
+        let finishRoleChange: (r: { success: boolean }) => void = () => {};
+        mockDb.addClassMember.mockReturnValue(new Promise((resolve) => (finishRoleChange = resolve)));
+        render(<ClassShareModal classItem={cls} onClose={vi.fn()} />);
+        const roleSelect = await screen.findByLabelText('classShare.role_for:{"name":"Bob"}');
+        const removeBtn = screen.getByRole('button', { name: 'classShare.remove:{"name":"Bob"}' });
+
+        fireEvent.change(roleSelect, { target: { value: 'editor' } });
+        await waitFor(() => expect(removeBtn).toBeDisabled());
+        expect(roleSelect).toBeDisabled();
+        fireEvent.click(removeBtn);
+        expect(mockDb.removeClassMember).not.toHaveBeenCalled();
+
+        finishRoleChange({ success: true });
+        await waitFor(() => expect(removeBtn).toBeEnabled());
+    });
+
+    it('surfaces a rejected removal and unlocks the row', async () => {
+        mockDb.fetchClassMembers.mockResolvedValue([bob]);
+        mockDb.removeClassMember.mockRejectedValue(new Error('boom'));
+        render(<ClassShareModal classItem={cls} onClose={vi.fn()} />);
+        const removeBtn = await screen.findByRole('button', { name: 'classShare.remove:{"name":"Bob"}' });
+        fireEvent.click(removeBtn);
+        expect(await screen.findByText('classShare.failed:{"error":"boom"}')).toBeInTheDocument();
+        expect(screen.getByText('Bob')).toBeInTheDocument();
+        expect(removeBtn).toBeEnabled();
+    });
 });

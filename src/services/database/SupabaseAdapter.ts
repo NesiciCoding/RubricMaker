@@ -2593,7 +2593,7 @@ export class SupabaseAdapter {
         classId: string,
         email: string,
         role: 'viewer' | 'editor' = 'viewer'
-    ): Promise<SyncResult & { notFound?: boolean }> {
+    ): Promise<SyncResult & { notFound?: boolean; isSelf?: boolean }> {
         let user: { userId: string; displayName?: string } | null;
         try {
             user = await this.lookupUserByEmail(email);
@@ -2601,6 +2601,9 @@ export class SupabaseAdapter {
             return { success: false, error: e instanceof Error ? e.message : String(e) };
         }
         if (!user) return { success: false, notFound: true, error: `No account found for ${email}` };
+        // A self-membership would make the owner look like a co-teacher of their own class.
+        if (user.userId === this.userId)
+            return { success: false, isSelf: true, error: 'Cannot share a class with yourself' };
         return this.addClassMember(classId, user.userId, role);
     }
 

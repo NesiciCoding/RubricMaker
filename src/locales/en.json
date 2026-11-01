@@ -1639,6 +1639,7 @@
         "share_btn": "Share",
         "success": "Class shared with {{email}}.",
         "not_found": "No account found for {{email}}. Ask them to sign in to RubricMaker first.",
+        "cannot_share_self": "That's your own account — enter a colleague's email address.",
         "failed": "Could not update sharing: {{error}}",
         "members_title": "Co-teachers with access",
         "loading_members": "Loading co-teachers…",

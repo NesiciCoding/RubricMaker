@@ -1639,6 +1639,7 @@
         "share_btn": "Teilen",
         "success": "Klasse mit {{email}} geteilt.",
         "not_found": "Kein Konto für {{email}} gefunden. Bitte die Person, sich zuerst bei RubricMaker anzumelden.",
+        "cannot_share_self": "Das ist dein eigenes Konto — gib die E-Mail-Adresse einer Lehrkraft ein.",
         "failed": "Freigabe konnte nicht aktualisiert werden: {{error}}",
         "members_title": "Lehrkräfte mit Zugriff",
         "loading_members": "Lehrkräfte werden geladen…",

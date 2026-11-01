@@ -1639,6 +1639,7 @@
         "share_btn": "Delen",
         "success": "Klas gedeeld met {{email}}.",
         "not_found": "Geen account gevonden voor {{email}}. Vraag de collega eerst in te loggen bij RubricMaker.",
+        "cannot_share_self": "Dat is je eigen account — vul het e-mailadres van een collega in.",
         "failed": "Delen bijwerken mislukt: {{error}}",
         "members_title": "Collega's met toegang",
         "loading_members": "Collega's laden…",

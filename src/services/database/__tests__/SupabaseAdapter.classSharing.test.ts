@@ -85,4 +85,15 @@ describe('SupabaseAdapter class sharing methods', () => {
         expect(addSpy).toHaveBeenCalledWith('c1', 'u2', 'editor');
         expect(result).toEqual({ success: true });
     });
+
+    it('addClassMemberByEmail refuses to add the signed-in owner to their own class', async () => {
+        const adapterInstance = adapterWithClient(makeClient({ data: null, error: null }), 'user1');
+        vi.spyOn(adapterInstance, 'lookupUserByEmail').mockResolvedValue({ userId: 'user1' });
+        const addSpy = vi.spyOn(adapterInstance, 'addClassMember');
+
+        const result = await adapterInstance.addClassMemberByEmail('c1', 'me@x.com');
+
+        expect(addSpy).not.toHaveBeenCalled();
+        expect(result).toMatchObject({ success: false, isSelf: true });
+    });
 });

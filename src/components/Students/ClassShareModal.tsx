@@ -13,7 +13,13 @@ interface Props {
     returnFocusTo?: HTMLElement | null;
 }
 
-type Status = { kind: 'idle' } | { kind: 'loading' } | { kind: 'success' | 'notfound' | 'error'; message: string };
+type Status =
+    | { kind: 'idle' }
+    | { kind: 'loading' }
+    | { kind: 'self' }
+    | { kind: 'success' | 'notfound' | 'error'; message: string };
+
+const errorMessage = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 export default function ClassShareModal({ classItem, onClose, returnFocusTo }: Props) {
     const { t } = useTranslation();
@@ -23,6 +29,7 @@ export default function ClassShareModal({ classItem, onClose, returnFocusTo }: P
     const [status, setStatus] = useState<Status>({ kind: 'idle' });
     const [members, setMembers] = useState<ClassMember[]>([]);
     const [loadingMembers, setLoadingMembers] = useState(false);
+    const [pendingMemberIds, setPendingMemberIds] = useState<ReadonlySet<string>>(new Set());
 
     useEffect(() => {
         if (!dbStatus.isConnected) return;
@@ -32,6 +39,9 @@ export default function ClassShareModal({ classItem, onClose, returnFocusTo }: P
             .fetchClassMembers(classItem.id)
             .then((list) => {
                 if (!cancelled) setMembers(list);
+            })
+            .catch((e: unknown) => {
+                if (!cancelled) setStatus({ kind: 'error', message: errorMessage(e) });
             })
             .finally(() => {
                 if (!cancelled) setLoadingMembers(false);
@@ -49,35 +59,64 @@ export default function ClassShareModal({ classItem, onClose, returnFocusTo }: P
         const trimmed = email.trim();
         if (!trimmed) return;
         setStatus({ kind: 'loading' });
-        const result = await storageSync.adapter.addClassMemberByEmail(classItem.id, trimmed, role);
-        if (result.success) {
-            setStatus({ kind: 'success', message: trimmed });
-            setEmail('');
-            setMembers(await storageSync.adapter.fetchClassMembers(classItem.id));
-        } else if (result.notFound) {
-            setStatus({ kind: 'notfound', message: trimmed });
-        } else {
-            setStatus({ kind: 'error', message: result.error ?? '' });
+        try {
+            const result = await storageSync.adapter.addClassMemberByEmail(classItem.id, trimmed, role);
+            if (result.success) {
+                setStatus({ kind: 'success', message: trimmed });
+                setEmail('');
+                setMembers(await storageSync.adapter.fetchClassMembers(classItem.id));
+            } else if (result.notFound) {
+                setStatus({ kind: 'notfound', message: trimmed });
+            } else if (result.isSelf) {
+                setStatus({ kind: 'self' });
+            } else {
+                setStatus({ kind: 'error', message: result.error ?? '' });
+            }
+        } catch (e) {
+            setStatus({ kind: 'error', message: errorMessage(e) });
         }
     }
 
-    async function handleRoleChange(member: ClassMember, next: ClassMember['role']) {
-        const result = await storageSync.adapter.addClassMember(classItem.id, member.userId, next);
-        if (result.success) {
-            setMembers((prev) => prev.map((m) => (m.userId === member.userId ? { ...m, role: next } : m)));
-        } else {
-            setStatus({ kind: 'error', message: result.error ?? '' });
+    // One mutation per member at a time: a role upsert finishing after a removal would re-grant access.
+    async function mutateMember(
+        member: ClassMember,
+        run: () => Promise<{ success: boolean; error?: string }>,
+        onSuccess: () => void
+    ) {
+        if (pendingMemberIds.has(member.userId)) return;
+        setPendingMemberIds((prev) => new Set(prev).add(member.userId));
+        try {
+            const result = await run();
+            if (result.success) onSuccess();
+            else setStatus({ kind: 'error', message: result.error ?? '' });
+        } catch (e) {
+            setStatus({ kind: 'error', message: errorMessage(e) });
+        } finally {
+            setPendingMemberIds((prev) => {
+                const next = new Set(prev);
+                next.delete(member.userId);
+                return next;
+            });
         }
     }
 
-    async function handleRemove(member: ClassMember) {
-        const result = await storageSync.adapter.removeClassMember(classItem.id, member.userId);
-        if (result.success) {
-            setMembers((prev) => prev.filter((m) => m.userId !== member.userId));
-            setStatus({ kind: 'idle' });
-        } else {
-            setStatus({ kind: 'error', message: result.error ?? '' });
-        }
+    function handleRoleChange(member: ClassMember, next: ClassMember['role']) {
+        return mutateMember(
+            member,
+            () => storageSync.adapter.addClassMember(classItem.id, member.userId, next),
+            () => setMembers((prev) => prev.map((m) => (m.userId === member.userId ? { ...m, role: next } : m)))
+        );
+    }
+
+    function handleRemove(member: ClassMember) {
+        return mutateMember(
+            member,
+            () => storageSync.adapter.removeClassMember(classItem.id, member.userId),
+            () => {
+                setMembers((prev) => prev.filter((m) => m.userId !== member.userId));
+                setStatus({ kind: 'idle' });
+            }
+        );
     }
 
     return (
@@ -154,6 +193,11 @@ export default function ClassShareModal({ classItem, onClose, returnFocusTo }: P
                             {t('classShare.not_found', { email: status.message })}
                         </p>
                     )}
+                    {status.kind === 'self' && (
+                        <p style={{ color: 'var(--red)', fontSize: '0.85rem', marginBottom: 8 }}>
+                            {t('classShare.cannot_share_self')}
+                        </p>
+                    )}
                     {status.kind === 'error' && (
                         <p style={{ color: 'var(--red)', fontSize: '0.85rem', marginBottom: 8 }}>
                             {t('classShare.failed', { error: status.message })}
@@ -177,6 +221,7 @@ export default function ClassShareModal({ classItem, onClose, returnFocusTo }: P
                             <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
                                 {members.map((m) => {
                                     const label = m.displayName ?? m.email ?? m.userId;
+                                    const pending = pendingMemberIds.has(m.userId);
                                     return (
                                         <li
                                             key={m.userId}
@@ -197,6 +242,7 @@ export default function ClassShareModal({ classItem, onClose, returnFocusTo }: P
                                             <select
                                                 aria-label={t('classShare.role_for', { name: label })}
                                                 value={m.role}
+                                                disabled={pending}
                                                 onChange={(e) =>
                                                     void handleRoleChange(m, e.target.value as ClassMember['role'])
                                                 }
@@ -209,6 +255,7 @@ export default function ClassShareModal({ classItem, onClose, returnFocusTo }: P
                                                 aria-label={t('classShare.remove', { name: label })}
                                                 title={t('classShare.remove', { name: label })}
                                                 style={{ color: 'var(--red)' }}
+                                                disabled={pending}
                                                 onClick={() => void handleRemove(m)}
                                             >
                                                 <UserMinus size={14} aria-hidden="true" />
