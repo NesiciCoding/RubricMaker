@@ -19,6 +19,7 @@ import { fromLocalDatetimeInput, toLocalDatetimeInput } from '../utils/dateInput
 import { validateEssayConfig } from '../utils/essayUtils';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import { EmptyState } from '../components/ui/EmptyState';
 
 function FieldError({ id, messageKey }: { id: string; messageKey?: string }) {
     const { t } = useTranslation();
@@ -246,13 +247,11 @@ export default function EssayBuilderPage() {
             <>
                 <Topbar title={t('essays.builder_title_edit')} />
                 <div className="page-content fade-in">
-                    <div className="empty-state">
-                        <FileText size={40} aria-hidden="true" />
-                        <h3>{t('essays.not_found')}</h3>
+                    <EmptyState icon={FileText} title={t('essays.not_found')}>
                         <button className="btn btn-secondary" onClick={() => navigate('/essays')}>
                             <ArrowLeft size={16} /> {t('common.back')}
                         </button>
-                    </div>
+                    </EmptyState>
                 </div>
             </>
         );

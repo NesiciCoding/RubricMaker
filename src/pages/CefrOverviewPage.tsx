@@ -24,6 +24,7 @@ import { CEFR_LEVELS } from '../data/cefrDescriptors';
 import { VO_TRACK_LABELS, VO_TRACK_DEFAULT_CEFR, getTrackBadgeColor, getEffectiveVoTrack } from '../data/voTracks';
 import { getEffectiveSchoolYear } from '../data/schoolYears';
 import type { CefrSkill } from '../types';
+import { EmptyState } from '../components/ui/EmptyState';
 
 export default function CefrOverviewPage() {
     const { students } = useStudents();
@@ -221,10 +222,7 @@ export default function CefrOverviewPage() {
                 {viewMode === 'class' && (
                     <>
                         {filteredStudents.length === 0 ? (
-                            <div className="empty-state">
-                                <Users size={36} />
-                                <p>{t('cefr.empty_no_students')}</p>
-                            </div>
+                            <EmptyState icon={Users} description={t('cefr.empty_no_students')} />
                         ) : (
                             <>
                                 <div style={{ marginBottom: 16 }}>
@@ -675,10 +673,7 @@ export default function CefrOverviewPage() {
                         </div>
 
                         {!selectedStudentId ? (
-                            <div className="empty-state">
-                                <Users size={36} />
-                                <p>{t('cefrOverview.select_student_prompt')}</p>
-                            </div>
+                            <EmptyState icon={Users} description={t('cefrOverview.select_student_prompt')} />
                         ) : (
                             <>
                                 {student && (
@@ -806,10 +801,12 @@ export default function CefrOverviewPage() {
                                             {t('cefrOverview.grid_subtitle')}
                                         </p>
                                         {!hasAnyData ? (
-                                            <div className="empty-state" style={{ padding: '32px 20px' }}>
-                                                <BookOpen size={28} style={{ opacity: 0.4 }} />
-                                                <p>{t('cefrOverview.empty_no_cefr')}</p>
-                                            </div>
+                                            <EmptyState
+                                                icon={BookOpen}
+                                                iconSize={28}
+                                                style={{ padding: '32px 20px' }}
+                                                description={t('cefrOverview.empty_no_cefr')}
+                                            />
                                         ) : (
                                             <CefrOverviewGrid
                                                 cells={overview.cells}

@@ -11,6 +11,7 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import CardGrid from '../components/ui/CardGrid';
 import CardTile from '../components/ui/CardTile';
 import CardGrip from '../components/ui/CardGrip';
+import { EmptyState } from '../components/ui/EmptyState';
 import FolderBar from '../components/Folders/FolderBar';
 import FolderNameModal from '../components/Folders/FolderNameModal';
 import { useConfirm } from '../hooks/useConfirm';
@@ -160,14 +161,12 @@ export default function FlashcardsPage() {
             />
             <div className="page-content fade-in" data-tour="fc-content">
                 {sorted.length === 0 && deckFolders.length === 0 ? (
-                    <div className="empty-state">
-                        <Layers size={40} />
-                        <h3>{t('flashcards.no_decks')}</h3>
-                        <p className="text-muted text-sm">{t('flashcards.create_first_instruction')}</p>
-                        <button className="btn btn-primary" onClick={handleCreate}>
-                            <Plus size={16} /> {t('flashcards.new_deck')}
-                        </button>
-                    </div>
+                    <EmptyState
+                        icon={Layers}
+                        title={t('flashcards.no_decks')}
+                        description={t('flashcards.create_first_instruction')}
+                        action={{ label: t('flashcards.new_deck'), icon: Plus, onClick: handleCreate }}
+                    />
                 ) : (
                     <DragDropContext onBeforeCapture={startFolderDrop} onDragEnd={handleDragEnd}>
                         <FolderBar
@@ -182,11 +181,11 @@ export default function FlashcardsPage() {
                             dropFolderId={dropFolderId}
                         />
                         {visibleDecks.length === 0 ? (
-                            <div className="empty-state">
-                                <Layers size={40} />
-                                <h3>{t('folders.empty')}</h3>
-                                <p className="text-muted text-sm">{t('folders.empty_hint')}</p>
-                            </div>
+                            <EmptyState
+                                icon={Layers}
+                                title={t('folders.empty')}
+                                description={t('folders.empty_hint')}
+                            />
                         ) : (
                             <Droppable droppableId="flashcard-deck-list">
                                 {(droppableProvided) => (

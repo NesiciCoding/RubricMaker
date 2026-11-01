@@ -17,6 +17,7 @@ import QuestionBankImportModal from './QuestionBankImportModal';
 import QuestionBankItemEditorModal from './QuestionBankItemEditorModal';
 import TagFilterChips from './TagFilterChips';
 import { questionTypeLabelKey } from '../../utils/questionTypeKey';
+import { EmptyState } from '../ui/EmptyState';
 
 interface QuestionBankManagerProps {
     /** When set, items render as pick targets (insert-from-bank) instead of a plain manager list. */
@@ -447,7 +448,7 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
 
             <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
                 {filteredItems.length === 0 ? (
-                    <div className="empty-state">{t('questionBank.empty_state')}</div>
+                    <EmptyState description={t('questionBank.empty_state')} />
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                         {pagedItems.map((item) => (

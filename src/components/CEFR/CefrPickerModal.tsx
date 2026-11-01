@@ -20,6 +20,7 @@ import type {
     LinkedFrameworkDescriptor,
     AssessmentFramework,
 } from '../../types';
+import { EmptyState } from '../ui/EmptyState';
 
 type ActiveFramework = 'cefr' | AssessmentFramework;
 
@@ -295,9 +296,7 @@ export default function CefrPickerModal({
                 {activeFramework === 'cefr' && (
                     <>
                         {cefrByLevel.size === 0 && (
-                            <div className="empty-state" style={{ padding: 40 }}>
-                                {t('cefr.no_results')}
-                            </div>
+                            <EmptyState style={{ padding: 40 }} description={t('cefr.no_results')} />
                         )}
                         {Array.from(cefrByLevel.entries()).map(([level, descriptors]) => {
                             const expanded = expandedSections.has(level);
@@ -465,11 +464,7 @@ export default function CefrPickerModal({
                                     const text = lang === 'nl' ? d.descriptionNl : d.descriptionEn;
                                     return text.toLowerCase().includes(search.toLowerCase());
                                 })
-                        ) && (
-                            <div className="empty-state" style={{ padding: 40 }}>
-                                {t('cefr.no_results')}
-                            </div>
-                        )}
+                        ) && <EmptyState style={{ padding: 40 }} description={t('cefr.no_results')} />}
                     </>
                 )}
 
@@ -579,11 +574,7 @@ export default function CefrPickerModal({
                                     const text = lang === 'nl' ? d.descriptionNl : d.descriptionEn;
                                     return text.toLowerCase().includes(search.toLowerCase());
                                 })
-                        ) && (
-                            <div className="empty-state" style={{ padding: 40 }}>
-                                {t('cefr.no_results')}
-                            </div>
-                        )}
+                        ) && <EmptyState style={{ padding: 40 }} description={t('cefr.no_results')} />}
                     </>
                 )}
 
@@ -608,11 +599,7 @@ export default function CefrPickerModal({
                         }).filter((g) => g.items.length > 0);
 
                         if (visibleCategories.length === 0) {
-                            return (
-                                <div className="empty-state" style={{ padding: 40 }}>
-                                    {t('cefr.no_results')}
-                                </div>
-                            );
+                            return <EmptyState style={{ padding: 40 }} description={t('cefr.no_results')} />;
                         }
 
                         return visibleCategories.map(({ cat, items }) => {

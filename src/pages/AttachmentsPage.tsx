@@ -10,6 +10,7 @@ import { useConfirm } from '../hooks/useConfirm';
 import { fileToDataUrl } from '../utils/fileToDataUrl';
 import { attachmentMaxBytes, formatFileSize } from '../utils/attachmentLimits';
 import { useDbStatus } from '../hooks/useDbStatus';
+import { EmptyState } from '../components/ui/EmptyState';
 
 export default function AttachmentsPage() {
     const { t } = useTranslation();
@@ -207,14 +208,16 @@ export default function AttachmentsPage() {
 
                 {/* File list */}
                 {attachments.length === 0 ? (
-                    <div className="empty-state">
-                        <Paperclip size={40} />
-                        <h3>{t('attachments.empty_state')}</h3>
-                        <p className="text-muted text-sm">{t('attachments.empty_state_subtitle')}</p>
-                        <button className="btn btn-primary btn-sm" onClick={() => fileRef.current?.click()}>
-                            <Plus size={14} /> {t('attachments.empty_state_cta')}
-                        </button>
-                    </div>
+                    <EmptyState
+                        icon={Paperclip}
+                        title={t('attachments.empty_state')}
+                        description={t('attachments.empty_state_subtitle')}
+                        action={{
+                            label: t('attachments.empty_state_cta'),
+                            icon: Plus,
+                            onClick: () => fileRef.current?.click(),
+                        }}
+                    />
                 ) : (
                     <table className="data-table">
                         <thead>

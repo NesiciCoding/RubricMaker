@@ -32,6 +32,7 @@ import { nanoid } from '../utils/nanoid';
 import { useToast } from '../hooks/useToast';
 import { useActiveClassCohorts } from '../hooks/useActiveClassCohorts';
 import { formatShortDate } from '../utils/dateInput';
+import { EmptyState } from '../components/ui/EmptyState';
 
 function dayKey(iso: string): string {
     return new Date(iso).toDateString();
@@ -819,13 +820,15 @@ export default function Dashboard() {
                                 <h3>{t('dashboard.recent_activity')}</h3>
                             </div>
                             {recentActivity.length === 0 ? (
-                                <div className="empty-state">
-                                    <BookOpen size={32} />
-                                    <p>{t('dashboard.no_rubrics')}</p>
-                                    <button className="btn btn-primary btn-sm" onClick={() => navigate('/rubrics/new')}>
-                                        <Plus size={14} /> {t('dashboard.create_first')}
-                                    </button>
-                                </div>
+                                <EmptyState
+                                    icon={BookOpen}
+                                    description={t('dashboard.no_rubrics')}
+                                    action={{
+                                        label: t('dashboard.create_first'),
+                                        icon: Plus,
+                                        onClick: () => navigate('/rubrics/new'),
+                                    }}
+                                />
                             ) : (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                     {recentActivity.map((item, idx) => {

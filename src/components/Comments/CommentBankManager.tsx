@@ -8,6 +8,7 @@ import { storageSync } from '../../services/database';
 import { CEFR_LEVELS } from '../../data/cefrDescriptors';
 import CefrBadge from '../CEFR/CefrBadge';
 import { CommentBankItem, type CefrLevel } from '../../types';
+import { EmptyState } from '../ui/EmptyState';
 
 interface CommentBankManagerProps {
     onSelect?: (item: CommentBankItem) => void;
@@ -462,7 +463,7 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
                 </div>
             )}
             {filteredItems.length === 0 ? (
-                <div className="empty-state">{t('commentBank.empty_state')}</div>
+                <EmptyState description={t('commentBank.empty_state')} />
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>{filteredItems.map(renderItem)}</div>
             )}

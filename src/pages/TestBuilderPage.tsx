@@ -57,6 +57,7 @@ import {
 import { sectionQuestions, isAutoScorable, hasRoutingCycle } from '../utils/placementRouting';
 import { clamp } from '../utils/clamp';
 import { plainQuestionPromptText } from '../utils/clozeParse';
+import { EmptyState } from '../components/ui/EmptyState';
 
 /** Soft heuristic for a staircase level pool's builder warning — enough headroom for a couple of up/down moves without exhausting the pool. */
 const MIN_QUESTIONS_PER_LEVEL = 3;
@@ -1431,13 +1432,11 @@ export default function TestBuilderPage() {
                     </div>
 
                     {questions.length === 0 ? (
-                        <div className="empty-state">
-                            <h3>{t('tests.no_questions')}</h3>
-                            <p className="text-muted text-sm">{t('tests.no_questions_instruction')}</p>
-                            <button className="btn btn-primary" onClick={() => addQuestion()}>
-                                <Plus size={16} /> {t('tests.add_question')}
-                            </button>
-                        </div>
+                        <EmptyState
+                            title={t('tests.no_questions')}
+                            description={t('tests.no_questions_instruction')}
+                            action={{ label: t('tests.add_question'), icon: Plus, onClick: () => addQuestion() }}
+                        />
                     ) : (
                         <DragDropContext onDragEnd={onDragEnd}>
                             {/* Uncategorised questions */}

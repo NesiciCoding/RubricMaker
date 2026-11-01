@@ -85,6 +85,7 @@ import type {
 } from '../types';
 import { isLocalMode } from '../store/storage';
 import { useToast } from '../hooks/useToast';
+import { EmptyState } from '../components/ui/EmptyState';
 
 // Sections scroll to just below the sticky tab bar, whose height grows when the tabs wrap on phones.
 const SECTION_SCROLL_MARGIN = 'calc(var(--portal-nav-h, 62px) + 8px)';
@@ -1726,10 +1727,7 @@ function PortalMessages({
             </div>
 
             {threads.length === 0 ? (
-                <div className="empty-state">
-                    <Mail size={32} />
-                    <p className="text-muted text-sm">{t('studentPortal.no_messages_yet')}</p>
-                </div>
+                <EmptyState icon={Mail} description={t('studentPortal.no_messages_yet')} />
             ) : (
                 threads.map((thread) => {
                     const key = threadKey(thread);
