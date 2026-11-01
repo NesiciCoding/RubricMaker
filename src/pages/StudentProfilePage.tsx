@@ -59,6 +59,7 @@ import { getEffectiveSchoolYear } from '../data/schoolYears';
 import RecordingPlayer from '../components/Recordings/RecordingPlayer';
 import type { GradeScale, Rubric, SessionRecording, StudentRubric } from '../types';
 import { textOnTheme } from '../utils/contrastCheck';
+import { EmptyState } from '../components/ui/EmptyState';
 /** Safety valve: calibrating scans every student's evidence, so cap a huge school to a stable slice. */
 const CALIBRATION_COHORT_LIMIT = 200;
 /** Frozen fallback for classes without a cohort, so it stays a stable `useMemo` dependency. */
@@ -424,7 +425,7 @@ export default function StudentProfilePage() {
                     }
                 />
                 <div className="page-content fade-in">
-                    <div className="empty-state">{t('studentProfile.not_found')}</div>
+                    <EmptyState description={t('studentProfile.not_found')} />
                 </div>
             </>
         );
@@ -636,10 +637,7 @@ export default function StudentProfilePage() {
                 {activeTab === 'portfolio' && (
                     <div>
                         {portfolioTimeline.length === 0 ? (
-                            <div className="empty-state">
-                                <TrendingUp size={36} />
-                                <p>{t('studentProfile.portfolio_empty')}</p>
-                            </div>
+                            <EmptyState icon={TrendingUp} description={t('studentProfile.portfolio_empty')} />
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 0, position: 'relative' }}>
                                 <div
@@ -868,10 +866,7 @@ export default function StudentProfilePage() {
 
                 {activeTab === 'overview' &&
                     (history.length === 0 ? (
-                        <div className="empty-state">
-                            <TrendingUp size={36} />
-                            <p>{t('studentProfile.no_grades_yet')}</p>
-                        </div>
+                        <EmptyState icon={TrendingUp} description={t('studentProfile.no_grades_yet')} />
                     ) : (
                         <>
                             <div className="grid-3" style={{ marginBottom: 24 }}>

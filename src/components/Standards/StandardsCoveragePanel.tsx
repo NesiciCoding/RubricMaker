@@ -2,6 +2,7 @@ import React from 'react';
 import { Award } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { StandardSetGroup } from '../../utils/cefrStudentAggregator';
+import { EmptyState } from '../ui/EmptyState';
 
 interface Props {
     standardSets: StandardSetGroup[];
@@ -18,12 +19,7 @@ export default function StandardsCoveragePanel({ standardSets }: Props) {
     const { t } = useTranslation();
 
     if (standardSets.length === 0) {
-        return (
-            <div className="empty-state">
-                <Award size={28} style={{ opacity: 0.4 }} />
-                <p>{t('cefrOverview.standards_empty')}</p>
-            </div>
-        );
+        return <EmptyState icon={Award} iconSize={28} description={t('cefrOverview.standards_empty')} />;
     }
 
     return (

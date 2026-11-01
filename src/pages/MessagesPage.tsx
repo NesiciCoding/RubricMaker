@@ -8,6 +8,7 @@ import { useEssays, useSettings, useStudents } from '../context/AppContext';
 import { nanoid } from '../utils/nanoid';
 import { groupMessageThreads, MessageThread } from '../utils/messageThreads';
 import type { Message, MessageContextType } from '../types';
+import { EmptyState } from '../components/ui/EmptyState';
 
 const CONTEXT_BADGE_KEY: Record<MessageContextType, string> = {
     rubric: 'messages.context_rubric',
@@ -167,11 +168,11 @@ export default function MessagesPage() {
                 )}
 
                 {threads.length === 0 ? (
-                    <div className="empty-state">
-                        <Mail size={40} />
-                        <h3>{t('messages.inbox_empty')}</h3>
-                        <p className="text-muted text-sm">{t('messages.inbox_empty_desc')}</p>
-                    </div>
+                    <EmptyState
+                        icon={Mail}
+                        title={t('messages.inbox_empty')}
+                        description={t('messages.inbox_empty_desc')}
+                    />
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                         {threads.map((thread) => {

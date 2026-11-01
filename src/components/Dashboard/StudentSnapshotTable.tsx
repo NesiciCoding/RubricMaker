@@ -21,6 +21,7 @@ import type {
     StudentTest,
     GradeRange,
 } from '../../types';
+import { EmptyState } from '../ui/EmptyState';
 
 interface Props {
     students: Student[];
@@ -153,12 +154,7 @@ export default function StudentSnapshotTable({
     ]);
 
     if (students.length === 0) {
-        return (
-            <div className="empty-state">
-                <Users size={32} />
-                <p>{t('dashboard.snapshot_empty')}</p>
-            </div>
-        );
+        return <EmptyState icon={Users} description={t('dashboard.snapshot_empty')} />;
     }
 
     return (

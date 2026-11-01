@@ -11,6 +11,7 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import CardGrid from '../components/ui/CardGrid';
 import CardTile from '../components/ui/CardTile';
 import CardGrip from '../components/ui/CardGrip';
+import { EmptyState } from '../components/ui/EmptyState';
 import FolderBar from '../components/Folders/FolderBar';
 import FolderNameModal from '../components/Folders/FolderNameModal';
 import { useToast } from '../hooks/useToast';
@@ -185,14 +186,12 @@ export default function EssayListPage() {
                     <CohortFilter classes={classes} value={cohortFilter} onChange={setCohortFilter} />
                 </div>
                 {groups.length === 0 && essayFolders.length === 0 ? (
-                    <div className="empty-state">
-                        <FileText size={40} />
-                        <h3>{t('essays.no_essays')}</h3>
-                        <p className="text-muted text-sm">{t('essays.create_first_instruction')}</p>
-                        <button className="btn btn-primary" onClick={() => navigate('/essays/new')}>
-                            <Plus size={16} /> {t('essays.new_essay')}
-                        </button>
-                    </div>
+                    <EmptyState
+                        icon={FileText}
+                        title={t('essays.no_essays')}
+                        description={t('essays.create_first_instruction')}
+                        action={{ label: t('essays.new_essay'), icon: Plus, onClick: () => navigate('/essays/new') }}
+                    />
                 ) : (
                     <DragDropContext onBeforeCapture={startFolderDrop} onDragEnd={handleDragEnd}>
                         <FolderBar
@@ -207,11 +206,11 @@ export default function EssayListPage() {
                             dropFolderId={dropFolderId}
                         />
                         {visibleGroups.length === 0 ? (
-                            <div className="empty-state">
-                                <FileText size={40} />
-                                <h3>{t('folders.empty')}</h3>
-                                <p className="text-muted text-sm">{t('folders.empty_hint')}</p>
-                            </div>
+                            <EmptyState
+                                icon={FileText}
+                                title={t('folders.empty')}
+                                description={t('folders.empty_hint')}
+                            />
                         ) : (
                             <Droppable droppableId="essay-list">
                                 {(droppableProvided) => (

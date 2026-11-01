@@ -6,6 +6,7 @@ import { AlertCircle, CheckCircle2, Mail, UserCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import { useNotificationFeed, NotificationFeedItem } from '../hooks/useNotificationFeed';
+import { EmptyState } from '../components/ui/EmptyState';
 
 type FilterKind = 'all' | 'overdue_grading' | 'unread_message' | 'moderation_pending';
 
@@ -106,11 +107,11 @@ export default function NotificationsPage() {
                 </div>
 
                 {filtered.length === 0 ? (
-                    <div className="empty-state">
-                        <CheckCircle2 size={40} style={{ color: '#22c55e' }} />
-                        <h3>{t('notifications.all_up_to_date', { threshold })}</h3>
-                        <p className="text-muted text-sm">{t('notifications.empty_desc')}</p>
-                    </div>
+                    <EmptyState
+                        icon={CheckCircle2}
+                        title={t('notifications.all_up_to_date', { threshold })}
+                        description={t('notifications.empty_desc')}
+                    />
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                         {filtered.map((item) => {

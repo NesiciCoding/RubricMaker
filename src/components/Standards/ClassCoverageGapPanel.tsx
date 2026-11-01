@@ -1,6 +1,7 @@
 import { Target, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { StandardCoverageEntry } from '../../utils/standardsCoverageAggregator';
+import { EmptyState } from '../ui/EmptyState';
 
 interface Props {
     covered: StandardCoverageEntry[];
@@ -57,12 +58,7 @@ export default function ClassCoverageGapPanel({ covered, gap }: Props) {
     const { t } = useTranslation();
 
     if (covered.length === 0 && gap.length === 0) {
-        return (
-            <div className="empty-state">
-                <Target size={28} style={{ opacity: 0.4 }} />
-                <p>{t('activityDashboard.coverage_empty')}</p>
-            </div>
-        );
+        return <EmptyState icon={Target} iconSize={28} description={t('activityDashboard.coverage_empty')} />;
     }
 
     return (

@@ -29,6 +29,7 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import CardGrid from '../components/ui/CardGrid';
 import CardTile from '../components/ui/CardTile';
 import CardGrip from '../components/ui/CardGrip';
+import { EmptyState } from '../components/ui/EmptyState';
 import { useConfirm } from '../hooks/useConfirm';
 import { useFolderDropTarget } from '../hooks/useFolderDropTarget';
 import TestAssignmentModal from '../components/Tests/TestAssignmentModal';
@@ -439,18 +440,20 @@ export default function TestListPage() {
                         dropFolderId={dropFolderId}
                     />
                     {visibleTests.length === 0 ? (
-                        <div className="empty-state">
-                            <ClipboardCheck size={40} />
-                            <h3>{activeFolder === ALL_FOLDERS ? t('tests.no_tests') : t('folders.empty')}</h3>
-                            <p className="text-muted text-sm">
-                                {activeFolder === ALL_FOLDERS
+                        <EmptyState
+                            icon={ClipboardCheck}
+                            title={activeFolder === ALL_FOLDERS ? t('tests.no_tests') : t('folders.empty')}
+                            description={
+                                activeFolder === ALL_FOLDERS
                                     ? t('tests.create_first_instruction')
-                                    : t('folders.empty_hint')}
-                            </p>
-                            <button className="btn btn-primary" onClick={() => navigate('/tests/new')}>
-                                <Plus size={16} /> {t('tests.new_test')}
-                            </button>
-                        </div>
+                                    : t('folders.empty_hint')
+                            }
+                            action={{
+                                label: t('tests.new_test'),
+                                icon: Plus,
+                                onClick: () => navigate('/tests/new'),
+                            }}
+                        />
                     ) : view === 'list' ? (
                         <div style={{ overflowX: 'auto' }}>
                             <table className="data-table">
