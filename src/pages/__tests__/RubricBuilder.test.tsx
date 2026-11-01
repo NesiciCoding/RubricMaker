@@ -540,6 +540,26 @@ describe('RubricBuilder', () => {
         expect(mockNavigate).toHaveBeenCalledWith('/rubrics/new-r', { replace: true });
     });
 
+    it('does not leave the saved-badge timer running once the page unmounts', () => {
+        // Saving a new rubric navigates away in the same tick, so the badge's 2s timer used to
+        // outlive the component. Under the coverage run it then fired after jsdom was torn down,
+        // and Vitest failed the job on `ReferenceError: window is not defined`.
+        const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+        const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
+        const { unmount } = renderNew();
+        fireEvent.change(screen.getByPlaceholderText('rubricBuilder.placeholder_name'), {
+            target: { value: 'Badge Timer' },
+        });
+        fireEvent.click(screen.getByText('rubricBuilder.action_save'));
+        const badgeCall = setTimeoutSpy.mock.calls.findIndex(([, delay]) => delay === 2000);
+        expect(badgeCall, 'save should schedule the badge auto-hide').toBeGreaterThan(-1);
+        const badgeTimer = setTimeoutSpy.mock.results[badgeCall].value;
+        unmount();
+        expect(clearTimeoutSpy).toHaveBeenCalledWith(badgeTimer);
+        setTimeoutSpy.mockRestore();
+        clearTimeoutSpy.mockRestore();
+    });
+
     it('stays clean under StrictMode, where effects run twice on mount', () => {
         // The dev double-invoke used to flip the mount-skip ref and mark a pristine form dirty,
         // so leaving an untouched rubric raised the 'unsaved changes' dialog.
@@ -872,13 +892,29 @@ describe('RubricBuilder', () => {
         expect(createObjectURL).toHaveBeenCalled();
     });
 
-    it('prints the rubric', () => {
+    it('prints the whole rubric, not the visible editor (#1004)', async () => {
         renderEdit();
-        const printSpy = vi.spyOn(window, 'print').mockImplementation(() => {});
+        // The editor used to call window.print() on the app itself, which only ever produced the
+        // current viewport. Printing now goes through the blank-rubric document the PDF export
+        // writes, so the page gets the finished sheet with the criteria on it.
+        const appPrintSpy = vi.spyOn(window, 'print').mockImplementation(() => {});
         fireEvent.click(screen.getByText('rubricBuilder.action_export'));
         fireEvent.click(screen.getByText('rubricBuilder.action_print'));
-        expect(printSpy).toHaveBeenCalled();
-        printSpy.mockRestore();
+
+        await waitFor(() => expect(mockExportPdf).toHaveBeenCalled());
+        expect(mockExportPdf.mock.calls[0][0]).toEqual(
+            expect.objectContaining({ name: mockRubric.name, criteria: expect.any(Array) })
+        );
+        expect(appPrintSpy).not.toHaveBeenCalled();
+        appPrintSpy.mockRestore();
+    });
+
+    it('shows an error toast when printing fails', async () => {
+        mockExportPdf.mockRejectedValueOnce(new Error('blocked'));
+        renderEdit();
+        fireEvent.click(screen.getByText('rubricBuilder.action_export'));
+        fireEvent.click(screen.getByText('rubricBuilder.action_print'));
+        await waitFor(() => expect(mockShowToast).toHaveBeenCalledWith('toast.export_error', 'error'));
     });
 
     // ── Standards picker (with API key configured) ───────────────────────────────
