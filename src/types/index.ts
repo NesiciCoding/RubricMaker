@@ -1513,8 +1513,8 @@ export interface Test {
 /** One row of a points → grade norm table: the grade per tier column for scores of at least `minPoints`. */
 export interface TestNormTableRow {
     minPoints: number;
-    /** Keyed by RubricTier.id of the table's tiers. */
-    grades: Record<string, number>;
+    /** Keyed by TestNormTier.id; a number is a 1–10 grade, a string a label such as IO, B or E. */
+    grades: Record<string, number | string>;
 }
 
 export type TestGradingNorm =
@@ -1532,6 +1532,8 @@ export interface TestNormTier {
     year?: SchoolYear;
     track?: VoTrack;
     label?: string;
+    /** For label columns: the lowest label that counts as sufficient (e.g. 'B'); unset means no pass mark. */
+    passFrom?: string;
 }
 
 /** Config for the live/adaptive placement generator (roadmap 27.1) — teacher-set bounds the engine picks questions within, rather than a pre-authored section/pool structure. */

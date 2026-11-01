@@ -1738,7 +1738,7 @@
             "pass_points_label": "Punten voor een voldoende",
             "pass_grade_label": "Voldoende vanaf",
             "decimals_label": "Decimalen",
-            "table_help": "Elke rij geeft het cijfer voor scores vanaf dat aantal punten. Voeg een kolom per leerjaar/niveau toe; laat leerjaar en niveau leeg voor een kolom die voor iedereen geldt. Je kunt een tabel (punten, dan één cijfer per kolom) uit een spreadsheet plakken.",
+            "table_help": "Elke rij geeft het cijfer voor scores vanaf dat aantal punten. Een cel kan een getal (1–10) of een label zoals IO, B of E bevatten; kies bij labelkolommen vanaf welk label een resultaat voldoende is. Voeg een kolom per leerjaar/niveau toe; laat leerjaar en niveau leeg voor een kolom die voor iedereen geldt. Je kunt een tabel (punten, dan één cijfer per kolom) uit een spreadsheet plakken.",
             "min_points": "Vanaf punten",
             "tier_all": "Iedereen",
             "any_year": "Elk leerjaar",
@@ -1753,7 +1753,10 @@
             "add_tier": "Kolom leerjaar/niveau toevoegen",
             "show_preview": "Toon tabel punten → cijfer",
             "hide_preview": "Verberg tabel punten → cijfer",
-            "preview_scale": "Cijfers komen uit de cijferschaal."
+            "preview_scale": "Cijfers komen uit de cijferschaal.",
+            "pass_from": "Voldoende vanaf",
+            "pass_from_none": "— (geen grens)",
+            "pass_from_aria": "Laagste voldoende label in kolom {{n}}"
         },
         "quality": {
             "no_data": "Nog geen scores. Vul het scoreblad in om de analyse te zien.",
@@ -1793,7 +1796,8 @@
             "flag_weak_rir": "lage Rir",
             "flag_negative_rir": "negatieve Rir",
             "flag_alpha_rises": "α stijgt zonder",
-            "small_sample": "Minder dan 5 volledige rijen: Rit, Rir en α worden niet getoond omdat ze onbetrouwbaar zouden zijn."
+            "small_sample": "Minder dan 5 volledige rijen: Rit, Rir en α worden niet getoond omdat ze onbetrouwbaar zouden zijn.",
+            "distribution_labels": "Labelverdeling (groen: voldoende)"
         }
     },
     "classShare": {
@@ -4476,7 +4480,7 @@
         "gr_score_sheet_body": "Open het scoreblad van een toets via het tabelicoon op de kaart (pagina Toetsen). Rijen zijn de leerlingen van de gekozen klas, kolommen de vragen. Typ het behaalde aantal punten in elke cel — Enter of ↓ gaat naar de volgende leerling, ← en → naar de volgende vraag — of plak een heel blok uit Excel of Google Sheets. Waarden boven het maximum van een vraag worden gemarkeerd en niet opgeslagen. Vink Afwezig aan om een leerling buiten totalen en analyse te laten. Hier ingevoerde punten overschrijven de automatische score zonder het online antwoord van de leerling te wissen; totaal, percentage en cijfer worden direct bijgewerkt. Met CSV exporteren download je het blad.",
         "gr_score_only_body": "Voor een papieren toets die nooit in de app is gemaakt, klik je op Nieuwe scoretoets op de pagina Toetsen. Je definieert alleen kolommen (een label zoals 1a en het maximum aantal punten) onder Vragen & koppelingen, waar je elke kolom ook kunt koppelen aan standaarden, ERK-descriptoren of een grammaticaonderwerp zodat de scores meetellen in de standaarden-, ERK- en beheersingsoverzichten. Scoretoetsen kunnen niet online worden uitgezet of gemaakt.",
         "gr_norms_title": "Normering per toets",
-        "gr_norms_body": "Elke toets heeft een eigen normering, in te stellen op het scoreblad of in de toetsbouwer: percentage → cijferschaal (standaard), N-term (de CvTE-formule 9·score/max + N met de grensregels), cesuur (het aantal punten voor een voldoende; het cijfer loopt lineair van 1 via de voldoende naar 10) of een normtabel punten → cijfer. Een normtabel kan een kolom per leerjaar en VO-niveau hebben; elke leerling krijgt het cijfer uit de kolom van zijn of haar leerjaar en niveau. Als dat niet te bepalen is, worden alle kolommen met hun label getoond, zodat je ziet welk cijfer bij welk niveau hoort. Je stelt ook de voldoendegrens (standaard 5,5) en het aantal decimalen in. De normering wordt gebruikt op de resultatenpagina en in de CSV- en Magister/SOMtoday-export.",
+        "gr_norms_body": "Elke toets heeft een eigen normering, in te stellen op het scoreblad of in de toetsbouwer: percentage → cijferschaal (standaard), N-term (de CvTE-formule 9·score/max + N met de grensregels), cesuur (het aantal punten voor een voldoende; het cijfer loopt lineair van 1 via de voldoende naar 10) of een normtabel punten → cijfer. Een normtabel kan een kolom per leerjaar en VO-niveau hebben; elke leerling krijgt het cijfer uit de kolom van zijn of haar leerjaar en niveau. Als dat niet te bepalen is, worden alle kolommen met hun label getoond, zodat je ziet welk cijfer bij welk niveau hoort. Je stelt ook de voldoendegrens (standaard 5,5) en het aantal decimalen in. De normering wordt gebruikt op de resultatenpagina en in de CSV- en Magister/SOMtoday-export. Een cel in de normtabel kan ook een label zoals IO, B of E bevatten in plaats van een getal, zodat onderbouwklassen labels krijgen en bovenbouwklassen een 1–10; bij een labelkolom kies je vanaf welk label een resultaat voldoende is, wat de kleuren en het percentage voldoendes bepaalt, en de analyse toont hoeveel leerlingen elk label kregen. Labels worden als tekst in de CSV geëxporteerd; de Magister/SOMtoday-export accepteert alleen cijfers 1–10 en laat ze leeg.",
         "an_test_quality_title": "Toetsanalyse",
         "an_test_quality_body": "Het tabblad Analyse van het scoreblad werkt voor elke toets — online gemaakt, op papier geïmporteerd, gescand of ingetypt. Je ziet het aantal leerlingen, gemiddelde, standaarddeviatie, mediaan, spreiding, percentage voldoendes, gemiddeld cijfer en een cijferverdeling, plus de betrouwbaarheid (Cronbachs α, gelijk aan KR-20 bij goed/fout-vragen) en de standaardmeetfout. Per vraag staan de P-waarde (moeilijkheid), Rit en Rir (hoe goed de vraag aansluit bij de rest van de toets), de discriminatie-index (beste/zwakste 27%) en α zonder de vraag, met signalen voor vragen die erg moeilijk of makkelijk zijn, zwak of negatief onderscheiden, of de betrouwbaarheid verlagen. Alleen leerlingen met een score op elke vraag tellen mee voor de correlaties en α; onder 5 leerlingen worden die niet getoond. Percentage voldoendes, gemiddeld cijfer en een cijferverdeling verschijnen bij een normering op 1–10 (N-term, cesuur, normtabel); bij een cijferschaal wordt de verdeling in percentages getoond."
     },

@@ -66,7 +66,7 @@ export function caesuraGrade(points: number, maxPoints: number, passPoints: numb
 }
 
 /** The grade the highest row at or below `points` gives this tier; null when no row covers the score. */
-export function tableGrade(rows: TestNormTableRow[], tierId: string, points: number): number | null {
+export function tableGrade(rows: TestNormTableRow[], tierId: string, points: number): number | string | null {
     let best: TestNormTableRow | undefined;
     for (const row of rows) {
         if (row.minPoints <= points && row.grades[tierId] !== undefined && (!best || row.minPoints > best.minPoints)) {
@@ -74,6 +74,60 @@ export function tableGrade(rows: TestNormTableRow[], tierId: string, points: num
         }
     }
     return best ? best.grades[tierId] : null;
+}
+
+/** The lowest points a label is given from in a column — its position in the IO < B < E order. */
+export function labelRank(rows: TestNormTableRow[], tierId: string, label: string): number | null {
+    let rank: number | null = null;
+    for (const row of rows) {
+        if (row.grades[tierId] === label && (rank === null || row.minPoints < rank)) rank = row.minPoints;
+    }
+    return rank;
+}
+
+/** The distinct labels used in a column, lowest first. */
+export function tierLabels(rows: TestNormTableRow[], tierId: string): string[] {
+    const labels = new Set<string>();
+    for (const row of rows) {
+        const g = row.grades[tierId];
+        if (typeof g === 'string') labels.add(g);
+    }
+    return [...labels].sort((a, b) => labelRank(rows, tierId, a)! - labelRank(rows, tierId, b)!);
+}
+
+const MAX_LABEL_LENGTH = 12;
+
+/** A norm-table cell as typed: a number ("6,5") is a grade, other text ("IO") a label, blank clears it. */
+export function parseGradeCell(raw: string): number | string | null {
+    const text = raw.trim();
+    if (text === '') return null;
+    const asNumber = text.replace(',', '.');
+    if (/^(\d+\.?\d*|\.\d+)$/.test(asNumber)) return Number(asNumber);
+    return text.slice(0, MAX_LABEL_LENGTH);
+}
+
+/**
+ * Gives label columns a 'sufficient from' default (their second label, so B in IO/B/E) when they first
+ * get labels or when the chosen label disappears from the column. An explicit '' means the teacher
+ * chose no pass mark and is kept.
+ */
+export function withLabelPassDefaults(tiers: TestNormTier[], rows: TestNormTableRow[]): TestNormTier[] {
+    return tiers.map((tier) => {
+        const labels = tierLabels(rows, tier.id);
+        const stale = !!tier.passFrom && !labels.includes(tier.passFrom);
+        if ((tier.passFrom === undefined || stale) && labels.length >= 2) return { ...tier, passFrom: labels[1] };
+        if (stale) return { ...tier, passFrom: undefined };
+        return tier;
+    });
+}
+
+/** Whether a label reaches the column's 'sufficient from' label; null when the column has no pass mark. */
+export function labelPassed(rows: TestNormTableRow[], tier: TestNormTier, label: string): boolean | null {
+    if (!tier.passFrom) return null;
+    const passRank = labelRank(rows, tier.id, tier.passFrom);
+    const rank = labelRank(rows, tier.id, label);
+    if (passRank === null || rank === null) return null;
+    return rank >= passRank;
 }
 
 export function normTierLabel(tier: TestNormTier, allLabel: string): string {
@@ -106,7 +160,7 @@ export function resolveNormTier(
 
 export interface TestGradeAlternative {
     tier: TestNormTier;
-    grade: number | null;
+    grade: number | string | null;
 }
 
 export interface TestGradeResult {
@@ -158,9 +212,13 @@ export function resolveTestGrade(
             const tier = resolveNormTier(norm.tiers, ctx.student, ctx.cls);
             if (tier) {
                 const grade = tableGrade(norm.rows, tier.id, ctx.points);
-                return grade === null
-                    ? { label: '—', numeric: null, color: NEUTRAL_COLOR, passed: null, tier }
-                    : { ...numericResult(grade, test), tier };
+                if (grade === null) return { label: '—', numeric: null, color: NEUTRAL_COLOR, passed: null, tier };
+                if (typeof grade === 'string') {
+                    const passed = labelPassed(norm.rows, tier, grade);
+                    const color = passed === null ? NEUTRAL_COLOR : passed ? PASS_COLOR : FAIL_COLOR;
+                    return { label: grade, numeric: null, color, passed, tier };
+                }
+                return { ...numericResult(grade, test), tier };
             }
             return {
                 label: '—',
@@ -195,7 +253,7 @@ export function resolveTestScale(
 export interface NormTablePreviewRow {
     points: number;
     /** One grade per tier for a table norm; a single entry otherwise. */
-    grades: (number | null)[];
+    grades: (number | string | null)[];
 }
 
 /** Whole-point preview of the norm (0…max) for the teacher to sanity-check cut-offs. */
@@ -216,7 +274,7 @@ export function buildNormPreview(
                 points: p,
                 grades: norm.tiers.map((tier) => {
                     const g = tableGrade(norm.rows, tier.id, p);
-                    return g === null ? null : roundGrade(g, decimals);
+                    return typeof g === 'number' ? roundGrade(g, decimals) : g;
                 }),
             };
         }
@@ -249,4 +307,34 @@ export function defaultNorm(type: TestGradingNorm['type'], maxPoints: number): T
         default:
             return { type: 'scale' };
     }
+}
+
+export interface LabelCount {
+    label: string;
+    count: number;
+    passed: boolean | null;
+}
+
+/** How many students got each table label (IO, B, E…), lowest label first, for the analysis chart. */
+export function labelDistribution(
+    test: Pick<Test, 'gradingNorm'>,
+    results: Pick<TestGradeResult, 'label' | 'numeric' | 'passed' | 'tier'>[]
+): LabelCount[] {
+    const norm = testNorm(test);
+    if (norm.type !== 'table') return [];
+    const byLabel = new Map<string, LabelCount & { rank: number }>();
+    for (const r of results) {
+        if (r.numeric !== null || !r.tier) continue;
+        const rank = labelRank(norm.rows, r.tier.id, r.label);
+        if (rank === null) continue;
+        // A label can pass in one column and fail in another (different 'sufficient from'), so split by both.
+        const key = `${r.label}\u0000${String(r.passed)}`;
+        const entry = byLabel.get(key) ?? { label: r.label, count: 0, passed: r.passed, rank };
+        entry.count++;
+        entry.rank = Math.min(entry.rank, rank);
+        byLabel.set(key, entry);
+    }
+    return [...byLabel.values()]
+        .sort((a, b) => a.rank - b.rank)
+        .map(({ label, count, passed }) => ({ label, count, passed }));
 }

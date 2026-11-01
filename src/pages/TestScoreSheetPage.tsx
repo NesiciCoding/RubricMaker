@@ -18,6 +18,7 @@ import { scoreTestAnswer } from '../utils/testCalc';
 import { calcTestQuality } from '../utils/testQualityMetrics';
 import {
     DEFAULT_PASS_GRADE,
+    labelDistribution,
     normTierLabel,
     resolveTestGrade,
     resolveTestScale,
@@ -203,7 +204,12 @@ function ScoreSheetBody({
         .filter((g) => g !== null);
     const numeric = graded.map((g) => g.grade.numeric).filter((n): n is number => n !== null);
     const passGrade = test.passGrade ?? DEFAULT_PASS_GRADE;
-    const passRate = numeric.length ? numeric.filter((g) => g >= passGrade).length / numeric.length : null;
+    const judged = graded.filter((g) => g.grade.passed !== null);
+    const passRate = judged.length ? judged.filter((g) => g.grade.passed).length / judged.length : null;
+    const labelCounts = labelDistribution(
+        test,
+        graded.map((g) => g.grade)
+    );
     const meanGrade = numeric.length ? numeric.reduce((a, b) => a + b, 0) / numeric.length : null;
 
     function patchNorm(patch: Partial<NormSettings>) {
@@ -345,6 +351,7 @@ function ScoreSheetBody({
                         passGrade={passGrade}
                         passRate={passRate}
                         meanGrade={meanGrade}
+                        labelCounts={labelCounts}
                     />
                 )}
             </div>

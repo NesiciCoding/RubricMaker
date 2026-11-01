@@ -102,6 +102,84 @@ describe('NormConfig', () => {
         expect(onChange.mock.lastCall![0].gradingNorm.rows).toHaveLength(3);
     });
 
+    it('accepts label grades and a sufficient-from label per column', () => {
+        const onChange = vi.fn();
+        render(
+            <Harness
+                initial={{
+                    gradingNorm: {
+                        type: 'table',
+                        tiers: [{ id: 'a', year: 'jaar-1' }],
+                        rows: [
+                            { minPoints: 0, grades: {} },
+                            { minPoints: 5, grades: {} },
+                            { minPoints: 8, grades: {} },
+                        ],
+                    },
+                }}
+                onChange={onChange}
+            />
+        );
+        const cells = screen.getAllByLabelText(/grade_cell/);
+        fireEvent.blur(cells[0], { target: { value: 'IO' } });
+        expect(screen.queryByLabelText(/pass_from_aria/)).toBeInTheDocument();
+        fireEvent.blur(screen.getAllByLabelText(/grade_cell/)[1], { target: { value: 'B' } });
+        fireEvent.blur(screen.getAllByLabelText(/grade_cell/)[2], { target: { value: 'E' } });
+        let norm = onChange.mock.lastCall![0].gradingNorm;
+        expect(norm.rows.map((r: { grades: Record<string, unknown> }) => r.grades.a)).toEqual(['IO', 'B', 'E']);
+        expect(norm.tiers[0].passFrom).toBe('B');
+        expect(screen.getAllByText('E').length).toBeGreaterThan(0);
+        fireEvent.change(screen.getByLabelText(/pass_from_aria/), { target: { value: 'E' } });
+        norm = onChange.mock.lastCall![0].gradingNorm;
+        expect(norm.tiers[0].passFrom).toBe('E');
+        fireEvent.change(screen.getByLabelText(/pass_from_aria/), { target: { value: '' } });
+        expect(onChange.mock.lastCall![0].gradingNorm.tiers[0].passFrom).toBe('');
+    });
+
+    it('clears the sufficient-from label when its last row is removed', () => {
+        const onChange = vi.fn();
+        render(
+            <Harness
+                initial={{
+                    gradingNorm: {
+                        type: 'table',
+                        tiers: [{ id: 'a', passFrom: 'E' }],
+                        rows: [
+                            { minPoints: 0, grades: { a: 'IO' } },
+                            { minPoints: 5, grades: { a: 'B' } },
+                            { minPoints: 8, grades: { a: 'E' } },
+                        ],
+                    },
+                }}
+                onChange={onChange}
+            />
+        );
+        fireEvent.click(screen.getByLabelText(/remove_row.*"points":8/));
+        const norm = onChange.mock.lastCall![0].gradingNorm;
+        expect(norm.rows).toHaveLength(2);
+        expect(norm.tiers[0].passFrom).toBe('B');
+    });
+
+    it('pastes a table that mixes labels and numbers', () => {
+        const onChange = vi.fn();
+        render(
+            <Harness
+                initial={{
+                    gradingNorm: { type: 'table', tiers: [{ id: 'a' }, { id: 'b' }], rows: [] },
+                }}
+                onChange={onChange}
+            />
+        );
+        fireEvent.click(screen.getByText('tests.norm.add_row'));
+        fireEvent.paste(screen.getByLabelText('tests.norm.min_points'), {
+            clipboardData: { getData: () => '0\tIO\t1\n10\tB\t5,5\n16\tE\t8' },
+        });
+        const norm = onChange.mock.lastCall![0].gradingNorm;
+        expect(norm.rows[1]).toEqual({ minPoints: 10, grades: { a: 'B', b: 5.5 } });
+        expect(norm.tiers[0].passFrom).toBe('B');
+        expect(norm.tiers[1].passFrom).toBeUndefined();
+    });
+
     it('switches to the N-term and shows the preview', () => {
         render(<Harness initial={{}} />);
         fireEvent.change(document.getElementById('norm-type')!, { target: { value: 'nterm' } });

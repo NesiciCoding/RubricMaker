@@ -1738,7 +1738,7 @@
             "pass_points_label": "Points for a pass",
             "pass_grade_label": "Pass grade",
             "decimals_label": "Decimals",
-            "table_help": "Each row gives the grade for scores of at least that many points. Add a column per school year/track; leave year and track empty for a column that applies to everyone. You can paste a table (points, then one grade per column) from a spreadsheet.",
+            "table_help": "Each row gives the grade for scores of at least that many points. A cell can hold a number (1–10) or a label such as IO, B or E; for label columns, pick from which label a result counts as sufficient. Add a column per school year/track; leave year and track empty for a column that applies to everyone. You can paste a table (points, then one grade per column) from a spreadsheet.",
             "min_points": "From points",
             "tier_all": "Everyone",
             "any_year": "Any year",
@@ -1753,7 +1753,10 @@
             "add_tier": "Add year/track column",
             "show_preview": "Show points → grade table",
             "hide_preview": "Hide points → grade table",
-            "preview_scale": "Grades come from the grade scale."
+            "preview_scale": "Grades come from the grade scale.",
+            "pass_from": "Sufficient from",
+            "pass_from_none": "— (no pass mark)",
+            "pass_from_aria": "Lowest sufficient label in column {{n}}"
         },
         "quality": {
             "no_data": "No scores yet. Fill in the score sheet to see the analysis.",
@@ -1793,7 +1796,8 @@
             "flag_weak_rir": "weak Rir",
             "flag_negative_rir": "negative Rir",
             "flag_alpha_rises": "α rises without it",
-            "small_sample": "Fewer than 5 complete rows: Rit, Rir and α are not shown because they would be unreliable."
+            "small_sample": "Fewer than 5 complete rows: Rit, Rir and α are not shown because they would be unreliable.",
+            "distribution_labels": "Label distribution (green: sufficient)"
         }
     },
     "classShare": {
@@ -4476,7 +4480,7 @@
         "gr_score_sheet_body": "Open a test's score sheet from the table icon on its card (Tests page). Rows are the students of the chosen class, columns are the questions. Type the points earned in each cell — Enter or ↓ moves to the next student, ← and → to the next question — or paste a whole block from Excel or Google Sheets. Values above a question's maximum are flagged and not saved. Tick Absent to leave a student out of totals and analysis. Points typed here override auto-scoring without deleting what a student answered online, and the totals, percentage and grade update immediately. Export CSV downloads the sheet.",
         "gr_score_only_body": "For a paper test that was never built in the app, click New score-only test on the Tests page. You only define columns (a label such as 1a and the maximum points) under Questions & links, where each column can also be linked to standards, CEFR descriptors or a grammar point so the scores feed the standards, CEFR and mastery overviews. Score-only tests can't be assigned or taken online.",
         "gr_norms_title": "Grading norms per test",
-        "gr_norms_body": "Each test has its own grading norm, set on the score sheet or in the Test Builder: percentage → grade scale (the default), N-term (the Dutch CvTE formula 9·score/max + N with its boundary rules), pass mark/caesura (the points needed for the pass grade; grades run linearly from 1 to the pass grade to 10), or a norm table of points → grade. A norm table can have a column per school year and VO track; each student is graded with the column that matches their year and track. When that can't be determined, every column's grade is shown with its label so you can see which grade belongs to which track. You also set the pass grade (default 5.5) and number of decimals. The chosen norm is used on the results page and in the CSV and Magister/SOMtoday exports.",
+        "gr_norms_body": "Each test has its own grading norm, set on the score sheet or in the Test Builder: percentage → grade scale (the default), N-term (the Dutch CvTE formula 9·score/max + N with its boundary rules), pass mark/caesura (the points needed for the pass grade; grades run linearly from 1 to the pass grade to 10), or a norm table of points → grade. A norm table can have a column per school year and VO track; each student is graded with the column that matches their year and track. When that can't be determined, every column's grade is shown with its label so you can see which grade belongs to which track. You also set the pass grade (default 5.5) and number of decimals. The chosen norm is used on the results page and in the CSV and Magister/SOMtoday exports. A norm-table cell can also hold a label such as IO, B or E instead of a number, so lower years can be graded with labels while upper years get 1–10; for a label column you choose from which label a result counts as sufficient, which drives the colours and the pass rate, and the analysis shows how many students got each label. Labels are exported as text in the CSV; the Magister/SOMtoday presets only take 1–10 grades and leave them blank.",
         "an_test_quality_title": "Test quality analysis",
         "an_test_quality_body": "The Analysis tab of a test's score sheet works for every test — taken online, imported from paper, scanned or typed in. It shows the number of students, mean, standard deviation, median, range, pass rate, mean grade and a grade distribution, plus reliability (Cronbach's α, equal to KR-20 for right/wrong questions) and the standard error of measurement. Per question it lists the P-value (difficulty), Rit and Rir (how well the question agrees with the rest of the test), the upper/lower-27% discrimination index and α without the question, and flags questions that are very hard, very easy, weakly or negatively discriminating, or that lower reliability. Only students with a score on every question count toward the correlations and α, and they are hidden below 5 students. Pass rate, mean grade and a grade distribution appear for numeric 1–10 norms (N-term, pass mark, norm table); with a grade scale the distribution is shown in percentages instead."
     },

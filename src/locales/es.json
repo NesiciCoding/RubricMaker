@@ -1738,7 +1738,7 @@
             "pass_points_label": "Puntos para aprobar",
             "pass_grade_label": "Nota de aprobado",
             "decimals_label": "Decimales",
-            "table_help": "Cada fila da la nota para puntuaciones de al menos esos puntos. Añade una columna por curso/itinerario; déjalos vacíos para una columna válida para todos. Puedes pegar una tabla (puntos y luego una nota por columna) desde una hoja de cálculo.",
+            "table_help": "Cada fila da la nota para puntuaciones de al menos esos puntos. Una celda puede contener un número (1–10) o una etiqueta como IO, B o E; en las columnas de etiquetas, elige a partir de qué etiqueta un resultado es suficiente. Añade una columna por curso/itinerario; déjalos vacíos para una columna válida para todos. Puedes pegar una tabla (puntos y luego una nota por columna) desde una hoja de cálculo.",
             "min_points": "Desde puntos",
             "tier_all": "Todos",
             "any_year": "Cualquier curso",
@@ -1753,7 +1753,10 @@
             "add_tier": "Añadir columna curso/itinerario",
             "show_preview": "Mostrar tabla puntos → nota",
             "hide_preview": "Ocultar tabla puntos → nota",
-            "preview_scale": "Las notas vienen de la escala de notas."
+            "preview_scale": "Las notas vienen de la escala de notas.",
+            "pass_from": "Suficiente desde",
+            "pass_from_none": "— (sin límite)",
+            "pass_from_aria": "Etiqueta suficiente más baja en la columna {{n}}"
         },
         "quality": {
             "no_data": "Aún no hay puntos. Rellena la hoja de puntos para ver el análisis.",
@@ -1793,7 +1796,8 @@
             "flag_weak_rir": "Rir bajo",
             "flag_negative_rir": "Rir negativo",
             "flag_alpha_rises": "α sube sin ella",
-            "small_sample": "Menos de 5 filas completas: no se muestran Rit, Rir ni α porque no serían fiables."
+            "small_sample": "Menos de 5 filas completas: no se muestran Rit, Rir ni α porque no serían fiables.",
+            "distribution_labels": "Distribución de etiquetas (verde: suficiente)"
         }
     },
     "classShare": {
@@ -4476,7 +4480,7 @@
         "gr_score_sheet_body": "Abre la hoja de puntos de una prueba con el icono de tabla de su tarjeta (página Pruebas). Las filas son los alumnos de la clase elegida y las columnas las preguntas. Escribe los puntos obtenidos en cada celda — Intro o ↓ pasa al siguiente alumno, ← y → a la siguiente pregunta — o pega un bloque entero desde Excel o Google Sheets. Los valores por encima del máximo de una pregunta se marcan y no se guardan. Marca Ausente para excluir a un alumno de los totales y del análisis. Los puntos introducidos aquí sustituyen la puntuación automática sin borrar la respuesta en línea del alumno; total, porcentaje y nota se actualizan al instante. Exportar CSV descarga la hoja.",
         "gr_score_only_body": "Para una prueba en papel que nunca se creó en la aplicación, haz clic en Nueva prueba solo puntos en la página Pruebas. Solo defines columnas (una etiqueta como 1a y los puntos máximos) en Preguntas y vínculos, donde cada columna también puede vincularse a estándares, descriptores del MCER o un punto gramatical para alimentar las vistas de estándares, MCER y dominio. Estas pruebas no se pueden asignar ni realizar en línea.",
         "gr_norms_title": "Baremo por prueba",
-        "gr_norms_body": "Cada prueba tiene su propio baremo, configurable en la hoja de puntos o en el editor de pruebas: porcentaje → escala de notas (predeterminado), término N (la fórmula neerlandesa CvTE 9·puntos/máx + N con sus reglas en los extremos), punto de corte (los puntos necesarios para el aprobado; la nota va linealmente de 1 al aprobado y a 10) o una tabla puntos → nota. Una tabla puede tener una columna por curso e itinerario; cada alumno se califica con la columna de su curso e itinerario. Si no se puede determinar, se muestra la nota de cada columna con su etiqueta. También eliges la nota de aprobado (5,5 por defecto) y los decimales. El baremo se usa en la página de resultados y en las exportaciones CSV y Magister/SOMtoday.",
+        "gr_norms_body": "Cada prueba tiene su propio baremo, configurable en la hoja de puntos o en el editor de pruebas: porcentaje → escala de notas (predeterminado), término N (la fórmula neerlandesa CvTE 9·puntos/máx + N con sus reglas en los extremos), punto de corte (los puntos necesarios para el aprobado; la nota va linealmente de 1 al aprobado y a 10) o una tabla puntos → nota. Una tabla puede tener una columna por curso e itinerario; cada alumno se califica con la columna de su curso e itinerario. Si no se puede determinar, se muestra la nota de cada columna con su etiqueta. También eliges la nota de aprobado (5,5 por defecto) y los decimales. El baremo se usa en la página de resultados y en las exportaciones CSV y Magister/SOMtoday. Una celda de la tabla también puede contener una etiqueta como IO, B o E en lugar de un número, de modo que los cursos inferiores se califiquen con etiquetas y los superiores de 1 a 10; en una columna de etiquetas eliges a partir de qué etiqueta un resultado es suficiente, lo que determina los colores y la tasa de aprobados, y el análisis muestra cuántos alumnos obtuvieron cada etiqueta. Las etiquetas se exportan como texto en el CSV; las exportaciones de Magister/SOMtoday solo aceptan notas de 1 a 10 y las dejan en blanco.",
         "an_test_quality_title": "Análisis de calidad de pruebas",
         "an_test_quality_body": "La pestaña Análisis de la hoja de puntos funciona para cualquier prueba: realizada en línea, importada del papel, escaneada o introducida a mano. Muestra el número de alumnos, la media, la desviación típica, la mediana, el rango, la tasa de aprobados, la nota media y una distribución de notas, además de la fiabilidad (α de Cronbach, igual a KR-20 en preguntas de acierto/error) y el error típico de medida. Por pregunta: valor P (dificultad), Rit y Rir (cuánto concuerda la pregunta con el resto de la prueba), índice de discriminación (27 % superior/inferior) y α sin la pregunta, con avisos para preguntas muy difíciles, muy fáciles, que discriminan poco o negativamente, o que bajan la fiabilidad. Solo cuentan para las correlaciones y α los alumnos con puntuación en todas las preguntas; con menos de 5 alumnos no se muestran. La tasa de aprobados, la nota media y la distribución de notas aparecen con baremos numéricos de 1 a 10 (término N, punto de corte, tabla); con una escala de notas, la distribución se muestra en porcentajes."
     },
