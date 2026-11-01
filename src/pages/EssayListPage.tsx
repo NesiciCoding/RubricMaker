@@ -2,12 +2,15 @@ import React from 'react';
 import PageTour from '../components/Tour/PageTour';
 import { usePageTourState } from '../hooks/usePageTourState';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Edit2, Trash2, FileText, Radio, GripVertical } from 'lucide-react';
+import { Plus, Edit2, Trash2, FileText, Radio } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import { useAuthoring, useClasses, useEssays, useStudents } from '../context/AppContext';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import CardGrid from '../components/ui/CardGrid';
+import CardTile from '../components/ui/CardTile';
+import CardGrip from '../components/ui/CardGrip';
 import { useConfirm } from '../hooks/useConfirm';
 import { useOnlineEssaySubmissions } from '../hooks/useOnlineEssaySubmissions';
 import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
@@ -119,16 +122,7 @@ export default function EssayListPage() {
                     <DragDropContext onDragEnd={handleDragEnd}>
                         <Droppable droppableId="essay-list">
                             {(droppableProvided) => (
-                                <div
-                                    ref={droppableProvided.innerRef}
-                                    {...droppableProvided.droppableProps}
-                                    style={{
-                                        // ponytail: flex-wrap, not CSS grid — see RubricList for why @hello-pangea/dnd needs this
-                                        display: 'flex',
-                                        flexWrap: 'wrap',
-                                        gap: 16,
-                                    }}
-                                >
+                                <CardGrid ref={droppableProvided.innerRef} {...droppableProvided.droppableProps}>
                                     {groups.map(({ teacherKey, rows }, idx) => {
                                         const first = rows[0];
                                         const rubric = rubrics.find((r) => r.id === first.rubricId);
@@ -141,22 +135,10 @@ export default function EssayListPage() {
                                                 isDragDisabled={!reorderable}
                                             >
                                                 {(dragProvided) => (
-                                                    <div
+                                                    <CardTile
                                                         ref={dragProvided.innerRef}
                                                         {...dragProvided.draggableProps}
-                                                        className="card"
-                                                        style={{
-                                                            transition: 'border-color var(--transition)',
-                                                            // Fixed basis, no grow: every tile keeps the same
-                                                            // width on every row. minWidth 0 is required — a
-                                                            // flex item's automatic minimum is its min-content
-                                                            // width, so a long title would stretch the card past
-                                                            // the basis and overflow the page.
-                                                            flex: '0 1 400px',
-                                                            minWidth: 0,
-                                                            maxWidth: '100%',
-                                                            ...dragProvided.draggableProps.style,
-                                                        }}
+                                                        style={dragProvided.draggableProps.style}
                                                     >
                                                         <div
                                                             style={{
@@ -174,25 +156,10 @@ export default function EssayListPage() {
                                                                 }}
                                                             >
                                                                 {reorderable && (
-                                                                    <span
+                                                                    <CardGrip
                                                                         {...dragProvided.dragHandleProps}
-                                                                        aria-label={t('rubricList.drag_to_reorder')}
-                                                                        style={{
-                                                                            cursor: 'grab',
-                                                                            color: 'var(--text-dim)',
-                                                                            display: 'flex',
-                                                                            alignItems: 'center',
-                                                                            flexShrink: 0,
-                                                                            // Padding (cancelled by the negative
-                                                                            // margin) grows the grab area around
-                                                                            // the corner glyph to a 25px target.
-                                                                            padding: 5,
-                                                                            margin: '-1px 0 0 -5px',
-                                                                            touchAction: 'none',
-                                                                        }}
-                                                                    >
-                                                                        <GripVertical size={15} />
-                                                                    </span>
+                                                                        label={t('rubricList.drag_to_reorder')}
+                                                                    />
                                                                 )}
                                                                 <div style={{ minWidth: 0 }}>
                                                                     <h3>{first.title}</h3>
@@ -310,13 +277,13 @@ export default function EssayListPage() {
                                                                 <Radio size={14} /> {t('essays.action_monitor')}
                                                             </Link>
                                                         </div>
-                                                    </div>
+                                                    </CardTile>
                                                 )}
                                             </Draggable>
                                         );
                                     })}
                                     {droppableProvided.placeholder}
-                                </div>
+                                </CardGrid>
                             )}
                         </Droppable>
                     </DragDropContext>

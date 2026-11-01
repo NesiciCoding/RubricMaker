@@ -431,10 +431,14 @@ const PRINT_DIALOG_WAIT_TIMEOUT_MS = 2 * 60_000;
  * completed one, and none exposes a cancel event, so this is deliberately "was the print dialog
  * shown", never "did a document come out". `dialogDetectable` is false in browsers that don't report
  * the lifecycle at all, where the caller has to take the print on trust.
+ *
+ * `documentAvailable` is separate and stricter: false means the frame never got a document, so
+ * `print()` was never called and nothing was printed at all — not even a dialog to cancel.
  */
 export interface PrintOutcome {
     dialogOpened: boolean;
     dialogDetectable: boolean;
+    documentAvailable: boolean;
 }
 
 export function printHtml(
@@ -496,7 +500,7 @@ export function printHtml(
                 };
                 // Resolving and removing the frame are separate: dropping the frame right after print()
                 // cancels the job in browsers where print() doesn't block.
-                const finish = () => resolve({ dialogOpened, dialogDetectable });
+                const finish = () => resolve({ dialogOpened, dialogDetectable, documentAvailable: true });
                 const safety = setTimeout(() => {
                     cleanup();
                     finish();
@@ -525,7 +529,11 @@ export function printHtml(
                 setTimeout(finish, waitsForDialog ? PRINT_DIALOG_WAIT_TIMEOUT_MS : 100);
             });
         } else {
-            resolve({ dialogOpened: false, dialogDetectable: false });
+            // Nothing was written and print() was never called, so say so rather than reporting the
+            // same outcome as a browser that simply cannot watch the dialog: callers that announce a
+            // finished export have to be able to tell "printed" from "never reached the printer".
+            iframe.remove();
+            resolve({ dialogOpened: false, dialogDetectable: false, documentAvailable: false });
         }
     });
 }
@@ -535,6 +543,9 @@ export function printHtml(
  * to close, and throws when the browser was able to report the dialog but never showed one — a blocked
  * print preview used to be logged (and toasted) as a successful export (#701). A cancelled dialog is
  * still indistinguishable from a printed one, so callers must not read this as proof of paper.
+ *
+ * It throws as well when the frame never received a document: nothing was written and `print()` was
+ * never called, so resolving there announced a finished export that never reached a printer.
  */
 export async function printForExport(
     html: string,
@@ -543,6 +554,9 @@ export async function printForExport(
     styleTemplate?: DocxStyleTemplateOverrides
 ): Promise<void> {
     const outcome = await printHtml(html, orientation, fontFamily, styleTemplate, { waitForPrintDialog: true });
+    if (!outcome.documentAvailable) {
+        throw new Error('print document unavailable');
+    }
     if (outcome.dialogDetectable && !outcome.dialogOpened) {
         throw new Error('print dialog did not open');
     }
