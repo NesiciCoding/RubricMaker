@@ -915,6 +915,10 @@ select.input-error {
     border-radius: 4px;
     display: flex;
     align-items: center;
+    /* TipTap makes this wrapper the draggable element, so its 4px padding is part of the
+       touched area — without this, a touch starting there is handled as a pan before the
+       native drag begins. */
+    touch-action: none;
 }
 
 .drag-handle:hover {

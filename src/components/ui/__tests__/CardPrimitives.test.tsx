@@ -94,4 +94,20 @@ describe('CardGrip', () => {
         expect(grip.querySelector('svg')).toHaveAttribute('width', '13');
         expect(grip.style.marginTop).toBe('-5px');
     });
+
+    it('omits the name when there is no label, for grips that are not controls (#697)', () => {
+        // A question edited in the bank modal has no `dragHandleProps`, so the span has no role;
+        // a name on a role-less element is invalid, and the caller renders sr-only text instead.
+        render(
+            <CardGrip data-testid="grip">
+                <span className="sr-only">Move question</span>
+            </CardGrip>
+        );
+        const grip = screen.getByTestId('grip');
+        expect(grip).not.toHaveAttribute('aria-label');
+        expect(screen.getByText('Move question')).toBeInTheDocument();
+        // The look (and the touch target) is independent of the name.
+        expect(grip.style.padding).toBe('5px');
+        expect(grip.style.touchAction).toBe('none');
+    });
 });

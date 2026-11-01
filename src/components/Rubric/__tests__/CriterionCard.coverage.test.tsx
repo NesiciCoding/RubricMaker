@@ -194,6 +194,22 @@ describe('CriterionCard coverage', () => {
         expect(cb.onUpdateCriterion).not.toHaveBeenCalled();
     });
 
+    it('keeps the move buttons out of the drag handle', () => {
+        // The arrows used to sit inside the element carrying `dragHandleProps`, so they were
+        // buttons nested in a role="button" handle and pressing one could start a drag.
+        const cb = makeCallbacks();
+        renderCard(makeCriterion({}), cb);
+        const handle = screen.getByLabelText(/rubricBuilder\.drag_reorder_criterion/);
+        expect(within(handle).queryByRole('button')).toBeNull();
+        // The handle still is one, and the arrows still work.
+        expect(handle).toHaveAttribute('aria-label');
+        expect(handle.style.touchAction).toBe('none');
+        const up = screen.getByLabelText('rubricBuilder.action_move_criterion_up');
+        expect(handle.contains(up)).toBe(false);
+        fireEvent.click(up);
+        expect(cb.onMoveCriterion).toHaveBeenCalledWith(0, -1);
+    });
+
     it('hides the descriptor-count badge without explicit descriptor arrays', () => {
         const cb = makeCallbacks();
         renderCard(makeCriterion({ cefrDescriptors: undefined, frameworkDescriptors: [] }), cb);
