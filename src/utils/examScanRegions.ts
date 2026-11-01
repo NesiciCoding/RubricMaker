@@ -9,14 +9,19 @@
  * optical mark recognition (OMR) — comparing how much ink is inside each cell — not text
  * recognition.
  *
- * `answerSheetGeometry()` assumes a single continuous top-to-bottom flow with no page breaks, so
- * its y-positions only correspond to real scanned pixels while the whole sheet fits on one page;
- * `answerSheetFitsOnOnePage()` gates that assumption instead of silently cropping the wrong page.
+ * Blocks come from `answerSheetPages()`, whose y-positions are absolute on their printed page, so
+ * a page's blocks can be cropped directly out of that page's scan image.
  */
 
 import type { RgbaImage } from '../types';
 import { luminance } from './preprocessScan';
-import { EXAM_PAGE_MM, CHOICE_CELL_WIDTH_MM, CHOICE_CELL_GAP_MM, type AnswerBlockGeometry } from './testExamContent';
+import {
+    ANSWER_SPACE_TOP_MM,
+    EXAM_PAGE_MM,
+    CHOICE_CELL_WIDTH_MM,
+    CHOICE_CELL_GAP_MM,
+    type AnswerBlockGeometry,
+} from './testExamContent';
 
 export interface MmRect {
     x: number;
@@ -32,26 +37,14 @@ export interface PixelRect {
     height: number;
 }
 
-/**
- * Whether an answer sheet's estimated geometry can be trusted to crop precise regions out of a
- * scanned image. Once the estimated content runs past one page, the flow-based `y` values stop
- * corresponding to any single scanned page — callers should fall back to whole-page OCR instead
- * of cropping when this returns false.
- */
-export function answerSheetFitsOnOnePage(blocks: AnswerBlockGeometry[]): boolean {
-    const last = blocks[blocks.length - 1];
-    if (!last) return true;
-    return last.y + last.height <= EXAM_PAGE_MM.height - EXAM_PAGE_MM.margin;
-}
-
-/** Per-letter bubble cells within a 'choice' block's mm box, evenly spaced left-to-right. */
+/** Per-letter bubble cells within a 'choice' block's mm box, evenly spaced left-to-right, starting where the renderer prints the bubble row (below the question number). */
 export function choiceCellRects(block: AnswerBlockGeometry): { letter: string; rect: MmRect }[] {
     const letters = block.space.optionLetters ?? [];
     return letters.map((letter, i) => ({
         letter,
         rect: {
             x: block.x + i * (CHOICE_CELL_WIDTH_MM + CHOICE_CELL_GAP_MM),
-            y: block.y,
+            y: block.y + ANSWER_SPACE_TOP_MM,
             width: CHOICE_CELL_WIDTH_MM,
             height: CHOICE_CELL_WIDTH_MM,
         },

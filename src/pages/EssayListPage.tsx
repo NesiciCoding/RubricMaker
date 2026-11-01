@@ -19,7 +19,7 @@ import { useFolderDropTarget } from '../hooks/useFolderDropTarget';
 import { useOnlineEssaySubmissions } from '../hooks/useOnlineEssaySubmissions';
 import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
 import { getCohortStudentIds, isAllCohorts, ALL_COHORTS } from '../utils/cohortAggregator';
-import { ALL_FOLDERS, countInFolder, filterByFolder, foldersForKind, nextFolderOrder } from '../utils/folders';
+import { ALL_FOLDERS, filterByFolder, foldersForKind, nextFolderOrder } from '../utils/folders';
 import type { CohortFilter as CohortFilterValue, Folder } from '../types';
 import CohortFilter from '../components/CohortFilter';
 
@@ -45,7 +45,7 @@ export default function EssayListPage() {
     const { showToast } = useToast();
     const [cohortFilter, setCohortFilter] = React.useState<CohortFilterValue>(ALL_COHORTS);
     const [activeFolder, setActiveFolder] = React.useState<string>(ALL_FOLDERS);
-    const [folderModal, setFolderModal] = React.useState<{ folder?: Folder } | null>(null);
+    const [folderModal, setFolderModal] = React.useState<{ folder?: Folder; parentId?: string } | null>(null);
     const { dropFolderId, startFolderDrop, endFolderDrop } = useFolderDropTarget();
     const cohortStudentIds = React.useMemo(
         () => getCohortStudentIds(students, classes, cohortFilter),
@@ -113,7 +113,13 @@ export default function EssayListPage() {
             updateFolder({ ...editing, name });
             showToast(t('folders.renamed_toast'), 'success');
         } else {
-            const folder = addFolder({ name, kind: 'essay', displayOrder: nextFolderOrder(folders, 'essay') });
+            const parentId = folderModal?.parentId;
+            const folder = addFolder({
+                name,
+                kind: 'essay',
+                parentId,
+                displayOrder: nextFolderOrder(folders, 'essay', parentId),
+            });
             setActiveFolder(folder.id);
             showToast(t('folders.created_toast', { name }), 'success');
         }
@@ -190,14 +196,15 @@ export default function EssayListPage() {
                 ) : (
                     <DragDropContext onBeforeCapture={startFolderDrop} onDragEnd={handleDragEnd}>
                         <FolderBar
-                            folders={essayFolders}
-                            activeFolder={activeFolder}
-                            countFor={(folderId) => countInFolder(groups, folderId)}
-                            dropFolderId={dropFolderId}
-                            onOpen={(id) => setActiveFolder((current) => (current === id ? ALL_FOLDERS : id))}
+                            folders={folders}
+                            kind="essay"
+                            activeFolderId={activeFolder}
+                            items={groups}
+                            onSelect={setActiveFolder}
+                            onCreate={(parentId) => setFolderModal({ parentId })}
                             onRename={(folder) => setFolderModal({ folder })}
                             onDelete={handleDeleteFolder}
-                            onCreate={() => setFolderModal({})}
+                            dropFolderId={dropFolderId}
                         />
                         {visibleGroups.length === 0 ? (
                             <div className="empty-state">
@@ -385,7 +392,13 @@ export default function EssayListPage() {
 
                 {folderModal && (
                     <FolderNameModal
-                        title={folderModal.folder ? t('folders.rename_title') : t('folders.new_folder')}
+                        title={
+                            folderModal.folder
+                                ? t('folders.rename_title')
+                                : folderModal.parentId
+                                  ? t('folders.new_subfolder')
+                                  : t('folders.new_folder')
+                        }
                         submitLabel={folderModal.folder ? t('folders.rename') : t('folders.create')}
                         initialName={folderModal.folder?.name}
                         onSubmit={submitFolderName}

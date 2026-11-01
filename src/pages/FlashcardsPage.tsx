@@ -16,7 +16,7 @@ import FolderNameModal from '../components/Folders/FolderNameModal';
 import { useConfirm } from '../hooks/useConfirm';
 import { useFolderDropTarget } from '../hooks/useFolderDropTarget';
 import { useToast } from '../hooks/useToast';
-import { ALL_FOLDERS, countInFolder, filterByFolder, foldersForKind, nextFolderOrder } from '../utils/folders';
+import { ALL_FOLDERS, filterByFolder, foldersForKind, nextFolderOrder } from '../utils/folders';
 import { UNTITLED_DECK_NAMES } from '../utils/flashcardDecks';
 import type { Folder } from '../types';
 
@@ -37,7 +37,7 @@ export default function FlashcardsPage() {
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
     const { showToast } = useToast();
     const [activeFolder, setActiveFolder] = React.useState<string>(ALL_FOLDERS);
-    const [folderModal, setFolderModal] = React.useState<{ folder?: Folder } | null>(null);
+    const [folderModal, setFolderModal] = React.useState<{ folder?: Folder; parentId?: string } | null>(null);
     const { dropFolderId, startFolderDrop, endFolderDrop } = useFolderDropTarget();
 
     // 'New deck' has to persist a deck before navigating (the editor needs an id), so an
@@ -116,7 +116,13 @@ export default function FlashcardsPage() {
             updateFolder({ ...editing, name });
             showToast(t('folders.renamed_toast'), 'success');
         } else {
-            const folder = addFolder({ name, kind: 'flashcard', displayOrder: nextFolderOrder(folders, 'flashcard') });
+            const parentId = folderModal?.parentId;
+            const folder = addFolder({
+                name,
+                kind: 'flashcard',
+                parentId,
+                displayOrder: nextFolderOrder(folders, 'flashcard', parentId),
+            });
             setActiveFolder(folder.id);
             showToast(t('folders.created_toast', { name }), 'success');
         }
@@ -165,14 +171,15 @@ export default function FlashcardsPage() {
                 ) : (
                     <DragDropContext onBeforeCapture={startFolderDrop} onDragEnd={handleDragEnd}>
                         <FolderBar
-                            folders={deckFolders}
-                            activeFolder={activeFolder}
-                            countFor={(folderId) => countInFolder(sorted, folderId)}
-                            dropFolderId={dropFolderId}
-                            onOpen={(id) => setActiveFolder((current) => (current === id ? ALL_FOLDERS : id))}
+                            folders={folders}
+                            kind="flashcard"
+                            activeFolderId={activeFolder}
+                            items={sorted}
+                            onSelect={setActiveFolder}
+                            onCreate={(parentId) => setFolderModal({ parentId })}
                             onRename={(folder) => setFolderModal({ folder })}
                             onDelete={handleDeleteFolder}
-                            onCreate={() => setFolderModal({})}
+                            dropFolderId={dropFolderId}
                         />
                         {visibleDecks.length === 0 ? (
                             <div className="empty-state">
@@ -358,7 +365,13 @@ export default function FlashcardsPage() {
 
             {folderModal && (
                 <FolderNameModal
-                    title={folderModal.folder ? t('folders.rename_title') : t('folders.new_folder')}
+                    title={
+                        folderModal.folder
+                            ? t('folders.rename_title')
+                            : folderModal.parentId
+                              ? t('folders.new_subfolder')
+                              : t('folders.new_folder')
+                    }
                     submitLabel={folderModal.folder ? t('folders.rename') : t('folders.create')}
                     initialName={folderModal.folder?.name}
                     onSubmit={submitFolderName}

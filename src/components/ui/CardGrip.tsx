@@ -2,8 +2,14 @@ import React from 'react';
 import { GripVertical } from 'lucide-react';
 
 export interface CardGripProps extends React.HTMLAttributes<HTMLSpanElement> {
-    /** Accessible name, e.g. t('rubricList.drag_to_reorder'). */
-    label: string;
+    /**
+     * Accessible name, e.g. t('rubricList.drag_to_reorder').
+     *
+     * Omit it where the grip is not a control — editing the same question in a modal has no
+     * `dragHandleProps`, so the span has no role, and a name on a role-less element is invalid
+     * (#697). Render the text as a `sr-only` child in that case instead.
+     */
+    label?: string;
     /** Glyph size in px: 15 on cards, 13 where rows are tighter. */
     size?: number;
 }
@@ -22,11 +28,14 @@ const CardGrip = React.forwardRef<HTMLSpanElement, CardGripProps>(function CardG
     { label, size = 15, style, children, ...rest },
     ref
 ) {
+    // Only set the attribute when there is a name: `aria-label={undefined}` is dropped by React,
+    // but a `label=""` caller would leave an empty name on the element.
+    const named = label ? { 'aria-label': label } : {};
     return (
         <span
             ref={ref}
             {...rest}
-            aria-label={label}
+            {...named}
             style={{
                 cursor: 'grab',
                 color: 'var(--text-dim)',
