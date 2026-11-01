@@ -2,7 +2,7 @@ import React from 'react';
 import PageTour from '../components/Tour/PageTour';
 import { usePageTourState } from '../hooks/usePageTourState';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Edit2, Trash2, FileText, Radio, GripVertical } from 'lucide-react';
+import { Plus, Edit2, Trash2, FileText, Radio } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
