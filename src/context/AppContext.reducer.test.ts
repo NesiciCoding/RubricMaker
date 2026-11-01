@@ -221,6 +221,39 @@ describe('AppContext reducer — rubrics, students, classes', () => {
         expect(vi.mocked(deleteRubricVersions)).toHaveBeenCalledWith('r1');
     });
 
+    it('moves a deleted folder\u2019s subfolders up to where it sat, and unfiles its rubrics', () => {
+        const rubricInFolder = { ...rubric, folderId: 'child' };
+        let state = makeState({
+            rubrics: [rubricInFolder],
+            folders: [
+                { id: 'parent', name: 'Year 1', kind: 'rubric', createdAt: '2026-01-01T00:00:00.000Z' },
+                {
+                    id: 'child',
+                    name: 'Essays',
+                    kind: 'rubric',
+                    parentId: 'parent',
+                    createdAt: '2026-01-01T00:00:00.000Z',
+                },
+                {
+                    id: 'grandchild',
+                    name: 'Drafts',
+                    kind: 'rubric',
+                    parentId: 'child',
+                    createdAt: '2026-01-01T00:00:00.000Z',
+                },
+                { id: 'elsewhere', name: 'Unrelated', kind: 'rubric', createdAt: '2026-01-01T00:00:00.000Z' },
+            ],
+        });
+
+        state = run(state, { type: 'DELETE_FOLDER', id: 'child', kind: 'rubric' });
+
+        expect(state.folders.map((f) => f.id)).toEqual(['parent', 'grandchild', 'elsewhere']);
+        // The grandchild moves up to its grandparent rather than pointing at a folder that is gone.
+        expect(state.folders.find((f) => f.id === 'grandchild')?.parentId).toBe('parent');
+        expect(state.folders.find((f) => f.id === 'parent')?.parentId).toBeUndefined();
+        expect(state.rubrics[0].folderId).toBeUndefined();
+    });
+
     it('deletes a rubric together with its grades and peer reviews, leaving other rubrics alone', () => {
         const grade = (id: string, rubricId: string) =>
             ({ id, rubricId, studentId: 's1', entries: [], overallComment: '', isPeerReview: false }) as never;
@@ -1476,5 +1509,62 @@ describe('AppContext reducer — connected mode and edge branches', () => {
         const NullCtx = React.createContext<string | null>(null);
         const Probe = () => useContextOrThrow(NullCtx, 'Probe');
         expect(() => render(React.createElement(Probe))).toThrow('Probe must be used within AppProvider');
+    });
+});
+
+describe('AppContext reducer — deleting a folder unfiles the list that owns it', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    const essayRow = {
+        rubricId: 'r1',
+        studentId: 's1',
+        teacherKey: 'tk1',
+        title: 'Filed essay',
+        readOnlyAfterSubmit: false,
+        createdAt: now,
+        folderId: 'f-essay',
+    };
+
+    it('keeps essays but clears their folder when an essay folder is deleted', () => {
+        const folder = { id: 'f-essay', name: 'Term 1', kind: 'essay' as const, createdAt: now };
+        const next = run(makeState({ folders: [folder], essayAssignments: [essayRow] }), {
+            type: 'DELETE_FOLDER',
+            id: 'f-essay',
+            kind: 'essay',
+        });
+
+        expect(next.folders).toEqual([]);
+        expect(next.essayAssignments).toHaveLength(1);
+        expect(next.essayAssignments[0].folderId).toBeUndefined();
+        // Rubrics are a different kind's list and must come through untouched.
+        expect(next.rubrics).toEqual(makeState().rubrics);
+    });
+
+    it('leaves decks filed under a different folder alone', () => {
+        const folder = { id: 'f-keep', name: 'Keep', kind: 'flashcard' as const, createdAt: now };
+        const other = { id: 'f-other', name: 'Other', kind: 'flashcard' as const, createdAt: now };
+        const decks = [
+            { id: 'd1', name: 'Deck in keep', cards: [], createdAt: now, folderId: 'f-keep' },
+            { id: 'd2', name: 'Deck in other', cards: [], createdAt: now, folderId: 'f-other' },
+            { id: 'd3', name: 'Unfiled deck', cards: [], createdAt: now },
+        ];
+        const next = run(makeState({ folders: [folder, other], flashcardDecks: decks }), {
+            type: 'DELETE_FOLDER',
+            id: 'f-other',
+            kind: 'flashcard',
+        });
+
+        expect(next.folders.map((f) => f.id)).toEqual(['f-keep']);
+        expect(next.flashcardDecks.map((d) => d.folderId)).toEqual(['f-keep', undefined, undefined]);
+        expect(next.flashcardDecks.map((d) => d.name)).toEqual(['Deck in keep', 'Deck in other', 'Unfiled deck']);
+    });
+
+    it('still unfiles rubrics for a rubric folder', () => {
+        const folder = { id: 'f-rubric', name: 'Rubrics', kind: 'rubric' as const, createdAt: now };
+        const state = makeState({ folders: [folder], rubrics: [{ ...makeState().rubrics[0], folderId: 'f-rubric' }] });
+        const next = run(state, { type: 'DELETE_FOLDER', id: 'f-rubric', kind: 'rubric' });
+
+        expect(next.folders).toEqual([]);
+        expect(next.rubrics[0].folderId).toBeUndefined();
     });
 });

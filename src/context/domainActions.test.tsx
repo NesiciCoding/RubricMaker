@@ -45,6 +45,7 @@ vi.mock('../store/storage', () => ({
     isLocalMode: vi.fn(() => true),
     loadStore: vi.fn(() => ({
         rubrics: [],
+        folders: [],
         students: [],
         classes: [],
         studentRubrics: [],
@@ -83,6 +84,7 @@ vi.mock('../store/storage', () => ({
         studentTests: [],
     })),
     saveRubrics: vi.fn(),
+    saveFolders: vi.fn(),
     saveStudents: vi.fn(),
     saveClasses: vi.fn(),
     saveStudentRubrics: vi.fn(),
@@ -119,6 +121,7 @@ vi.mock('../store/storage', () => ({
     exportStore: vi.fn((s) => s),
     importFullBackup: vi.fn(() => true),
     loadPendingQueue: vi.fn(() => []),
+    addToPendingQueue: vi.fn(),
     removePendingWrites: vi.fn(),
     loadCachedStudentRubrics: vi.fn(async () => []),
     sanitizeClassYears: vi.fn((cls) => cls),
@@ -211,6 +214,50 @@ describe('domain action creators', () => {
         // Undo any mockRejectedValue left by a previous test.
         const { storageSync } = await import('../services/database');
         vi.mocked(storageSync.pushOne).mockResolvedValue(undefined);
+    });
+
+    // ─── Folders ────────────────────────────────────────────────────────────
+
+    it('queues an offline folder delete and the rows it unfiles', () => {
+        // The DB is disconnected throughout this file, so the delta-sync effect is not pushing
+        // anything: without a queued write, reconnect hydration restores the folder from the
+        // cloud and re-files its items from the remote copies.
+        const { result } = renderHook(() => useAuthoring(), { wrapper });
+        let folderId = '';
+        act(() => {
+            folderId = result.current.addFolder({ name: 'Drafts', kind: 'rubric', displayOrder: 0 }).id;
+        });
+        let filedId = '';
+        let unfiledId = '';
+        act(() => {
+            filedId = result.current.addRubric({ ...makeRubric(), folderId }).id;
+            unfiledId = result.current.addRubric({ ...makeRubric(), name: 'R2' }).id;
+        });
+        vi.mocked(storage.addToPendingQueue).mockClear();
+
+        act(() => {
+            result.current.deleteFolder(folderId, 'rubric');
+        });
+
+        expect(result.current.folders).toHaveLength(0);
+        expect(result.current.rubrics.find((r) => r.id === filedId)?.folderId).toBeUndefined();
+        expect(storage.addToPendingQueue).toHaveBeenCalledWith({
+            entity: 'folder',
+            action: 'delete',
+            payload: null,
+            entityId: folderId,
+        });
+        expect(storage.addToPendingQueue).toHaveBeenCalledWith({
+            entity: 'rubric',
+            action: 'upsert',
+            payload: expect.objectContaining({ id: filedId }),
+            entityId: filedId,
+        });
+        // Only the rubric that was actually in the folder is queued.
+        expect(storage.addToPendingQueue).toHaveBeenCalledTimes(2);
+        expect(
+            vi.mocked(storage.addToPendingQueue).mock.calls.map((c) => (c[0] as { entityId?: string }).entityId)
+        ).not.toContain(unfiledId);
     });
 
     // ─── Flashcards ─────────────────────────────────────────────────────────

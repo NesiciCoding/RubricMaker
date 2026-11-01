@@ -17,7 +17,7 @@ import type {
     UserTemplate,
     VocabularyItem,
 } from '../../types';
-import { StoreData, loadRubricVersions, upsertRubricVersion } from '../../store/storage';
+import { StoreData, addToPendingQueue, loadRubricVersions, upsertRubricVersion } from '../../store/storage';
 import { nanoid } from '../../utils/nanoid';
 import { getDb } from '../../services/database/lazyDb';
 import { logAuditEvent } from '../../services/database/AuditLogger';
@@ -135,7 +135,48 @@ export function createAuthoringActions(ctx: StoreActionsCtx): AuthoringActions {
     };
     const updateFolder = (f: Folder) =>
         dispatch({ type: 'UPDATE_FOLDER', payload: { ...f, updatedAt: new Date().toISOString() } });
-    const deleteFolder = (id: string, kind: FolderKind) => dispatch({ type: 'DELETE_FOLDER', id, kind });
+    /**
+     * Offline, the reducer only writes localStorage: the delta-sync effect that pushes mutations
+     * short-circuits without a connection, so nothing would tell the cloud that the folder went.
+     * Reconnect hydration then restores the folder from the remote copy and re-files its items
+     * from theirs. Queue the delete and an upsert per unfiled row, which both replays the change
+     * (flushPendingQueue) and protects it from the merge that follows.
+     */
+    const queueOfflineFolderDelete = (id: string, kind: FolderKind) => {
+        const state = getState();
+        const unfile = <T extends { folderId?: string }>(items: T[], entity: string, getId: (item: T) => string) => {
+            for (const item of items) {
+                if (item.folderId !== id) continue;
+                // Mirrors the reducer: the key is dropped rather than set to null, which is what
+                // "not in a folder" means to every reader of these records.
+                addToPendingQueue({
+                    entity,
+                    action: 'upsert',
+                    payload: { ...item, folderId: undefined },
+                    entityId: getId(item),
+                });
+            }
+        };
+        switch (kind) {
+            case 'test':
+                unfile(state.tests, 'test', (t) => t.id);
+                break;
+            case 'essay':
+                unfile(state.essayAssignments, 'essayBatchAssignment', (a) => `${a.teacherKey}:${a.studentId}`);
+                break;
+            case 'flashcard':
+                unfile(state.flashcardDecks, 'flashcardDeck', (d) => d.id);
+                break;
+            case 'rubric':
+                unfile(state.rubrics, 'rubric', (r) => r.id);
+                break;
+        }
+        addToPendingQueue({ entity: 'folder', action: 'delete', payload: null, entityId: id });
+    };
+    const deleteFolder = (id: string, kind: FolderKind) => {
+        if (isOffline()) queueOfflineFolderDelete(id, kind);
+        dispatch({ type: 'DELETE_FOLDER', id, kind });
+    };
     const addGradeScale = (gs: Omit<GradeScale, 'id'>): GradeScale => {
         const scale: GradeScale = { ...gs, id: nanoid() };
         dispatch({ type: 'ADD_GRADE_SCALE', payload: scale });

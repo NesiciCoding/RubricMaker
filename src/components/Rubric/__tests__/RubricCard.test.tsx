@@ -116,6 +116,39 @@ describe('RubricCard', () => {
         expect(i18nMock.useTranslationCalls).toBe(rendersAfterMount + 1);
     });
 
+    it('says which folder the rubric is filed in, and nothing when it is unfiled', () => {
+        const card = (folderLabel?: string) => (
+            <DragDropContext onDragEnd={noop}>
+                <Droppable droppableId="rubric-list">
+                    {(provided) => (
+                        <div ref={provided.innerRef} {...provided.droppableProps}>
+                            <RubricCard
+                                rubric={r1}
+                                index={0}
+                                reorderable={false}
+                                gradedCount={0}
+                                dbConnected={false}
+                                isCopied={false}
+                                isPreviewCopied={false}
+                                classStudents={noStudents}
+                                hasActiveClass={false}
+                                actions={noopActions}
+                                folderLabel={folderLabel}
+                            />
+                            {provided.placeholder}
+                        </div>
+                    )}
+                </Droppable>
+            </DragDropContext>
+        );
+
+        const { rerender } = render(card());
+        expect(screen.queryByText('Year 1 / Essays')).not.toBeInTheDocument();
+
+        rerender(card('Year 1 / Essays'));
+        expect(screen.getByText('Year 1 / Essays')).toBeInTheDocument();
+    });
+
     it('offers a per-track copy only for a rubric that is not tiered', () => {
         const card = (rubric: Rubric) => (
             <DragDropContext onDragEnd={noop}>
