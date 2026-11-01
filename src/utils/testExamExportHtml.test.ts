@@ -3,6 +3,9 @@ import '../i18n';
 import type { Student, Test } from '../types';
 import { buildAnswerSheetHtml, buildExamAttachmentHtml, buildExamBookletHtml } from './testExamExportHtml';
 import {
+    ANSWER_BLOCK_PADDING_MM,
+    ANSWER_NUMBER_LINE_MM,
+    answerSheetPageMargins,
     CHOICE_CELL_WIDTH_MM,
     CHOICE_CELL_GAP_MM,
     DEFAULT_EXAM_EXPORT_OPTIONS,
@@ -46,6 +49,14 @@ describe('buildAnswerSheetHtml choice bubbles', () => {
         // Not the old hardcoded px sizing this used to diverge from the scanner geometry with.
         expect(html).not.toContain('width:20px');
         expect(html).not.toContain('gap:14px');
+    });
+
+    it('prints the bubble row exactly where choiceCellRects() crops it, below the question number', async () => {
+        const html = await buildAnswerSheetHtml(makeTest(), DEFAULT_EXAM_EXPORT_OPTIONS);
+        expect(html).toContain(`padding:${ANSWER_BLOCK_PADDING_MM}mm 0`);
+        expect(html).toContain(`height:${ANSWER_NUMBER_LINE_MM}mm;box-sizing:border-box`);
+        // The bubble row itself carries no extra top margin; ANSWER_SPACE_TOP_MM accounts for it.
+        expect(html).toContain(`gap:${CHOICE_CELL_GAP_MM}mm;flex-wrap:wrap`);
     });
 });
 
@@ -176,10 +187,12 @@ describe('answer sheet scan markers', () => {
         expect(html).toContain(`height:${margins.bottom}mm`);
     });
 
-    it('keeps the default print margin when scan markers are off', async () => {
+    it('reserves the same band when scan markers are off, so markerless sheets share the layout', async () => {
         const html = await buildAnswerSheetHtml(makeTest(), DEFAULT_EXAM_EXPORT_OPTIONS, students);
-        expect(html).toContain(`height:${PRINT_MARGIN_MM}mm`);
-        expect(html).not.toContain(`height:${scanMarkerMarginsMm().top}mm`);
+        const band = answerSheetPageMargins();
+        expect(html).toContain(`height:${band.top}mm`);
+        expect(html).toContain(`height:${band.bottom}mm`);
+        expect(html).not.toContain('position:absolute');
     });
 });
 
@@ -228,5 +241,23 @@ describe('teacher header, instructions and footer', () => {
         const html = await buildAnswerSheetHtml(withText(), DEFAULT_EXAM_EXPORT_OPTIONS);
         expect(html).toContain('HDR');
         expect(html).toContain('FTR');
+    });
+});
+
+describe('answer sheet pagination', () => {
+    it('renders explicit printed pages with fixed-height blocks', async () => {
+        const test = makeTest();
+        test.questions = Array.from({ length: 30 }, (_, i) => ({
+            ...test.questions[0],
+            id: `q${i}`,
+        }));
+        const html = await buildAnswerSheetHtml(test, DEFAULT_EXAM_EXPORT_OPTIONS);
+        expect(html.match(/class="print-page"/g)?.length ?? 0).toBeGreaterThan(1);
+        expect(html).toContain('height:20mm;box-sizing:border-box;padding:2mm 0');
+        expect(html).toContain('page-break-after:always');
+    });
+
+    it('keeps the answer-sheet band equal to the scan-marker band', () => {
+        expect(answerSheetPageMargins()).toEqual(scanMarkerMarginsMm());
     });
 });

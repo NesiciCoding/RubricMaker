@@ -29,6 +29,7 @@ import EssayEditor from '../Editor/EssayEditor';
 import ClozeGapEditor from './ClozeGapEditor';
 import HotTextEditor from './HotTextEditor';
 import StandardsPickerModal from '../Standards/StandardsPickerModal';
+import Modal from '../ui/Modal';
 import CefrPickerModal from '../CEFR/CefrPickerModal';
 import HelpPopover from './HelpPopover';
 import AudioUrlStatus from './AudioUrlStatus';
@@ -67,6 +68,7 @@ import type {
     LinkedFrameworkDescriptor,
     CefrLevel,
 } from '../../types';
+import CardGrip from '../ui/CardGrip';
 
 interface Props {
     question: TestQuestion;
@@ -507,22 +509,27 @@ export default function QuestionEditor({
         <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {/* Drag handle */}
-                    {/* The handle carries the label as text rather than aria-label: outside a
-                        Droppable it has no role, and a name on a role-less div is invalid (#697). */}
-                    <div
+                    {/* Drag handle. Outside a Droppable (the question-bank modal) it has no role,
+                        and a name on a role-less element is invalid (#697) — so the name is only
+                        an aria-label when dnd supplied the role, and is text otherwise. */}
+                    <CardGrip
                         {...(dragHandleProps ?? {})}
+                        label={dragHandleProps ? t('tests.drag_question') : undefined}
+                        size={16}
+                        // The glyph is 16px and the padding only grows the box vertically, so pin
+                        // the 25px touch target from the other side too.
                         style={{
-                            cursor: 'grab',
-                            color: 'var(--text-muted)',
-                            display: 'flex',
-                            alignItems: 'center',
                             padding: '2px 0',
+                            margin: 0,
+                            color: 'var(--text-muted)',
+                            minWidth: 25,
+                            minHeight: 25,
+                            justifyContent: 'center',
                         }}
                     >
                         <GripVertical size={16} aria-hidden="true" />
-                        <span className="sr-only">{t('tests.drag_question')}</span>
-                    </div>
+                        {!dragHandleProps && <span className="sr-only">{t('tests.drag_question')}</span>}
+                    </CardGrip>
                     <span className="badge badge-blue">{t('tests.question_number', { number: index + 1 })}</span>
                 </div>
                 <div style={{ display: 'flex', gap: 4 }}>
@@ -1792,30 +1799,28 @@ export default function QuestionEditor({
                     onClose={() => setPickingStandard(false)}
                 />
             ) : pickingStandard && !settings.standardsApiKey ? (
-                <div className="modal-overlay" onClick={() => setPickingStandard(false)}>
-                    <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 460 }}>
-                        <div className="modal-header">
-                            <h3>
-                                <AlertCircle size={16} /> {t('rubricBuilder.standards_modal_title')}
-                            </h3>
-                            <button
-                                className="btn btn-ghost btn-icon"
-                                aria-label={t('common.close')}
-                                onClick={() => setPickingStandard(false)}
-                            >
-                                ✕
-                            </button>
-                        </div>
-                        <div className="modal-body">
-                            <p>{t('tests.standards_api_key_required')}</p>
-                        </div>
-                        <div className="modal-footer">
-                            <button className="btn btn-secondary" onClick={() => setPickingStandard(false)}>
-                                {t('rubricBuilder.action_close')}
-                            </button>
-                        </div>
+                <Modal titleId="question-standards-title" onClose={() => setPickingStandard(false)} maxWidth={460}>
+                    <div className="modal-header">
+                        <h3 id="question-standards-title">
+                            <AlertCircle size={16} /> {t('rubricBuilder.standards_modal_title')}
+                        </h3>
+                        <button
+                            className="btn btn-ghost btn-icon"
+                            aria-label={t('common.close')}
+                            onClick={() => setPickingStandard(false)}
+                        >
+                            ✕
+                        </button>
                     </div>
-                </div>
+                    <div className="modal-body">
+                        <p>{t('tests.standards_api_key_required')}</p>
+                    </div>
+                    <div className="modal-footer">
+                        <button className="btn btn-secondary" onClick={() => setPickingStandard(false)}>
+                            {t('rubricBuilder.action_close')}
+                        </button>
+                    </div>
+                </Modal>
             ) : null}
 
             {pickingCefr && (

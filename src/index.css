@@ -936,6 +936,10 @@ select.input-error {
     border-radius: 4px;
     display: flex;
     align-items: center;
+    /* TipTap makes this wrapper the draggable element, so its 4px padding is part of the
+       touched area — without this, a touch starting there is handled as a pan before the
+       native drag begins. */
+    touch-action: none;
 }
 
 .drag-handle:hover {
@@ -1305,6 +1309,33 @@ select.input-error {
     border-color: var(--accent);
     background: var(--accent-soft);
     color: var(--accent-text);
+}
+
+/* ─── Pill popovers (cloze gap, error fragment, hot text) ──────────────────────
+   Opened from a TipTap node view by Editor/pillPopover.ts and appended to <body>, so they are the
+   same floating panel whichever editor owns them and `position: fixed` resolves against the
+   viewport rather than an editor's transformed ancestor (#1017, #1022). The editor-specific
+   `.cloze-gap-popover` / `.error-fragment-popover` / `.hot-text-popover` classes only style the
+   contents. */
+.pill-popover {
+    position: fixed;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    /* min-width beats max-width, so both are capped: openPillPopover keeps an 8px inset each side. */
+    min-width: min(220px, calc(100vw - 16px));
+    max-width: calc(100vw - 16px);
+    padding: 10px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+
+/* The error-fragment popover holds two inputs in a row and needs more room. */
+.pill-popover--wide {
+    min-width: min(240px, calc(100vw - 16px));
 }
 
 /* ─── Empty state ────────────────────────────────────────────────────────────── */

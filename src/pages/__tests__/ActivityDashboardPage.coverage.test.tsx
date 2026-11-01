@@ -300,12 +300,13 @@ describe('ActivityDashboardPage coverage', () => {
         expect(screen.getByText('tutorial.ad_tour_button')).toBeInTheDocument();
     });
 
-    it('closes the assign modal via overlay, header close, and cancel', () => {
+    it('closes the assign modal via Escape, header close, and cancel', () => {
         renderPage();
         const assignBtn = screen.getByTitle('gradingTasks.assign_title');
         fireEvent.click(assignBtn);
         expect(screen.getByText('gradingTasks.modal_title')).toBeInTheDocument();
-        fireEvent.click(document.querySelector('.modal-overlay') as HTMLElement);
+        // The dialog is the shared Radix-backed Modal, so it closes on Escape.
+        fireEvent.keyDown(document.body, { key: 'Escape' });
         expect(screen.queryByText('gradingTasks.modal_title')).not.toBeInTheDocument();
 
         fireEvent.click(assignBtn);

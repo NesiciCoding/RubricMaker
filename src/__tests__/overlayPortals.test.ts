@@ -23,11 +23,6 @@ const NOT_OVERLAYS = new Set([
     'pages/StudentEssayPage.tsx',
     // `position: fixed` in a stylesheet for the generated PDF document, never rendered in the app.
     'utils/pdfExport.ts',
-    // TipTap pill popovers: inserted by editor extensions that own their own DOM, so they are not
-    // React portals yet. Tracked in #1022 — remove these entries as each one migrates.
-    'components/Tests/ClozeGapEditor.tsx',
-    'components/Tests/ErrorPassageEditor.tsx',
-    'components/Tests/HotTextEditor.tsx',
 ]);
 
 function sourceFiles(dir: string): string[] {
@@ -40,13 +35,19 @@ function sourceFiles(dir: string): string[] {
     });
 }
 
+/** Comments may name the rule — a `position: fixed` mentioned in prose is not a declaration. */
+function stripComments(source: string): string {
+    return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+}
+
 function offenders(): string[] {
     return sourceFiles(srcRoot)
         .map((path) => ({ path, source: readFileSync(path, 'utf8'), rel: relative(srcRoot, path) }))
         .filter(({ source, rel }) => {
             if (NOT_OVERLAYS.has(rel)) return false;
-            const fixedCss = /position:\s*'fixed'/.test(source) || /position:\s*fixed/.test(source);
-            return fixedCss && !/\bcreatePortal\b/.test(source);
+            const code = stripComments(source);
+            const fixedCss = /position:\s*'fixed'/.test(code) || /position:\s*fixed/.test(code);
+            return fixedCss && !/\bcreatePortal\b/.test(code);
         })
         .map(({ rel }) => rel);
 }
@@ -54,6 +55,25 @@ function offenders(): string[] {
 describe('fixed-position overlays', () => {
     it('are portalled to <body> so a transformed ancestor cannot reposition them', () => {
         expect(offenders()).toEqual([]);
+    });
+
+    it('gives the body-level pill popovers one stylesheet-owned panel', () => {
+        // The cloze-gap, error-fragment and hot-text popovers are built imperatively, so their
+        // shell cannot be a React component — it is `.pill-popover` in index.css, and the editors
+        // only style the contents. If an editor declares the shell again the panel has two owners
+        // and drifts (#1022).
+        const css = readFileSync(resolve(srcRoot, 'index.css'), 'utf8');
+        expect(css).toMatch(/\.pill-popover \{[^}]*position: fixed/);
+        // Narrow (or zoomed) viewports: neither variant may outgrow the space between the 8px insets.
+        expect(css).toMatch(/\.pill-popover \{[^}]*max-width: calc\(100vw - 16px\)/);
+        for (const min of css.match(/\.pill-popover(?:--wide)? \{[^}]*/g) ?? []) {
+            expect(min).toMatch(/min-width: min\(\d+px, calc\(100vw - 16px\)\)/);
+        }
+        for (const editor of ['ClozeGapEditor.tsx', 'ErrorPassageEditor.tsx', 'HotTextEditor.tsx']) {
+            const source = readFileSync(resolve(srcRoot, 'components/Tests', editor), 'utf8');
+            expect(source, editor).not.toMatch(/position:\s*fixed/);
+            expect(source, editor).not.toMatch(/\.(cloze-gap|error-fragment|hot-text)-popover \{/);
+        }
     });
 
     // Portalling moved these out of `#root`, which is the element the SlipSheet print rule hides.
