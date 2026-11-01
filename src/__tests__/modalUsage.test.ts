@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { join, relative, resolve } from 'node:path';
+import { join, relative, resolve, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
@@ -51,21 +51,52 @@ function titleIds(source: string): string[] {
     return ids;
 }
 
+/**
+ * A raw overlay: the hand-rolled markup `ui/Modal` and `ui/ConfirmDialog` replaced. Matches the
+ * attribute whether it is a plain string (`role="dialog"`) or an expression holding one
+ * (`role={'dialog'}`, `className={open ? 'modal-overlay' : ''}`, a template literal).
+ */
+const ATTRIBUTE_VALUE = String.raw`(?:"[^"]*"|\{[^}]*\})`;
+const RAW_OVERLAY = new RegExp(String.raw`className=${ATTRIBUTE_VALUE}`, 'g');
+const RAW_ROLE = new RegExp(String.raw`\brole=(?:"dialog"|\{[^}]*['"\x60]dialog['"\x60][^}]*\})`);
+
+function hasRawDialog(source: string): boolean {
+    const overlay = (source.match(RAW_OVERLAY) ?? []).some((attr) =>
+        /(^|[\s'"\x60{])modal-overlay($|[\s'"\x60}])/.test(attr)
+    );
+    return overlay || RAW_ROLE.test(source) || /\baria-modal=/.test(source);
+}
+
+/** `/`-separated, so the allowlist matches on Windows too, where `relative` joins with `\`. */
+function relPath(path: string): string {
+    return relative(srcRoot, path).split(sep).join('/');
+}
+
 function offenders(): string[] {
     return sourceFiles(srcRoot)
-        .map((path) => ({ source: readFileSync(path, 'utf8'), rel: relative(srcRoot, path) }))
-        .filter(({ source, rel }) => {
-            if (PRIMITIVES.has(rel)) return false;
-            const rawOverlay = /className="modal-overlay"/.test(source);
-            const rawDialogRole = /role="dialog"|aria-modal=/.test(source);
-            return rawOverlay || rawDialogRole;
-        })
+        .map((path) => ({ source: readFileSync(path, 'utf8'), rel: relPath(path) }))
+        .filter(({ source, rel }) => !PRIMITIVES.has(rel) && hasRawDialog(source))
         .map(({ rel }) => rel);
 }
 
 describe('modal usage', () => {
     it('does not hand-roll a dialog outside the two Radix primitives', () => {
         expect(offenders()).toEqual([]);
+    });
+
+    it.each([
+        ['<div className="modal-overlay">', true],
+        ['<div className="modal-overlay compact">', true],
+        ["<div className={open ? 'modal-overlay' : ''}>", true],
+        ['<div className={`modal-overlay ${extra}`}>', true],
+        ['<div role="dialog">', true],
+        ["<div role={'dialog'}>", true],
+        ['<div aria-modal="true">', true],
+        ['<div className="modal-overlay-hint">', false],
+        ["<div role={'alertdialog-ish'} className={'card'}>", false],
+        ['<Modal titleId="x" onClose={close}>', false],
+    ])('reads %s as a raw dialog: %s', (markup, expected) => {
+        expect(hasRawDialog(markup)).toBe(expected);
     });
 
     it.each([
@@ -88,7 +119,7 @@ describe('modal usage', () => {
         // A `<Modal titleId="x">` whose content has no `id="x"` leaves the dialog unnamed.
         const nameless: string[] = [];
         for (const { rel, source } of sourceFiles(srcRoot).map((path) => ({
-            rel: relative(srcRoot, path),
+            rel: relPath(path),
             source: readFileSync(path, 'utf8'),
         }))) {
             for (const id of titleIds(source)) {
