@@ -1584,6 +1584,7 @@
             "batch_add_files": "Foto's of pdf's toevoegen",
             "batch_camera_source": "Camerafoto",
             "batch_reading_files": "Pagina's voorbereiden…",
+            "batch_files_skipped": "Overgeslagen bestanden die niet gelezen konden worden: {{names}}",
             "batch_select_all": "Alle pagina's selecteren",
             "batch_selected": "{{count}} geselecteerd",
             "batch_assign_label": "Leerling voor geselecteerde pagina's",

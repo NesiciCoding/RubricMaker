@@ -192,4 +192,44 @@ describe('ExamScanBatchModal', () => {
             expect(screen.getByText('tests.scan.batch_detect_button').closest('button')).not.toBeDisabled()
         );
     });
+    it('names the files it could not read while keeping the pages it could', async () => {
+        decodeAnswerSheetQr.mockReturnValue(null);
+        importScanFiles.mockResolvedValueOnce({
+            images: [{ blob: new Blob(['a'], { type: 'image/png' }), mimeType: 'image/png', sourceName: 'stack.pdf' }],
+            skipped: [{ name: 'broken.pdf', reason: 'pdf-render-failed' }],
+        });
+        renderModal();
+
+        pickTwoPages();
+
+        await screen.findByLabelText('tests.scan.batch_page_student:1');
+        expect(await screen.findByText('tests.scan.batch_files_skipped')).toBeInTheDocument();
+    });
+
+    it('mounts the camera preview before the stream starts, so the stream has a video to attach to', async () => {
+        let mountedWhenStreamReady: boolean | undefined;
+        start.mockImplementationOnce(async () => {
+            // getUserMedia resolves on a later task; that is when the hook attaches the stream.
+            await new Promise((resolve) => setTimeout(resolve, 0));
+            mountedWhenStreamReady = document.querySelector('video') !== null;
+            return true;
+        });
+        renderModal();
+
+        fireEvent.click(screen.getByText('scan.use_camera'));
+
+        await waitFor(() => expect(start).toHaveBeenCalled());
+        await waitFor(() => expect(mountedWhenStreamReady).toBe(true));
+        expect(screen.getByText('scan.take_photo')).toBeInTheDocument();
+    });
+
+    it('closes the camera preview again when the camera cannot start', async () => {
+        start.mockResolvedValueOnce(false);
+        renderModal();
+
+        fireEvent.click(screen.getByText('scan.use_camera'));
+
+        expect(await screen.findByText('scan.camera_error')).toBeInTheDocument();
+        expect(document.querySelector('video')).toBeNull();
+    });
 });

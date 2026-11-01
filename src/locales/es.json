@@ -1584,6 +1584,7 @@
             "batch_add_files": "Añadir fotos o PDF",
             "batch_camera_source": "Foto de la cámara",
             "batch_reading_files": "Preparando páginas…",
+            "batch_files_skipped": "Archivos omitidos que no se pudieron leer: {{names}}",
             "batch_select_all": "Seleccionar todas las páginas",
             "batch_selected": "{{count}} seleccionadas",
             "batch_assign_label": "Estudiante para las páginas seleccionadas",

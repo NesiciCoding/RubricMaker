@@ -1584,6 +1584,7 @@
             "batch_add_files": "Fotos oder PDFs hinzufügen",
             "batch_camera_source": "Kamerafoto",
             "batch_reading_files": "Seiten werden vorbereitet…",
+            "batch_files_skipped": "Übersprungene Dateien, die nicht gelesen werden konnten: {{names}}",
             "batch_select_all": "Alle Seiten auswählen",
             "batch_selected": "{{count}} ausgewählt",
             "batch_assign_label": "Schüler für ausgewählte Seiten",

@@ -266,12 +266,17 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
             setErrorMsg('');
             setBusy({ label: t('tests.scan.batch_reading_files'), done: 0, total: files.length });
             try {
-                const { images } = await importScanFiles(files);
+                const { images, skipped } = await importScanFiles(files);
                 if (images.length === 0) {
                     setErrorMsg(t('scan.no_image'));
                     return;
                 }
                 await addImages(images);
+                if (skipped.length > 0) {
+                    setErrorMsg(
+                        t('tests.scan.batch_files_skipped', { names: skipped.map((file) => file.name).join(', ') })
+                    );
+                }
             } catch (err) {
                 setErrorMsg(err instanceof Error ? err.message : String(err));
             } finally {
@@ -282,9 +287,13 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
     );
 
     const startCamera = useCallback(async () => {
+        // The <video> only renders while cameraOn, and start() attaches the stream to it on resolve.
+        setCameraOn(true);
         const ok = await start({ facingMode: 'environment' });
-        setCameraOn(ok);
-        if (!ok) setErrorMsg(t('scan.camera_error'));
+        if (!ok) {
+            setCameraOn(false);
+            setErrorMsg(t('scan.camera_error'));
+        }
     }, [start, t]);
 
     const takePhoto = useCallback(async () => {
@@ -400,18 +409,16 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
     }, []);
 
     const saveCorners = useCallback(() => {
-        setCornerEdit((prev) => {
-            if (!prev || prev.clicks.length !== 4) return prev;
-            setPages((current) =>
-                current.map((page) =>
-                    page.id === prev.pageId || prev.applyToAll
-                        ? { ...page, corners: prev.clicks, error: undefined }
-                        : page
-                )
-            );
-            return null;
-        });
-    }, []);
+        if (!cornerEdit || cornerEdit.clicks.length !== 4) return;
+        setPages((current) =>
+            current.map((page) =>
+                page.id === cornerEdit.pageId || cornerEdit.applyToAll
+                    ? { ...page, corners: cornerEdit.clicks, error: undefined }
+                    : page
+            )
+        );
+        setCornerEdit(null);
+    }, [cornerEdit]);
 
     const detectAll = useCallback(async () => {
         if (groups.length === 0) {

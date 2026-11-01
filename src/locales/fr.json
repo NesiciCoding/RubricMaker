@@ -1584,6 +1584,7 @@
             "batch_add_files": "Ajouter des photos ou des PDF",
             "batch_camera_source": "Photo de l'appareil",
             "batch_reading_files": "Préparation des pages…",
+            "batch_files_skipped": "Fichiers ignorés car illisibles : {{names}}",
             "batch_select_all": "Sélectionner toutes les pages",
             "batch_selected": "{{count}} sélectionnée(s)",
             "batch_assign_label": "Élève pour les pages sélectionnées",
