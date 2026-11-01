@@ -655,12 +655,14 @@ export interface DocumentAnalysisResult {
 /** Which list a folder belongs to; the rubric and test trees stay separate. */
 export type FolderKind = 'rubric' | 'test';
 
-/** A flat, named group of rubrics or tests (issue #850). Items point at it through `folderId`. */
+/** A named group of rubrics or tests (issue #850), which may hold folders of its own. */
 export interface Folder {
     id: string;
     name: string;
     kind: FolderKind;
-    /** Manual sort position in the folder row; undefined sorts last by createdAt */
+    /** Folder this one sits in; undefined means it sits at the top level. */
+    parentId?: string;
+    /** Manual sort position among its siblings; undefined sorts last by createdAt */
     displayOrder?: number;
     createdAt: string;
     updatedAt?: string;
