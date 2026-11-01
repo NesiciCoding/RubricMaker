@@ -1721,7 +1721,7 @@
             "add_column": "Frage hinzufügen",
             "unlink": "Verknüpfung {{label}} entfernen",
             "incomplete": "unvollständig",
-            "incomplete_hint": "Noch nicht jede Frage hat Punkte; dieser Schüler fließt erst in die Analyse ein, wenn die Zeile vollständig ist."
+            "incomplete_hint": "Noch nicht jede Frage hat Punkte. Die eingetragenen Punkte zählen bereits für Mittelwert und P-Wert pro Frage, aber dieser Schüler fließt erst in die summenbasierten Statistiken (α, Rit/Rir, Verteilung, Bestehensquote) ein, wenn die Zeile vollständig ist."
         },
         "norm": {
             "section_title": "Notenschlüssel",
@@ -4478,7 +4478,7 @@
         "gr_norms_title": "Notenschlüssel pro Test",
         "gr_norms_body": "Jeder Test hat seinen eigenen Notenschlüssel, einstellbar im Punkteblatt oder im Test-Editor: Prozent → Notenskala (Standard), N-Term (die niederländische CvTE-Formel 9·Punkte/Max + N mit ihren Grenzregeln), Bestehensgrenze (Punkte für die Bestehensnote; die Note verläuft linear von 1 über die Bestehensnote bis 10) oder eine Normtabelle Punkte → Note. Eine Normtabelle kann eine Spalte pro Jahrgang und Schulform haben; jeder Schüler wird mit der passenden Spalte bewertet. Lässt sich das nicht bestimmen, wird die Note jeder Spalte mit ihrer Bezeichnung angezeigt. Sie legen auch die Bestehensnote (Standard 5,5) und die Nachkommastellen fest. Der Notenschlüssel gilt auf der Ergebnisseite und in den CSV- und Magister/SOMtoday-Exporten.",
         "an_test_quality_title": "Analyse der Testqualität",
-        "an_test_quality_body": "Der Reiter Analyse im Punkteblatt funktioniert für jeden Test — online geschrieben, von Papier importiert, gescannt oder eingetippt. Er zeigt Schülerzahl, Mittelwert, Standardabweichung, Median, Spannweite, Bestehensquote, Durchschnittsnote und eine Notenverteilung sowie die Reliabilität (Cronbachs α, bei Richtig/Falsch-Fragen gleich KR-20) und den Standardmessfehler. Pro Frage: P-Wert (Schwierigkeit), Rit und Rir (wie gut die Frage zum Rest des Tests passt), Trennschärfe (obere/untere 27 %) und α ohne die Frage, mit Hinweisen auf sehr schwere, sehr leichte, schwach oder negativ trennende oder reliabilitätssenkende Fragen. Nur Schüler mit Punkten bei jeder Frage zählen für Korrelationen und α; unter 5 Schülern werden diese nicht angezeigt."
+        "an_test_quality_body": "Der Reiter Analyse im Punkteblatt funktioniert für jeden Test — online geschrieben, von Papier importiert, gescannt oder eingetippt. Er zeigt Schülerzahl, Mittelwert, Standardabweichung, Median, Spannweite, Bestehensquote, Durchschnittsnote und eine Notenverteilung sowie die Reliabilität (Cronbachs α, bei Richtig/Falsch-Fragen gleich KR-20) und den Standardmessfehler. Pro Frage: P-Wert (Schwierigkeit), Rit und Rir (wie gut die Frage zum Rest des Tests passt), Trennschärfe (obere/untere 27 %) und α ohne die Frage, mit Hinweisen auf sehr schwere, sehr leichte, schwach oder negativ trennende oder reliabilitätssenkende Fragen. Nur Schüler mit Punkten bei jeder Frage zählen für Korrelationen und α; unter 5 Schülern werden diese nicht angezeigt. Bestehensquote, Durchschnittsnote und Notenverteilung erscheinen bei numerischen 1–10-Schlüsseln (N-Term, Bestehensgrenze, Normtabelle); bei einer Notenskala wird die Verteilung in Prozent angezeigt."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",

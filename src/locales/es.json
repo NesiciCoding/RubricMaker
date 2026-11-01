@@ -1721,7 +1721,7 @@
             "add_column": "Añadir pregunta",
             "unlink": "Quitar el vínculo {{label}}",
             "incomplete": "incompleto",
-            "incomplete_hint": "Aún no todas las preguntas tienen puntuación; este alumno no cuenta en el análisis hasta que la fila esté completa."
+            "incomplete_hint": "Aún no todas las preguntas tienen puntuación. Los puntos introducidos ya cuentan para la media y el valor P de cada pregunta, pero este alumno queda fuera de las estadísticas basadas en totales (α, Rit/Rir, distribución, tasa de aprobados) hasta que la fila esté completa."
         },
         "norm": {
             "section_title": "Baremo",
@@ -4478,7 +4478,7 @@
         "gr_norms_title": "Baremo por prueba",
         "gr_norms_body": "Cada prueba tiene su propio baremo, configurable en la hoja de puntos o en el editor de pruebas: porcentaje → escala de notas (predeterminado), término N (la fórmula neerlandesa CvTE 9·puntos/máx + N con sus reglas en los extremos), punto de corte (los puntos necesarios para el aprobado; la nota va linealmente de 1 al aprobado y a 10) o una tabla puntos → nota. Una tabla puede tener una columna por curso e itinerario; cada alumno se califica con la columna de su curso e itinerario. Si no se puede determinar, se muestra la nota de cada columna con su etiqueta. También eliges la nota de aprobado (5,5 por defecto) y los decimales. El baremo se usa en la página de resultados y en las exportaciones CSV y Magister/SOMtoday.",
         "an_test_quality_title": "Análisis de calidad de pruebas",
-        "an_test_quality_body": "La pestaña Análisis de la hoja de puntos funciona para cualquier prueba: realizada en línea, importada del papel, escaneada o introducida a mano. Muestra el número de alumnos, la media, la desviación típica, la mediana, el rango, la tasa de aprobados, la nota media y una distribución de notas, además de la fiabilidad (α de Cronbach, igual a KR-20 en preguntas de acierto/error) y el error típico de medida. Por pregunta: valor P (dificultad), Rit y Rir (cuánto concuerda la pregunta con el resto de la prueba), índice de discriminación (27 % superior/inferior) y α sin la pregunta, con avisos para preguntas muy difíciles, muy fáciles, que discriminan poco o negativamente, o que bajan la fiabilidad. Solo cuentan para las correlaciones y α los alumnos con puntuación en todas las preguntas; con menos de 5 alumnos no se muestran."
+        "an_test_quality_body": "La pestaña Análisis de la hoja de puntos funciona para cualquier prueba: realizada en línea, importada del papel, escaneada o introducida a mano. Muestra el número de alumnos, la media, la desviación típica, la mediana, el rango, la tasa de aprobados, la nota media y una distribución de notas, además de la fiabilidad (α de Cronbach, igual a KR-20 en preguntas de acierto/error) y el error típico de medida. Por pregunta: valor P (dificultad), Rit y Rir (cuánto concuerda la pregunta con el resto de la prueba), índice de discriminación (27 % superior/inferior) y α sin la pregunta, con avisos para preguntas muy difíciles, muy fáciles, que discriminan poco o negativamente, o que bajan la fiabilidad. Solo cuentan para las correlaciones y α los alumnos con puntuación en todas las preguntas; con menos de 5 alumnos no se muestran. La tasa de aprobados, la nota media y la distribución de notas aparecen con baremos numéricos de 1 a 10 (término N, punto de corte, tabla); con una escala de notas, la distribución se muestra en porcentajes."
     },
     "studentProfile": {
         "tab_overview": "Resumen",

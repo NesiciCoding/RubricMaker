@@ -1721,7 +1721,7 @@
             "add_column": "Add question",
             "unlink": "Remove link {{label}}",
             "incomplete": "incomplete",
-            "incomplete_hint": "Not every question has a score yet; this student is left out of the analysis until the row is complete."
+            "incomplete_hint": "Not every question has a score yet. The scores entered still count toward the per-question mean and P-value, but this student is left out of totals-based statistics (α, Rit/Rir, distribution, pass rate) until the row is complete."
         },
         "norm": {
             "section_title": "Grading norm",
@@ -4478,7 +4478,7 @@
         "gr_norms_title": "Grading norms per test",
         "gr_norms_body": "Each test has its own grading norm, set on the score sheet or in the Test Builder: percentage → grade scale (the default), N-term (the Dutch CvTE formula 9·score/max + N with its boundary rules), pass mark/caesura (the points needed for the pass grade; grades run linearly from 1 to the pass grade to 10), or a norm table of points → grade. A norm table can have a column per school year and VO track; each student is graded with the column that matches their year and track. When that can't be determined, every column's grade is shown with its label so you can see which grade belongs to which track. You also set the pass grade (default 5.5) and number of decimals. The chosen norm is used on the results page and in the CSV and Magister/SOMtoday exports.",
         "an_test_quality_title": "Test quality analysis",
-        "an_test_quality_body": "The Analysis tab of a test's score sheet works for every test — taken online, imported from paper, scanned or typed in. It shows the number of students, mean, standard deviation, median, range, pass rate, mean grade and a grade distribution, plus reliability (Cronbach's α, equal to KR-20 for right/wrong questions) and the standard error of measurement. Per question it lists the P-value (difficulty), Rit and Rir (how well the question agrees with the rest of the test), the upper/lower-27% discrimination index and α without the question, and flags questions that are very hard, very easy, weakly or negatively discriminating, or that lower reliability. Only students with a score on every question count toward the correlations and α, and they are hidden below 5 students."
+        "an_test_quality_body": "The Analysis tab of a test's score sheet works for every test — taken online, imported from paper, scanned or typed in. It shows the number of students, mean, standard deviation, median, range, pass rate, mean grade and a grade distribution, plus reliability (Cronbach's α, equal to KR-20 for right/wrong questions) and the standard error of measurement. Per question it lists the P-value (difficulty), Rit and Rir (how well the question agrees with the rest of the test), the upper/lower-27% discrimination index and α without the question, and flags questions that are very hard, very easy, weakly or negatively discriminating, or that lower reliability. Only students with a score on every question count toward the correlations and α, and they are hidden below 5 students. Pass rate, mean grade and a grade distribution appear for numeric 1–10 norms (N-term, pass mark, norm table); with a grade scale the distribution is shown in percentages instead."
     },
     "studentProfile": {
         "tab_overview": "Overview",

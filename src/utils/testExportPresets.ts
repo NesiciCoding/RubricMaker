@@ -92,44 +92,46 @@ export function buildTestResultsCsv(
 ): string {
     const hasCefr = !!test.cefrTargetLevel || test.mode === 'placement';
 
-    const rows = latestAttempts(test, studentTests).map((studentTest) => {
-        const student = students.find((s) => s.id === studentTest.studentId);
-        // Scope the breakdowns to just the canonical attempt's own answers — passing the full
-        // studentTests array here would blend earlier attempts' answers into the accuracy
-        // columns while Score % reflects only the latest attempt, an inconsistent row.
-        const questionBreakdowns = calcQuestionBreakdowns(studentTest.studentId, [studentTest], test);
-        const skillBreakdowns = calcSkillBreakdowns(studentTest.studentId, [studentTest], test);
+    const rows = latestAttempts(test, studentTests)
+        .filter((st) => !st.absent)
+        .map((studentTest) => {
+            const student = students.find((s) => s.id === studentTest.studentId);
+            // Scope the breakdowns to just the canonical attempt's own answers — passing the full
+            // studentTests array here would blend earlier attempts' answers into the accuracy
+            // columns while Score % reflects only the latest attempt, an inconsistent row.
+            const questionBreakdowns = calcQuestionBreakdowns(studentTest.studentId, [studentTest], test);
+            const skillBreakdowns = calcSkillBreakdowns(studentTest.studentId, [studentTest], test);
 
-        const score = scoreStudentTest(test, studentTest);
-        const row: Record<string, string | number> = {
-            'Student Name': student?.name ?? '',
-            'Student Number': student?.studentNumber ?? '',
-            'Score %': score.percentage.toFixed(1),
-            Points: score.totalPoints,
-            'Max Points': score.maxPoints,
-        };
-        if (scale || isNumericNorm(testNorm(test)))
-            row['Grade'] = exportGrade(test, studentTest, student, scale, classes);
-        row['Status'] = STATUS_LABELS[studentTest.status];
+            const score = scoreStudentTest(test, studentTest);
+            const row: Record<string, string | number> = {
+                'Student Name': student?.name ?? '',
+                'Student Number': student?.studentNumber ?? '',
+                'Score %': score.percentage.toFixed(1),
+                Points: score.totalPoints,
+                'Max Points': score.maxPoints,
+            };
+            if (scale || isNumericNorm(testNorm(test)))
+                row['Grade'] = exportGrade(test, studentTest, student, scale, classes);
+            row['Status'] = STATUS_LABELS[studentTest.status];
 
-        if (hasCefr) {
-            row['CEFR'] = describeTestCefr(test, studentTest, achieveThreshold) ?? '';
-        }
+            if (hasCefr) {
+                row['CEFR'] = describeTestCefr(test, studentTest, achieveThreshold) ?? '';
+            }
 
-        test.questions.forEach((question, index) => {
-            const breakdown = questionBreakdowns.find((b) => b.questionId === question.id);
-            // calcQuestionBreakdowns always emits one entry per test question, so the empty fallback is
-            // unreachable — kept defensive, but excluded from coverage.
-            /* v8 ignore next 1 */
-            row[`Q${index + 1} Accuracy %`] = breakdown ? breakdown.accuracyPct.toFixed(0) : '';
+            test.questions.forEach((question, index) => {
+                const breakdown = questionBreakdowns.find((b) => b.questionId === question.id);
+                // calcQuestionBreakdowns always emits one entry per test question, so the empty fallback is
+                // unreachable — kept defensive, but excluded from coverage.
+                /* v8 ignore next 1 */
+                row[`Q${index + 1} Accuracy %`] = breakdown ? breakdown.accuracyPct.toFixed(0) : '';
+            });
+
+            skillBreakdowns.forEach((skill) => {
+                row[`${skill.label} %`] = skill.accuracyPct.toFixed(0);
+            });
+
+            return row;
         });
-
-        skillBreakdowns.forEach((skill) => {
-            row[`${skill.label} %`] = skill.accuracyPct.toFixed(0);
-        });
-
-        return row;
-    });
 
     return Papa.unparse(rows, CSV_UNPARSE_OPTIONS);
 }

@@ -104,11 +104,11 @@ function latestAnswers(st: StudentTest): Map<string, TestAnswer> {
 function scoredSubmissions(test: Test, studentTests: StudentTest[]): StudentTest[] {
     const byStudent = new Map<string, StudentTest>();
     for (const st of studentTests) {
-        if (st.testId !== test.id || st.absent || st.answers.length === 0) continue;
+        if (st.testId !== test.id || (!st.absent && st.answers.length === 0)) continue;
         const prev = byStudent.get(st.studentId);
         if (!prev || (st.attemptNumber ?? 1) >= (prev.attemptNumber ?? 1)) byStudent.set(st.studentId, st);
     }
-    return [...byStudent.values()];
+    return [...byStudent.values()].filter((st) => !st.absent);
 }
 
 /**

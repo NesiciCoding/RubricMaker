@@ -385,6 +385,14 @@ describe('grading norms in exports', () => {
         );
         expect(rows).toHaveLength(1);
         expect(rows[0].grade).toBe('5.5');
+        const withAbsent = buildTestResultsCsv(
+            normed,
+            [graded('s1', 1, 1), graded('s2', 0, 0, { absent: true })],
+            students,
+            undefined,
+            null
+        );
+        expect(withAbsent).not.toContain('John Roe');
         const csv = buildTestResultsCsv(normed, [graded('s1', 1, 1)], students, undefined, null);
         expect(csv).toContain('Grade');
         expect(csv).toContain('10.0');

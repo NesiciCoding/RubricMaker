@@ -128,6 +128,12 @@ describe('calcTestQuality', () => {
         expect(report.totals).toEqual([{ studentId: 's0', points: 8 }]);
     });
 
+    it('drops a student whose latest attempt is marked absent', () => {
+        const sts = sheet(test, [[2, 2, 4], []]);
+        sts[1] = { ...sts[1], studentId: 's0', attemptNumber: 2, absent: true };
+        expect(calcTestQuality(test, sts).totals).toEqual([]);
+    });
+
     it('returns nulls for tiny classes', () => {
         const report = calcTestQuality(test, sheet(test, scores.slice(0, 2)));
         expect(report.summary.alpha).toBeNull();

@@ -1721,7 +1721,7 @@
             "add_column": "Vraag toevoegen",
             "unlink": "Koppeling {{label}} verwijderen",
             "incomplete": "onvolledig",
-            "incomplete_hint": "Nog niet elke vraag heeft een score; deze leerling telt pas mee in de analyse als de rij volledig is."
+            "incomplete_hint": "Nog niet elke vraag heeft een score. De ingevulde scores tellen wel mee voor het gemiddelde en de P-waarde per vraag, maar deze leerling telt pas mee in de statistieken op basis van totalen (α, Rit/Rir, verdeling, percentage voldoendes) als de rij volledig is."
         },
         "norm": {
             "section_title": "Normering",
@@ -4478,7 +4478,7 @@
         "gr_norms_title": "Normering per toets",
         "gr_norms_body": "Elke toets heeft een eigen normering, in te stellen op het scoreblad of in de toetsbouwer: percentage → cijferschaal (standaard), N-term (de CvTE-formule 9·score/max + N met de grensregels), cesuur (het aantal punten voor een voldoende; het cijfer loopt lineair van 1 via de voldoende naar 10) of een normtabel punten → cijfer. Een normtabel kan een kolom per leerjaar en VO-niveau hebben; elke leerling krijgt het cijfer uit de kolom van zijn of haar leerjaar en niveau. Als dat niet te bepalen is, worden alle kolommen met hun label getoond, zodat je ziet welk cijfer bij welk niveau hoort. Je stelt ook de voldoendegrens (standaard 5,5) en het aantal decimalen in. De normering wordt gebruikt op de resultatenpagina en in de CSV- en Magister/SOMtoday-export.",
         "an_test_quality_title": "Toetsanalyse",
-        "an_test_quality_body": "Het tabblad Analyse van het scoreblad werkt voor elke toets — online gemaakt, op papier geïmporteerd, gescand of ingetypt. Je ziet het aantal leerlingen, gemiddelde, standaarddeviatie, mediaan, spreiding, percentage voldoendes, gemiddeld cijfer en een cijferverdeling, plus de betrouwbaarheid (Cronbachs α, gelijk aan KR-20 bij goed/fout-vragen) en de standaardmeetfout. Per vraag staan de P-waarde (moeilijkheid), Rit en Rir (hoe goed de vraag aansluit bij de rest van de toets), de discriminatie-index (beste/zwakste 27%) en α zonder de vraag, met signalen voor vragen die erg moeilijk of makkelijk zijn, zwak of negatief onderscheiden, of de betrouwbaarheid verlagen. Alleen leerlingen met een score op elke vraag tellen mee voor de correlaties en α; onder 5 leerlingen worden die niet getoond."
+        "an_test_quality_body": "Het tabblad Analyse van het scoreblad werkt voor elke toets — online gemaakt, op papier geïmporteerd, gescand of ingetypt. Je ziet het aantal leerlingen, gemiddelde, standaarddeviatie, mediaan, spreiding, percentage voldoendes, gemiddeld cijfer en een cijferverdeling, plus de betrouwbaarheid (Cronbachs α, gelijk aan KR-20 bij goed/fout-vragen) en de standaardmeetfout. Per vraag staan de P-waarde (moeilijkheid), Rit en Rir (hoe goed de vraag aansluit bij de rest van de toets), de discriminatie-index (beste/zwakste 27%) en α zonder de vraag, met signalen voor vragen die erg moeilijk of makkelijk zijn, zwak of negatief onderscheiden, of de betrouwbaarheid verlagen. Alleen leerlingen met een score op elke vraag tellen mee voor de correlaties en α; onder 5 leerlingen worden die niet getoond. Percentage voldoendes, gemiddeld cijfer en een cijferverdeling verschijnen bij een normering op 1–10 (N-term, cesuur, normtabel); bij een cijferschaal wordt de verdeling in percentages getoond."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",

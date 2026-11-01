@@ -485,7 +485,7 @@ export default function TestResultsPage() {
 
     const scale = test ? resolveTestScale(test, gradeScales, settings.defaultGradeScaleId) : null;
     const gradeResult =
-        test && (scale || isNumericNorm(testNorm(test)))
+        test && !studentTest?.absent && (scale || isNumericNorm(testNorm(test)))
             ? resolveTestGrade(test, {
                   points: totalPoints,
                   maxPoints,

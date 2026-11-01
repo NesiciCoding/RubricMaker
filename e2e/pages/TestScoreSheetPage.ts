@@ -30,7 +30,10 @@ export class TestScoreSheetPage extends BasePage {
         await cell.evaluate((el, value) => {
             const data = new DataTransfer();
             data.setData('text', value);
-            el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }));
+            // Firefox ignores the clipboardData init option on synthetic events, so attach it explicitly.
+            const event = new ClipboardEvent('paste', { bubbles: true, cancelable: true });
+            Object.defineProperty(event, 'clipboardData', { value: data });
+            el.dispatchEvent(event);
         }, text);
     }
 }
