@@ -14,9 +14,16 @@ export function foldersForKind(folders: Folder[], kind: FolderKind): Folder[] {
     return sortByDisplayOrder(folders.filter((folder) => folder.kind === kind));
 }
 
-/** The folders directly inside `parentId` (top level when it is undefined), siblings in order. */
+/**
+ * The folders directly inside `parentId` (top level when it is undefined), siblings in order.
+ * A folder whose parent is gone — deleted on another device, which did not promote its children —
+ * is listed at the top level, matching `folderDepth`, so it stays reachable in the bar and menus.
+ */
 export function childFolders(folders: Folder[], kind: FolderKind, parentId?: string): Folder[] {
-    return sortByDisplayOrder(folders.filter((folder) => folder.kind === kind && folder.parentId === parentId));
+    const ofKind = folders.filter((folder) => folder.kind === kind);
+    if (parentId !== undefined) return sortByDisplayOrder(ofKind.filter((folder) => folder.parentId === parentId));
+    const ids = new Set(ofKind.map((folder) => folder.id));
+    return sortByDisplayOrder(ofKind.filter((folder) => !folder.parentId || !ids.has(folder.parentId)));
 }
 
 /**

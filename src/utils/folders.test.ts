@@ -66,6 +66,13 @@ describe('childFolders', () => {
     it('returns nothing for a leaf folder', () => {
         expect(childFolders(tree, 'rubric', 'a-child')).toEqual([]);
     });
+
+    it('lists a folder whose parent is gone at the top level, so it stays reachable', () => {
+        // Another device deleted `gone` without promoting its child.
+        const orphaned = [folder({ id: 'root', displayOrder: 0 }), folder({ id: 'orphan', parentId: 'gone' })];
+        expect(childFolders(orphaned, 'rubric').map((f) => f.id)).toEqual(['root', 'orphan']);
+        expect(folderDepth(orphaned, 'orphan')).toBe(1);
+    });
 });
 
 describe('folderPath / folderDepth', () => {

@@ -20,6 +20,8 @@ export interface FolderBarProps {
     onDelete: (folder: Folder) => void;
     /** Re-parent a folder; when omitted the tiles get no “Move to…” action. */
     onMoveFolder?: (folder: Folder, parentId: string | undefined) => void;
+    /** The tile under the dragging pointer, from `useFolderDropTarget`. */
+    dropFolderId?: string | null;
 }
 
 /**
@@ -40,6 +42,7 @@ export default function FolderBar({
     onRename,
     onDelete,
     onMoveFolder,
+    dropFolderId = null,
 }: FolderBarProps) {
     const { t } = useTranslation();
     const barRef = useRef<HTMLDivElement>(null);
@@ -122,6 +125,7 @@ export default function FolderBar({
                         count={countInFolderTree(items, folders, folder.id)}
                         subfolderCount={childFolders(folders, kind, folder.id).length}
                         active={false}
+                        isDropTarget={dropFolderId === folder.id}
                         onOpen={onSelect}
                         onRename={onRename}
                         onDelete={onDelete}

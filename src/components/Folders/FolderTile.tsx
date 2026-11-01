@@ -27,6 +27,7 @@ export default function FolderTile({
     count,
     subfolderCount = 0,
     active,
+    isDropTarget = false,
     onOpen,
     onRename,
     onDelete,
@@ -39,6 +40,8 @@ export default function FolderTile({
                 <div
                     ref={provided.innerRef}
                     {...provided.droppableProps}
+                    // Read by useFolderDropTarget to resolve the tile under the dragging pointer.
+                    data-drop-folder-id={folder.id}
                     className="card"
                     style={{
                         flex: '0 1 220px',
@@ -46,13 +49,16 @@ export default function FolderTile({
                         display: 'flex',
                         flexDirection: 'column',
                         gap: 4,
-                        borderColor: snapshot.isDraggingOver || active ? 'var(--accent)' : 'var(--border)',
-                        background: snapshot.isDraggingOver
-                            ? 'var(--accent-soft)'
-                            : active
-                              ? 'var(--bg-elevated)'
-                              : undefined,
+                        borderColor:
+                            snapshot.isDraggingOver || isDropTarget || active ? 'var(--accent)' : 'var(--border)',
+                        background:
+                            snapshot.isDraggingOver || isDropTarget
+                                ? 'var(--accent-soft)'
+                                : active
+                                  ? 'var(--bg-elevated)'
+                                  : undefined,
                         transition: 'border-color var(--transition)',
+                        minWidth: 0,
                     }}
                 >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>

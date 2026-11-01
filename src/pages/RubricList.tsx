@@ -653,7 +653,7 @@ export default function RubricList() {
                     </div>
                 </div>
 
-                <DragDropContext onDragEnd={handleDragEnd}>
+                <DragDropContext onBeforeCapture={startFolderDrop} onDragEnd={handleDragEnd}>
                     <FolderBar
                         folders={folders}
                         kind="rubric"
@@ -664,6 +664,7 @@ export default function RubricList() {
                         onRename={(f) => setFolderModal({ folder: f })}
                         onDelete={handleDeleteFolder}
                         onMoveFolder={moveFolder}
+                        dropFolderId={dropFolderId}
                     />
                     {filtered.length === 0 ? (
                         <div className="empty-state">

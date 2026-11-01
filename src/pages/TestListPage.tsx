@@ -424,7 +424,7 @@ export default function TestListPage() {
                         />
                     </div>
                 </div>
-                <DragDropContext onDragEnd={handleDragEnd}>
+                <DragDropContext onBeforeCapture={startFolderDrop} onDragEnd={handleDragEnd}>
                     <FolderBar
                         folders={folders}
                         kind="test"
@@ -435,6 +435,7 @@ export default function TestListPage() {
                         onRename={(f) => setFolderModal({ folder: f })}
                         onDelete={handleDeleteFolder}
                         onMoveFolder={moveFolder}
+                        dropFolderId={dropFolderId}
                     />
                     {visibleTests.length === 0 ? (
                         <div className="empty-state">

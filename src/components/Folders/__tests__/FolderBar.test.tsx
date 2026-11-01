@@ -150,4 +150,17 @@ describe('FolderBar', () => {
         expect(screen.queryByRole('navigation', { name: 'folders.path_label' })).not.toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'folders.all' })).toHaveAttribute('aria-pressed', 'true');
     });
+    it('marks each tile for the pointer tracker and highlights the one under the dragging pointer', () => {
+        // useFolderDropTarget resolves the tile with closest('[data-drop-folder-id]'); without the
+        // marker a card grabbed by its corner can never be dropped on a tile.
+        const { rerender } = renderBar();
+        const tileOf = (name: string) => screen.getByText(name).closest('[data-drop-folder-id]') as HTMLElement;
+        expect(tileOf('Year 1').getAttribute('data-drop-folder-id')).toBe('year1');
+        expect(tileOf('Year 2').getAttribute('data-drop-folder-id')).toBe('year2');
+        expect(tileOf('Year 2').style.background).toBe('');
+
+        rerender({ dropFolderId: 'year2' });
+        expect(tileOf('Year 2').style.background).toBe('var(--accent-soft)');
+        expect(tileOf('Year 1').style.background).toBe('');
+    });
 });
