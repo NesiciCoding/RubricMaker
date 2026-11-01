@@ -5,6 +5,7 @@ import { discriminationColor, pValueColor } from '../ItemAnalysisPanel';
 import { alphaBand, type ItemQualityFlag, type TestQualityReport } from '../../../utils/testQualityMetrics';
 import { formatPoints } from '../../../utils/scoreSheet';
 import type { Test } from '../../../types';
+import type { LabelCount } from '../../../utils/testGradingNorm';
 import { asTextColor, ritColor } from './qualityColors';
 
 interface Props {
@@ -16,6 +17,8 @@ interface Props {
     passGrade: number;
     passRate: number | null;
     meanGrade: number | null;
+    /** Students per norm-table label (IO, B, E…), lowest first; empty when no label grades were given. */
+    labelCounts?: LabelCount[];
 }
 
 function fmt(value: number | null, digits = 2): string {
@@ -42,7 +45,16 @@ function Stat({ label, value, help }: { label: string; value: string; help?: str
     );
 }
 
-export default function TestQualityPanel({ test, report, grades, percentages, passGrade, passRate, meanGrade }: Props) {
+export default function TestQualityPanel({
+    test,
+    report,
+    grades,
+    percentages,
+    passGrade,
+    passRate,
+    meanGrade,
+    labelCounts = [],
+}: Props) {
     const { t, i18n } = useTranslation();
     const { summary, items } = report;
     const numericGrades = grades.filter((g): g is number => g !== null);
@@ -153,6 +165,42 @@ export default function TestQualityPanel({ test, report, grades, percentages, pa
                         </Bar>
                     </BarChart>
                 </ResponsiveContainer>
+                {labelCounts.length > 0 && (
+                    <>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '14px 0 4px' }}>
+                            {t('tests.quality.distribution_labels')}
+                        </div>
+                        <ResponsiveContainer width="100%" height={160}>
+                            <BarChart data={labelCounts} margin={{ top: 4, right: 8, bottom: 0, left: -16 }}>
+                                <XAxis dataKey="label" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} />
+                                <YAxis allowDecimals={false} tick={{ fill: 'var(--text-muted)', fontSize: 11 }} />
+                                <Tooltip
+                                    contentStyle={{
+                                        background: 'var(--bg-card)',
+                                        border: '1px solid var(--border)',
+                                        borderRadius: 8,
+                                    }}
+                                    formatter={(value: unknown) => [String(value), t('tests.quality.students')]}
+                                />
+                                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                                    {labelCounts.map((d) => (
+                                        <Cell
+                                            key={d.label}
+                                            fill={
+                                                d.passed === null
+                                                    ? 'var(--accent)'
+                                                    : d.passed
+                                                      ? 'var(--green)'
+                                                      : 'var(--red)'
+                                            }
+                                            fillOpacity={0.8}
+                                        />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </>
+                )}
             </section>
 
             <section className="card" aria-labelledby="quality-items-title">

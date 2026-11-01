@@ -296,6 +296,34 @@ describe('TestScoreSheetPage', () => {
         expect(mockDownloadCsv.mock.calls[0][1]).toBe('Paper_test_scores.csv');
     });
 
+    it('grades lower years with labels and shows the label distribution', async () => {
+        mockState.tests = [
+            {
+                ...baseTest,
+                gradingNorm: {
+                    type: 'table',
+                    tiers: [{ id: 'j2', year: 'jaar-2', passFrom: 'B' }],
+                    rows: [
+                        { minPoints: 0, grades: { j2: 'IO' } },
+                        { minPoints: 4, grades: { j2: 'B' } },
+                        { minPoints: 6, grades: { j2: 'E' } },
+                    ],
+                },
+            },
+        ];
+        mockState.studentTests = [sheetFor('s1', { q1: 1, q2: 1 }), sheetFor('s2', { q1: 2, q2: 3 })];
+        await renderPage();
+        const anna = screen.getAllByRole('row').find((r) => within(r).queryByText('Anna'))!;
+        expect(within(anna).getByText('B')).toBeInTheDocument();
+        const bram = screen.getAllByRole('row').find((r) => within(r).queryByText('Bram'))!;
+        expect(within(bram).getByText('IO')).toBeInTheDocument();
+        fireEvent.click(screen.getByText('tests.scoreSheet.tab_analysis'));
+        expect(screen.getByText('tests.quality.distribution_labels')).toBeInTheDocument();
+        expect(screen.getByText('tests.quality.pass_rate')).toBeInTheDocument();
+        expect(screen.getByText('50%')).toBeInTheDocument();
+        expect(screen.queryByText('tests.quality.mean_grade')).not.toBeInTheDocument();
+    });
+
     it('changes the norm and shows its preview', async () => {
         await renderPage();
         fireEvent.change(screen.getByLabelText('tests.norm.n_label'), { target: { value: '1.5' } });

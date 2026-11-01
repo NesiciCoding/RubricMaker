@@ -119,7 +119,7 @@ export interface ScoreSheetCsvRow {
     percentage: number | null;
     grade: string;
     /** Every norm-table column's grade, for a student whose year/track didn't pick one. */
-    alternatives?: { label: string; grade: number | null }[];
+    alternatives?: { label: string; grade: number | string | null }[];
     absent: boolean;
 }
 

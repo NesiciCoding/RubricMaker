@@ -4,12 +4,18 @@ import {
     buildNormPreview,
     caesuraGrade,
     defaultNorm,
+    labelDistribution,
+    labelPassed,
+    labelRank,
     normTierLabel,
     ntermGrade,
+    parseGradeCell,
     resolveNormTier,
     resolveTestGrade,
     resolveTestScale,
     tableGrade,
+    tierLabels,
+    withLabelPassDefaults,
 } from './testGradingNorm';
 
 const scale = {
@@ -200,5 +206,76 @@ describe('buildNormPreview', () => {
         expect(defaultNorm('nterm', 10)).toEqual({ type: 'nterm', n: 1 });
         expect(defaultNorm('caesura', 20)).toEqual({ type: 'caesura', passPoints: 11 });
         expect(defaultNorm('scale', 20)).toEqual({ type: 'scale' });
+    });
+});
+
+describe('label grades', () => {
+    const lower: TestNormTier = { id: 'j1', year: 'jaar-1', passFrom: 'B' };
+    const upper: TestNormTier = { id: 'j3', year: 'jaar-3' };
+    const rows = [
+        { minPoints: 0, grades: { j1: 'IO', j3: 1 } },
+        { minPoints: 10, grades: { j1: 'B', j3: 5.5 } },
+        { minPoints: 16, grades: { j1: 'E', j3: 8 } },
+    ];
+    const test: Pick<Test, 'gradingNorm'> = { gradingNorm: { type: 'table', tiers: [lower, upper], rows } };
+    const ctx = (points: number, year: 'jaar-1' | 'jaar-3') => ({
+        points,
+        maxPoints: 20,
+        percentage: points * 5,
+        scale: null,
+        cls: { year },
+    });
+
+    it('parses cells as numbers or labels', () => {
+        expect(parseGradeCell('6,5')).toBe(6.5);
+        expect(parseGradeCell(' 7 ')).toBe(7);
+        expect(parseGradeCell(' IO ')).toBe('IO');
+        expect(parseGradeCell('')).toBeNull();
+        expect(parseGradeCell('a very long label text')).toBe('a very long ');
+    });
+
+    it('orders labels by the points they start at', () => {
+        expect(tierLabels(rows, 'j1')).toEqual(['IO', 'B', 'E']);
+        expect(tierLabels(rows, 'j3')).toEqual([]);
+        expect(labelRank(rows, 'j1', 'E')).toBe(16);
+        expect(labelRank(rows, 'j1', 'X')).toBeNull();
+    });
+
+    it('grades lower years with labels judged against the pass-from label', () => {
+        expect(resolveTestGrade(test, ctx(12, 'jaar-1'))).toMatchObject({ label: 'B', numeric: null, passed: true });
+        expect(resolveTestGrade(test, ctx(17, 'jaar-1'))).toMatchObject({ label: 'E', passed: true });
+        expect(resolveTestGrade(test, ctx(3, 'jaar-1'))).toMatchObject({ label: 'IO', passed: false });
+        expect(resolveTestGrade(test, ctx(12, 'jaar-3'))).toMatchObject({ label: '5.5', numeric: 5.5, passed: true });
+    });
+
+    it('leaves labels unjudged without a pass mark', () => {
+        const noPass = { gradingNorm: { type: 'table' as const, tiers: [{ ...lower, passFrom: '' }], rows } };
+        expect(resolveTestGrade(noPass, ctx(12, 'jaar-1'))).toMatchObject({ label: 'B', passed: null });
+        expect(labelPassed(rows, { id: 'j1', passFrom: 'Z' }, 'B')).toBeNull();
+    });
+
+    it('shows labels among unresolved alternatives and in the preview', () => {
+        const result = resolveTestGrade(test, { points: 12, maxPoints: 20, percentage: 60, scale: null });
+        expect(result.alternatives?.map((a) => a.grade)).toEqual(['B', 5.5]);
+        expect(buildNormPreview(test, 20)[16].grades).toEqual(['E', 8]);
+    });
+
+    it('defaults the pass-from label to the second label and keeps an explicit none', () => {
+        const [fresh] = withLabelPassDefaults([{ id: 'j1' }], rows);
+        expect(fresh.passFrom).toBe('B');
+        expect(withLabelPassDefaults([{ id: 'j1', passFrom: '' }], rows)[0].passFrom).toBe('');
+        expect(withLabelPassDefaults([{ id: 'j1', passFrom: 'Gone' }], rows)[0].passFrom).toBeUndefined();
+        expect(withLabelPassDefaults([{ id: 'j3' }], rows)[0].passFrom).toBeUndefined();
+    });
+
+    it('counts labels for the analysis, lowest first', () => {
+        const results = [17, 12, 3, 13].map((p) => resolveTestGrade(test, ctx(p, 'jaar-1')));
+        results.push(resolveTestGrade(test, ctx(12, 'jaar-3')));
+        expect(labelDistribution(test, results)).toEqual([
+            { label: 'IO', count: 1, passed: false },
+            { label: 'B', count: 2, passed: true },
+            { label: 'E', count: 1, passed: true },
+        ]);
+        expect(labelDistribution({}, results)).toEqual([]);
     });
 });

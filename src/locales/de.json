@@ -1738,7 +1738,7 @@
             "pass_points_label": "Punkte zum Bestehen",
             "pass_grade_label": "Bestehensnote",
             "decimals_label": "Nachkommastellen",
-            "table_help": "Jede Zeile gibt die Note für Ergebnisse ab dieser Punktzahl an. Fügen Sie eine Spalte pro Jahrgang/Schulform hinzu; lassen Sie beides leer für eine Spalte, die für alle gilt. Sie können eine Tabelle (Punkte, dann eine Note pro Spalte) aus einer Tabellenkalkulation einfügen.",
+            "table_help": "Jede Zeile gibt die Note für Ergebnisse ab dieser Punktzahl an. Eine Zelle kann eine Zahl (1–10) oder eine Bezeichnung wie IO, B oder E enthalten; wählen Sie bei Bezeichnungsspalten, ab welcher Bezeichnung ein Ergebnis ausreichend ist. Fügen Sie eine Spalte pro Jahrgang/Schulform hinzu; lassen Sie beides leer für eine Spalte, die für alle gilt. Sie können eine Tabelle (Punkte, dann eine Note pro Spalte) aus einer Tabellenkalkulation einfügen.",
             "min_points": "Ab Punkten",
             "tier_all": "Alle",
             "any_year": "Jeder Jahrgang",
@@ -1753,7 +1753,10 @@
             "add_tier": "Spalte Jahrgang/Schulform hinzufügen",
             "show_preview": "Tabelle Punkte → Note anzeigen",
             "hide_preview": "Tabelle Punkte → Note ausblenden",
-            "preview_scale": "Die Noten kommen aus der Notenskala."
+            "preview_scale": "Die Noten kommen aus der Notenskala.",
+            "pass_from": "Ausreichend ab",
+            "pass_from_none": "— (keine Grenze)",
+            "pass_from_aria": "Niedrigste ausreichende Bezeichnung in Spalte {{n}}"
         },
         "quality": {
             "no_data": "Noch keine Punkte. Füllen Sie das Punkteblatt aus, um die Analyse zu sehen.",
@@ -1793,7 +1796,8 @@
             "flag_weak_rir": "schwacher Rir",
             "flag_negative_rir": "negativer Rir",
             "flag_alpha_rises": "α steigt ohne",
-            "small_sample": "Weniger als 5 vollständige Zeilen: Rit, Rir und α werden nicht angezeigt, da sie unzuverlässig wären."
+            "small_sample": "Weniger als 5 vollständige Zeilen: Rit, Rir und α werden nicht angezeigt, da sie unzuverlässig wären.",
+            "distribution_labels": "Verteilung der Bezeichnungen (grün: ausreichend)"
         }
     },
     "classShare": {
@@ -4476,7 +4480,7 @@
         "gr_score_sheet_body": "Öffnen Sie das Punkteblatt eines Tests über das Tabellensymbol auf seiner Karte (Seite Tests). Zeilen sind die Schüler der gewählten Klasse, Spalten die Fragen. Tragen Sie die erreichten Punkte in jede Zelle ein — Enter oder ↓ springt zum nächsten Schüler, ← und → zur nächsten Frage — oder fügen Sie einen ganzen Block aus Excel oder Google Sheets ein. Werte über dem Maximum einer Frage werden markiert und nicht gespeichert. Mit Abwesend wird ein Schüler aus Summen und Analyse ausgeschlossen. Hier eingegebene Punkte überschreiben die automatische Bewertung, ohne die Online-Antwort zu löschen; Summe, Prozent und Note werden sofort aktualisiert. CSV exportieren lädt das Blatt herunter.",
         "gr_score_only_body": "Für einen Papiertest, der nie in der App erstellt wurde, klicken Sie auf der Seite Tests auf Neuer Punktetest. Sie legen nur Spalten fest (eine Bezeichnung wie 1a und die Höchstpunktzahl) unter Fragen & Verknüpfungen, wo jede Spalte auch mit Standards, GER-Deskriptoren oder einem Grammatikthema verknüpft werden kann, damit die Punkte in die Standard-, GER- und Beherrschungsübersichten einfließen. Punktetests können nicht online zugewiesen oder bearbeitet werden.",
         "gr_norms_title": "Notenschlüssel pro Test",
-        "gr_norms_body": "Jeder Test hat seinen eigenen Notenschlüssel, einstellbar im Punkteblatt oder im Test-Editor: Prozent → Notenskala (Standard), N-Term (die niederländische CvTE-Formel 9·Punkte/Max + N mit ihren Grenzregeln), Bestehensgrenze (Punkte für die Bestehensnote; die Note verläuft linear von 1 über die Bestehensnote bis 10) oder eine Normtabelle Punkte → Note. Eine Normtabelle kann eine Spalte pro Jahrgang und Schulform haben; jeder Schüler wird mit der passenden Spalte bewertet. Lässt sich das nicht bestimmen, wird die Note jeder Spalte mit ihrer Bezeichnung angezeigt. Sie legen auch die Bestehensnote (Standard 5,5) und die Nachkommastellen fest. Der Notenschlüssel gilt auf der Ergebnisseite und in den CSV- und Magister/SOMtoday-Exporten.",
+        "gr_norms_body": "Jeder Test hat seinen eigenen Notenschlüssel, einstellbar im Punkteblatt oder im Test-Editor: Prozent → Notenskala (Standard), N-Term (die niederländische CvTE-Formel 9·Punkte/Max + N mit ihren Grenzregeln), Bestehensgrenze (Punkte für die Bestehensnote; die Note verläuft linear von 1 über die Bestehensnote bis 10) oder eine Normtabelle Punkte → Note. Eine Normtabelle kann eine Spalte pro Jahrgang und Schulform haben; jeder Schüler wird mit der passenden Spalte bewertet. Lässt sich das nicht bestimmen, wird die Note jeder Spalte mit ihrer Bezeichnung angezeigt. Sie legen auch die Bestehensnote (Standard 5,5) und die Nachkommastellen fest. Der Notenschlüssel gilt auf der Ergebnisseite und in den CSV- und Magister/SOMtoday-Exporten. Eine Zelle der Normtabelle kann statt einer Zahl auch eine Bezeichnung wie IO, B oder E enthalten, sodass untere Jahrgänge Bezeichnungen und obere 1–10 erhalten; bei einer Bezeichnungsspalte wählen Sie, ab welcher Bezeichnung ein Ergebnis ausreichend ist, was Farben und Bestehensquote bestimmt, und die Analyse zeigt, wie viele Schüler jede Bezeichnung erhielten. Bezeichnungen werden als Text in die CSV exportiert; die Magister/SOMtoday-Exporte akzeptieren nur Noten 1–10 und lassen sie leer.",
         "an_test_quality_title": "Analyse der Testqualität",
         "an_test_quality_body": "Der Reiter Analyse im Punkteblatt funktioniert für jeden Test — online geschrieben, von Papier importiert, gescannt oder eingetippt. Er zeigt Schülerzahl, Mittelwert, Standardabweichung, Median, Spannweite, Bestehensquote, Durchschnittsnote und eine Notenverteilung sowie die Reliabilität (Cronbachs α, bei Richtig/Falsch-Fragen gleich KR-20) und den Standardmessfehler. Pro Frage: P-Wert (Schwierigkeit), Rit und Rir (wie gut die Frage zum Rest des Tests passt), Trennschärfe (obere/untere 27 %) und α ohne die Frage, mit Hinweisen auf sehr schwere, sehr leichte, schwach oder negativ trennende oder reliabilitätssenkende Fragen. Nur Schüler mit Punkten bei jeder Frage zählen für Korrelationen und α; unter 5 Schülern werden diese nicht angezeigt. Bestehensquote, Durchschnittsnote und Notenverteilung erscheinen bei numerischen 1–10-Schlüsseln (N-Term, Bestehensgrenze, Normtabelle); bei einer Notenskala wird die Verteilung in Prozent angezeigt."
     },

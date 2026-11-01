@@ -4,6 +4,7 @@ import {
     DEFAULT_GRADE_DECIMALS,
     DEFAULT_PASS_GRADE,
     buildNormPreview,
+    labelPassed,
     normTierLabel,
     testNorm,
 } from '../../../utils/testGradingNorm';
@@ -21,6 +22,14 @@ export default function NormPreview({ test, maxPoints }: Props) {
     if (rows.length === 0) return <p className="text-muted text-sm">{t('tests.norm.preview_scale')}</p>;
     const decimals = test.gradeDecimals ?? DEFAULT_GRADE_DECIMALS;
     const passGrade = test.passGrade ?? DEFAULT_PASS_GRADE;
+    function cellColor(g: number | string | null, column: number): string {
+        let passed: boolean | null;
+        if (g === null) passed = null;
+        else if (typeof g === 'number') passed = g >= passGrade;
+        else passed = norm.type === 'table' ? labelPassed(norm.rows, norm.tiers[column], g) : null;
+        if (passed === null) return 'var(--text-muted)';
+        return passed ? 'var(--green-text)' : 'var(--red-text)';
+    }
     const headers =
         norm.type === 'table'
             ? norm.tiers.map((tier) => normTierLabel(tier, t('tests.norm.tier_all')))
@@ -52,15 +61,10 @@ export default function NormPreview({ test, maxPoints }: Props) {
                                         textAlign: 'right',
                                         padding: '3px 10px',
                                         fontWeight: 600,
-                                        color:
-                                            g === null
-                                                ? 'var(--text-muted)'
-                                                : g >= passGrade
-                                                  ? 'var(--green-text)'
-                                                  : 'var(--red-text)',
+                                        color: cellColor(g, i),
                                     }}
                                 >
-                                    {g === null ? '—' : g.toFixed(decimals)}
+                                    {g === null ? '—' : typeof g === 'string' ? g : g.toFixed(decimals)}
                                 </td>
                             ))}
                         </tr>

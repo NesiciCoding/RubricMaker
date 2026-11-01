@@ -4,7 +4,15 @@ import { Plus, Trash2 } from 'lucide-react';
 import type { GradeScale, SchoolYear, Test, TestGradingNorm, TestNormTier, VoTrack } from '../../../types';
 import { SCHOOL_YEARS, SCHOOL_YEAR_LABELS } from '../../../data/schoolYears';
 import { VO_TRACKS, VO_TRACK_LABELS } from '../../../data/voTracks';
-import { DEFAULT_GRADE_DECIMALS, DEFAULT_PASS_GRADE, defaultNorm, testNorm } from '../../../utils/testGradingNorm';
+import {
+    DEFAULT_GRADE_DECIMALS,
+    DEFAULT_PASS_GRADE,
+    defaultNorm,
+    parseGradeCell,
+    testNorm,
+    tierLabels,
+    withLabelPassDefaults,
+} from '../../../utils/testGradingNorm';
 import { parsePastedGrid, parsePoints } from '../../../utils/scoreSheet';
 import { nanoid } from '../../../utils/nanoid';
 import HelpPopover from '../HelpPopover';
@@ -187,14 +195,18 @@ function NormTableEditor({
         });
     }
 
+    function setRows(rows: TableNorm['rows']) {
+        onChange({ ...norm, rows, tiers: withLabelPassDefaults(norm.tiers, rows) });
+    }
+
     function setRow(index: number, patch: Partial<TableNorm['rows'][number]>) {
-        onChange({ ...norm, rows: norm.rows.map((row, i) => (i === index ? { ...row, ...patch } : row)) });
+        setRows(norm.rows.map((row, i) => (i === index ? { ...row, ...patch } : row)));
     }
 
     function setGrade(index: number, tierId: string, raw: string) {
         const grades = { ...norm.rows[index].grades };
-        const value = parsePoints(raw);
-        if (value === null || Number.isNaN(value)) delete grades[tierId];
+        const value = parseGradeCell(raw);
+        if (value === null) delete grades[tierId];
         else grades[tierId] = value;
         setRow(index, { grades });
     }
@@ -213,15 +225,15 @@ function NormTableEditor({
             .map((cells) => {
                 const minPoints = parsePoints(cells[0] ?? '');
                 if (minPoints === null || Number.isNaN(minPoints)) return null;
-                const grades: Record<string, number> = {};
+                const grades: Record<string, number | string> = {};
                 norm.tiers.forEach((tier, i) => {
-                    const g = parsePoints(cells[i + 1] ?? '');
-                    if (g !== null && !Number.isNaN(g)) grades[tier.id] = g;
+                    const g = parseGradeCell(cells[i + 1] ?? '');
+                    if (g !== null) grades[tier.id] = g;
                 });
                 return { minPoints, grades };
             })
             .filter((r): r is TableNorm['rows'][number] => r !== null);
-        if (rows.length) onChange({ ...norm, rows });
+        if (rows.length) setRows(rows);
     }
 
     const sortedIndexes = norm.rows.map((_, i) => i).sort((a, b) => norm.rows[a].minPoints - norm.rows[b].minPoints);
@@ -292,6 +304,26 @@ function NormTableEditor({
                                                 </button>
                                             )}
                                         </div>
+                                        {tierLabels(norm.rows, tier.id).length > 0 && (
+                                            <label
+                                                className="text-xs text-muted"
+                                                style={{ display: 'flex', flexDirection: 'column', gap: 2, margin: 0 }}
+                                            >
+                                                {t('tests.norm.pass_from')}
+                                                <select
+                                                    aria-label={t('tests.norm.pass_from_aria', { n: ti + 1 })}
+                                                    value={tier.passFrom ?? ''}
+                                                    onChange={(e) => updateTier(tier.id, { passFrom: e.target.value })}
+                                                >
+                                                    <option value="">{t('tests.norm.pass_from_none')}</option>
+                                                    {tierLabels(norm.rows, tier.id).map((label) => (
+                                                        <option key={label} value={label}>
+                                                            {label}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </label>
+                                        )}
                                     </div>
                                 </th>
                             ))}
@@ -324,7 +356,6 @@ function NormTableEditor({
                                                     points: row.minPoints,
                                                     n: ti + 1,
                                                 })}
-                                                inputMode="decimal"
                                                 defaultValue={row.grades[tier.id] ?? ''}
                                                 key={`${tier.id}-${row.grades[tier.id] ?? ''}`}
                                                 onBlur={(e) => setGrade(index, tier.id, e.target.value)}

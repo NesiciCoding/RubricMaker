@@ -398,6 +398,22 @@ describe('grading norms in exports', () => {
         expect(csv).toContain('10.0');
     });
 
+    it('exports label grades as text (the gradebook presets then blank non-1–10 grades)', () => {
+        const labelled: Test = {
+            ...test,
+            gradingNorm: {
+                type: 'table',
+                tiers: [{ id: 'all', passFrom: 'B' }],
+                rows: [
+                    { minPoints: 0, grades: { all: 'IO' } },
+                    { minPoints: 1, grades: { all: 'B' } },
+                ],
+            },
+        };
+        expect(buildTestResultsCsv(labelled, [graded('s1', 1, 0)], students, undefined, null)).toContain(',B,');
+        expect(buildTestGradebookRows(labelled, [graded('s1', 1, 0)], students, null)[0].grade).toBe('B');
+    });
+
     it('picks the norm-table column from the class and leaves it blank when unresolved', () => {
         const tabled: Test = {
             ...test,
