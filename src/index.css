@@ -1384,6 +1384,10 @@ select.input-error {
     }
 }
 
+/* Ends on `transform: none`, not `translateY(0)`. A value that keeps a transform — even an
+   identity one — makes the element a containing block for every `position: fixed` descendant, so
+   overlays inside page content got pinned to this box instead of the viewport (#1017). Overlays
+   are portalled to <body> now; never end an animation here on a transform. */
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -1392,7 +1396,7 @@ select.input-error {
 
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: none;
     }
 }
 
@@ -1408,8 +1412,11 @@ select.input-error {
     }
 }
 
+/* No `forwards` fill on purpose: a retained `transform` (even translateY(0)) makes the
+   element the containing block for `position: fixed` descendants, which breaks the
+   drag-and-drop preview and any fixed-position popover opened inside a page. */
 .fade-in {
-    animation: fadeIn 0.25s ease forwards;
+    animation: fadeIn 0.25s ease;
 }
 
 /* ─── Print-only elements (hidden on screen) ────────────────────────────────── */
