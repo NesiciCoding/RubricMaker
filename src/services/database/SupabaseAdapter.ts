@@ -2589,6 +2589,21 @@ export class SupabaseAdapter {
         return error ? { success: false, error: error.message } : { success: true };
     }
 
+    async addClassMemberByEmail(
+        classId: string,
+        email: string,
+        role: 'viewer' | 'editor' = 'viewer'
+    ): Promise<SyncResult & { notFound?: boolean }> {
+        let user: { userId: string; displayName?: string } | null;
+        try {
+            user = await this.lookupUserByEmail(email);
+        } catch (e) {
+            return { success: false, error: e instanceof Error ? e.message : String(e) };
+        }
+        if (!user) return { success: false, notFound: true, error: `No account found for ${email}` };
+        return this.addClassMember(classId, user.userId, role);
+    }
+
     async removeClassMember(classId: string, targetUserId: string): Promise<SyncResult> {
         const { error } = await this.db()
             .from('class_members')

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SupabaseAdapter } from '../SupabaseAdapter';
 import { makeClient, adapterWithClient } from './supabaseTestUtils';
 
@@ -59,5 +59,30 @@ describe('SupabaseAdapter class sharing methods', () => {
     it('fetchClassMembers returns [] on error', async () => {
         const client = makeClient({ data: null, error: { message: 'boom' } });
         expect(await adapterWithClient(client).fetchClassMembers('c1')).toEqual([]);
+    });
+
+    it('addClassMemberByEmail returns notFound when the email has no account', async () => {
+        const rpc = vi.fn().mockResolvedValue({ data: [], error: null });
+        const client = { ...makeClient({ data: null, error: null }), rpc };
+        const result = await adapterWithClient(client).addClassMemberByEmail('c1', 'nobody@x.com');
+        expect(result).toEqual({ success: false, notFound: true, error: 'No account found for nobody@x.com' });
+    });
+
+    it('addClassMemberByEmail surfaces a refused lookup', async () => {
+        const rpc = vi.fn().mockResolvedValue({ data: null, error: { message: 'rate limited' } });
+        const client = { ...makeClient({ data: null, error: null }), rpc };
+        const result = await adapterWithClient(client).addClassMemberByEmail('c1', 'bob@x.com', 'editor');
+        expect(result).toEqual({ success: false, error: 'rate limited' });
+    });
+
+    it('addClassMemberByEmail adds the resolved user with the requested role', async () => {
+        const adapterInstance = adapterWithClient(makeClient({ data: null, error: null }));
+        vi.spyOn(adapterInstance, 'lookupUserByEmail').mockResolvedValue({ userId: 'u2' });
+        const addSpy = vi.spyOn(adapterInstance, 'addClassMember').mockResolvedValue({ success: true });
+
+        const result = await adapterInstance.addClassMemberByEmail('c1', 'bob@x.com', 'editor');
+
+        expect(addSpy).toHaveBeenCalledWith('c1', 'u2', 'editor');
+        expect(result).toEqual({ success: true });
     });
 });

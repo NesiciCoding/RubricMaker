@@ -22,6 +22,7 @@ import {
     ArrowUp,
     ArrowDown,
     Minus,
+    Share2,
 } from 'lucide-react';
 import PageTour from '../components/Tour/PageTour';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
@@ -38,6 +39,7 @@ import { CSV_UNPARSE_OPTIONS } from '../utils/csvOptions';
 import { downloadCsv } from '../utils/csvDownload';
 import { findDuplicateStudent, isValidEmail, studentExportRows } from '../utils/studentValidation';
 import CsvImportModal from '../components/Students/CsvImportModal';
+import ClassShareModal from '../components/Students/ClassShareModal';
 import StudentPasswordSlipSheet, { type PasswordSlip } from '../components/Students/StudentPasswordSlipSheet';
 import { useTranslation, Trans } from 'react-i18next';
 import { VO_TRACKS, VO_TRACK_LABELS, VO_TRACK_COLORS, getClassVoTracks, getEffectiveVoTrack } from '../data/voTracks';
@@ -436,6 +438,7 @@ export default function StudentsPage() {
     const [mergeConfirming, setMergeConfirming] = useState(false);
 
     const [deleteClassId, setDeleteClassId] = useState<string | null>(null);
+    const [shareClassId, setShareClassId] = useState<string | null>(null);
     const fileRef = useRef<HTMLInputElement>(null);
     const [studentSearch, setStudentSearch] = useState('');
     const [confirmDeleteStudent, setConfirmDeleteStudent] = useState<string | null>(null);
@@ -1840,6 +1843,14 @@ export default function StudentsPage() {
                     </Modal>
                 )}
 
+                {shareClassId && classById.get(shareClassId) && (
+                    <ClassShareModal
+                        classItem={classById.get(shareClassId)!}
+                        onClose={() => setShareClassId(null)}
+                        returnFocusTo={classMenuTrigger}
+                    />
+                )}
+
                 {deleteClassId && (
                     <Modal
                         titleId="students-delete-class-title"
@@ -2161,6 +2172,19 @@ export default function StudentsPage() {
                                 }}
                             >
                                 <Link size={13} style={{ marginRight: 4 }} /> {t('studentsPage.link_rubrics')}
+                            </button>
+                            <button
+                                type="button"
+                                role="menuitem"
+                                className="btn btn-ghost btn-sm"
+                                style={{ width: '100%', justifyContent: 'flex-start' }}
+                                onClick={() => {
+                                    setShareClassId(classMenuTarget.id);
+                                    setClassMenu(null);
+                                }}
+                            >
+                                <Share2 size={13} style={{ marginRight: 4 }} aria-hidden="true" />{' '}
+                                {t('classShare.menu_item')}
                             </button>
                             <button
                                 type="button"
