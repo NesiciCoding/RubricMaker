@@ -27,6 +27,7 @@ import {
     Mail,
     Newspaper,
     Bell,
+    BarChart2,
 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useTranslation } from 'react-i18next';
@@ -143,6 +144,12 @@ function getRouteTree(t: TFunction): RouteNode[] {
                     path: '/tests/:testId/monitor',
                     label: t('docs.route_test_monitor_label'),
                     description: t('docs.route_test_monitor_desc'),
+                    color: '#3b82f6',
+                },
+                {
+                    path: '/tests/:id/scores',
+                    label: t('docs.route_test_scores_label'),
+                    description: t('docs.route_test_scores_desc'),
                     color: '#3b82f6',
                 },
             ],
@@ -1437,6 +1444,23 @@ function GradingTab() {
                 </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.gr_score_sheet_title')}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    {t('docs.gr_score_sheet_body')}
+                </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    {t('docs.gr_score_only_body')}
+                </p>
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.gr_norms_title')}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    {t('docs.gr_norms_body')}
+                </p>
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.gr_import_offline_title')}
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
@@ -1743,6 +1767,12 @@ function AnalyticsTab() {
     const { t } = useTranslation();
     return (
         <div>
+            <FeatureSection icon={BarChart2} title={t('docs.an_test_quality_title')} color="#8b5cf6">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    {t('docs.an_test_quality_body')}
+                </p>
+            </FeatureSection>
+
             <FeatureSection icon={TrendingUp} title={t('docs.an_trends_title')} color="#8b5cf6">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     {t('docs.an_trends_body')}

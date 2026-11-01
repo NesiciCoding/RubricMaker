@@ -26,7 +26,7 @@ function scoreAnswer(question: TestQuestion, answer: TestAnswer): number {
 }
 
 function relevantStudentTests(studentId: string | null, studentTests: StudentTest[], test: Test): StudentTest[] {
-    const sameTest = studentTests.filter((st) => st.testId === test.id);
+    const sameTest = studentTests.filter((st) => st.testId === test.id && !st.absent);
     return studentId === null ? sameTest : sameTest.filter((st) => st.studentId === studentId);
 }
 

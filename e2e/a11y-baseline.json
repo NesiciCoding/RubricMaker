@@ -949,6 +949,26 @@
       ]
     },
     {
+      "route": "/tests/test-a11y-1/scores",
+      "theme": "dark",
+      "violations": [
+        {
+          "rule": "page-has-heading-one",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "route": "/tests/test-a11y-1/scores",
+      "theme": "light",
+      "violations": [
+        {
+          "rule": "page-has-heading-one",
+          "nodes": 1
+        }
+      ]
+    },
+    {
       "route": "/this-route-does-not-exist",
       "theme": "dark",
       "violations": []

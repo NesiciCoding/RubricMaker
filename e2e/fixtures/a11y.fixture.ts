@@ -325,6 +325,7 @@ export const A11Y_ROUTES: readonly A11yRoute[] = [
     { path: `/tests/${TEST_ID}`, label: 'Test builder (edit)' },
     { path: `/tests/${TEST_ID}/results/${STUDENT_TEST_ID}`, label: 'Test results' },
     { path: `/tests/${TEST_ID}/monitor`, label: 'Test live monitor' },
+    { path: `/tests/${TEST_ID}/scores`, label: 'Test score sheet' },
     { path: '/essays', label: 'Essay list' },
     { path: '/essays/new', label: 'Essay builder (new)' },
     { path: `/essays/${ESSAY_KEY}`, label: 'Essay builder (edit)' },

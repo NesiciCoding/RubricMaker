@@ -17,6 +17,7 @@ import {
     LayoutGrid,
     List,
     ScanLine,
+    Table2,
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { useTranslation } from 'react-i18next';
@@ -56,6 +57,8 @@ import { calcClassAveragePercentage } from '../utils/testCalc';
 import { GRADEBOOK_PRESET_IDS, type DecimalSeparator, type GradebookPresetId } from '../utils/gradebookExportPresets';
 import { testAssignBlockers } from '../utils/testQuestionIssues';
 import { resolveScanOcrSettings } from '../utils/scanSettings';
+import { defaultScoreOnlyQuestions } from '../utils/scoreSheet';
+import { resolveTestScale } from '../utils/testGradingNorm';
 
 export default function TestListPage() {
     const { t } = useTranslation();
@@ -313,12 +316,10 @@ export default function TestListPage() {
             const { downloadCsv } = await import('../utils/csvDownload');
             const { sanitizeFilename } = await import('../utils/exportDataPrep');
             // Same scale resolution as TestResultsPage, so the CSV grade matches the one shown there.
-            const scaleId = test.gradeScaleId ?? settings.defaultGradeScaleId;
-            const scale =
-                scaleId === 'none' ? null : (gradeScales.find((g) => g.id === scaleId) ?? gradeScales[0] ?? null);
+            const scale = resolveTestScale(test, gradeScales, settings.defaultGradeScaleId);
             const preset = buildGradebookPresetCsv(
                 gradebookPreset,
-                buildTestGradebookRows(test, studentTests, students, scale),
+                buildTestGradebookRows(test, studentTests, students, scale, classes),
                 gradebookDecimal
             );
             if (preset) {
@@ -333,7 +334,14 @@ export default function TestListPage() {
                 if (preset.inProgressCount > 0)
                     showToast(t('exportPage.csv_grades_in_progress', { count: preset.inProgressCount }), 'warning');
             } else {
-                const csv = buildTestResultsCsv(test, studentTests, students, settings.cefrAchieveThreshold, scale);
+                const csv = buildTestResultsCsv(
+                    test,
+                    studentTests,
+                    students,
+                    settings.cefrAchieveThreshold,
+                    scale,
+                    classes
+                );
                 downloadCsv(csv, `${sanitizeFilename(test.name)}_results.csv`);
             }
             const uniqueStudentCount = new Set(relevantStudentTests.map((st) => st.studentId)).size;
@@ -361,6 +369,18 @@ export default function TestListPage() {
             })),
         });
         navigate(`/tests/${newTest.id}`);
+    }
+
+    function handleNewScoreOnly() {
+        const created = addTest({
+            name: t('tests.scoreSheet.new_test_name'),
+            questions: defaultScoreOnlyQuestions(),
+            requireSEB: false,
+            shuffleQuestions: false,
+            scoreOnly: true,
+            gradingNorm: { type: 'nterm', n: 1 },
+        });
+        navigate(`/tests/${created.id}/scores`);
     }
 
     function requestAssign(test: Test) {
@@ -392,6 +412,9 @@ export default function TestListPage() {
                     <>
                         <button className="btn btn-ghost btn-sm" onClick={tour.start}>
                             {t('tutorial.page_tour_button')}
+                        </button>
+                        <button className="btn btn-secondary btn-sm" onClick={handleNewScoreOnly}>
+                            <Table2 size={15} /> {t('tests.scoreSheet.new_score_only')}
                         </button>
                         <button className="btn btn-secondary btn-sm" onClick={() => setShowGenerateModal(true)}>
                             <Sparkles size={15} /> {t('generateTest.entry_point')}
@@ -479,7 +502,13 @@ export default function TestListPage() {
                                             <tr
                                                 key={test.id}
                                                 style={{ cursor: 'pointer' }}
-                                                onClick={() => navigate(`/tests/${test.id}`)}
+                                                onClick={() =>
+                                                    navigate(
+                                                        test.scoreOnly
+                                                            ? `/tests/${test.id}/scores`
+                                                            : `/tests/${test.id}`
+                                                    )
+                                                }
                                             >
                                                 <td style={{ fontWeight: 500 }}>{test.name}</td>
                                                 <td>{test.questions.length}</td>
@@ -496,27 +525,45 @@ export default function TestListPage() {
                                                         >
                                                             <Edit2 size={14} />
                                                         </button>
-                                                        <button
-                                                            type="button"
-                                                            className="btn btn-ghost btn-icon btn-sm"
-                                                            title={t('tests.action_assign')}
-                                                            aria-label={t('tests.action_assign')}
-                                                            disabled={
-                                                                test.questions.length === 0 && !isGeneratorTest(test)
-                                                            }
-                                                            onClick={() => requestAssign(test)}
-                                                        >
-                                                            <Send size={14} />
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            className="btn btn-ghost btn-icon btn-sm"
-                                                            title={t('tests.monitor.action_monitor')}
-                                                            aria-label={t('tests.monitor.action_monitor')}
-                                                            onClick={() => navigate(`/tests/${test.id}/monitor`)}
-                                                        >
-                                                            <Radio size={14} />
-                                                        </button>
+                                                        {test.mode !== 'placement' && (
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-ghost btn-icon btn-sm"
+                                                                title={t('tests.scoreSheet.action_open')}
+                                                                aria-label={t('tests.scoreSheet.action_open')}
+                                                                onClick={() => navigate(`/tests/${test.id}/scores`)}
+                                                            >
+                                                                <Table2 size={14} />
+                                                            </button>
+                                                        )}
+                                                        {!test.scoreOnly && (
+                                                            <>
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                                    title={t('tests.action_assign')}
+                                                                    aria-label={t('tests.action_assign')}
+                                                                    disabled={
+                                                                        test.questions.length === 0 &&
+                                                                        !isGeneratorTest(test)
+                                                                    }
+                                                                    onClick={() => requestAssign(test)}
+                                                                >
+                                                                    <Send size={14} />
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                                    title={t('tests.monitor.action_monitor')}
+                                                                    aria-label={t('tests.monitor.action_monitor')}
+                                                                    onClick={() =>
+                                                                        navigate(`/tests/${test.id}/monitor`)
+                                                                    }
+                                                                >
+                                                                    <Radio size={14} />
+                                                                </button>
+                                                            </>
+                                                        )}
                                                         <button
                                                             type="button"
                                                             className="btn btn-ghost btn-icon btn-sm"
@@ -725,27 +772,53 @@ export default function TestListPage() {
                                                         <div
                                                             style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
                                                         >
-                                                            <button
-                                                                type="button"
-                                                                className="btn btn-primary btn-sm"
-                                                                onClick={() => navigate(`/tests/${test.id}`)}
-                                                            >
-                                                                <Edit2 size={14} /> {t('tests.action_edit')}
-                                                            </button>
-                                                            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                                                            {test.scoreOnly ? (
                                                                 <button
                                                                     type="button"
-                                                                    className="btn btn-ghost btn-icon btn-sm"
-                                                                    title={t('tests.action_assign')}
-                                                                    aria-label={t('tests.action_assign')}
-                                                                    disabled={
-                                                                        test.questions.length === 0 &&
-                                                                        !isGeneratorTest(test)
-                                                                    }
-                                                                    onClick={() => requestAssign(test)}
+                                                                    className="btn btn-primary btn-sm"
+                                                                    onClick={() => navigate(`/tests/${test.id}/scores`)}
                                                                 >
-                                                                    <Send size={14} />
+                                                                    <Table2 size={14} />{' '}
+                                                                    {t('tests.scoreSheet.action_open')}
                                                                 </button>
+                                                            ) : (
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-primary btn-sm"
+                                                                    onClick={() => navigate(`/tests/${test.id}`)}
+                                                                >
+                                                                    <Edit2 size={14} /> {t('tests.action_edit')}
+                                                                </button>
+                                                            )}
+                                                            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                                                                {!test.scoreOnly && (
+                                                                    <button
+                                                                        type="button"
+                                                                        className="btn btn-ghost btn-icon btn-sm"
+                                                                        title={t('tests.action_assign')}
+                                                                        aria-label={t('tests.action_assign')}
+                                                                        disabled={
+                                                                            test.questions.length === 0 &&
+                                                                            !isGeneratorTest(test)
+                                                                        }
+                                                                        onClick={() => requestAssign(test)}
+                                                                    >
+                                                                        <Send size={14} />
+                                                                    </button>
+                                                                )}
+                                                                {test.mode !== 'placement' && !test.scoreOnly && (
+                                                                    <button
+                                                                        type="button"
+                                                                        className="btn btn-ghost btn-icon btn-sm"
+                                                                        title={t('tests.scoreSheet.action_open')}
+                                                                        aria-label={t('tests.scoreSheet.action_open')}
+                                                                        onClick={() =>
+                                                                            navigate(`/tests/${test.id}/scores`)
+                                                                        }
+                                                                    >
+                                                                        <Table2 size={14} />
+                                                                    </button>
+                                                                )}
                                                                 <button
                                                                     type="button"
                                                                     className="btn btn-ghost btn-icon btn-sm"
@@ -772,58 +845,68 @@ export default function TestListPage() {
                                                                 >
                                                                     <BarChart3 size={14} />
                                                                 </button>
-                                                                <button
-                                                                    type="button"
-                                                                    className="btn btn-ghost btn-icon btn-sm"
-                                                                    title={t('tests.results.action_import')}
-                                                                    aria-label={t('tests.results.action_import')}
-                                                                    onClick={() => setImportingTestId(test.id)}
-                                                                >
-                                                                    <Upload size={14} />
-                                                                </button>
-                                                                <button
-                                                                    type="button"
-                                                                    className="btn btn-ghost btn-icon btn-sm"
-                                                                    title={t('tests.scan.action_scan')}
-                                                                    aria-label={t('tests.scan.action_scan')}
-                                                                    onClick={() => setScanningTestId(test.id)}
-                                                                >
-                                                                    <ScanLine size={14} />
-                                                                </button>
-                                                                <button
-                                                                    type="button"
-                                                                    className="btn btn-ghost btn-icon btn-sm"
-                                                                    title={t('tests.monitor.action_monitor')}
-                                                                    aria-label={t('tests.monitor.action_monitor')}
-                                                                    onClick={() =>
-                                                                        navigate(`/tests/${test.id}/monitor`)
-                                                                    }
-                                                                >
-                                                                    <Radio size={14} />
-                                                                </button>
-                                                                <button
-                                                                    type="button"
-                                                                    className="btn btn-ghost btn-icon btn-sm"
-                                                                    title={t('tests.export.exam.section_title')}
-                                                                    aria-label={t('tests.export.exam.section_title')}
-                                                                    aria-expanded={examExportTestId === test.id}
-                                                                    aria-controls={`test-exam-export-${test.id}`}
-                                                                    style={{
-                                                                        color:
-                                                                            examExportTestId === test.id
-                                                                                ? 'var(--accent)'
-                                                                                : undefined,
-                                                                    }}
-                                                                    onClick={() =>
-                                                                        setExamExportTestId(
-                                                                            examExportTestId === test.id
-                                                                                ? null
-                                                                                : test.id
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    <FileDown size={14} />
-                                                                </button>
+                                                                {!test.scoreOnly && (
+                                                                    <>
+                                                                        <button
+                                                                            type="button"
+                                                                            className="btn btn-ghost btn-icon btn-sm"
+                                                                            title={t('tests.results.action_import')}
+                                                                            aria-label={t(
+                                                                                'tests.results.action_import'
+                                                                            )}
+                                                                            onClick={() => setImportingTestId(test.id)}
+                                                                        >
+                                                                            <Upload size={14} />
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            className="btn btn-ghost btn-icon btn-sm"
+                                                                            title={t('tests.scan.action_scan')}
+                                                                            aria-label={t('tests.scan.action_scan')}
+                                                                            onClick={() => setScanningTestId(test.id)}
+                                                                        >
+                                                                            <ScanLine size={14} />
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            className="btn btn-ghost btn-icon btn-sm"
+                                                                            title={t('tests.monitor.action_monitor')}
+                                                                            aria-label={t(
+                                                                                'tests.monitor.action_monitor'
+                                                                            )}
+                                                                            onClick={() =>
+                                                                                navigate(`/tests/${test.id}/monitor`)
+                                                                            }
+                                                                        >
+                                                                            <Radio size={14} />
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            className="btn btn-ghost btn-icon btn-sm"
+                                                                            title={t('tests.export.exam.section_title')}
+                                                                            aria-label={t(
+                                                                                'tests.export.exam.section_title'
+                                                                            )}
+                                                                            aria-expanded={examExportTestId === test.id}
+                                                                            aria-controls={`test-exam-export-${test.id}`}
+                                                                            style={{
+                                                                                color:
+                                                                                    examExportTestId === test.id
+                                                                                        ? 'var(--accent)'
+                                                                                        : undefined,
+                                                                            }}
+                                                                            onClick={() =>
+                                                                                setExamExportTestId(
+                                                                                    examExportTestId === test.id
+                                                                                        ? null
+                                                                                        : test.id
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            <FileDown size={14} />
+                                                                        </button>
+                                                                    </>
+                                                                )}
                                                             </div>
                                                         </div>
 
@@ -936,6 +1019,18 @@ export default function TestListPage() {
                                                                                 (st) => st.testId === test.id
                                                                             )}
                                                                         />
+                                                                        <button
+                                                                            type="button"
+                                                                            className="btn btn-secondary btn-sm"
+                                                                            onClick={() =>
+                                                                                navigate(
+                                                                                    `/tests/${test.id}/scores?tab=analysis`
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            <Table2 size={14} />{' '}
+                                                                            {t('tests.scoreSheet.action_full_analysis')}
+                                                                        </button>
                                                                     </>
                                                                 )}
 

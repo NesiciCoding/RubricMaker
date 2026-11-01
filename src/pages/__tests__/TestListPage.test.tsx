@@ -285,7 +285,8 @@ describe('TestListPage', () => {
             [mockStudentTest],
             [mockStudent],
             undefined,
-            mockGradeScale
+            mockGradeScale,
+            [mockClass]
         );
         expect(mockSaveAs.mock.calls[0][1]).toBe('Vocabulary_Quiz_results.csv');
         (mockUseApp as Record<string, unknown>).studentTests = [];
@@ -316,7 +317,8 @@ describe('TestListPage', () => {
             mockTest,
             [mockStudentTest],
             [mockStudent],
-            mockGradeScale
+            mockGradeScale,
+            [mockClass]
         );
         expect(mockShowToast).toHaveBeenCalledWith(expect.stringMatching(/^exportPage\.csv_grades_blank/), 'warning');
         expect(mockShowToast).toHaveBeenCalledWith(
@@ -391,6 +393,45 @@ describe('TestListPage', () => {
         await loadPage();
         fireEvent.click(screen.getAllByText('tests.new_test')[0]);
         expect(mockNavigate).toHaveBeenCalledWith('/tests/new');
+    });
+
+    it('creates a score-only test and opens its score sheet', async () => {
+        await loadPage();
+        fireEvent.click(screen.getByText('tests.scoreSheet.new_score_only'));
+        const arg = mockAddTest.mock.calls[0][0];
+        expect(arg).toMatchObject({ scoreOnly: true, gradingNorm: { type: 'nterm', n: 1 } });
+        expect(arg.questions).toHaveLength(5);
+        expect(mockNavigate).toHaveBeenCalledWith('/tests/new-test/scores');
+    });
+
+    it('opens the score sheet from the card, list and results panel', async () => {
+        (mockUseApp as Record<string, unknown>).studentTests = [mockStudentTest];
+        await loadPage();
+        fireEvent.click(screen.getByTitle('tests.scoreSheet.action_open'));
+        expect(mockNavigate).toHaveBeenCalledWith('/tests/t1/scores');
+        fireEvent.click(screen.getByTitle('tests.results.action_results'));
+        fireEvent.click(screen.getByText('tests.scoreSheet.action_full_analysis'));
+        expect(mockNavigate).toHaveBeenCalledWith('/tests/t1/scores?tab=analysis');
+        fireEvent.click(screen.getByText('common.view_list'));
+        mockNavigate.mockClear();
+        fireEvent.click(screen.getByTitle('tests.scoreSheet.action_open'));
+        expect(mockNavigate).toHaveBeenCalledWith('/tests/t1/scores');
+    });
+
+    it('hides online-only actions for a score-only test', async () => {
+        const original = (mockUseApp as Record<string, unknown>).tests;
+        (mockUseApp as Record<string, unknown>).tests = [{ ...(original as RmTest[])[0], scoreOnly: true }];
+        await loadPage();
+        expect(screen.queryByTitle('tests.action_assign')).not.toBeInTheDocument();
+        expect(screen.queryByTitle('tests.scan.action_scan')).not.toBeInTheDocument();
+        fireEvent.click(screen.getByText('tests.scoreSheet.action_open'));
+        expect(mockNavigate).toHaveBeenCalledWith('/tests/t1/scores');
+        fireEvent.click(screen.getByText('common.view_list'));
+        expect(screen.queryByTitle('tests.monitor.action_monitor')).not.toBeInTheDocument();
+        mockNavigate.mockClear();
+        fireEvent.click(screen.getByText('Vocabulary Quiz'));
+        expect(mockNavigate).toHaveBeenCalledWith('/tests/t1/scores');
+        (mockUseApp as Record<string, unknown>).tests = original;
     });
 
     it('opens and closes the generate-test modal', async () => {

@@ -360,3 +360,61 @@ describe('test results points, grade and status (#607)', () => {
         expect(row.startsWith('Jane Doe,1234,50.0,2,4,8,Graded')).toBe(true);
     });
 });
+
+describe('grading norms in exports', () => {
+    const graded = (studentId: string, q1: number, q2: number, extra: Partial<StudentTest> = {}): StudentTest => ({
+        id: `n-${studentId}`,
+        testId: 'test1',
+        studentId,
+        answers: [
+            { questionId: 'q1', response: '', pointsEarned: q1 },
+            { questionId: 'q2', response: '', pointsEarned: q2 },
+        ],
+        status: 'graded',
+        startedAt: '2024-01-01T00:00:00.000Z',
+        ...extra,
+    });
+
+    it('exports N-term grades and leaves absent students out of gradebook rows', () => {
+        const normed: Test = { ...test, gradingNorm: { type: 'nterm', n: 1 } };
+        const rows = buildTestGradebookRows(
+            normed,
+            [graded('s1', 1, 0), graded('s2', 0, 0, { absent: true })],
+            students,
+            null
+        );
+        expect(rows).toHaveLength(1);
+        expect(rows[0].grade).toBe('5.5');
+        const withAbsent = buildTestResultsCsv(
+            normed,
+            [graded('s1', 1, 1), graded('s2', 0, 0, { absent: true })],
+            students,
+            undefined,
+            null
+        );
+        expect(withAbsent).not.toContain('John Roe');
+        const csv = buildTestResultsCsv(normed, [graded('s1', 1, 1)], students, undefined, null);
+        expect(csv).toContain('Grade');
+        expect(csv).toContain('10.0');
+    });
+
+    it('picks the norm-table column from the class and leaves it blank when unresolved', () => {
+        const tabled: Test = {
+            ...test,
+            gradingNorm: {
+                type: 'table',
+                tiers: [
+                    { id: 'h', track: 'havo' },
+                    { id: 'v', track: 'vwo' },
+                ],
+                rows: [{ minPoints: 0, grades: { h: 7, v: 6 } }],
+            },
+        };
+        const placed = students.map((s) => ({ ...s, classId: 'c1' }));
+        const rows = buildTestGradebookRows(tabled, [graded('s1', 1, 0), graded('s2', 1, 0)], placed, null, [
+            { id: 'c1', name: '4V', voTrack: 'vwo' },
+        ]);
+        expect(rows.map((r) => r.grade)).toEqual(['6.0', '6.0']);
+        expect(buildTestGradebookRows(tabled, [graded('s1', 1, 0)], students, null)[0].grade).toBe('');
+    });
+});

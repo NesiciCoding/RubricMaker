@@ -35,6 +35,7 @@ import {
     Route,
     Bell,
     ScanLine,
+    Table2,
 } from 'lucide-react';
 import { usePlatform } from '../context/AppContext';
 import { loadSupabaseConfig } from '../services/database/supabaseConfig';
@@ -95,6 +96,12 @@ const TEACHER_FEATURES = [
         title: 'Tests & Quizzes',
         desc: 'Build multiple-choice, multiple-response, true/false, short-answer, open, fill-the-gap, matching, ordering, categorize, hot text, and audio-response tests with rich-text prompts, reading passages, and picture-choice options, preview the printed A4 page live while you build, assign them with a share link or Safe Exam Browser, then auto-grade, fine-tune the class average, and export a strong/weak point summary per student or class. Add an ungraded, retakeable Practice mode with audio questions for listening comprehension, or have students record a spoken answer for speaking practice. Save questions — or a whole reading/listening passage — to a reusable bank, then generate a new test automatically from bank criteria in one click. Auto-generate cloze gaps (fixed-ratio, C-test, grammar or vocabulary-targeted), check a passage against your class’s CEFR level with one-click pre-teaching decks, and turn a flashcard deck straight into test questions. Export a printable, CITO-style exam paper — question booklet, answer sheet, attachment, and grading sheet — as PDF or Word, then scan a student’s filled-in paper answer sheet back in for automatic marking.',
         color: '#3b82f6',
+    },
+    {
+        icon: Table2,
+        title: 'Paper-Test Score Sheet',
+        desc: 'Type in the points per question for a paper test in a spreadsheet-style grid and get grades from a percentage, N-term, pass mark or per-year norm table, plus P-values and reliability.',
+        color: '#2563eb',
     },
     {
         icon: Route,
