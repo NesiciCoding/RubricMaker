@@ -3923,7 +3923,7 @@
         "rb_standards_item_cefr": "CEFR Can-Do descriptors — attach specific descriptors per criterion.",
         "rb_standards_item_ib": "IB Learner Profile attributes and Bloom's Taxonomy levels.",
         "rb_standards_item_ccss": "CCSS, NGSS, and state standards via the Common Standards Project API.",
-        "rb_standards_item_grammar": "Grammar linker — open the alignment picker and switch to the Grammar tab. Each grammar topic is a header (e.g. Past Simple) and its distinctions (regular verbs, irregular verbs) are separate, individually linkable standards. Filter by CEFR level (levels follow the CEFR-J Grammar Profile). Linked grammar can be auto-checked in scanned essays during grading — see Grading.",
+        "rb_standards_item_grammar": "Grammar linker — open the alignment picker and switch to the Grammar tab. Each grammar topic is a header (e.g. Past Simple) and its distinctions (regular verbs, irregular verbs) are separate, individually linkable standards. Filter by CEFR level (levels follow the CEFR-J Grammar Profile). The verbs to be and to have (including have got) have their own topics, with present, past, negative and question forms at A1–A2; they are not auto-detected in essays. Linked grammar can be auto-checked in scanned essays during grading — see Grading.",
         "rb_version_history_title": "Version history",
         "rb_version_history_body_prefix": "Every save creates an automatic snapshot. Click",
         "rb_version_history_body_button": "Version History",

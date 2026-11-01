@@ -3923,7 +3923,7 @@
         "rb_standards_item_cefr": "Descriptores Can-Do del MCER — adjuntar descriptores específicos por criterio.",
         "rb_standards_item_ib": "Atributos del Perfil del estudiante del IB y niveles de la taxonomía de Bloom.",
         "rb_standards_item_ccss": "CCSS, NGSS y estándares estatales a través de la API del Common Standards Project.",
-        "rb_standards_item_grammar": "Vinculador de gramática — abre el selector de alineación y cambia a la pestaña Gramática. Cada tema gramatical es un encabezado (p. ej., Past Simple) y sus distinciones (verbos regulares, verbos irregulares) son estándares separados, vinculables individualmente. Filtra por nivel MCER (los niveles siguen el CEFR-J Grammar Profile). La gramática vinculada se puede comprobar automáticamente en redacciones escaneadas durante la calificación — ver Calificación.",
+        "rb_standards_item_grammar": "Vinculador de gramática — abre el selector de alineación y cambia a la pestaña Gramática. Cada tema gramatical es un encabezado (p. ej., Past Simple) y sus distinciones (verbos regulares, verbos irregulares) son estándares separados, vinculables individualmente. Filtra por nivel MCER (los niveles siguen el CEFR-J Grammar Profile). Los verbos to be y to have (incluido have got) tienen sus propios temas, con presente, pasado, negación y preguntas en A1–A2; no se detectan automáticamente en las redacciones. La gramática vinculada se puede comprobar automáticamente en redacciones escaneadas durante la calificación — ver Calificación.",
         "rb_version_history_title": "Historial de versiones",
         "rb_version_history_body_prefix": "Cada guardado crea automáticamente una instantánea. Haz clic en",
         "rb_version_history_body_button": "Historial de versiones",
