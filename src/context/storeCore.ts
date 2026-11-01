@@ -261,9 +261,16 @@ export function reducer(state: StoreData, action: Action): StoreData {
             return { ...state, folders: next };
         }
         case 'DELETE_FOLDER': {
-            // The folder goes, its contents stay: items are unfiled so a deleted folder can
-            // never orphan them, and only the rows that actually pointed at it get new objects.
-            const folders = state.folders.filter((f) => f.id !== action.id);
+            // The folder goes, its contents stay: items are unfiled and any folders inside it move
+            // up to where it sat, so nothing is left pointing at a folder that no longer exists.
+            // Only the rows that actually pointed at it get new objects.
+            const removed = state.folders.find((f) => f.id === action.id);
+            const reparentedAt = new Date().toISOString();
+            const folders = state.folders
+                .filter((f) => f.id !== action.id)
+                .map((f) =>
+                    f.parentId === action.id ? { ...f, parentId: removed?.parentId, updatedAt: reparentedAt } : f
+                );
             if (isOffline()) saveFolders(folders);
             if (action.kind === 'test') {
                 const tests = state.tests.map((t) => (t.folderId === action.id ? { ...t, folderId: undefined } : t));
