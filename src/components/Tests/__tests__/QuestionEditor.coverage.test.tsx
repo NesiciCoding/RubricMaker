@@ -469,11 +469,12 @@ describe('QuestionEditor coverage', () => {
         expect(screen.queryByTestId('std-picker')).not.toBeInTheDocument();
     });
 
-    it('closes the no-api-key dialog via the overlay and the header close button', () => {
+    it('closes the no-api-key dialog via Escape and the header close button', () => {
         renderEditor();
         fireEvent.click(screen.getByText('tests.link_standard'));
         expect(screen.getByText('tests.standards_api_key_required')).toBeInTheDocument();
-        fireEvent.click(document.querySelector('.modal-overlay') as HTMLElement);
+        // The dialog is the shared Radix-backed Modal, so Escape closes it.
+        fireEvent.keyDown(document.body, { key: 'Escape' });
         expect(screen.queryByText('tests.standards_api_key_required')).not.toBeInTheDocument();
 
         fireEvent.click(screen.getByText('tests.link_standard'));
