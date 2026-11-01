@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { AlertTriangle } from 'lucide-react';
 import type { Class, GradeScale, Student, StudentTest, Test, TestAnswer } from '../../../types';
 import { scoreTestAnswer } from '../../../utils/testCalc';
+import { stripHtmlTags } from '../../../utils/exportDataPrep';
 import { scoreStudentTest } from '../../../utils/studentTestScore';
 import { normTierLabel, resolveTestGrade } from '../../../utils/testGradingNorm';
 import {
@@ -166,7 +167,7 @@ export default function ScoreSheetGrid({ test, students, classes, sheetByStudent
                                 <th
                                     key={q.id}
                                     scope="col"
-                                    title={test.scoreOnly ? undefined : q.prompt.replace(/<[^>]+>/g, '').slice(0, 120)}
+                                    title={test.scoreOnly ? undefined : stripHtmlTags(q.prompt).slice(0, 120)}
                                     style={{
                                         ...stickyHead,
                                         padding: '6px 4px',
