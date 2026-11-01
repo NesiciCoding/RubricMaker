@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LayoutGrid, GripVertical, ClipboardList, Plus, X } from 'lucide-react';
+import { LayoutGrid, ClipboardList, Plus, X } from 'lucide-react';
+import CardGrip from '../components/ui/CardGrip';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { useTranslation } from 'react-i18next';
 import PageTour from '../components/Tour/PageTour';
@@ -10,6 +11,7 @@ import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { getActivityRows, buildDashboardMatrix } from '../utils/activityDashboardAggregator';
 import { getClassStandardsCoverage } from '../utils/standardsCoverageAggregator';
 import ClassCoverageGapPanel from '../components/Standards/ClassCoverageGapPanel';
+import Modal from '../components/ui/Modal';
 import { reorderDisplayOrder } from '../utils/displayOrder';
 import { VO_TRACKS } from '../data/voTracks';
 import { SCHOOL_YEAR_LABELS, getAvailableSchoolYears } from '../data/schoolYears';
@@ -431,44 +433,58 @@ export default function ActivityDashboardPage() {
                                                                         zIndex: 1,
                                                                         background: 'var(--bg-card)',
                                                                         padding: '8px 12px',
+                                                                        width: 200,
                                                                         maxWidth: 200,
                                                                         overflow: 'hidden',
-                                                                        textOverflow: 'ellipsis',
-                                                                        whiteSpace: 'nowrap',
                                                                     }}
                                                                     title={activity.name}
                                                                 >
-                                                                    <span
-                                                                        {...dragProvided.dragHandleProps}
-                                                                        aria-label={t('rubricList.drag_to_reorder')}
+                                                                    {/* A table cell sizes to its content, so the name needs its own capped,
+                                                                        truncating box — otherwise a long activity name widens the sticky column
+                                                                        and pushes the class columns into horizontal scroll. The box must not clip,
+                                                                        though: the handle's negative margin pulls part of its grab area (and its
+                                                                        focus ring) outside it, and the button ellipsises on its own. */}
+                                                                    <div
                                                                         style={{
-                                                                            cursor: 'grab',
-                                                                            color: 'var(--text-dim)',
-                                                                            marginRight: 6,
-                                                                            display: 'inline-flex',
-                                                                            verticalAlign: 'middle',
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            gap: 2,
+                                                                            minWidth: 0,
+                                                                            maxWidth: 200,
                                                                         }}
                                                                     >
-                                                                        <GripVertical size={13} />
-                                                                    </span>
-                                                                    <button
-                                                                        type="button"
-                                                                        className="btn btn-ghost btn-sm"
-                                                                        style={{
-                                                                            padding: 0,
-                                                                            color: 'var(--accent)',
-                                                                            fontWeight: 500,
-                                                                        }}
-                                                                        onClick={() => {
-                                                                            if (activity.kind === 'rubric')
-                                                                                navigate(`/rubrics/${activity.id}`);
-                                                                            else if (activity.kind === 'test')
-                                                                                navigate(`/tests/${activity.id}`);
-                                                                            else navigate(`/essays/${activity.id}`);
-                                                                        }}
-                                                                    >
-                                                                        {activity.name}
-                                                                    </button>
+                                                                        <CardGrip
+                                                                            {...dragProvided.dragHandleProps}
+                                                                            label={t('rubricList.drag_to_reorder')}
+                                                                            size={13}
+                                                                            // Table cells are tighter than cards, so cancel the padding vertically as well.
+                                                                            style={{ margin: '-5px 1px -5px -5px' }}
+                                                                        />
+                                                                        <button
+                                                                            type="button"
+                                                                            className="btn btn-ghost btn-sm"
+                                                                            style={{
+                                                                                padding: 0,
+                                                                                color: 'var(--accent)',
+                                                                                fontWeight: 500,
+                                                                                display: 'block',
+                                                                                minWidth: 0,
+                                                                                overflow: 'hidden',
+                                                                                textOverflow: 'ellipsis',
+                                                                                whiteSpace: 'nowrap',
+                                                                                textAlign: 'left',
+                                                                            }}
+                                                                            onClick={() => {
+                                                                                if (activity.kind === 'rubric')
+                                                                                    navigate(`/rubrics/${activity.id}`);
+                                                                                else if (activity.kind === 'test')
+                                                                                    navigate(`/tests/${activity.id}`);
+                                                                                else navigate(`/essays/${activity.id}`);
+                                                                            }}
+                                                                        >
+                                                                            {activity.name}
+                                                                        </button>
+                                                                    </div>
                                                                 </td>
 
                                                                 {visibleClasses.map((cls) => {
@@ -667,54 +683,52 @@ export default function ActivityDashboardPage() {
             </div>
 
             {assignTaskCell && (
-                <div className="modal-overlay" onClick={() => setAssignTaskCell(null)}>
-                    <div className="modal" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
-                        <div className="modal-header">
-                            <h3>{t('gradingTasks.modal_title')}</h3>
-                            <button
-                                className="btn btn-ghost btn-icon"
-                                aria-label={t('common.close')}
-                                onClick={() => setAssignTaskCell(null)}
-                            >
-                                <X size={16} />
-                            </button>
+                <Modal titleId="grading-task-title" onClose={() => setAssignTaskCell(null)} maxWidth={420}>
+                    <div className="modal-header">
+                        <h3 id="grading-task-title">{t('gradingTasks.modal_title')}</h3>
+                        <button
+                            className="btn btn-ghost btn-icon"
+                            aria-label={t('common.close')}
+                            onClick={() => setAssignTaskCell(null)}
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
+                    <div className="modal-body">
+                        <div className="form-group">
+                            <label htmlFor="grading-task-teacher">{t('gradingTasks.teacher_label')}</label>
+                            <input
+                                id="grading-task-teacher"
+                                type="text"
+                                autoFocus
+                                value={assignTeacherName}
+                                onChange={(e) => setAssignTeacherName(e.target.value)}
+                                placeholder={t('gradingTasks.teacher_placeholder')}
+                            />
                         </div>
-                        <div className="modal-body">
-                            <div className="form-group">
-                                <label htmlFor="grading-task-teacher">{t('gradingTasks.teacher_label')}</label>
-                                <input
-                                    id="grading-task-teacher"
-                                    type="text"
-                                    autoFocus
-                                    value={assignTeacherName}
-                                    onChange={(e) => setAssignTeacherName(e.target.value)}
-                                    placeholder={t('gradingTasks.teacher_placeholder')}
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="grading-task-due-date">{t('gradingTasks.due_date_label')}</label>
-                                <input
-                                    id="grading-task-due-date"
-                                    type="date"
-                                    value={assignDueDate}
-                                    onChange={(e) => setAssignDueDate(e.target.value)}
-                                />
-                            </div>
-                        </div>
-                        <div className="modal-footer">
-                            <button className="btn btn-secondary" onClick={() => setAssignTaskCell(null)}>
-                                {t('common.cancel')}
-                            </button>
-                            <button
-                                className="btn btn-primary"
-                                disabled={!assignTeacherName.trim()}
-                                onClick={handleAssignTasks}
-                            >
-                                {t('gradingTasks.action_assign')}
-                            </button>
+                        <div className="form-group">
+                            <label htmlFor="grading-task-due-date">{t('gradingTasks.due_date_label')}</label>
+                            <input
+                                id="grading-task-due-date"
+                                type="date"
+                                value={assignDueDate}
+                                onChange={(e) => setAssignDueDate(e.target.value)}
+                            />
                         </div>
                     </div>
-                </div>
+                    <div className="modal-footer">
+                        <button className="btn btn-secondary" onClick={() => setAssignTaskCell(null)}>
+                            {t('common.cancel')}
+                        </button>
+                        <button
+                            className="btn btn-primary"
+                            disabled={!assignTeacherName.trim()}
+                            onClick={handleAssignTasks}
+                        >
+                            {t('gradingTasks.action_assign')}
+                        </button>
+                    </div>
+                </Modal>
             )}
         </>
     );

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Droppable } from '@hello-pangea/dnd';
 import { Folder as FolderIcon, Pencil, Trash2 } from 'lucide-react';
@@ -8,14 +9,30 @@ export const FOLDER_DROP_PREFIX = 'folder-drop:';
 export interface FolderTileProps {
     folder: Folder;
     count: number;
+    /** Folders directly inside this one; shown as a second line so a nested folder reads as nested. */
+    subfolderCount?: number;
     active: boolean;
+    /** Highlight from the pointer tracker: the card being dragged is over this tile. */
+    isDropTarget?: boolean;
     onOpen: (folderId: string) => void;
     onRename: (folder: Folder) => void;
     onDelete: (folder: Folder) => void;
+    /** A MoveToMenu for this folder, when the bar offers re-parenting. */
+    moveMenu?: ReactNode;
 }
 
 /** A compact Drive-style folder tile that is both a filter and a drop target for the cards. */
-export default function FolderTile({ folder, count, active, onOpen, onRename, onDelete }: FolderTileProps) {
+export default function FolderTile({
+    folder,
+    count,
+    subfolderCount = 0,
+    active,
+    isDropTarget = false,
+    onOpen,
+    onRename,
+    onDelete,
+    moveMenu,
+}: FolderTileProps) {
     const { t } = useTranslation();
     return (
         <Droppable droppableId={`${FOLDER_DROP_PREFIX}${folder.id}`}>
@@ -23,6 +40,8 @@ export default function FolderTile({ folder, count, active, onOpen, onRename, on
                 <div
                     ref={provided.innerRef}
                     {...provided.droppableProps}
+                    // Read by useFolderDropTarget to resolve the tile under the dragging pointer.
+                    data-drop-folder-id={folder.id}
                     className="card"
                     style={{
                         flex: '0 1 220px',
@@ -30,13 +49,16 @@ export default function FolderTile({ folder, count, active, onOpen, onRename, on
                         display: 'flex',
                         flexDirection: 'column',
                         gap: 4,
-                        borderColor: snapshot.isDraggingOver || active ? 'var(--accent)' : 'var(--border)',
-                        background: snapshot.isDraggingOver
-                            ? 'var(--accent-soft)'
-                            : active
-                              ? 'var(--bg-elevated)'
-                              : undefined,
+                        borderColor:
+                            snapshot.isDraggingOver || isDropTarget || active ? 'var(--accent)' : 'var(--border)',
+                        background:
+                            snapshot.isDraggingOver || isDropTarget
+                                ? 'var(--accent-soft)'
+                                : active
+                                  ? 'var(--bg-elevated)'
+                                  : undefined,
                         transition: 'border-color var(--transition)',
+                        minWidth: 0,
                     }}
                 >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
@@ -59,6 +81,7 @@ export default function FolderTile({ folder, count, active, onOpen, onRename, on
                                 {folder.name}
                             </span>
                         </button>
+                        {moveMenu}
                         <button
                             type="button"
                             className="btn btn-ghost btn-icon btn-sm"
@@ -81,6 +104,7 @@ export default function FolderTile({ folder, count, active, onOpen, onRename, on
                     </div>
                     <div className="text-muted text-xs" style={{ paddingLeft: 22 }}>
                         {t('folders.items_count', { count })}
+                        {subfolderCount > 0 && <> · {t('folders.subfolder_count', { count: subfolderCount })}</>}
                     </div>
                     {provided.placeholder}
                 </div>

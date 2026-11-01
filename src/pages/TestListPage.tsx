@@ -13,7 +13,6 @@ import {
     Upload,
     Radio,
     FileDown,
-    GripVertical,
     Sparkles,
     LayoutGrid,
     List,
@@ -27,12 +26,19 @@ import { useToast } from '../hooks/useToast';
 import { logAuditEvent } from '../services/database/AuditLogger';
 import { nanoid } from '../utils/nanoid';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import CardGrid from '../components/ui/CardGrid';
+import CardTile from '../components/ui/CardTile';
+import CardGrip from '../components/ui/CardGrip';
 import { useConfirm } from '../hooks/useConfirm';
+import { useFolderDropTarget } from '../hooks/useFolderDropTarget';
 import TestAssignmentModal from '../components/Tests/TestAssignmentModal';
-import FolderTile, { FOLDER_DROP_PREFIX } from '../components/Folders/FolderTile';
+import FolderBar from '../components/Folders/FolderBar';
+import MoveToMenu from '../components/Folders/MoveToMenu';
+import FolderLocationBadge from '../components/Folders/FolderLocationBadge';
+import { FOLDER_DROP_PREFIX } from '../components/Folders/FolderTile';
 import FolderNameModal from '../components/Folders/FolderNameModal';
 import TestSubmissionImportModal from '../components/Tests/TestSubmissionImportModal';
-import ExamScanCaptureModal from '../components/Tests/ExamScanCaptureModal';
+import ExamScanBatchModal from '../components/Tests/ExamScanBatchModal';
 import ClassAverageAdjuster from '../components/Tests/ClassAverageAdjuster';
 import ItemAnalysisPanel from '../components/Tests/ItemAnalysisPanel';
 import PlacementAnalysisPanel from '../components/Tests/PlacementAnalysisPanel';
@@ -40,7 +46,7 @@ import GenerateTestModal from '../components/Tests/GenerateTestModal';
 import ExamBookletExportPanel from '../components/Tests/ExamBookletExportPanel';
 import type { Folder, Test, StudentTest, CohortFilter as CohortFilterValue } from '../types';
 import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
-import { ALL_FOLDERS, countInFolder, filterByFolder, foldersForKind, nextFolderOrder } from '../utils/folders';
+import { ALL_FOLDERS, filterByFolder, folderPathLabel, foldersForKind, nextFolderOrder } from '../utils/folders';
 import { getCohortStudentIds, isAllCohorts, ALL_COHORTS } from '../utils/cohortAggregator';
 import { isGeneratorTest } from '../utils/placementGenerator';
 import CohortFilter from '../components/CohortFilter';
@@ -48,6 +54,7 @@ import SegmentedToggle from '../components/ui/SegmentedToggle';
 import { calcClassAveragePercentage } from '../utils/testCalc';
 import { GRADEBOOK_PRESET_IDS, type DecimalSeparator, type GradebookPresetId } from '../utils/gradebookExportPresets';
 import { testAssignBlockers } from '../utils/testQuestionIssues';
+import { resolveScanOcrSettings } from '../utils/scanSettings';
 
 export default function TestListPage() {
     const { t } = useTranslation();
@@ -83,7 +90,8 @@ export default function TestListPage() {
     const [cohortFilter, setCohortFilter] = useState<CohortFilterValue>(ALL_COHORTS);
     const [view, setView] = useState<'cards' | 'list'>('cards');
     const [activeFolder, setActiveFolder] = useState<string>(ALL_FOLDERS);
-    const [folderModal, setFolderModal] = useState<{ folder?: Folder } | null>(null);
+    // `parentId` is where a new folder is created: the folder you are inside of, if any.
+    const [folderModal, setFolderModal] = useState<{ folder?: Folder; parentId?: string } | null>(null);
     const allCohorts = isAllCohorts(cohortFilter);
     const cohortStudentIds = React.useMemo(
         () => getCohortStudentIds(students, classes, cohortFilter),
@@ -99,17 +107,29 @@ export default function TestListPage() {
         return sorted.filter((test) => cohortTestIds.has(test.id));
     }, [tests, studentTests, cohortStudentIds, allCohorts, activeFolder]);
     const reorderable = allCohorts && activeFolder === ALL_FOLDERS;
+    const { dropFolderId, startFolderDrop, endFolderDrop } = useFolderDropTarget();
+
+    function fileIntoFolder(test: Test | undefined, folderId: string) {
+        if (!test || test.folderId === folderId) return;
+        updateTest({ ...test, folderId });
+        const folder = testFolders.find((f) => f.id === folderId);
+        if (folder) showToast(t('folders.moved_toast', { name: folder.name }), 'success');
+    }
 
     function handleDragEnd(result: DropResult) {
+        // Pointer-based: @hello-pangea/dnd only sees the dragged card's centre, which never reaches
+        // a folder tile from a card grabbed by its corner handle.
+        const pointerFolderId = endFolderDrop();
+        // `reason` guards Escape: @hello-pangea/dnd calls onDragEnd with CANCEL and a null
+        // destination, and the pointer may well be resting on a tile at that moment.
+        if (pointerFolderId && result.reason === 'DROP') {
+            fileIntoFolder(visibleTests[result.source.index], pointerFolderId);
+            return;
+        }
         const destination = result.destination;
         if (!destination) return;
         if (destination.droppableId.startsWith(FOLDER_DROP_PREFIX)) {
-            const folderId = destination.droppableId.slice(FOLDER_DROP_PREFIX.length);
-            const test = visibleTests[result.source.index];
-            if (!test || test.folderId === folderId) return;
-            updateTest({ ...test, folderId });
-            const folder = testFolders.find((f) => f.id === folderId);
-            if (folder) showToast(t('folders.moved_toast', { name: folder.name }), 'success');
+            fileIntoFolder(visibleTests[result.source.index], destination.droppableId.slice(FOLDER_DROP_PREFIX.length));
             return;
         }
         if (destination.droppableId !== 'test-list' || !reorderable) return;
@@ -121,12 +141,32 @@ export default function TestListPage() {
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
     const { showToast } = useToast();
 
+    function moveFolder(folder: Folder, parentId: string | undefined) {
+        if (folder.parentId === parentId) return;
+        updateFolder({
+            ...folder,
+            parentId,
+            displayOrder: nextFolderOrder(folders, 'test', parentId),
+        });
+    }
+
+    function moveTest(test: Test, folderId: string | undefined) {
+        if ((test.folderId ?? undefined) === folderId) return;
+        updateTest({ ...test, folderId });
+    }
+
     function submitFolderName(name: string) {
         const editing = folderModal?.folder;
         if (editing) {
             updateFolder({ ...editing, name });
         } else {
-            const folder = addFolder({ name, kind: 'test', displayOrder: nextFolderOrder(folders, 'test') });
+            const parentId = folderModal?.parentId;
+            const folder = addFolder({
+                name,
+                kind: 'test',
+                parentId,
+                displayOrder: nextFolderOrder(folders, 'test', parentId),
+            });
             setActiveFolder(folder.id);
         }
         setFolderModal(null);
@@ -385,31 +425,19 @@ export default function TestListPage() {
                         />
                     </div>
                 </div>
-                <DragDropContext onDragEnd={handleDragEnd}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
-                        <button
-                            type="button"
-                            className={`btn btn-sm ${activeFolder === ALL_FOLDERS ? 'btn-primary' : 'btn-secondary'}`}
-                            aria-pressed={activeFolder === ALL_FOLDERS}
-                            onClick={() => setActiveFolder(ALL_FOLDERS)}
-                        >
-                            <LayoutGrid size={14} /> {t('folders.all')}
-                        </button>
-                        {testFolders.map((folder) => (
-                            <FolderTile
-                                key={folder.id}
-                                folder={folder}
-                                count={countInFolder(tests, folder.id)}
-                                active={activeFolder === folder.id}
-                                onOpen={(id) => setActiveFolder((current) => (current === id ? ALL_FOLDERS : id))}
-                                onRename={(f) => setFolderModal({ folder: f })}
-                                onDelete={handleDeleteFolder}
-                            />
-                        ))}
-                        <button type="button" className="btn btn-secondary btn-sm" onClick={() => setFolderModal({})}>
-                            <Plus size={14} /> {t('folders.new_folder')}
-                        </button>
-                    </div>
+                <DragDropContext onBeforeCapture={startFolderDrop} onDragEnd={handleDragEnd}>
+                    <FolderBar
+                        folders={folders}
+                        kind="test"
+                        activeFolderId={activeFolder}
+                        items={tests}
+                        onSelect={setActiveFolder}
+                        onCreate={(parentId) => setFolderModal({ parentId })}
+                        onRename={(f) => setFolderModal({ folder: f })}
+                        onDelete={handleDeleteFolder}
+                        onMoveFolder={moveFolder}
+                        dropFolderId={dropFolderId}
+                    />
                     {visibleTests.length === 0 ? (
                         <div className="empty-state">
                             <ClipboardCheck size={40} />
@@ -516,16 +544,7 @@ export default function TestListPage() {
                     ) : (
                         <Droppable droppableId="test-list">
                             {(droppableProvided) => (
-                                <div
-                                    ref={droppableProvided.innerRef}
-                                    {...droppableProvided.droppableProps}
-                                    style={{
-                                        // ponytail: flex-wrap, not CSS grid — see RubricList for why @hello-pangea/dnd needs this
-                                        display: 'flex',
-                                        flexWrap: 'wrap',
-                                        gap: 16,
-                                    }}
-                                >
+                                <CardGrid ref={droppableProvided.innerRef} {...droppableProvided.droppableProps}>
                                     {visibleTests.map((test, idx) => {
                                         const totalPoints = test.questions.reduce((sum, q) => sum + (q.points || 0), 0);
                                         const isOverdue = !!test.dueDate && new Date(test.dueDate) < new Date();
@@ -544,22 +563,14 @@ export default function TestListPage() {
                                                 isDragDisabled={!reorderable}
                                             >
                                                 {(dragProvided) => (
-                                                    <div
+                                                    <CardTile
                                                         ref={dragProvided.innerRef}
                                                         {...dragProvided.draggableProps}
-                                                        className="card"
+                                                        hoverable
                                                         style={{
                                                             cursor: 'pointer',
-                                                            transition: 'border-color var(--transition)',
-                                                            flex: '0 1 400px',
                                                             ...dragProvided.draggableProps.style,
                                                         }}
-                                                        onMouseEnter={(e) =>
-                                                            (e.currentTarget.style.borderColor = 'var(--accent)')
-                                                        }
-                                                        onMouseLeave={(e) =>
-                                                            (e.currentTarget.style.borderColor = 'var(--border)')
-                                                        }
                                                     >
                                                         <div
                                                             style={{
@@ -577,17 +588,10 @@ export default function TestListPage() {
                                                                 }}
                                                             >
                                                                 {reorderable && (
-                                                                    <span
+                                                                    <CardGrip
                                                                         {...dragProvided.dragHandleProps}
-                                                                        aria-label={t('rubricList.drag_to_reorder')}
-                                                                        style={{
-                                                                            cursor: 'grab',
-                                                                            color: 'var(--text-dim)',
-                                                                            marginTop: 3,
-                                                                        }}
-                                                                    >
-                                                                        <GripVertical size={15} />
-                                                                    </span>
+                                                                        label={t('rubricList.drag_to_reorder')}
+                                                                    />
                                                                 )}
                                                                 <div>
                                                                     <h3>{test.name}</h3>
@@ -619,6 +623,13 @@ export default function TestListPage() {
                                                                 </div>
                                                             </div>
                                                             <div style={{ display: 'flex', gap: 4 }}>
+                                                                <MoveToMenu
+                                                                    folders={testFolders}
+                                                                    kind="test"
+                                                                    currentFolderId={test.folderId}
+                                                                    rootLabel={t('folders.move_to_unfiled')}
+                                                                    onMove={(folderId) => moveTest(test, folderId)}
+                                                                />
                                                                 <button
                                                                     type="button"
                                                                     className="btn btn-ghost btn-icon btn-sm"
@@ -667,6 +678,11 @@ export default function TestListPage() {
                                                                 marginBottom: 14,
                                                             }}
                                                         >
+                                                            {folderPathLabel(testFolders, test.folderId) && (
+                                                                <FolderLocationBadge
+                                                                    path={folderPathLabel(testFolders, test.folderId)!}
+                                                                />
+                                                            )}
                                                             <span className="badge badge-blue">
                                                                 {t('tests.question_count', {
                                                                     count: test.questions.length,
@@ -1112,13 +1128,13 @@ export default function TestListPage() {
                                                                 </div>
                                                             </div>
                                                         )}
-                                                    </div>
+                                                    </CardTile>
                                                 )}
                                             </Draggable>
                                         );
                                     })}
                                     {droppableProvided.placeholder}
-                                </div>
+                                </CardGrid>
                             )}
                         </Droppable>
                     )}
@@ -1126,7 +1142,13 @@ export default function TestListPage() {
 
                 {folderModal && (
                     <FolderNameModal
-                        title={folderModal.folder ? t('folders.rename_title') : t('folders.new_folder')}
+                        title={
+                            folderModal.folder
+                                ? t('folders.rename_title')
+                                : folderModal.parentId
+                                  ? t('folders.new_subfolder')
+                                  : t('folders.new_folder')
+                        }
                         submitLabel={folderModal.folder ? t('folders.rename') : t('folders.create')}
                         initialName={folderModal.folder?.name}
                         onSubmit={submitFolderName}
@@ -1165,10 +1187,11 @@ export default function TestListPage() {
                         // v8 ignore next line — scan buttons only render for existing tests
                         if (!test) return null;
                         return (
-                            <ExamScanCaptureModal
+                            <ExamScanBatchModal
                                 test={test}
                                 students={students}
                                 studentTests={studentTests.filter((st) => st.testId === test.id)}
+                                defaultLang={resolveScanOcrSettings(settings.scanOcr).defaultLang}
                                 onSave={saveStudentTest}
                                 onClose={() => setScanningTestId(null)}
                             />

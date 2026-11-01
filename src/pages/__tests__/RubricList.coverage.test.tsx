@@ -63,6 +63,24 @@ const mockStudentRubric: StudentRubric = {
 };
 
 const mockAddRubric = vi.fn((_r: Rubric) => ({ ...mockRubric, id: 'new-r' }));
+const mockAddFolder = vi.fn((f: { name: string; kind: string; parentId?: string }) => ({
+    id: 'new-folder',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    ...f,
+}));
+const mockUpdateFolder = vi.fn();
+const mockDeleteFolder = vi.fn();
+const mockFolders = [
+    { id: 'year1', name: 'Year 1', kind: 'rubric' as const, createdAt: '2026-01-01T00:00:00.000Z' },
+    { id: 'year2', name: 'Year 2', kind: 'rubric' as const, createdAt: '2026-01-02T00:00:00.000Z' },
+    {
+        id: 'essays',
+        name: 'Essays',
+        kind: 'rubric' as const,
+        parentId: 'year1',
+        createdAt: '2026-01-03T00:00:00.000Z',
+    },
+];
 const mockUpdateRubric = vi.fn();
 const mockDeleteRubric = vi.fn();
 const mockCreateGroupStudentRubrics = vi.fn(() => [{ studentId: 's1' }]);
@@ -75,6 +93,7 @@ const mockUnshareRubric = vi.fn();
 const mockFetchSharedRubrics = vi.fn().mockResolvedValue([]);
 const mockFetchSchoolSharedRubrics = vi.fn().mockResolvedValue([]);
 const dndOnDragEnd = vi.hoisted(() => ({ handler: null as unknown as (r: unknown) => void }));
+const dndOnBeforeCapture = vi.hoisted(() => ({ handler: null as unknown as () => void }));
 
 const mockRubricsArr = [mockRubric, mockRubric2, mockRubric3];
 const mockStudentsArr = [mockStudent1, mockStudent2];
@@ -92,6 +111,10 @@ const mockAppValue = {
     deleteRubric: mockDeleteRubric,
     createGroupStudentRubrics: mockCreateGroupStudentRubrics,
     userTemplates: [],
+    folders: mockFolders,
+    addFolder: mockAddFolder,
+    updateFolder: mockUpdateFolder,
+    deleteFolder: mockDeleteFolder,
 };
 
 vi.mock('../../context/AppContext', () => ({
@@ -130,12 +153,21 @@ vi.mock('../../services/database', () => ({
 }));
 
 vi.mock('@hello-pangea/dnd', () => ({
-    DragDropContext: ({ children, onDragEnd }: { children: React.ReactNode; onDragEnd: (r: unknown) => void }) => {
+    DragDropContext: ({
+        children,
+        onBeforeCapture,
+        onDragEnd,
+    }: {
+        children: React.ReactNode;
+        onBeforeCapture: () => void;
+        onDragEnd: (r: unknown) => void;
+    }) => {
         dndOnDragEnd.handler = onDragEnd;
+        dndOnBeforeCapture.handler = onBeforeCapture;
         return React.createElement(React.Fragment, null, children);
     },
-    Droppable: ({ children }: { children: (p: unknown) => React.ReactNode }) =>
-        children({ innerRef: vi.fn(), droppableProps: {}, placeholder: null }),
+    Droppable: ({ children }: { children: (p: unknown, s: unknown) => React.ReactNode }) =>
+        children({ innerRef: vi.fn(), droppableProps: {}, placeholder: null }, { isDraggingOver: false }),
     Draggable: ({ children }: { children: (p: unknown) => React.ReactNode }) =>
         children({ innerRef: vi.fn(), draggableProps: {}, dragHandleProps: {} }),
 }));
@@ -330,6 +362,55 @@ describe('RubricList coverage', () => {
         expect(mockUpdateRubric).not.toHaveBeenCalled();
     });
 
+    it('files a rubric on a real drop over a folder tile but not on a cancelled drag', () => {
+        renderPage();
+        const tile = document.createElement('div');
+        tile.setAttribute('data-drop-folder-id', 'f1');
+        const label = document.createElement('span');
+        tile.appendChild(label);
+        document.body.appendChild(tile);
+        // jsdom has no layout and therefore no elementFromPoint at all; stand in for the hit test.
+        Object.defineProperty(document, 'elementFromPoint', {
+            configurable: true,
+            writable: true,
+            value: () => label,
+        });
+
+        const dragOverTile = () => {
+            act(() => {
+                dndOnBeforeCapture.handler();
+            });
+            act(() => {
+                // The listener is registered on window itself, so dispatch there.
+                window.dispatchEvent(new MouseEvent('mousemove', { clientX: 5, clientY: 5 }));
+            });
+        };
+
+        // Escape ends the drag with CANCEL and no destination; the pointer is still on the tile.
+        dragOverTile();
+        act(() => {
+            dndOnDragEnd.handler({
+                source: { index: 0, droppableId: 'rubric-list' },
+                destination: null,
+                reason: 'CANCEL',
+            });
+        });
+        expect(mockUpdateRubric).not.toHaveBeenCalled();
+
+        dragOverTile();
+        act(() => {
+            dndOnDragEnd.handler({
+                source: { index: 0, droppableId: 'rubric-list' },
+                destination: null,
+                reason: 'DROP',
+            });
+        });
+        expect(mockUpdateRubric).toHaveBeenCalledWith(expect.objectContaining({ id: 'r1', folderId: 'f1' }));
+
+        Reflect.deleteProperty(document, 'elementFromPoint');
+        tile.remove();
+    });
+
     it('imports a minimal share code using every fallback field', () => {
         renderPage();
         const minimal = {
@@ -371,10 +452,12 @@ describe('RubricList coverage', () => {
         expect(screen.queryByPlaceholderText('tooltips.paste_share_code')).not.toBeInTheDocument();
     });
 
-    it('closes the differentiate modal via overlay, close button, and picks a CEFR level', () => {
+    it('closes the differentiate modal via Escape, close button, and picks a CEFR level', () => {
         renderPage();
+        // The differentiate dialog is the shared Radix-backed Modal now, so it closes on Escape.
+        // Backdrop dismissal is Radix's own outside-interaction detection, covered by Modal.test.tsx.
         fireEvent.click(screen.getAllByTitle('voTrack.differentiate_title')[0]);
-        fireEvent.click(document.querySelector('.modal-overlay') as HTMLElement);
+        fireEvent.keyDown(document.body, { key: 'Escape' });
         expect(screen.queryByText('voTrack.action_create')).not.toBeInTheDocument();
 
         fireEvent.click(screen.getAllByTitle('voTrack.differentiate_title')[0]);
@@ -498,9 +581,9 @@ describe('RubricList coverage', () => {
             await waitFor(() => expect(screen.getByText('Unknown error')).toBeInTheDocument());
         });
 
-        it('closes the share modal via overlay, header close, and footer close', async () => {
+        it('closes the share modal via Escape, header close, and footer close', async () => {
             await openShare();
-            fireEvent.click(document.querySelector('.modal-overlay') as HTMLElement);
+            fireEvent.keyDown(document.body, { key: 'Escape' });
             expect(screen.queryByText('rubricList.share_modal_title')).not.toBeInTheDocument();
 
             await openShare();
@@ -529,6 +612,44 @@ it('renders the no-subject dash in the list view', () => {
     renderPage();
     fireEvent.click(screen.getByText('common.view_list'));
     expect(screen.getAllByText('—').length).toBeGreaterThan(0);
+    mockRubricsArr.pop();
+});
+
+it('creates a subfolder inside the folder that is open', () => {
+    renderPage();
+    // Walk into the folder; the bar now shows a breadcrumb and offers a subfolder.
+    fireEvent.click(screen.getByRole('button', { name: 'Year 1' }));
+    expect(screen.getByRole('navigation', { name: 'folders.path_label' })).toBeInTheDocument();
+    fireEvent.click(screen.getByText(/folders.new_subfolder/));
+
+    fireEvent.change(screen.getByLabelText('folders.folder_name'), { target: { value: 'Essays' } });
+    fireEvent.click(screen.getByText('folders.create'));
+
+    expect(mockAddFolder).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'Essays', kind: 'rubric', parentId: 'year1', displayOrder: 0 })
+    );
+});
+
+it('files a rubric into a folder from its card menu', () => {
+    renderPage();
+    // The folder tiles come first in the DOM, so the first menu inside a card is after both tiles.
+    const menus = screen.getAllByRole('button', { name: 'folders.move_to' });
+    fireEvent.click(menus[2]);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Year 2' }));
+    expect(mockUpdateRubric).toHaveBeenCalledWith(expect.objectContaining({ id: 'r1', folderId: 'year2' }));
+});
+
+it('moves a folder into another folder from its tile menu', () => {
+    renderPage();
+    fireEvent.click(screen.getAllByRole('button', { name: 'folders.move_to' })[1]);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Year 1' }));
+    expect(mockUpdateFolder).toHaveBeenCalledWith(expect.objectContaining({ id: 'year2', parentId: 'year1' }));
+});
+
+it('shows the folder path on a card that is filed away', () => {
+    mockRubricsArr.push({ ...mockRubric, id: 'r7', name: 'Filed Rubric', folderId: 'essays', displayOrder: 7 });
+    renderPage();
+    expect(screen.getByText('Year 1 / Essays')).toBeInTheDocument();
     mockRubricsArr.pop();
 });
 

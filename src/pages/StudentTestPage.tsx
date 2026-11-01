@@ -13,6 +13,7 @@ import {
     Lightbulb,
     Flag,
 } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { decodeTestAssignment } from '../utils/shareCode';
 import { encodeTestSubmission } from '../utils/shareCode';
@@ -1415,7 +1416,9 @@ function QuestionTimeline({
 
     const neutralBg = 'color-mix(in srgb, var(--text-muted) 20%, var(--bg))';
 
-    return (
+    // Portalled to <body>: a fixed bar inside page content is positioned against the nearest
+    // transformed ancestor (any `.fade-in` ending on a transform) instead of the viewport (#1017).
+    return createPortal(
         <div
             style={{
                 position: 'fixed',
@@ -1527,7 +1530,8 @@ function QuestionTimeline({
                     })}
                 </div>
             ))}
-        </div>
+        </div>,
+        document.body
     );
 }
 
