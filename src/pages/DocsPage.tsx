@@ -1590,6 +1590,7 @@ function CefrTab() {
                         t('docs.ce_flashcards_item_student_decks'),
                         t('docs.ce_flashcards_item_insights'),
                         t('docs.ce_flashcards_item_grammar'),
+                        t('docs.ce_flashcards_item_folders'),
                     ]}
                 />
                 <InfoBox color="#8b5cf6">{t('docs.ce_flashcards_info')}</InfoBox>
@@ -1651,6 +1652,9 @@ function EssaysTab() {
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     {t('docs.es_workspace_intro_prefix')} <strong>{t('docs.es_workspace_intro_name')}</strong>{' '}
                     {t('docs.es_workspace_intro_suffix')}
+                </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    {t('docs.es_folders_body')}
                 </p>
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.es_creating_title')}

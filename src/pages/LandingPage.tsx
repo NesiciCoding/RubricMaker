@@ -51,7 +51,7 @@ const TEACHER_FEATURES = [
     {
         icon: Layers,
         title: 'Folders',
-        desc: 'Group rubrics and tests into named folders and drag cards between them.',
+        desc: 'Sort rubrics, tests, essays and flashcard decks into nested folders.',
         color: '#0ea5e9',
     },
     {

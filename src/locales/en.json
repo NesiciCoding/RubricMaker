@@ -4073,6 +4073,7 @@
         "es_workspace_intro_prefix": "The",
         "es_workspace_intro_name": "Essays",
         "es_workspace_intro_suffix": "section in the sidebar is the dedicated home for essay assignments — separate from the Rubrics page. It lists every essay you have created, grouped by assignment, with the linked rubric, the number of assigned students, and how many have submitted.",
+        "es_folders_body": "Essay assignments can be filed into folders on the Essays list, separate from the rubric and test folders. Create a folder (or a subfolder, up to four levels deep) above the list, drag an assignment onto a folder to file it, and click a folder to open it. Deleting a folder keeps its essays — they move back into the full list — and its subfolders move up one level.",
         "es_creating_title": "Creating an essay",
         "es_creating_item_new": "Click \"New Essay\" to open the builder: write the title and prompt, set optional word count limits (min/max), a time limit, and a deadline. Nothing is saved until you assign the essay to students; leaving before that asks you to confirm.",
         "es_creating_item_rubric": "Use the rubric connector to link a rubric for structured feedback after grading.",
@@ -4223,6 +4224,7 @@
         "ce_flashcards_item_study": "Students study in the portal: reveal the answer, then rate the card Again / Hard / Good / Easy. Ratings drive the next review date.",
         "ce_flashcards_item_insights": "Learner insights for both sides: students see their progress and focus words on the study page; teachers see per-student progress on the deck page.",
         "ce_flashcards_item_grammar": "Set a deck's type to Grammar and tag each card with a specific grammar item to build recall-style drills that feed a student's grammar practice recommendations.",
+        "ce_flashcards_item_folders": "Folders — group decks into their own folders (nestable up to four levels) on the Flashcards page: drag a deck onto a folder to file it. Deleting a folder keeps its decks.",
         "ce_flashcards_info": "Study progress syncs through the database when connected, so students can study on any device. In local mode, progress is stored in this browser.",
         "route_news_flashes_label": "News Flashes",
         "route_news_flashes_desc": "Curate articles, books, and videos to share with your students.",
@@ -4322,7 +4324,7 @@
         "an_export_item_tiered": "Tiered rubrics export (PDF, DOCX and template DOCX) in the layout of the paper sheet: requirements, a Student / Tier / Verdict bar, then per criterion a column per tier with each band's statements as checkboxes. A blank rubric prints every tier, in landscape and one criterion per page in DOCX. A graded rubric prints only the student's tier, with ticked statements, the chosen band per criterion, the requirements met or not, and the verdict. A table template only lends its header colour. The rubric preview in the builder and the shared preview link show the same layout.",
         "gr_tiered_item_pairing": "Comparative grading pairs students within the same tier by default, so both are judged against the same statements, and shows each student's tier. A student whose tier isn't known yet isn't paired until it is. Switch to pairing across tiers in the session (Pair: across tiers) or in the rubric's tiered setup; progress then counts pairs across the whole class, up to each student's comparison limit.",
         "rb_import_export_item_tiered": "Import a tiered sheet — a Word or PDF rubric with a column per tier (e.g. Mavo / Havo / VWO), bands marked by a short code and colon (IO:, B:, E:) and their statements below — and it becomes a tiered rubric: tier columns, bands, requirements and every statement, with criterion names read from the table, the text beside it or a floating label. Tracks come from the column names and the year from the title or file name; the import preview shows the sheet and says what to check.",
-        "rb_folders_body": "Rubrics can be grouped into folders: create one above the list, drag a rubric card onto a folder to file it, and click a folder to see only its rubrics. Deleting a folder keeps the rubrics inside it — they move back into the full list."
+        "rb_folders_body": "Rubrics can be grouped into folders, and folders can hold subfolders up to four levels deep. Create a folder above the list (inside a folder the button becomes \"New subfolder\"), click a folder to open it, and use the breadcrumb to go back up. File a rubric by dragging its card onto a folder, or use \"Move to…\" on the card; folders have their own \"Move to…\" to re-nest them. A filed rubric shows its folder path on the card. Deleting a folder keeps the rubrics inside it — they move back into the full list — and its subfolders move up one level. The Tests list has its own, separate folders that work the same way."
     },
     "studentProfile": {
         "tab_overview": "Overview",
