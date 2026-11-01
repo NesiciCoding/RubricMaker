@@ -184,22 +184,22 @@ export default function ClassShareModal({ classItem, onClose, returnFocusTo }: P
 
                 <div aria-live="polite">
                     {status.kind === 'success' && (
-                        <p style={{ color: 'var(--green)', fontSize: '0.85rem', marginBottom: 8 }}>
+                        <p style={{ color: 'var(--green-text)', fontSize: '0.85rem', marginBottom: 8 }}>
                             {t('classShare.success', { email: status.message })}
                         </p>
                     )}
                     {status.kind === 'notfound' && (
-                        <p style={{ color: 'var(--red)', fontSize: '0.85rem', marginBottom: 8 }}>
+                        <p style={{ color: 'var(--red-text)', fontSize: '0.85rem', marginBottom: 8 }}>
                             {t('classShare.not_found', { email: status.message })}
                         </p>
                     )}
                     {status.kind === 'self' && (
-                        <p style={{ color: 'var(--red)', fontSize: '0.85rem', marginBottom: 8 }}>
+                        <p style={{ color: 'var(--red-text)', fontSize: '0.85rem', marginBottom: 8 }}>
                             {t('classShare.cannot_share_self')}
                         </p>
                     )}
                     {status.kind === 'error' && (
-                        <p style={{ color: 'var(--red)', fontSize: '0.85rem', marginBottom: 8 }}>
+                        <p style={{ color: 'var(--red-text)', fontSize: '0.85rem', marginBottom: 8 }}>
                             {t('classShare.failed', { error: status.message })}
                         </p>
                     )}
@@ -254,7 +254,7 @@ export default function ClassShareModal({ classItem, onClose, returnFocusTo }: P
                                                 className="btn btn-ghost btn-icon btn-sm"
                                                 aria-label={t('classShare.remove', { name: label })}
                                                 title={t('classShare.remove', { name: label })}
-                                                style={{ color: 'var(--red)' }}
+                                                style={{ color: 'var(--red-text)' }}
                                                 disabled={pending}
                                                 onClick={() => void handleRemove(m)}
                                             >
