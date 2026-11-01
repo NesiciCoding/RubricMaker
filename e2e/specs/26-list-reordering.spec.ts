@@ -41,6 +41,56 @@ test.describe('Manual list reordering', () => {
         await expect(await page.cardTitles()).toEqual(['Reorder Rubric B', 'Reorder Rubric C', 'Reorder Rubric A']);
     });
 
+    test('dragging a rubric card onto a folder tile files it', async ({ appPage, seedStorage }) => {
+        await seedStorage({
+            rm_rubrics: [buildRubric({ id: 'file-r1', name: 'File Me' })],
+            rm_folders: [{ id: 'folder-r1', name: 'Term 1', kind: 'rubric', displayOrder: 0 }],
+        });
+
+        const page = new RubricListPage(appPage);
+        await page.goto();
+
+        const tile = appPage.locator('.card').filter({ hasText: 'Term 1' }).first();
+        await expect(tile).toContainText('0 items');
+
+        await page.dragReorder(page.dragHandle('File Me'), tile);
+
+        await expect(tile).toContainText('1 item');
+        const stored = await appPage.evaluate(
+            () => JSON.parse(localStorage.getItem('rm_rubrics') ?? '[]') as Array<{ id: string; folderId?: string }>
+        );
+        expect(stored.find((r) => r.id === 'file-r1')?.folderId).toBe('folder-r1');
+    });
+
+    test('dragging a test card onto a folder tile files it', async ({ appPage, seedStorage }) => {
+        const tests: RmTest[] = [
+            {
+                id: 'file-t1',
+                name: 'File Me Too',
+                questions: [],
+                requireSEB: false,
+                shuffleQuestions: false,
+                createdAt: '2024-01-01T00:00:00.000Z',
+            },
+        ];
+        await seedStorage({
+            rm_tests: tests,
+            rm_folders: [{ id: 'folder-t1', name: 'Mock week', kind: 'test', displayOrder: 0 }],
+        });
+
+        const page = new TestListPage(appPage);
+        await page.goto();
+
+        const tile = appPage.locator('.card').filter({ hasText: 'Mock week' }).first();
+        await page.dragReorder(page.dragHandle('File Me Too'), tile);
+
+        await expect(tile).toContainText('1 item');
+        const stored = await appPage.evaluate(
+            () => JSON.parse(localStorage.getItem('rm_tests') ?? '[]') as Array<{ id: string; folderId?: string }>
+        );
+        expect(stored.find((t) => t.id === 'file-t1')?.folderId).toBe('folder-t1');
+    });
+
     test('dragging a test card reorders the Tests list', async ({ appPage, seedStorage }) => {
         const tests: RmTest[] = [
             {

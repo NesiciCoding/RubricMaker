@@ -75,6 +75,7 @@ const mockUnshareRubric = vi.fn();
 const mockFetchSharedRubrics = vi.fn().mockResolvedValue([]);
 const mockFetchSchoolSharedRubrics = vi.fn().mockResolvedValue([]);
 const dndOnDragEnd = vi.hoisted(() => ({ handler: null as unknown as (r: unknown) => void }));
+const dndOnBeforeCapture = vi.hoisted(() => ({ handler: null as unknown as () => void }));
 
 const mockRubricsArr = [mockRubric, mockRubric2, mockRubric3];
 const mockStudentsArr = [mockStudent1, mockStudent2];
@@ -130,8 +131,17 @@ vi.mock('../../services/database', () => ({
 }));
 
 vi.mock('@hello-pangea/dnd', () => ({
-    DragDropContext: ({ children, onDragEnd }: { children: React.ReactNode; onDragEnd: (r: unknown) => void }) => {
+    DragDropContext: ({
+        children,
+        onBeforeCapture,
+        onDragEnd,
+    }: {
+        children: React.ReactNode;
+        onBeforeCapture: () => void;
+        onDragEnd: (r: unknown) => void;
+    }) => {
         dndOnDragEnd.handler = onDragEnd;
+        dndOnBeforeCapture.handler = onBeforeCapture;
         return React.createElement(React.Fragment, null, children);
     },
     Droppable: ({ children }: { children: (p: unknown) => React.ReactNode }) =>
@@ -328,6 +338,55 @@ describe('RubricList coverage', () => {
             });
         });
         expect(mockUpdateRubric).not.toHaveBeenCalled();
+    });
+
+    it('files a rubric on a real drop over a folder tile but not on a cancelled drag', () => {
+        renderPage();
+        const tile = document.createElement('div');
+        tile.setAttribute('data-drop-folder-id', 'f1');
+        const label = document.createElement('span');
+        tile.appendChild(label);
+        document.body.appendChild(tile);
+        // jsdom has no layout and therefore no elementFromPoint at all; stand in for the hit test.
+        Object.defineProperty(document, 'elementFromPoint', {
+            configurable: true,
+            writable: true,
+            value: () => label,
+        });
+
+        const dragOverTile = () => {
+            act(() => {
+                dndOnBeforeCapture.handler();
+            });
+            act(() => {
+                // The listener is registered on window itself, so dispatch there.
+                window.dispatchEvent(new MouseEvent('mousemove', { clientX: 5, clientY: 5 }));
+            });
+        };
+
+        // Escape ends the drag with CANCEL and no destination; the pointer is still on the tile.
+        dragOverTile();
+        act(() => {
+            dndOnDragEnd.handler({
+                source: { index: 0, droppableId: 'rubric-list' },
+                destination: null,
+                reason: 'CANCEL',
+            });
+        });
+        expect(mockUpdateRubric).not.toHaveBeenCalled();
+
+        dragOverTile();
+        act(() => {
+            dndOnDragEnd.handler({
+                source: { index: 0, droppableId: 'rubric-list' },
+                destination: null,
+                reason: 'DROP',
+            });
+        });
+        expect(mockUpdateRubric).toHaveBeenCalledWith(expect.objectContaining({ id: 'r1', folderId: 'f1' }));
+
+        Reflect.deleteProperty(document, 'elementFromPoint');
+        tile.remove();
     });
 
     it('imports a minimal share code using every fallback field', () => {

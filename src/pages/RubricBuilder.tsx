@@ -280,6 +280,8 @@ function RubricBuilderEditor() {
         tiered,
     });
     const savedSnapshotRef = useRef<{ formSnapshot: string; criteriaSnapshot: string } | null>(null);
+    // handle for the "Saved" badge's auto-hide, cleared on unmount below
+    const savedBadgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [isDirty, setIsDirty] = useState(false);
     useEffect(() => {
         if (savedSnapshotRef.current === null) {
@@ -291,6 +293,16 @@ function RubricBuilderEditor() {
                 criteriaSnapshot !== savedSnapshotRef.current.criteriaSnapshot
         );
     }, [formSnapshot, criteriaSnapshot]);
+    // The badge's timer must not outlive the page. Saving a *new* rubric navigates away in the
+    // same tick, so the pending timeout would otherwise call setSaved on an unmounted tree — which
+    // under jsdom lands after the environment is torn down and surfaces as an unhandled
+    // `ReferenceError: window is not defined` that fails the whole run.
+    useEffect(
+        () => () => {
+            if (savedBadgeTimerRef.current !== null) clearTimeout(savedBadgeTimerRef.current);
+        },
+        []
+    );
     const { dialogProps: unsavedDialogProps } = useUnsavedChangesGuard(isDirty);
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
 
@@ -419,14 +431,15 @@ function RubricBuilderEditor() {
         }
     }
 
-    function handlePrint() {
-        /* v8 ignore next -- orientation is required on RubricFormat */
-        const orientation = format.orientation || 'portrait';
-        const style = document.createElement('style');
-        style.textContent = `@page { size: A4 ${orientation}; }`;
-        document.head.appendChild(style);
-        window.print();
-        document.head.removeChild(style);
+    async function handlePrint() {
+        // `window.print()` on the editor itself printed whatever happened to be on screen — one
+        // viewport of the builder, sidebar and all (#1004). Printing now goes through the same
+        // blank-rubric document as "PDF", which paginates the whole rubric in a print frame.
+        try {
+            await exportRubricGridPdf(getRubricData());
+        } catch {
+            showToast(t('toast.export_error'), 'error');
+        }
     }
 
     const handleSave = useCallback(() => {
@@ -486,7 +499,11 @@ function RubricBuilderEditor() {
             navigate(`/rubrics/${newR.id}`, { replace: true });
         }
         setSaved(true);
-        setTimeout(() => setSaved(false), 2000);
+        if (savedBadgeTimerRef.current !== null) clearTimeout(savedBadgeTimerRef.current);
+        savedBadgeTimerRef.current = setTimeout(() => {
+            savedBadgeTimerRef.current = null;
+            setSaved(false);
+        }, 2000);
     }, [
         name,
         subject,
@@ -1031,7 +1048,7 @@ function RubricBuilderEditor() {
                                 style={{ justifyContent: 'flex-start' }}
                                 onClick={() => {
                                     setShowExportMenu(false);
-                                    handlePrint();
+                                    void handlePrint();
                                 }}
                             >
                                 <Printer size={14} /> {t('rubricBuilder.action_print')}
