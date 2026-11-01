@@ -1298,7 +1298,9 @@ select.input-error {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    min-width: 220px;
+    /* min-width beats max-width, so both are capped: openPillPopover keeps an 8px inset each side. */
+    min-width: min(220px, calc(100vw - 16px));
+    max-width: calc(100vw - 16px);
     padding: 10px;
     background: var(--bg-elevated);
     border: 1px solid var(--border);
@@ -1308,7 +1310,7 @@ select.input-error {
 
 /* The error-fragment popover holds two inputs in a row and needs more room. */
 .pill-popover--wide {
-    min-width: 240px;
+    min-width: min(240px, calc(100vw - 16px));
 }
 
 /* ─── Empty state ────────────────────────────────────────────────────────────── */

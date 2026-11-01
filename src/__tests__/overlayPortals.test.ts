@@ -64,6 +64,11 @@ describe('fixed-position overlays', () => {
         // and drifts (#1022).
         const css = readFileSync(resolve(srcRoot, 'index.css'), 'utf8');
         expect(css).toMatch(/\.pill-popover \{[^}]*position: fixed/);
+        // Narrow (or zoomed) viewports: neither variant may outgrow the space between the 8px insets.
+        expect(css).toMatch(/\.pill-popover \{[^}]*max-width: calc\(100vw - 16px\)/);
+        for (const min of css.match(/\.pill-popover(?:--wide)? \{[^}]*/g) ?? []) {
+            expect(min).toMatch(/min-width: min\(\d+px, calc\(100vw - 16px\)\)/);
+        }
         for (const editor of ['ClozeGapEditor.tsx', 'ErrorPassageEditor.tsx', 'HotTextEditor.tsx']) {
             const source = readFileSync(resolve(srcRoot, 'components/Tests', editor), 'utf8');
             expect(source, editor).not.toMatch(/position:\s*fixed/);
