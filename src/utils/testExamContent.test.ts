@@ -1,7 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import type { Test, TestQuestion } from '../types';
 import {
+    ANSWER_SHEET_FIRST_BLOCK_MM,
+    ANSWER_SHEET_FOOTER_MM,
+    EXAM_PAGE_MM,
     answerSheetGeometry,
+    answerSheetPageMargins,
+    answerSheetPages,
+    scanMarkerMarginsMm,
     answerSpaceFor,
     answerKeyText,
     builderBookletTiles,
@@ -171,6 +177,53 @@ describe('answerSheetGeometry', () => {
     });
 });
 
+describe('answerSheetPages', () => {
+    const choiceQuestions = (count: number) =>
+        Array.from({ length: count }, (_, i) =>
+            q({
+                id: `q${i}`,
+                type: 'multiple-choice' as const,
+                points: 1,
+                prompt: 'p',
+                options: [
+                    { id: 'a', text: 'A', isCorrect: true },
+                    { id: 'b', text: 'B', isCorrect: false },
+                ],
+            })
+        );
+
+    it('starts page 1 below the title header and later pages at the print band', () => {
+        const test = makeTest({ questions: choiceQuestions(30) });
+        const pages = answerSheetPages(test);
+        expect(pages.length).toBeGreaterThan(1);
+        expect(pages[0].pageNumber).toBe(1);
+        expect(pages[0].blocks[0].y).toBe(ANSWER_SHEET_FIRST_BLOCK_MM);
+        expect(pages[1].blocks[0].y).toBe(answerSheetPageMargins().top);
+    });
+
+    it('packs blocks into explicit pages without crossing the reserved bottom area', () => {
+        const test = makeTest({ questions: choiceQuestions(40) });
+        const pages = answerSheetPages(test);
+        const bottomLimit = EXAM_PAGE_MM.height - answerSheetPageMargins().bottom - ANSWER_SHEET_FOOTER_MM;
+        for (const page of pages) {
+            const last = page.blocks[page.blocks.length - 1];
+            expect(last.y + last.height).toBeLessThanOrEqual(bottomLimit);
+        }
+    });
+
+    it('keeps every question exactly once across the pages', () => {
+        const test = makeTest({ questions: choiceQuestions(30) });
+        const questionIds = answerSheetPages(test).flatMap((page) => page.blocks.map((b) => b.questionId));
+        expect(questionIds).toEqual(test.questions.map((question) => question.id));
+    });
+
+    it('reserves the same marker band for markerless sheets, so the layout never has to be inferred', () => {
+        expect(answerSheetPageMargins()).toEqual(scanMarkerMarginsMm());
+        const test = makeTest({ questions: choiceQuestions(100) });
+        expect(answerSheetPages(test).length).toBeGreaterThan(1);
+    });
+});
+
 describe('answerSpaceFor', () => {
     it('maps question types to their answer-sheet space kind', () => {
         expect(answerSpaceFor(q({ id: 'a', type: 'multiple-choice', points: 1, prompt: 'p', options: [] })).kind).toBe(
@@ -251,6 +304,15 @@ describe('answerSheetQrPayload', () => {
             testId: 't1',
             studentId: 's1',
             sheetType: 'answer',
+        });
+    });
+
+    it('records the printed page count and marker mode for batch ingestion', () => {
+        expect(JSON.parse(answerSheetQrPayload('t1', 's1', { pages: 3 }))).toEqual({
+            testId: 't1',
+            studentId: 's1',
+            sheetType: 'answer',
+            pages: 3,
         });
     });
 });
