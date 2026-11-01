@@ -44,13 +44,6 @@ export const GRAMMAR_CATEGORIES: GrammarCategory[] = [
                 labelNl: "Verleden tijd, ontkennend & vragend (wasn't / weren't, Was … ? / Were … ?)",
                 examplesEn: ["It wasn't easy", 'Were you there?', 'Yes, I was.'],
             },
-            {
-                id: 'gr-be-there-is-are',
-                level: 'A1',
-                labelEn: 'There is / there are',
-                labelNl: 'There is / there are (er is / er zijn)',
-                examplesEn: ['There is a cat in the garden', 'There are two windows'],
-            },
         ],
     },
     {

@@ -39,7 +39,10 @@ describe('grammarStandards', () => {
             }
         }
         expect(getGrammarItemById('gr-have-got')?.level).toBe('A1');
-        expect(getGrammarItemById('gr-be-there-is-are')).toBeDefined();
+        // There is / there are already exists (with a UD detector); the new category must not duplicate it.
+        const beLabels = GRAMMAR_CATEGORIES.find((c) => c.id === 'verb-be')!.items.map((i) => i.labelEn);
+        expect(beLabels.some((label) => /there is/i.test(label))).toBe(false);
+        expect(getGrammarItemById('gr-existential-there')).toBeDefined();
     });
 
     it('looks up an item by id', () => {
