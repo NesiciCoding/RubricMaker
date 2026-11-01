@@ -717,6 +717,7 @@ function GettingStartedTab() {
                         t('docs.gs_classes_item_student_track'),
                         t('docs.gs_classes_item_menu'),
                         t('docs.gs_classes_item_color'),
+                        t('docs.gs_classes_item_share'),
                     ]}
                 />
             </FeatureSection>

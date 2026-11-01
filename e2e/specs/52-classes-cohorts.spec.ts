@@ -17,7 +17,8 @@ test.describe('Class options menu', () => {
 
         await page.openClassMenu('Overflow 4A');
         const menu = page.getClassMenu();
-        await expect(menu.getByRole('menuitem')).toHaveCount(4);
+        await expect(menu.getByRole('menuitem')).toHaveCount(5);
+        await expect(menu.getByRole('menuitem', { name: /co-teachers/i })).toBeVisible();
         await expect(menu.getByRole('menuitem', { name: /rename/i })).toBeVisible();
 
         // The menu is portaled to <body> and fixed, so the chip row's `overflow-x: auto`
