@@ -57,6 +57,7 @@ import { ALL_FOLDERS, filterByFolder, folderPathLabel, foldersForKind, nextFolde
 import { cloneRubricForCopy, type RubricInput } from '../utils/rubricClone';
 import { getCohortStudentIds, isAllCohorts, ALL_COHORTS } from '../utils/cohortAggregator';
 import CohortFilter from '../components/CohortFilter';
+import { textOnTheme } from '../utils/contrastCheck';
 
 const UNDO_DELETE_MS = 8000;
 
@@ -762,7 +763,7 @@ export default function RubricList() {
                                                             className="btn btn-ghost btn-icon btn-sm"
                                                             title={t('rubricList.action_delete')}
                                                             aria-label={t('rubricList.action_delete')}
-                                                            style={{ color: 'var(--red)' }}
+                                                            style={{ color: 'var(--red-text)' }}
                                                             onClick={() => requestDelete(r)}
                                                         >
                                                             <Trash2 size={14} />
@@ -814,7 +815,7 @@ export default function RubricList() {
                 {sharedWithMe.length > 0 && (
                     <div style={{ marginTop: 32 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                            <Share2 size={15} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                            <Share2 size={15} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
                             <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>
                                 {t('rubricList.shared_with_me')}
                             </h3>
@@ -864,7 +865,7 @@ export default function RubricList() {
                                             padding: '2px 7px',
                                             borderRadius: 4,
                                             background: 'var(--accent-soft)',
-                                            color: 'var(--accent)',
+                                            color: 'var(--accent-text)',
                                             fontWeight: 500,
                                             flexShrink: 0,
                                         }}
@@ -880,7 +881,7 @@ export default function RubricList() {
                 {schoolShared.length > 0 && (
                     <div style={{ marginTop: 32 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                            <Users2 size={15} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                            <Users2 size={15} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
                             <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>
                                 {t('rubricList.shared_with_department')}
                             </h3>
@@ -938,7 +939,7 @@ export default function RubricList() {
                                             padding: '2px 7px',
                                             borderRadius: 4,
                                             background: 'var(--accent-soft)',
-                                            color: 'var(--accent)',
+                                            color: 'var(--accent-text)',
                                             fontWeight: 500,
                                             flexShrink: 0,
                                         }}
@@ -1074,7 +1075,7 @@ export default function RubricList() {
                     <Modal titleId="rubric-differentiate-title" onClose={() => setDifferentiateId(null)} maxWidth={480}>
                         <div className="modal-header">
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                <Layers size={18} style={{ color: 'var(--accent)' }} />
+                                <Layers size={18} style={{ color: 'var(--accent-text)' }} />
                                 <div>
                                     <h3 id="rubric-differentiate-title" style={{ fontWeight: 600, fontSize: 15 }}>
                                         {t('voTrack.differentiate_title')}
@@ -1145,7 +1146,7 @@ export default function RubricList() {
                                                 diffCefr !== level
                                                     ? {
                                                           borderColor: CEFR_LEVEL_COLORS[level],
-                                                          color: CEFR_LEVEL_COLORS[level],
+                                                          color: textOnTheme(CEFR_LEVEL_COLORS[level]),
                                                       }
                                                     : {}
                                             }
@@ -1225,7 +1226,7 @@ export default function RubricList() {
                                     role="alert"
                                     style={{
                                         marginTop: 10,
-                                        color: 'var(--red)',
+                                        color: 'var(--red-text)',
                                         fontSize: '0.875rem',
                                         background: 'var(--red-soft)',
                                         padding: '8px 12px',
@@ -1324,17 +1325,19 @@ export default function RubricList() {
                             </select>
                         </div>
                         {shareStatus === 'success' && (
-                            <p style={{ color: 'var(--green)', fontSize: '0.85rem', marginBottom: 8 }}>
+                            <p style={{ color: 'var(--green-text)', fontSize: '0.85rem', marginBottom: 8 }}>
                                 {t('rubricList.share_success')}
                             </p>
                         )}
                         {shareStatus === 'notfound' && (
-                            <p style={{ color: 'var(--red)', fontSize: '0.85rem', marginBottom: 8 }}>
+                            <p style={{ color: 'var(--red-text)', fontSize: '0.85rem', marginBottom: 8 }}>
                                 {t('rubricList.share_notfound', { email: shareErrorMsg })}
                             </p>
                         )}
                         {shareStatus === 'error' && (
-                            <p style={{ color: 'var(--red)', fontSize: '0.85rem', marginBottom: 8 }}>{shareErrorMsg}</p>
+                            <p style={{ color: 'var(--red-text)', fontSize: '0.85rem', marginBottom: 8 }}>
+                                {shareErrorMsg}
+                            </p>
                         )}
 
                         {/* Current shares */}
@@ -1365,7 +1368,7 @@ export default function RubricList() {
                                         <button
                                             className="btn btn-ghost btn-icon btn-sm"
                                             aria-label={t('rubricList.action_unshare')}
-                                            style={{ color: 'var(--red)' }}
+                                            style={{ color: 'var(--red-text)' }}
                                             onClick={() => handleUnshare(s.userId)}
                                         >
                                             <Trash2 size={13} />

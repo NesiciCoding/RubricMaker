@@ -28,7 +28,7 @@ export default function HelpPopover({ title, children }: Props) {
                 aria-label={title}
                 aria-expanded={open}
                 onClick={() => setOpen((o) => !o)}
-                style={{ color: 'var(--accent)' }}
+                style={{ color: 'var(--accent-text)' }}
             >
                 <HelpCircle size={14} />
             </button>

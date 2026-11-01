@@ -7,10 +7,6 @@
       "theme": "dark",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 5
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -21,10 +17,6 @@
       "theme": "light",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 9
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -34,10 +26,6 @@
       "route": "/activity-dashboard",
       "theme": "dark",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 1
-        },
         {
           "rule": "page-has-heading-one",
           "nodes": 1
@@ -49,10 +37,6 @@
       "theme": "light",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 6
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -62,10 +46,6 @@
       "route": "/admin",
       "theme": "dark",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 1
-        },
         {
           "rule": "page-has-heading-one",
           "nodes": 1
@@ -77,10 +57,6 @@
       "theme": "light",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 4
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -90,10 +66,6 @@
       "route": "/attachments",
       "theme": "dark",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 1
-        },
         {
           "rule": "page-has-heading-one",
           "nodes": 1
@@ -105,10 +77,6 @@
       "theme": "light",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 3
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -118,10 +86,6 @@
       "route": "/cefr-overview",
       "theme": "dark",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 5
-        },
         {
           "rule": "page-has-heading-one",
           "nodes": 1
@@ -133,10 +97,6 @@
       "theme": "light",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 7
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -147,10 +107,6 @@
       "theme": "dark",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 3
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -160,10 +116,6 @@
       "route": "/comments",
       "theme": "light",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 6
-        },
         {
           "rule": "page-has-heading-one",
           "nodes": 1
@@ -174,10 +126,6 @@
       "route": "/docs",
       "theme": "dark",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 3
-        },
         {
           "rule": "landmark-unique",
           "nodes": 1
@@ -192,10 +140,6 @@
       "route": "/docs",
       "theme": "light",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 6
-        },
         {
           "rule": "landmark-unique",
           "nodes": 1
@@ -215,10 +159,6 @@
           "nodes": 1
         },
         {
-          "rule": "color-contrast",
-          "nodes": 2
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -233,10 +173,6 @@
           "nodes": 1
         },
         {
-          "rule": "color-contrast",
-          "nodes": 5
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -246,10 +182,6 @@
       "route": "/essays/essay-a11y-1",
       "theme": "dark",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 1
-        },
         {
           "rule": "page-has-heading-one",
           "nodes": 1
@@ -261,10 +193,6 @@
       "theme": "light",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 3
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -274,10 +202,6 @@
       "route": "/essays/essay-a11y-1/monitor",
       "theme": "dark",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 1
-        },
         {
           "rule": "page-has-heading-one",
           "nodes": 1
@@ -289,10 +213,6 @@
       "theme": "light",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 3
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -302,10 +222,6 @@
       "route": "/essays/new",
       "theme": "dark",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 1
-        },
         {
           "rule": "page-has-heading-one",
           "nodes": 1
@@ -317,10 +233,6 @@
       "theme": "light",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 3
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -330,10 +242,6 @@
       "route": "/export",
       "theme": "dark",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 1
-        },
         {
           "rule": "page-has-heading-one",
           "nodes": 1
@@ -345,10 +253,6 @@
       "theme": "light",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 3
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -358,10 +262,6 @@
       "route": "/flashcards",
       "theme": "dark",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 1
-        },
         {
           "rule": "page-has-heading-one",
           "nodes": 1
@@ -373,10 +273,6 @@
       "theme": "light",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 4
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -387,10 +283,6 @@
       "theme": "dark",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 1
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -400,10 +292,6 @@
       "route": "/flashcards/deck-a11y-1",
       "theme": "light",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 3
-        },
         {
           "rule": "page-has-heading-one",
           "nodes": 1
@@ -414,14 +302,6 @@
       "route": "/grade-comparative/class-a11y-1/rubric-a11y-1",
       "theme": "dark",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 3
-        },
-        {
-          "rule": "label",
-          "nodes": 3
-        },
         {
           "rule": "label-title-only",
           "nodes": 1
@@ -441,14 +321,6 @@
       "theme": "light",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 4
-        },
-        {
-          "rule": "label",
-          "nodes": 3
-        },
-        {
           "rule": "label-title-only",
           "nodes": 1
         },
@@ -467,10 +339,6 @@
       "theme": "dark",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 1
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -481,10 +349,6 @@
       "theme": "light",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 3
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -494,10 +358,6 @@
       "route": "/messages",
       "theme": "dark",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 1
-        },
         {
           "rule": "page-has-heading-one",
           "nodes": 1
@@ -509,10 +369,6 @@
       "theme": "light",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 3
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -522,10 +378,6 @@
       "route": "/moderation",
       "theme": "dark",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 1
-        },
         {
           "rule": "page-has-heading-one",
           "nodes": 1
@@ -537,10 +389,6 @@
       "theme": "light",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 3
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -550,10 +398,6 @@
       "route": "/news-flashes",
       "theme": "dark",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 1
-        },
         {
           "rule": "page-has-heading-one",
           "nodes": 1
@@ -565,10 +409,6 @@
       "theme": "light",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 3
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -578,10 +418,6 @@
       "route": "/notifications",
       "theme": "dark",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 1
-        },
         {
           "rule": "page-has-heading-one",
           "nodes": 1
@@ -593,10 +429,6 @@
       "theme": "light",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 3
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -607,10 +439,6 @@
       "theme": "dark",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 1
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -620,10 +448,6 @@
       "route": "/peer-analytics/rubric-a11y-1",
       "theme": "light",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 2
-        },
         {
           "rule": "page-has-heading-one",
           "nodes": 1
@@ -661,31 +485,17 @@
     {
       "route": "/portal/student-a11y-1/flashcards/deck-a11y-1",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/portal/student-a11y-1/flashcards/deck-a11y-1",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 3
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/privacy",
       "theme": "dark",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 1
-        },
         {
           "rule": "page-has-heading-one",
           "nodes": 1
@@ -697,10 +507,6 @@
       "theme": "light",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 9
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -710,10 +516,6 @@
       "route": "/question-bank",
       "theme": "dark",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 2
-        },
         {
           "rule": "page-has-heading-one",
           "nodes": 1
@@ -725,10 +527,6 @@
       "theme": "light",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 4
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -738,10 +536,6 @@
       "route": "/rubrics",
       "theme": "dark",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 3
-        },
         {
           "rule": "page-has-heading-one",
           "nodes": 1
@@ -753,10 +547,6 @@
       "theme": "light",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 9
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -767,10 +557,6 @@
       "theme": "dark",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 1
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -780,10 +566,6 @@
       "route": "/rubrics/new",
       "theme": "light",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 3
-        },
         {
           "rule": "page-has-heading-one",
           "nodes": 1
@@ -794,10 +576,6 @@
       "route": "/rubrics/rubric-a11y-1",
       "theme": "dark",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 1
-        },
         {
           "rule": "label",
           "nodes": 1
@@ -817,10 +595,6 @@
       "theme": "light",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 3
-        },
-        {
           "rule": "label",
           "nodes": 1
         },
@@ -839,10 +613,6 @@
       "theme": "dark",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 1
-        },
-        {
           "rule": "label",
           "nodes": 3
         },
@@ -861,10 +631,6 @@
       "theme": "light",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 3
-        },
-        {
           "rule": "label",
           "nodes": 3
         },
@@ -883,14 +649,6 @@
       "theme": "dark",
       "violations": [
         {
-          "rule": "aria-prohibited-attr",
-          "nodes": 4
-        },
-        {
-          "rule": "color-contrast",
-          "nodes": 1
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -901,14 +659,6 @@
       "theme": "light",
       "violations": [
         {
-          "rule": "aria-prohibited-attr",
-          "nodes": 4
-        },
-        {
-          "rule": "color-contrast",
-          "nodes": 3
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -918,10 +668,6 @@
       "route": "/rubrics/rubric-a11y-1/self-assess/student-a11y-1",
       "theme": "dark",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 1
-        },
         {
           "rule": "page-has-heading-one",
           "nodes": 1
@@ -933,10 +679,6 @@
       "theme": "light",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 3
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -946,10 +688,6 @@
       "route": "/settings",
       "theme": "dark",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 1
-        },
         {
           "rule": "page-has-heading-one",
           "nodes": 1
@@ -961,10 +699,6 @@
       "theme": "light",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 5
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -975,10 +709,6 @@
       "theme": "dark",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 1
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -988,10 +718,6 @@
       "route": "/speaking/rubric2-a11y-1/student-a11y-1",
       "theme": "light",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 2
-        },
         {
           "rule": "page-has-heading-one",
           "nodes": 1
@@ -1002,10 +728,6 @@
       "route": "/statistics",
       "theme": "dark",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 1
-        },
         {
           "rule": "label-title-only",
           "nodes": 3
@@ -1021,10 +743,6 @@
       "theme": "light",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 4
-        },
-        {
           "rule": "label-title-only",
           "nodes": 3
         },
@@ -1038,10 +756,6 @@
       "route": "/students",
       "theme": "dark",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 1
-        },
         {
           "rule": "page-has-heading-one",
           "nodes": 1
@@ -1057,10 +771,6 @@
       "theme": "light",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 7
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         },
@@ -1075,10 +785,6 @@
       "theme": "dark",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 3
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -1089,10 +795,6 @@
       "theme": "light",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 5
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -1102,10 +804,6 @@
       "route": "/students/student-a11y-1/cefr-overview",
       "theme": "dark",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 2
-        },
         {
           "rule": "page-has-heading-one",
           "nodes": 1
@@ -1117,10 +815,6 @@
       "theme": "light",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 4
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -1130,10 +824,6 @@
       "route": "/students/student-a11y-1/learning-path",
       "theme": "dark",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 1
-        },
         {
           "rule": "page-has-heading-one",
           "nodes": 1
@@ -1145,10 +835,6 @@
       "theme": "light",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 3
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -1158,10 +844,6 @@
       "route": "/tests",
       "theme": "dark",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 2
-        },
         {
           "rule": "page-has-heading-one",
           "nodes": 1
@@ -1173,10 +855,6 @@
       "theme": "light",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 7
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -1187,10 +865,6 @@
       "theme": "dark",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 1
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -1200,10 +874,6 @@
       "route": "/tests/new",
       "theme": "light",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 3
-        },
         {
           "rule": "page-has-heading-one",
           "nodes": 1
@@ -1214,10 +884,6 @@
       "route": "/tests/test-a11y-1",
       "theme": "dark",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 1
-        },
         {
           "rule": "label-title-only",
           "nodes": 12
@@ -1233,10 +899,6 @@
       "theme": "light",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 3
-        },
-        {
           "rule": "label-title-only",
           "nodes": 12
         },
@@ -1251,10 +913,6 @@
       "theme": "dark",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 1
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -1265,10 +923,6 @@
       "theme": "light",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 3
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -1278,10 +932,6 @@
       "route": "/tests/test-a11y-1/results/student-test-a11y-1",
       "theme": "dark",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 1
-        },
         {
           "rule": "page-has-heading-one",
           "nodes": 1
@@ -1293,10 +943,6 @@
       "theme": "light",
       "violations": [
         {
-          "rule": "color-contrast",
-          "nodes": 3
-        },
-        {
           "rule": "page-has-heading-one",
           "nodes": 1
         }
@@ -1305,31 +951,17 @@
     {
       "route": "/this-route-does-not-exist",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/this-route-does-not-exist",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 2
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/vocabulary",
       "theme": "dark",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 1
-        },
         {
           "rule": "page-has-heading-one",
           "nodes": 1
@@ -1340,10 +972,6 @@
       "route": "/vocabulary",
       "theme": "light",
       "violations": [
-        {
-          "rule": "color-contrast",
-          "nodes": 3
-        },
         {
           "rule": "page-has-heading-one",
           "nodes": 1

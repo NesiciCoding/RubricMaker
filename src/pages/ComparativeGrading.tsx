@@ -18,6 +18,7 @@ import PageTour from '../components/Tour/PageTour';
 import { getComparativeTourSteps } from '../data/TutorialSteps';
 import { SCHOOL_YEAR_LABELS } from '../data/schoolYears';
 import { nanoid } from '../utils/nanoid';
+import { textOnTheme } from '../utils/contrastCheck';
 import { useTranslation } from 'react-i18next';
 import { calcGradeSummary, patchScoreEntry } from '../utils/gradeCalc';
 import { scoresSubItems, subItemMode, subItemRange, toggleTick } from '../utils/subItems';
@@ -674,7 +675,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                         className="card"
                         style={{ maxWidth: 420, width: '100%', textAlign: 'center', padding: '32px 28px' }}
                     >
-                        <Check size={40} style={{ color: 'var(--accent)', marginBottom: 16 }} />
+                        <Check size={40} style={{ color: 'var(--accent-text)', marginBottom: 16 }} />
                         <h2 style={{ marginBottom: 8 }}>{t('comparativeGrading.session_complete_title')}</h2>
                         <p className="text-muted text-sm" style={{ marginBottom: 24 }}>
                             {t('comparativeGrading.session_complete_body', { count: matchupLimit })}
@@ -767,7 +768,13 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                     </button>
                                 </div>
                             )}
-                            <div className="text-muted text-sm" style={{ fontWeight: 'bold', color: sumA?.gradeColor }}>
+                            <div
+                                className="text-muted text-sm"
+                                style={{
+                                    fontWeight: 'bold',
+                                    color: sumA?.gradeColor ? textOnTheme(sumA.gradeColor) : undefined,
+                                }}
+                            >
                                 {sumA?.rawScore} pts ({sumA?.modifiedPercentage.toFixed(1)}%)
                             </div>
                             <div className="text-xs text-muted" style={{ marginTop: 2 }}>
@@ -884,7 +891,13 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                     </button>
                                 </div>
                             )}
-                            <div className="text-muted text-sm" style={{ fontWeight: 'bold', color: sumB?.gradeColor }}>
+                            <div
+                                className="text-muted text-sm"
+                                style={{
+                                    fontWeight: 'bold',
+                                    color: sumB?.gradeColor ? textOnTheme(sumB.gradeColor) : undefined,
+                                }}
+                            >
                                 {sumB?.rawScore} pts ({sumB?.modifiedPercentage.toFixed(1)}%)
                             </div>
                             <div className="text-xs text-muted" style={{ marginTop: 2 }}>
@@ -986,7 +999,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                                         <span
                                                             style={{
                                                                 fontWeight: isCurrent ? 600 : 400,
-                                                                color: isCurrent ? 'var(--accent)' : 'var(--text)',
+                                                                color: isCurrent ? 'var(--accent-text)' : 'var(--text)',
                                                             }}
                                                         >
                                                             {s.name}
@@ -1066,7 +1079,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                             onClick={() => toggleComment(c.id)}
                                             title={t('comparativeGrading.toggle_comments')}
                                             style={{
-                                                color: hasComment ? 'var(--accent)' : 'var(--text-dim)',
+                                                color: hasComment ? 'var(--accent-text)' : 'var(--text-dim)',
                                                 flexShrink: 0,
                                                 marginLeft: 8,
                                             }}

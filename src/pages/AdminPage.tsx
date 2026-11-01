@@ -374,7 +374,7 @@ export function SchoolsTab() {
             {schools.map((s) => (
                 <div key={s.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px' }}>
-                        <School size={16} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+                        <School size={16} style={{ color: 'var(--accent-text)', flexShrink: 0 }} />
                         <div style={{ flex: 1 }}>
                             <div style={{ fontWeight: 600, color: 'var(--text)', fontSize: '0.95rem' }}>{s.name}</div>
                             <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>
@@ -583,7 +583,7 @@ function DatabaseTab() {
             {/* ── Connection status ── */}
             <div className="card" style={{ borderLeft: '4px solid var(--accent)' }}>
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
-                    <Database size={20} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                    <Database size={20} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
                     <h3 style={{ margin: 0 }}>{t('admin.db_title')}</h3>
                     <HelpPopover title={t('help.lww_title')}>{t('help.lww_body')}</HelpPopover>
                     <span
@@ -597,8 +597,8 @@ function DatabaseTab() {
                     >
                         {dbStatus.isConnected ? (
                             <>
-                                <Wifi size={14} style={{ color: 'var(--green)' }} aria-hidden="true" />
-                                <span style={{ color: 'var(--green)' }}>{t('admin.connected')}</span>
+                                <Wifi size={14} style={{ color: 'var(--green-text)' }} aria-hidden="true" />
+                                <span style={{ color: 'var(--green-text)' }}>{t('admin.connected')}</span>
                             </>
                         ) : (
                             <>
@@ -1209,7 +1209,7 @@ function DatabaseTab() {
                         <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12 }}>
                             <button
                                 className="btn btn-ghost btn-sm"
-                                style={{ color: 'var(--red)', fontSize: '0.8rem' }}
+                                style={{ color: 'var(--red-text)', fontSize: '0.8rem' }}
                                 onClick={async () => {
                                     const ok = await confirmDialog({
                                         title: t('admin.delete_all_db_title'),
@@ -1270,7 +1270,7 @@ function DatabaseTab() {
                                             href="https://supabase.com"
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            style={{ color: 'var(--accent)' }}
+                                            style={{ color: 'var(--accent-text)' }}
                                         >
                                             supabase.com <ExternalLink size={10} />
                                         </a>
@@ -1372,7 +1372,7 @@ function IntegrationsTab() {
             {/* Standards Integration */}
             <div className="card" style={{ borderLeft: '4px solid var(--accent)' }}>
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
-                    <Key size={20} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                    <Key size={20} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
                     <h3 style={{ margin: 0 }}>{t('settings.standards_integration')}</h3>
                 </div>
                 <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
@@ -1411,7 +1411,7 @@ function IntegrationsTab() {
                                 href="https://commonstandardsproject.com/developers"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                style={{ color: 'var(--accent)' }}
+                                style={{ color: 'var(--accent-text)' }}
                             >
                                 commonstandardsproject.com/developers <ExternalLink size={10} />
                             </a>
@@ -2074,7 +2074,7 @@ export default function AdminPage() {
                                 padding: '8px 16px',
                                 cursor: 'pointer',
                                 fontWeight: tab === id ? 600 : 400,
-                                color: tab === id ? 'var(--accent)' : 'var(--text-muted)',
+                                color: tab === id ? 'var(--accent-text)' : 'var(--text-muted)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: 6,

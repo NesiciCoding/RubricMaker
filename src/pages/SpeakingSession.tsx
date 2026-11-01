@@ -356,7 +356,7 @@ export default function SpeakingSession() {
                 {/* ── Timer Panel ── */}
                 <div className="card" data-tour="sp-timer" style={{ marginBottom: 24 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-                        <Mic size={18} style={{ color: 'var(--accent)' }} />
+                        <Mic size={18} style={{ color: 'var(--accent-text)' }} />
                         <h3 style={{ margin: 0 }}>{t('speaking.timer_label')}</h3>
                     </div>
 
@@ -406,14 +406,14 @@ export default function SpeakingSession() {
                                 fontFamily: 'monospace',
                                 fontSize: '2.5rem',
                                 fontWeight: 700,
-                                color: timeUp ? 'var(--red)' : 'var(--text)',
+                                color: timeUp ? 'var(--red-text)' : 'var(--text)',
                                 minWidth: 100,
                             }}
                         >
                             {formatTime(timeRemaining)}
                         </div>
                         {timeUp && (
-                            <span style={{ color: 'var(--red)', fontWeight: 700 }}>{t('speaking.time_up')}</span>
+                            <span style={{ color: 'var(--red-text)', fontWeight: 700 }}>{t('speaking.time_up')}</span>
                         )}
 
                         {!timerLocked ? (
@@ -596,7 +596,7 @@ export default function SpeakingSession() {
                                                             ? `2px solid var(--accent)`
                                                             : '1px solid var(--border)',
                                                         background: isSelected ? 'var(--accent-soft)' : 'var(--bg)',
-                                                        color: isSelected ? 'var(--accent)' : 'var(--text)',
+                                                        color: isSelected ? 'var(--accent-text)' : 'var(--text)',
                                                         fontWeight: isSelected ? 700 : 400,
                                                         fontSize: '0.85rem',
                                                         cursor: 'pointer',

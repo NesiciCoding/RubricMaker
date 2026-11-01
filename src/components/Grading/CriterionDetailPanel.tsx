@@ -225,7 +225,7 @@ export default function CriterionDetailPanel({
                             alignItems: 'center',
                             gap: 6,
                             fontSize: '0.75rem',
-                            color: entry.overridePoints !== undefined ? 'var(--yellow)' : 'var(--text-muted)',
+                            color: entry.overridePoints !== undefined ? 'var(--yellow-text)' : 'var(--text-muted)',
                             cursor: 'pointer',
                             userSelect: 'none',
                         }}

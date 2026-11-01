@@ -244,7 +244,7 @@ export default function SelfAssessPage() {
                         </div>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        <div style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--accent)' }}>
+                        <div style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--accent-text)' }}>
                             {ratedCount}/{totalCount}
                         </div>
                         <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
@@ -272,7 +272,7 @@ export default function SelfAssessPage() {
                         return (
                             <div key={skill} className="card" style={{ marginBottom: 20 }}>
                                 <h3 style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <BookOpen size={16} style={{ color: 'var(--accent)' }} />
+                                    <BookOpen size={16} style={{ color: 'var(--accent-text)' }} />
                                     {skillLabel}
                                 </h3>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

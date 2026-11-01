@@ -56,7 +56,7 @@ export default function SentenceBuilderFields({ question, update }: Props) {
                 }
             />
             {unbuildable.length > 0 && (
-                <p role="alert" className="text-xs" style={{ margin: 0, color: 'var(--red)' }}>
+                <p role="alert" className="text-xs" style={{ margin: 0, color: 'var(--red-text)' }}>
                     {t('tests.builder_alt_mismatch', { lines: unbuildable.join(', ') })}
                 </p>
             )}

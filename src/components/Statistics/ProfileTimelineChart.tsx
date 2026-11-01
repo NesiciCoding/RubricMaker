@@ -19,7 +19,7 @@ export default function ProfileTimelineChart({ history }: { history: TimelinePoi
                         fontSize: '0.85rem',
                     }}
                     labelStyle={{ color: 'var(--text)', fontWeight: 600, marginBottom: 4 }}
-                    itemStyle={{ color: 'var(--accent)', fontWeight: 600 }}
+                    itemStyle={{ color: 'var(--accent-text)', fontWeight: 600 }}
                     formatter={(val: unknown, _name: unknown, props: TooltipPayloadEntry) => [
                         `${typeof val === 'number' ? val : 0}%`,
                         (props.payload as TimelinePoint).rubric.name,

@@ -20,7 +20,7 @@ export default function FolderLocationBadge({ path }: { path: string }) {
                 minWidth: 0,
             }}
         >
-            <Folder size={11} aria-hidden="true" style={{ color: 'var(--accent)', flexShrink: 0 }} />
+            <Folder size={11} aria-hidden="true" style={{ color: 'var(--accent-text)', flexShrink: 0 }} />
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{path}</span>
         </span>
     );

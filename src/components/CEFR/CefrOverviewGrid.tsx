@@ -5,6 +5,7 @@ import CefrBadge from './CefrBadge';
 import { CEFR_LEVELS, CEFR_SKILLS, CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../../data/cefrDescriptors';
 import type { CefrLevel } from '../../types';
 import type { CefrCellData } from '../../utils/cefrStudentAggregator';
+import { textOnTheme } from '../../utils/contrastCheck';
 
 interface Props {
     cells: CefrCellData[];
@@ -75,7 +76,7 @@ export default function CefrOverviewGrid({ cells, targetLevel, lang }: Props) {
                     >
                         <CefrBadge level={level} size="sm" />
                         {level === targetLevel && (
-                            <span style={{ fontSize: 9, color: 'var(--accent)', fontWeight: 600 }}>
+                            <span style={{ fontSize: 9, color: 'var(--accent-text)', fontWeight: 600 }}>
                                 {t('cefrOverview.target_level_label')}
                             </span>
                         )}
@@ -150,7 +151,7 @@ export default function CefrOverviewGrid({ cells, targetLevel, lang }: Props) {
                                                 gap: 3,
                                                 color:
                                                     state === 'achieved'
-                                                        ? CEFR_LEVEL_COLORS[level]
+                                                        ? textOnTheme(CEFR_LEVEL_COLORS[level])
                                                         : state === 'developing'
                                                           ? '#f59e0b'
                                                           : 'var(--text-muted)',
@@ -211,7 +212,7 @@ export default function CefrOverviewGrid({ cells, targetLevel, lang }: Props) {
                                                         padding: '1px 4px',
                                                         borderRadius: 3,
                                                         background: CEFR_LEVEL_COLORS[cell.textVocabEstimate] + '22',
-                                                        color: CEFR_LEVEL_COLORS[cell.textVocabEstimate],
+                                                        color: textOnTheme(CEFR_LEVEL_COLORS[cell.textVocabEstimate]),
                                                         border: `1px solid ${CEFR_LEVEL_COLORS[cell.textVocabEstimate]}44`,
                                                     }}
                                                     title={`Vocabulary estimate: ${cell.textVocabEstimate}`}
@@ -227,7 +228,7 @@ export default function CefrOverviewGrid({ cells, targetLevel, lang }: Props) {
                                                         padding: '1px 4px',
                                                         borderRadius: 3,
                                                         background: CEFR_LEVEL_COLORS[cell.textGrammarEstimate] + '22',
-                                                        color: CEFR_LEVEL_COLORS[cell.textGrammarEstimate],
+                                                        color: textOnTheme(CEFR_LEVEL_COLORS[cell.textGrammarEstimate]),
                                                         border: `1px solid ${CEFR_LEVEL_COLORS[cell.textGrammarEstimate]}44`,
                                                     }}
                                                     title={`Grammar estimate: ${cell.textGrammarEstimate}`}
@@ -352,7 +353,7 @@ export default function CefrOverviewGrid({ cells, targetLevel, lang }: Props) {
                                                             <CheckCircle
                                                                 size={14}
                                                                 style={{
-                                                                    color: CEFR_LEVEL_COLORS[activeLevel],
+                                                                    color: textOnTheme(CEFR_LEVEL_COLORS[activeLevel]),
                                                                     flexShrink: 0,
                                                                     marginTop: 1,
                                                                 }}
@@ -383,7 +384,7 @@ export default function CefrOverviewGrid({ cells, targetLevel, lang }: Props) {
                                                                 style={{
                                                                     fontSize: '0.72rem',
                                                                     color: d.confidentInSelfAssess
-                                                                        ? CEFR_LEVEL_COLORS[activeLevel]
+                                                                        ? textOnTheme(CEFR_LEVEL_COLORS[activeLevel])
                                                                         : 'var(--text-muted)',
                                                                     fontWeight: 600,
                                                                 }}

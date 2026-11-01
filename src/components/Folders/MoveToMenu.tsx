@@ -138,7 +138,7 @@ export default function MoveToMenu(props: MoveToMenuProps) {
                         }}
                         onClick={() => choose(folder.id)}
                     >
-                        <FolderIcon size={13} aria-hidden="true" style={{ color: 'var(--accent)' }} />
+                        <FolderIcon size={13} aria-hidden="true" style={{ color: 'var(--accent-text)' }} />
                         {folder.name}
                     </button>
                 ))}

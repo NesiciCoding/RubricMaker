@@ -695,7 +695,7 @@ export default function ExportPage() {
                         cursor: 'pointer',
                     }}
                 >
-                    <FileText size={16} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                    <FileText size={16} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
                     <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, flex: 1 }}>
                         {t('exportPage.rubric_section_title')}
                     </h3>
@@ -823,7 +823,7 @@ export default function ExportPage() {
                                             alignItems: 'center',
                                             gap: 4,
                                             textDecoration: 'none',
-                                            color: 'var(--accent)',
+                                            color: 'var(--accent-text)',
                                         }}
                                     >
                                         <Download size={10} /> {t('exportPage.download_sample')}
@@ -852,7 +852,7 @@ export default function ExportPage() {
                                             alignItems: 'center',
                                             gap: 4,
                                             textDecoration: 'none',
-                                            color: 'var(--accent)',
+                                            color: 'var(--accent-text)',
                                         }}
                                     >
                                         <Download size={10} /> {t('exportPage.download_sample')}
@@ -938,7 +938,7 @@ export default function ExportPage() {
                             padding: 0,
                         }}
                     >
-                        <Users size={16} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                        <Users size={16} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
                         <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, flex: 1 }}>
                             {t('exportPage.rubric_students_section_title')}
                         </h3>
@@ -1301,7 +1301,7 @@ export default function ExportPage() {
                             padding: 0,
                         }}
                     >
-                        <ClipboardList size={16} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                        <ClipboardList size={16} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
                         <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, flex: 1 }}>
                             {t('tests.export.exam.section_title')}
                         </h3>
@@ -1368,7 +1368,7 @@ export default function ExportPage() {
                             padding: 0,
                         }}
                     >
-                        <FileText size={16} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                        <FileText size={16} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
                         <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, flex: 1 }}>
                             {t('exportPage.essays_title')}
                         </h3>
@@ -1540,7 +1540,7 @@ export default function ExportPage() {
                             padding: 0,
                         }}
                     >
-                        <ClipboardList size={16} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                        <ClipboardList size={16} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
                         <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, flex: 1 }}>
                             {t('exportPage.period_report_title')}
                         </h3>
@@ -1697,7 +1697,7 @@ export default function ExportPage() {
                             padding: 0,
                         }}
                     >
-                        <ClipboardList size={16} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                        <ClipboardList size={16} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
                         <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, flex: 1 }}>
                             {t('reportCard.title')}
                         </h3>

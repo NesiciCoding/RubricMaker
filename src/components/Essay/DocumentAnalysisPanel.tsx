@@ -38,6 +38,7 @@ import EssayStatsPanel from './EssayStatsPanel';
 import UdGrammarPanel from './UdGrammarPanel';
 import { useUdGrammarProfile } from '../../hooks/useUdGrammarProfile';
 import { constructionCounts } from '../../utils/grammarProfile';
+import { textOnTheme } from '../../utils/contrastCheck';
 
 const LEVEL_ORDER: CefrLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 
@@ -268,7 +269,7 @@ export default function DocumentAnalysisPanel({
         >
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-                <ScanSearch size={20} style={{ color: 'var(--accent)' }} />
+                <ScanSearch size={20} style={{ color: 'var(--accent-text)' }} />
                 <div style={{ flex: 1 }}>
                     <h3 id="analysis-dialog-title" style={{ margin: 0 }}>
                         {t('analysis.title', 'Document Analysis')}
@@ -293,7 +294,7 @@ export default function DocumentAnalysisPanel({
                         borderLeft: '3px solid var(--accent)',
                     }}
                 >
-                    <Info size={15} style={{ color: 'var(--accent)', flexShrink: 0, marginTop: 2 }} />
+                    <Info size={15} style={{ color: 'var(--accent-text)', flexShrink: 0, marginTop: 2 }} />
                     <p className="text-xs text-muted" style={{ margin: 0, lineHeight: 1.6 }}>
                         {t('analysis.detection_disclaimer')}
                     </p>
@@ -360,7 +361,7 @@ export default function DocumentAnalysisPanel({
                                     >
                                         <AlertTriangle
                                             size={15}
-                                            style={{ color: 'var(--yellow)', flexShrink: 0, marginTop: 1 }}
+                                            style={{ color: 'var(--yellow-text)', flexShrink: 0, marginTop: 1 }}
                                         />
                                         <p className="text-xs text-muted" style={{ margin: 0 }}>
                                             {t(
@@ -416,7 +417,7 @@ export default function DocumentAnalysisPanel({
                                 href={LT_ATTRIBUTION_URL}
                                 target="_blank"
                                 rel="noreferrer"
-                                style={{ color: 'var(--accent)' }}
+                                style={{ color: 'var(--accent-text)' }}
                             >
                                 LanguageTool
                             </a>
@@ -429,7 +430,7 @@ export default function DocumentAnalysisPanel({
                                 href="https://languagetool.org/legal/privacy"
                                 target="_blank"
                                 rel="noreferrer"
-                                style={{ color: 'var(--accent)' }}
+                                style={{ color: 'var(--accent-text)' }}
                             >
                                 {t('analysis.privacy_policy_link', 'LanguageTool Privacy Policy')}
                             </a>
@@ -461,7 +462,7 @@ export default function DocumentAnalysisPanel({
                             border: '1px solid rgba(239,68,68,0.3)',
                         }}
                     >
-                        <p style={{ margin: 0, color: 'var(--red)', fontSize: '0.9rem' }}>{errorMsg}</p>
+                        <p style={{ margin: 0, color: 'var(--red-text)', fontSize: '0.9rem' }}>{errorMsg}</p>
                     </div>
                 )}
 
@@ -524,7 +525,7 @@ export default function DocumentAnalysisPanel({
                                     style={{
                                         fontWeight: 700,
                                         fontSize: '1.1rem',
-                                        color: foundCount > 0 ? 'var(--accent)' : 'var(--text-muted)',
+                                        color: foundCount > 0 ? 'var(--accent-text)' : 'var(--text-muted)',
                                     }}
                                 >
                                     {foundCount}
@@ -542,7 +543,7 @@ export default function DocumentAnalysisPanel({
                                         href={LT_ATTRIBUTION_URL}
                                         target="_blank"
                                         rel="noreferrer"
-                                        style={{ color: 'var(--accent)' }}
+                                        style={{ color: 'var(--accent-text)' }}
                                     >
                                         LanguageTool
                                     </a>
@@ -635,7 +636,7 @@ export default function DocumentAnalysisPanel({
                                                         {detected.found && (
                                                             <span
                                                                 className="text-xs"
-                                                                style={{ color: 'var(--accent)' }}
+                                                                style={{ color: 'var(--accent-text)' }}
                                                             >
                                                                 ×{detected.occurrences}
                                                             </span>
@@ -773,7 +774,9 @@ export default function DocumentAnalysisPanel({
                                                                 marginLeft: 8,
                                                                 fontSize: 12,
                                                                 fontWeight: 600,
-                                                                color: qual.passed ? 'var(--green)' : 'var(--yellow)',
+                                                                color: qual.passed
+                                                                    ? 'var(--green-text)'
+                                                                    : 'var(--yellow-text)',
                                                             }}
                                                         >
                                                             {qual.foundCount}/{qual.autoDetectableCount}
@@ -840,7 +843,7 @@ export default function DocumentAnalysisPanel({
                                             <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
                                                 <AlertTriangle
                                                     size={15}
-                                                    style={{ color: 'var(--yellow)', flexShrink: 0, marginTop: 2 }}
+                                                    style={{ color: 'var(--yellow-text)', flexShrink: 0, marginTop: 2 }}
                                                 />
                                                 <div>
                                                     <p style={{ margin: 0, fontSize: '0.875rem' }}>{err.message}</p>
@@ -920,7 +923,7 @@ function CefrLevelBadge({ level }: { level: CefrLevel }) {
                 fontWeight: 700,
                 fontSize: '0.75rem',
                 background: CEFR_LEVEL_COLORS[level] + '22',
-                color: CEFR_LEVEL_COLORS[level],
+                color: textOnTheme(CEFR_LEVEL_COLORS[level]),
                 border: `1px solid ${CEFR_LEVEL_COLORS[level]}44`,
             }}
         >
@@ -1059,7 +1062,7 @@ function CefrProfilePanel({ profile, extractedText }: { profile: CefrTextProfile
                                                 style={{
                                                     marginLeft: 4,
                                                     fontSize: '0.68rem',
-                                                    color: CEFR_LEVEL_COLORS[level],
+                                                    color: textOnTheme(CEFR_LEVEL_COLORS[level]),
                                                     fontWeight: 700,
                                                 }}
                                             >

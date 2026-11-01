@@ -1410,7 +1410,7 @@ export default function StudentsPage() {
                                                                 type="button"
                                                                 className="btn btn-ghost btn-icon btn-sm"
                                                                 aria-label={t('studentsPage.action_delete_student')}
-                                                                style={{ color: 'var(--red)' }}
+                                                                style={{ color: 'var(--red-text)' }}
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     setConfirmDeleteStudent(s.id);
@@ -1636,7 +1636,7 @@ export default function StudentsPage() {
                                 id="students-class-settings-title"
                                 style={{ display: 'flex', alignItems: 'center', gap: 8 }}
                             >
-                                <GraduationCap size={18} style={{ color: 'var(--accent)' }} />
+                                <GraduationCap size={18} style={{ color: 'var(--accent-text)' }} />
                                 {t('voTrack.class_settings_title')}
                             </h3>
                             <button
@@ -1871,7 +1871,7 @@ export default function StudentsPage() {
                             <div
                                 style={{
                                     background: 'var(--red-soft)',
-                                    color: 'var(--red)',
+                                    color: 'var(--red-text)',
                                     padding: '12px 16px',
                                     borderRadius: 8,
                                     marginTop: 16,
@@ -1932,7 +1932,7 @@ export default function StudentsPage() {
                             <div
                                 style={{
                                     background: 'var(--red-soft)',
-                                    color: 'var(--red)',
+                                    color: 'var(--red-text)',
                                     padding: '12px 16px',
                                     borderRadius: 8,
                                     marginTop: 16,
@@ -1975,7 +1975,7 @@ export default function StudentsPage() {
                     >
                         <div className="modal-header">
                             <h3 id="students-summary-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <ClipboardCopy size={17} style={{ color: 'var(--accent)' }} />
+                                <ClipboardCopy size={17} style={{ color: 'var(--accent-text)' }} />
                                 {students.find((s) => s.id === summaryStudentId)?.name} — Rubric Summary
                             </h3>
                             <button

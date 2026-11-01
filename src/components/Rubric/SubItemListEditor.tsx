@@ -284,7 +284,7 @@ export default function SubItemListEditor({
                                     onClick={() => onLinkStandard(si.id)}
                                     title={t('rubricBuilder.sub_item_link_standard_title')}
                                     aria-label={t('rubricBuilder.sub_item_link_standard_title')}
-                                    style={{ ...iconBtn, color: 'var(--accent)' }}
+                                    style={{ ...iconBtn, color: 'var(--accent-text)' }}
                                 >
                                     <Link2 size={11} />
                                 </button>
@@ -294,7 +294,7 @@ export default function SubItemListEditor({
                                     onClick={() => remove(index, false)}
                                     title={t('rubricBuilder.sub_item_delete_title')}
                                     aria-label={t('rubricBuilder.sub_item_delete_title')}
-                                    style={{ ...iconBtn, color: 'var(--red)' }}
+                                    style={{ ...iconBtn, color: 'var(--red-text)' }}
                                 >
                                     <Trash2 size={11} />
                                 </button>
@@ -314,7 +314,7 @@ export default function SubItemListEditor({
                                                 fontSize: '0.65rem',
                                             }}
                                         >
-                                            <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
+                                            <span style={{ color: 'var(--accent-text)', fontWeight: 600 }}>
                                                 {std.statementNotation ?? std.guid}
                                             </span>
                                             <button

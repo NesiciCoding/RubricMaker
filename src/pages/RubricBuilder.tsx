@@ -1306,7 +1306,7 @@ function RubricBuilderEditor() {
                                 }}
                             >
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                                    <BookOpen size={15} style={{ color: 'var(--accent)' }} />
+                                    <BookOpen size={15} style={{ color: 'var(--accent-text)' }} />
                                     <h4 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text)' }}>
                                         {t('cefr.rubric_section_title')}
                                     </h4>
@@ -1421,7 +1421,7 @@ function RubricBuilderEditor() {
                                 style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
                                 onClick={() => setShowVocabulary((v) => !v)}
                             >
-                                <BookOpen size={15} style={{ color: 'var(--accent)' }} />
+                                <BookOpen size={15} style={{ color: 'var(--accent-text)' }} />
                                 <h4 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text)', flex: 1 }}>
                                     {t('vocabulary.section_title', 'Vocabulary & Grammar List')}
                                     {existing?.vocabularyItems?.length ? (
@@ -1514,7 +1514,11 @@ function RubricBuilderEditor() {
                                         )}
                                         <button
                                             className="btn btn-ghost btn-sm"
-                                            style={{ marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--accent)' }}
+                                            style={{
+                                                marginLeft: 'auto',
+                                                fontSize: '0.75rem',
+                                                color: 'var(--accent-text)',
+                                            }}
                                             onClick={() => setCriteria(distributeWeights)}
                                             title={t('rubricBuilder.weight_distribute_evenly', 'Distribute evenly')}
                                         >
@@ -1895,7 +1899,9 @@ function RubricBuilderEditor() {
                                             }}
                                         >
                                             <div
-                                                style={{ color: format[key] ? 'var(--accent)' : 'var(--text-muted)' }}
+                                                style={{
+                                                    color: format[key] ? 'var(--accent-text)' : 'var(--text-muted)',
+                                                }}
                                                 onClick={() => setFormat((f) => ({ ...f, [key]: !f[key] }))}
                                             >
                                                 {format[key] ? <CheckSquare size={16} /> : <Square size={16} />}
@@ -2047,7 +2053,7 @@ function RubricBuilderEditor() {
                                             href="https://commonstandardsproject.com"
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            style={{ color: 'var(--accent)' }}
+                                            style={{ color: 'var(--accent-text)' }}
                                         >
                                             commonstandardsproject.com
                                         </a>
@@ -2409,7 +2415,7 @@ function RubricPreviewTable({
                                 )}
                                 {c.linkedStandard && (
                                     <div
-                                        style={{ marginTop: 6, fontSize: '0.75em', color: 'var(--accent)' }}
+                                        style={{ marginTop: 6, fontSize: '0.75em', color: 'var(--accent-text)' }}
                                         title={
                                             showDescriptions
                                                 ? (c.linkedStandard.statementNotation ?? '')
@@ -2425,7 +2431,7 @@ function RubricPreviewTable({
                                 {(c.linkedStandards || []).map((std, idx) => (
                                     <div
                                         key={idx}
-                                        style={{ marginTop: 6, fontSize: '0.75em', color: 'var(--accent)' }}
+                                        style={{ marginTop: 6, fontSize: '0.75em', color: 'var(--accent-text)' }}
                                         title={showDescriptions ? (std.statementNotation ?? '') : std.description}
                                     >
                                         📌 {showDescriptions ? std.description : (std.statementNotation ?? std.guid)}
@@ -2458,7 +2464,7 @@ function RubricPreviewTable({
                                                         <div
                                                             style={{
                                                                 fontSize: '0.85em',
-                                                                color: 'var(--accent)',
+                                                                color: 'var(--accent-text)',
                                                                 marginTop: 2,
                                                             }}
                                                         >
@@ -3074,7 +3080,7 @@ function RubricWysiwygEditor({
                                         className="btn btn-ghost btn-icon btn-sm"
                                         aria-label={t('rubricBuilder.action_delete_criterion')}
                                         onClick={() => deleteCriterion(c.id)}
-                                        style={{ padding: 2, height: 20, width: 20, color: 'var(--red)' }}
+                                        style={{ padding: 2, height: 20, width: 20, color: 'var(--red-text)' }}
                                     >
                                         <Trash2 size={13} />
                                     </button>
@@ -3131,7 +3137,7 @@ function RubricWysiwygEditor({
                                     )}
                                     {c.linkedStandard && (
                                         <div
-                                            style={{ marginTop: 6, fontSize: '0.75em', color: 'var(--accent)' }}
+                                            style={{ marginTop: 6, fontSize: '0.75em', color: 'var(--accent-text)' }}
                                             title={
                                                 showStdDesc
                                                     ? (c.linkedStandard.statementNotation ?? '')
@@ -3147,7 +3153,7 @@ function RubricWysiwygEditor({
                                     {(c.linkedStandards || []).map((std, idx) => (
                                         <div
                                             key={idx}
-                                            style={{ marginTop: 6, fontSize: '0.75em', color: 'var(--accent)' }}
+                                            style={{ marginTop: 6, fontSize: '0.75em', color: 'var(--accent-text)' }}
                                             title={showStdDesc ? (std.statementNotation ?? '') : std.description}
                                         >
                                             📌 {showStdDesc ? std.description : (std.statementNotation ?? std.guid)}
@@ -3204,7 +3210,7 @@ function RubricWysiwygEditor({
                                                                 <div
                                                                     style={{
                                                                         fontSize: '0.85em',
-                                                                        color: 'var(--accent)',
+                                                                        color: 'var(--accent-text)',
                                                                         marginTop: 2,
                                                                     }}
                                                                 >

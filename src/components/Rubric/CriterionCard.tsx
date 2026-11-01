@@ -260,10 +260,10 @@ export default memo(function CriterionCard({
                                             marginBottom: 8,
                                         }}
                                     >
-                                        <BookOpen size={13} style={{ color: 'var(--accent)' }} />
+                                        <BookOpen size={13} style={{ color: 'var(--accent-text)' }} />
                                         <span
                                             style={{
-                                                color: 'var(--accent)',
+                                                color: 'var(--accent-text)',
                                                 fontWeight: 600,
                                             }}
                                         >
@@ -316,10 +316,10 @@ export default memo(function CriterionCard({
                                             marginBottom: 8,
                                         }}
                                     >
-                                        <BookOpen size={13} style={{ color: 'var(--accent)' }} />
+                                        <BookOpen size={13} style={{ color: 'var(--accent-text)' }} />
                                         <span
                                             style={{
-                                                color: 'var(--accent)',
+                                                color: 'var(--accent-text)',
                                                 fontWeight: 600,
                                             }}
                                         >
@@ -352,7 +352,7 @@ export default memo(function CriterionCard({
                                 )}
                                 <button
                                     className="btn btn-ghost btn-sm"
-                                    style={{ color: 'var(--accent)', marginTop: 4 }}
+                                    style={{ color: 'var(--accent-text)', marginTop: 4 }}
                                     onClick={() =>
                                         onPickStandard({
                                             type: 'criterion',
@@ -364,7 +364,7 @@ export default memo(function CriterionCard({
                                 </button>
                                 <button
                                     className="btn btn-ghost btn-sm"
-                                    style={{ color: 'var(--accent)', marginTop: 4 }}
+                                    style={{ color: 'var(--accent-text)', marginTop: 4 }}
                                     onClick={() => onPickCefr(criterion.id)}
                                 >
                                     <BookOpen size={13} /> {t('framework.action_link_descriptor')}
@@ -615,7 +615,7 @@ export default memo(function CriterionCard({
                             </button>
                             <button
                                 className="btn btn-ghost btn-icon btn-sm"
-                                style={{ color: 'var(--accent)' }}
+                                style={{ color: 'var(--accent-text)' }}
                                 onClick={() => copyToClipboard(criterion)}
                                 title={t('rubricBuilder.action_copy_criterion')}
                                 aria-label={t('rubricBuilder.action_copy_criterion')}
@@ -633,7 +633,7 @@ export default memo(function CriterionCard({
                             </button>
                             <button
                                 className="btn btn-ghost btn-icon btn-sm"
-                                style={{ color: 'var(--red)' }}
+                                style={{ color: 'var(--red-text)' }}
                                 onClick={() => onDeleteCriterion(criterion.id)}
                                 title={t('rubricBuilder.action_delete_criterion')}
                                 aria-label={t('rubricBuilder.action_delete_criterion')}
@@ -867,7 +867,7 @@ export default memo(function CriterionCard({
                                                                                     'rubricBuilder.action_delete_level'
                                                                                 )}
                                                                                 style={{
-                                                                                    color: 'var(--red)',
+                                                                                    color: 'var(--red-text)',
                                                                                 }}
                                                                                 onClick={() =>
                                                                                     onDeleteLevel(

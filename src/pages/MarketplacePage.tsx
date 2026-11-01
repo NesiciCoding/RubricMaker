@@ -454,7 +454,7 @@ export default function MarketplacePage() {
                                     <button
                                         className="btn btn-ghost btn-sm"
                                         style={{
-                                            color: myUpvotes.has(listing.id) ? 'var(--accent)' : undefined,
+                                            color: myUpvotes.has(listing.id) ? 'var(--accent-text)' : undefined,
                                         }}
                                         onClick={() => handleToggleUpvote(listing.id)}
                                         title={t('marketplace.upvote_title')}

@@ -226,7 +226,7 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
             <div className="modal-header">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <BookOpen size={20} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                        <BookOpen size={20} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
                         <h3 id="standards-picker-title">{t('standardsPicker.title')}</h3>
                     </div>
                     {/* View Toggles */}
@@ -386,7 +386,7 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
                                 alignItems: 'flex-start',
                             }}
                         >
-                            <AlertCircle size={16} style={{ color: 'var(--red)', marginTop: 1, flexShrink: 0 }} />
+                            <AlertCircle size={16} style={{ color: 'var(--red-text)', marginTop: 1, flexShrink: 0 }} />
                             <div className="text-sm">
                                 <strong>{t('standardsPicker.api_error')}</strong> {error}
                                 {error.includes('403') || error.includes('401') ? (
@@ -396,7 +396,7 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
                                             href="https://commonstandardsproject.com/developers"
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            style={{ color: 'var(--accent)' }}
+                                            style={{ color: 'var(--accent-text)' }}
                                         >
                                             CSP CORS allowlist
                                         </a>
@@ -410,7 +410,7 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
 
                 {loading && (
                     <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}>
-                        <Loader size={24} className="spin" style={{ color: 'var(--accent)' }} />
+                        <Loader size={24} className="spin" style={{ color: 'var(--accent-text)' }} />
                     </div>
                 )}
 
@@ -448,7 +448,7 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
                                     className="btn btn-ghost btn-icon btn-sm"
                                     aria-label={t('standards.remove_favorite')}
                                     onClick={() => removeFavoriteStandard(std.guid)}
-                                    style={{ flexShrink: 0, marginTop: 2, color: 'var(--yellow)' }}
+                                    style={{ flexShrink: 0, marginTop: 2, color: 'var(--yellow-text)' }}
                                 >
                                     <Star size={16} fill="currentColor" />
                                 </button>
@@ -460,7 +460,7 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
                                             {std.statementNotation && (
                                                 <span
                                                     className="badge badge-blue"
-                                                    style={{ flexShrink: 0, color: 'var(--accent)' }}
+                                                    style={{ flexShrink: 0, color: 'var(--accent-text)' }}
                                                 >
                                                     {std.statementNotation}
                                                 </span>
@@ -584,7 +584,7 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
                                                 style={{
                                                     flexShrink: 0,
                                                     marginTop: 2,
-                                                    color: isFav ? 'var(--yellow)' : 'var(--text-dim)',
+                                                    color: isFav ? 'var(--yellow-text)' : 'var(--text-dim)',
                                                 }}
                                             >
                                                 <Star size={16} fill={isFav ? 'currentColor' : 'none'} />

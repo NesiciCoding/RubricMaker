@@ -1073,7 +1073,7 @@ export default function GradeStudent() {
                             background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
                         }}
                     >
-                        <History size={16} style={{ color: 'var(--accent)', flexShrink: 0 }} aria-hidden="true" />
+                        <History size={16} style={{ color: 'var(--accent-text)', flexShrink: 0 }} aria-hidden="true" />
                         <span style={{ flex: 1, minWidth: 200 }}>
                             {rubricChanges.length > 0
                                 ? t('gradeStudent.version_banner_rubric', { count: rubricChanges.length })
@@ -1365,7 +1365,7 @@ export default function GradeStudent() {
                                                     style={{
                                                         marginTop: 4,
                                                         fontSize: '0.72em',
-                                                        color: 'var(--accent)',
+                                                        color: 'var(--accent-text)',
                                                         display: 'flex',
                                                         alignItems: 'flex-start',
                                                         gap: 3,
@@ -1389,7 +1389,7 @@ export default function GradeStudent() {
                                                     style={{
                                                         marginTop: 4,
                                                         fontSize: '0.72em',
-                                                        color: 'var(--accent)',
+                                                        color: 'var(--accent-text)',
                                                         display: 'flex',
                                                         alignItems: 'flex-start',
                                                         gap: 3,
@@ -1406,7 +1406,11 @@ export default function GradeStudent() {
                                             ))}
                                             {entry.overridePoints !== undefined && (
                                                 <div
-                                                    style={{ fontSize: '0.75em', color: 'var(--yellow)', marginTop: 3 }}
+                                                    style={{
+                                                        fontSize: '0.75em',
+                                                        color: 'var(--yellow-text)',
+                                                        marginTop: 3,
+                                                    }}
                                                 >
                                                     {t('gradeStudent.label_override')} {entry.overridePoints}
                                                     {t('gradeStudent.table_points')}
@@ -1434,7 +1438,9 @@ export default function GradeStudent() {
                                                 onClick={() =>
                                                     setActiveCommentCrit(activeCommentCrit === c.id ? null : c.id)
                                                 }
-                                                style={{ color: entry.comment ? 'var(--accent)' : 'var(--text-dim)' }}
+                                                style={{
+                                                    color: entry.comment ? 'var(--accent-text)' : 'var(--text-dim)',
+                                                }}
                                                 title={t('gradeStudent.comment_open_bank')}
                                                 aria-label={t('gradeStudent.comment_open_bank')}
                                             >
@@ -1929,7 +1935,7 @@ export default function GradeStudent() {
                         return (
                             <div className="card" style={{ marginTop: 16, borderLeft: '4px solid var(--accent)' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                                    <BookOpen size={16} style={{ color: 'var(--accent)' }} />
+                                    <BookOpen size={16} style={{ color: 'var(--accent-text)' }} />
                                     <h3 style={{ margin: 0 }}>
                                         {t('gradeStudent.anchor_panel_title')}: {anchorStudent?.name ?? '?'}
                                     </h3>
@@ -1957,7 +1963,13 @@ export default function GradeStudent() {
                                             }}
                                         >
                                             <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{c.title}</div>
-                                            <div style={{ fontSize: '0.8rem', color: 'var(--accent)', marginTop: 2 }}>
+                                            <div
+                                                style={{
+                                                    fontSize: '0.8rem',
+                                                    color: 'var(--accent-text)',
+                                                    marginTop: 2,
+                                                }}
+                                            >
                                                 {levelLabel}
                                             </div>
                                             {comment && (

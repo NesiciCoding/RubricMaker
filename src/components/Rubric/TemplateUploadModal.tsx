@@ -218,7 +218,10 @@ export default function TemplateUploadModal({ onClose, onSave }: Props) {
                             padding: '28px 0',
                         }}
                     >
-                        <Loader size={24} style={{ color: 'var(--accent)', animation: 'spin 1s linear infinite' }} />
+                        <Loader
+                            size={24}
+                            style={{ color: 'var(--accent-text)', animation: 'spin 1s linear infinite' }}
+                        />
                         <span>
                             {kind === 'table'
                                 ? t('settings.template_extracting_table')
@@ -232,7 +235,7 @@ export default function TemplateUploadModal({ onClose, onSave }: Props) {
                         style={{
                             display: 'flex',
                             gap: 8,
-                            color: 'var(--red)',
+                            color: 'var(--red-text)',
                             background: 'color-mix(in srgb, var(--red, #ef4444) 12%, transparent)',
                             borderRadius: 8,
                             padding: '10px 14px',

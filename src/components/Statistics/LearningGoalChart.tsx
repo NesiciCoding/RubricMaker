@@ -120,7 +120,7 @@ export default function LearningGoalChart({ goals, className }: Props) {
                     <p style={{ margin: 0, fontSize: '0.9em' }} className="text-secondary">
                         {activeGoal.description}
                     </p>
-                    <p style={{ margin: '4px 0 0 0', fontWeight: 600, color: 'var(--accent)' }}>
+                    <p style={{ margin: '4px 0 0 0', fontWeight: 600, color: 'var(--accent-text)' }}>
                         {t('statistics.lg_average', {
                             pct: activeGoal.averagePercentage.toFixed(1),
                             earned: activeGoal.totalEarned,

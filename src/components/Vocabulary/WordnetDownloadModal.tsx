@@ -61,7 +61,7 @@ export default function WordnetDownloadModal({ onClose, onInstalled }: Props) {
                     </div>
                 )}
                 {failed && (
-                    <p className="text-sm" role="alert" style={{ color: 'var(--red)' }}>
+                    <p className="text-sm" role="alert" style={{ color: 'var(--red-text)' }}>
                         {t('vocabProfile.wordnet_failed')}
                     </p>
                 )}

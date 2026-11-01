@@ -276,7 +276,7 @@ export default function FlashcardsPage() {
                                                                                             fontWeight: 700,
                                                                                             background:
                                                                                                 'var(--green-soft, color-mix(in srgb, var(--green) 14%, transparent))',
-                                                                                            color: 'var(--green)',
+                                                                                            color: 'var(--green-text)',
                                                                                         }}
                                                                                     >
                                                                                         {t(
@@ -315,7 +315,7 @@ export default function FlashcardsPage() {
                                                                                 aria-label={t(
                                                                                     'flashcards.action_delete'
                                                                                 )}
-                                                                                style={{ color: 'var(--red)' }}
+                                                                                style={{ color: 'var(--red-text)' }}
                                                                                 onClick={() =>
                                                                                     handleDelete(deck.id, deck.name)
                                                                                 }

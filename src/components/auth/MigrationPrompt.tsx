@@ -53,7 +53,7 @@ export default function MigrationPrompt() {
                             flexShrink: 0,
                         }}
                     >
-                        <Database size={22} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                        <Database size={22} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
                     </div>
                     <div>
                         <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: 1.6 }}>
@@ -87,7 +87,7 @@ export default function MigrationPrompt() {
                             color: 'var(--text)',
                         }}
                     >
-                        <AlertCircle size={16} style={{ color: 'var(--red)', flexShrink: 0 }} aria-hidden="true" />
+                        <AlertCircle size={16} style={{ color: 'var(--red-text)', flexShrink: 0 }} aria-hidden="true" />
                         <div>
                             <div>{t('migration.upload_failed')}</div>
                             <div style={{ color: 'var(--text-muted)', marginTop: 4, overflowWrap: 'anywhere' }}>

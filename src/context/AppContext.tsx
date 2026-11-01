@@ -28,6 +28,8 @@ import { SettingsProvider } from './domains/settings';
 import { PlatformProvider } from './domains/platform';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../hooks/useToast';
+import { accentLabelFor, accentTextFor } from '../utils/contrastCheck';
+import { ThemeName, themeSurfaces } from '../data/themeSurfaces';
 import { loadDb, getDb } from '../services/database/lazyDb';
 import {
     loadStore,
@@ -184,24 +186,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const accent = state.settings.accentColor;
         if (!accent) {
             // No custom accent chosen — let the theme's own --accent (Warm Scholar tokens, per light/dark) stand.
-            root.style.removeProperty('--accent');
-            root.style.removeProperty('--accent-hover');
-            root.style.removeProperty('--accent-soft');
-            root.style.removeProperty('--accent-glow');
+            for (const token of [
+                '--accent',
+                '--accent-text',
+                '--accent-fg',
+                '--accent-hover',
+                '--accent-soft',
+                '--accent-glow',
+            ]) {
+                root.style.removeProperty(token);
+            }
             for (const step of ACCENT_SCALE_STEPS) {
                 root.style.removeProperty(`--accent-${step}`);
             }
             return;
         }
+        const theme: ThemeName = state.settings.theme === 'light' ? 'light' : 'dark';
         root.style.setProperty('--accent', accent);
         root.style.setProperty('--accent-hover', accent);
+        // A bundle accent is picked to look good as a button fill; as *text* it can fall well under
+        // AA (academy's #1d4ed8 is 2.7:1 on the dark page). Derive the legible variant here so every
+        // link, tab label and badge follows whatever accent the teacher chose (#533).
+        root.style.setProperty('--accent-text', accentTextFor(accent, themeSurfaces(theme), theme));
+        root.style.setProperty('--accent-fg', accentLabelFor(accent));
         root.style.setProperty('--accent-soft', `${accent}26`);
         root.style.setProperty('--accent-glow', `${accent}66`);
         const scale = buildAccentScale(accent);
         for (const step of ACCENT_SCALE_STEPS) {
             root.style.setProperty(`--accent-${step}`, scale[step]);
         }
-    }, [state.settings.accentColor]);
+    }, [state.settings.accentColor, state.settings.theme]);
 
     useEffect(() => {
         const fontKey = state.settings.uiFontFamily;

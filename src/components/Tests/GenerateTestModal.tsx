@@ -251,7 +251,7 @@ export default function GenerateTestModal({ onClose }: GenerateTestModalProps) {
                                             type="button"
                                             className="btn btn-ghost btn-icon btn-sm"
                                             aria-label={t('common.delete')}
-                                            style={{ color: 'var(--red)', marginLeft: 'auto' }}
+                                            style={{ color: 'var(--red-text)', marginLeft: 'auto' }}
                                             onClick={() => removeRow(row.id)}
                                         >
                                             <Trash2 size={14} />

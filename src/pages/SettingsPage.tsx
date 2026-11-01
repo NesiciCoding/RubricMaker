@@ -90,7 +90,7 @@ function GradeRangeWarnings({ ranges }: { ranges: GradeRange[] }) {
         <div
             role="status"
             className="text-xs"
-            style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4, color: 'var(--yellow)' }}
+            style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4, color: 'var(--yellow-text)' }}
         >
             {warnings.map((key) => (
                 <span key={key}>
@@ -712,11 +712,15 @@ export default function SettingsPage() {
                         >
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
                                 {isAdmin ? (
-                                    <Shield size={20} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                                    <Shield size={20} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
                                 ) : isUserPlus ? (
-                                    <User size={20} style={{ color: 'var(--green)' }} aria-hidden="true" />
+                                    <User size={20} style={{ color: 'var(--green-text)' }} aria-hidden="true" />
                                 ) : (
-                                    <GraduationCap size={20} style={{ color: 'var(--yellow)' }} aria-hidden="true" />
+                                    <GraduationCap
+                                        size={20}
+                                        style={{ color: 'var(--yellow-text)' }}
+                                        aria-hidden="true"
+                                    />
                                 )}
                                 <h3 style={{ margin: 0 }}>{t('settings.role_access')}</h3>
                                 <span className={`role-badge ${ROLE_META[role].badgeClass}`} style={{ marginLeft: 4 }}>
@@ -826,7 +830,7 @@ export default function SettingsPage() {
                                             <div
                                                 id="accent-error"
                                                 className="text-xs"
-                                                style={{ color: 'var(--red)', marginTop: 4 }}
+                                                style={{ color: 'var(--red-text)', marginTop: 4 }}
                                             >
                                                 {t('settings.accent_color_invalid')}
                                             </div>
@@ -958,7 +962,7 @@ export default function SettingsPage() {
                         {/* Localization */}
                         <div className="card" style={{ marginBottom: 24, borderLeft: '4px solid var(--accent)' }}>
                             <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
-                                <Globe size={20} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                                <Globe size={20} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
                                 <h3 style={{ margin: 0 }}>{t('navigation.localization') || 'Localization'}</h3>
                             </div>
                             <div className="form-group">
@@ -973,7 +977,7 @@ export default function SettingsPage() {
                         {/* Cambridge English exam labels */}
                         <div className="card" style={{ marginBottom: 24 }}>
                             <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
-                                <GraduationCap size={20} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                                <GraduationCap size={20} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
                                 <h3 style={{ margin: 0 }}>{t('cambridge.settings_section_title')}</h3>
                             </div>
                             <label
@@ -1027,7 +1031,7 @@ export default function SettingsPage() {
                         {/* Dyslexia-friendly reading mode */}
                         <div className="card" style={{ marginBottom: 24 }}>
                             <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
-                                <BookOpen size={20} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                                <BookOpen size={20} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
                                 <h3 style={{ margin: 0 }}>{t('settings.dyslexia_section_title')}</h3>
                             </div>
                             <label
@@ -1394,7 +1398,7 @@ export default function SettingsPage() {
                                                     <button
                                                         type="button"
                                                         className="btn btn-ghost btn-sm"
-                                                        style={{ color: 'var(--red)' }}
+                                                        style={{ color: 'var(--red-text)' }}
                                                         onClick={() => setDeleteMasteryTargetId(target.id)}
                                                     >
                                                         {t('common.delete')}
@@ -1656,7 +1660,7 @@ export default function SettingsPage() {
                                         <button
                                             className="btn btn-ghost btn-icon btn-sm"
                                             aria-label={t('common.delete')}
-                                            style={{ color: 'var(--red)' }}
+                                            style={{ color: 'var(--red-text)' }}
                                             onClick={() => {
                                                 if (gs.id !== settings.defaultGradeScaleId) setDeleteScaleId(gs.id);
                                                 else showToast(t('settings.alert_cannot_delete_default'), 'info');
@@ -1761,7 +1765,7 @@ export default function SettingsPage() {
                                                                 <button
                                                                     className="btn btn-ghost btn-icon btn-sm"
                                                                     aria-label={t('common.delete')}
-                                                                    style={{ color: 'var(--red)' }}
+                                                                    style={{ color: 'var(--red-text)' }}
                                                                     onClick={() => removeRange(gs.id, idx)}
                                                                 >
                                                                     <Trash2 size={13} aria-hidden="true" />
@@ -1909,7 +1913,7 @@ export default function SettingsPage() {
                                                         <button
                                                             className="btn btn-ghost btn-icon btn-sm"
                                                             aria-label={t('common.delete')}
-                                                            style={{ color: 'var(--red)' }}
+                                                            style={{ color: 'var(--red-text)' }}
                                                             onClick={() => removeMasteryBand(idx)}
                                                         >
                                                             <Trash2 size={13} aria-hidden="true" />
@@ -1945,7 +1949,7 @@ export default function SettingsPage() {
                                 }}
                             >
                                 <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                                    <Layout size={20} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                                    <Layout size={20} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
                                     <div>
                                         <h3 style={{ margin: 0 }}>{t('settings.export_templates')}</h3>
                                         <p className="text-muted text-xs" style={{ marginTop: 2 }}>
@@ -2088,7 +2092,7 @@ export default function SettingsPage() {
                                                         type="button"
                                                         className="btn btn-ghost btn-icon btn-sm"
                                                         aria-label={t('common.delete')}
-                                                        style={{ color: 'var(--red)' }}
+                                                        style={{ color: 'var(--red-text)' }}
                                                         onClick={() => {
                                                             deleteExportTemplate(tmpl.id);
                                                             if (isActive)
@@ -2184,7 +2188,7 @@ export default function SettingsPage() {
                                                 {pinError && (
                                                     <div
                                                         className="text-xs"
-                                                        style={{ color: 'var(--red)', marginTop: 4 }}
+                                                        style={{ color: 'var(--red-text)', marginTop: 4 }}
                                                     >
                                                         {t('settings.admin_incorrect_password')}
                                                     </div>
@@ -2213,7 +2217,7 @@ export default function SettingsPage() {
                                 >
                                     <Shield
                                         size={20}
-                                        style={{ color: 'var(--accent)', flexShrink: 0 }}
+                                        style={{ color: 'var(--accent-text)', flexShrink: 0 }}
                                         aria-hidden="true"
                                     />
                                     <div style={{ flex: 1 }}>
@@ -2294,7 +2298,7 @@ export default function SettingsPage() {
                                     style={{ marginBottom: 24, borderLeft: '4px solid var(--accent)' }}
                                 >
                                     <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
-                                        <Lock size={20} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                                        <Lock size={20} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
                                         <div>
                                             <h3 style={{ margin: 0 }}>{t('settings.admin_password_heading')}</h3>
                                             <p className="text-muted text-xs" style={{ marginTop: 2 }}>
@@ -2337,7 +2341,7 @@ export default function SettingsPage() {
                                                     </button>
                                                     <button
                                                         className="btn btn-ghost btn-sm"
-                                                        style={{ color: 'var(--red)' }}
+                                                        style={{ color: 'var(--red-text)' }}
                                                         onClick={() => {
                                                             setPinSetupMode('removing');
                                                             setPinSetupError('');
@@ -2431,7 +2435,7 @@ export default function SettingsPage() {
                                             )}
 
                                             {pinSetupError && (
-                                                <div className="text-xs" style={{ color: 'var(--red)' }}>
+                                                <div className="text-xs" style={{ color: 'var(--red-text)' }}>
                                                     {pinSetupError}
                                                 </div>
                                             )}
@@ -2473,7 +2477,7 @@ export default function SettingsPage() {
                                 {/* Role management summary */}
                                 <div className="card">
                                     <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
-                                        <User size={20} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                                        <User size={20} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
                                         <h3 style={{ margin: 0 }}>{t('settings.role_reference')}</h3>
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -2594,7 +2598,7 @@ export default function SettingsPage() {
                                             textAlign: 'right',
                                             padding: '6px 8px',
                                             borderBottom: '1px solid var(--border)',
-                                            color: 'var(--accent)',
+                                            color: 'var(--accent-text)',
                                             fontWeight: 700,
                                         }}
                                     >
@@ -2643,7 +2647,7 @@ export default function SettingsPage() {
                                                 padding: '6px 8px',
                                                 textAlign: 'right',
                                                 fontWeight: 600,
-                                                color: backup !== current ? 'var(--accent)' : 'var(--text)',
+                                                color: backup !== current ? 'var(--accent-text)' : 'var(--text)',
                                             }}
                                         >
                                             {backup}
@@ -2773,7 +2777,7 @@ export default function SettingsPage() {
                 >
                     <div className="modal-header">
                         <h3 id="pin-dialog-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <Shield size={16} style={{ color: 'var(--accent)' }} aria-hidden="true" />{' '}
+                            <Shield size={16} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />{' '}
                             {t('settings.admin_switch_to')}
                         </h3>
                         <button
@@ -2822,7 +2826,11 @@ export default function SettingsPage() {
                                 </button>
                             </div>
                             {pinError && (
-                                <div id="pin-error" className="text-xs" style={{ color: 'var(--red)', marginTop: 4 }}>
+                                <div
+                                    id="pin-error"
+                                    className="text-xs"
+                                    style={{ color: 'var(--red-text)', marginTop: 4 }}
+                                >
                                     {t('settings.admin_pin_incorrect')}
                                 </div>
                             )}

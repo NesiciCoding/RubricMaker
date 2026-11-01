@@ -557,7 +557,7 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
                 style={{ width: '96vw', maxHeight: '92vh', display: 'flex', flexDirection: 'column' }}
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '18px 20px 14px' }}>
-                    <ScanLine size={20} style={{ color: 'var(--accent)' }} />
+                    <ScanLine size={20} style={{ color: 'var(--accent-text)' }} />
                     <h3 id="exam-scan-batch-title" style={{ margin: 0, flex: 1 }}>
                         {t('tests.scan.batch_title')}
                     </h3>
@@ -588,8 +588,11 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
                                 alignItems: 'flex-start',
                             }}
                         >
-                            <AlertTriangle size={16} style={{ color: 'var(--red)', flexShrink: 0, marginTop: 2 }} />
-                            <p style={{ margin: 0, color: 'var(--red)', fontSize: '0.9rem' }}>{errorMsg}</p>
+                            <AlertTriangle
+                                size={16}
+                                style={{ color: 'var(--red-text)', flexShrink: 0, marginTop: 2 }}
+                            />
+                            <p style={{ margin: 0, color: 'var(--red-text)', fontSize: '0.9rem' }}>{errorMsg}</p>
                         </div>
                     )}
 
@@ -826,12 +829,18 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
                                                                 : page.sourceName}
                                                         </div>
                                                         {wrongTest && (
-                                                            <div className="text-xs" style={{ color: 'var(--red)' }}>
+                                                            <div
+                                                                className="text-xs"
+                                                                style={{ color: 'var(--red-text)' }}
+                                                            >
                                                                 {t('tests.scan.batch_wrong_test')}
                                                             </div>
                                                         )}
                                                         {page.error && (
-                                                            <div className="text-xs" style={{ color: 'var(--red)' }}>
+                                                            <div
+                                                                className="text-xs"
+                                                                style={{ color: 'var(--red-text)' }}
+                                                            >
                                                                 {page.error}
                                                             </div>
                                                         )}
@@ -898,12 +907,12 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
                                     </div>
 
                                     {unassigned.length > 0 && (
-                                        <p className="text-xs" style={{ margin: 0, color: 'var(--yellow)' }}>
+                                        <p className="text-xs" style={{ margin: 0, color: 'var(--yellow-text)' }}>
                                             {t('tests.scan.batch_unassigned_warning', { count: unassigned.length })}
                                         </p>
                                     )}
                                     {mismatches.length > 0 && (
-                                        <p className="text-xs" style={{ margin: 0, color: 'var(--yellow)' }}>
+                                        <p className="text-xs" style={{ margin: 0, color: 'var(--yellow-text)' }}>
                                             {mismatches
                                                 .map((m) =>
                                                     t('tests.scan.batch_page_mismatch', {
@@ -958,7 +967,7 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
                                         {mismatch && (
                                             <p
                                                 className="text-xs"
-                                                style={{ margin: '0 0 8px', color: 'var(--yellow)' }}
+                                                style={{ margin: '0 0 8px', color: 'var(--yellow-text)' }}
                                             >
                                                 {t('tests.scan.batch_page_mismatch', {
                                                     name,
@@ -972,7 +981,7 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
                                                 <p
                                                     key={page.id}
                                                     className="text-xs"
-                                                    style={{ margin: '0 0 6px', color: 'var(--red)' }}
+                                                    style={{ margin: '0 0 6px', color: 'var(--red-text)' }}
                                                 >
                                                     {t('tests.scan.batch_page_error', {
                                                         number: pageIndex + 1,
@@ -1053,7 +1062,7 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
                                 gap: 8,
                             }}
                         >
-                            <Check size={32} style={{ color: 'var(--green)' }} />
+                            <Check size={32} style={{ color: 'var(--green-text)' }} />
                             <p style={{ margin: 0, fontWeight: 600 }}>
                                 {t('tests.scan.batch_saved', { count: savedCount })}
                             </p>

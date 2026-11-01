@@ -389,7 +389,10 @@ export default function ResponsesGrid({ test, rows, sortRules }: ResponsesGridPr
                                 });
                                 const fullLabel = `${shortLabel}: ${plainQuestionPromptText(q)}`;
                                 return (
-                                    <th key={col.id} style={{ ...th, textAlign: 'center', color: 'var(--accent)' }}>
+                                    <th
+                                        key={col.id}
+                                        style={{ ...th, textAlign: 'center', color: 'var(--accent-text)' }}
+                                    >
                                         <button
                                             type="button"
                                             className="btn btn-ghost btn-sm"
@@ -511,7 +514,7 @@ export default function ResponsesGrid({ test, rows, sortRules }: ResponsesGridPr
                                     style={{
                                         fontSize: '0.75rem',
                                         fontWeight: 700,
-                                        color: 'var(--accent)',
+                                        color: 'var(--accent-text)',
                                         textTransform: 'uppercase',
                                     }}
                                 >

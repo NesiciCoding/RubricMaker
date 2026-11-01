@@ -862,7 +862,7 @@ export default function StudentTestPage() {
                             alignItems: 'center',
                             gap: 8,
                             fontSize: '0.875rem',
-                            color: 'var(--accent)',
+                            color: 'var(--accent-text)',
                         }}
                     >
                         {t('tests.taking.draft_restored')}
@@ -873,7 +873,7 @@ export default function StudentTestPage() {
                                 background: 'none',
                                 border: 'none',
                                 cursor: 'pointer',
-                                color: 'var(--accent)',
+                                color: 'var(--accent-text)',
                                 fontSize: '0.8rem',
                                 textDecoration: 'underline',
                             }}
@@ -1065,12 +1065,12 @@ export default function StudentTestPage() {
                                             {isCorrect ? (
                                                 <CheckCircle
                                                     size={18}
-                                                    style={{ color: 'var(--green)', flexShrink: 0, marginTop: 2 }}
+                                                    style={{ color: 'var(--green-text)', flexShrink: 0, marginTop: 2 }}
                                                 />
                                             ) : (
                                                 <XCircle
                                                     size={18}
-                                                    style={{ color: 'var(--red)', flexShrink: 0, marginTop: 2 }}
+                                                    style={{ color: 'var(--red-text)', flexShrink: 0, marginTop: 2 }}
                                                 />
                                             )}
                                             <div style={{ flex: 1 }}>
@@ -1152,7 +1152,7 @@ export default function StudentTestPage() {
                                         fontWeight: 700,
                                         textTransform: 'uppercase',
                                         letterSpacing: '0.06em',
-                                        color: 'var(--accent)',
+                                        color: 'var(--accent-text)',
                                         marginBottom: 10,
                                         padding: '4px 10px',
                                         background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
@@ -1237,7 +1237,9 @@ export default function StudentTestPage() {
                                         aria-pressed={flagged.has(question.id)}
                                         className="btn btn-ghost btn-sm"
                                         style={{
-                                            color: flagged.has(question.id) ? 'var(--yellow)' : 'var(--text-muted)',
+                                            color: flagged.has(question.id)
+                                                ? 'var(--yellow-text)'
+                                                : 'var(--text-muted)',
                                             gap: 6,
                                         }}
                                     >
@@ -1613,7 +1615,7 @@ function QuestionCard({
                     fontSize: '0.75rem',
                     fontWeight: 700,
                     textTransform: 'uppercase',
-                    color: 'var(--accent)',
+                    color: 'var(--accent-text)',
                     marginBottom: 8,
                     letterSpacing: '0.05em',
                 }}
@@ -1714,7 +1716,7 @@ function QuestionCard({
                             padding: '4px 10px',
                             fontSize: '0.8rem',
                             fontWeight: 600,
-                            color: 'var(--accent)',
+                            color: 'var(--accent-text)',
                             cursor: 'pointer',
                         }}
                     >
@@ -2067,7 +2069,11 @@ function KeyWordAnswer({
                     </>
                 )}
             </p>
-            <span role="status" className="text-sm" style={{ color: outside ? 'var(--red)' : 'var(--text-muted)' }}>
+            <span
+                role="status"
+                className="text-sm"
+                style={{ color: outside ? 'var(--red-text)' : 'var(--text-muted)' }}
+            >
                 {t('tests.taking.kwt_word_count', { count: words, min: limit.min, max: limit.max })}
                 {outside ? ` — ${t('tests.taking.kwt_out_of_limit')}` : ''}
             </span>
@@ -2260,7 +2266,7 @@ function AudioResponseAnswer({
                 </div>
             )}
             {micError && (
-                <p style={{ color: 'var(--red)', fontSize: '0.85rem', margin: 0 }}>
+                <p style={{ color: 'var(--red-text)', fontSize: '0.85rem', margin: 0 }}>
                     {t('tests.taking.microphone_error')}
                 </p>
             )}

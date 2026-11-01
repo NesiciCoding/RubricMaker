@@ -176,7 +176,7 @@ export default function PeerReviewView() {
             <div className="page-content fade-in">
                 <div data-tour="pr-header" className="card" style={{ marginBottom: 24 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                        <FileText size={20} style={{ color: 'var(--accent)' }} />
+                        <FileText size={20} style={{ color: 'var(--accent-text)' }} />
                         <h2 style={{ margin: 0 }}>{rubric.name}</h2>
                     </div>
                     <p className="text-muted text-sm">{rubric.description}</p>

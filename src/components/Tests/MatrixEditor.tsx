@@ -60,7 +60,7 @@ export default function MatrixEditor({ question, update, partialCreditToggle }: 
                             type="button"
                             className="btn btn-ghost btn-icon btn-sm"
                             aria-label={t('tests.remove_option')}
-                            style={{ color: 'var(--red)' }}
+                            style={{ color: 'var(--red-text)' }}
                             disabled={columns.length <= 2}
                             onClick={() => removeColumn(col.id)}
                         >
@@ -104,7 +104,7 @@ export default function MatrixEditor({ question, update, partialCreditToggle }: 
                             type="button"
                             className="btn btn-ghost btn-icon btn-sm"
                             aria-label={t('tests.remove_option')}
-                            style={{ color: 'var(--red)' }}
+                            style={{ color: 'var(--red-text)' }}
                             disabled={rows.length <= 1}
                             onClick={() => update({ matrixRows: rows.filter((r) => r.id !== row.id) })}
                         >

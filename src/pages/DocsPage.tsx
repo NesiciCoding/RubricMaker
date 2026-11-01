@@ -554,7 +554,7 @@ function FeatureList({ items }: { items: string[] }) {
     );
 }
 
-function InfoBox({ children, color = 'var(--accent)' }: { children: React.ReactNode; color?: string }) {
+function InfoBox({ children, color = 'var(--accent-text)' }: { children: React.ReactNode; color?: string }) {
     return (
         <div
             style={{
@@ -2002,7 +2002,7 @@ export default function DocsPage() {
                                     width: '100%',
                                     padding: '9px 14px',
                                     background: activeTab === id ? 'var(--accent-soft)' : 'transparent',
-                                    color: activeTab === id ? 'var(--accent)' : 'var(--text-muted)',
+                                    color: activeTab === id ? 'var(--accent-text)' : 'var(--text-muted)',
                                     border: 'none',
                                     borderLeft: `3px solid ${activeTab === id ? 'var(--accent)' : 'transparent'}`,
                                     cursor: 'pointer',

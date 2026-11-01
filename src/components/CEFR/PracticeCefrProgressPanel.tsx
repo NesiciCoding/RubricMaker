@@ -22,7 +22,7 @@ export default function PracticeCefrProgressPanel({ cells, lang }: Props) {
     return (
         <div className="card" style={{ marginBottom: 24, border: '1px dashed var(--border)' }}>
             <h3 style={{ marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Dumbbell size={18} style={{ color: 'var(--accent)' }} />
+                <Dumbbell size={18} style={{ color: 'var(--accent-text)' }} />
                 {t('cefrOverview.practice_title')}
             </h3>
             <p className="text-muted text-sm" style={{ marginBottom: 16 }}>

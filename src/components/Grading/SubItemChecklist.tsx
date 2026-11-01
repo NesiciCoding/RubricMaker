@@ -30,7 +30,7 @@ interface Props {
 function LinkedStandards({ item, display }: { item: SubItem; display?: 'notation' | 'description' }) {
     if (!display || !item.linkedStandards?.length) return null;
     return (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, fontSize: '0.72rem', color: 'var(--accent)' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, fontSize: '0.72rem', color: 'var(--accent-text)' }}>
             {item.linkedStandards.map((std, idx) => (
                 <span key={idx} title={display === 'description' ? (std.statementNotation ?? '') : std.description}>
                     {display === 'description' ? std.description : `[${std.statementNotation ?? std.guid}]`}

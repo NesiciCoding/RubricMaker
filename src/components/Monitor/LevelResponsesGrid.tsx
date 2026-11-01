@@ -111,7 +111,7 @@ export default function LevelResponsesGrid({ rows }: LevelResponsesGridProps) {
                             {t('tests.monitor.grid.estimated_level')}
                         </th>
                         {levels.map((level) => (
-                            <th key={level} style={{ ...th, textAlign: 'center', color: 'var(--accent)' }}>
+                            <th key={level} style={{ ...th, textAlign: 'center', color: 'var(--accent-text)' }}>
                                 {level}
                             </th>
                         ))}

@@ -129,7 +129,7 @@ export default function GradingGrid({
                                                     <div
                                                         style={{
                                                             fontSize: '0.68rem',
-                                                            color: 'var(--yellow)',
+                                                            color: 'var(--yellow-text)',
                                                             marginTop: 2,
                                                         }}
                                                     >

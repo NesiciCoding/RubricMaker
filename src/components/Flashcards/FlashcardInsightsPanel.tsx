@@ -12,9 +12,9 @@ interface Props {
 
 const STAGES = [
     { key: 'newCount', color: 'var(--text-dim)', labelKey: 'flashcards.stage_new' },
-    { key: 'learningCount', color: 'var(--yellow)', labelKey: 'flashcards.stage_learning' },
-    { key: 'reviewCount', color: 'var(--teal)', labelKey: 'flashcards.stage_review' },
-    { key: 'masteredCount', color: 'var(--green)', labelKey: 'flashcards.stage_mastered' },
+    { key: 'learningCount', color: 'var(--yellow-text)', labelKey: 'flashcards.stage_learning' },
+    { key: 'reviewCount', color: 'var(--teal-text)', labelKey: 'flashcards.stage_review' },
+    { key: 'masteredCount', color: 'var(--green-text)', labelKey: 'flashcards.stage_mastered' },
 ] as const;
 
 export default function FlashcardInsightsPanel({ insights, compact = false, deckKind = 'vocabulary' }: Props) {
@@ -64,7 +64,7 @@ export default function FlashcardInsightsPanel({ insights, compact = false, deck
                     </span>
                 ))}
                 {insights.dueCount > 0 && (
-                    <span style={{ color: 'var(--red)', fontWeight: 600 }}>
+                    <span style={{ color: 'var(--red-text)', fontWeight: 600 }}>
                         {t('flashcards.due_count', { count: insights.dueCount })}
                     </span>
                 )}

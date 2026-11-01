@@ -80,9 +80,9 @@ export default function AudioUrlStatus({ url }: { url: string | undefined }) {
 
     const config = {
         checking: { Icon: Loader2, color: 'var(--text-muted)', text: t('tests.audio_check_checking'), spin: true },
-        ok: { Icon: CheckCircle2, color: 'var(--green)', text: t('tests.audio_check_ok'), spin: false },
-        error: { Icon: XCircle, color: 'var(--red)', text: t('tests.audio_check_error'), spin: false },
-        mixed: { Icon: AlertTriangle, color: 'var(--yellow)', text: t('tests.audio_check_mixed'), spin: false },
+        ok: { Icon: CheckCircle2, color: 'var(--green-text)', text: t('tests.audio_check_ok'), spin: false },
+        error: { Icon: XCircle, color: 'var(--red-text)', text: t('tests.audio_check_error'), spin: false },
+        mixed: { Icon: AlertTriangle, color: 'var(--yellow-text)', text: t('tests.audio_check_mixed'), spin: false },
     }[status];
 
     return (

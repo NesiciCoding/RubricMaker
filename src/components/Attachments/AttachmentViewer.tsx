@@ -251,7 +251,9 @@ export default function AttachmentViewer({ attachment, commentable = false }: Pr
                                 <MediaBoxSkeleton aspectRatio="8.5 / 11" label={t('attachments.loading_preview')} />
                             )}
                             {error && (
-                                <div style={{ padding: 20, textAlign: 'center', color: 'var(--red)' }}>{error}</div>
+                                <div style={{ padding: 20, textAlign: 'center', color: 'var(--red-text)' }}>
+                                    {error}
+                                </div>
                             )}
                             <div
                                 ref={docxRef}

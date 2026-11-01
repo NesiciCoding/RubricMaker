@@ -48,8 +48,8 @@ describe('GradingActionsMenu coverage', () => {
 
         const items = screen.getAllByRole('menuitem');
         expect(items).toHaveLength(3);
-        expect(items[1]).toHaveStyle({ color: 'var(--red)' });
-        expect(items[2]).toHaveStyle({ color: 'var(--accent)' });
+        expect(items[1]).toHaveStyle({ color: 'var(--red-text)' });
+        expect(items[2]).toHaveStyle({ color: 'var(--accent-text)' });
         expect(screen.getByText('✓')).toBeInTheDocument();
 
         fireEvent.click(items[1]);

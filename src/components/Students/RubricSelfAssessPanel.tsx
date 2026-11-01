@@ -74,7 +74,7 @@ export default function RubricSelfAssessPanel({ sr, rubric, onSave }: Props) {
                                                 background: selected
                                                     ? 'color-mix(in srgb, var(--accent) 12%, transparent)'
                                                     : 'var(--bg-elevated)',
-                                                color: selected ? 'var(--accent)' : 'var(--text)',
+                                                color: selected ? 'var(--accent-text)' : 'var(--text)',
                                                 cursor: 'pointer',
                                                 fontWeight: selected ? 600 : 400,
                                                 transition: 'border-color 0.15s, background 0.15s',

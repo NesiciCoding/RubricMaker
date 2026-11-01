@@ -468,7 +468,7 @@ export default function ActivityDashboardPage() {
                                                                             className="btn btn-ghost btn-sm"
                                                                             style={{
                                                                                 padding: 0,
-                                                                                color: 'var(--accent)',
+                                                                                color: 'var(--accent-text)',
                                                                                 fontWeight: 500,
                                                                                 display: 'block',
                                                                                 minWidth: 0,
@@ -529,7 +529,7 @@ export default function ActivityDashboardPage() {
                                                                                             fontSize: '0.78rem',
                                                                                             color:
                                                                                                 cell.submittedCount > 0
-                                                                                                    ? 'var(--accent)'
+                                                                                                    ? 'var(--accent-text)'
                                                                                                     : 'var(--text-muted)',
                                                                                             fontWeight: 600,
                                                                                         }}

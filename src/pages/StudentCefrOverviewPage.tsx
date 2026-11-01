@@ -329,7 +329,7 @@ export default function StudentCefrOverviewPage() {
                 {overview && (
                     <div className="grid-3" style={{ marginBottom: 24 }}>
                         <div className="card" style={{ borderTop: '3px solid var(--accent)' }}>
-                            <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--accent)' }}>
+                            <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--accent-text)' }}>
                                 {overview.skillsWithRubricData > 0 ? overview.skillsWithRubricData : '—'}
                             </div>
                             <div style={{ fontWeight: 600, fontSize: '0.9rem', marginTop: 4 }}>
@@ -443,7 +443,7 @@ export default function StudentCefrOverviewPage() {
                                 gap: 8,
                             }}
                         >
-                            <BookOpen size={18} style={{ color: 'var(--accent)' }} />
+                            <BookOpen size={18} style={{ color: 'var(--accent-text)' }} />
                             {t('cefrOverview.grid_title')}
                         </h3>
                         <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
@@ -476,7 +476,7 @@ export default function StudentCefrOverviewPage() {
                                 gap: 8,
                             }}
                         >
-                            <Award size={18} style={{ color: 'var(--accent)' }} />
+                            <Award size={18} style={{ color: 'var(--accent-text)' }} />
                             {t('cefrOverview.evidence_title')}
                         </h3>
                         <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
@@ -565,7 +565,7 @@ export default function StudentCefrOverviewPage() {
                                 gap: 8,
                             }}
                         >
-                            <Award size={18} style={{ color: 'var(--accent)' }} />
+                            <Award size={18} style={{ color: 'var(--accent-text)' }} />
                             {t('cefrOverview.standards_title')}
                         </h3>
                         <StandardsCoveragePanel standardSets={overview.standardSets} />

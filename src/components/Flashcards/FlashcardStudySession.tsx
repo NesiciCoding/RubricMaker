@@ -16,10 +16,10 @@ interface Props {
 const REQUEUE_WINDOW_MS = 10 * 60 * 1000;
 
 const RATING_BUTTONS: { rating: FlashcardRating; labelKey: string; color: string }[] = [
-    { rating: 1, labelKey: 'flashcards.rate_again', color: 'var(--red)' },
-    { rating: 2, labelKey: 'flashcards.rate_hard', color: 'var(--yellow)' },
-    { rating: 3, labelKey: 'flashcards.rate_good', color: 'var(--teal)' },
-    { rating: 4, labelKey: 'flashcards.rate_easy', color: 'var(--green)' },
+    { rating: 1, labelKey: 'flashcards.rate_again', color: 'var(--red-text)' },
+    { rating: 2, labelKey: 'flashcards.rate_hard', color: 'var(--yellow-text)' },
+    { rating: 3, labelKey: 'flashcards.rate_good', color: 'var(--teal-text)' },
+    { rating: 4, labelKey: 'flashcards.rate_easy', color: 'var(--green-text)' },
 ];
 
 export default function FlashcardStudySession({ deck, initialStates, onStatesChange, onExit }: Props) {
@@ -69,7 +69,7 @@ export default function FlashcardStudySession({ deck, initialStates, onStatesCha
     if (!card) {
         return (
             <div style={{ textAlign: 'center', padding: '48px 24px' }}>
-                <PartyPopper size={40} style={{ color: 'var(--green)' }} />
+                <PartyPopper size={40} style={{ color: 'var(--green-text)' }} />
                 <h3 style={{ marginTop: 12 }}>{t('flashcards.session_done_title')}</h3>
                 <p className="text-muted text-sm">
                     {reviewedCount > 0
@@ -266,7 +266,7 @@ export default function FlashcardStudySession({ deck, initialStates, onStatesCha
                                     borderRadius: 6,
                                     fontSize: '0.8rem',
                                     background: isCurrent ? 'var(--accent-soft)' : 'transparent',
-                                    color: isCurrent ? 'var(--accent)' : 'var(--text)',
+                                    color: isCurrent ? 'var(--accent-text)' : 'var(--text)',
                                     fontWeight: isCurrent ? 600 : 400,
                                 }}
                             >
@@ -274,7 +274,7 @@ export default function FlashcardStudySession({ deck, initialStates, onStatesCha
                                     style={{
                                         width: 14,
                                         flexShrink: 0,
-                                        color: 'var(--green)',
+                                        color: 'var(--green-text)',
                                         display: 'inline-flex',
                                     }}
                                 >

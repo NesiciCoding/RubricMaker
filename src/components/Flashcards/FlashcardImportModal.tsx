@@ -70,7 +70,7 @@ export default function FlashcardImportModal({ onImport, onClose }: Props) {
                 <Upload size={15} /> {parsing ? t('flashcards.import_parsing') : t('flashcards.import_choose_file')}
             </button>
             {error && (
-                <div className="text-sm" style={{ color: 'var(--red)', marginTop: 12 }}>
+                <div className="text-sm" style={{ color: 'var(--red-text)', marginTop: 12 }}>
                     {error}
                 </div>
             )}

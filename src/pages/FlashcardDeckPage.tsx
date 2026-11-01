@@ -346,7 +346,7 @@ export default function FlashcardDeckPage() {
                                         className="btn btn-ghost btn-icon btn-sm"
                                         title={t('flashcards.remove_card')}
                                         aria-label={t('flashcards.remove_card')}
-                                        style={{ color: 'var(--red)', flexShrink: 0 }}
+                                        style={{ color: 'var(--red-text)', flexShrink: 0 }}
                                         onClick={() => removeCard(card.id)}
                                     >
                                         <Trash2 size={14} />
