@@ -990,10 +990,10 @@ describe('StudentsPage extended', () => {
         expect(textarea.value).toContain('Score: 100.0% (A) — 4/4 pts');
     });
 
-    it('closes every modal via overlay, close and cancel buttons', () => {
+    it('closes every modal via Escape, the close button and cancel', () => {
         renderPage();
-        // Add-student modal (migrated to the shared Radix-backed Modal): Escape, close (✕), cancel.
-        // Backdrop dismissal is Radix's own pointerdown-based outside-interaction detection, already
+        // Every dialog on this page is the shared Radix-backed Modal, so it closes on Escape, ✕ or
+        // Cancel. Backdrop dismissal is Radix's own pointerdown-based outside-interaction detection,
         // covered by Modal.test.tsx — a bare fireEvent.click on .modal-overlay doesn't trigger it.
         fireEvent.click(screen.getAllByText('studentsPage.add_student')[0]);
         fireEvent.keyDown(document.body, { key: 'Escape' });
@@ -1011,7 +1011,7 @@ describe('StudentsPage extended', () => {
             fireEvent.click(screen.getByText('studentsPage.action_rename'));
         };
         openRename();
-        fireEvent.click(document.querySelector('.modal-overlay')!);
+        fireEvent.keyDown(document.body, { key: 'Escape' });
         expect(screen.queryByText('voTrack.class_settings_title')).not.toBeInTheDocument();
         openRename();
         fireEvent.click(screen.getAllByText('✕')[0]);
@@ -1026,7 +1026,7 @@ describe('StudentsPage extended', () => {
             fireEvent.click(screen.getByText('studentsPage.action_merge'));
         };
         openMerge();
-        fireEvent.click(document.querySelector('.modal-overlay')!);
+        fireEvent.keyDown(document.body, { key: 'Escape' });
         expect(screen.queryByText('studentsPage.merge_class_title')).not.toBeInTheDocument();
         openMerge();
         fireEvent.click(screen.getAllByText('✕')[0]);
@@ -1041,7 +1041,7 @@ describe('StudentsPage extended', () => {
             fireEvent.click(screen.getByText('studentsPage.action_delete'));
         };
         openDeleteClass();
-        fireEvent.click(document.querySelector('.modal-overlay')!);
+        fireEvent.keyDown(document.body, { key: 'Escape' });
         expect(screen.queryByText('studentsPage.delete_class_title')).not.toBeInTheDocument();
         openDeleteClass();
         fireEvent.click(screen.getAllByText('✕')[0]);
@@ -1053,7 +1053,7 @@ describe('StudentsPage extended', () => {
         // Delete-student modal: overlay, ✕, cancel.
         const aliceRow = screen.getAllByRole('row').find((r) => within(r).queryByText('Alice'))!;
         fireEvent.click(within(aliceRow).getByLabelText('studentsPage.action_delete_student'));
-        fireEvent.click(document.querySelector('.modal-overlay')!);
+        fireEvent.keyDown(document.body, { key: 'Escape' });
         expect(screen.queryByText('studentsPage.delete_student_title')).not.toBeInTheDocument();
         fireEvent.click(within(aliceRow).getByLabelText('studentsPage.action_delete_student'));
         fireEvent.click(screen.getAllByText('✕')[0]);
@@ -1064,7 +1064,7 @@ describe('StudentsPage extended', () => {
 
         // Summary modal: overlay + ✕.
         fireEvent.click(within(aliceRow).getByTitle('studentsPage.action_copy_summary'));
-        fireEvent.click(document.querySelector('.modal-overlay')!);
+        fireEvent.keyDown(document.body, { key: 'Escape' });
         expect(document.querySelector('textarea')).not.toBeInTheDocument();
         fireEvent.click(within(aliceRow).getByTitle('studentsPage.action_copy_summary'));
         fireEvent.click(screen.getAllByText('✕')[0]);
@@ -1073,7 +1073,7 @@ describe('StudentsPage extended', () => {
         // Link-rubrics modal: overlay + ✕.
         fireEvent.click(screen.getAllByLabelText('studentsPage.action_class_menu')[0]);
         fireEvent.click(screen.getByText('studentsPage.link_rubrics'));
-        fireEvent.click(document.querySelector('.modal-overlay')!);
+        fireEvent.keyDown(document.body, { key: 'Escape' });
         expect(screen.queryByText(/link_rubrics_title/)).not.toBeInTheDocument();
         fireEvent.click(screen.getAllByLabelText('studentsPage.action_class_menu')[0]);
         fireEvent.click(screen.getByText('studentsPage.link_rubrics'));
