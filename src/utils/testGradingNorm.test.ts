@@ -229,6 +229,9 @@ describe('label grades', () => {
     it('parses cells as numbers or labels', () => {
         expect(parseGradeCell('6,5')).toBe(6.5);
         expect(parseGradeCell(' 7 ')).toBe(7);
+        expect(parseGradeCell('7.')).toBe(7);
+        expect(parseGradeCell('.5')).toBe(0.5);
+        expect(parseGradeCell(',5')).toBe(0.5);
         expect(parseGradeCell(' IO ')).toBe('IO');
         expect(parseGradeCell('')).toBeNull();
         expect(parseGradeCell('a very long label text')).toBe('a very long ');
@@ -277,5 +280,24 @@ describe('label grades', () => {
             { label: 'E', count: 1, passed: true },
         ]);
         expect(labelDistribution({}, results)).toEqual([]);
+    });
+
+    it('keeps a label apart when it passes in one column and fails in another', () => {
+        const strict: TestNormTier = { id: 'j2', year: 'jaar-2', passFrom: 'E' };
+        const twoTiers: Pick<Test, 'gradingNorm'> = {
+            gradingNorm: {
+                type: 'table',
+                tiers: [lower, strict],
+                rows: rows.map((r) => ({ ...r, grades: { ...r.grades, j2: r.grades.j1 } })),
+            },
+        };
+        const results = [
+            resolveTestGrade(twoTiers, ctx(12, 'jaar-1')),
+            resolveTestGrade(twoTiers, { ...ctx(12, 'jaar-1'), cls: { year: 'jaar-2' } }),
+        ];
+        expect(labelDistribution(twoTiers, results)).toEqual([
+            { label: 'B', count: 1, passed: true },
+            { label: 'B', count: 1, passed: false },
+        ]);
     });
 });

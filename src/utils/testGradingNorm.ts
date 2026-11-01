@@ -102,7 +102,7 @@ export function parseGradeCell(raw: string): number | string | null {
     const text = raw.trim();
     if (text === '') return null;
     const asNumber = text.replace(',', '.');
-    if (/^\d+(\.\d+)?$/.test(asNumber)) return Number(asNumber);
+    if (/^(\d+\.?\d*|\.\d+)$/.test(asNumber)) return Number(asNumber);
     return text.slice(0, MAX_LABEL_LENGTH);
 }
 
@@ -325,10 +325,12 @@ export function labelDistribution(
         if (r.numeric !== null || !r.tier) continue;
         const rank = labelRank(norm.rows, r.tier.id, r.label);
         if (rank === null) continue;
-        const entry = byLabel.get(r.label) ?? { label: r.label, count: 0, passed: r.passed, rank };
+        // A label can pass in one column and fail in another (different 'sufficient from'), so split by both.
+        const key = `${r.label}\u0000${String(r.passed)}`;
+        const entry = byLabel.get(key) ?? { label: r.label, count: 0, passed: r.passed, rank };
         entry.count++;
         entry.rank = Math.min(entry.rank, rank);
-        byLabel.set(r.label, entry);
+        byLabel.set(key, entry);
     }
     return [...byLabel.values()]
         .sort((a, b) => a.rank - b.rank)

@@ -185,7 +185,7 @@ export default function TestQualityPanel({
                                 <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                                     {labelCounts.map((d) => (
                                         <Cell
-                                            key={d.label}
+                                            key={`${d.label}-${String(d.passed)}`}
                                             fill={
                                                 d.passed === null
                                                     ? 'var(--accent)'
