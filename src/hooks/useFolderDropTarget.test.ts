@@ -86,6 +86,35 @@ describe('useFolderDropTarget', () => {
         expect(result.current.dropFolderId).toBeNull();
     });
 
+    it('re-runs the hit test when the page scrolls under a stationary pointer', () => {
+        underPointer = tileA.querySelector('span');
+        const { result } = renderHook(() => useFolderDropTarget());
+        act(() => result.current.startFolderDrop());
+        moveTo(10, 10);
+        expect(result.current.dropFolderId).toBe('folder-a');
+
+        // @hello-pangea/dnd auto-scrolls the list during a drag: a different tile slides under
+        // the pointer with no pointer event to notice it.
+        underPointer = tileB.querySelector('span');
+        act(() => {
+            window.dispatchEvent(new Event('scroll'));
+        });
+
+        expect(result.current.dropFolderId).toBe('folder-b');
+    });
+
+    it('ignores a scroll that arrives before the pointer has moved', () => {
+        underPointer = tileA.querySelector('span');
+        const { result } = renderHook(() => useFolderDropTarget());
+        act(() => result.current.startFolderDrop());
+
+        act(() => {
+            window.dispatchEvent(new Event('scroll'));
+        });
+
+        expect(result.current.dropFolderId).toBeNull();
+    });
+
     it('follows touch drags too', () => {
         underPointer = tileA.querySelector('span');
         const { result } = renderHook(() => useFolderDropTarget());
