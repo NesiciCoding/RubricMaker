@@ -36,7 +36,7 @@ import TestAssignmentModal from '../components/Tests/TestAssignmentModal';
 import FolderTile, { FOLDER_DROP_PREFIX } from '../components/Folders/FolderTile';
 import FolderNameModal from '../components/Folders/FolderNameModal';
 import TestSubmissionImportModal from '../components/Tests/TestSubmissionImportModal';
-import ExamScanCaptureModal from '../components/Tests/ExamScanCaptureModal';
+import ExamScanBatchModal from '../components/Tests/ExamScanBatchModal';
 import ClassAverageAdjuster from '../components/Tests/ClassAverageAdjuster';
 import ItemAnalysisPanel from '../components/Tests/ItemAnalysisPanel';
 import PlacementAnalysisPanel from '../components/Tests/PlacementAnalysisPanel';
@@ -52,6 +52,7 @@ import SegmentedToggle from '../components/ui/SegmentedToggle';
 import { calcClassAveragePercentage } from '../utils/testCalc';
 import { GRADEBOOK_PRESET_IDS, type DecimalSeparator, type GradebookPresetId } from '../utils/gradebookExportPresets';
 import { testAssignBlockers } from '../utils/testQuestionIssues';
+import { resolveScanOcrSettings } from '../utils/scanSettings';
 
 export default function TestListPage() {
     const { t } = useTranslation();
@@ -1160,10 +1161,11 @@ export default function TestListPage() {
                         // v8 ignore next line — scan buttons only render for existing tests
                         if (!test) return null;
                         return (
-                            <ExamScanCaptureModal
+                            <ExamScanBatchModal
                                 test={test}
                                 students={students}
                                 studentTests={studentTests.filter((st) => st.testId === test.id)}
+                                defaultLang={resolveScanOcrSettings(settings.scanOcr).defaultLang}
                                 onSave={saveStudentTest}
                                 onClose={() => setScanningTestId(null)}
                             />
