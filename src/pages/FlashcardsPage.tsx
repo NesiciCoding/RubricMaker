@@ -7,6 +7,8 @@ import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import { useFlashcards } from '../context/AppContext';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import CardGrid from '../components/ui/CardGrid';
+import CardTile from '../components/ui/CardTile';
 import { useConfirm } from '../hooks/useConfirm';
 import { UNTITLED_DECK_NAMES } from '../utils/flashcardDecks';
 
@@ -92,24 +94,13 @@ export default function FlashcardsPage() {
                         </button>
                     </div>
                 ) : (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+                    <CardGrid>
                         {sorted.map((deck) => {
                             const assignedCount = new Set(
                                 flashcardAssignments.filter((a) => a.deckId === deck.id).map((a) => a.studentId)
                             ).size;
                             return (
-                                <div
-                                    key={deck.id}
-                                    className="card"
-                                    style={{
-                                        position: 'relative',
-                                        transition: 'border-color var(--transition)',
-                                        flex: '1 1 320px',
-                                        maxWidth: 480,
-                                    }}
-                                    onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
-                                    onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
-                                >
+                                <CardTile key={deck.id} hoverable style={{ position: 'relative' }}>
                                     <div
                                         style={{
                                             display: 'flex',
@@ -195,10 +186,10 @@ export default function FlashcardsPage() {
                                             {deck.description}
                                         </p>
                                     )}
-                                </div>
+                                </CardTile>
                             );
                         })}
-                    </div>
+                    </CardGrid>
                 )}
             </div>
             <ConfirmDialog {...confirmDialogProps} />

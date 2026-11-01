@@ -12,13 +12,14 @@ import {
     Layers,
     Link2,
     Users2,
-    GripVertical,
     ExternalLink,
     UsersRound,
 } from 'lucide-react';
 import { Draggable } from '@hello-pangea/dnd';
 import type { Rubric, Student } from '../../types';
 import CefrBadge from '../CEFR/CefrBadge';
+import CardTile from '../ui/CardTile';
+import CardGrip from '../ui/CardGrip';
 import { encodeRubricShareCode } from '../../utils/rubricImport';
 
 export interface RubricCardActions {
@@ -121,20 +122,11 @@ function RubricCard({
     return (
         <Draggable draggableId={rubric.id} index={index} isDragDisabled={!reorderable}>
             {(dragProvided) => (
-                <div
+                <CardTile
                     ref={dragProvided.innerRef}
                     {...dragProvided.draggableProps}
-                    className="card"
-                    style={{
-                        cursor: 'pointer',
-                        transition: 'border-color var(--transition)',
-                        // Fixed basis, no grow: tiles stay the same width on every row (a growing
-                        // basis made the last row's cards wider than the full ones above it).
-                        flex: '0 1 400px',
-                        ...dragProvided.draggableProps.style,
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
+                    hoverable
+                    style={{ cursor: 'pointer', ...dragProvided.draggableProps.style }}
                 >
                     {/* The title gets its own full-width line so a long name wraps instead of
                         squeezing the action row off the card. */}
@@ -155,17 +147,7 @@ function RubricCard({
                             }}
                         >
                             {reorderable && (
-                                <span
-                                    {...dragProvided.dragHandleProps}
-                                    aria-label={t('rubricList.drag_to_reorder')}
-                                    style={{
-                                        cursor: 'grab',
-                                        color: 'var(--text-dim)',
-                                        marginTop: 3,
-                                    }}
-                                >
-                                    <GripVertical size={15} />
-                                </span>
+                                <CardGrip {...dragProvided.dragHandleProps} label={t('rubricList.drag_to_reorder')} />
                             )}
                             <div style={{ minWidth: 0 }}>
                                 <h3
@@ -367,7 +349,7 @@ function RubricCard({
                             )}
                         </div>
                     </div>
-                </div>
+                </CardTile>
             )}
         </Draggable>
     );
