@@ -258,6 +258,21 @@ describe('TestBuilderPage', () => {
         expect(payload.questions[0].options?.[0].isCorrect).toBe(false);
     });
 
+    it('saves the grading norm chosen in the builder', async () => {
+        const { default: TestBuilderPage } = await import('../TestBuilderPage');
+        renderBuilder(TestBuilderPage);
+        fireEvent.change(screen.getByLabelText('tests.name_label'), { target: { value: 'Normed' } });
+        expect(screen.queryByLabelText('tests.norm.scale_label')).not.toBeInTheDocument();
+        fireEvent.change(document.getElementById('builder-norm-type')!, { target: { value: 'nterm' } });
+        fireEvent.change(screen.getByLabelText('tests.norm.n_label'), { target: { value: '1.3' } });
+        fireEvent.change(screen.getByLabelText('tests.norm.decimals_label'), { target: { value: '2' } });
+        fireEvent.click(screen.getByText('common.save'));
+        expect(mockAddTest.mock.calls[0][0]).toMatchObject({
+            gradingNorm: { type: 'nterm', n: 1.3 },
+            gradeDecimals: 2,
+        });
+    });
+
     it('does not show the unsaved-changes prompt after saving a new test (redirect)', async () => {
         const { default: TestBuilderPage } = await import('../TestBuilderPage');
         const { router } = renderBuilder(TestBuilderPage);

@@ -12,7 +12,7 @@ import { scoreSectionPct } from '../utils/placementRouting';
 import { clamp } from '../utils/clamp';
 import { scoreStudentTest } from '../utils/studentTestScore';
 import { estimatePlacement } from '../utils/placementResult';
-import { calcLetterGrade, calcGradeColor } from '../utils/gradeCalc';
+import { isNumericNorm, normTierLabel, resolveTestGrade, resolveTestScale, testNorm } from '../utils/testGradingNorm';
 import { stripHtmlTags } from '../utils/exportDataPrep';
 import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse';
 import { alignDictation, answersMatch, parseErrorPassage } from '../../supabase/functions/_shared/testScoring';
@@ -434,8 +434,10 @@ export default function TestResultsPage() {
         tests,
         studentTests,
         settings,
+        classes,
     } = useStoreSelector((s) => ({
         students: s.students,
+        classes: s.classes,
         gradeScales: s.gradeScales,
         rubrics: s.rubrics,
         tests: s.tests,
@@ -481,10 +483,24 @@ export default function TestResultsPage() {
     const totalPoints = score?.totalPoints ?? 0;
     const percentage = score?.percentage ?? 0;
 
-    const scaleId = test?.gradeScaleId ?? settings.defaultGradeScaleId;
-    const scale = scaleId === 'none' ? null : (gradeScales.find((g) => g.id === scaleId) ?? gradeScales[0] ?? null);
-    const gradeLabel = scale ? calcLetterGrade(percentage, scale) : null;
-    const gradeColor = scale ? calcGradeColor(percentage, scale) : '#6b7280';
+    const scale = test ? resolveTestScale(test, gradeScales, settings.defaultGradeScaleId) : null;
+    const gradeResult =
+        test && (scale || isNumericNorm(testNorm(test)))
+            ? resolveTestGrade(test, {
+                  points: totalPoints,
+                  maxPoints,
+                  percentage,
+                  scale,
+                  student,
+                  cls: classes.find((c) => c.id === student?.classId),
+              })
+            : null;
+    const gradeLabel = gradeResult?.alternatives
+        ? gradeResult.alternatives
+              .map((a) => `${a.grade ?? '—'} (${normTierLabel(a.tier, t('tests.norm.tier_all'))})`)
+              .join(' · ')
+        : (gradeResult?.label ?? null);
+    const gradeColor = gradeResult?.color ?? '#6b7280';
 
     const standardsMap = new Map<
         string,

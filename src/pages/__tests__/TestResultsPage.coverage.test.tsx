@@ -256,6 +256,7 @@ const mockUseApp: Record<string, unknown> = {
     students: [mockStudent],
     studentRubrics: [],
     gradeScales: [mockGradeScale],
+    classes: [],
     settings: mockSettings,
     updateSettings: vi.fn(),
     saveStudentTest: mockSaveStudentTest,

@@ -29,6 +29,7 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { nanoid } from '../utils/nanoid';
 import { toLocalDatetimeInput } from '../utils/dateInput';
 import QuestionEditor from '../components/Tests/QuestionEditor';
+import NormConfig from '../components/Tests/ScoreSheet/NormConfig';
 import TestA4Preview, { type PrintTextFields } from '../components/Tests/TestA4Preview';
 import ListeningControlsFields from '../components/Tests/ListeningControlsFields';
 import AudioUrlStatus from '../components/Tests/AudioUrlStatus';
@@ -112,6 +113,11 @@ export default function TestBuilderPage() {
     const [dueDate, setDueDate] = useState(existing?.dueDate ? toLocalDatetimeInput(existing.dueDate) : '');
     const [shuffleQuestions, setShuffleQuestions] = useState(existing?.shuffleQuestions ?? false);
     const [requireSEB, setRequireSEB] = useState(existing?.requireSEB ?? false);
+    const [normSettings, setNormSettings] = useState<Pick<Test, 'gradingNorm' | 'gradeDecimals' | 'passGrade'>>({
+        gradingNorm: existing?.gradingNorm,
+        gradeDecimals: existing?.gradeDecimals,
+        passGrade: existing?.passGrade,
+    });
     const [gradeScaleId, setGradeScaleId] = useState<string | undefined>(
         existing?.gradeScaleId ?? settings.defaultGradeScaleId
     );
@@ -181,6 +187,7 @@ export default function TestBuilderPage() {
         shuffleQuestions,
         requireSEB,
         gradeScaleId,
+        normSettings,
         mode,
         placementEngine,
         allowMultipleAttempts,
@@ -488,6 +495,7 @@ export default function TestBuilderPage() {
             shuffleQuestions,
             requireSEB,
             gradeScaleId,
+            ...(mode === 'placement' ? { gradingNorm: undefined } : normSettings),
             mode,
             placementEngine: mode === 'placement' ? placementEngine : undefined,
             generatorConfig:
@@ -777,6 +785,32 @@ export default function TestBuilderPage() {
                                 />
                             </div>
                         </div>
+                        {mode !== 'placement' && (
+                            <fieldset
+                                style={{
+                                    border: '1px solid var(--border)',
+                                    borderRadius: 8,
+                                    padding: '10px 12px',
+                                    margin: 0,
+                                }}
+                            >
+                                <legend style={{ fontSize: '0.85rem', fontWeight: 600, padding: '0 4px' }}>
+                                    {t('tests.norm.section_title')}
+                                </legend>
+                                <NormConfig
+                                    idPrefix="builder-norm"
+                                    hideScaleSelect
+                                    value={{ ...normSettings, gradeScaleId }}
+                                    maxPoints={questions.reduce((sum, q) => sum + (q.points || 0), 0)}
+                                    gradeScales={gradeScales}
+                                    onChange={(patch) => {
+                                        const rest = { ...patch };
+                                        delete rest.gradeScaleId;
+                                        setNormSettings((prev) => ({ ...prev, ...rest }));
+                                    }}
+                                />
+                            </fieldset>
+                        )}
                         <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
                             <label
                                 style={{

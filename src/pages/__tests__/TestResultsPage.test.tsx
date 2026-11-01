@@ -79,6 +79,7 @@ const mockUseApp = {
     students: [mockStudent],
     studentRubrics: [],
     gradeScales: [mockGradeScale],
+    classes: [],
     settings: mockSettings,
     updateSettings: vi.fn(),
     saveStudentTest: mockSaveStudentTest,

@@ -1500,6 +1500,38 @@ export interface Test {
     contentArea?: 'listening' | 'reading' | 'grammar';
     /** BCP-47 base code ('en', 'fr', …) of the language the test content is written in — drives read-aloud voice selection. Defaults to English; must NOT fall back to the student's UI language (which is Dutch for most, and would read English passages with a Dutch voice). */
     contentLanguage?: string;
+    /** How points turn into a grade; absent means `{ type: 'scale' }` (the grade scale from gradeScaleId). */
+    gradingNorm?: TestGradingNorm;
+    /** Decimals shown for numeric (1–10) norms; defaults to 1. */
+    gradeDecimals?: 0 | 1 | 2;
+    /** Lowest passing grade for numeric norms; defaults to 5.5. */
+    passGrade?: number;
+    /** Created from the score sheet for a paper test: questions are only labels + max points, and the test can't be assigned or taken online. */
+    scoreOnly?: boolean;
+}
+
+/** One row of a points → grade norm table: the grade per tier column for scores of at least `minPoints`. */
+export interface TestNormTableRow {
+    minPoints: number;
+    /** Keyed by RubricTier.id of the table's tiers. */
+    grades: Record<string, number>;
+}
+
+export type TestGradingNorm =
+    | { type: 'scale' }
+    /** Dutch CvTE N-term: grade = 9·S/L + N, with the CvTE boundary corrections. */
+    | { type: 'nterm'; n: number }
+    /** Points needed for the pass grade; linear from 1 at 0 points through the pass grade to 10 at full marks. */
+    | { type: 'caesura'; passPoints: number }
+    /** Lookup table with one grade column per school year / VO track; a tier with no year applies to everyone. */
+    | { type: 'table'; tiers: TestNormTier[]; rows: TestNormTableRow[] };
+
+/** A norm-table column: like RubricTier, but the year is optional so one column can apply to everyone. */
+export interface TestNormTier {
+    id: string;
+    year?: SchoolYear;
+    track?: VoTrack;
+    label?: string;
 }
 
 /** Config for the live/adaptive placement generator (roadmap 27.1) — teacher-set bounds the engine picks questions within, rather than a pre-authored section/pool structure. */
@@ -1614,6 +1646,10 @@ export interface StudentTest {
     askedQuestionSnapshots?: TestQuestion[];
     /** The level a generator-engine (27.1) run actually started from — the configured range's midpoint, or a teacher-preselected starter bank item's own level, clamped into range. Persisted from `placement_sessions.start_level` so `estimatePlacement()`'s client-side replay matches the server-authoritative run exactly, instead of approximating with `cefrMidpoint()` (which can disagree when a starter item started outside the midpoint). */
     placementStartLevel?: CefrLevel;
+    /** Where the answers came from; 'manual' means points typed into the score sheet. Absent on older records. */
+    source?: 'online' | 'import' | 'manual';
+    /** Marked absent in the score sheet: kept for the record, but left out of totals, grades and analysis. */
+    absent?: boolean;
 }
 
 export type TestStrengthBucket = 'strong' | 'developing' | 'weak';

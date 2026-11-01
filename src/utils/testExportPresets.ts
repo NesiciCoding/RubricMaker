@@ -1,8 +1,8 @@
 import Papa from 'papaparse';
 import { CSV_UNPARSE_OPTIONS } from './csvOptions';
-import type { GradeScale, Student, StudentTest, Test } from '../types';
+import type { Class, GradeScale, Student, StudentTest, Test } from '../types';
 import type { GradebookExportRow } from './gradebookExportPresets';
-import { calcLetterGrade } from './gradeCalc';
+import { isNumericNorm, resolveTestGrade, testNorm } from './testGradingNorm';
 import { calcQuestionBreakdowns, calcSkillBreakdowns } from './testSummaryAggregator';
 import { scoreStudentTest } from './studentTestScore';
 import { describeTestCefr, pickLatestAttempt } from './testAnswerText';
@@ -26,25 +26,52 @@ function latestAttempts(test: Test, studentTests: StudentTest[]): StudentTest[] 
     return Array.from(attemptsByStudent.values()).map((attempts) => pickLatestAttempt(attempts)!);
 }
 
+/**
+ * The grade TestResultsPage shows, as text: a scale label or a 1–10 number under the test's norm.
+ * Empty when there is no scale, or when a norm table has no column for the student's year/track.
+ */
+function exportGrade(
+    test: Test,
+    studentTest: StudentTest,
+    student: Student | undefined,
+    scale: GradeScale | null,
+    classes: Class[]
+): string {
+    if (!scale && !isNumericNorm(testNorm(test))) return '';
+    const { totalPoints, maxPoints, percentage } = scoreStudentTest(test, studentTest);
+    const result = resolveTestGrade(test, {
+        points: totalPoints,
+        maxPoints,
+        percentage,
+        scale,
+        student,
+        cls: classes.find((c) => c.id === student?.classId),
+    });
+    return result.label === '—' ? '' : result.label;
+}
+
 /** Rows for the Magister/SOMtoday gradebook presets, graded with the scale the results page uses. */
 export function buildTestGradebookRows(
     test: Test,
     studentTests: StudentTest[],
     students: Student[],
-    scale: GradeScale | null
+    scale: GradeScale | null,
+    classes: Class[] = []
 ): GradebookExportRow[] {
-    return latestAttempts(test, studentTests).map((studentTest) => {
-        const student = students.find((s) => s.id === studentTest.studentId);
-        const { percentage } = scoreStudentTest(test, studentTest);
-        const inProgress = studentTest.status === 'in_progress';
-        return {
-            studentName: student?.name ?? '',
-            studentNumber: student?.studentNumber ?? '',
-            percentage,
-            grade: scale && !inProgress ? calcLetterGrade(percentage, scale) : '',
-            ...(inProgress && { inProgress }),
-        };
-    });
+    return latestAttempts(test, studentTests)
+        .filter((st) => !st.absent)
+        .map((studentTest) => {
+            const student = students.find((s) => s.id === studentTest.studentId);
+            const { percentage } = scoreStudentTest(test, studentTest);
+            const inProgress = studentTest.status === 'in_progress';
+            return {
+                studentName: student?.name ?? '',
+                studentNumber: student?.studentNumber ?? '',
+                percentage,
+                grade: inProgress ? '' : exportGrade(test, studentTest, student, scale, classes),
+                ...(inProgress && { inProgress }),
+            };
+        });
 }
 
 /**
@@ -60,7 +87,8 @@ export function buildTestResultsCsv(
     studentTests: StudentTest[],
     students: Student[],
     achieveThreshold?: number,
-    scale: GradeScale | null = null
+    scale: GradeScale | null = null,
+    classes: Class[] = []
 ): string {
     const hasCefr = !!test.cefrTargetLevel || test.mode === 'placement';
 
@@ -80,7 +108,8 @@ export function buildTestResultsCsv(
             Points: score.totalPoints,
             'Max Points': score.maxPoints,
         };
-        if (scale) row['Grade'] = calcLetterGrade(score.percentage, scale);
+        if (scale || isNumericNorm(testNorm(test)))
+            row['Grade'] = exportGrade(test, studentTest, student, scale, classes);
         row['Status'] = STATUS_LABELS[studentTest.status];
 
         if (hasCefr) {
