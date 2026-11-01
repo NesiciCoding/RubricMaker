@@ -277,6 +277,11 @@ export function reducer(state: StoreData, action: Action): StoreData {
             const unfile = <T extends { folderId?: string }>(items: T[]): T[] =>
                 items.map((item) => (item.folderId === action.id ? { ...item, folderId: undefined } : item));
             switch (action.kind) {
+                case 'rubric': {
+                    const rubrics = unfile(state.rubrics);
+                    if (isOffline()) saveRubrics(rubrics);
+                    return { ...state, folders, rubrics };
+                }
                 case 'test': {
                     const tests = unfile(state.tests);
                     if (isOffline()) saveTests(tests);
@@ -293,9 +298,11 @@ export function reducer(state: StoreData, action: Action): StoreData {
                     return { ...state, folders, flashcardDecks };
                 }
                 default: {
-                    const rubrics = unfile(state.rubrics);
-                    if (isOffline()) saveRubrics(rubrics);
-                    return { ...state, folders, rubrics };
+                    // No `default: rubrics` fallback: a new FolderKind must be handled above, or
+                    // its items stay filed under a folder that no longer exists while rubrics
+                    // that were never in this folder get unfiled. This line fails typecheck first.
+                    const unhandled: never = action.kind;
+                    throw new Error(`DELETE_FOLDER: unhandled folder kind ${String(unhandled)}`);
                 }
             }
         }

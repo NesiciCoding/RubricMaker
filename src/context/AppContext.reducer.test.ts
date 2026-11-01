@@ -16,6 +16,7 @@ import type {
     FlashcardAssignment,
     FlashcardDeck,
     FlashcardReview,
+    FolderKind,
     GradeScale,
     GradingTask,
     Message,
@@ -1567,4 +1568,51 @@ describe('AppContext reducer — deleting a folder unfiles the list that owns it
         expect(next.folders).toEqual([]);
         expect(next.rubrics[0].folderId).toBeUndefined();
     });
+
+    // Which collection each kind owns. This Record is the point of the table below: a new
+    // FolderKind fails typecheck here until it is given an owner, and the reducer's `never`
+    // branch fails typecheck until it handles the kind, so neither can be forgotten silently.
+    const OWNED_BY: Record<FolderKind, keyof StoreData> = {
+        rubric: 'rubrics',
+        test: 'tests',
+        essay: 'essayAssignments',
+        flashcard: 'flashcardDecks',
+    };
+
+    it.each(Object.entries(OWNED_BY) as [FolderKind, keyof StoreData][])(
+        'unfiles only the %s list when a %s folder is deleted',
+        (kind, owned) => {
+            const shared = { id: 'f-shared', name: 'Shared', kind, createdAt: now };
+            // Every list holds one item filed under the same folder id, so an unfiling branch that
+            // picks the wrong collection cannot pass by accident.
+            const filed = makeState({
+                folders: [shared],
+                rubrics: [{ ...makeState().rubrics[0], folderId: 'f-shared' }],
+                tests: [
+                    {
+                        id: 't1',
+                        title: 'Filed test',
+                        sections: [],
+                        createdAt: now,
+                        updatedAt: now,
+                        folderId: 'f-shared',
+                    } as unknown as Test,
+                ],
+                essayAssignments: [{ ...essayRow, folderId: 'f-shared' }],
+                flashcardDecks: [{ id: 'd1', name: 'Filed deck', cards: [], createdAt: now, folderId: 'f-shared' }],
+            });
+
+            const next = run(filed, { type: 'DELETE_FOLDER', id: 'f-shared', kind });
+
+            expect(next.folders).toEqual([]);
+            expect((next[owned] as { folderId?: string }[]).every((item) => item.folderId === undefined)).toBe(true);
+            for (const collection of Object.values(OWNED_BY)) {
+                if (collection === owned) continue;
+                expect(
+                    (next[collection] as { folderId?: string }[]).every((item) => item.folderId === 'f-shared')
+                ).toBe(true);
+            }
+            expect(next.rubrics).toHaveLength(1);
+        }
+    );
 });
