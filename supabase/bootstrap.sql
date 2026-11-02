@@ -6872,7 +6872,7 @@ END $$;
 --   school     — a teacher/admin in the owner's school (school_members or profiles.school_id).
 --   admin      — an admin in the owner's school reads every rubric and test regardless of the
 --                setting (never edits unless the setting grants edit).
--- Students never match: every path requires the viewer's role to be 'user' (teacher) or 'admin',
+-- Students never match: every path requires the viewer's role to be 'teacher' or 'admin',
 -- which matters for tests because they carry answer keys.
 --
 -- Replaces the rubric-only `sharedWithSchool` flag of 041: existing flags are converted to
@@ -6961,7 +6961,7 @@ BEGIN
     RETURN NULL;
   END IF;
   SELECT role INTO v_role FROM public.profiles WHERE id = v_me;
-  IF v_role IS NULL OR v_role NOT IN ('user', 'admin') THEN
+  IF v_role IS NULL OR v_role NOT IN ('teacher', 'admin') THEN
     RETURN NULL;
   END IF;
 
