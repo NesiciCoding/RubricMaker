@@ -1140,7 +1140,7 @@ export default function GradeStudent() {
                                 );
                                 setIsDirty(true);
                             }}
-                            style={{ flexShrink: 0, minWidth: 110 }}
+                            style={{ width: 'auto', flexShrink: 0, minWidth: 110 }}
                         >
                             <option value="percentage">{t('gradeStudent.offset_percentage')}</option>
                             <option value="points">{t('gradeStudent.offset_points')}</option>
@@ -1165,7 +1165,7 @@ export default function GradeStudent() {
                                 );
                                 setIsDirty(true);
                             }}
-                            style={{ width: 60 }}
+                            style={{ width: 80, flexShrink: 0 }}
                         />
                         <input
                             type="text"

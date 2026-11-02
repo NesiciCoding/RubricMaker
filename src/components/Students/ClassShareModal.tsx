@@ -233,7 +233,14 @@ export default function ClassShareModal({ classItem, onClose, returnFocusTo }: P
                                                 borderBottom: '1px solid var(--border)',
                                             }}
                                         >
-                                            <div style={{ flex: 1, minWidth: 0, fontSize: '0.875rem' }}>
+                                            <div
+                                                style={{
+                                                    flex: 1,
+                                                    minWidth: 0,
+                                                    fontSize: '0.875rem',
+                                                    overflowWrap: 'anywhere',
+                                                }}
+                                            >
                                                 <div>{label}</div>
                                                 {m.displayName && m.email && (
                                                     <div className="text-xs text-muted">{m.email}</div>
@@ -243,6 +250,7 @@ export default function ClassShareModal({ classItem, onClose, returnFocusTo }: P
                                                 aria-label={t('classShare.role_for', { name: label })}
                                                 value={m.role}
                                                 disabled={pending}
+                                                style={{ width: 'auto', flexShrink: 0 }}
                                                 onChange={(e) =>
                                                     void handleRoleChange(m, e.target.value as ClassMember['role'])
                                                 }

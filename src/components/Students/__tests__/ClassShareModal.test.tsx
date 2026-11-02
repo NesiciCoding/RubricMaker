@@ -108,6 +108,15 @@ describe('ClassShareModal', () => {
         expect(mockDb.removeClassMember).toHaveBeenCalledWith('c1', 'u2');
     });
 
+    it('keeps the role select at its natural width and wraps long co-teacher emails', async () => {
+        mockDb.fetchClassMembers.mockResolvedValue([bob]);
+        render(<ClassShareModal classItem={cls} onClose={vi.fn()} />);
+        const roleSelect = await screen.findByLabelText('classShare.role_for:{"name":"Bob"}');
+        expect(roleSelect.style.width).toBe('auto');
+        expect(roleSelect.style.flexShrink).toBe('0');
+        expect((screen.getByText('Bob').parentElement as HTMLElement).style.overflowWrap).toBe('anywhere');
+    });
+
     it('shows a read-only notice to a co-teacher the class was shared with', async () => {
         mockDb.userId = 'u2';
         mockDb.fetchClassMembers.mockResolvedValue([bob]);

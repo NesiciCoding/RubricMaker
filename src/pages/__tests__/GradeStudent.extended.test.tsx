@@ -194,7 +194,9 @@ describe('GradeStudent extended', () => {
     it('leaves the modifier type select its natural width so "Points offset" is not clipped (#701)', () => {
         renderPage();
         const select = screen.getByRole('combobox', { name: 'gradeStudent.label_modifier' });
-        expect(select.style.width).toBe('');
+        // 'auto' (not unset) — the global `select { width: 100% }` rule would otherwise stretch it
+        // across the row and push the value/reason inputs under the Export PDF button.
+        expect(select.style.width).toBe('auto');
         expect(select.style.flexShrink).toBe('0');
     });
 
