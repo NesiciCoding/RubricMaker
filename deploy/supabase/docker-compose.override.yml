@@ -40,14 +40,14 @@ services:
             GOTRUE_MAILER_SUBJECTS_EMAIL_CHANGE: 'Bevestig je nieuwe e-mailadres / Confirm your new email address'
             GOTRUE_MAILER_SUBJECTS_REAUTHENTICATION: 'Je RubricMaker-bevestigingscode / Your RubricMaker confirmation code'
 
-  # The grade, message and digest notifications are sent by edge functions over the same SMTP
-  # account (supabase/functions/_deno/mail.ts). APP_URL is used for the links in those emails.
-  functions:
-    environment:
-      SMTP_HOST: ${SMTP_HOST}
-      SMTP_PORT: ${SMTP_PORT}
-      SMTP_USER: ${SMTP_USER}
-      SMTP_PASS: ${SMTP_PASS}
-      SMTP_ADMIN_EMAIL: ${SMTP_ADMIN_EMAIL}
-      SMTP_SENDER_NAME: ${SMTP_SENDER_NAME}
-      APP_URL: ${APP_URL:-}
+    # The grade, message and digest notifications are sent by edge functions over the same SMTP
+    # account (supabase/functions/_deno/mail.ts). APP_URL is used for the links in those emails.
+    functions:
+        environment:
+            SMTP_HOST: ${SMTP_HOST}
+            SMTP_PORT: ${SMTP_PORT}
+            SMTP_USER: ${SMTP_USER}
+            SMTP_PASS: ${SMTP_PASS}
+            SMTP_ADMIN_EMAIL: ${SMTP_ADMIN_EMAIL}
+            SMTP_SENDER_NAME: ${SMTP_SENDER_NAME}
+            APP_URL: ${APP_URL:-}
