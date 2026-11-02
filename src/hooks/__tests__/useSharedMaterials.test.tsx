@@ -86,6 +86,42 @@ describe('useSharedMaterials', () => {
         expect(result.current.items[0].item.name).toBe('Renamed');
     });
 
+    it('applies a save at once and sends consecutive saves in order', async () => {
+        const { result } = renderHook(() => useSharedMaterials('rubric'));
+        await waitFor(() => expect(result.current.status).toBe('ready'));
+        let release!: () => void;
+        mockUpdate.mockImplementationOnce(() => new Promise((resolve) => (release = () => resolve({ success: true }))));
+        let first!: Promise<unknown>;
+        let second!: Promise<unknown>;
+        act(() => {
+            first = result.current.save({ id: 'r1', name: 'One' } as never);
+        });
+        expect(result.current.items[0].item.name).toBe('One');
+        act(() => {
+            second = result.current.save({ id: 'r1', name: 'Two' } as never);
+        });
+        expect(result.current.items[0].item.name).toBe('Two');
+        await waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(1));
+        await act(async () => {
+            release();
+            await first;
+            await second;
+        });
+        expect(mockUpdate.mock.calls.map((c) => (c[1] as { name: string }).name)).toEqual(['One', 'Two']);
+    });
+
+    it('rolls a refused save back unless a newer save replaced it, and treats a thrown save as refused', async () => {
+        const { result } = renderHook(() => useSharedMaterials('rubric'));
+        await waitFor(() => expect(result.current.status).toBe('ready'));
+        mockUpdate.mockRejectedValueOnce(new Error('network'));
+        let outcome: { success: boolean; error?: string } | undefined;
+        await act(async () => {
+            outcome = await result.current.save({ id: 'r1', name: 'Lost' } as never);
+        });
+        expect(outcome).toEqual({ success: false, error: 'network' });
+        expect(result.current.items[0].item.name).toBe('Shared');
+    });
+
     it('refresh reloads the list', async () => {
         const { result } = renderHook(() => useSharedMaterials('rubric'));
         await waitFor(() => expect(result.current.status).toBe('ready'));

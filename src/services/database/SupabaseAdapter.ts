@@ -2413,6 +2413,23 @@ export class SupabaseAdapter {
     }
 
     /**
+     * My role in each class shared with me ('viewer' | 'editor'). Classes I own have no row: the
+     * class_members RLS lets a member read only their own row, which is exactly this.
+     */
+    async fetchMyClassRoles(): Promise<Record<string, 'viewer' | 'editor'>> {
+        const { data, error } = await this.db()
+            .from('class_members')
+            .select('class_id, role')
+            .eq('user_id', this.uid());
+        if (error) throw new Error(error.message);
+        const roles: Record<string, 'viewer' | 'editor'> = {};
+        for (const row of (data ?? []) as { class_id: string; role: string }[]) {
+            roles[row.class_id] = row.role === 'editor' ? 'editor' : 'viewer';
+        }
+        return roles;
+    }
+
+    /**
      * Display names for colleague profile ids (e.g. a grade's lastEditedBy). Profile RLS (077)
      * already limits this to the caller's school and the colleagues they share a class or rubric
      * with; ids it hides are simply missing from the result.

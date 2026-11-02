@@ -5,6 +5,7 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
 import type { AppSettings, GradeScale, Test as RmTest, StudentTest, Student } from '../../types';
 import type { StoreData } from '../../store/storage';
+import { resetClassRolesCache } from '../../hooks/useClassRoles';
 
 const mockSettings: AppSettings = {
     defaultGradeScaleId: 'gs1',
@@ -121,6 +122,7 @@ vi.mock('react-i18next', () => ({
 describe('TestResultsPage', () => {
     beforeEach(() => {
         mockSaveStudentTest.mockClear();
+        resetClassRolesCache();
         resultsDb.isConnected = false;
         mockUseApp.studentTests = [mockStudentTest];
     });
@@ -141,6 +143,23 @@ describe('TestResultsPage', () => {
         fireEvent.change(screen.getAllByLabelText('tests.results.manual_points_label')[1], { target: { value: '5' } });
         fireEvent.click(screen.getAllByText('tests.results.save_score')[1]);
         expect((mockSaveStudentTest.mock.calls[0][0] as StudentTest).lastEditedBy).toBe('me');
+    });
+
+    it('keeps manual scores read-only in a class shared with me as "Can view"', async () => {
+        resultsDb.isConnected = true;
+        const { storageSync } = await import('../../services/database');
+        const spy = vi.spyOn(storageSync.adapter, 'fetchMyClassRoles').mockResolvedValue({ c1: 'viewer' });
+        const { default: TestResultsPage } = await import('../TestResultsPage');
+        render(
+            <MemoryRouter initialEntries={['/tests/t1/results/st1']}>
+                <Routes>
+                    <Route path="/tests/:testId/results/:studentTestId" element={<TestResultsPage />} />
+                </Routes>
+            </MemoryRouter>
+        );
+        expect(await screen.findByText('gradeStudent.view_only_class')).toBeInTheDocument();
+        for (const button of screen.getAllByText('tests.results.save_score')) expect(button).toBeDisabled();
+        spy.mockRestore();
     });
 
     it('shows no note and does not stamp while offline', async () => {

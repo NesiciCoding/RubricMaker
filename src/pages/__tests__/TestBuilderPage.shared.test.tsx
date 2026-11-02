@@ -135,11 +135,13 @@ describe('TestBuilderPage — a colleague’s shared test', () => {
         sharedState.access = 'view';
         await renderAt('/tests/shared-t');
         expect(screen.getByText('common.save').closest('button')).toBeDisabled();
+        fireEvent.change(screen.getByLabelText('tests.name_label'), { target: { value: 'My version' } });
         fireEvent.click(screen.getByRole('button', { name: /sharing.duplicate/ }));
         const copy = mockAddTest.mock.calls[0][0] as Partial<RmTest>;
         expect(copy).not.toHaveProperty('id');
         expect(copy).not.toHaveProperty('sharing');
         expect(copy.folderId).toBeUndefined();
+        expect(copy.name).toBe('My version tests.copy_suffix');
         expect(mockNavigate).toHaveBeenCalledWith('/tests/copy-t');
     });
 

@@ -9,6 +9,7 @@ import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { useOwnOrSharedItem, useSharedMaterials } from '../hooks/useSharedMaterials';
 import { useToast } from '../hooks/useToast';
 import { useDbStatus } from '../hooks/useDbStatus';
+import { useCanEditStudentWork } from '../hooks/useClassRoles';
 import { SkeletonRow } from '../components/ui/Skeleton';
 import ScoreSheetGrid from '../components/Tests/ScoreSheet/ScoreSheetGrid';
 import TestQualityPanel from '../components/Tests/ScoreSheet/TestQualityPanel';
@@ -290,8 +291,13 @@ function ScoreSheetBody({
         downloadCsv(buildScoreSheetCsv(columns, csvRows), `${sanitizeFilename(test.name)}_scores.csv`);
     }
 
+    // Rows of a class shared with me as "Can view" are read-only: the server refuses the write.
+    const canEditStudentWork = useCanEditStudentWork();
+    const classOfStudent = new Map(rows.map((s) => [s.id, s.classId]));
+    const canEditStudent = (student: Student) => canEditStudentWork(student.classId);
+
     function saveMany(sts: StudentTest[]) {
-        sts.forEach(saveStudentTest);
+        sts.filter((st) => canEditStudentWork(classOfStudent.get(st.studentId))).forEach(saveStudentTest);
     }
 
     return (
@@ -384,6 +390,7 @@ function ScoreSheetBody({
                             scale={scale}
                             items={report.items}
                             onSave={saveMany}
+                            canEdit={canEditStudent}
                         />
                         <p className="text-muted text-xs" style={{ margin: 0 }}>
                             {t('tests.scoreSheet.keyboard_hint')}

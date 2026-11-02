@@ -5,6 +5,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
 import { storageSync } from '../../services/database';
 import { resetSharedMaterialsCache } from '../../hooks/useSharedMaterials';
+import { resetClassRolesCache } from '../../hooks/useClassRoles';
 import { LOCAL_STORAGE_QUOTA_CHARS, localStorageUsedChars } from '../../store/storage';
 import {
     LOW_STORAGE_RECORDING_SECONDS,
@@ -2232,6 +2233,7 @@ describe('GradeStudent — grading with a colleague’s rubric', () => {
     beforeEach(async () => {
         Element.prototype.scrollIntoView = vi.fn();
         resetSharedMaterialsCache();
+        resetClassRolesCache();
         dbState.isConnected = true;
         dbState.userId = 'me';
         mockStudentRubricsArr = [];
@@ -2276,5 +2278,19 @@ describe('GradeStudent — grading with a colleague’s rubric', () => {
         fireEvent.click(screen.getAllByText(/gradeStudent\.action_save/)[0]);
         await waitFor(() => expect(mockSaveStudentRubric).toHaveBeenCalled());
         expect((mockSaveStudentRubric.mock.calls.at(-1)![0] as StudentRubric).lastEditedBy).toBe('me');
+    });
+
+    it('keeps a "Can view" co-teacher from saving and says why', async () => {
+        vi.spyOn(storageSync.adapter, 'fetchMyClassRoles').mockResolvedValue({ c1: 'viewer' });
+        mockAppValue.rubrics = mockRubricsArr;
+        mockStudentRubricsArr = [{ ...baseSR }] as never[];
+        mockAppValue.studentRubrics = mockStudentRubricsArr;
+        mockShowToast.mockClear();
+        mockSaveStudentRubric.mockClear();
+        renderPage();
+        expect(await screen.findByText('gradeStudent.view_only_class')).toBeInTheDocument();
+        fireEvent.click(screen.getAllByText(/gradeStudent\.action_save/)[0]);
+        await waitFor(() => expect(mockShowToast).toHaveBeenCalledWith('gradeStudent.view_only_class', 'info'));
+        expect(mockSaveStudentRubric).not.toHaveBeenCalled();
     });
 });

@@ -50,13 +50,24 @@ describe('LastEditedNote', () => {
     it('falls back to "a colleague" when the name is hidden or the lookup fails', async () => {
         mockFetchNames.mockResolvedValueOnce({});
         const { unmount } = render(<LastEditedNote editorId="hidden" currentUserId="me" />);
-        await waitFor(() => expect(lastEditedNameCache.has('hidden')).toBe(true));
+        await waitFor(() => expect(lastEditedNameCache.has('me:hidden')).toBe(true));
         expect(screen.getByTestId('last-edited-note')).toHaveTextContent('sharing.unknown_teacher');
         unmount();
 
         mockFetchNames.mockRejectedValueOnce(new Error('offline'));
         render(<LastEditedNote editorId="broken" currentUserId={null} />);
-        await waitFor(() => expect(lastEditedNameCache.get('broken')).toBeNull());
+        await waitFor(() => expect(lastEditedNameCache.get(':broken')).toBeNull());
         expect(screen.getByTestId('last-edited-note')).toHaveTextContent('sharing.unknown_teacher');
+    });
+
+    it('never shows a name looked up by another signed-in account', async () => {
+        const { unmount } = render(<LastEditedNote editorId="ann" currentUserId="me" />);
+        await waitFor(() => expect(screen.getByTestId('last-edited-note')).toHaveTextContent('Ann Smith'));
+        unmount();
+        mockFetchNames.mockResolvedValueOnce({});
+        render(<LastEditedNote editorId="ann" currentUserId="someone-else" />);
+        await waitFor(() => expect(lastEditedNameCache.has('someone-else:ann')).toBe(true));
+        expect(screen.getByTestId('last-edited-note')).not.toHaveTextContent('Ann Smith');
+        expect(mockFetchNames).toHaveBeenCalledTimes(2);
     });
 });

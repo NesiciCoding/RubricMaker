@@ -17,13 +17,15 @@ interface Props {
 export default function LastEditedNote({ editorId, currentUserId, at }: Props) {
     const { t, i18n } = useTranslation();
     const isMe = !!editorId && editorId === currentUserId;
+    // Keyed per signed-in account: what one account may see of a colleague isn't another's to see.
+    const cacheKey = editorId ? `${currentUserId ?? ''}:${editorId}` : undefined;
     const [name, setName] = useState<string | null | undefined>(() =>
-        editorId && !isMe ? nameCache.get(editorId) : undefined
+        cacheKey && !isMe ? nameCache.get(cacheKey) : undefined
     );
 
     useEffect(() => {
-        if (!editorId || isMe || nameCache.has(editorId)) {
-            setName(editorId ? nameCache.get(editorId) : undefined);
+        if (!editorId || !cacheKey || isMe || nameCache.has(cacheKey)) {
+            setName(cacheKey ? nameCache.get(cacheKey) : undefined);
             return;
         }
         let cancelled = false;
@@ -32,13 +34,13 @@ export default function LastEditedNote({ editorId, currentUserId, at }: Props) {
             .then((names) => names[editorId] ?? null)
             .catch(() => null)
             .then((found) => {
-                nameCache.set(editorId, found);
+                nameCache.set(cacheKey, found);
                 if (!cancelled) setName(found);
             });
         return () => {
             cancelled = true;
         };
-    }, [editorId, isMe]);
+    }, [editorId, cacheKey, isMe]);
 
     if (!editorId) return null;
     const who = isMe ? t('gradeStudent.last_edited_you') : name || t('sharing.unknown_teacher');

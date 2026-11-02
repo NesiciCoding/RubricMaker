@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
     ArrowLeft,
     Save,
+    Eye,
     MessageSquare,
     Paperclip,
     Info,
@@ -55,6 +56,7 @@ import { useMediaRecorder } from '../hooks/useMediaRecorder';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { useOwnOrSharedItem } from '../hooks/useSharedMaterials';
 import LastEditedNote from '../components/Grading/LastEditedNote';
+import { useCanEditStudentWork } from '../hooks/useClassRoles';
 import { SkeletonRow } from '../components/ui/Skeleton';
 import { useToast } from '../hooks/useToast';
 import { isOffline } from '../context/storeCore';
@@ -186,6 +188,10 @@ function GradeStudentEditor() {
     const scale = regradeOnLatest ? liveScale : (existingSR?.gradeScaleSnapshot ?? resolveScale(rubric));
     const scaleChanged = !!existingSR?.gradeScaleSnapshot && !sameGradeScale(existingSR.gradeScaleSnapshot, liveScale);
     const student = students.find((s) => s.id === studentId);
+    // A class shared with me as "Can view": I may read its grades but the server refuses changes
+    // (migration 096), so nothing here may pretend to save.
+    const canEditStudentWork = useCanEditStudentWork();
+    const readOnly = !canEditStudentWork(student?.classId);
     const classStudents = useMemo(
         () => students.filter((s) => s.classId === student?.classId).map((s) => ({ id: s.id, name: s.name })),
         [students, student?.classId]
@@ -296,7 +302,7 @@ function GradeStudentEditor() {
         return () => clearTimeout(id);
     }, [saved]);
     const [isDirty, setIsDirty] = useState(false);
-    const { dialogProps: unsavedDialogProps, allowNavigation } = useUnsavedChangesGuard(isDirty);
+    const { dialogProps: unsavedDialogProps, allowNavigation } = useUnsavedChangesGuard(isDirty && !readOnly);
     const [showStdDesc, setShowStdDesc] = useState(false);
     const [focusedCriterionIdx, setFocusedCriterionIdx] = useState<number | null>(null);
     const [gradingView, setGradingView] = useState<'cards' | 'grid'>('cards');
@@ -443,6 +449,10 @@ function GradeStudentEditor() {
     const handleSave = useCallback(async () => {
         /* v8 ignore next -- the not-found render above gates on sr/rubric */
         if (!sr || !rubric) return;
+        if (readOnly) {
+            showToast(t('gradeStudent.view_only_class'), 'info');
+            return;
+        }
         if (nothingScored && !(await confirmSaveNothingScored())) return;
         const toSave = clearNotHandedInIfScored(sr, cannedNhiComment, existingSR);
         if (toSave !== sr) setSr(toSave);
@@ -463,6 +473,7 @@ function GradeStudentEditor() {
             void storageSync.notifyStudentGraded(studentId, rubric.name).catch(() => undefined);
         }
     }, [
+        readOnly,
         sr,
         tierId,
         rubric,
@@ -485,6 +496,10 @@ function GradeStudentEditor() {
     const handleSaveAndNext = useCallback(async () => {
         /* v8 ignore next -- the not-found render above gates on sr/rubric */
         if (!sr || !rubric || !nextStudent) return;
+        if (readOnly) {
+            showToast(t('gradeStudent.view_only_class'), 'info');
+            return;
+        }
         if (nothingScored) {
             // Save & Next on an untouched, ungraded student is a skip: there is nothing to record.
             if (!existingSR) {
@@ -509,6 +524,7 @@ function GradeStudentEditor() {
         // Replace rather than push history so the topbar Back returns to where grading started.
         navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}`, { replace: true });
     }, [
+        readOnly,
         sr,
         tierId,
         rubric,
@@ -532,6 +548,10 @@ function GradeStudentEditor() {
     const handleNotHandedIn = useCallback(async () => {
         /* v8 ignore next -- the not-found render above gates on sr/rubric */
         if (!sr || !rubric) return;
+        if (readOnly) {
+            showToast(t('gradeStudent.view_only_class'), 'info');
+            return;
+        }
         const hasGrade = (!!existingSR?.gradedAt && !existingSR.notHandedIn) || hasAnyScore(sr);
         if (
             hasGrade &&
@@ -562,6 +582,8 @@ function GradeStudentEditor() {
             navigate(-1);
         }
     }, [
+        readOnly,
+        showToast,
         sr,
         tierId,
         rubric,
@@ -583,6 +605,10 @@ function GradeStudentEditor() {
     const handleRegradeOnLatest = useCallback(async () => {
         /* v8 ignore next -- the banner only renders with a saved record and a live rubric */
         if (!sr || !liveRubric) return;
+        if (readOnly) {
+            showToast(t('gradeStudent.view_only_class'), 'info');
+            return;
+        }
         const ok = await confirm({
             title: t('gradeStudent.regrade_latest_title'),
             message: t('gradeStudent.regrade_latest_message'),
@@ -605,15 +631,19 @@ function GradeStudentEditor() {
                   : t('gradeStudent.regrade_latest_done'),
             clearedCount > 0 ? 'warning' : removedCount > 0 ? 'info' : 'success'
         );
-    }, [sr, liveRubric, liveScale, confirm, t, showToast, setRegradeOnLatest, setShowVersionDiff]);
+    }, [sr, liveRubric, liveScale, confirm, t, showToast, setRegradeOnLatest, setShowVersionDiff, readOnly]);
 
     const handleUndoNotHandedIn = useCallback(() => {
         /* v8 ignore next -- the banner only renders for a loaded not-handed-in record */
         if (!sr) return;
+        if (readOnly) {
+            showToast(t('gradeStudent.view_only_class'), 'info');
+            return;
+        }
         const cleared = clearNotHandedIn(sr, cannedNhiComment);
         setSr(cleared);
         saveGrade(cleared);
-    }, [sr, saveGrade, cannedNhiComment]);
+    }, [sr, saveGrade, cannedNhiComment, readOnly, showToast, t]);
 
     // Scroll focused criterion into view
     React.useEffect(() => {
@@ -1077,6 +1107,24 @@ function GradeStudentEditor() {
                     </div>
                 )}
 
+                {readOnly && (
+                    <div
+                        role="status"
+                        className="card no-print"
+                        style={{
+                            marginBottom: 16,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            fontSize: '0.85rem',
+                            borderColor: 'var(--accent)',
+                            background: 'var(--accent-soft)',
+                        }}
+                    >
+                        <Eye size={16} style={{ color: 'var(--accent-text)', flexShrink: 0 }} aria-hidden="true" />
+                        {t('gradeStudent.view_only_class')}
+                    </div>
+                )}
                 {dbStatus.isConnected && (
                     <LastEditedNote
                         editorId={existingSR?.lastEditedBy}

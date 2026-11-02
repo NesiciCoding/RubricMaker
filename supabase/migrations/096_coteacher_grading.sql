@@ -59,7 +59,11 @@ AS $$
   SELECT public.is_teacher_or_admin() AND public.can_grade_student(p_student_id, auth.uid())
 $$;
 
-CREATE OR REPLACE FUNCTION public.rubric_in_coteaching(p_rubric_id text)
+-- Material references only count when they come from the material's OWNER: a rubric linked to a
+-- class the rubric owner owns or graded by the rubric owner, a test assigned under (or a result
+-- owned by) the test owner. Otherwise anyone able to write a class, grade, result or assignment
+-- row could point it at a colleague's private rubric/test id and read it through these helpers.
+CREATE OR REPLACE FUNCTION public.rubric_in_coteaching(p_rubric_id text, p_owner uuid)
 RETURNS boolean
 LANGUAGE sql
 STABLE
@@ -70,12 +74,14 @@ AS $$
     EXISTS (
       SELECT 1 FROM public.class_members cm JOIN public.classes c ON c.id = cm.class_id
       WHERE cm.user_id = auth.uid()
+        AND c.owner_id = p_owner
         AND jsonb_typeof(c.data->'rubricIds') = 'array'
         AND c.data->'rubricIds' ? p_rubric_id
     )
     OR EXISTS (
       SELECT 1 FROM public.student_rubrics sr JOIN public.students s ON s.id = sr.student_id
       WHERE sr.rubric_id = p_rubric_id
+        AND sr.grader_id = p_owner
         AND (
           s.owner_id = auth.uid()
           OR EXISTS (SELECT 1 FROM public.class_members cm WHERE cm.class_id = s.class_id AND cm.user_id = auth.uid())
@@ -84,7 +90,7 @@ AS $$
   )
 $$;
 
-CREATE OR REPLACE FUNCTION public.test_in_coteaching(p_test_id text)
+CREATE OR REPLACE FUNCTION public.test_in_coteaching(p_test_id text, p_owner uuid)
 RETURNS boolean
 LANGUAGE sql
 STABLE
@@ -94,11 +100,12 @@ AS $$
   SELECT public.is_teacher_or_admin() AND (
     EXISTS (
       SELECT 1 FROM public.test_assignments ta
-      WHERE ta.test_id = p_test_id AND public.can_view_student_work(ta.student_id)
+      WHERE ta.test_id = p_test_id AND ta.owner_id = p_owner AND public.can_view_student_work(ta.student_id)
     )
     OR EXISTS (
       SELECT 1 FROM public.student_tests st
-      WHERE st.data->>'testId' = p_test_id AND public.can_view_student_work(st.data->>'studentId')
+      WHERE st.data->>'testId' = p_test_id AND st.owner_id = p_owner
+        AND public.can_view_student_work(st.data->>'studentId')
     )
   )
 $$;
@@ -121,7 +128,7 @@ AS $$
       WHERE t.id = p_test_id AND t.owner_id = p_owner
         AND (
           public.material_access(t.owner_id, t.data->'sharing', t.data->>'folderId') IS NOT NULL
-          OR public.test_in_coteaching(t.id)
+          OR public.test_in_coteaching(t.id, t.owner_id)
         )
     )
 $$;
@@ -129,14 +136,14 @@ $$;
 REVOKE EXECUTE ON FUNCTION public.is_teacher_or_admin()                            FROM PUBLIC, anon;
 REVOKE EXECUTE ON FUNCTION public.can_view_student_work(text)                      FROM PUBLIC, anon;
 REVOKE EXECUTE ON FUNCTION public.can_edit_student_work(text)                      FROM PUBLIC, anon;
-REVOKE EXECUTE ON FUNCTION public.rubric_in_coteaching(text)                       FROM PUBLIC, anon;
-REVOKE EXECUTE ON FUNCTION public.test_in_coteaching(text)                         FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.rubric_in_coteaching(text, uuid)                 FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.test_in_coteaching(text, uuid)                   FROM PUBLIC, anon;
 REVOKE EXECUTE ON FUNCTION public.can_assign_colleague_test(text, uuid, text)      FROM PUBLIC, anon;
 GRANT  EXECUTE ON FUNCTION public.is_teacher_or_admin()                            TO authenticated;
 GRANT  EXECUTE ON FUNCTION public.can_view_student_work(text)                      TO authenticated;
 GRANT  EXECUTE ON FUNCTION public.can_edit_student_work(text)                      TO authenticated;
-GRANT  EXECUTE ON FUNCTION public.rubric_in_coteaching(text)                       TO authenticated;
-GRANT  EXECUTE ON FUNCTION public.test_in_coteaching(text)                         TO authenticated;
+GRANT  EXECUTE ON FUNCTION public.rubric_in_coteaching(text, uuid)                 TO authenticated;
+GRANT  EXECUTE ON FUNCTION public.test_in_coteaching(text, uuid)                   TO authenticated;
 GRANT  EXECUTE ON FUNCTION public.can_assign_colleague_test(text, uuid, text)      TO authenticated;
 
 -- ── 2. Grades (student_rubrics) ──────────────────────────────────────────────
@@ -176,11 +183,11 @@ CREATE POLICY test_assignments_coteacher_update ON public.test_assignments FOR U
 
 DROP POLICY IF EXISTS rubrics_coteaching_select ON public.rubrics;
 CREATE POLICY rubrics_coteaching_select ON public.rubrics FOR SELECT TO authenticated
-  USING (owner_id <> (SELECT auth.uid()) AND public.rubric_in_coteaching(id));
+  USING (owner_id <> (SELECT auth.uid()) AND public.rubric_in_coteaching(id, owner_id));
 
 DROP POLICY IF EXISTS tests_coteaching_select ON public.tests;
 CREATE POLICY tests_coteaching_select ON public.tests FOR SELECT TO authenticated
-  USING (owner_id <> (SELECT auth.uid()) AND public.test_in_coteaching(id));
+  USING (owner_id <> (SELECT auth.uid()) AND public.test_in_coteaching(id, owner_id));
 
 -- ── 4. Keep the original grader/owner; record who last changed it ────────────
 -- An upsert from a co-teacher's client proposes their own id as grader_id/owner_id; the row keeps
@@ -199,13 +206,21 @@ BEGIN
   IF v_me IS NULL THEN
     RETURN NEW;
   END IF;
+  -- A co-teacher edits the scores, never what the row is about: keep the student and the
+  -- rubric/test it points at, so a row can't be repointed at someone else's material.
   IF TG_TABLE_NAME = 'student_rubrics' THEN
     IF v_me IS DISTINCT FROM OLD.grader_id THEN
       NEW.grader_id := OLD.grader_id;
       NEW.is_peer_review := OLD.is_peer_review;
+      NEW.rubric_id := OLD.rubric_id;
+      NEW.student_id := OLD.student_id;
+      NEW.data := jsonb_set(jsonb_set(NEW.data, '{rubricId}', to_jsonb(OLD.rubric_id)), '{studentId}', to_jsonb(OLD.student_id));
     END IF;
   ELSIF v_me IS DISTINCT FROM OLD.owner_id THEN
     NEW.owner_id := OLD.owner_id;
+    NEW.data := jsonb_set(
+      jsonb_set(NEW.data, '{testId}', COALESCE(OLD.data->'testId', 'null'::jsonb)),
+      '{studentId}', COALESCE(OLD.data->'studentId', 'null'::jsonb));
   END IF;
   IF (NEW.data - 'lastEditedBy') IS DISTINCT FROM (OLD.data - 'lastEditedBy') THEN
     NEW.data := jsonb_set(NEW.data, '{lastEditedBy}', to_jsonb(v_me::text));

@@ -9,6 +9,7 @@ import HelpPopover from '../components/ui/HelpPopover';
 import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { useOwnOrSharedItem } from '../hooks/useSharedMaterials';
 import { useDbStatus } from '../hooks/useDbStatus';
+import { useCanEditStudentWork } from '../hooks/useClassRoles';
 import LastEditedNote from '../components/Grading/LastEditedNote';
 import { SkeletonRow } from '../components/ui/Skeleton';
 import { calcTestMaxPoints, calcStudentTestRawPoints, calcTestPercentage, autoScoreResponse } from '../utils/testCalc';
@@ -453,6 +454,7 @@ export default function TestResultsPage() {
     const students = React.useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
     const { saveStudentTest, recordCommentBankUsage, addCommentBankItem } = useStoreActions();
     const dbStatus = useDbStatus();
+    const canEditStudentWork = useCanEditStudentWork();
 
     const { item: test, loading: sharedLoading } = useOwnOrSharedItem(
         'test',
@@ -461,6 +463,8 @@ export default function TestResultsPage() {
     );
     const studentTest = studentTests.find((st) => st.id === studentTestId && st.testId === testId);
     const student = students.find((s) => s.id === studentTest?.studentId);
+    // A class shared with me as "Can view": results are readable, but the server refuses changes.
+    const readOnly = !canEditStudentWork(student?.classId);
     const isLateSubmission = !!test?.dueDate && !!studentTest?.submittedAt && studentTest.submittedAt > test.dueDate;
 
     const [drafts, setDrafts] = useState<
@@ -613,6 +617,8 @@ export default function TestResultsPage() {
     function handleSaveManualScore(question: TestQuestion) {
         /* v8 ignore next -- provably dead: the page early-returns when studentTest is missing */
         if (!studentTest) return;
+        /* v8 ignore next -- the save button is disabled for a read-only class */
+        if (readOnly) return;
         const existingAnswers = studentTest.answers;
         // calcStudentTestRawPoints dedups by keeping the *last* answer per questionId, so the
         // edit must target that same last occurrence — editing the first would silently be
@@ -707,6 +713,11 @@ export default function TestResultsPage() {
                             currentUserId={dbStatus.userId}
                             at={studentTest.updatedAt ?? studentTest.gradedAt}
                         />
+                    )}
+                    {readOnly && (
+                        <p role="status" className="text-muted text-xs" style={{ margin: '0 0 12px' }}>
+                            {t('gradeStudent.view_only_class')}
+                        </p>
                     )}
                     <p className="text-muted text-sm" style={{ margin: '0 0 14px' }}>
                         {t('tests.results.student_label')}: {student?.name ?? studentTest.studentId}
@@ -1066,6 +1077,8 @@ export default function TestResultsPage() {
                                         <button
                                             className="btn btn-primary btn-sm"
                                             onClick={() => handleSaveManualScore(question)}
+                                            disabled={readOnly}
+                                            title={readOnly ? t('gradeStudent.view_only_class') : undefined}
                                         >
                                             {t('tests.results.save_score')}
                                         </button>

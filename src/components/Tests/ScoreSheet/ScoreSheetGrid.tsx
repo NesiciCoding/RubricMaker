@@ -28,6 +28,8 @@ interface Props {
     scale: GradeScale | null;
     items: ItemQuality[];
     onSave: (studentTests: StudentTest[]) => void;
+    /** False for a student in a class shared with me as "Can view": their row is read-only. */
+    canEdit?: (student: Student) => boolean;
 }
 
 const cellBorder = '1px solid var(--border)';
@@ -40,7 +42,16 @@ function latestAnswer(st: StudentTest | undefined, questionId: string): TestAnsw
     return undefined;
 }
 
-export default function ScoreSheetGrid({ test, students, classes, sheetByStudent, scale, items, onSave }: Props) {
+export default function ScoreSheetGrid({
+    test,
+    students,
+    classes,
+    sheetByStudent,
+    scale,
+    items,
+    onSave,
+    canEdit,
+}: Props) {
     const { t, i18n } = useTranslation();
     const tableRef = useRef<HTMLTableElement>(null);
     const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -257,7 +268,7 @@ export default function ScoreSheetGrid({ test, students, classes, sheetByStudent
                                                 data-cell={`${row}-${col}`}
                                                 inputMode="decimal"
                                                 autoComplete="off"
-                                                disabled={absent}
+                                                disabled={absent || !(canEdit?.(student) ?? true)}
                                                 aria-label={t('tests.scoreSheet.cell_label', {
                                                     student: student.name,
                                                     question: test.scoreOnly ? q.prompt : col + 1,
@@ -332,6 +343,7 @@ export default function ScoreSheetGrid({ test, students, classes, sheetByStudent
                                     <input
                                         type="checkbox"
                                         checked={absent}
+                                        disabled={!(canEdit?.(student) ?? true)}
                                         aria-label={t('tests.scoreSheet.absent_label', { student: student.name })}
                                         onChange={(e) => onSave([setAbsent(st, test, student.id, e.target.checked)])}
                                     />

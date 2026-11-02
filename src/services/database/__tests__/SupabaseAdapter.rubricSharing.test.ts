@@ -185,4 +185,23 @@ describe('SupabaseAdapter rubric sharing methods', () => {
         expect(client.from).not.toHaveBeenCalled();
         expect(await adapter.fetchProfileNames(['a'])).toEqual({});
     });
+
+    it('fetchMyClassRoles maps my class_members rows and throws on an error', async () => {
+        const client = makeClient({
+            data: [
+                { class_id: 'c1', role: 'editor' },
+                { class_id: 'c2', role: 'viewer' },
+                { class_id: 'c3', role: 'weird' },
+            ],
+            error: null,
+        });
+        expect(await adapterWithClient(client, 'me').fetchMyClassRoles()).toEqual({
+            c1: 'editor',
+            c2: 'viewer',
+            c3: 'viewer',
+        });
+        expect(client.from.mock.results[0].value.eq).toHaveBeenCalledWith('user_id', 'me');
+        const failing = makeClient({ data: null, error: { message: 'boom' } });
+        await expect(adapterWithClient(failing).fetchMyClassRoles()).rejects.toThrow('boom');
+    });
 });

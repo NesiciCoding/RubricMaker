@@ -300,6 +300,11 @@ function RubricBuilderEditor({ shared }: { shared?: SharedEntry<Rubric> }) {
         tiered,
     });
     const savedSnapshotRef = useRef<{ formSnapshot: string; criteriaSnapshot: string } | null>(null);
+    // The form as it is right now, for async saves that finish after further edits.
+    const latestSnapshotRef = useRef({ formSnapshot, criteriaSnapshot });
+    useEffect(() => {
+        latestSnapshotRef.current = { formSnapshot, criteriaSnapshot };
+    }, [formSnapshot, criteriaSnapshot]);
     // handle for the "Saved" badge's auto-hide, cleared on unmount below
     const savedBadgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [isDirty, setIsDirty] = useState(false);
@@ -521,7 +526,12 @@ function RubricBuilderEditor({ shared }: { shared?: SharedEntry<Rubric> }) {
                     return;
                 }
                 savedSnapshotRef.current = snapshot;
-                setIsDirty(false);
+                // Edits made while the save was in flight are not in the original yet.
+                const latest = latestSnapshotRef.current;
+                setIsDirty(
+                    latest.formSnapshot !== snapshot.formSnapshot ||
+                        latest.criteriaSnapshot !== snapshot.criteriaSnapshot
+                );
                 showToast(t('sharing.saved_to_owner', { name: shared.ownerName }), 'success');
             });
             return;

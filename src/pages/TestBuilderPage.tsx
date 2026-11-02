@@ -202,11 +202,14 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
 
     const [isDirty, setIsDirty] = useState(false);
     const mountedRef = useRef(false);
+    // Counts edits so an async save can tell whether the form changed while it was in flight.
+    const editCountRef = useRef(0);
     useEffect(() => {
         if (!mountedRef.current) {
             mountedRef.current = true;
             return;
         }
+        editCountRef.current += 1;
         setIsDirty(true);
     }, [
         name,
@@ -495,28 +498,13 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         });
     }
 
-    function handleSave() {
-        /* v8 ignore next 1 -- the not-found view renders no save button */
-        if (notFound) return;
-        if (!name.trim()) {
-            setNameError(t('tests.name_required'));
-            return;
-        }
-        setNameError('');
-
-        const trimmedDuration = durationMinutes.trim();
-        const parsedDuration = trimmedDuration === '' ? undefined : Number(trimmedDuration);
-        if (parsedDuration !== undefined && !(Number.isFinite(parsedDuration) && parsedDuration > 0)) {
-            setDurationError(t('tests.duration_invalid'));
-            return;
-        }
-        setDurationError('');
-
+    // The test as the form shows it now, shared by Save and by duplicating a colleague's test.
+    function buildPayload(parsedDuration: number | undefined) {
         const sanitizedSections = sections.map((s) =>
             s.routing ? { ...s, routing: { ...s.routing, thresholdPct: clampThresholdPct(s.routing.thresholdPct) } } : s
         );
 
-        const payload = {
+        return {
             name: name.trim(),
             description: description.trim() || undefined,
             questions: displayOrderedQuestions,
@@ -549,6 +537,26 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
             printIntro: printText.printIntro,
             printFooter: printText.printFooter,
         };
+    }
+
+    function handleSave() {
+        /* v8 ignore next 1 -- the not-found view renders no save button */
+        if (notFound) return;
+        if (!name.trim()) {
+            setNameError(t('tests.name_required'));
+            return;
+        }
+        setNameError('');
+
+        const trimmedDuration = durationMinutes.trim();
+        const parsedDuration = trimmedDuration === '' ? undefined : Number(trimmedDuration);
+        if (parsedDuration !== undefined && !(Number.isFinite(parsedDuration) && parsedDuration > 0)) {
+            setDurationError(t('tests.duration_invalid'));
+            return;
+        }
+        setDurationError('');
+
+        const payload = buildPayload(parsedDuration);
 
         // Incomplete questions don't block saving a draft, only assigning it (TestListPage).
         const blockers = testAssignBlockers(payload);
@@ -561,12 +569,13 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         if (shared) {
             /* v8 ignore next -- the Save button is disabled for a view-only share */
             if (readOnly) return;
+            const submittedAtEdit = editCountRef.current;
             void saveSharedTest({ ...shared.item, ...payload, updatedAt: new Date().toISOString() }).then((result) => {
                 if (!result.success) {
                     showToast(t('sharing.save_failed'), 'error');
                     return;
                 }
-                setIsDirty(false);
+                if (editCountRef.current === submittedAtEdit) setIsDirty(false);
                 showToast(t('sharing.saved_to_owner', { name: shared.ownerName }), 'success');
             });
             return;
@@ -657,11 +666,19 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                             ownerName={shared.ownerName}
                             access={shared.access}
                             onDuplicate={() => {
+                                // Copy what is on screen, edits included, not the stored original.
+                                const duration = Number(durationMinutes.trim());
+                                const draft = buildPayload(
+                                    Number.isFinite(duration) && duration > 0 ? duration : undefined
+                                );
                                 const copy = addTest(
-                                    cloneTestForCopy(shared.item, {
-                                        name: `${shared.item.name} ${t('tests.copy_suffix')}`,
-                                        folderId: undefined,
-                                    })
+                                    cloneTestForCopy(
+                                        { ...shared.item, ...draft },
+                                        {
+                                            name: `${(draft.name || shared.item.name).trim()} ${t('tests.copy_suffix')}`,
+                                            folderId: undefined,
+                                        }
+                                    )
                                 );
                                 showToast(t('sharing.duplicated_toast', { name: copy.name }), 'success');
                                 navigate(`/tests/${copy.id}`);

@@ -158,6 +158,15 @@ describe('TestAssignmentModal coverage', () => {
         expect(mockSaveTestAssignment).toHaveBeenCalledWith(expect.objectContaining({ ownerId: 'ann' }));
     });
 
+    it('only lets a colleague’s test links be copied once their assignment rows are saved', async () => {
+        mockDbStatus.isConnected = true;
+        mockSaveTestAssignment.mockResolvedValue({ success: false, error: 'rls' });
+        renderWithRouter(<TestAssignmentModalComp test={mockTest} ownerId="ann" onClose={vi.fn()} />);
+        await waitFor(() => expect(mockSaveTestAssignment).toHaveBeenCalled());
+        await waitFor(() => expect(screen.getAllByRole('button', { name: /essay_assignment.copy/ })[0]).toBeDisabled());
+        mockSaveTestAssignment.mockResolvedValue({ success: true });
+    });
+
     it('saves my own test without an owner override', async () => {
         mockDbStatus.isConnected = true;
         renderWithRouter(<TestAssignmentModalComp test={mockTest} onClose={vi.fn()} />);

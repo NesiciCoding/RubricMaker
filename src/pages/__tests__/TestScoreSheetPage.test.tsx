@@ -1,10 +1,11 @@
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
 import type { AppSettings, Class, GradeScale, Student, StudentTest, Test } from '../../types';
 import type { StoreData } from '../../store/storage';
 import { resetSharedMaterialsCache } from '../../hooks/useSharedMaterials';
+import { resetClassRolesCache } from '../../hooks/useClassRoles';
 
 const mockSettings: AppSettings = {
     defaultGradeScaleId: 'gs1',
@@ -50,6 +51,7 @@ const mockSaveStudentTest = vi.fn();
 const sharedDb = vi.hoisted(() => ({ connected: false }));
 const mockFetchShared = vi.fn();
 const mockUpdateShared = vi.fn();
+const mockFetchRoles = vi.fn();
 const mockShowToast = vi.fn();
 vi.mock('../../hooks/useDbStatus', () => ({
     useDbStatus: () => ({ isConnected: sharedDb.connected, userId: sharedDb.connected ? 'me' : null }),
@@ -58,6 +60,7 @@ vi.mock('../../services/database', () => ({
     storageSync: {
         adapter: {
             fetchSharedMaterials: (...a: unknown[]) => mockFetchShared(...a),
+            fetchMyClassRoles: (...a: unknown[]) => mockFetchRoles(...a),
             updateSharedMaterial: (...a: unknown[]) => mockUpdateShared(...a),
         },
     },
@@ -194,6 +197,8 @@ async function renderPage(route = '/tests/t1/scores') {
 beforeEach(() => {
     sharedDb.connected = false;
     resetSharedMaterialsCache();
+    resetClassRolesCache();
+    mockFetchRoles.mockReset().mockResolvedValue({});
     mockFetchShared.mockReset().mockResolvedValue({ items: [], folders: [] });
     mockUpdateShared.mockReset().mockResolvedValue({ success: true });
     mockShowToast.mockClear();
@@ -426,6 +431,18 @@ describe('TestScoreSheetPage', () => {
         expect((mockSaveStudentTest.mock.calls[0][0] as StudentTest).lastEditedBy).toBe('me');
     });
 
+    it('makes a "Can view" class read-only on the sheet and saves nothing for it', async () => {
+        sharedDb.connected = true;
+        mockFetchRoles.mockResolvedValue({ c1: 'viewer' });
+        await renderPage();
+        const cell = screen.getByLabelText(/"student":"Bram","question":"1a"/);
+        await waitFor(() => expect(cell).toBeDisabled());
+        expect(screen.getByLabelText(/tests.scoreSheet.absent_label.*Bram/)).toBeDisabled();
+        fireEvent.change(cell, { target: { value: '1' } });
+        fireEvent.blur(cell);
+        expect(mockSaveStudentTest).not.toHaveBeenCalled();
+    });
+
     describe('a colleague’s test from a co-taught class', () => {
         function shareTest(access: 'view' | 'edit') {
             sharedDb.connected = true;
@@ -458,6 +475,7 @@ describe('TestScoreSheetPage', () => {
             mockUpdateShared.mockResolvedValue({ success: false, error: 'not_permitted' });
             await renderPage();
             fireEvent.change(await screen.findByLabelText('tests.norm.n_label'), { target: { value: '1.5' } });
+            await waitFor(() => expect(mockUpdateShared).toHaveBeenCalled());
             expect(mockUpdateShared.mock.calls[0][0]).toBe('test');
             expect(mockUpdateShared.mock.calls[0][1].gradingNorm).toEqual({ type: 'nterm', n: 1.5 });
             expect(mockUpdateTest).not.toHaveBeenCalled();

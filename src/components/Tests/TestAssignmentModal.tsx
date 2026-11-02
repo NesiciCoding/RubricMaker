@@ -113,6 +113,10 @@ export default function TestAssignmentModal({ test, onClose, ownerId }: Props) {
     // raw total against the current (possibly smaller) class's count would read as nonsense
     // (e.g. "3/1 saved").
     const classSavedCount = classStudents.filter((s) => savedKeys.has(savedKeyFor(s.id))).length;
+    // A colleague's test is assigned under its owner, which the server refuses for students the
+    // owner can't grade; a link for such a student would open nothing, so only saved rows copy.
+    const linkNeedsRow = embedDb && !!ownerId;
+    const linkReady = (studentId: string) => !linkNeedsRow || savedKeys.has(savedKeyFor(studentId));
 
     const buildAssignment = useCallback(
         (studentId: string): TestAssignmentPayload => {
@@ -407,7 +411,11 @@ export default function TestAssignmentModal({ test, onClose, ownerId }: Props) {
                                 </button>
                             )}
                             {classStudents.length > 1 && (
-                                <button className="btn btn-secondary btn-sm" onClick={handleCopyAll}>
+                                <button
+                                    className="btn btn-secondary btn-sm"
+                                    onClick={handleCopyAll}
+                                    disabled={linkNeedsRow && classSavedCount < classStudents.length}
+                                >
                                     {copiedAll ? <Check size={14} /> : <Copy size={14} />}
                                     {copiedAll
                                         ? t('essay_assignment.copied')
@@ -438,6 +446,8 @@ export default function TestAssignmentModal({ test, onClose, ownerId }: Props) {
                                         className="btn btn-secondary btn-sm"
                                         style={{ flexShrink: 0 }}
                                         onClick={() => handleCopyOne(s.id)}
+                                        disabled={!linkReady(s.id)}
+                                        title={linkReady(s.id) ? undefined : t('tests.assignment_print_slips_wait')}
                                     >
                                         {copiedStudentId === s.id ? <Check size={14} /> : <Copy size={14} />}
                                         {copiedStudentId === s.id

@@ -28,6 +28,16 @@ function setState(kind: SharedKind, next: SharedMaterialsState<Rubric | Test>) {
     listeners.forEach((l) => l());
 }
 
+const saveChains: Record<SharedKind, Promise<unknown>> = { rubric: Promise.resolve(), test: Promise.resolve() };
+
+function replaceItem(kind: SharedKind, item: Rubric | Test) {
+    const current = cache[kind];
+    setState(kind, {
+        ...current,
+        items: current.items.map((e) => (e.item.id === item.id ? { ...e, item } : e)),
+    });
+}
+
 function subscribe(listener: () => void) {
     listeners.add(listener);
     return () => listeners.delete(listener);
@@ -79,14 +89,19 @@ export function useSharedMaterials<K extends SharedKind>(kind: K, enabled = true
 
     const save = useCallback(
         async (item: ItemOf<K>): Promise<{ success: boolean; error?: string }> => {
-            const result = await storageSync.adapter.updateSharedMaterial(kind, item);
-            if (result.success) {
-                const current = cache[kind];
-                setState(kind, {
-                    ...current,
-                    items: current.items.map((e) => (e.item.id === item.id ? { ...e, item } : e)),
-                });
-            }
+            // Optimistic: the next edit (e.g. a second norm change on the score sheet) must build on
+            // this one, not on the stale copy. Saves run one at a time so they land in order.
+            const previous = cache[kind].items.find((e) => e.item.id === item.id)?.item;
+            replaceItem(kind, item);
+            const run = saveChains[kind].then(() =>
+                storageSync.adapter
+                    .updateSharedMaterial(kind, item)
+                    .catch((e: unknown) => ({ success: false, error: e instanceof Error ? e.message : String(e) }))
+            );
+            saveChains[kind] = run;
+            const result = await run;
+            const stillOurs = cache[kind].items.some((e) => e.item === item);
+            if (!result.success && previous && stillOurs) replaceItem(kind, previous);
             return result;
         },
         [kind]
