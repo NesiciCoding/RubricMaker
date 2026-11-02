@@ -100,7 +100,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.64.1",
-    "@rollup/wasm-node": "^4.65.0",
+    "@rollup/wasm-node": "^4.66.0",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
@@ -125,9 +125,9 @@
     "lint-staged": "^17.6.0",
     "prettier": "^3.9.10",
     "rollup-plugin-visualizer": "^7.1.1",
-    "supabase": "^2.121.0",
+    "supabase": "^2.122.0",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.72.0",
+    "typescript-eslint": "^8.72.1",
     "vite": "^8.3.5",
     "vite-plugin-pwa": "^2.0.0",
     "vitest": "^5.0.0"
