@@ -59,6 +59,11 @@ import { sectionQuestions, isAutoScorable, hasRoutingCycle } from '../utils/plac
 import { clamp } from '../utils/clamp';
 import { plainQuestionPromptText } from '../utils/clozeParse';
 import { EmptyState } from '../components/ui/EmptyState';
+import { SkeletonRow } from '../components/ui/Skeleton';
+import { useSharedMaterials } from '../hooks/useSharedMaterials';
+import type { SharedEntry } from '../utils/materialSharing';
+import { cloneTestForCopy } from '../utils/testClone';
+import SharedMaterialBanner from '../components/Sharing/SharedMaterialBanner';
 
 /** Soft heuristic for a staircase level pool's builder warning — enough headroom for a couple of up/down moves without exhausting the pool. */
 const MIN_QUESTIONS_PER_LEVEL = 3;
@@ -70,6 +75,30 @@ function clampThresholdPct(value: number): number {
 }
 
 export default function TestBuilderPage() {
+    const { id } = useParams();
+    const { t } = useTranslation();
+    const { tests } = useAssessment();
+    const found = !id || tests.some((tst) => tst.id === id);
+    // A colleague's test is never in our own state; look it up among the shared ones instead.
+    const shared = useSharedMaterials('test', !found);
+    if (found) return <TestBuilderEditor />;
+    const sharedEntry = shared.items.find((e) => e.item.id === id);
+    if (sharedEntry) return <TestBuilderEditor key={sharedEntry.item.id} shared={sharedEntry} />;
+    if (shared.connected && (shared.status === 'idle' || shared.status === 'loading')) {
+        return (
+            <>
+                <Topbar title={t('tests.edit_test_title')} />
+                <div className="page-content fade-in" aria-busy="true">
+                    <SkeletonRow />
+                    <SkeletonRow />
+                </div>
+            </>
+        );
+    }
+    return <TestBuilderEditor />;
+}
+
+function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
     const navigate = useNavigate();
     const { id } = useParams();
     const location = useLocation();
@@ -80,7 +109,9 @@ export default function TestBuilderPage() {
     const { settings } = useSettings();
     const { addFlashcardDeck } = useFlashcards();
 
-    const existing = id ? tests.find((tst) => tst.id === id) : undefined;
+    const { save: saveSharedTest } = useSharedMaterials('test', false);
+    const existing = shared ? shared.item : id ? tests.find((tst) => tst.id === id) : undefined;
+    const readOnly = shared?.access === 'view';
     const notFound = !!id && !existing;
     const generatedState = !existing
         ? (location.state as {
@@ -203,7 +234,7 @@ export default function TestBuilderPage() {
         generatorMaxQuestions,
         generatorStarterBankItemId,
     ]);
-    const { dialogProps: unsavedDialogProps } = useUnsavedChangesGuard(isDirty);
+    const { dialogProps: unsavedDialogProps } = useUnsavedChangesGuard(isDirty && !readOnly);
 
     useEffect(() => {
         const shortfalls = generatedState?.generatedShortfalls;
@@ -527,6 +558,19 @@ export default function TestBuilderPage() {
                 ? showToast(t('tests.saved_with_issues', { count: blockers.entries.length || 1 }), 'warning')
                 : showToast(t('tests.save_success'), 'success');
 
+        if (shared) {
+            /* v8 ignore next -- the Save button is disabled for a view-only share */
+            if (readOnly) return;
+            void saveSharedTest({ ...shared.item, ...payload, updatedAt: new Date().toISOString() }).then((result) => {
+                if (!result.success) {
+                    showToast(t('sharing.save_failed'), 'error');
+                    return;
+                }
+                setIsDirty(false);
+                showToast(t('sharing.saved_to_owner', { name: shared.ownerName }), 'success');
+            });
+            return;
+        }
         if (existing) {
             updateTest({ ...existing, ...payload, updatedAt: new Date().toISOString() });
             notifySaved();
@@ -583,7 +627,12 @@ export default function TestBuilderPage() {
                         <button className="btn btn-secondary btn-sm" onClick={() => navigate('/tests')}>
                             <ArrowLeft size={15} /> {t('tests.back_to_list')}
                         </button>
-                        <button className="btn btn-primary btn-sm" onClick={handleSave}>
+                        <button
+                            className="btn btn-primary btn-sm"
+                            onClick={handleSave}
+                            disabled={readOnly}
+                            title={readOnly ? t('sharing.view_only') : undefined}
+                        >
                             <Save size={15} /> {t('common.save')}
                         </button>
                     </>
@@ -603,6 +652,22 @@ export default function TestBuilderPage() {
                 }
             >
                 <div style={{ minWidth: 0 }}>
+                    {shared && (
+                        <SharedMaterialBanner
+                            ownerName={shared.ownerName}
+                            access={shared.access}
+                            onDuplicate={() => {
+                                const copy = addTest(
+                                    cloneTestForCopy(shared.item, {
+                                        name: `${shared.item.name} ${t('tests.copy_suffix')}`,
+                                        folderId: undefined,
+                                    })
+                                );
+                                showToast(t('sharing.duplicated_toast', { name: copy.name }), 'success');
+                                navigate(`/tests/${copy.id}`);
+                            }}
+                        />
+                    )}
                     {draftBlockers && (
                         <div
                             role="status"

@@ -81,6 +81,10 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import PageTour from '../components/Tour/PageTour';
 import { getRubricBuilderTourSteps } from '../data/TutorialSteps';
 import { EmptyState } from '../components/ui/EmptyState';
+import { useSharedMaterials } from '../hooks/useSharedMaterials';
+import type { SharedEntry } from '../utils/materialSharing';
+import { cloneRubricForCopy } from '../utils/rubricClone';
+import SharedMaterialBanner from '../components/Sharing/SharedMaterialBanner';
 
 function newLevel(min = 0, max = 0, label = ''): RubricLevel {
     return {
@@ -135,7 +139,22 @@ export default function RubricBuilder() {
     const navigate = useNavigate();
     const { t } = useTranslation();
     const found = useStoreSelector((s) => !id || s.rubrics.some((r) => r.id === id));
+    // A colleague's rubric is never in our own state; look it up among the shared ones instead.
+    const shared = useSharedMaterials('rubric', !found);
     if (found) return <RubricBuilderEditor />;
+    const sharedEntry = shared.items.find((e) => e.item.id === id);
+    if (sharedEntry) return <RubricBuilderEditor key={sharedEntry.item.id} shared={sharedEntry} />;
+    if (shared.connected && (shared.status === 'idle' || shared.status === 'loading')) {
+        return (
+            <>
+                <Topbar title={t('rubricBuilder.edit_rubric')} />
+                <div className="page-content fade-in" aria-busy="true">
+                    <SkeletonRow />
+                    <SkeletonRow />
+                </div>
+            </>
+        );
+    }
     return (
         <>
             <Topbar title={t('rubricBuilder.edit_rubric')} />
@@ -150,7 +169,7 @@ export default function RubricBuilder() {
     );
 }
 
-function RubricBuilderEditor() {
+function RubricBuilderEditor({ shared }: { shared?: SharedEntry<Rubric> }) {
     const navigate = useNavigate();
     const { id } = useParams();
     const location = useLocation();
@@ -184,7 +203,9 @@ function RubricBuilderEditor() {
         saveUserTemplate,
     } = useStoreActions();
 
-    const existing = id ? rubrics.find((r) => r.id === id) : undefined;
+    const { save: saveSharedRubric } = useSharedMaterials('rubric', false);
+    const existing = shared ? shared.item : id ? rubrics.find((r) => r.id === id) : undefined;
+    const readOnly = shared?.access === 'view';
     const template = location.state?.template as Partial<Rubric> | undefined;
 
     const [name, setName] = useState(existing?.name ?? template?.name ?? '');
@@ -302,7 +323,7 @@ function RubricBuilderEditor() {
         },
         []
     );
-    const { dialogProps: unsavedDialogProps } = useUnsavedChangesGuard(isDirty);
+    const { dialogProps: unsavedDialogProps } = useUnsavedChangesGuard(isDirty && !readOnly);
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
 
     // Version history lives outside rubric/AppContext state (Phase 18.4) — fetch it
@@ -411,6 +432,22 @@ function RubricBuilderEditor() {
         }
     };
 
+    function duplicateShared() {
+        /* v8 ignore next -- only rendered for a shared rubric */
+        if (!shared) return;
+        const copy = addRubric(
+            cloneRubricForCopy(
+                { ...shared.item, ...getRubricData() },
+                {
+                    name: t('rubricList.copy_name', { name: name.trim() || shared.item.name }),
+                    folderId: undefined,
+                }
+            )
+        );
+        showToast(t('rubricList.duplicated_toast', { name: copy.name }), 'success');
+        navigate(`/rubrics/${copy.id}`);
+    }
+
     function handleSaveAsTemplate() {
         const rubric = getRubricData();
         const template = {
@@ -473,6 +510,22 @@ function RubricBuilderEditor() {
         // The field can hold surrounding whitespace the save ignores, so show what actually got
         // persisted. Comparing trimmed values above keeps that re-render from marking the form dirty.
         setName(rubricData.name);
+        if (shared) {
+            /* v8 ignore next -- the Save button is disabled for a view-only share */
+            if (readOnly) return;
+            const savedRubric = { ...shared.item, ...rubricData, updatedAt: new Date().toISOString() };
+            const snapshot = { formSnapshot, criteriaSnapshot };
+            void saveSharedRubric(savedRubric).then((result) => {
+                if (!result.success) {
+                    showToast(t('sharing.save_failed'), 'error');
+                    return;
+                }
+                savedSnapshotRef.current = snapshot;
+                setIsDirty(false);
+                showToast(t('sharing.saved_to_owner', { name: shared.ownerName }), 'success');
+            });
+            return;
+        }
         if (existing) {
             const savedRubric = { ...existing, ...rubricData };
             updateRubric(savedRubric);
@@ -523,6 +576,12 @@ function RubricBuilderEditor() {
         t,
         studentRubrics,
         peerReviews,
+        shared,
+        readOnly,
+        saveSharedRubric,
+        formSnapshot,
+        criteriaSnapshot,
+        showToast,
     ]);
 
     // Ctrl/Cmd+S saves from anywhere in the builder, inputs included, instead of opening the
@@ -965,7 +1024,13 @@ function RubricBuilderEditor() {
                         </button>
                         {/* Leading the toolbar keeps Save on screen: the action strip scrolls and narrower
                             windows hide its trailing buttons first. */}
-                        <button data-tour="rb-save" className="btn btn-primary btn-sm" onClick={handleSave}>
+                        <button
+                            data-tour="rb-save"
+                            className="btn btn-primary btn-sm"
+                            onClick={handleSave}
+                            disabled={readOnly}
+                            title={readOnly ? t('sharing.view_only') : undefined}
+                        >
                             <Save size={15} />{' '}
                             {saved ? t('rubricBuilder.action_saved') : t('rubricBuilder.action_save')}
                         </button>
@@ -1072,7 +1137,7 @@ function RubricBuilderEditor() {
                                 <Layers size={14} /> {t('rubricBuilder.action_save_as_template')}
                             </button>
                         </DropdownMenu>
-                        {id && (
+                        {id && !shared && (
                             <button
                                 className="btn btn-secondary btn-sm"
                                 onClick={() => setShowVersionHistory((p) => !p)}
@@ -1094,6 +1159,13 @@ function RubricBuilderEditor() {
                 }
             />
             <div className="page-content fade-in">
+                {shared && (
+                    <SharedMaterialBanner
+                        ownerName={shared.ownerName}
+                        access={shared.access}
+                        onDuplicate={duplicateShared}
+                    />
+                )}
                 <div
                     className="rubric-builder-layout"
                     style={{
@@ -1446,7 +1518,12 @@ function RubricBuilderEditor() {
                                     }}
                                 />
                             </div>
-                            {showVocabulary && id && (
+                            {showVocabulary && shared && (
+                                <p className="text-xs text-muted" style={{ marginTop: 12 }}>
+                                    {t('sharing.vocabulary_owner_only')}
+                                </p>
+                            )}
+                            {showVocabulary && id && !shared && (
                                 <div style={{ marginTop: 16 }}>
                                     <p className="text-xs text-muted" style={{ marginBottom: 14 }}>
                                         {t(

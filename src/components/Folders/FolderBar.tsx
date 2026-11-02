@@ -22,6 +22,10 @@ export interface FolderBarProps {
     onMoveFolder?: (folder: Folder, parentId: string | undefined) => void;
     /** The tile under the dragging pointer, from `useFolderDropTarget`. */
     dropFolderId?: string | null;
+    /** Opens a folder's sharing settings; when omitted the tiles get no share button. */
+    onShare?: (folder: Folder) => void;
+    /** Whether a folder is shared (own or inherited setting), for the share button's state. */
+    isFolderShared?: (folder: Folder) => boolean;
 }
 
 /**
@@ -43,6 +47,8 @@ export default function FolderBar({
     onDelete,
     onMoveFolder,
     dropFolderId = null,
+    onShare,
+    isFolderShared,
 }: FolderBarProps) {
     const { t } = useTranslation();
     const barRef = useRef<HTMLDivElement>(null);
@@ -147,6 +153,8 @@ export default function FolderBar({
                         onOpen={onSelect}
                         onRename={onRename}
                         onDelete={onDelete}
+                        onShare={onShare}
+                        shared={isFolderShared?.(folder) ?? false}
                         moveMenu={
                             onMoveFolder && (
                                 <MoveToMenu

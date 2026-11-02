@@ -3,7 +3,7 @@ import { nanoid } from './nanoid';
 
 export type RubricInput = Omit<Rubric, 'id' | 'createdAt' | 'updatedAt'>;
 
-// A copy starts private and unplaced, with fresh ids for every nested record; vocabulary links
+// A copy carries no sharing setting of its own and no list position, with fresh ids for every nested record; vocabulary links
 // follow the criteria and sub-items they pointed at so the copy never refers back to the source.
 export function cloneRubricForCopy(source: Rubric, overrides: Partial<RubricInput> = {}): RubricInput {
     const ids = new Map<string, string>();
@@ -28,7 +28,7 @@ export function cloneRubricForCopy(source: Rubric, overrides: Partial<RubricInpu
         createdAt: _createdAt,
         updatedAt: _updatedAt,
         displayOrder: _displayOrder,
-        sharedWithSchool: _sharedWithSchool,
+        sharing: _sharing,
         vocabularyItems,
         ...rest
     } = source;

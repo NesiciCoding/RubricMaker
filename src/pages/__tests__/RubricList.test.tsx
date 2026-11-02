@@ -215,7 +215,7 @@ describe('RubricList', () => {
     it('places a private copy right after its source and offers to open it (#707)', () => {
         const orig = mockAppValue.rubrics;
         (mockAppValue as Record<string, unknown>).rubrics = [
-            { ...mockRubric, id: 'r1', sharedWithSchool: true, displayOrder: 0 },
+            { ...mockRubric, id: 'r1', sharing: { visibility: 'school', access: 'edit' }, displayOrder: 0 },
             { ...mockRubric, id: 'r2', name: 'Other Rubric', displayOrder: 1 },
         ];
         mockShowToast.mockClear();
@@ -224,7 +224,7 @@ describe('RubricList', () => {
             fireEvent.click(screen.getAllByTitle('rubricList.action_duplicate')[0]);
             const copy = (mockAddRubric.mock.calls[0] as unknown[])[0] as Rubric;
             expect(copy.displayOrder).toBe(0.5);
-            expect(copy).not.toHaveProperty('sharedWithSchool');
+            expect(copy).not.toHaveProperty('sharing');
             expect(mockUpdateRubric).not.toHaveBeenCalled();
             const [message, type, options] = mockShowToast.mock.calls[0];
             expect(message).toMatch(/^rubricList\.duplicated_toast/);

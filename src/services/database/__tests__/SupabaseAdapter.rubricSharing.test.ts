@@ -101,28 +101,49 @@ describe('SupabaseAdapter rubric sharing methods', () => {
         expect(result).toEqual({ success: true });
     });
 
-    it('fetchSharedRubrics unwraps the nested rubrics.data payload and drops empty rows', async () => {
-        const rubricA = { id: 'r1', name: 'Shared A' };
-        const rows = [{ rubrics: { data: rubricA } }, { rubrics: null }];
-        const client = makeClient({ data: rows, error: null });
+    it('fetchSharedMaterials splits items from folders and normalises access', async () => {
+        const rows = [
+            { owner_id: 'o1', owner_name: 'Ann', item_kind: 'rubric', data: { id: 'r1' }, access: 'edit' },
+            { owner_id: 'o1', owner_name: null, item_kind: 'folder', data: { id: 'f1' }, access: null },
+            { owner_id: 'o2', owner_name: 'Bo', item_kind: 'rubric', data: null, access: 'view' },
+        ];
+        const rpc = vi.fn(async () => ({ data: rows, error: null }));
+        const result = await adapterWithClient({ rpc }).fetchSharedMaterials('rubric');
 
-        const result = await adapterWithClient(client).fetchSharedRubrics();
-
-        expect(result).toEqual([rubricA]);
+        expect(rpc).toHaveBeenCalledWith('list_shared_materials', { p_kind: 'rubric' });
+        expect(result.items).toEqual([{ item: { id: 'r1' }, ownerId: 'o1', ownerName: 'Ann', access: 'edit' }]);
+        expect(result.folders).toEqual([{ item: { id: 'f1' }, ownerId: 'o1', ownerName: '', access: 'view' }]);
     });
 
-    it('fetchSchoolSharedRubrics returns [] on error', async () => {
+    it('fetchSharedMaterials throws on an RPC error', async () => {
+        const rpc = vi.fn(async () => ({ data: null, error: { message: 'boom' } }));
+        await expect(adapterWithClient({ rpc }).fetchSharedMaterials('test')).rejects.toThrow('boom');
+    });
+
+    it('updateSharedMaterial updates (never upserts) the row by id', async () => {
+        const client = makeClient({ data: [{ id: 'r1' }], error: null });
+        const rubric = { id: 'r1', updatedAt: '2026-01-01T00:00:00Z' } as never;
+        const result = await adapterWithClient(client).updateSharedMaterial('rubric', rubric);
+
+        expect(client.from).toHaveBeenCalledWith('rubrics');
+        const builder = client.from.mock.results[0].value;
+        expect(builder.update).toHaveBeenCalledWith({ data: rubric, updated_at: '2026-01-01T00:00:00Z' });
+        expect(builder.upsert).not.toHaveBeenCalled();
+        expect(builder.eq).toHaveBeenCalledWith('id', 'r1');
+        expect(result).toEqual({ success: true });
+    });
+
+    it('updateSharedMaterial reports not_permitted when RLS matched no row', async () => {
+        const client = makeClient({ data: [], error: null });
+        const result = await adapterWithClient(client).updateSharedMaterial('test', { id: 't1' } as never);
+        expect(client.from).toHaveBeenCalledWith('tests');
+        expect(client.from.mock.results[0].value.update).toHaveBeenCalledWith({ data: { id: 't1' } });
+        expect(result).toEqual({ success: false, error: 'not_permitted' });
+    });
+
+    it('updateSharedMaterial surfaces a database error', async () => {
         const client = makeClient({ data: null, error: { message: 'boom' } });
-        expect(await adapterWithClient(client).fetchSchoolSharedRubrics()).toEqual([]);
-    });
-
-    it('fetchSchoolSharedRubrics excludes the current user and maps rows', async () => {
-        const okClient = makeClient({ data: [{ owner_id: 'other', data: { id: 'r2' } }], error: null });
-        const connected = adapterWithClient(okClient, 'user1');
-        const result = await connected.fetchSchoolSharedRubrics();
-
-        const builder = okClient.from.mock.results[0].value;
-        expect(builder.neq).toHaveBeenCalledWith('owner_id', 'user1');
-        expect(result).toEqual([{ id: 'r2' }]);
+        const result = await adapterWithClient(client).updateSharedMaterial('test', { id: 't1' } as never);
+        expect(result).toEqual({ success: false, error: 'boom' });
     });
 });

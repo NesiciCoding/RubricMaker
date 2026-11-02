@@ -881,13 +881,19 @@ function RubricsTab() {
                 </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
-                    {t('docs.rb_department_sharing_title')}
+                    {t('docs.rb_material_sharing_title')}
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
-                    {t('docs.rb_department_sharing_body_prefix')}{' '}
-                    <strong>{t('docs.rb_department_sharing_body_checkbox')}</strong>{' '}
-                    {t('docs.rb_department_sharing_body_suffix')}
+                    {t('docs.rb_material_sharing_intro')}
                 </p>
+                <ul style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, paddingLeft: 20 }}>
+                    <li>{t('docs.rb_material_sharing_levels')}</li>
+                    <li>{t('docs.rb_material_sharing_default')}</li>
+                    <li>{t('docs.rb_material_sharing_folders')}</li>
+                    <li>{t('docs.rb_material_sharing_access')}</li>
+                    <li>{t('docs.rb_material_sharing_shared_view')}</li>
+                    <li>{t('docs.rb_material_sharing_admin')}</li>
+                </ul>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.rb_reorder_title')}

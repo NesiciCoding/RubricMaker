@@ -652,6 +652,20 @@ export interface DocumentAnalysisResult {
     updatedAt?: string;
 }
 
+/** Who besides the owner can open a rubric, test or folder (migration 095). */
+export type MaterialVisibility = 'private' | 'coteachers' | 'school';
+/** What the colleagues a material is visible to may do with it. */
+export type MaterialAccess = 'view' | 'edit';
+
+/**
+ * Sharing setting on a rubric, test or folder, or the teacher's default (`AppSettings.materialSharing`).
+ * Unset means inherit: the nearest folder with a setting, then the default, then private.
+ */
+export interface MaterialSharing {
+    visibility: MaterialVisibility;
+    access: MaterialAccess;
+}
+
 /** Which list a folder belongs to; each list keeps its own tree of folders. */
 export type FolderKind = 'rubric' | 'test' | 'essay' | 'flashcard';
 
@@ -664,6 +678,8 @@ export interface Folder {
     parentId?: string;
     /** Manual sort position among its siblings; undefined sorts last by createdAt */
     displayOrder?: number;
+    /** Sharing for everything filed in this folder (and its subfolders) without a setting of its own */
+    sharing?: MaterialSharing;
     createdAt: string;
     updatedAt?: string;
 }
@@ -695,8 +711,8 @@ export interface Rubric {
     displayOrder?: number;
     /** Folder this rubric is filed under in RubricList; undefined means it sits in the full list */
     folderId?: string;
-    /** When true, every teacher in the owner's school can view (read-only) this rubric */
-    sharedWithSchool?: boolean;
+    /** Own sharing setting; undefined inherits from the folder chain and the owner's default */
+    sharing?: MaterialSharing;
     /** Comparative grading: max matchups per student for this rubric (0/undefined = unlimited) */
     comparativeMatchupLimit?: number;
     /** Present when this is a tiered rubric: one column per tier, the same bands (levels) in each. */
@@ -995,6 +1011,8 @@ export interface AppSettings {
     userRole?: UserRole;
     /** Email of the currently authenticated user (populated from Supabase profile on login). */
     userEmail?: string;
+    /** Default sharing for rubrics, tests and folders that have no setting of their own (undefined = private). */
+    materialSharing?: MaterialSharing;
     /** Days since last grading before a student is considered overdue (default 7). */
     overdueReminderThreshold?: number;
     /**
@@ -1484,6 +1502,8 @@ export interface Test {
     displayOrder?: number;
     /** Folder this test is filed under in TestListPage; undefined means it sits in the full list */
     folderId?: string;
+    /** Own sharing setting; undefined inherits from the folder chain and the owner's default */
+    sharing?: MaterialSharing;
     /** 'assessment' (default when unset, for back-compat with existing tests) is graded/due-dated as today; 'practice' is ungraded, retakeable, and feeds a separate practice-progress view instead of the graded CEFR chart; 'placement' presents sections sequentially via routing rules and produces a provisional CEFR estimate instead of a graded score (roadmap Phase 25) */
     mode?: 'practice' | 'assessment' | 'placement';
     /** Only meaningful for mode: 'placement'. 'mst' (default when unset) is the branching-sections engine (routing rules, roadmap 25.1); 'staircase' is the per-question adaptive ladder (roadmap 25.3) — sections become CEFR-level question pools instead of routing stages; 'generator' pulls questions live from the question bank at runtime instead of a pre-authored pool, server-authoritative (roadmap 27.1). */
