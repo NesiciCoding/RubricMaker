@@ -108,6 +108,13 @@ export default function EssayListPage() {
         }
     }
 
+    function moveFolder(folder: Folder, parentId: string | undefined) {
+        if (folder.parentId === parentId) return;
+        updateFolder({ ...folder, parentId, displayOrder: nextFolderOrder(folders, 'essay', parentId) });
+        const target = parentId ? folders.find((f) => f.id === parentId) : undefined;
+        showToast(t('folders.moved_toast', { name: target?.name ?? t('folders.move_to_root') }), 'success');
+    }
+
     function submitFolderName(name: string) {
         const editing = folderModal?.folder;
         if (editing) {
@@ -203,6 +210,7 @@ export default function EssayListPage() {
                             onCreate={(parentId) => setFolderModal({ parentId })}
                             onRename={(folder) => setFolderModal({ folder })}
                             onDelete={handleDeleteFolder}
+                            onMoveFolder={moveFolder}
                             dropFolderId={dropFolderId}
                         />
                         {visibleGroups.length === 0 ? (
