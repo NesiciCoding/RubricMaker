@@ -60,6 +60,24 @@ export default function FolderBar({
         barRef.current?.querySelector<HTMLElement>('[data-folder-focus]')?.focus();
     }, [activeFolderId]);
 
+    // Picking a target in a tile's "Move to…" menu closes the menu and moves the folder off this
+    // level, so the focused menu item and the tile's own trigger both unmount and focus falls to
+    // <body>. Once the new folder list has rendered, land on the destination tile if it is on this
+    // level (that is where the folder went), else on the crumb for the current level.
+    const pendingMoveTarget = useRef<{ targetId: string | undefined } | null>(null);
+    useEffect(() => {
+        const pending = pendingMoveTarget.current;
+        if (!pending) return;
+        pendingMoveTarget.current = null;
+        const focused = document.activeElement;
+        if (focused && focused !== document.body && focused.isConnected) return;
+        const bar = barRef.current;
+        const destination = pending.targetId
+            ? bar?.querySelector<HTMLElement>(`[data-folder-open="${CSS.escape(pending.targetId)}"]`)
+            : null;
+        (destination ?? bar?.querySelector<HTMLElement>('[data-folder-focus]'))?.focus();
+    }, [folders]);
+
     const atRoot = activeFolderId === ALL_FOLDERS;
     const path = atRoot ? [] : folderPath(folders, activeFolderId);
     const active = path.at(-1);
@@ -137,7 +155,10 @@ export default function FolderBar({
                                     movingFolderId={folder.id}
                                     currentFolderId={parentId}
                                     rootLabel={t('folders.move_to_root')}
-                                    onMove={(target) => onMoveFolder(folder, target)}
+                                    onMove={(target) => {
+                                        pendingMoveTarget.current = { targetId: target };
+                                        onMoveFolder(folder, target);
+                                    }}
                                 />
                             )
                         }
