@@ -513,6 +513,10 @@ class StorageSyncService {
         return this.adapter.notifyStudentMessage(studentId, contextLabel, bodyPreview);
     }
 
+    async notifyStudentGraded(studentId: string, rubricName: string): Promise<void> {
+        return this.adapter.notifyStudentGraded(studentId, rubricName);
+    }
+
     async deleteEssayAssignment(teacherKey: string): Promise<SyncResult> {
         return this.adapter.deleteEssayAssignment(teacherKey);
     }

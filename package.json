@@ -9,7 +9,7 @@
     "build:analyze": "tsc && ANALYZE=1 vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "typecheck:edge-shared": "npx -y deno@2.9.6 check supabase/functions/_shared/",
+    "typecheck:edge-shared": "npx -y deno@2.9.6 check supabase/functions/_shared/ supabase/functions/_deno/",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm test",
     "lint": "eslint src",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",

@@ -1044,27 +1044,19 @@ describe('GradeStudent coverage', () => {
     });
 
     // ---------- Grade notification ----------
-    it('sends a grade notification when enabled and configured', async () => {
+    it('sends a grade notification through the signed-in session when enabled', async () => {
         mockSettingsObj.notifyStudentsOnGrade = true;
-        localStorage.setItem(
-            'rm_supabase_config',
-            JSON.stringify({ supabaseUrl: 'https://example.supabase.co', supabaseAnonKey: 'anon-key' })
-        );
-        const fetchMock = vi.fn().mockResolvedValue({ ok: true });
-        vi.stubGlobal('fetch', fetchMock);
+        const { storageSync } = await import('../../services/database');
+        const notify = vi.spyOn(storageSync, 'notifyStudentGraded').mockResolvedValue(undefined);
         renderPage();
         fireEvent.click(screen.getByText('Excellent'));
         fireEvent.click(screen.getAllByText('gradeStudent.action_save')[0]);
-        await waitFor(() =>
-            expect(fetchMock).toHaveBeenCalledWith(
-                expect.stringContaining('/functions/v1/notify-student-graded'),
-                expect.objectContaining({ method: 'POST' })
-            )
-        );
-        // a second save with a rejecting fetch exercises the silent catch
-        fetchMock.mockRejectedValue(new Error('network down'));
+        await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.any(String), expect.any(String)));
+        // a rejecting call is swallowed: saving must not fail because the email did
+        notify.mockRejectedValue(new Error('network down'));
         fireEvent.click(screen.getAllByText('gradeStudent.action_saved')[0]);
-        await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+        await waitFor(() => expect(notify).toHaveBeenCalledTimes(2));
+        notify.mockRestore();
     });
 
     // ---------- Modifier ----------

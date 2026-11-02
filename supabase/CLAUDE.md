@@ -105,6 +105,8 @@ Current functions:
 - `get-test-assignment` — mirrors `get-essay-assignment` for test content on a bare share-code link
 - `next-placement-question` — server-authoritative question picker for a generator-engine placement test (roadmap 27.1): scores the previous answer, updates level/Elo state (per-item, on `question_bank_items` — same no-whole-blob-race approach `submit-test` now also uses via `update_test_question_elo()`), applies any pending teacher level nudge (roadmap 27.2, `placement_sessions.override_direction`), and picks the next question live from the bank
 - `notify-student-graded` — emails a student when a teacher saves a grade, if the student has an email on file and SMTP is configured
+- `notify-student-message` — emails a student when a teacher sends or replies to a message (same conditions)
+- `scheduled-digest` — nightly (pg_cron, migration 059/066); emails each opted-in teacher a summary of unread messages, overdue grading and pending moderation
 - `set-student-password` — lets a teacher set/reset a student's login password, as a fallback when school email filters block Supabase's OTP mail
 - `delete-old-attachments` — run nightly via Supabase Cron; deletes storage files and metadata rows for attachments past the owner's school retention period, and for handwriting scans older than the current academic year (`get_overdue_scans()`)
 - `nightly-backup` — run nightly via Supabase Cron (or a self-hosted scheduler hitting the function URL); dumps each teacher/admin's rows via `export_owner_backup()` into the `backups` bucket. The bundled Docker Compose stack has no functions runtime, so self-hosted deployments use `scripts/backup.sh` instead — see the README's "Nightly cloud backup" section
@@ -112,6 +114,7 @@ Current functions:
 ### Edge function rules
 
 - Use the Deno standard library and `@supabase/supabase-js` only (already available in the Supabase edge runtime).
+- Notification emails go out over SMTP through `_deno/mail.ts` (`sendEmail`, `appLink`), which wraps the runtime-neutral client in `_shared/smtp.ts`; bodies come from `_shared/notificationEmails.ts`. Don't add an email library or reuse GoTrue's `generateLink` as a stand-in — it creates a link and sends nothing. Deno-only helpers shared by several functions go in `_deno/`, never `_shared/`.
 - Validate the request body and return proper HTTP status codes.
 - The service role key is available as `Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')` inside edge functions — never expose it to the client.
 - Deploy via: `supabase functions deploy <function-name>`

@@ -339,7 +339,7 @@ Logged-out visitors can read only this one key (migration 088); the rest of `sit
 readable by signed-in users only. If the row cannot be read, the page falls back to showing every
 provider.
 
-## Email (sign-in codes)
+## Email
 
 Supabase Auth (GoTrue) sends every email RubricMaker relies on. Each one has a code-only, Dutch +
 English template in `public/email-templates/`:
@@ -367,9 +367,9 @@ container).
 2. Copy the templates into the stack: `cp public/email-templates/*.html <stack>/volumes/mail-templates/`.
 3. In the stack's `.env`, set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_ADMIN_EMAIL`
    (the From address), `SMTP_SENDER_NAME=RubricMaker` (the display name) and
-   `ENABLE_EMAIL_AUTOCONFIRM=false`. Quote `SMTP_PASS` in single quotes if it contains `$`, `#` or
-   spaces.
-4. `docker compose up -d --force-recreate mail-templates auth`
+   `ENABLE_EMAIL_AUTOCONFIRM=false`, plus `APP_URL` (the address the app is served from). Quote
+   `SMTP_PASS` in single quotes if it contains `$`, `#` or spaces.
+4. `docker compose up -d --force-recreate mail-templates auth functions`
 
 GoTrue fetches a template over HTTP the first time it needs it and falls back to its built-in,
 link-only email if the fetch fails, so check after a change:
@@ -387,9 +387,29 @@ docker run --rm --network supabase_default alpine sh -c 'apk add -q openssl && o
 
 `Verification: OK` and a certificate for that exact host name are required.
 
-**Notification emails are not sent yet.** `notify-student-graded`, `notify-student-message` and
-`scheduled-digest` call `auth.admin.generateLink`, which creates a link but does not send any email.
-There is no template to configure for them until they send mail themselves.
+### Notification emails
+
+Three edge functions send their own email over the same SMTP account, with Dutch + English bodies
+from `supabase/functions/_shared/notificationEmails.ts`:
+
+| Function                 | Recipient | Sent when                                                                                  |
+| ------------------------ | --------- | ------------------------------------------------------------------------------------------ |
+| `notify-student-graded`  | Student   | A teacher saves a grade with Settings → "Notify students when graded" on                   |
+| `notify-student-message` | Student   | A teacher sends or replies to a message                                                    |
+| `scheduled-digest`       | Teacher   | Nightly, when the teacher turned on a digest category in Settings and something is waiting |
+
+Only students with an email address on their record get mail. The SMTP client is
+`supabase/functions/_shared/smtp.ts` (STARTTLS on 587, implicit TLS on 465, AUTH PLAIN/LOGIN; it
+refuses to send a password without TLS) with the Deno socket glue in `supabase/functions/_deno/`.
+`deploy-edge-functions.sh` copies both folders along with the functions.
+
+The edge-runtime container needs `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`,
+`SMTP_ADMIN_EMAIL`, `SMTP_SENDER_NAME` and `APP_URL` (the app's address, used for the links). The
+override file passes them through from the stack's `.env`; `stack-drift.py check` reports any that are
+missing. A failed send is logged as `[mail] send failed …` in `docker logs supabase-edge-functions`.
+The grade and message functions answer `{"skipped": true, "reason": "smtp_not_configured" | "send_failed"}`
+instead of failing the teacher's action; `scheduled-digest` reports failed recipients in `errors` and
+skips its heartbeat ping, so the missed-heartbeat alert fires.
 
 ## Log Rotation
 
@@ -420,15 +440,15 @@ Docker daemon logs are rotated via `/etc/docker/daemon.json`:
 
 ## Troubleshooting
 
-| Symptom                       | First steps                                                                                   |
-| ----------------------------- | --------------------------------------------------------------------------------------------- |
-| SMTP / OTP email not arriving | Check `docker compose logs auth` for SMTP errors; verify `SMTP_HOST/PORT/USER/PASS` in `.env`; see Email (sign-in codes) |
-| Cannot log in after restore   | Run `docker compose up -d db_migrate` to ensure migrations are applied; check `auth` logs     |
-| Storage uploads fail          | Check `docker compose logs storage`; verify S3/local storage bucket config in `.env`          |
-| pg_cron jobs not running      | See "Enabling pg_cron" above; confirm with `SELECT * FROM cron.job`                           |
-| High memory usage             | Check `docker stats`; add connection pooling if `db` has many idle connections                |
-| RLS errors in app             | Run `npm run db:reset` locally to reproduce; check for missing policies in latest migrations  |
-| No admin can sign in          | See "Admin recovery" below                                                                    |
+| Symptom                       | First steps                                                                                              |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------- |
+| SMTP / OTP email not arriving | Check `docker compose logs auth` for SMTP errors; verify `SMTP_HOST/PORT/USER/PASS` in `.env`; see Email |
+| Cannot log in after restore   | Run `docker compose up -d db_migrate` to ensure migrations are applied; check `auth` logs                |
+| Storage uploads fail          | Check `docker compose logs storage`; verify S3/local storage bucket config in `.env`                     |
+| pg_cron jobs not running      | See "Enabling pg_cron" above; confirm with `SELECT * FROM cron.job`                                      |
+| High memory usage             | Check `docker stats`; add connection pooling if `db` has many idle connections                           |
+| RLS errors in app             | Run `npm run db:reset` locally to reproduce; check for missing policies in latest migrations             |
+| No admin can sign in          | See "Admin recovery" below                                                                               |
 
 ---
 

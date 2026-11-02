@@ -5,6 +5,9 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { renderGradedEmail } from '../_shared/notificationEmails.ts';
+import { isValidEmailAddress } from '../_shared/smtp.ts';
+import { appLink, sendEmail } from '../_deno/mail.ts';
 
 const CORS = {
     'Access-Control-Allow-Origin': '*',
@@ -24,15 +27,13 @@ serve(async (req) => {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) return json({ error: 'Unauthorized' }, 401);
 
-    const supabase = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-    );
+    const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '');
 
     // Verify teacher JWT
-    const { data: { user }, error: authErr } = await supabase.auth.getUser(
-        authHeader.replace('Bearer ', ''),
-    );
+    const {
+        data: { user },
+        error: authErr,
+    } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
     if (authErr || !user) return json({ error: 'Invalid token' }, 401);
 
     let body: {
@@ -51,35 +52,27 @@ serve(async (req) => {
         return json({ error: 'studentId and rubricName are required' }, 400);
     }
 
-    // Look up the student's email
     const { data: studentRow } = await supabase
         .from('students')
-        .select("data->>email as email, data->>name as name")
+        .select('data->>email as email, data->>name as name')
         .eq('id', studentId)
         .eq('owner_id', user.id)
         .single();
 
-    if (!studentRow?.email) {
-        // No email stored — silently skip
+    const email = typeof studentRow?.email === 'string' ? studentRow.email.trim() : '';
+    if (!email || !isValidEmailAddress(email)) {
         return json({ skipped: true, reason: 'no_email' });
     }
 
-    // Send notification via Supabase Auth mailer (reuses the same SMTP config)
-    // We use the admin API to send a custom email — if SMTP is not configured this will fail
-    // gracefully (Supabase returns an error we can safely ignore).
-    const { error: mailErr } = await supabase.auth.admin.generateLink({
-        type: 'magiclink',
-        email: studentRow.email,
+    const { data: teacher } = await supabase.from('profiles').select('display_name').eq('id', user.id).maybeSingle();
+
+    const rendered = renderGradedEmail({
+        studentName: studentRow?.name,
+        teacherName: teacher?.display_name,
+        rubricName,
+        portalUrl: appLink(`/portal/${encodeURIComponent(studentId)}`) ?? portalUrl,
     });
-
-    // If mail fails (e.g. SMTP not configured), return a partial success so the
-    // frontend doesn't show an error to the teacher.
-    if (mailErr) {
-        return json({ skipped: true, reason: 'smtp_not_configured' });
-    }
-
-    // In a production setup you'd use a transactional email service here.
-    // The magic-link flow above is a placeholder — replace with a direct
-    // SMTP call (e.g. via Resend or Brevo API) once SMTP is configured.
-    return json({ sent: true, studentEmail: studentRow.email, rubricName, portalUrl });
+    const result = await sendEmail({ to: email, ...rendered });
+    if (!result.sent) return json({ skipped: true, reason: result.reason });
+    return json({ sent: true });
 });
