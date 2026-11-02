@@ -1183,6 +1183,9 @@ function GradingTab() {
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
                     {t('docs.gr_notifications_dismiss_note')}
                 </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginTop: 8 }}>
+                    {t('docs.gr_notifications_email_note')}
+                </p>
             </FeatureSection>
 
             <FeatureSection icon={MessageSquare} title={t('docs.gr_comment_bank_title')} color="#06b6d4">

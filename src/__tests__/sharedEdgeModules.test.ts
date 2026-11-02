@@ -10,6 +10,8 @@ import * as sharedPasswordGuard from '../../supabase/functions/_shared/studentPa
 import * as sharedPurgeGuard from '../../supabase/functions/_shared/attachmentPurgeGuard.ts';
 import * as sharedSecureCompare from '../../supabase/functions/_shared/secureCompare.ts';
 import * as sharedHeartbeat from '../../supabase/functions/_shared/heartbeat.ts';
+import * as sharedSmtp from '../../supabase/functions/_shared/smtp.ts';
+import * as sharedNotificationEmails from '../../supabase/functions/_shared/notificationEmails.ts';
 import * as testCalc from '../utils/testCalc';
 import * as clozeParse from '../utils/clozeParse';
 import * as placementRouting from '../utils/placementRouting';
@@ -36,11 +38,16 @@ const SHARED_MODULES = {
     attachmentPurgeGuard: sharedPurgeGuard,
     secureCompare: sharedSecureCompare,
     heartbeat: sharedHeartbeat,
+    smtp: sharedSmtp,
+    notificationEmails: sharedNotificationEmails,
 };
 
 const EDGE_FUNCTION_IMPORTS: Record<string, (keyof typeof SHARED_MODULES)[]> = {
     'submit-test': ['testScoring', 'placementRouting', 'placementStaircase'],
     'next-placement-question': ['testScoring', 'placementStaircase', 'seededShuffle'],
+    'notify-student-graded': ['notificationEmails', 'smtp'],
+    'notify-student-message': ['notificationEmails', 'smtp'],
+    'scheduled-digest': ['notificationEmails', 'smtp'],
 };
 
 const sharedFunctionNames = [

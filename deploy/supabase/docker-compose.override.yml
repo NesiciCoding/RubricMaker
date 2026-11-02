@@ -1,0 +1,53 @@
+# Mail settings for the official Supabase self-hosting stack
+# (https://github.com/supabase/supabase/tree/master/docker).
+#
+# Copy this file next to that stack's docker-compose.yml (Compose loads
+# docker-compose.override.yml automatically) and copy public/email-templates/*.html
+# into its ./volumes/mail-templates/. Add APP_URL (where the app is served, e.g.
+# https://app.rubricmaker.nl) to the stack's .env. Then:
+#   docker compose up -d --force-recreate mail-templates auth functions
+#
+# The templates show only the 8-digit code, never a clickable token link: mail
+# scanners such as Microsoft Safe Links open links on arrival and would use up the
+# one-time token before the teacher can type it.
+
+services:
+    mail-templates:
+        image: nginx:1.27-alpine
+        restart: unless-stopped
+        volumes:
+            - ./volumes/mail-templates:/usr/share/nginx/html:ro
+
+    auth:
+        depends_on:
+            mail-templates:
+                condition: service_started
+        environment:
+            GOTRUE_MAILER_OTP_LENGTH: '8'
+            GOTRUE_MAILER_OTP_EXP: '3600'
+            GOTRUE_SMTP_MAX_FREQUENCY: 60s
+            GOTRUE_RATE_LIMIT_EMAIL_SENT: '200'
+            GOTRUE_MAILER_TEMPLATES_CONFIRMATION: 'http://mail-templates/confirmation.html'
+            GOTRUE_MAILER_TEMPLATES_MAGIC_LINK: 'http://mail-templates/magic-link.html'
+            GOTRUE_MAILER_TEMPLATES_RECOVERY: 'http://mail-templates/recovery.html'
+            GOTRUE_MAILER_TEMPLATES_INVITE: 'http://mail-templates/invite.html'
+            GOTRUE_MAILER_TEMPLATES_EMAIL_CHANGE: 'http://mail-templates/email-change.html'
+            GOTRUE_MAILER_TEMPLATES_REAUTHENTICATION: 'http://mail-templates/reauthentication.html'
+            GOTRUE_MAILER_SUBJECTS_CONFIRMATION: 'Je RubricMaker-aanmeldcode / Your RubricMaker sign-up code'
+            GOTRUE_MAILER_SUBJECTS_MAGIC_LINK: 'Je RubricMaker-inlogcode / Your RubricMaker sign-in code'
+            GOTRUE_MAILER_SUBJECTS_RECOVERY: 'Je RubricMaker-herstelcode / Your RubricMaker recovery code'
+            GOTRUE_MAILER_SUBJECTS_INVITE: "Uitnodiging voor RubricMaker / You've been invited to RubricMaker"
+            GOTRUE_MAILER_SUBJECTS_EMAIL_CHANGE: 'Bevestig je nieuwe e-mailadres / Confirm your new email address'
+            GOTRUE_MAILER_SUBJECTS_REAUTHENTICATION: 'Je RubricMaker-bevestigingscode / Your RubricMaker confirmation code'
+
+  # The grade, message and digest notifications are sent by edge functions over the same SMTP
+  # account (supabase/functions/_deno/mail.ts). APP_URL is used for the links in those emails.
+  functions:
+    environment:
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      SMTP_ADMIN_EMAIL: ${SMTP_ADMIN_EMAIL}
+      SMTP_SENDER_NAME: ${SMTP_SENDER_NAME}
+      APP_URL: ${APP_URL:-}

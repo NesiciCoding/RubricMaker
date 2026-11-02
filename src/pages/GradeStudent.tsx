@@ -79,7 +79,7 @@ import { stripCommentHtml } from '../utils/exportDataPrep';
 import { getCriterionInterventionFlags } from '../utils/learningPathAggregator';
 import { exportSinglePdf } from '../utils/pdfExport';
 import { logAuditEvent } from '../services/database/AuditLogger';
-import { loadSupabaseConfig, storageSync } from '../services/database';
+import { storageSync } from '../services/database';
 import { getGradingTourSteps } from '../data/TutorialSteps';
 import { fileToDataUrl } from '../utils/fileToDataUrl';
 import { resolveScanOcrSettings } from '../utils/scanSettings';
@@ -426,22 +426,8 @@ export default function GradeStudent() {
         setIsDirty(false);
         if (!existingSR && !hasOtherUngraded) showToast(t('gradeStudent.all_students_graded'), 'success');
 
-        // Fire-and-forget grade notification if the teacher has opted in
         if (settings.notifyStudentsOnGrade && student && studentId) {
-            const config = loadSupabaseConfig();
-            if (config?.supabaseUrl && config.supabaseAnonKey) {
-                const portalUrl = `${window.location.origin}${window.location.pathname}#/portal/${studentId}`;
-                fetch(`${config.supabaseUrl}/functions/v1/notify-student-graded`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${config.supabaseAnonKey}`,
-                    },
-                    body: JSON.stringify({ studentId, rubricName: rubric.name, portalUrl }),
-                }).catch(() => {
-                    /* silently ignore network errors */
-                });
-            }
+            void storageSync.notifyStudentGraded(studentId, rubric.name).catch(() => undefined);
         }
     }, [
         sr,

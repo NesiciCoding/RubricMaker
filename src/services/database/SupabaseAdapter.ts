@@ -269,6 +269,31 @@ export class SupabaseAdapter {
         }
     }
 
+    async notifyStudentGraded(studentId: string, rubricName: string): Promise<void> {
+        if (!this.client || !this.activeUrl) return;
+        const {
+            data: { session },
+        } = await this.client.auth.getSession();
+        if (!session) return;
+        try {
+            await fetch(`${this.activeUrl}/functions/v1/notify-student-graded`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${session.access_token}`,
+                    apikey: this.activeKey ?? '',
+                },
+                body: JSON.stringify({
+                    studentId,
+                    rubricName,
+                    portalUrl: `${window.location.origin}${window.location.pathname}#/portal/${studentId}`,
+                }),
+            });
+        } catch {
+            /* best-effort — silently ignore network errors */
+        }
+    }
+
     async signInWithGoogle(): Promise<{ error?: string }> {
         if (!this.client) return { error: 'Supabase not initialised' };
         const { error } = await this.client.auth.signInWithOAuth({
