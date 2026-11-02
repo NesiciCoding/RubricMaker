@@ -65,6 +65,13 @@ The RLS recursion bug (fixed in `013_fix_rls_recursion.sql`) was caused by polic
 - A shared editor writes with a plain UPDATE (`SupabaseAdapter.updateSharedMaterial`), never an upsert; `protect_shared_material()` (BEFORE UPDATE on `rubrics`/`tests`) rejects owner/id changes and restores `sharing`, `folderId` and `displayOrder` from the old row for anyone but the owner.
 - The client lists colleagues' material with `list_shared_materials(kind)` (SECURITY INVOKER, so RLS still filters), which also folds in per-person `rubric_shares`. Owner fetches (`fetchRubrics`, `fetchTests`, `fetchFolders`) and realtime stay scoped to `owner_id`, so shared rows never enter a teacher's own state, local cache or backups.
 
+## Co-teacher grading (096)
+
+- A class co-teacher (`class_members`, any role) reads the grades (`student_rubrics`), test results (`student_tests`) and test assignments of the class's students (`can_view_student_work()`), plus the rubrics and tests that class uses — linked via `classes.data->'rubricIds'`, graded, assigned or taken — even when the owner keeps them private (`rubric_in_coteaching()`, `test_in_coteaching()`). The student's owner sees co-teachers' grades and results the same way.
+- The student's owner and class `editor`s (`can_edit_student_work()`, i.e. 077's `can_grade_student()`) may UPDATE any grade or result for that student, not only their own. `protect_coteacher_edit()` keeps the original `grader_id`/`owner_id` (a co-teacher's client upserts with its own id) and stamps `data->'lastEditedBy'` only when the content changed. Clients keep upserting as before.
+- An editor may assign a colleague's test it can read (`can_assign_colleague_test()`), but the `test_assignments` row is owned by the test's owner (`TestAssignment.ownerId`), because `tests_student_select`, `get-test-assignment` and `submit-test` require assignment owner = test owner; results therefore land with the test owner and reach the co-teacher through the policies above.
+- `list_shared_materials('test')` (redefined) now returns every test RLS lets the caller read, like the rubric branch, so the client finds co-taught tests in the same list as shared ones.
+
 ## Student erasure
 
 - `erase_student(p_student_id, p_storage_failures)` (084) deletes every row keyed to one student, walking `student_data_tables()`; `student_storage_objects(p_student_id)` lists their files (attachments, scans, recordings, essays, voice feedback) for the client to remove through the Storage API first (`SupabaseAdapter.eraseStudentData`). Only the student's teacher (`students.owner_id`) may erase them; that includes grades other teachers gave the student in a shared class. When the student row was never synced, only the caller's own rows go.

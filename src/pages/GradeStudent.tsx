@@ -53,6 +53,8 @@ import { useTranslation } from 'react-i18next';
 import { useVoiceGrading } from '../hooks/useVoiceGrading';
 import { useMediaRecorder } from '../hooks/useMediaRecorder';
 import { useDbStatus } from '../hooks/useDbStatus';
+import { useOwnOrSharedItem } from '../hooks/useSharedMaterials';
+import { SkeletonRow } from '../components/ui/Skeleton';
 import { useToast } from '../hooks/useToast';
 import { isOffline } from '../context/storeCore';
 import { LOCAL_STORAGE_QUOTA_CHARS, localStorageUsedChars } from '../store/storage';
@@ -87,6 +89,22 @@ import { resolveScanOcrSettings } from '../utils/scanSettings';
 const formatPoints = (n: number) => String(Math.round(n * 100) / 100);
 
 export default function GradeStudent() {
+    const { rubricId } = useParams();
+    const ownRubric = useStoreSelector((s) => s.rubrics.find((r) => r.id === rubricId));
+    // The draft grade is built from the rubric's criteria when the page mounts, so a colleague's
+    // rubric (shared with us, or used in a class we co-teach) has to have arrived first.
+    const { loading } = useOwnOrSharedItem('rubric', rubricId, ownRubric);
+    if (loading)
+        return (
+            <div className="page-content" aria-busy="true">
+                <SkeletonRow />
+                <SkeletonRow />
+            </div>
+        );
+    return <GradeStudentEditor />;
+}
+
+function GradeStudentEditor() {
     const { t, i18n } = useTranslation();
     const { rubricId, studentId } = useParams();
     const navigate = useNavigate();
@@ -139,7 +157,12 @@ export default function GradeStudent() {
     const dbStatus = useDbStatus();
 
     const existingSR = studentRubrics.find((sr) => sr.rubricId === rubricId && sr.studentId === studentId);
-    const liveRubric = rubrics.find((r) => r.id === rubricId);
+    // A colleague's rubric (shared with us, or used in a class we co-teach) grades just like our own.
+    const { item: liveRubric } = useOwnOrSharedItem(
+        'rubric',
+        rubricId,
+        rubrics.find((r) => r.id === rubricId)
+    );
     const snapshotRubric = existingSR?.rubricSnapshot;
     // A graded record stays on the rubric version it was graded with until the teacher opts in to
     // regrading it on the current version.

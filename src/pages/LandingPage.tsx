@@ -130,7 +130,7 @@ const TEACHER_FEATURES = [
     {
         icon: UserCheck,
         title: 'Department Collaboration',
-        desc: 'Share rubrics, tests and whole folders with your co-teachers or your whole school, send work for a second opinion, share a class with a co-teacher, and assign ungraded work to colleagues.',
+        desc: 'Share rubrics, tests and whole folders with your co-teachers or your whole school, send work for a second opinion, co-teach a class — grading it together with the same rubrics and tests — and assign ungraded work to colleagues.',
         color: '#f59e0b',
     },
     {

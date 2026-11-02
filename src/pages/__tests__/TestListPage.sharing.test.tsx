@@ -93,7 +93,13 @@ vi.mock('../../hooks/useSharedMaterials', () => ({
         connected: true,
         items: [
             {
-                item: { ...loose, id: 'theirs', name: 'Colleague quiz', folderId: 'gone' },
+                item: {
+                    ...loose,
+                    id: 'theirs',
+                    name: 'Colleague quiz',
+                    folderId: 'gone',
+                    questions: [{ id: 'q1', type: 'open', prompt: 'Why?', points: 1 }],
+                },
                 ownerId: 'ann',
                 ownerName: 'Ann',
                 access: 'view',
@@ -105,6 +111,14 @@ vi.mock('../../hooks/useSharedMaterials', () => ({
     }),
 }));
 vi.mock('../../services/database', () => ({ loadSupabaseConfig: vi.fn(() => null) }));
+vi.mock('../../components/Tests/TestAssignmentModal', () => ({
+    default: ({ test, ownerId, onClose }: { test: RmTest; ownerId?: string; onClose: () => void }) => (
+        <div role="dialog" aria-label="assign">
+            {`${test.id}:${ownerId ?? 'me'}`}
+            <button onClick={onClose}>close-assign</button>
+        </div>
+    ),
+}));
 vi.mock('../../hooks/useToast', () => ({ useToast: () => ({ showToast: mockShowToast }) }));
 vi.mock('react-router-dom', async () => {
     const actual = await vi.importActual('react-router-dom');
@@ -175,5 +189,16 @@ describe('TestListPage sharing', () => {
         expect(mockShowToast.mock.calls[0][0]).toMatch(/^sharing.duplicated_toast/);
         mockShowToast.mock.calls[0][2].action.onClick();
         expect(mockNavigate).toHaveBeenCalledWith('/tests/copy');
+    });
+
+    it('assigns a colleague’s test under its owner and opens its score sheet', async () => {
+        await renderPage();
+        fireEvent.click(screen.getByRole('button', { name: 'tests.action_assign: Colleague quiz' }));
+        expect(screen.getByRole('dialog', { name: 'assign' })).toHaveTextContent('theirs:ann');
+        fireEvent.click(screen.getByText('close-assign'));
+        expect(screen.queryByRole('dialog', { name: 'assign' })).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: 'tests.scoreSheet.action_open: Colleague quiz' }));
+        expect(mockNavigate).toHaveBeenCalledWith('/tests/theirs/scores');
     });
 });

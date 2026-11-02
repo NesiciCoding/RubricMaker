@@ -14,9 +14,11 @@ import type { Test, TestAssignmentPayload, TestAssignment } from '../../types';
 interface Props {
     test: Test;
     onClose: () => void;
+    /** Set when assigning a colleague's test: the assignment rows are owned by the test's owner. */
+    ownerId?: string;
 }
 
-export default function TestAssignmentModal({ test, onClose }: Props) {
+export default function TestAssignmentModal({ test, onClose, ownerId }: Props) {
     const { t } = useTranslation();
     const { students } = useStudents();
     const { classes } = useClasses();
@@ -160,6 +162,7 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
                         createdAt: new Date().toISOString(),
                         expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
                         testMode: test.mode,
+                        ...(ownerId ? { ownerId } : {}),
                     } satisfies TestAssignment)
                 )
             );
@@ -176,7 +179,7 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
         } finally {
             setSaving(false);
         }
-    }, [classStudents, teacherKeys, test, expiresAt, saveTestAssignment, savedKeys, savedKeyFor]);
+    }, [classStudents, teacherKeys, test, expiresAt, saveTestAssignment, savedKeys, savedKeyFor, ownerId]);
 
     // Auto-save as soon as a DB-mode batch of links becomes shareable, same rationale as
     // EssayAssignmentModal: gating behind a separate button click leaves a window where a

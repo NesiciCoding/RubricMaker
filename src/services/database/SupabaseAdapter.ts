@@ -1554,7 +1554,7 @@ export class SupabaseAdapter {
             .upsert(
                 {
                     id: a.teacherKey,
-                    owner_id: this.uid(),
+                    owner_id: a.ownerId ?? this.uid(),
                     test_id: a.testId,
                     student_id: a.studentId,
                     test_name: a.testName,

@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
 import { storageSync } from '../../services/database';
+import { resetSharedMaterialsCache } from '../../hooks/useSharedMaterials';
 import { LOCAL_STORAGE_QUOTA_CHARS, localStorageUsedChars } from '../../store/storage';
 import {
     LOW_STORAGE_RECORDING_SECONDS,
@@ -2224,5 +2225,44 @@ describe('GradeStudent rubric version (#639)', () => {
         await waitFor(() => expect(mockShowToast).toHaveBeenCalledWith('gradeStudent.regrade_latest_done', 'success'));
         fireEvent.click(screen.getAllByText(/gradeStudent\.action_save/)[0]);
         expect((mockSaveStudentRubric.mock.calls.at(-1)![0] as StudentRubric).gradeScaleSnapshot).toEqual(editedScale);
+    });
+});
+
+describe('GradeStudent — grading with a colleague’s rubric', () => {
+    beforeEach(async () => {
+        Element.prototype.scrollIntoView = vi.fn();
+        resetSharedMaterialsCache();
+        dbState.isConnected = true;
+        dbState.userId = 'me';
+        mockStudentRubricsArr = [];
+        mockAppValue.studentRubrics = mockStudentRubricsArr;
+        mockAppValue.rubrics = [];
+        vi.spyOn(storageSync.feedbackAudioSync, 'resolveUrl').mockResolvedValue('');
+        GradeStudentComp = (await import('../GradeStudent')).default;
+    });
+
+    afterEach(() => {
+        mockAppValue.rubrics = mockRubricsArr;
+        dbState.isConnected = false;
+        dbState.userId = null;
+        vi.restoreAllMocks();
+    });
+
+    it('waits for the shared rubric, then grades with it', async () => {
+        const fetchShared = vi.spyOn(storageSync.adapter, 'fetchSharedMaterials').mockResolvedValue({
+            items: [{ item: mockRubricsArr[0], ownerId: 'ann', ownerName: 'Ann', access: 'view' }],
+            folders: [],
+        });
+        renderPage();
+        expect(document.querySelector('[aria-busy="true"]')).not.toBeNull();
+        await waitFor(() => expect(screen.getAllByText(/gradeStudent\.action_save/).length).toBeGreaterThan(0));
+        expect(fetchShared).toHaveBeenCalledWith('rubric');
+        expect(screen.queryByText(/gradeStudent\.error_not_found/)).not.toBeInTheDocument();
+    });
+
+    it('reports not-found when the rubric is neither mine nor shared', async () => {
+        vi.spyOn(storageSync.adapter, 'fetchSharedMaterials').mockResolvedValue({ items: [], folders: [] });
+        renderPage();
+        expect(await screen.findByText(/gradeStudent\.error_not_found/)).toBeInTheDocument();
     });
 });

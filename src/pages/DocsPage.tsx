@@ -893,6 +893,7 @@ function RubricsTab() {
                     <li>{t('docs.rb_material_sharing_access')}</li>
                     <li>{t('docs.rb_material_sharing_shared_view')}</li>
                     <li>{t('docs.rb_material_sharing_admin')}</li>
+                    <li>{t('docs.rb_material_sharing_coteaching')}</li>
                 </ul>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>

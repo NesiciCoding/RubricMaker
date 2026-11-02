@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
 import type { AppSettings, Class, GradeScale, Student, StudentTest, Test } from '../../types';
 import type { StoreData } from '../../store/storage';
+import { resetSharedMaterialsCache } from '../../hooks/useSharedMaterials';
 
 const mockSettings: AppSettings = {
     defaultGradeScaleId: 'gs1',
@@ -46,6 +47,22 @@ const baseTest: Test = {
 };
 
 const mockSaveStudentTest = vi.fn();
+const sharedDb = vi.hoisted(() => ({ connected: false }));
+const mockFetchShared = vi.fn();
+const mockUpdateShared = vi.fn();
+const mockShowToast = vi.fn();
+vi.mock('../../hooks/useDbStatus', () => ({
+    useDbStatus: () => ({ isConnected: sharedDb.connected, userId: sharedDb.connected ? 'me' : null }),
+}));
+vi.mock('../../services/database', () => ({
+    storageSync: {
+        adapter: {
+            fetchSharedMaterials: (...a: unknown[]) => mockFetchShared(...a),
+            updateSharedMaterial: (...a: unknown[]) => mockUpdateShared(...a),
+        },
+    },
+}));
+vi.mock('../../hooks/useToast', () => ({ useToast: () => ({ showToast: mockShowToast }) }));
 const mockUpdateTest = vi.fn();
 const mockDownloadCsv = vi.fn();
 let mockState: Record<string, unknown>;
@@ -175,6 +192,11 @@ async function renderPage(route = '/tests/t1/scores') {
 }
 
 beforeEach(() => {
+    sharedDb.connected = false;
+    resetSharedMaterialsCache();
+    mockFetchShared.mockReset().mockResolvedValue({ items: [], folders: [] });
+    mockUpdateShared.mockReset().mockResolvedValue({ success: true });
+    mockShowToast.mockClear();
     mockSaveStudentTest.mockClear();
     mockUpdateTest.mockClear();
     mockDownloadCsv.mockClear();
@@ -392,5 +414,44 @@ describe('TestScoreSheetPage', () => {
         expect(screen.getByText('P')).toBeInTheDocument();
         fireEvent.click(screen.getByText('tests.action_edit'));
         expect(screen.getByText('builder')).toBeInTheDocument();
+    });
+
+    describe('a colleague’s test from a co-taught class', () => {
+        function shareTest(access: 'view' | 'edit') {
+            sharedDb.connected = true;
+            mockState.tests = [];
+            mockFetchShared.mockResolvedValue({
+                items: [{ item: baseTest, ownerId: 'ann', ownerName: 'Ann', access }],
+                folders: [],
+            });
+        }
+
+        it('waits for the shared list, then shows the sheet with its results', async () => {
+            shareTest('view');
+            const view = await renderPage();
+            expect(view.container.querySelector('[aria-busy="true"]')).not.toBeNull();
+            expect(await screen.findByLabelText('tests.norm.n_label')).toBeInTheDocument();
+            expect(mockFetchShared).toHaveBeenCalledWith('test');
+        });
+
+        it('keeps a view-only test’s norm with its owner', async () => {
+            shareTest('view');
+            await renderPage();
+            fireEvent.change(await screen.findByLabelText('tests.norm.n_label'), { target: { value: '1.5' } });
+            expect(mockUpdateTest).not.toHaveBeenCalled();
+            expect(mockUpdateShared).not.toHaveBeenCalled();
+            expect(mockShowToast).toHaveBeenCalledWith('sharing.test_settings_owner_only', 'info');
+        });
+
+        it('saves an editable test’s norm into the original and reports a refusal', async () => {
+            shareTest('edit');
+            mockUpdateShared.mockResolvedValue({ success: false, error: 'not_permitted' });
+            await renderPage();
+            fireEvent.change(await screen.findByLabelText('tests.norm.n_label'), { target: { value: '1.5' } });
+            expect(mockUpdateShared.mock.calls[0][0]).toBe('test');
+            expect(mockUpdateShared.mock.calls[0][1].gradingNorm).toEqual({ type: 'nterm', n: 1.5 });
+            expect(mockUpdateTest).not.toHaveBeenCalled();
+            await vi.waitFor(() => expect(mockShowToast).toHaveBeenCalledWith('sharing.save_failed', 'error'));
+        });
     });
 });

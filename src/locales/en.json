@@ -4492,7 +4492,8 @@
         "rb_material_sharing_folders": "Share a whole folder with the share button on its tile: everything inside it and its subfolders follows, unless an item or subfolder has its own setting. The nearest setting always wins.",
         "rb_material_sharing_access": "Pick “View and duplicate” or “Edit the original”. Colleagues who may edit save straight into your rubric or test; they can never change its sharing, folder or owner.",
         "rb_material_sharing_shared_view": "Material colleagues share with you appears under “Shared with me” at the bottom of the Rubrics and Tests lists, grouped per teacher in their own folders. Open it, or duplicate it into your own library.",
-        "rb_material_sharing_admin": "School admins can view every rubric and test in their school, with a teacher filter, but only edit where the owner allowed editing."
+        "rb_material_sharing_admin": "School admins can view every rubric and test in their school, with a teacher filter, but only edit where the owner allowed editing.",
+        "rb_material_sharing_coteaching": "Co-teaching a class: anyone you add to a class (Students page → class menu → Share) can grade it with the class’s rubrics and tests, even ones you keep private. Co-teachers set to “Can view & grade” can change any grade or test result in that class — including yours — and can assign your tests to it; the result stays yours and records who changed it last. “Can view” co-teachers can read grades and results but not change them."
     },
     "studentProfile": {
         "tab_overview": "Overview",
@@ -5311,6 +5312,7 @@
         "saved_to_owner": "Saved to {{name}}’s original",
         "vocabulary_owner_only": "Only the owner can change the vocabulary list.",
         "settings_title": "Sharing my rubrics and tests",
-        "settings_desc": "Your default for every rubric, test and folder without its own sharing setting — including the ones you already have. You can still change any single item or folder."
+        "settings_desc": "Your default for every rubric, test and folder without its own sharing setting — including the ones you already have. You can still change any single item or folder.",
+        "test_settings_owner_only": "Only the test’s owner can change its grading settings."
     }
 }

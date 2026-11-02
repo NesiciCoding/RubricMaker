@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Copy, Folder as FolderIcon, Pencil, Eye, RefreshCw, Share2 } from 'lucide-react';
 import type { Folder, Rubric, Test } from '../../types';
@@ -10,6 +10,8 @@ interface Props<K extends SharedKind> {
     kind: K;
     onOpen: (id: string) => void;
     onDuplicate: (entry: SharedEntry<K extends 'rubric' ? Rubric : Test>) => void;
+    /** Extra buttons on each row (assign, score sheet…), shown before Duplicate. */
+    renderActions?: (entry: SharedEntry<K extends 'rubric' ? Rubric : Test>) => React.ReactNode;
     /** A second line under the item name (subject, mode…). */
     subtitle?: (item: K extends 'rubric' ? Rubric : Test) => string | undefined;
 }
@@ -25,6 +27,7 @@ export default function SharedMaterialsSection<K extends SharedKind>({
     onOpen,
     onDuplicate,
     subtitle,
+    renderActions,
 }: Props<K>) {
     type Item = K extends 'rubric' ? Rubric : Test;
     const { t } = useTranslation();
@@ -82,6 +85,7 @@ export default function SharedMaterialsSection<K extends SharedKind>({
                     )}
                     {entry.access === 'edit' ? t('sharing.can_edit') : t('sharing.view_only')}
                 </span>
+                {renderActions?.(entry)}
                 <button
                     type="button"
                     className="btn btn-secondary btn-sm"

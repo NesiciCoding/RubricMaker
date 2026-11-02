@@ -146,4 +146,22 @@ describe('SupabaseAdapter rubric sharing methods', () => {
         const result = await adapterWithClient(client).updateSharedMaterial('test', { id: 't1' } as never);
         expect(result).toEqual({ success: false, error: 'boom' });
     });
+
+    it('saveTestAssignment writes my own assignment under me and a colleague’s under its test owner', async () => {
+        const client = makeClient({ data: null, error: null });
+        const adapter = adapterWithClient(client, 'me');
+        const base = {
+            testId: 't1',
+            studentId: 's1',
+            teacherKey: 'k1',
+            testName: 'Quiz',
+            requireSEB: false,
+            createdAt: '2026-01-01T00:00:00Z',
+        };
+        await adapter.saveTestAssignment(base);
+        await adapter.saveTestAssignment({ ...base, teacherKey: 'k2', ownerId: 'ann' });
+        const rows = client.from.mock.results.map((r) => (r.value.upsert as ReturnType<typeof vi.fn>).mock.calls[0][0]);
+        expect(rows[0]).toMatchObject({ id: 'k1', owner_id: 'me' });
+        expect(rows[1]).toMatchObject({ id: 'k2', owner_id: 'ann' });
+    });
 });

@@ -4492,7 +4492,8 @@
         "rb_material_sharing_folders": "Comparte una carpeta entera con el botón de compartir de su mosaico: todo lo que contiene y sus subcarpetas lo siguen, salvo que un elemento o subcarpeta tenga ajuste propio. Siempre gana el ajuste más cercano.",
         "rb_material_sharing_access": "Elige «Ver y duplicar» o «Editar el original». Los colegas con permiso guardan directamente en tu rúbrica o prueba; nunca pueden cambiar su forma de compartir, su carpeta ni su propietario.",
         "rb_material_sharing_shared_view": "El material que tus colegas comparten contigo aparece en «Compartido conmigo» al final de las listas de Rúbricas y Pruebas, agrupado por profesor en sus propias carpetas. Ábrelo o duplícalo en tu biblioteca.",
-        "rb_material_sharing_admin": "Los administradores del centro pueden ver todas las rúbricas y pruebas de su centro, con un filtro por profesor, pero solo editar donde el propietario lo permita."
+        "rb_material_sharing_admin": "Los administradores del centro pueden ver todas las rúbricas y pruebas de su centro, con un filtro por profesor, pero solo editar donde el propietario lo permita.",
+        "rb_material_sharing_coteaching": "Docencia compartida: cualquier persona que añadas a una clase (Alumnos → menú de la clase → Compartir) puede calificar esa clase con sus rúbricas y pruebas, aunque las mantengas privadas. Los coprofesores con «Puede ver y calificar» pueden cambiar cualquier nota o resultado de prueba de esa clase —también los tuyos— y asignarle tus pruebas; el resultado sigue siendo tuyo y registra quién lo cambió por última vez. Los coprofesores de «Puede ver» pueden ver notas y resultados, pero no cambiarlos."
     },
     "studentProfile": {
         "tab_overview": "Resumen",
@@ -5311,6 +5312,7 @@
         "saved_to_owner": "Guardado en el original de {{name}}",
         "vocabulary_owner_only": "Solo el propietario puede cambiar la lista de vocabulario.",
         "settings_title": "Compartir mis rúbricas y pruebas",
-        "settings_desc": "Tu opción predeterminada para cada rúbrica, prueba y carpeta sin ajuste de compartir propio, incluidas las que ya tienes. Puedes seguir cambiando cualquier elemento o carpeta por separado."
+        "settings_desc": "Tu opción predeterminada para cada rúbrica, prueba y carpeta sin ajuste de compartir propio, incluidas las que ya tienes. Puedes seguir cambiando cualquier elemento o carpeta por separado.",
+        "test_settings_owner_only": "Solo el propietario de la prueba puede cambiar su configuración de calificación."
     }
 }

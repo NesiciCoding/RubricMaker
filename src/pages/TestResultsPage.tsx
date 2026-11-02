@@ -7,6 +7,8 @@ import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import HelpPopover from '../components/ui/HelpPopover';
 import { useStoreActions, useStoreSelector } from '../context/useStore';
+import { useOwnOrSharedItem } from '../hooks/useSharedMaterials';
+import { SkeletonRow } from '../components/ui/Skeleton';
 import { calcTestMaxPoints, calcStudentTestRawPoints, calcTestPercentage, autoScoreResponse } from '../utils/testCalc';
 import { scoreSectionPct } from '../utils/placementRouting';
 import { clamp } from '../utils/clamp';
@@ -449,7 +451,11 @@ export default function TestResultsPage() {
     const students = React.useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
     const { saveStudentTest, recordCommentBankUsage, addCommentBankItem } = useStoreActions();
 
-    const test = tests.find((tst) => tst.id === testId);
+    const { item: test, loading: sharedLoading } = useOwnOrSharedItem(
+        'test',
+        testId,
+        tests.find((tst) => tst.id === testId)
+    );
     const studentTest = studentTests.find((st) => st.id === studentTestId && st.testId === testId);
     const student = students.find((s) => s.id === studentTest?.studentId);
     const isLateSubmission = !!test?.dueDate && !!studentTest?.submittedAt && studentTest.submittedAt > test.dueDate;
@@ -645,6 +651,17 @@ export default function TestResultsPage() {
         });
     }
 
+    if (!test && sharedLoading) {
+        return (
+            <>
+                <Topbar title={t('tests.results.title')} />
+                <div className="page-content fade-in" aria-busy="true">
+                    <SkeletonRow />
+                    <SkeletonRow />
+                </div>
+            </>
+        );
+    }
     if (!test || !studentTest) {
         return (
             <>

@@ -202,6 +202,7 @@ export default function TestListPage() {
         if (activeFolder === folder.id) setActiveFolder(ALL_FOLDERS);
     }
     const [assigningTestId, setAssigningTestId] = useState<string | null>(null);
+    const [assigningShared, setAssigningShared] = useState<SharedEntry<Test> | null>(null);
     const [importingTestId, setImportingTestId] = useState<string | null>(null);
     const [scanningTestId, setScanningTestId] = useState<string | null>(null);
     const [resultsTestId, setResultsTestId] = useState<string | null>(null);
@@ -435,11 +436,11 @@ export default function TestListPage() {
         navigate(`/tests/${created.id}/scores`);
     }
 
-    function requestAssign(test: Test) {
+    function requestAssign(test: Test, onReady: () => void = () => setAssigningTestId(test.id)) {
         const { noQuestions, entries } = testAssignBlockers(test);
         if (noQuestions) showToast(t('tests.assign_blocked_empty'), 'error');
         else if (entries.length > 0) showToast(t('tests.assign_blocked', { count: entries.length }), 'error');
-        else setAssigningTestId(test.id);
+        else onReady();
     }
 
     async function handleDelete(testId: string, testName: string) {
@@ -1322,6 +1323,32 @@ export default function TestListPage() {
                     kind="test"
                     onOpen={(id) => navigate(`/tests/${id}`)}
                     onDuplicate={duplicateShared}
+                    renderActions={(entry) => (
+                        <>
+                            {!entry.item.scoreOnly && (
+                                <button
+                                    type="button"
+                                    className="btn btn-ghost btn-icon btn-sm"
+                                    title={t('tests.action_assign')}
+                                    aria-label={`${t('tests.action_assign')}: ${entry.item.name}`}
+                                    onClick={() => requestAssign(entry.item, () => setAssigningShared(entry))}
+                                >
+                                    <Send size={14} />
+                                </button>
+                            )}
+                            {entry.item.mode !== 'placement' && (
+                                <button
+                                    type="button"
+                                    className="btn btn-ghost btn-icon btn-sm"
+                                    title={t('tests.scoreSheet.action_open')}
+                                    aria-label={`${t('tests.scoreSheet.action_open')}: ${entry.item.name}`}
+                                    onClick={() => navigate(`/tests/${entry.item.id}/scores`)}
+                                >
+                                    <Table2 size={14} />
+                                </button>
+                            )}
+                        </>
+                    )}
                     subtitle={(x) => t('tests.question_count', { count: x.questions.length })}
                 />
                 {renderSharingModal()}
@@ -1351,6 +1378,14 @@ export default function TestListPage() {
                         if (!test) return null;
                         return <TestAssignmentModal test={test} onClose={() => setAssigningTestId(null)} />;
                     })()}
+
+                {assigningShared && (
+                    <TestAssignmentModal
+                        test={assigningShared.item}
+                        ownerId={assigningShared.ownerId}
+                        onClose={() => setAssigningShared(null)}
+                    />
+                )}
 
                 {importingTestId &&
                     (() => {

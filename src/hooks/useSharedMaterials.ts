@@ -102,3 +102,19 @@ export function useSharedMaterials<K extends SharedKind>(kind: K, enabled = true
         save,
     };
 }
+
+/**
+ * The teacher's own rubric/test when they have it, otherwise a colleague's one they can read
+ * (shared with them, or used in a class they co-teach). `loading` stays true until the shared
+ * list has arrived, so pages can wait instead of reporting "not found".
+ */
+export function useOwnOrSharedItem<K extends SharedKind>(kind: K, id: string | undefined, own: ItemOf<K> | undefined) {
+    const shared = useSharedMaterials(kind, !!id && !own);
+    const entry = own || !id ? undefined : shared.items.find((e) => e.item.id === id);
+    return {
+        item: own ?? entry?.item,
+        entry,
+        loading:
+            !own && !entry && !!id && shared.connected && (shared.status === 'idle' || shared.status === 'loading'),
+    };
+}

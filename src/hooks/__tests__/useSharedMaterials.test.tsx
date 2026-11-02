@@ -17,7 +17,7 @@ vi.mock('../../services/database', () => ({
     },
 }));
 
-import { useSharedMaterials, resetSharedMaterialsCache } from '../useSharedMaterials';
+import { useSharedMaterials, useOwnOrSharedItem, resetSharedMaterialsCache } from '../useSharedMaterials';
 
 const entry = { item: { id: 'r1', name: 'Shared' }, ownerId: 'ann', ownerName: 'Ann', access: 'edit' };
 
@@ -91,5 +91,33 @@ describe('useSharedMaterials', () => {
         await waitFor(() => expect(result.current.status).toBe('ready'));
         act(() => result.current.refresh());
         await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(2));
+    });
+
+    describe('useOwnOrSharedItem', () => {
+        it('prefers my own item and never fetches for it', () => {
+            const own = { id: 'r1', name: 'Mine' } as never;
+            const { result } = renderHook(() => useOwnOrSharedItem('rubric', 'r1', own));
+            expect(result.current).toMatchObject({ item: own, entry: undefined, loading: false });
+            expect(mockFetch).not.toHaveBeenCalled();
+        });
+
+        it('loads a colleague’s item, then reports it with its share entry', async () => {
+            const { result } = renderHook(() => useOwnOrSharedItem('rubric', 'r1', undefined));
+            expect(result.current.loading).toBe(true);
+            await waitFor(() => expect(result.current.loading).toBe(false));
+            expect(result.current.item).toEqual(entry.item);
+            expect(result.current.entry?.ownerName).toBe('Ann');
+        });
+
+        it('stops loading without a match, and never loads without an id or offline', async () => {
+            const missing = renderHook(() => useOwnOrSharedItem('rubric', 'nope', undefined));
+            await waitFor(() => expect(missing.result.current.loading).toBe(false));
+            expect(missing.result.current.item).toBeUndefined();
+            expect(renderHook(() => useOwnOrSharedItem('test', undefined, undefined)).result.current.loading).toBe(
+                false
+            );
+            db.isConnected = false;
+            expect(renderHook(() => useOwnOrSharedItem('test', 't1', undefined)).result.current.loading).toBe(false);
+        });
     });
 });

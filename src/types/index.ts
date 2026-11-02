@@ -885,6 +885,8 @@ export interface StudentRubric {
     submittedAt?: string;
     gradedAt?: string;
     gradedBy?: string;
+    /** Account that last changed this grade; set by the server (migration 096), never by the client */
+    lastEditedBy?: string;
     /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */
     updatedAt?: string;
     isPeerReview: boolean;
@@ -1639,6 +1641,8 @@ export interface StudentTest {
     id: string;
     testId: string;
     studentId: string;
+    /** Account that last changed this result; set by the server (migration 096), never by the client */
+    lastEditedBy?: string;
     answers: TestAnswer[];
     status: 'in_progress' | 'submitted' | 'graded';
     startedAt: string;
@@ -1754,6 +1758,11 @@ export interface TestAssignment {
     expiresAt?: string;
     /** Denormalized from Test.mode so the portal to-do list can badge practice vs. assessment without reading `tests` */
     testMode?: Test['mode'];
+    /**
+     * The test's owner, when a co-teacher assigns a colleague's test. The row must belong to the
+     * test owner (students can only open tests whose assignment owner matches); undefined = me.
+     */
+    ownerId?: string;
 }
 
 /** A test assignment as seen by the student portal, including their own submission status */
