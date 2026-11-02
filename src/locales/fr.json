@@ -2921,6 +2921,8 @@
         "blooms_title": "Taxonomie de Bloom",
         "ib_title": "Profil de l'apprenant IB",
         "slo_title": "Objectifs SLO (anglais)",
+        "slo_scored_count_one": "{{count}} note",
+        "slo_scored_count_other": "{{count}} notes",
         "view_compare": "Comparer",
         "compare": {
             "select_classes": "Sélectionner des classes (max {{max}})",

@@ -2876,6 +2876,8 @@
         "blooms_title": "Taxonomía de Bloom",
         "ib_title": "Perfil del Alumno IB",
         "slo_title": "Objetivos SLO (inglés)",
+        "slo_scored_count_one": "{{count}} calificación",
+        "slo_scored_count_other": "{{count}} calificaciones",
         "heatmap": "Mapa de Calor de Criterios",
         "heatmap_subtitle": "Haz clic en un estudiante para ver su puntuación, calificación y progreso.",
         "lg_title": "Progreso de objetivos de aprendizaje",

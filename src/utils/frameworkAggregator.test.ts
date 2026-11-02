@@ -65,6 +65,27 @@ describe('aggregateFrameworkScores', () => {
         expect(result.find((b) => b.categoryId === 'slo-po-34')?.count).toBe(0);
     });
 
+    it('counts a criterion once per category even when it links several of its descriptors', () => {
+        const twoGoals = criterion('c1', 'slo-vo-35', 'slo', 10);
+        twoGoals.frameworkDescriptors = [
+            ...twoGoals.frameworkDescriptors!,
+            { ...twoGoals.frameworkDescriptors![0], descriptorId: 'c1-d2' },
+        ];
+        const oneGoal = criterion('c2', 'slo-vo-35', 'slo', 10);
+        const rubric: StudentRubric = {
+            ...sr('sr1', 'c1', 'l-best', 10),
+            entries: [
+                { criterionId: 'c1', levelId: 'l-best', selectedPoints: 10, checkedSubItems: [], comment: '' },
+                { criterionId: 'c2', levelId: 'l-best', selectedPoints: 0, checkedSubItems: [], comment: '' },
+            ],
+        };
+        const bucket = aggregateFrameworkScores('slo', [rubric], [twoGoals, oneGoal]).find(
+            (b) => b.categoryId === 'slo-vo-35'
+        )!;
+        expect(bucket.count).toBe(2);
+        expect(bucket.avgPercentage).toBeCloseTo(50);
+    });
+
     it('buckets grammar by grammar category rather than by IB attribute', () => {
         const result = aggregateFrameworkScores('grammar', [], []);
         expect(result.map((b) => b.categoryId)).toEqual(GRAMMAR_CATEGORIES.map((c) => c.id));

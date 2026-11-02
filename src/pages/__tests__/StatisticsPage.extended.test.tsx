@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, within } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { DEFAULT_FORMAT } from '../../types';
@@ -84,6 +84,14 @@ const sloDesc = {
     descriptionNl: '35D — De leerling schrijft in de Engelse taal.',
 };
 
+const sloPoDesc = {
+    ...sloDesc,
+    descriptorId: 'slo-po-33a',
+    categoryId: 'slo-po-33',
+    categoryLabelEn: 'Primary · Core goal 33',
+    categoryLabelNl: 'PO · Kerndoel 33',
+};
+
 const linkedStandard = {
     guid: 'g1',
     description: 'Can express ideas clearly',
@@ -96,7 +104,7 @@ const c1 = {
     description: '',
     weight: 60,
     levels: [l1, l2],
-    frameworkDescriptors: [bloomsDesc],
+    frameworkDescriptors: [bloomsDesc, sloPoDesc],
     linkedStandards: [linkedStandard],
 };
 const c2 = {
@@ -560,7 +568,11 @@ describe('StatisticsPage extended', () => {
         expect(screen.getByText('statistics.slo_title')).toBeInTheDocument();
         // Dutch labels render when the language is nl.
         expect(screen.getAllByText(/Onthouden/).length).toBeGreaterThan(0);
-        expect(screen.getAllByText(/VO · Kerndoel 35/).length).toBeGreaterThan(0);
+        // Every scored kerndoel is listed with its full label and score; the rose uses short labels.
+        const sloList = screen.getByRole('list', { name: 'statistics.slo_title' });
+        expect(within(sloList).getByText('VO · Kerndoel 35')).toBeInTheDocument();
+        expect(within(sloList).getByText('PO · Kerndoel 33')).toBeInTheDocument();
+        expect(screen.getAllByText('PO 33').length).toBeGreaterThan(0);
         h.i18n.language = 'en';
     });
 

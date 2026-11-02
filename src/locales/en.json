@@ -2876,6 +2876,8 @@
         "blooms_title": "Bloom's Taxonomy",
         "ib_title": "IB Learner Profile",
         "slo_title": "SLO core goals (English)",
+        "slo_scored_count_one": "{{count}} score",
+        "slo_scored_count_other": "{{count}} scores",
         "heatmap": "Criterion Heat Map",
         "heatmap_subtitle": "Click a student to see their score, grade and progress.",
         "lg_title": "Learning Goals Progress",

@@ -2876,6 +2876,8 @@
         "blooms_title": "Taxonomie van Bloom",
         "ib_title": "IB Leerlingprofiel",
         "slo_title": "SLO-kerndoelen (Engels)",
+        "slo_scored_count_one": "{{count}} score",
+        "slo_scored_count_other": "{{count}} scores",
         "heatmap": "Criterium Heatmap",
         "heatmap_subtitle": "Klik op een leerling voor score, cijfer en voortgang.",
         "lg_title": "Voortgang leerdoelen",

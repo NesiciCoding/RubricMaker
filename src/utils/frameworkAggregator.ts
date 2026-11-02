@@ -40,8 +40,11 @@ export function aggregateFrameworkScores(
 
             const pct = criterionPercentage(entry, criterion);
 
+            // Several descriptors of one category on a criterion (e.g. goals 35A and 35D) are still one score.
+            const seen = new Set<string>();
             for (const fd of criterion.frameworkDescriptors ?? []) {
-                if (fd.framework !== framework) continue;
+                if (fd.framework !== framework || seen.has(fd.categoryId)) continue;
+                seen.add(fd.categoryId);
                 const existing = buckets.get(fd.categoryId);
                 if (existing) {
                     existing.scores.push(pct);

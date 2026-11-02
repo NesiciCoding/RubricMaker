@@ -5,6 +5,7 @@ import { TrendingUp, Users, BookOpen, Download, Maximize2, Printer, ChevronDown,
 import { useTranslation } from 'react-i18next';
 import { BLOOM_LEVELS } from '../data/bloomsTaxonomy';
 import { IB_ATTRIBUTES } from '../data/ibLearnerProfile';
+import { SLO_KERNDOELEN } from '../data/sloKerndoelen';
 import { aggregateFrameworkScores } from '../utils/frameworkAggregator';
 import BloomsPyramidChart from '../components/Statistics/BloomsPyramidChart';
 import FrameworkRoseChart from '../components/Statistics/FrameworkRoseChart';
@@ -1493,27 +1494,84 @@ export default function StatisticsPage() {
                                 )}
 
                                 {/* SLO kerndoelen (English) — only the core goals this rubric links to */}
-                                {sloData && sloData.some((bucket) => bucket.count > 0) && summaries.length > 0 && (
-                                    <div className="card" style={{ marginBottom: 20 }}>
-                                        <h3 style={{ marginBottom: 16 }}>{t('statistics.slo_title')}</h3>
-                                        <div style={{ display: 'flex', justifyContent: 'center' }}>
-                                            <FrameworkRoseChart
-                                                sectors={sloData
-                                                    .filter((bucket) => bucket.count > 0)
-                                                    .map((bucket) => ({
-                                                        id: bucket.categoryId,
-                                                        label:
-                                                            lang === 'nl'
-                                                                ? bucket.categoryLabelNl
-                                                                : bucket.categoryLabelEn,
-                                                        value: bucket.avgPercentage,
-                                                        color: bucket.categoryColor,
-                                                        count: bucket.count,
-                                                    }))}
-                                            />
-                                        </div>
-                                    </div>
-                                )}
+                                {sloData &&
+                                    summaries.length > 0 &&
+                                    (() => {
+                                        const scored = sloData.filter((bucket) => bucket.count > 0);
+                                        if (scored.length === 0) return null;
+                                        const short = (id: string) => {
+                                            const kd = SLO_KERNDOELEN.find((k) => k.id === id);
+                                            /* v8 ignore next -- buckets come from the canonical SLO list */
+                                            return kd ? `${kd.phase.toUpperCase()} ${kd.number}` : id;
+                                        };
+                                        return (
+                                            <div className="card" style={{ marginBottom: 20 }}>
+                                                <h3 style={{ marginBottom: 16 }}>{t('statistics.slo_title')}</h3>
+                                                {/* A rose needs two sectors; one would be a full circle that draws nothing. */}
+                                                {scored.length > 1 && (
+                                                    <div
+                                                        aria-hidden="true"
+                                                        style={{ display: 'flex', justifyContent: 'center' }}
+                                                    >
+                                                        <FrameworkRoseChart
+                                                            sectors={scored.map((bucket) => ({
+                                                                id: bucket.categoryId,
+                                                                label: short(bucket.categoryId),
+                                                                value: bucket.avgPercentage,
+                                                                color: bucket.categoryColor,
+                                                                count: bucket.count,
+                                                            }))}
+                                                        />
+                                                    </div>
+                                                )}
+                                                <ul
+                                                    aria-label={t('statistics.slo_title')}
+                                                    style={{
+                                                        listStyle: 'none',
+                                                        margin: 0,
+                                                        padding: 0,
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        gap: 6,
+                                                    }}
+                                                >
+                                                    {scored.map((bucket) => (
+                                                        <li
+                                                            key={bucket.categoryId}
+                                                            style={{
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: 8,
+                                                                fontSize: 13,
+                                                            }}
+                                                        >
+                                                            <span
+                                                                aria-hidden="true"
+                                                                style={{
+                                                                    width: 10,
+                                                                    height: 10,
+                                                                    borderRadius: 2,
+                                                                    background: bucket.categoryColor,
+                                                                    flexShrink: 0,
+                                                                }}
+                                                            />
+                                                            <span style={{ flex: 1 }}>
+                                                                {lang === 'nl'
+                                                                    ? bucket.categoryLabelNl
+                                                                    : bucket.categoryLabelEn}
+                                                            </span>
+                                                            <strong>{Math.round(bucket.avgPercentage)}%</strong>
+                                                            <span className="text-muted text-xs">
+                                                                {t('statistics.slo_scored_count', {
+                                                                    count: bucket.count,
+                                                                })}
+                                                            </span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        );
+                                    })()}
 
                                 {/* Custom Views — recommended chart presets, toggleable + recolorable */}
                                 <div className="card" style={{ marginBottom: 20 }}>

@@ -2921,6 +2921,8 @@
         "blooms_title": "Blooms Taxonomie",
         "ib_title": "IB-Lernerprofil",
         "slo_title": "SLO-Kernziele (Englisch)",
+        "slo_scored_count_one": "{{count}} Bewertung",
+        "slo_scored_count_other": "{{count}} Bewertungen",
         "view_compare": "Vergleichen",
         "compare": {
             "select_classes": "Klassen auswählen (max {{max}})",
