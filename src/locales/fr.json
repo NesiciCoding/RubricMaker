@@ -2629,6 +2629,10 @@
         "ib_short": "Profil de l'apprenant IB",
         "blooms_short": "Taxonomie de Bloom",
         "grammar_short": "Grammaire",
+        "slo_short": "Objectifs SLO",
+        "slo_phase_all": "Toutes les phases",
+        "slo_phase_po": "Primaire (PO)",
+        "slo_phase_vo": "Secondaire (VO)",
         "action_link_descriptor": "Lier un descripteur",
         "selected_count": "{{count}} descripteur(s) lié(s)"
     },
@@ -2916,6 +2920,9 @@
         "action_export_chart": "Exporter le graphique",
         "blooms_title": "Taxonomie de Bloom",
         "ib_title": "Profil de l'apprenant IB",
+        "slo_title": "Objectifs SLO (anglais)",
+        "slo_scored_count_one": "{{count}} note",
+        "slo_scored_count_other": "{{count}} notes",
         "view_compare": "Comparer",
         "compare": {
             "select_classes": "Sélectionner des classes (max {{max}})",
@@ -3921,6 +3928,7 @@
         "rb_level_options_item_modifiers": "Modificateurs de score — appliquez des ajustements en %, en points ou de niveau avec une raison facultative.",
         "rb_standards_title": "Référentiels & liens vers les cadres",
         "rb_standards_item_cefr": "Descripteurs Can-Do du CECRL — joindre des descripteurs spécifiques par critère.",
+        "rb_standards_item_slo": "Kerndoelen SLO (anglais) — les objectifs fondamentaux néerlandais pour l'anglais au primaire (PO, kerndoelen 33–34) et au secondaire (VO, kerndoelen 34–36) ont leur propre onglet dans le sélecteur d'alignement. Filtrez par phase ; chaque objectif (par ex. 35D) se lie individuellement et affiche son code sur le critère. La page Statistiques montre le score moyen par kerndoel lié. Seule la matière anglais est incluse.",
         "rb_standards_item_ib": "Attributs du Profil de l'apprenant IB et niveaux de la taxonomie de Bloom.",
         "rb_standards_item_ccss": "CCSS, NGSS et normes d'État via l'API du Common Standards Project.",
         "rb_standards_item_grammar": "Lieur de grammaire — ouvrez le sélecteur d'alignement et passez à l'onglet Grammaire. Chaque sujet grammatical est un en-tête (par ex. Past Simple) et ses distinctions (verbes réguliers, verbes irréguliers) sont des référentiels distincts, liables individuellement. Filtrez par niveau CECRL (les niveaux suivent le CEFR-J Grammar Profile). Les verbes to be et to have (y compris have got) ont leurs propres sujets, avec présent, passé, formes négatives et interrogatives aux niveaux A1–A2 ; ils ne sont pas détectés automatiquement dans les rédactions. La grammaire liée peut être vérifiée automatiquement dans les rédactions numérisées pendant la notation — voir Notation.",

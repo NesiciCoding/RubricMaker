@@ -826,6 +826,7 @@ function RubricsTab() {
                     items={[
                         t('docs.rb_standards_item_cefr'),
                         t('docs.rb_standards_item_ib'),
+                        t('docs.rb_standards_item_slo'),
                         t('docs.rb_standards_item_ccss'),
                         t('docs.rb_standards_item_grammar'),
                     ]}

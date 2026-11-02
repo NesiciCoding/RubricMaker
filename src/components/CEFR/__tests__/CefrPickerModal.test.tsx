@@ -12,6 +12,7 @@ vi.mock('react-i18next', () => ({
             if (key === 'framework.selected_count') return `${opts?.count} selected`;
             if (key === 'framework.ib_short') return 'IB';
             if (key === 'framework.blooms_short') return "Bloom's";
+            if (key === 'framework.slo_short') return 'SLO';
             return key;
         },
         i18n: { language: mockLang, changeLanguage: vi.fn() },
@@ -360,6 +361,78 @@ describe('CefrPickerModal', () => {
                 .closest('button')!;
             fireEvent.click(row);
             expect(onRemoveFramework).toHaveBeenCalledWith('bl-rem-1');
+        });
+    });
+    describe('SLO tab', () => {
+        function openSloTab(props: Partial<typeof baseProps> = {}) {
+            render(<CefrPickerModal {...baseProps} {...props} />);
+            fireEvent.click(screen.getByText('SLO'));
+        }
+
+        it('lists primary and secondary kerndoelen and links a goal with its code', () => {
+            const onAddFramework = vi.fn();
+            openSloTab({ onAddFramework });
+            expect(screen.getByText('Primary · Core goal 34')).toBeInTheDocument();
+            expect(screen.getByText('Secondary · Core goal 34')).toBeInTheDocument();
+
+            fireEvent.click(levelHeader('Secondary · Core goal 35'));
+            fireEvent.click(screen.getByText(/^35D — /));
+
+            expect(onAddFramework).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    descriptorId: 'slo-vo-35d',
+                    framework: 'slo',
+                    categoryId: 'slo-vo-35',
+                    descriptionEn: expect.stringMatching(/^35D — The pupil writes in English/),
+                })
+            );
+        });
+
+        it('filters by phase', () => {
+            openSloTab();
+            fireEvent.click(screen.getByText('framework.slo_phase_vo'));
+            expect(screen.queryByText('Primary · Core goal 33')).not.toBeInTheDocument();
+            expect(screen.getByText('Secondary · Core goal 36')).toBeInTheDocument();
+
+            fireEvent.click(screen.getByText('framework.slo_phase_po'));
+            expect(screen.getByText('Primary · Core goal 33')).toBeInTheDocument();
+            expect(screen.queryByText('Secondary · Core goal 36')).not.toBeInTheDocument();
+
+            fireEvent.click(screen.getByText('framework.slo_phase_all'));
+            expect(screen.getByText('Secondary · Core goal 36')).toBeInTheDocument();
+        });
+
+        it('finds a goal by its code and says when nothing matches', () => {
+            openSloTab();
+            fireEvent.change(screen.getByPlaceholderText('cefr.search_placeholder'), { target: { value: '36c' } });
+            expect(screen.getByText('Secondary · Core goal 36')).toBeInTheDocument();
+            expect(screen.queryByText('Secondary · Core goal 35')).not.toBeInTheDocument();
+
+            fireEvent.change(screen.getByPlaceholderText('cefr.search_placeholder'), { target: { value: 'zzzz' } });
+            expect(screen.getByText('cefr.no_results')).toBeInTheDocument();
+        });
+
+        it('removes an already linked goal and shows Dutch text in Dutch', () => {
+            mockLang = 'nl';
+            const onRemoveFramework = vi.fn();
+            openSloTab({
+                onRemoveFramework,
+                linkedFrameworkDescriptors: [
+                    {
+                        descriptorId: 'slo-po-33a',
+                        framework: 'slo',
+                        categoryId: 'slo-po-33',
+                        categoryLabelEn: 'Primary · Core goal 33',
+                        categoryLabelNl: 'PO · Kerndoel 33',
+                        categoryColor: '#000',
+                        descriptionEn: '33A',
+                        descriptionNl: '33A',
+                    },
+                ],
+            });
+            fireEvent.click(levelHeader('PO · Kerndoel 33'));
+            fireEvent.click(screen.getByText(/^33A — De leerling toont begrip/));
+            expect(onRemoveFramework).toHaveBeenCalledWith('slo-po-33a');
         });
     });
 });

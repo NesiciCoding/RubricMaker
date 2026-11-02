@@ -1,6 +1,8 @@
 import { criterionMaxPoints, criterionPercentage } from './gradeCalc';
 import { BLOOM_LEVELS } from '../data/bloomsTaxonomy';
 import { IB_ATTRIBUTES } from '../data/ibLearnerProfile';
+import { GRAMMAR_CATEGORIES } from '../data/grammarStandards';
+import { SLO_KERNDOELEN } from '../data/sloKerndoelen';
 import type { AssessmentFramework, RubricCriterion, StudentRubric } from '../types';
 
 export interface FrameworkBucket {
@@ -11,6 +13,15 @@ export interface FrameworkBucket {
     avgPercentage: number;
     count: number;
 }
+
+type CategoryMeta = { id: string; labelEn: string; labelNl: string; color: string };
+
+const CANONICAL_CATEGORIES: Record<AssessmentFramework, CategoryMeta[]> = {
+    blooms: BLOOM_LEVELS,
+    ib: IB_ATTRIBUTES,
+    grammar: GRAMMAR_CATEGORIES,
+    slo: SLO_KERNDOELEN,
+};
 
 export function aggregateFrameworkScores(
     framework: AssessmentFramework,
@@ -29,8 +40,11 @@ export function aggregateFrameworkScores(
 
             const pct = criterionPercentage(entry, criterion);
 
+            // Several descriptors of one category on a criterion (e.g. goals 35A and 35D) are still one score.
+            const seen = new Set<string>();
             for (const fd of criterion.frameworkDescriptors ?? []) {
-                if (fd.framework !== framework) continue;
+                if (fd.framework !== framework || seen.has(fd.categoryId)) continue;
+                seen.add(fd.categoryId);
                 const existing = buckets.get(fd.categoryId);
                 if (existing) {
                     existing.scores.push(pct);
@@ -46,21 +60,18 @@ export function aggregateFrameworkScores(
         }
     }
 
-    const canonicalIds = framework === 'blooms' ? BLOOM_LEVELS.map((l) => l.id) : IB_ATTRIBUTES.map((a) => a.id);
+    const canonical = CANONICAL_CATEGORIES[framework];
 
-    return canonicalIds.map((id) => {
+    return canonical.map((meta) => {
+        const id = meta.id;
         const bucket = buckets.get(id);
-        const meta =
-            framework === 'blooms' ? BLOOM_LEVELS.find((l) => l.id === id) : IB_ATTRIBUTES.find((a) => a.id === id);
 
         if (!bucket) {
             return {
                 categoryId: id,
-                /* v8 ignore start -- id comes from the canonical list, so meta is always found and complete */
-                categoryLabelEn: meta?.labelEn ?? id,
-                categoryLabelNl: meta?.labelNl ?? id,
-                categoryColor: meta?.color ?? '#94a3b8',
-                /* v8 ignore stop */
+                categoryLabelEn: meta.labelEn,
+                categoryLabelNl: meta.labelNl,
+                categoryColor: meta.color,
                 avgPercentage: NaN,
                 count: 0,
             };

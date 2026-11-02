@@ -2,7 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { aggregateFrameworkScores } from './frameworkAggregator';
 import { BLOOM_LEVELS } from '../data/bloomsTaxonomy';
 import { IB_ATTRIBUTES } from '../data/ibLearnerProfile';
-import type { RubricCriterion, StudentRubric } from '../types';
+import { GRAMMAR_CATEGORIES } from '../data/grammarStandards';
+import { SLO_KERNDOELEN } from '../data/sloKerndoelen';
+import type { AssessmentFramework, RubricCriterion, StudentRubric } from '../types';
 
 const level = (id: string, max: number) => ({
     id,
@@ -13,7 +15,7 @@ const level = (id: string, max: number) => ({
     subItems: [],
 });
 
-const criterion = (id: string, categoryId: string, framework: 'blooms' | 'ib', max = 10): RubricCriterion => ({
+const criterion = (id: string, categoryId: string, framework: AssessmentFramework, max = 10): RubricCriterion => ({
     id,
     title: id,
     description: '',
@@ -53,6 +55,40 @@ describe('aggregateFrameworkScores', () => {
     it('returns a bucket for every canonical IB attribute', () => {
         const result = aggregateFrameworkScores('ib', [], []);
         expect(result).toHaveLength(IB_ATTRIBUTES.length);
+    });
+
+    it('returns a bucket for every SLO kerndoel, keeping primary and secondary 34 apart', () => {
+        const criteria = [criterion('c1', 'slo-vo-34', 'slo', 10)];
+        const result = aggregateFrameworkScores('slo', [sr('sr1', 'c1', 'l-best', 6)], criteria);
+        expect(result.map((b) => b.categoryId)).toEqual(SLO_KERNDOELEN.map((kd) => kd.id));
+        expect(result.find((b) => b.categoryId === 'slo-vo-34')).toMatchObject({ count: 1, avgPercentage: 60 });
+        expect(result.find((b) => b.categoryId === 'slo-po-34')?.count).toBe(0);
+    });
+
+    it('counts a criterion once per category even when it links several of its descriptors', () => {
+        const twoGoals = criterion('c1', 'slo-vo-35', 'slo', 10);
+        twoGoals.frameworkDescriptors = [
+            ...twoGoals.frameworkDescriptors!,
+            { ...twoGoals.frameworkDescriptors![0], descriptorId: 'c1-d2' },
+        ];
+        const oneGoal = criterion('c2', 'slo-vo-35', 'slo', 10);
+        const rubric: StudentRubric = {
+            ...sr('sr1', 'c1', 'l-best', 10),
+            entries: [
+                { criterionId: 'c1', levelId: 'l-best', selectedPoints: 10, checkedSubItems: [], comment: '' },
+                { criterionId: 'c2', levelId: 'l-best', selectedPoints: 0, checkedSubItems: [], comment: '' },
+            ],
+        };
+        const bucket = aggregateFrameworkScores('slo', [rubric], [twoGoals, oneGoal]).find(
+            (b) => b.categoryId === 'slo-vo-35'
+        )!;
+        expect(bucket.count).toBe(2);
+        expect(bucket.avgPercentage).toBeCloseTo(50);
+    });
+
+    it('buckets grammar by grammar category rather than by IB attribute', () => {
+        const result = aggregateFrameworkScores('grammar', [], []);
+        expect(result.map((b) => b.categoryId)).toEqual(GRAMMAR_CATEGORIES.map((c) => c.id));
     });
 
     it('computes avgPercentage correctly for a single grade', () => {
