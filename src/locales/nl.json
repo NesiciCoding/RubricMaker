@@ -2056,7 +2056,10 @@
         "tiered_verdict_reason_requirement": "Er is niet aan een voorwaarde voldaan",
         "tiered_verdict_reason_override": "Door jou gekozen",
         "tiered_verdict_override": "Eindoordeel kiezen:",
-        "tiered_verdict_auto": "Automatisch (op basis van punten)"
+        "tiered_verdict_auto": "Automatisch (op basis van punten)",
+        "last_edited_by": "Laatst gewijzigd door {{name}}",
+        "last_edited_by_at": "Laatst gewijzigd door {{name}} · {{when}}",
+        "last_edited_you": "jou"
     },
     "rubricBuilder": {
         "action_back": "Terug",
@@ -4493,7 +4496,7 @@
         "rb_material_sharing_access": "Kies ‘Bekijken en dupliceren’ of ‘Het origineel bewerken’. Collega’s die mogen bewerken, slaan direct op in jouw rubric of toets; delen, map en eigenaar kunnen zij nooit wijzigen.",
         "rb_material_sharing_shared_view": "Materiaal dat collega’s met je delen, staat onder ‘Met mij gedeeld’ onderaan de lijsten Rubrics en Toetsen, per leraar in hun eigen mappen. Open het of dupliceer het naar je eigen bibliotheek.",
         "rb_material_sharing_admin": "Schoolbeheerders kunnen elke rubric en toets van hun school bekijken, met een filter per leraar, maar alleen bewerken waar de eigenaar dat toestaat.",
-        "rb_material_sharing_coteaching": "Samen lesgeven: iedereen die je aan een klas toevoegt (Leerlingen → klasmenu → Delen) kan die klas beoordelen met de rubrics en toetsen van de klas, ook als je ze privé houdt. Medeleraren met ‘Kan bekijken en beoordelen’ kunnen elk cijfer of toetsresultaat in die klas wijzigen — ook dat van jou — en je toetsen aan de klas toewijzen; het resultaat blijft van jou en legt vast wie het laatst wijzigde. Medeleraren met ‘Kan bekijken’ kunnen cijfers en resultaten zien, maar niet wijzigen."
+        "rb_material_sharing_coteaching": "Samen lesgeven: iedereen die je aan een klas toevoegt (Leerlingen → klasmenu → Delen) kan die klas beoordelen met de rubrics en toetsen van de klas, ook als je ze privé houdt. Medeleraren met ‘Kan bekijken en beoordelen’ kunnen elk cijfer of toetsresultaat in die klas wijzigen — ook dat van jou — en je toetsen aan de klas toewijzen; het resultaat blijft van jou en legt vast wie het laatst wijzigde. Medeleraren met ‘Kan bekijken’ kunnen cijfers en resultaten zien, maar niet wijzigen. Op de beoordelingspagina zie je wie elk cijfer het laatst heeft gewijzigd."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",

@@ -2056,7 +2056,10 @@
         "tiered_verdict_reason_requirement": "Eine Voraussetzung ist nicht erfüllt",
         "tiered_verdict_reason_override": "Von dir festgelegt",
         "tiered_verdict_override": "Urteil festlegen:",
-        "tiered_verdict_auto": "Automatisch (aus den Punkten)"
+        "tiered_verdict_auto": "Automatisch (aus den Punkten)",
+        "last_edited_by": "Zuletzt geändert von {{name}}",
+        "last_edited_by_at": "Zuletzt geändert von {{name}} · {{when}}",
+        "last_edited_you": "dir"
     },
     "rubricBuilder": {
         "action_back": "Zurück",
@@ -4493,7 +4496,7 @@
         "rb_material_sharing_access": "Wähle „Ansehen und duplizieren“ oder „Das Original bearbeiten“. Berechtigte Kolleg:innen speichern direkt in dein Raster bzw. deinen Test; Freigabe, Ordner und Eigentümer können sie nie ändern.",
         "rb_material_sharing_shared_view": "Mit dir geteiltes Material erscheint unter „Mit mir geteilt“ unten in den Listen Raster und Tests, pro Lehrkraft in deren eigenen Ordnern. Öffne es oder dupliziere es in deine Bibliothek.",
         "rb_material_sharing_admin": "Schuladministratoren können alle Raster und Tests ihrer Schule ansehen, mit einem Filter nach Lehrkraft, aber nur bearbeiten, wo der Eigentümer das erlaubt.",
-        "rb_material_sharing_coteaching": "Gemeinsam unterrichten: Wer zu einer Klasse hinzugefügt wird (Schüler:innen → Klassenmenü → Teilen), kann diese Klasse mit ihren Rastern und Tests bewerten, auch wenn du sie privat hältst. Co-Lehrkräfte mit „Kann ansehen und bewerten“ können jede Note und jedes Testergebnis der Klasse ändern – auch deine – und ihr deine Tests zuweisen; das Ergebnis bleibt deins und hält fest, wer es zuletzt geändert hat. Co-Lehrkräfte mit „Kann ansehen“ sehen Noten und Ergebnisse, können sie aber nicht ändern."
+        "rb_material_sharing_coteaching": "Gemeinsam unterrichten: Wer zu einer Klasse hinzugefügt wird (Schüler:innen → Klassenmenü → Teilen), kann diese Klasse mit ihren Rastern und Tests bewerten, auch wenn du sie privat hältst. Co-Lehrkräfte mit „Kann ansehen und bewerten“ können jede Note und jedes Testergebnis der Klasse ändern – auch deine – und ihr deine Tests zuweisen; das Ergebnis bleibt deins und hält fest, wer es zuletzt geändert hat. Co-Lehrkräfte mit „Kann ansehen“ sehen Noten und Ergebnisse, können sie aber nicht ändern. Auf der Bewertungsseite siehst du, wer jede Note zuletzt geändert hat."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",

@@ -54,6 +54,7 @@ import { useVoiceGrading } from '../hooks/useVoiceGrading';
 import { useMediaRecorder } from '../hooks/useMediaRecorder';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { useOwnOrSharedItem } from '../hooks/useSharedMaterials';
+import LastEditedNote from '../components/Grading/LastEditedNote';
 import { SkeletonRow } from '../components/ui/Skeleton';
 import { useToast } from '../hooks/useToast';
 import { isOffline } from '../context/storeCore';
@@ -155,6 +156,15 @@ function GradeStudentEditor() {
     const { fetchSchoolMembers } = usePlatform();
 
     const dbStatus = useDbStatus();
+    // The server stamps lastEditedBy on every changed grade (migration 096); stamping it locally
+    // too keeps the "last changed by" note right before the next hydrate.
+    const saveGrade = useCallback(
+        (record: Parameters<typeof saveStudentRubric>[0]) =>
+            saveStudentRubric(
+                dbStatus.isConnected && dbStatus.userId ? { ...record, lastEditedBy: dbStatus.userId } : record
+            ),
+        [saveStudentRubric, dbStatus.isConnected, dbStatus.userId]
+    );
 
     const existingSR = studentRubrics.find((sr) => sr.rubricId === rubricId && sr.studentId === studentId);
     // A colleague's rubric (shared with us, or used in a class we co-teach) grades just like our own.
@@ -436,7 +446,7 @@ function GradeStudentEditor() {
         if (nothingScored && !(await confirmSaveNothingScored())) return;
         const toSave = clearNotHandedInIfScored(sr, cannedNhiComment, existingSR);
         if (toSave !== sr) setSr(toSave);
-        saveStudentRubric({
+        saveGrade({
             ...toSave,
             ...(tierId && { tierId }),
             feedbackOnly,
@@ -459,7 +469,7 @@ function GradeStudentEditor() {
         scale,
         nothingScored,
         confirmSaveNothingScored,
-        saveStudentRubric,
+        saveGrade,
         feedbackOnly,
         isAnchor,
         settings.notifyStudentsOnGrade,
@@ -485,7 +495,7 @@ function GradeStudentEditor() {
             }
             if (!(await confirmSaveNothingScored())) return;
         }
-        saveStudentRubric({
+        saveGrade({
             ...clearNotHandedInIfScored(sr, cannedNhiComment, existingSR),
             ...(tierId && { tierId }),
             feedbackOnly,
@@ -503,7 +513,7 @@ function GradeStudentEditor() {
         tierId,
         rubric,
         scale,
-        saveStudentRubric,
+        saveGrade,
         nextStudent,
         navigate,
         rubricId,
@@ -543,7 +553,7 @@ function GradeStudentEditor() {
             gradeScaleSnapshot: scale ? JSON.parse(JSON.stringify(scale)) : undefined,
             gradedAt: new Date().toISOString(),
         };
-        saveStudentRubric(nhiSR);
+        saveGrade(nhiSR);
         setIsDirty(false);
         allowNavigation();
         if (nextStudent) {
@@ -556,7 +566,7 @@ function GradeStudentEditor() {
         tierId,
         rubric,
         scale,
-        saveStudentRubric,
+        saveGrade,
         nextStudent,
         navigate,
         rubricId,
@@ -602,8 +612,8 @@ function GradeStudentEditor() {
         if (!sr) return;
         const cleared = clearNotHandedIn(sr, cannedNhiComment);
         setSr(cleared);
-        saveStudentRubric(cleared);
-    }, [sr, saveStudentRubric, cannedNhiComment]);
+        saveGrade(cleared);
+    }, [sr, saveGrade, cannedNhiComment]);
 
     // Scroll focused criterion into view
     React.useEffect(() => {
@@ -1065,6 +1075,14 @@ function GradeStudentEditor() {
                             {t('gradeStudent.nhi_undo')}
                         </button>
                     </div>
+                )}
+
+                {dbStatus.isConnected && (
+                    <LastEditedNote
+                        editorId={existingSR?.lastEditedBy}
+                        currentUserId={dbStatus.userId}
+                        at={existingSR?.updatedAt ?? existingSR?.gradedAt}
+                    />
                 )}
 
                 {hasNewerVersion && (

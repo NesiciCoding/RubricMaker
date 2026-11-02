@@ -2265,4 +2265,16 @@ describe('GradeStudent — grading with a colleague’s rubric', () => {
         renderPage();
         expect(await screen.findByText(/gradeStudent\.error_not_found/)).toBeInTheDocument();
     });
+
+    it('stamps me as the last editor when I save while connected, and shows who changed it last', async () => {
+        mockAppValue.rubrics = mockRubricsArr;
+        mockStudentRubricsArr = [{ ...baseSR, lastEditedBy: 'me', updatedAt: '2026-03-01T10:00:00Z' }] as never[];
+        mockAppValue.studentRubrics = mockStudentRubricsArr;
+        renderPage();
+        expect(screen.getByTestId('last-edited-note')).toHaveTextContent('gradeStudent.last_edited_you');
+        mockSaveStudentRubric.mockClear();
+        fireEvent.click(screen.getAllByText(/gradeStudent\.action_save/)[0]);
+        await waitFor(() => expect(mockSaveStudentRubric).toHaveBeenCalled());
+        expect((mockSaveStudentRubric.mock.calls.at(-1)![0] as StudentRubric).lastEditedBy).toBe('me');
+    });
 });

@@ -2412,6 +2412,24 @@ export class SupabaseAdapter {
         });
     }
 
+    /**
+     * Display names for colleague profile ids (e.g. a grade's lastEditedBy). Profile RLS (077)
+     * already limits this to the caller's school and the colleagues they share a class or rubric
+     * with; ids it hides are simply missing from the result.
+     */
+    async fetchProfileNames(ids: string[]): Promise<Record<string, string>> {
+        const unique = [...new Set(ids.filter(Boolean))];
+        if (unique.length === 0) return {};
+        const { data, error } = await this.db().from('profiles').select('id, display_name, email').in('id', unique);
+        if (error || !data) return {};
+        const names: Record<string, string> = {};
+        for (const row of data as { id: string; display_name: string | null; email: string | null }[]) {
+            const name = row.display_name?.trim() || row.email || '';
+            if (name) names[row.id] = name;
+        }
+        return names;
+    }
+
     async lookupUserByEmail(email: string): Promise<{ userId: string; displayName?: string } | null> {
         const { data, error } = await this.db().rpc('find_profile_by_email', { p_email: email.trim().toLowerCase() });
         if (error) throw new Error(error.message);

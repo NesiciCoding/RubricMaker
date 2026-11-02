@@ -164,4 +164,25 @@ describe('SupabaseAdapter rubric sharing methods', () => {
         expect(rows[0]).toMatchObject({ id: 'k1', owner_id: 'me' });
         expect(rows[1]).toMatchObject({ id: 'k2', owner_id: 'ann' });
     });
+
+    it('fetchProfileNames maps visible profiles to a display name, falling back to the email', async () => {
+        const rows = [
+            { id: 'a', display_name: 'Ann', email: 'ann@x' },
+            { id: 'b', display_name: '  ', email: 'bo@x' },
+            { id: 'c', display_name: null, email: null },
+        ];
+        const client = makeClient({ data: rows, error: null });
+        const adapter = adapterWithClient(client);
+        expect(await adapter.fetchProfileNames(['a', 'b', 'a', 'c', ''])).toEqual({ a: 'Ann', b: 'bo@x' });
+        expect(client.from).toHaveBeenCalledWith('profiles');
+        expect(client.from.mock.results[0].value.in).toHaveBeenCalledWith('id', ['a', 'b', 'c']);
+    });
+
+    it('fetchProfileNames skips the query for no ids and returns {} on an error', async () => {
+        const client = makeClient({ data: null, error: { message: 'boom' } });
+        const adapter = adapterWithClient(client);
+        expect(await adapter.fetchProfileNames([])).toEqual({});
+        expect(client.from).not.toHaveBeenCalled();
+        expect(await adapter.fetchProfileNames(['a'])).toEqual({});
+    });
 });
