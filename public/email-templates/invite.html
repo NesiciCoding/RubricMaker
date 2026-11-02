@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="nl">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>RubricMaker</title>
+    </head>
+    <body
+        style="
+            font-family: -apple-system, Helvetica, Arial, sans-serif;
+            color: #1f2937;
+            padding: 24px;
+            max-width: 480px;
+            margin: 0 auto;
+        "
+    >
+        <h2 style="margin: 0 0 16px">Je bent uitgenodigd voor RubricMaker</h2>
+        <p style="margin: 0 0 16px">
+            Je bent uitgenodigd om RubricMaker te gebruiken met <strong>{{ .Email }}</strong>.
+        </p>
+        <p style="margin: 0 0 16px">
+            Ga naar <strong>{{ .SiteURL }}</strong>, kies <em>Inloggen met e-mail</em> en vul dit adres in. Je ontvangt
+            dan een inlogcode.
+        </p>
+
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0" />
+        <h2 lang="en" style="margin: 0 0 16px; font-size: 18px">You've been invited to RubricMaker</h2>
+        <div lang="en">
+            <p style="margin: 0 0 16px">You've been invited to use RubricMaker with <strong>{{ .Email }}</strong>.</p>
+            <p style="margin: 0 0 16px">
+                Go to <strong>{{ .SiteURL }}</strong>, choose <em>Sign in with email</em> and enter this address. You'll
+                then receive a sign-in code.
+            </p>
+        </div>
+        <p style="margin: 24px 0 0; color: #9ca3af; font-size: 12px">RubricMaker — {{ .SiteURL }}</p>
+    </body>
+</html>

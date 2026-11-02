@@ -339,6 +339,58 @@ Logged-out visitors can read only this one key (migration 088); the rest of `sit
 readable by signed-in users only. If the row cannot be read, the page falls back to showing every
 provider.
 
+## Email (sign-in codes)
+
+Supabase Auth (GoTrue) sends every email RubricMaker relies on. Each one has a code-only, Dutch +
+English template in `public/email-templates/`:
+
+| GoTrue email     | Template                | Sent when                                                             |
+| ---------------- | ----------------------- | --------------------------------------------------------------------- |
+| Confirmation     | `confirmation.html`     | A new teacher signs in with email for the first time                  |
+| Magic link       | `magic-link.html`       | An existing teacher signs in with email                               |
+| Recovery         | `recovery.html`         | A password reset is requested (not used by the app today)             |
+| Invite           | `invite.html`           | An admin invites a user from Studio (no code; points to the app)      |
+| Email change     | `email-change.html`     | A user changes their email address (not used by the app today)        |
+| Reauthentication | `reauthentication.html` | GoTrue asks for a fresh code before a sensitive change (not used yet) |
+
+The templates show the 8-digit code, never a clickable token link: Microsoft Safe Links and similar
+scanners open links on arrival and would use up the one-time token. `otp-code.html` is the older
+single template, kept so existing configs that point at it keep working.
+
+**This repo's `docker-compose.yml`** already points GoTrue at these templates (served by the `app`
+container).
+
+**The official Supabase stack** needs `deploy/supabase/docker-compose.override.yml`:
+
+1. Copy it next to the stack's `docker-compose.yml`. Compose loads `docker-compose.override.yml`
+   automatically.
+2. Copy the templates into the stack: `cp public/email-templates/*.html <stack>/volumes/mail-templates/`.
+3. In the stack's `.env`, set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_ADMIN_EMAIL`
+   (the From address), `SMTP_SENDER_NAME=RubricMaker` (the display name) and
+   `ENABLE_EMAIL_AUTOCONFIRM=false`. Quote `SMTP_PASS` in single quotes if it contains `$`, `#` or
+   spaces.
+4. `docker compose up -d --force-recreate mail-templates auth`
+
+GoTrue fetches a template over HTTP the first time it needs it and falls back to its built-in,
+link-only email if the fetch fails, so check after a change:
+
+```bash
+docker compose exec auth wget -qO- http://mail-templates/magic-link.html | head -5
+```
+
+GoTrue checks the SMTP server's TLS certificate against `SMTP_HOST`. To see what it sees, run this
+from the stack's network (replace the host name at the end):
+
+```bash
+docker run --rm --network supabase_default alpine sh -c 'apk add -q openssl && openssl s_client -brief -starttls smtp -connect "$0:587" -servername "$0" </dev/null' mail.example.nl
+```
+
+`Verification: OK` and a certificate for that exact host name are required.
+
+**Notification emails are not sent yet.** `notify-student-graded`, `notify-student-message` and
+`scheduled-digest` call `auth.admin.generateLink`, which creates a link but does not send any email.
+There is no template to configure for them until they send mail themselves.
+
 ## Log Rotation
 
 The observability stack (see [OBSERVABILITY_HESTIACP.md](OBSERVABILITY_HESTIACP.md)) uses Loki with a 168-hour (7-day) retention window. For raw web-server logs on HestiaCP/Virtualmin, `logrotate` is configured automatically by the control panel. Verify with:
@@ -370,7 +422,7 @@ Docker daemon logs are rotated via `/etc/docker/daemon.json`:
 
 | Symptom                       | First steps                                                                                   |
 | ----------------------------- | --------------------------------------------------------------------------------------------- |
-| SMTP / OTP email not arriving | Check `docker compose logs auth` for SMTP errors; verify `SMTP_HOST/PORT/USER/PASS` in `.env` |
+| SMTP / OTP email not arriving | Check `docker compose logs auth` for SMTP errors; verify `SMTP_HOST/PORT/USER/PASS` in `.env`; see Email (sign-in codes) |
 | Cannot log in after restore   | Run `docker compose up -d db_migrate` to ensure migrations are applied; check `auth` logs     |
 | Storage uploads fail          | Check `docker compose logs storage`; verify S3/local storage bucket config in `.env`          |
 | pg_cron jobs not running      | See "Enabling pg_cron" above; confirm with `SELECT * FROM cron.job`                           |
