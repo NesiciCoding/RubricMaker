@@ -71,6 +71,7 @@ export default function FolderTile({
                             type="button"
                             className="btn btn-ghost btn-sm"
                             onClick={() => onOpen(folder.id)}
+                            data-folder-open={folder.id}
                             title={folder.name}
                             aria-pressed={active}
                             style={{

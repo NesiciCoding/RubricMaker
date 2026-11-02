@@ -145,6 +145,48 @@ describe('FolderBar', () => {
         expect(props.onMoveFolder).toHaveBeenCalledWith(expect.objectContaining({ id: 'year2' }), 'year1');
     });
 
+    it('focuses the destination tile after a folder is moved into a sibling', () => {
+        const { rerender } = renderBar();
+        fireEvent.click(screen.getAllByRole('button', { name: 'folders.move_to' })[1]);
+        fireEvent.click(screen.getByRole('menuitem', { name: 'Year 1' }));
+        // The menu item that had focus is gone; the page stores the move and re-renders the bar.
+        expect(document.activeElement).toBe(document.body);
+        rerender({ folders: tree.map((f) => (f.id === 'year2' ? { ...f, parentId: 'year1' } : f)) });
+        expect(screen.queryByRole('button', { name: 'Year 2' })).not.toBeInTheDocument();
+        expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Year 1' }));
+    });
+
+    it('focuses the current crumb when the moved folder leaves for a folder off this level', () => {
+        const levelTree = [
+            ...tree,
+            folder({ id: 'notes', name: 'Notes', parentId: 'year1' }),
+            folder({ id: 'year3', name: 'Year 3' }),
+        ];
+        const { rerender } = renderBar({ folders: levelTree, activeFolderId: 'year1' });
+        const notesTile = screen.getByRole('button', { name: 'Notes' }).closest('.card') as HTMLElement;
+        fireEvent.click(within(notesTile).getByRole('button', { name: 'folders.move_to' }));
+        fireEvent.click(screen.getByRole('menuitem', { name: 'Year 3' }));
+        rerender({
+            folders: levelTree.map((f) => (f.id === 'notes' ? { ...f, parentId: 'year3' } : f)),
+            activeFolderId: 'year1',
+        });
+        const crumb = screen.getByRole('button', { name: 'Year 1' });
+        expect(crumb).toHaveAttribute('aria-current', 'page');
+        expect(document.activeElement).toBe(crumb);
+    });
+
+    it('does not take focus back after a move when the user has already moved on', () => {
+        const outside = document.createElement('button');
+        document.body.appendChild(outside);
+        const { rerender } = renderBar();
+        fireEvent.click(screen.getAllByRole('button', { name: 'folders.move_to' })[1]);
+        fireEvent.click(screen.getByRole('menuitem', { name: 'Year 1' }));
+        outside.focus();
+        rerender({ folders: tree.map((f) => (f.id === 'year2' ? { ...f, parentId: 'year1' } : f)) });
+        expect(document.activeElement).toBe(outside);
+        outside.remove();
+    });
+
     it('falls back to the top level when the selected folder is gone', () => {
         renderBar({ activeFolderId: 'deleted-on-another-device' });
         expect(screen.queryByRole('navigation', { name: 'folders.path_label' })).not.toBeInTheDocument();
