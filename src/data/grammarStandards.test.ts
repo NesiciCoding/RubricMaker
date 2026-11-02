@@ -27,6 +27,24 @@ describe('grammarStandards', () => {
         expect(ids).toContain('gr-past-simple-irregular');
     });
 
+    it('covers the conjugations of to be and to have at A1–A2', () => {
+        for (const id of ['verb-be', 'verb-have']) {
+            const category = GRAMMAR_CATEGORIES.find((c) => c.id === id);
+            expect(category, id).toBeDefined();
+            expect(category!.items.length).toBeGreaterThan(0);
+            for (const item of category!.items) {
+                expect(['A1', 'A2']).toContain(item.level);
+                expect(item.labelNl).toBeTruthy();
+                expect(item.examplesEn?.length).toBeGreaterThan(0);
+            }
+        }
+        expect(getGrammarItemById('gr-have-got')?.level).toBe('A1');
+        // There is / there are already exists (with a UD detector); the new category must not duplicate it.
+        const beLabels = GRAMMAR_CATEGORIES.find((c) => c.id === 'verb-be')!.items.map((i) => i.labelEn);
+        expect(beLabels.some((label) => /there is/i.test(label))).toBe(false);
+        expect(getGrammarItemById('gr-existential-there')).toBeDefined();
+    });
+
     it('looks up an item by id', () => {
         const item = getGrammarItemById('gr-past-simple-irregular');
         expect(item?.detectShorthand).toBe('PAST.SIMPLE.IRREG');

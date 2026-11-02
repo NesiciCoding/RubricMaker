@@ -3923,7 +3923,7 @@
         "rb_standards_item_cefr": "ERK Can-Do-descriptoren — koppel specifieke descriptoren per criterium.",
         "rb_standards_item_ib": "IB Learner Profile-attributen en niveaus van Bloom's taxonomie.",
         "rb_standards_item_ccss": "CCSS, NGSS en staatsstandaarden via de Common Standards Project API.",
-        "rb_standards_item_grammar": "Grammaticakoppelaar — open de uitlijningskiezer en schakel naar het tabblad Grammatica. Elk grammaticaonderwerp is een kop (bijv. Past Simple) en de onderverdelingen (regelmatige werkwoorden, onregelmatige werkwoorden) zijn afzonderlijke, individueel koppelbare standaarden. Filter op ERK-niveau (niveaus volgen het CEFR-J Grammar Profile). Gekoppelde grammatica kan tijdens het beoordelen automatisch worden gecontroleerd in gescande essays — zie Beoordelen.",
+        "rb_standards_item_grammar": "Grammaticakoppelaar — open de uitlijningskiezer en schakel naar het tabblad Grammatica. Elk grammaticaonderwerp is een kop (bijv. Past Simple) en de onderverdelingen (regelmatige werkwoorden, onregelmatige werkwoorden) zijn afzonderlijke, individueel koppelbare standaarden. Filter op ERK-niveau (niveaus volgen het CEFR-J Grammar Profile). De werkwoorden to be en to have (inclusief have got) hebben eigen onderwerpen, met tegenwoordige en verleden tijd, ontkenningen en vragen op A1–A2; ze worden niet automatisch in essays herkend. Gekoppelde grammatica kan tijdens het beoordelen automatisch worden gecontroleerd in gescande essays — zie Beoordelen.",
         "rb_version_history_title": "Versiegeschiedenis",
         "rb_version_history_body_prefix": "Elke keer opslaan maakt automatisch een momentopname. Klik op",
         "rb_version_history_body_button": "Versiegeschiedenis",
