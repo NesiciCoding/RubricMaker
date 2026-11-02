@@ -29,6 +29,7 @@ import { getStudentsTourSteps } from '../data/TutorialSteps';
 import Topbar from '../components/Layout/Topbar';
 import Modal from '../components/ui/Modal';
 import { useStoreActions, useStoreSelector } from '../context/useStore';
+import { useSharedMaterials } from '../hooks/useSharedMaterials';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { useActiveClassCohorts } from '../hooks/useActiveClassCohorts';
 import { useToast } from '../hooks/useToast';
@@ -498,14 +499,31 @@ export default function StudentsPage() {
     // Index classes once so per-row roster lookups don't scan the array on every render.
     const classById = useMemo(() => new Map(classes.map((c) => [c.id, c])), [classes]);
     // Per-class rubric lists, so the roster doesn't re-filter rubrics for every student row.
+    // A shared class links (and grades with) its owner's rubrics, which never sit in our own list;
+    // colleagues' rubrics come from the shared list and are offered for the classes that use them.
+    const { items: sharedRubricEntries } = useSharedMaterials('rubric');
     const classRubricsById = useMemo(() => {
+        const ownIds = new Set(rubrics.map((r) => r.id));
+        const shared = sharedRubricEntries.map((e) => e.item).filter((r) => !ownIds.has(r.id));
+        const pool = [...rubrics, ...shared];
+        const classOfStudent = new Map(students.map((st) => [st.id, st.classId]));
+        const gradedInClass = new Map<string, Set<string>>();
+        for (const sr of studentRubrics) {
+            const classId = classOfStudent.get(sr.studentId);
+            if (!classId) continue;
+            if (!gradedInClass.has(classId)) gradedInClass.set(classId, new Set());
+            gradedInClass.get(classId)!.add(sr.rubricId);
+        }
         const map = new Map<string, Rubric[]>();
         for (const c of classes) {
             const ids = c.rubricIds;
-            map.set(c.id, ids?.length ? rubrics.filter((r) => ids.includes(r.id)) : rubrics);
+            const linked = ids?.length ? pool.filter((r) => ids.includes(r.id)) : rubrics;
+            const graded = gradedInClass.get(c.id);
+            const extra = graded ? shared.filter((r) => graded.has(r.id) && !linked.includes(r)) : [];
+            map.set(c.id, extra.length ? [...linked, ...extra] : linked);
         }
         return map;
-    }, [classes, rubrics]);
+    }, [classes, rubrics, sharedRubricEntries, students, studentRubrics]);
 
     /* v8 ignore start -- singleClassId always resolves to a live class, so the ?? fallback never fires */
     const rosterLabel = singleClassId

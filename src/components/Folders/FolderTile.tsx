@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Droppable } from '@hello-pangea/dnd';
-import { Folder as FolderIcon, Pencil, Trash2 } from 'lucide-react';
+import { Folder as FolderIcon, Pencil, Share2, Trash2 } from 'lucide-react';
 import type { Folder } from '../../types';
 
 export const FOLDER_DROP_PREFIX = 'folder-drop:';
@@ -17,6 +17,10 @@ export interface FolderTileProps {
     onOpen: (folderId: string) => void;
     onRename: (folder: Folder) => void;
     onDelete: (folder: Folder) => void;
+    /** Opens the folder's sharing settings; the button is hidden when absent. */
+    onShare?: (folder: Folder) => void;
+    /** Whether the folder is shared with anyone (its own setting or inherited). */
+    shared?: boolean;
     /** A MoveToMenu for this folder, when the bar offers re-parenting. */
     moveMenu?: ReactNode;
 }
@@ -31,6 +35,8 @@ export default function FolderTile({
     onOpen,
     onRename,
     onDelete,
+    onShare,
+    shared = false,
     moveMenu,
 }: FolderTileProps) {
     const { t } = useTranslation();
@@ -87,6 +93,19 @@ export default function FolderTile({
                             </span>
                         </button>
                         {moveMenu}
+                        {onShare && (
+                            <button
+                                type="button"
+                                className="btn btn-ghost btn-icon btn-sm"
+                                title={t('sharing.folder_share')}
+                                aria-label={t('sharing.folder_share')}
+                                aria-pressed={shared}
+                                style={shared ? { color: 'var(--accent-text)' } : undefined}
+                                onClick={() => onShare(folder)}
+                            >
+                                <Share2 size={13} />
+                            </button>
+                        )}
                         <button
                             type="button"
                             className="btn btn-ghost btn-icon btn-sm"

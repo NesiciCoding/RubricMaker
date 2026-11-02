@@ -5,6 +5,7 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
 import type { AppSettings, GradeScale, Test as RmTest, StudentTest, Student } from '../../types';
 import type { StoreData } from '../../store/storage';
+import { resetClassRolesCache } from '../../hooks/useClassRoles';
 
 const mockSettings: AppSettings = {
     defaultGradeScaleId: 'gs1',
@@ -103,6 +104,11 @@ vi.mock('../../context/useStore', () => ({
     useStoreActions: () => mockUseApp,
 }));
 
+const resultsDb = vi.hoisted(() => ({ isConnected: false }));
+vi.mock('../../hooks/useDbStatus', () => ({
+    useDbStatus: () => ({ isConnected: resultsDb.isConnected, userId: resultsDb.isConnected ? 'me' : null }),
+}));
+
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
         t: (key: string, params?: Record<string, unknown>) => {
@@ -116,6 +122,59 @@ vi.mock('react-i18next', () => ({
 describe('TestResultsPage', () => {
     beforeEach(() => {
         mockSaveStudentTest.mockClear();
+        resetClassRolesCache();
+        resultsDb.isConnected = false;
+        mockUseApp.studentTests = [mockStudentTest];
+    });
+
+    it('shows who last changed the result and stamps me when I save while connected', async () => {
+        resultsDb.isConnected = true;
+        mockUseApp.studentTests = [{ ...mockStudentTest, lastEditedBy: 'me', updatedAt: '2026-01-02T10:00:00.000Z' }];
+        const { default: TestResultsPage } = await import('../TestResultsPage');
+        render(
+            <MemoryRouter initialEntries={['/tests/t1/results/st1']}>
+                <Routes>
+                    <Route path="/tests/:testId/results/:studentTestId" element={<TestResultsPage />} />
+                </Routes>
+            </MemoryRouter>
+        );
+        expect(screen.getByTestId('last-edited-note')).toHaveTextContent('gradeStudent.last_edited_you');
+
+        fireEvent.change(screen.getAllByLabelText('tests.results.manual_points_label')[1], { target: { value: '5' } });
+        fireEvent.click(screen.getAllByText('tests.results.save_score')[1]);
+        expect((mockSaveStudentTest.mock.calls[0][0] as StudentTest).lastEditedBy).toBe('me');
+    });
+
+    it('keeps manual scores read-only in a class shared with me as "Can view"', async () => {
+        resultsDb.isConnected = true;
+        const { storageSync } = await import('../../services/database');
+        const spy = vi.spyOn(storageSync.adapter, 'fetchMyClassRoles').mockResolvedValue({ c1: 'viewer' });
+        const { default: TestResultsPage } = await import('../TestResultsPage');
+        render(
+            <MemoryRouter initialEntries={['/tests/t1/results/st1']}>
+                <Routes>
+                    <Route path="/tests/:testId/results/:studentTestId" element={<TestResultsPage />} />
+                </Routes>
+            </MemoryRouter>
+        );
+        expect(await screen.findByText('gradeStudent.view_only_class')).toBeInTheDocument();
+        for (const button of screen.getAllByText('tests.results.save_score')) expect(button).toBeDisabled();
+        spy.mockRestore();
+    });
+
+    it('shows no note and does not stamp while offline', async () => {
+        const { default: TestResultsPage } = await import('../TestResultsPage');
+        render(
+            <MemoryRouter initialEntries={['/tests/t1/results/st1']}>
+                <Routes>
+                    <Route path="/tests/:testId/results/:studentTestId" element={<TestResultsPage />} />
+                </Routes>
+            </MemoryRouter>
+        );
+        expect(screen.queryByTestId('last-edited-note')).not.toBeInTheDocument();
+        fireEvent.change(screen.getAllByLabelText('tests.results.manual_points_label')[1], { target: { value: '5' } });
+        fireEvent.click(screen.getAllByText('tests.results.save_score')[1]);
+        expect(mockSaveStudentTest.mock.calls[0][0]).not.toHaveProperty('lastEditedBy');
     });
 
     it('renders question results, totals, and grade mapping', async () => {

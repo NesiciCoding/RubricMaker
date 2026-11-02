@@ -7,6 +7,11 @@ import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import HelpPopover from '../components/ui/HelpPopover';
 import { useStoreActions, useStoreSelector } from '../context/useStore';
+import { useOwnOrSharedItem } from '../hooks/useSharedMaterials';
+import { useDbStatus } from '../hooks/useDbStatus';
+import { useCanEditStudentWork } from '../hooks/useClassRoles';
+import LastEditedNote from '../components/Grading/LastEditedNote';
+import { SkeletonRow } from '../components/ui/Skeleton';
 import { calcTestMaxPoints, calcStudentTestRawPoints, calcTestPercentage, autoScoreResponse } from '../utils/testCalc';
 import { scoreSectionPct } from '../utils/placementRouting';
 import { clamp } from '../utils/clamp';
@@ -448,10 +453,18 @@ export default function TestResultsPage() {
     // resolve from a results route.
     const students = React.useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
     const { saveStudentTest, recordCommentBankUsage, addCommentBankItem } = useStoreActions();
+    const dbStatus = useDbStatus();
+    const canEditStudentWork = useCanEditStudentWork();
 
-    const test = tests.find((tst) => tst.id === testId);
+    const { item: test, loading: sharedLoading } = useOwnOrSharedItem(
+        'test',
+        testId,
+        tests.find((tst) => tst.id === testId)
+    );
     const studentTest = studentTests.find((st) => st.id === studentTestId && st.testId === testId);
     const student = students.find((s) => s.id === studentTest?.studentId);
+    // A class shared with me as "Can view": results are readable, but the server refuses changes.
+    const readOnly = !canEditStudentWork(student?.classId);
     const isLateSubmission = !!test?.dueDate && !!studentTest?.submittedAt && studentTest.submittedAt > test.dueDate;
 
     const [drafts, setDrafts] = useState<
@@ -604,6 +617,8 @@ export default function TestResultsPage() {
     function handleSaveManualScore(question: TestQuestion) {
         /* v8 ignore next -- provably dead: the page early-returns when studentTest is missing */
         if (!studentTest) return;
+        /* v8 ignore next -- the save button is disabled for a read-only class */
+        if (readOnly) return;
         const existingAnswers = studentTest.answers;
         // calcStudentTestRawPoints dedups by keeping the *last* answer per questionId, so the
         // edit must target that same last occurrence — editing the first would silently be
@@ -637,6 +652,9 @@ export default function TestResultsPage() {
         const nextRaw = scoredTest ? calcStudentTestRawPoints(scoredTest, scopedAnswers) : 0;
         saveStudentTest({
             ...studentTest,
+            // The server stamps lastEditedBy too (migration 096); stamping it here keeps the note
+            // right before the next hydrate.
+            ...(dbStatus.isConnected && dbStatus.userId ? { lastEditedBy: dbStatus.userId } : {}),
             answers: nextAnswers,
             rawTotalPoints: nextRaw,
             status: studentTest.status === 'submitted' ? 'graded' : studentTest.status,
@@ -645,6 +663,17 @@ export default function TestResultsPage() {
         });
     }
 
+    if (!test && sharedLoading) {
+        return (
+            <>
+                <Topbar title={t('tests.results.title')} />
+                <div className="page-content fade-in" aria-busy="true">
+                    <SkeletonRow />
+                    <SkeletonRow />
+                </div>
+            </>
+        );
+    }
     if (!test || !studentTest) {
         return (
             <>
@@ -678,6 +707,18 @@ export default function TestResultsPage() {
             <div className="page-content fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div data-tour="tr-summary" className="card">
                     <h2 style={{ margin: '0 0 4px' }}>{test.name}</h2>
+                    {dbStatus.isConnected && (
+                        <LastEditedNote
+                            editorId={studentTest.lastEditedBy}
+                            currentUserId={dbStatus.userId}
+                            at={studentTest.updatedAt ?? studentTest.gradedAt}
+                        />
+                    )}
+                    {readOnly && (
+                        <p role="status" className="text-muted text-xs" style={{ margin: '0 0 12px' }}>
+                            {t('gradeStudent.view_only_class')}
+                        </p>
+                    )}
                     <p className="text-muted text-sm" style={{ margin: '0 0 14px' }}>
                         {t('tests.results.student_label')}: {student?.name ?? studentTest.studentId}
                         {isLateSubmission && (
@@ -1036,6 +1077,8 @@ export default function TestResultsPage() {
                                         <button
                                             className="btn btn-primary btn-sm"
                                             onClick={() => handleSaveManualScore(question)}
+                                            disabled={readOnly}
+                                            title={readOnly ? t('gradeStudent.view_only_class') : undefined}
                                         >
                                             {t('tests.results.save_score')}
                                         </button>

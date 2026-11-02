@@ -85,7 +85,7 @@ vi.mock('../../../services/database', () => ({
 }));
 
 describe('TestAssignmentModal coverage', () => {
-    let TestAssignmentModalComp: React.ComponentType<{ test: RmTest; onClose: () => void }>;
+    let TestAssignmentModalComp: React.ComponentType<{ test: RmTest; onClose: () => void; ownerId?: string }>;
 
     beforeEach(async () => {
         mockDbStatus.isConnected = false;
@@ -149,6 +149,29 @@ describe('TestAssignmentModal coverage', () => {
                 expect.objectContaining({ expiresAt: new Date('2024-06-20T09:00:00').toISOString() })
             )
         );
+    });
+
+    it('saves a colleague’s test assignments under the test owner', async () => {
+        mockDbStatus.isConnected = true;
+        renderWithRouter(<TestAssignmentModalComp test={mockTest} ownerId="ann" onClose={vi.fn()} />);
+        await waitFor(() => expect(mockSaveTestAssignment).toHaveBeenCalled());
+        expect(mockSaveTestAssignment).toHaveBeenCalledWith(expect.objectContaining({ ownerId: 'ann' }));
+    });
+
+    it('only lets a colleague’s test links be copied once their assignment rows are saved', async () => {
+        mockDbStatus.isConnected = true;
+        mockSaveTestAssignment.mockResolvedValue({ success: false, error: 'rls' });
+        renderWithRouter(<TestAssignmentModalComp test={mockTest} ownerId="ann" onClose={vi.fn()} />);
+        await waitFor(() => expect(mockSaveTestAssignment).toHaveBeenCalled());
+        await waitFor(() => expect(screen.getAllByRole('button', { name: /essay_assignment.copy/ })[0]).toBeDisabled());
+        mockSaveTestAssignment.mockResolvedValue({ success: true });
+    });
+
+    it('saves my own test without an owner override', async () => {
+        mockDbStatus.isConnected = true;
+        renderWithRouter(<TestAssignmentModalComp test={mockTest} onClose={vi.fn()} />);
+        await waitFor(() => expect(mockSaveTestAssignment).toHaveBeenCalled());
+        expect(mockSaveTestAssignment.mock.calls[0][0]).not.toHaveProperty('ownerId');
     });
 
     it('counts failed saves and shows the partial-error message', async () => {

@@ -5,6 +5,7 @@ import { renderWithRouter } from '../../test-utils/renderWithProviders';
 import { DEFAULT_FORMAT } from '../../types';
 import type { AppSettings, Class, Rubric, Student, StudentRubric } from '../../types';
 import { encodeRubricShareCode } from '../../utils/rubricImport';
+import { resetSharedMaterialsCache } from '../../hooks/useSharedMaterials';
 
 const mockRubric: Rubric = {
     id: 'r1',
@@ -90,8 +91,7 @@ const mockDbStatus = vi.hoisted(() => ({ isConnected: false }));
 const mockFetchRubricShares = vi.fn().mockResolvedValue([]);
 const mockShareRubricWithEmail = vi.fn();
 const mockUnshareRubric = vi.fn();
-const mockFetchSharedRubrics = vi.fn().mockResolvedValue([]);
-const mockFetchSchoolSharedRubrics = vi.fn().mockResolvedValue([]);
+const mockFetchSharedMaterials = vi.fn().mockResolvedValue({ items: [], folders: [] });
 const dndOnDragEnd = vi.hoisted(() => ({ handler: null as unknown as (r: unknown) => void }));
 const dndOnBeforeCapture = vi.hoisted(() => ({ handler: null as unknown as () => void }));
 
@@ -137,7 +137,7 @@ vi.mock('react-router-dom', async () => {
 });
 
 vi.mock('../../hooks/useDbStatus', () => ({
-    useDbStatus: () => ({ isConnected: mockDbStatus.isConnected }),
+    useDbStatus: () => ({ isConnected: mockDbStatus.isConnected, userId: 'me' }),
 }));
 
 vi.mock('../../services/database', () => ({
@@ -146,8 +146,7 @@ vi.mock('../../services/database', () => ({
             fetchRubricShares: (...args: unknown[]) => mockFetchRubricShares(...args),
             shareRubricWithEmail: (...args: unknown[]) => mockShareRubricWithEmail(...args),
             unshareRubric: (...args: unknown[]) => mockUnshareRubric(...args),
-            fetchSharedRubrics: (...args: unknown[]) => mockFetchSharedRubrics(...args),
-            fetchSchoolSharedRubrics: (...args: unknown[]) => mockFetchSchoolSharedRubrics(...args),
+            fetchSharedMaterials: (...args: unknown[]) => mockFetchSharedMaterials(...args),
         },
     },
 }));
@@ -220,8 +219,8 @@ describe('RubricList coverage', () => {
         mockDbStatus.isConnected = false;
         mockSettings.activeClassId = 'c1';
         mockFetchRubricShares.mockResolvedValue([]);
-        mockFetchSharedRubrics.mockResolvedValue([]);
-        mockFetchSchoolSharedRubrics.mockResolvedValue([]);
+        mockFetchSharedMaterials.mockResolvedValue({ items: [], folders: [] });
+        resetSharedMaterialsCache();
         mockAddRubric.mockReturnValue({ ...mockRubric, id: 'new-r' });
         Object.assign(navigator, { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } });
         const mod = await import('../RubricList');
@@ -496,23 +495,40 @@ describe('RubricList coverage', () => {
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
-    it('navigates from the shared-with-me and department rows, including keyboard', async () => {
+    it('lists colleagues’ shared rubrics per teacher, opens them and duplicates into my library', async () => {
         mockDbStatus.isConnected = true;
-        mockFetchSharedRubrics.mockResolvedValue([{ ...mockRubric2, id: 'shared-1', name: 'Shared Rubric' }]);
-        mockFetchSchoolSharedRubrics.mockResolvedValue([{ ...mockRubric2, id: 'dept-1', name: 'Dept Rubric' }]);
+        mockFetchSharedMaterials.mockResolvedValue({
+            items: [
+                {
+                    item: { ...mockRubric2, id: 'shared-1', name: 'Shared Rubric', folderId: 'theirs' },
+                    ownerId: 'ann',
+                    ownerName: 'Ann',
+                    access: 'edit',
+                },
+            ],
+            folders: [
+                {
+                    item: { id: 'theirs', name: 'Ann archive', kind: 'rubric', createdAt: '2026-01-01' },
+                    ownerId: 'ann',
+                    ownerName: 'Ann',
+                    access: 'view',
+                },
+            ],
+        });
         renderPage();
-        await waitFor(() => expect(screen.getByText('rubricList.shared_with_me')).toBeInTheDocument());
-
-        fireEvent.click(screen.getByText('Dept Rubric'));
-        expect(mockNavigate).toHaveBeenCalledWith('/rubrics/dept-1');
-        fireEvent.keyDown(screen.getByText('Dept Rubric'), { key: 'Enter' });
-        fireEvent.keyDown(screen.getByText('Dept Rubric'), { key: ' ' });
-        // An unrelated key leaves the row inert.
-        fireEvent.keyDown(screen.getByText('Dept Rubric'), { key: 'Tab' });
-        expect(mockNavigate).toHaveBeenCalledTimes(3);
+        await waitFor(() => expect(screen.getByText('sharing.shared_with_me')).toBeInTheDocument());
+        expect(mockFetchSharedMaterials).toHaveBeenCalledWith('rubric');
+        expect(screen.getByText('Ann')).toBeInTheDocument();
+        expect(screen.getByText('Ann archive')).toBeInTheDocument();
+        expect(screen.getByText('sharing.can_edit')).toBeInTheDocument();
 
         fireEvent.click(screen.getByText('Shared Rubric'));
         expect(mockNavigate).toHaveBeenCalledWith('/rubrics/shared-1');
+
+        fireEvent.click(screen.getByRole('button', { name: /sharing\.duplicate_named/ }));
+        const copy = mockAddRubric.mock.calls.at(-1)![0] as Rubric;
+        expect(copy.folderId).toBeUndefined();
+        expect(copy).not.toHaveProperty('id');
     });
 
     it('resets the copied icons after the two-second timeout', () => {

@@ -269,6 +269,11 @@ vi.mock('react-joyride', () => ({
     STATUS: { FINISHED: 'finished', SKIPPED: 'skipped' },
 }));
 
+const sharedRubricState = vi.hoisted(() => ({ items: [] as unknown[] }));
+vi.mock('../../hooks/useSharedMaterials', () => ({
+    useSharedMaterials: () => ({ items: sharedRubricState.items, folders: [], status: 'ready', connected: true }),
+}));
+
 vi.mock('../../hooks/useDbStatus', () => ({
     useDbStatus: () => ({ isConnected: true, status: 'idle', lastSyncAt: null, userId: null, currentUser: null }),
 }));
@@ -326,6 +331,7 @@ function renderPage() {
 }
 
 function resetFixtures() {
+    sharedRubricState.items = [];
     mockAppValue.classes = classesArr;
     mockAppValue.students = studentsArr;
     mockAppValue.studentRubrics = studentRubricsArr;
@@ -1130,5 +1136,29 @@ describe('StudentsPage extended', () => {
         renderPage();
         // Graded students show the raw percentage text instead of a letter grade, no crash.
         expect(screen.getAllByText(/100%/).length).toBeGreaterThan(0);
+    });
+
+    it('offers a co-taught class’s linked and already-graded colleague rubrics in the grade menu', async () => {
+        const linked = mkRubric({ id: 'rS', name: 'Colleague Linked' });
+        const graded = mkRubric({ id: 'rG', name: 'Colleague Graded' });
+        const unrelated = mkRubric({ id: 'rU', name: 'Colleague Unrelated' });
+        sharedRubricState.items = [linked, graded, unrelated, rubric].map((item) => ({
+            item,
+            ownerId: 'ann',
+            ownerName: 'Ann',
+            access: 'view',
+        }));
+        mockAppValue.classes = classesArr.map((c) => (c.id === 'c1' ? { ...c, rubricIds: ['r1', 'rS'] } : c));
+        mockAppValue.studentRubrics = [...studentRubricsArr, mkSr('sr-shared', 's1', 'rG', '2024-05-01T00:00:00Z')];
+        renderPage();
+
+        fireEvent.click(screen.getAllByRole('button', { name: /studentsPage\.grade_prefix/ })[0]);
+        const menu = screen.getByRole('menu');
+        expect(within(menu).getByText('Colleague Linked')).toBeInTheDocument();
+        expect(within(menu).getByText('Colleague Graded')).toBeInTheDocument();
+        expect(within(menu).queryByText('Colleague Unrelated')).not.toBeInTheDocument();
+        expect(within(menu).getAllByText('Essay Rubric')).toHaveLength(1);
+        fireEvent.click(within(menu).getByText('Colleague Graded'));
+        expect(mockNavigate).toHaveBeenCalledWith('/rubrics/rG/grade/s1');
     });
 });

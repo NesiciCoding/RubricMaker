@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
     ArrowLeft,
     Save,
+    Eye,
     MessageSquare,
     Paperclip,
     Info,
@@ -53,6 +54,10 @@ import { useTranslation } from 'react-i18next';
 import { useVoiceGrading } from '../hooks/useVoiceGrading';
 import { useMediaRecorder } from '../hooks/useMediaRecorder';
 import { useDbStatus } from '../hooks/useDbStatus';
+import { useOwnOrSharedItem } from '../hooks/useSharedMaterials';
+import LastEditedNote from '../components/Grading/LastEditedNote';
+import { useCanEditStudentWork } from '../hooks/useClassRoles';
+import { SkeletonRow } from '../components/ui/Skeleton';
 import { useToast } from '../hooks/useToast';
 import { isOffline } from '../context/storeCore';
 import { LOCAL_STORAGE_QUOTA_CHARS, localStorageUsedChars } from '../store/storage';
@@ -87,6 +92,22 @@ import { resolveScanOcrSettings } from '../utils/scanSettings';
 const formatPoints = (n: number) => String(Math.round(n * 100) / 100);
 
 export default function GradeStudent() {
+    const { rubricId } = useParams();
+    const ownRubric = useStoreSelector((s) => s.rubrics.find((r) => r.id === rubricId));
+    // The draft grade is built from the rubric's criteria when the page mounts, so a colleague's
+    // rubric (shared with us, or used in a class we co-teach) has to have arrived first.
+    const { loading } = useOwnOrSharedItem('rubric', rubricId, ownRubric);
+    if (loading)
+        return (
+            <div className="page-content" aria-busy="true">
+                <SkeletonRow />
+                <SkeletonRow />
+            </div>
+        );
+    return <GradeStudentEditor />;
+}
+
+function GradeStudentEditor() {
     const { t, i18n } = useTranslation();
     const { rubricId, studentId } = useParams();
     const navigate = useNavigate();
@@ -137,9 +158,23 @@ export default function GradeStudent() {
     const { fetchSchoolMembers } = usePlatform();
 
     const dbStatus = useDbStatus();
+    // The server stamps lastEditedBy on every changed grade (migration 096); stamping it locally
+    // too keeps the "last changed by" note right before the next hydrate.
+    const saveGrade = useCallback(
+        (record: Parameters<typeof saveStudentRubric>[0]) =>
+            saveStudentRubric(
+                dbStatus.isConnected && dbStatus.userId ? { ...record, lastEditedBy: dbStatus.userId } : record
+            ),
+        [saveStudentRubric, dbStatus.isConnected, dbStatus.userId]
+    );
 
     const existingSR = studentRubrics.find((sr) => sr.rubricId === rubricId && sr.studentId === studentId);
-    const liveRubric = rubrics.find((r) => r.id === rubricId);
+    // A colleague's rubric (shared with us, or used in a class we co-teach) grades just like our own.
+    const { item: liveRubric } = useOwnOrSharedItem(
+        'rubric',
+        rubricId,
+        rubrics.find((r) => r.id === rubricId)
+    );
     const snapshotRubric = existingSR?.rubricSnapshot;
     // A graded record stays on the rubric version it was graded with until the teacher opts in to
     // regrading it on the current version.
@@ -153,6 +188,10 @@ export default function GradeStudent() {
     const scale = regradeOnLatest ? liveScale : (existingSR?.gradeScaleSnapshot ?? resolveScale(rubric));
     const scaleChanged = !!existingSR?.gradeScaleSnapshot && !sameGradeScale(existingSR.gradeScaleSnapshot, liveScale);
     const student = students.find((s) => s.id === studentId);
+    // A class shared with me as "Can view": I may read its grades but the server refuses changes
+    // (migration 096), so nothing here may pretend to save.
+    const canEditStudentWork = useCanEditStudentWork();
+    const readOnly = !canEditStudentWork(student?.classId);
     const classStudents = useMemo(
         () => students.filter((s) => s.classId === student?.classId).map((s) => ({ id: s.id, name: s.name })),
         [students, student?.classId]
@@ -263,7 +302,7 @@ export default function GradeStudent() {
         return () => clearTimeout(id);
     }, [saved]);
     const [isDirty, setIsDirty] = useState(false);
-    const { dialogProps: unsavedDialogProps, allowNavigation } = useUnsavedChangesGuard(isDirty);
+    const { dialogProps: unsavedDialogProps, allowNavigation } = useUnsavedChangesGuard(isDirty && !readOnly);
     const [showStdDesc, setShowStdDesc] = useState(false);
     const [focusedCriterionIdx, setFocusedCriterionIdx] = useState<number | null>(null);
     const [gradingView, setGradingView] = useState<'cards' | 'grid'>('cards');
@@ -410,10 +449,14 @@ export default function GradeStudent() {
     const handleSave = useCallback(async () => {
         /* v8 ignore next -- the not-found render above gates on sr/rubric */
         if (!sr || !rubric) return;
+        if (readOnly) {
+            showToast(t('gradeStudent.view_only_class'), 'info');
+            return;
+        }
         if (nothingScored && !(await confirmSaveNothingScored())) return;
         const toSave = clearNotHandedInIfScored(sr, cannedNhiComment, existingSR);
         if (toSave !== sr) setSr(toSave);
-        saveStudentRubric({
+        saveGrade({
             ...toSave,
             ...(tierId && { tierId }),
             feedbackOnly,
@@ -430,13 +473,14 @@ export default function GradeStudent() {
             void storageSync.notifyStudentGraded(studentId, rubric.name).catch(() => undefined);
         }
     }, [
+        readOnly,
         sr,
         tierId,
         rubric,
         scale,
         nothingScored,
         confirmSaveNothingScored,
-        saveStudentRubric,
+        saveGrade,
         feedbackOnly,
         isAnchor,
         settings.notifyStudentsOnGrade,
@@ -452,6 +496,10 @@ export default function GradeStudent() {
     const handleSaveAndNext = useCallback(async () => {
         /* v8 ignore next -- the not-found render above gates on sr/rubric */
         if (!sr || !rubric || !nextStudent) return;
+        if (readOnly) {
+            showToast(t('gradeStudent.view_only_class'), 'info');
+            return;
+        }
         if (nothingScored) {
             // Save & Next on an untouched, ungraded student is a skip: there is nothing to record.
             if (!existingSR) {
@@ -462,7 +510,7 @@ export default function GradeStudent() {
             }
             if (!(await confirmSaveNothingScored())) return;
         }
-        saveStudentRubric({
+        saveGrade({
             ...clearNotHandedInIfScored(sr, cannedNhiComment, existingSR),
             ...(tierId && { tierId }),
             feedbackOnly,
@@ -476,11 +524,12 @@ export default function GradeStudent() {
         // Replace rather than push history so the topbar Back returns to where grading started.
         navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}`, { replace: true });
     }, [
+        readOnly,
         sr,
         tierId,
         rubric,
         scale,
-        saveStudentRubric,
+        saveGrade,
         nextStudent,
         navigate,
         rubricId,
@@ -499,6 +548,10 @@ export default function GradeStudent() {
     const handleNotHandedIn = useCallback(async () => {
         /* v8 ignore next -- the not-found render above gates on sr/rubric */
         if (!sr || !rubric) return;
+        if (readOnly) {
+            showToast(t('gradeStudent.view_only_class'), 'info');
+            return;
+        }
         const hasGrade = (!!existingSR?.gradedAt && !existingSR.notHandedIn) || hasAnyScore(sr);
         if (
             hasGrade &&
@@ -520,7 +573,7 @@ export default function GradeStudent() {
             gradeScaleSnapshot: scale ? JSON.parse(JSON.stringify(scale)) : undefined,
             gradedAt: new Date().toISOString(),
         };
-        saveStudentRubric(nhiSR);
+        saveGrade(nhiSR);
         setIsDirty(false);
         allowNavigation();
         if (nextStudent) {
@@ -529,11 +582,13 @@ export default function GradeStudent() {
             navigate(-1);
         }
     }, [
+        readOnly,
+        showToast,
         sr,
         tierId,
         rubric,
         scale,
-        saveStudentRubric,
+        saveGrade,
         nextStudent,
         navigate,
         rubricId,
@@ -550,6 +605,10 @@ export default function GradeStudent() {
     const handleRegradeOnLatest = useCallback(async () => {
         /* v8 ignore next -- the banner only renders with a saved record and a live rubric */
         if (!sr || !liveRubric) return;
+        if (readOnly) {
+            showToast(t('gradeStudent.view_only_class'), 'info');
+            return;
+        }
         const ok = await confirm({
             title: t('gradeStudent.regrade_latest_title'),
             message: t('gradeStudent.regrade_latest_message'),
@@ -572,15 +631,19 @@ export default function GradeStudent() {
                   : t('gradeStudent.regrade_latest_done'),
             clearedCount > 0 ? 'warning' : removedCount > 0 ? 'info' : 'success'
         );
-    }, [sr, liveRubric, liveScale, confirm, t, showToast, setRegradeOnLatest, setShowVersionDiff]);
+    }, [sr, liveRubric, liveScale, confirm, t, showToast, setRegradeOnLatest, setShowVersionDiff, readOnly]);
 
     const handleUndoNotHandedIn = useCallback(() => {
         /* v8 ignore next -- the banner only renders for a loaded not-handed-in record */
         if (!sr) return;
+        if (readOnly) {
+            showToast(t('gradeStudent.view_only_class'), 'info');
+            return;
+        }
         const cleared = clearNotHandedIn(sr, cannedNhiComment);
         setSr(cleared);
-        saveStudentRubric(cleared);
-    }, [sr, saveStudentRubric, cannedNhiComment]);
+        saveGrade(cleared);
+    }, [sr, saveGrade, cannedNhiComment, readOnly, showToast, t]);
 
     // Scroll focused criterion into view
     React.useEffect(() => {
@@ -1042,6 +1105,32 @@ export default function GradeStudent() {
                             {t('gradeStudent.nhi_undo')}
                         </button>
                     </div>
+                )}
+
+                {readOnly && (
+                    <div
+                        role="status"
+                        className="card no-print"
+                        style={{
+                            marginBottom: 16,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            fontSize: '0.85rem',
+                            borderColor: 'var(--accent)',
+                            background: 'var(--accent-soft)',
+                        }}
+                    >
+                        <Eye size={16} style={{ color: 'var(--accent-text)', flexShrink: 0 }} aria-hidden="true" />
+                        {t('gradeStudent.view_only_class')}
+                    </div>
+                )}
+                {dbStatus.isConnected && (
+                    <LastEditedNote
+                        editorId={existingSR?.lastEditedBy}
+                        currentUserId={dbStatus.userId}
+                        at={existingSR?.updatedAt ?? existingSR?.gradedAt}
+                    />
                 )}
 
                 {hasNewerVersion && (

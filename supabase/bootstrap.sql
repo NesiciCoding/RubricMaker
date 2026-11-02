@@ -6854,6 +6854,621 @@ BEGIN
   END LOOP;
 END $$;
 
+-- ── 095_material_sharing.sql ──────────────────────────────────────────────────────────────
+
+-- Material sharing (rubrics + tests, with folders): a teacher shares their materials with
+-- co-teachers or with every teacher in their school, read-only or editable.
+--
+-- The setting is a `sharing` object ({"visibility": "private"|"coteachers"|"school",
+-- "access": "view"|"edit"}) inside `data`, on a rubric, a test or a folder, plus a per-teacher
+-- default in user_settings.settings->'materialSharing'. Resolution is "nearest explicit wins":
+-- the item's own `sharing`, else the nearest folder up its `folderId`/`parentId` chain that has
+-- one, else the owner's default, else private. So changing the default re-shares every item that
+-- has no setting of its own, and any single item or folder can still override it.
+--
+-- Who counts:
+--   co-teacher — a teacher/admin who shares a class with the owner through class_members, in
+--                either direction. `school` visibility includes co-teachers at other schools.
+--   school     — a teacher/admin in the owner's school (school_members or profiles.school_id).
+--   admin      — an admin in the owner's school reads every rubric and test regardless of the
+--                setting (never edits unless the setting grants edit).
+-- Students never match: every path requires the viewer's role to be 'teacher' or 'admin',
+-- which matters for tests because they carry answer keys.
+--
+-- Replaces the rubric-only `sharedWithSchool` flag of 041: existing flags are converted to
+-- {"visibility":"school","access":"view"} and the old policy and audit trigger are dropped
+-- (comment_bank keeps its own sharedWithSchool flag and policy).
+
+-- ── 1. Resolution helpers ─────────────────────────────────────────────────────
+
+CREATE OR REPLACE FUNCTION public.material_sharing(p_owner uuid, p_sharing jsonb, p_folder_id text)
+RETURNS jsonb
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  WITH RECURSIVE chain(id, parent_id, sharing, depth) AS (
+    SELECT f.id, f.data->>'parentId', f.data->'sharing', 1
+    FROM public.folders f
+    WHERE f.id = p_folder_id AND f.owner_id = p_owner
+    UNION ALL
+    SELECT f.id, f.data->>'parentId', f.data->'sharing', c.depth + 1
+    FROM public.folders f
+    JOIN chain c ON f.id = c.parent_id
+    WHERE f.owner_id = p_owner AND c.depth < 32
+  )
+  SELECT COALESCE(
+    CASE WHEN jsonb_typeof(p_sharing) = 'object' THEN p_sharing END,
+    (SELECT c.sharing FROM chain c WHERE jsonb_typeof(c.sharing) = 'object' ORDER BY c.depth LIMIT 1),
+    (SELECT s.settings->'materialSharing' FROM public.user_settings s
+      WHERE s.user_id = p_owner AND jsonb_typeof(s.settings->'materialSharing') = 'object'),
+    '{"visibility":"private","access":"view"}'::jsonb
+  )
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_coteacher(p_a uuid, p_b uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.class_members cm JOIN public.classes c ON c.id = cm.class_id
+    WHERE (c.owner_id = p_a AND cm.user_id = p_b)
+       OR (c.owner_id = p_b AND cm.user_id = p_a)
+  ) OR EXISTS (
+    SELECT 1 FROM public.class_members a JOIN public.class_members b ON a.class_id = b.class_id
+    WHERE a.user_id = p_a AND b.user_id = p_b
+  )
+$$;
+
+CREATE OR REPLACE FUNCTION public.same_school(p_a uuid, p_b uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.school_members a JOIN public.school_members b ON a.school_id = b.school_id
+    WHERE a.profile_id = p_a AND b.profile_id = p_b
+  ) OR EXISTS (
+    SELECT 1 FROM public.profiles a JOIN public.profiles b ON a.school_id = b.school_id
+    WHERE a.id = p_a AND b.id = p_b AND a.school_id IS NOT NULL
+  )
+$$;
+
+-- What the calling user may do with someone else's material: 'edit', 'view', or NULL (nothing).
+-- Owners get NULL — their own policies cover them.
+CREATE OR REPLACE FUNCTION public.material_access(p_owner uuid, p_sharing jsonb, p_folder_id text)
+RETURNS text
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_me     uuid := auth.uid();
+  v_role   text;
+  v_eff    jsonb;
+  v_vis    text;
+  v_access text;
+  v_school boolean;
+BEGIN
+  IF v_me IS NULL OR v_me = p_owner THEN
+    RETURN NULL;
+  END IF;
+  SELECT role INTO v_role FROM public.profiles WHERE id = v_me;
+  IF v_role IS NULL OR v_role NOT IN ('teacher', 'admin') THEN
+    RETURN NULL;
+  END IF;
+
+  v_eff    := public.material_sharing(p_owner, p_sharing, p_folder_id);
+  v_vis    := v_eff->>'visibility';
+  v_access := CASE WHEN v_eff->>'access' = 'edit' THEN 'edit' ELSE 'view' END;
+  v_school := public.same_school(v_me, p_owner);
+
+  IF v_vis = 'school' AND v_school THEN
+    RETURN v_access;
+  END IF;
+  IF v_vis IN ('coteachers', 'school') AND public.is_coteacher(v_me, p_owner) THEN
+    RETURN v_access;
+  END IF;
+  IF v_role = 'admin' AND v_school THEN
+    RETURN 'view';
+  END IF;
+  RETURN NULL;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.material_sharing(uuid, jsonb, text) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.is_coteacher(uuid, uuid)            FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.same_school(uuid, uuid)             FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.material_access(uuid, jsonb, text)  FROM PUBLIC, anon;
+GRANT  EXECUTE ON FUNCTION public.material_sharing(uuid, jsonb, text) TO authenticated;
+GRANT  EXECUTE ON FUNCTION public.is_coteacher(uuid, uuid)            TO authenticated;
+GRANT  EXECUTE ON FUNCTION public.same_school(uuid, uuid)             TO authenticated;
+GRANT  EXECUTE ON FUNCTION public.material_access(uuid, jsonb, text)  TO authenticated;
+
+-- ── 2. Shared editors keep the owner's row metadata ──────────────────────────
+-- A colleague with edit access may change the content, but not who owns it, how it is shared
+-- or which of the owner's folders it sits in. Those keys are put back from OLD rather than
+-- rejected, so a whole-entity save from the editor's client still succeeds.
+
+CREATE OR REPLACE FUNCTION public.protect_shared_material()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  k text;
+BEGIN
+  IF auth.uid() IS NULL OR auth.uid() = OLD.owner_id THEN
+    RETURN NEW;
+  END IF;
+  IF NEW.owner_id IS DISTINCT FROM OLD.owner_id OR NEW.id IS DISTINCT FROM OLD.id THEN
+    RAISE EXCEPTION 'Only the owner can change ownership';
+  END IF;
+  FOREACH k IN ARRAY ARRAY['sharing', 'folderId', 'displayOrder', 'sharedWithSchool'] LOOP
+    IF OLD.data ? k THEN
+      NEW.data := jsonb_set(NEW.data, ARRAY[k], OLD.data->k);
+    ELSE
+      NEW.data := NEW.data - k;
+    END IF;
+  END LOOP;
+  RETURN NEW;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.protect_shared_material() FROM PUBLIC, anon, authenticated;
+
+DROP TRIGGER IF EXISTS rubrics_protect_shared ON public.rubrics;
+CREATE TRIGGER rubrics_protect_shared
+  BEFORE UPDATE ON public.rubrics
+  FOR EACH ROW EXECUTE FUNCTION public.protect_shared_material();
+
+DROP TRIGGER IF EXISTS tests_protect_shared ON public.tests;
+CREATE TRIGGER tests_protect_shared
+  BEFORE UPDATE ON public.tests
+  FOR EACH ROW EXECUTE FUNCTION public.protect_shared_material();
+
+-- ── 3. Replace the 041 school flag ───────────────────────────────────────────
+
+DROP POLICY IF EXISTS rubrics_school_select ON public.rubrics;
+DROP TRIGGER IF EXISTS audit_rubrics_share ON public.rubrics;
+
+UPDATE public.rubrics
+SET data = (data - 'sharedWithSchool')
+  || CASE WHEN data->'sharedWithSchool' = 'true'::jsonb
+          THEN jsonb_build_object('sharing', '{"visibility":"school","access":"view"}'::jsonb)
+          ELSE '{}'::jsonb END
+WHERE data ? 'sharedWithSchool';
+
+-- ── 4. Policies ──────────────────────────────────────────────────────────────
+
+DROP POLICY IF EXISTS rubrics_material_select ON public.rubrics;
+CREATE POLICY rubrics_material_select ON public.rubrics FOR SELECT TO authenticated
+  USING (public.material_access(owner_id, data->'sharing', data->>'folderId') IS NOT NULL);
+
+DROP POLICY IF EXISTS rubrics_material_update ON public.rubrics;
+CREATE POLICY rubrics_material_update ON public.rubrics FOR UPDATE TO authenticated
+  USING (public.material_access(owner_id, data->'sharing', data->>'folderId') = 'edit')
+  WITH CHECK (public.material_access(owner_id, data->'sharing', data->>'folderId') = 'edit');
+
+DROP POLICY IF EXISTS tests_material_select ON public.tests;
+CREATE POLICY tests_material_select ON public.tests FOR SELECT TO authenticated
+  USING (public.material_access(owner_id, data->'sharing', data->>'folderId') IS NOT NULL);
+
+DROP POLICY IF EXISTS tests_material_update ON public.tests;
+CREATE POLICY tests_material_update ON public.tests FOR UPDATE TO authenticated
+  USING (public.material_access(owner_id, data->'sharing', data->>'folderId') = 'edit')
+  WITH CHECK (public.material_access(owner_id, data->'sharing', data->>'folderId') = 'edit');
+
+-- Folders are shown to colleagues so shared material keeps its structure; they are never
+-- editable by anyone but the owner.
+DROP POLICY IF EXISTS folders_material_select ON public.folders;
+CREATE POLICY folders_material_select ON public.folders FOR SELECT TO authenticated
+  USING (
+    data->>'kind' IN ('rubric', 'test')
+    AND public.material_access(owner_id, data->'sharing', data->>'parentId') IS NOT NULL
+  );
+
+-- ── 5. Listing for the "Shared with me" views ────────────────────────────────
+-- SECURITY INVOKER: rows come through the policies above (plus the per-person rubric_shares
+-- policies of 026), and `access` is recomputed per row so the client knows whether to offer
+-- Save. A per-person rubric share outranks the general setting when it grants more.
+
+CREATE OR REPLACE FUNCTION public.list_shared_materials(p_kind text)
+RETURNS TABLE (id text, owner_id uuid, owner_name text, item_kind text, data jsonb, access text)
+LANGUAGE plpgsql
+STABLE
+SECURITY INVOKER
+SET search_path = public
+AS $$
+DECLARE
+  v_me uuid := auth.uid();
+BEGIN
+  IF v_me IS NULL OR p_kind NOT IN ('rubric', 'test') THEN
+    RETURN;
+  END IF;
+
+  IF p_kind = 'rubric' THEN
+    RETURN QUERY
+      SELECT r.id, r.owner_id, COALESCE(NULLIF(p.display_name, ''), p.email, '')::text, 'rubric'::text, r.data,
+        CASE
+          WHEN EXISTS (SELECT 1 FROM public.rubric_shares rs
+                       WHERE rs.rubric_id = r.id AND rs.user_id = v_me AND rs.mode = 'edit') THEN 'edit'
+          ELSE COALESCE(public.material_access(r.owner_id, r.data->'sharing', r.data->>'folderId'), 'view')
+        END
+      FROM public.rubrics r
+      LEFT JOIN public.profiles p ON p.id = r.owner_id
+      WHERE r.owner_id <> v_me;
+  ELSE
+    RETURN QUERY
+      SELECT t.id, t.owner_id, COALESCE(NULLIF(p.display_name, ''), p.email, '')::text, 'test'::text, t.data,
+        public.material_access(t.owner_id, t.data->'sharing', t.data->>'folderId')
+      FROM public.tests t
+      LEFT JOIN public.profiles p ON p.id = t.owner_id
+      WHERE t.owner_id <> v_me
+        AND public.material_access(t.owner_id, t.data->'sharing', t.data->>'folderId') IS NOT NULL;
+  END IF;
+
+  RETURN QUERY
+    SELECT f.id, f.owner_id, COALESCE(NULLIF(p.display_name, ''), p.email, '')::text, 'folder'::text, f.data,
+      public.material_access(f.owner_id, f.data->'sharing', f.data->>'parentId')
+    FROM public.folders f
+    LEFT JOIN public.profiles p ON p.id = f.owner_id
+    WHERE f.owner_id <> v_me AND f.data->>'kind' = p_kind;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.list_shared_materials(text) FROM PUBLIC, anon;
+GRANT  EXECUTE ON FUNCTION public.list_shared_materials(text) TO authenticated;
+
+-- ── 6. Audit sharing changes ─────────────────────────────────────────────────
+
+CREATE OR REPLACE FUNCTION public.audit_material_sharing_change()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  PERFORM public.write_audit_entry('admin', 'material_sharing_change', TG_ARGV[0], NEW.id::text,
+    jsonb_strip_nulls(jsonb_build_object(
+      'owner_id', NEW.owner_id,
+      'from', OLD.data->'sharing',
+      'to', NEW.data->'sharing')));
+  RETURN NULL;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.audit_material_sharing_change() FROM PUBLIC, anon, authenticated;
+
+DROP TRIGGER IF EXISTS audit_rubrics_sharing ON public.rubrics;
+CREATE TRIGGER audit_rubrics_sharing
+  AFTER UPDATE OF data ON public.rubrics
+  FOR EACH ROW
+  WHEN (OLD.data->'sharing' IS DISTINCT FROM NEW.data->'sharing')
+  EXECUTE FUNCTION public.audit_material_sharing_change('rubric');
+
+DROP TRIGGER IF EXISTS audit_tests_sharing ON public.tests;
+CREATE TRIGGER audit_tests_sharing
+  AFTER UPDATE OF data ON public.tests
+  FOR EACH ROW
+  WHEN (OLD.data->'sharing' IS DISTINCT FROM NEW.data->'sharing')
+  EXECUTE FUNCTION public.audit_material_sharing_change('test');
+
+DROP TRIGGER IF EXISTS audit_folders_sharing ON public.folders;
+CREATE TRIGGER audit_folders_sharing
+  AFTER UPDATE OF data ON public.folders
+  FOR EACH ROW
+  WHEN (OLD.data->'sharing' IS DISTINCT FROM NEW.data->'sharing')
+  EXECUTE FUNCTION public.audit_material_sharing_change('folder');
+
+-- ── 096_coteacher_grading.sql ──────────────────────────────────────────────────────────────
+
+-- Co-teacher grading: a teacher who shares a class (class_members) can grade that class with the
+-- class's rubrics and tests, and an `editor` can change ANY grade or test result for its students,
+-- not only the ones they gave themselves.
+--
+-- Who may change a grade/result for a student: the student's owner, or an `editor` on the
+-- student's class — exactly can_grade_student() from 077. Rows keep their original grader/owner
+-- (protect_coteacher_edit puts it back) and record the last editor in data->'lastEditedBy'.
+--
+-- What a co-teacher may READ to grade (any class_members role, teacher/admin only):
+--   rubrics  — linked to a shared class (classes.data->'rubricIds') or used by a grade of one of
+--              its students; also rubrics a co-teacher used on the caller's own students.
+--   tests    — assigned to, or taken by, a student of a shared class or one of the caller's students.
+--   results  — student_rubrics / student_tests / test_assignments of those students.
+-- Editing a colleague's rubric or test itself stays governed by material sharing (095).
+--
+-- Assigning: a class editor may create test_assignments for a test they can read, but the row is
+-- owned by the TEST's owner (owner_id), because tests_student_select and the get-test-assignment /
+-- submit-test functions require assignment owner = test owner; results therefore land with the
+-- test owner and reach the co-teacher through the policies below.
+
+-- ── 1. Helpers ───────────────────────────────────────────────────────────────
+
+CREATE OR REPLACE FUNCTION public.is_teacher_or_admin()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('teacher', 'admin'))
+$$;
+
+-- The caller owns the student, or is a member (any role) of the student's class.
+CREATE OR REPLACE FUNCTION public.can_view_student_work(p_student_id text)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT public.is_teacher_or_admin() AND EXISTS (
+    SELECT 1 FROM public.students s
+    WHERE s.id = p_student_id
+      AND (
+        s.owner_id = auth.uid()
+        OR EXISTS (SELECT 1 FROM public.class_members cm WHERE cm.class_id = s.class_id AND cm.user_id = auth.uid())
+      )
+  )
+$$;
+
+-- The caller owns the student or is an editor on the student's class.
+CREATE OR REPLACE FUNCTION public.can_edit_student_work(p_student_id text)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT public.is_teacher_or_admin() AND public.can_grade_student(p_student_id, auth.uid())
+$$;
+
+-- Material references only count when they come from the material's OWNER: a rubric linked to a
+-- class the rubric owner owns or graded by the rubric owner, a test assigned under (or a result
+-- owned by) the test owner. Otherwise anyone able to write a class, grade, result or assignment
+-- row could point it at a colleague's private rubric/test id and read it through these helpers.
+CREATE OR REPLACE FUNCTION public.rubric_in_coteaching(p_rubric_id text, p_owner uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT public.is_teacher_or_admin() AND (
+    EXISTS (
+      SELECT 1 FROM public.class_members cm JOIN public.classes c ON c.id = cm.class_id
+      WHERE cm.user_id = auth.uid()
+        AND c.owner_id = p_owner
+        AND jsonb_typeof(c.data->'rubricIds') = 'array'
+        AND c.data->'rubricIds' ? p_rubric_id
+    )
+    OR EXISTS (
+      SELECT 1 FROM public.student_rubrics sr JOIN public.students s ON s.id = sr.student_id
+      WHERE sr.rubric_id = p_rubric_id
+        AND sr.grader_id = p_owner
+        AND (
+          s.owner_id = auth.uid()
+          OR EXISTS (SELECT 1 FROM public.class_members cm WHERE cm.class_id = s.class_id AND cm.user_id = auth.uid())
+        )
+    )
+  )
+$$;
+
+CREATE OR REPLACE FUNCTION public.test_in_coteaching(p_test_id text, p_owner uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT public.is_teacher_or_admin() AND (
+    EXISTS (
+      SELECT 1 FROM public.test_assignments ta
+      WHERE ta.test_id = p_test_id AND ta.owner_id = p_owner AND public.can_view_student_work(ta.student_id)
+    )
+    OR EXISTS (
+      SELECT 1 FROM public.student_tests st
+      WHERE st.data->>'testId' = p_test_id AND st.owner_id = p_owner
+        AND public.can_view_student_work(st.data->>'studentId')
+    )
+  )
+$$;
+
+-- A co-teacher may write an assignment row owned by the test's owner when they can edit the
+-- student's work, can read the test, and the test owner can grade the student too (so the
+-- results land with someone who has that student).
+CREATE OR REPLACE FUNCTION public.can_assign_colleague_test(p_test_id text, p_owner uuid, p_student_id text)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT p_owner IS DISTINCT FROM auth.uid()
+    AND public.can_edit_student_work(p_student_id)
+    AND public.can_grade_student(p_student_id, p_owner)
+    AND EXISTS (
+      SELECT 1 FROM public.tests t
+      WHERE t.id = p_test_id AND t.owner_id = p_owner
+        AND (
+          public.material_access(t.owner_id, t.data->'sharing', t.data->>'folderId') IS NOT NULL
+          OR public.test_in_coteaching(t.id, t.owner_id)
+        )
+    )
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.is_teacher_or_admin()                            FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.can_view_student_work(text)                      FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.can_edit_student_work(text)                      FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.rubric_in_coteaching(text, uuid)                 FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.test_in_coteaching(text, uuid)                   FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.can_assign_colleague_test(text, uuid, text)      FROM PUBLIC, anon;
+GRANT  EXECUTE ON FUNCTION public.is_teacher_or_admin()                            TO authenticated;
+GRANT  EXECUTE ON FUNCTION public.can_view_student_work(text)                      TO authenticated;
+GRANT  EXECUTE ON FUNCTION public.can_edit_student_work(text)                      TO authenticated;
+GRANT  EXECUTE ON FUNCTION public.rubric_in_coteaching(text, uuid)                 TO authenticated;
+GRANT  EXECUTE ON FUNCTION public.test_in_coteaching(text, uuid)                   TO authenticated;
+GRANT  EXECUTE ON FUNCTION public.can_assign_colleague_test(text, uuid, text)      TO authenticated;
+
+-- ── 2. Grades (student_rubrics) ──────────────────────────────────────────────
+
+DROP POLICY IF EXISTS sr_student_owner_select ON public.student_rubrics;
+CREATE POLICY sr_student_owner_select ON public.student_rubrics FOR SELECT TO authenticated
+  USING (NOT is_peer_review AND public.can_view_student_work(student_id));
+
+DROP POLICY IF EXISTS sr_coteacher_update ON public.student_rubrics;
+CREATE POLICY sr_coteacher_update ON public.student_rubrics FOR UPDATE TO authenticated
+  USING (NOT is_peer_review AND public.can_edit_student_work(student_id))
+  WITH CHECK (NOT is_peer_review AND public.can_edit_student_work(student_id));
+
+-- ── 3. Test results, assignments and the tests themselves ────────────────────
+
+DROP POLICY IF EXISTS student_tests_coteacher_select ON public.student_tests;
+CREATE POLICY student_tests_coteacher_select ON public.student_tests FOR SELECT TO authenticated
+  USING (public.can_view_student_work(data->>'studentId'));
+
+DROP POLICY IF EXISTS student_tests_coteacher_update ON public.student_tests;
+CREATE POLICY student_tests_coteacher_update ON public.student_tests FOR UPDATE TO authenticated
+  USING (public.can_edit_student_work(data->>'studentId'))
+  WITH CHECK (public.can_edit_student_work(data->>'studentId'));
+
+DROP POLICY IF EXISTS test_assignments_coteacher_select ON public.test_assignments;
+CREATE POLICY test_assignments_coteacher_select ON public.test_assignments FOR SELECT TO authenticated
+  USING (public.can_view_student_work(student_id));
+
+DROP POLICY IF EXISTS test_assignments_coteacher_insert ON public.test_assignments;
+CREATE POLICY test_assignments_coteacher_insert ON public.test_assignments FOR INSERT TO authenticated
+  WITH CHECK (public.can_assign_colleague_test(test_id, owner_id, student_id));
+
+DROP POLICY IF EXISTS test_assignments_coteacher_update ON public.test_assignments;
+CREATE POLICY test_assignments_coteacher_update ON public.test_assignments FOR UPDATE TO authenticated
+  USING (public.can_assign_colleague_test(test_id, owner_id, student_id))
+  WITH CHECK (public.can_assign_colleague_test(test_id, owner_id, student_id));
+
+DROP POLICY IF EXISTS rubrics_coteaching_select ON public.rubrics;
+CREATE POLICY rubrics_coteaching_select ON public.rubrics FOR SELECT TO authenticated
+  USING (owner_id <> (SELECT auth.uid()) AND public.rubric_in_coteaching(id, owner_id));
+
+DROP POLICY IF EXISTS tests_coteaching_select ON public.tests;
+CREATE POLICY tests_coteaching_select ON public.tests FOR SELECT TO authenticated
+  USING (owner_id <> (SELECT auth.uid()) AND public.test_in_coteaching(id, owner_id));
+
+-- ── 4. Keep the original grader/owner; record who last changed it ────────────
+-- An upsert from a co-teacher's client proposes their own id as grader_id/owner_id; the row keeps
+-- the original one instead. lastEditedBy is only stamped when the content really changed, so a
+-- client re-pushing an unchanged row doesn't claim it.
+
+CREATE OR REPLACE FUNCTION public.protect_coteacher_edit()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_me uuid := auth.uid();
+BEGIN
+  IF v_me IS NULL THEN
+    RETURN NEW;
+  END IF;
+  -- A co-teacher edits the scores, never what the row is about: keep the student and the
+  -- rubric/test it points at, so a row can't be repointed at someone else's material.
+  IF TG_TABLE_NAME = 'student_rubrics' THEN
+    IF v_me IS DISTINCT FROM OLD.grader_id THEN
+      NEW.grader_id := OLD.grader_id;
+      NEW.is_peer_review := OLD.is_peer_review;
+      NEW.rubric_id := OLD.rubric_id;
+      NEW.student_id := OLD.student_id;
+      NEW.data := jsonb_set(jsonb_set(NEW.data, '{rubricId}', to_jsonb(OLD.rubric_id)), '{studentId}', to_jsonb(OLD.student_id));
+    END IF;
+  ELSIF v_me IS DISTINCT FROM OLD.owner_id THEN
+    NEW.owner_id := OLD.owner_id;
+    NEW.data := jsonb_set(
+      jsonb_set(NEW.data, '{testId}', COALESCE(OLD.data->'testId', 'null'::jsonb)),
+      '{studentId}', COALESCE(OLD.data->'studentId', 'null'::jsonb));
+  END IF;
+  IF (NEW.data - 'lastEditedBy') IS DISTINCT FROM (OLD.data - 'lastEditedBy') THEN
+    NEW.data := jsonb_set(NEW.data, '{lastEditedBy}', to_jsonb(v_me::text));
+  ELSIF OLD.data ? 'lastEditedBy' THEN
+    NEW.data := jsonb_set(NEW.data, '{lastEditedBy}', OLD.data->'lastEditedBy');
+  ELSE
+    NEW.data := NEW.data - 'lastEditedBy';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.protect_coteacher_edit() FROM PUBLIC, anon, authenticated;
+
+DROP TRIGGER IF EXISTS student_rubrics_protect_coteacher ON public.student_rubrics;
+CREATE TRIGGER student_rubrics_protect_coteacher
+  BEFORE UPDATE ON public.student_rubrics
+  FOR EACH ROW EXECUTE FUNCTION public.protect_coteacher_edit();
+
+DROP TRIGGER IF EXISTS student_tests_protect_coteacher ON public.student_tests;
+CREATE TRIGGER student_tests_protect_coteacher
+  BEFORE UPDATE ON public.student_tests
+  FOR EACH ROW EXECUTE FUNCTION public.protect_coteacher_edit();
+
+-- ── 5. List the rubrics/tests a co-teacher can grade with ────────────────────
+-- Redefined from 095: the test branch now returns every test RLS lets the caller read (shared via
+-- 095 or used in a co-taught class), like the rubric branch already did.
+
+CREATE OR REPLACE FUNCTION public.list_shared_materials(p_kind text)
+RETURNS TABLE (id text, owner_id uuid, owner_name text, item_kind text, data jsonb, access text)
+LANGUAGE plpgsql
+STABLE
+SECURITY INVOKER
+SET search_path = public
+AS $$
+DECLARE
+  v_me uuid := auth.uid();
+BEGIN
+  IF v_me IS NULL OR p_kind NOT IN ('rubric', 'test') THEN
+    RETURN;
+  END IF;
+
+  IF p_kind = 'rubric' THEN
+    RETURN QUERY
+      SELECT r.id, r.owner_id, COALESCE(NULLIF(p.display_name, ''), p.email, '')::text, 'rubric'::text, r.data,
+        CASE
+          WHEN EXISTS (SELECT 1 FROM public.rubric_shares rs
+                       WHERE rs.rubric_id = r.id AND rs.user_id = v_me AND rs.mode = 'edit') THEN 'edit'
+          ELSE COALESCE(public.material_access(r.owner_id, r.data->'sharing', r.data->>'folderId'), 'view')
+        END
+      FROM public.rubrics r
+      LEFT JOIN public.profiles p ON p.id = r.owner_id
+      WHERE r.owner_id <> v_me;
+  ELSE
+    RETURN QUERY
+      SELECT t.id, t.owner_id, COALESCE(NULLIF(p.display_name, ''), p.email, '')::text, 'test'::text, t.data,
+        COALESCE(public.material_access(t.owner_id, t.data->'sharing', t.data->>'folderId'), 'view')
+      FROM public.tests t
+      LEFT JOIN public.profiles p ON p.id = t.owner_id
+      WHERE t.owner_id <> v_me
+        AND public.is_teacher_or_admin();
+  END IF;
+
+  RETURN QUERY
+    SELECT f.id, f.owner_id, COALESCE(NULLIF(p.display_name, ''), p.email, '')::text, 'folder'::text, f.data,
+      public.material_access(f.owner_id, f.data->'sharing', f.data->>'parentId')
+    FROM public.folders f
+    LEFT JOIN public.profiles p ON p.id = f.owner_id
+    WHERE f.owner_id <> v_me AND f.data->>'kind' = p_kind;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.list_shared_materials(text) FROM PUBLIC, anon;
+GRANT  EXECUTE ON FUNCTION public.list_shared_materials(text) TO authenticated;
+
 -- ── 20260617093844_delete_old_attachments_fn.sql ──────────────────────────────────────────────────────────────
 
 -- Returns attachments whose updated_at has passed the owner's school retention
@@ -6987,5 +7602,7 @@ insert into public._migrations (name) values
     ('092_monitoring_dashboard_reads.sql'),
     ('093_folders.sql'),
     ('094_realtime_publication_backfill.sql'),
+    ('095_material_sharing.sql'),
+    ('096_coteacher_grading.sql'),
     ('20260617093844_delete_old_attachments_fn.sql')
 on conflict (name) do nothing;

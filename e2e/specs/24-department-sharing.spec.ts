@@ -1,12 +1,11 @@
 /**
- * Item 24 — Department rubric & comment bank libraries (Phase 8.2 of the
- * roadmap).
+ * Item 24 — School-wide rubric sharing (Phase 8.2 of the roadmap; reworked by
+ * migration 095_material_sharing.sql).
  *
  * Unlike the school-scoped Marketplace (publish a frozen snapshot for
- * colleagues to clone), department sharing makes the LIVE rubric read-only
- * visible to every other teacher in the same school via a `sharedWithSchool`
- * flag stored in the rubric's existing `data` jsonb column — see
- * supabase/migrations/041_school_sharing.sql.
+ * colleagues to clone), sharing makes the LIVE rubric visible to every other
+ * teacher in the same school via the `sharing` setting stored in the rubric's
+ * `data` jsonb column, listed for colleagues under "Shared with me".
  *
  * Requires a running local Supabase stack:
  *   npm run db:start
@@ -20,8 +19,8 @@ import { test, expect } from '../fixtures/supabase.fixture';
 import { RubricBuilderPage } from '../pages/RubricBuilderPage';
 import { RubricListPage } from '../pages/RubricListPage';
 
-test.describe('Department rubric sharing', () => {
-    test('a rubric shared with the department becomes visible to a colleague at the same school', async ({
+test.describe('School rubric sharing', () => {
+    test('a rubric shared with the school becomes visible to a colleague at the same school', async ({
         supabasePage,
         colleaguePage,
     }) => {
@@ -43,14 +42,13 @@ test.describe('Department rubric sharing', () => {
             .getByRole('button', { name: /share with colleague/i });
         await shareButton.click();
 
-        const departmentToggle = supabasePage.getByText(/share with my department/i);
-        await departmentToggle.click();
+        await supabasePage.getByLabel(/all teachers in my school/i).check();
         await supabasePage.waitForLoadState('networkidle', { timeout: 15_000 });
 
         const colleagueList = new RubricListPage(colleaguePage);
         await colleagueList.goto();
 
-        await expect(colleaguePage.getByRole('heading', { name: 'Shared with your department' })).toBeVisible({
+        await expect(colleaguePage.getByRole('heading', { name: 'Shared with me' })).toBeVisible({
             timeout: 15_000,
         });
         await expect(colleaguePage.getByText('Department Shared Rubric')).toBeVisible({ timeout: 15_000 });

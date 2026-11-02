@@ -13,6 +13,7 @@ export function makeQueryBuilder(result: QueryResult) {
     builder.delete = vi.fn(chain);
     builder.eq = vi.fn(chain);
     builder.neq = vi.fn(chain);
+    builder.in = vi.fn(chain);
     builder.order = vi.fn(chain);
     builder.single = vi.fn(async () => result);
     builder.maybeSingle = vi.fn(async () => result);

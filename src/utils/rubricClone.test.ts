@@ -33,7 +33,7 @@ const source: Rubric = {
     totalMaxPoints: 100,
     scoringMode: 'total-points',
     displayOrder: 3,
-    sharedWithSchool: true,
+    sharing: { visibility: 'school', access: 'edit' },
     comparativeMatchupLimit: 4,
     vocabularyItems: [
         { id: 'v1', phrase: 'however', category: 'vocabulary', linkedCriterionId: 'c1', linkedSubItemId: 's1' },
@@ -48,7 +48,7 @@ describe('cloneRubricForCopy', () => {
         expect(copy).not.toHaveProperty('id');
         expect(copy).not.toHaveProperty('createdAt');
         expect(copy).not.toHaveProperty('displayOrder');
-        expect(copy).not.toHaveProperty('sharedWithSchool');
+        expect(copy).not.toHaveProperty('sharing');
         expect(copy.attachmentIds).toEqual([]);
         expect(copy.name).toBe('Essay (Copy)');
     });

@@ -45,10 +45,12 @@ import type {
     Scan,
     StaircaseStep,
     TestQuestion,
+    MaterialAccess,
 } from '../../types';
 import type { DatabaseConfig, DbUser, SyncResult } from './types';
 import type { ConvergedPlacementSession } from '../../utils/placementRecovery';
 import { nanoid } from '../../utils/nanoid';
+import type { SharedEntry } from '../../utils/materialSharing';
 
 /** A school write that RLS silently filtered to 0 rows (not permitted, or already gone). */
 export const SCHOOL_NOT_CHANGED = 'school_not_changed';
@@ -625,10 +627,10 @@ export class SupabaseAdapter {
     // ── Rubrics ───────────────────────────────────────────────────────────────
 
     async fetchRubrics(): Promise<Rubric[]> {
-        // Scoped to owned rows: rubrics_shared_select and rubrics_school_select grant
-        // additional RLS visibility (individual/department shares) for the dedicated
-        // fetchSharedRubrics()/fetchSchoolSharedRubrics() calls — an unscoped select
-        // here would let those same rows leak into "my rubrics" with owner-only controls.
+        // Scoped to owned rows: rubrics_shared_select and rubrics_material_select grant
+        // additional RLS visibility (individual / co-teacher / school shares) for
+        // fetchSharedMaterials() — an unscoped select here would let those same rows leak
+        // into "my rubrics" with owner-only controls.
         const { data, error } = await this.db()
             .from('rubrics')
             .select('data')
@@ -1449,7 +1451,9 @@ export class SupabaseAdapter {
     // ── Tests ─────────────────────────────────────────────────────────────────
 
     async fetchTests(): Promise<Test[]> {
-        const { data, error } = await this.db().from('tests').select('data');
+        // Scoped to owned rows: tests_material_select (migration 095) lets colleagues read shared
+        // tests, which must only reach the "Shared with me" view, never "my tests".
+        const { data, error } = await this.db().from('tests').select('data').eq('owner_id', this.uid());
         if (error) throw error;
         return (data ?? []).map((r) => r.data as Test);
     }
@@ -1550,7 +1554,7 @@ export class SupabaseAdapter {
             .upsert(
                 {
                     id: a.teacherKey,
-                    owner_id: this.uid(),
+                    owner_id: a.ownerId ?? this.uid(),
                     test_id: a.testId,
                     student_id: a.studentId,
                     test_name: a.testName,
@@ -2408,6 +2412,41 @@ export class SupabaseAdapter {
         });
     }
 
+    /**
+     * My role in each class shared with me ('viewer' | 'editor'). Classes I own have no row: the
+     * class_members RLS lets a member read only their own row, which is exactly this.
+     */
+    async fetchMyClassRoles(): Promise<Record<string, 'viewer' | 'editor'>> {
+        const { data, error } = await this.db()
+            .from('class_members')
+            .select('class_id, role')
+            .eq('user_id', this.uid());
+        if (error) throw new Error(error.message);
+        const roles: Record<string, 'viewer' | 'editor'> = {};
+        for (const row of (data ?? []) as { class_id: string; role: string }[]) {
+            roles[row.class_id] = row.role === 'editor' ? 'editor' : 'viewer';
+        }
+        return roles;
+    }
+
+    /**
+     * Display names for colleague profile ids (e.g. a grade's lastEditedBy). Profile RLS (077)
+     * already limits this to the caller's school and the colleagues they share a class or rubric
+     * with; ids it hides are simply missing from the result.
+     */
+    async fetchProfileNames(ids: string[]): Promise<Record<string, string>> {
+        const unique = [...new Set(ids.filter(Boolean))];
+        if (unique.length === 0) return {};
+        const { data, error } = await this.db().from('profiles').select('id, display_name, email').in('id', unique);
+        if (error || !data) return {};
+        const names: Record<string, string> = {};
+        for (const row of data as { id: string; display_name: string | null; email: string | null }[]) {
+            const name = row.display_name?.trim() || row.email || '';
+            if (name) names[row.id] = name;
+        }
+        return names;
+    }
+
     async lookupUserByEmail(email: string): Promise<{ userId: string; displayName?: string } | null> {
         const { data, error } = await this.db().rpc('find_profile_by_email', { p_email: email.trim().toLowerCase() });
         if (error) throw new Error(error.message);
@@ -2431,29 +2470,49 @@ export class SupabaseAdapter {
         return this.shareRubric(rubricId, user.userId, mode);
     }
 
-    async fetchSharedRubrics(): Promise<Rubric[]> {
-        const { data, error } = await this.db().from('rubric_shares').select('rubrics(data)').eq('user_id', this.uid());
-        if (error) {
-            console.error('fetchSharedRubrics', error);
-            return [];
+    // ── Material sharing with co-teachers / school (migration 095) ───────────
+
+    /** Colleagues' rubrics or tests the caller may open, with the folders they are filed in. */
+    async fetchSharedMaterials<T extends Rubric | Test>(
+        kind: 'rubric' | 'test'
+    ): Promise<{ items: SharedEntry<T>[]; folders: SharedEntry<Folder>[] }> {
+        const { data, error } = await this.db().rpc('list_shared_materials', { p_kind: kind });
+        if (error) throw new Error(error.message);
+        const rows = (data ?? []) as {
+            owner_id: string;
+            owner_name: string | null;
+            item_kind: string;
+            data: unknown;
+            access: string | null;
+        }[];
+        const items: SharedEntry<T>[] = [];
+        const folders: SharedEntry<Folder>[] = [];
+        for (const row of rows) {
+            if (!row.data) continue;
+            const base = {
+                ownerId: row.owner_id,
+                ownerName: row.owner_name ?? '',
+                access: (row.access === 'edit' ? 'edit' : 'view') as MaterialAccess,
+            };
+            if (row.item_kind === 'folder') folders.push({ ...base, item: row.data as Folder });
+            else items.push({ ...base, item: row.data as T });
         }
-        return (data ?? [])
-            .map((r) => (r as unknown as { rubrics: { data: unknown } }).rubrics?.data as Rubric)
-            .filter(Boolean);
+        return { items, folders };
     }
 
-    /** Rubrics a colleague in the same school has opted to share read-only with the whole school. */
-    async fetchSchoolSharedRubrics(): Promise<Rubric[]> {
-        const { data, error } = await this.db()
-            .from('rubrics')
-            .select('owner_id, data')
-            .eq('data->>sharedWithSchool', 'true')
-            .neq('owner_id', this.uid());
-        if (error) {
-            console.error('fetchSchoolSharedRubrics', error);
-            return [];
-        }
-        return (data ?? []).map((r) => r.data as Rubric).filter(Boolean);
+    /**
+     * Saves a colleague's rubric or test the caller has edit access to. A plain UPDATE, never an
+     * upsert: an upsert would try to insert the row as the caller's own. The server keeps the
+     * owner's sharing, folder and list position whatever the payload says (protect_shared_material).
+     */
+    async updateSharedMaterial(kind: 'rubric' | 'test', item: Rubric | Test): Promise<SyncResult> {
+        const table = kind === 'rubric' ? 'rubrics' : 'tests';
+        const row: Record<string, unknown> = { data: item };
+        if (kind === 'rubric' && item.updatedAt) row.updated_at = item.updatedAt;
+        const { data, error } = await this.db().from(table).update(row).eq('id', item.id).select('id');
+        if (error) return { success: false, error: error.message };
+        if (!data || data.length === 0) return { success: false, error: 'not_permitted' };
+        return { success: true };
     }
 
     // ── Marketplace (rubrics, tests, flashcard decks — roadmap 24.4) ──────────

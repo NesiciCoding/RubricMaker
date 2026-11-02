@@ -55,6 +55,7 @@ import {
     upsertRubricVersion,
     deleteRubricVersions,
     migrateLegacyRubricVersions,
+    migrateLegacyRubricSharing,
 } from './storage';
 import type { Rubric, Student, Class, AppSettings, RubricFormat, StudentRubric, RubricVersion } from '../types';
 import { DEFAULT_FORMAT } from '../types';
@@ -985,6 +986,27 @@ describe('rubric version history (Phase 18.4)', () => {
         migrateLegacyRubricVersions(makeLegacyRubric());
         migrateLegacyRubricVersions(makeLegacyRubric());
         expect(loadRubricVersions('r1')).toHaveLength(1);
+    });
+
+    it('migrateLegacyRubricSharing turns sharedWithSchool into school view sharing', () => {
+        const legacy = { ...makeRubric('r1'), sharedWithSchool: true } as Rubric;
+        const migrated = migrateLegacyRubricSharing(legacy);
+        expect(migrated).not.toHaveProperty('sharedWithSchool');
+        expect(migrated.sharing).toEqual({ visibility: 'school', access: 'view' });
+    });
+
+    it('migrateLegacyRubricSharing drops a false flag and keeps an existing sharing setting', () => {
+        const off = migrateLegacyRubricSharing({ ...makeRubric('r1'), sharedWithSchool: false } as Rubric);
+        expect(off).not.toHaveProperty('sharedWithSchool');
+        expect(off.sharing).toBeUndefined();
+        const both = migrateLegacyRubricSharing({
+            ...makeRubric('r1'),
+            sharedWithSchool: true,
+            sharing: { visibility: 'coteachers', access: 'edit' },
+        } as Rubric);
+        expect(both.sharing).toEqual({ visibility: 'coteachers', access: 'edit' });
+        const plain = makeRubric('r2');
+        expect(migrateLegacyRubricSharing(plain)).toBe(plain);
     });
 
     it('mergeLegacyCommentSnippets converts a snippet into a tagged bank item and appends it', () => {

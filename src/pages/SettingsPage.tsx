@@ -3,6 +3,8 @@ import PageTour from '../components/Tour/PageTour';
 import { usePageTourState } from '../hooks/usePageTourState';
 import { saveAs } from 'file-saver';
 import { useNavigate, Link } from 'react-router-dom';
+import SharingControl from '../components/Sharing/SharingControl';
+import { PRIVATE_SHARING } from '../utils/materialSharing';
 import { useTranslation, Trans } from 'react-i18next';
 import {
     Save,
@@ -1314,6 +1316,20 @@ export default function SettingsPage() {
                                 </label>
                             </div>
                         )}
+
+                        {/* Default sharing of rubrics, tests and their folders (migration 095) */}
+                        <div className="card" style={{ marginBottom: 24 }}>
+                            <div className="card-header">
+                                <h3>{t('sharing.settings_title')}</h3>
+                            </div>
+                            <p className="text-muted text-sm" style={{ marginTop: 0 }}>
+                                {t('sharing.settings_desc')}
+                            </p>
+                            <SharingControl
+                                value={settings.materialSharing ?? PRIVATE_SHARING}
+                                onChange={(next) => updateSettings({ materialSharing: next ?? PRIVATE_SHARING })}
+                            />
+                        </div>
 
                         {/* Overdue Reminder Threshold */}
                         <div className="card" style={{ marginBottom: 24 }}>

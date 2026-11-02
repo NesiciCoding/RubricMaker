@@ -18,6 +18,7 @@ import {
     List,
     ScanLine,
     Table2,
+    Share2,
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { useTranslation } from 'react-i18next';
@@ -25,7 +26,7 @@ import Topbar from '../components/Layout/Topbar';
 import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { useToast } from '../hooks/useToast';
 import { logAuditEvent } from '../services/database/AuditLogger';
-import { nanoid } from '../utils/nanoid';
+import { cloneTestForCopy } from '../utils/testClone';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import CardGrid from '../components/ui/CardGrid';
 import CardTile from '../components/ui/CardTile';
@@ -46,7 +47,18 @@ import ItemAnalysisPanel from '../components/Tests/ItemAnalysisPanel';
 import PlacementAnalysisPanel from '../components/Tests/PlacementAnalysisPanel';
 import GenerateTestModal from '../components/Tests/GenerateTestModal';
 import ExamBookletExportPanel from '../components/Tests/ExamBookletExportPanel';
-import type { Folder, Test, StudentTest, CohortFilter as CohortFilterValue } from '../types';
+import type { Folder, MaterialSharing, Test, StudentTest, CohortFilter as CohortFilterValue } from '../types';
+import { useDbStatus } from '../hooks/useDbStatus';
+import {
+    inheritedSharing,
+    isShared,
+    resolveFolderSharing,
+    resolveSharing,
+    type SharedEntry,
+} from '../utils/materialSharing';
+import SharingBadge from '../components/Sharing/SharingBadge';
+import SharingModal from '../components/Sharing/SharingModal';
+import SharedMaterialsSection from '../components/Sharing/SharedMaterialsSection';
 import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
 import { ALL_FOLDERS, filterByFolder, folderPathLabel, foldersForKind, nextFolderOrder } from '../utils/folders';
 import { getCohortStudentIds, isAllCohorts, ALL_COHORTS } from '../utils/cohortAggregator';
@@ -96,6 +108,8 @@ export default function TestListPage() {
     const [activeFolder, setActiveFolder] = useState<string>(ALL_FOLDERS);
     // `parentId` is where a new folder is created: the folder you are inside of, if any.
     const [folderModal, setFolderModal] = useState<{ folder?: Folder; parentId?: string } | null>(null);
+    const [sharingTarget, setSharingTarget] = useState<{ kind: 'test' | 'folder'; id: string } | null>(null);
+    const dbStatus = useDbStatus();
     const allCohorts = isAllCohorts(cohortFilter);
     const cohortStudentIds = React.useMemo(
         () => getCohortStudentIds(students, classes, cohortFilter),
@@ -188,6 +202,7 @@ export default function TestListPage() {
         if (activeFolder === folder.id) setActiveFolder(ALL_FOLDERS);
     }
     const [assigningTestId, setAssigningTestId] = useState<string | null>(null);
+    const [assigningShared, setAssigningShared] = useState<SharedEntry<Test> | null>(null);
     const [importingTestId, setImportingTestId] = useState<string | null>(null);
     const [scanningTestId, setScanningTestId] = useState<string | null>(null);
     const [resultsTestId, setResultsTestId] = useState<string | null>(null);
@@ -355,19 +370,57 @@ export default function TestListPage() {
         }
     }
 
+    function sharingOf(test: Test): MaterialSharing {
+        return resolveSharing(test.sharing, test.folderId, testFolders, settings.materialSharing).sharing;
+    }
+
+    function duplicateShared(entry: SharedEntry<Test>) {
+        const copy = addTest(
+            cloneTestForCopy(entry.item, { name: `${entry.item.name} ${t('tests.copy_suffix')}`, folderId: undefined })
+        );
+        showToast(t('sharing.duplicated_toast', { name: copy.name }), 'success', {
+            action: { label: t('rubricList.open_copy'), onClick: () => navigate(`/tests/${copy.id}`) },
+        });
+    }
+
+    function renderSharingModal() {
+        if (!sharingTarget) return null;
+        if (sharingTarget.kind === 'folder') {
+            const folder = folders.find((f) => f.id === sharingTarget.id);
+            /* v8 ignore next -- provably dead: the modal closes with its folder */
+            if (!folder) return null;
+            return (
+                <SharingModal
+                    name={folder.name}
+                    isFolder
+                    connected={dbStatus.isConnected}
+                    value={folder.sharing}
+                    inherited={inheritedSharing(folder.parentId, testFolders, settings.materialSharing)}
+                    onChange={(sharing) => updateFolder({ ...folder, sharing, updatedAt: new Date().toISOString() })}
+                    onClose={() => setSharingTarget(null)}
+                />
+            );
+        }
+        const test = tests.find((x) => x.id === sharingTarget.id);
+        /* v8 ignore next -- provably dead: the modal closes with its test */
+        if (!test) return null;
+        return (
+            <SharingModal
+                name={test.name}
+                connected={dbStatus.isConnected}
+                value={test.sharing}
+                inherited={inheritedSharing(test.folderId, testFolders, settings.materialSharing)}
+                onChange={(sharing) => updateTest({ ...test, sharing, updatedAt: new Date().toISOString() })}
+                onClose={() => setSharingTarget(null)}
+            />
+        );
+    }
+
     function handleDuplicate(testId: string) {
         const test = tests.find((tst) => tst.id === testId);
         // v8 ignore next line — the duplicate button only renders for tests in visibleTests
         if (!test) return;
-        const newTest = addTest({
-            ...test,
-            name: `${test.name} ${t('tests.copy_suffix')}`,
-            questions: test.questions.map((q) => ({
-                ...q,
-                id: nanoid(),
-                options: q.options?.map((o) => ({ ...o, id: nanoid() })),
-            })),
-        });
+        const newTest = addTest(cloneTestForCopy(test, { name: `${test.name} ${t('tests.copy_suffix')}` }));
         navigate(`/tests/${newTest.id}`);
     }
 
@@ -383,11 +436,11 @@ export default function TestListPage() {
         navigate(`/tests/${created.id}/scores`);
     }
 
-    function requestAssign(test: Test) {
+    function requestAssign(test: Test, onReady: () => void = () => setAssigningTestId(test.id)) {
         const { noQuestions, entries } = testAssignBlockers(test);
         if (noQuestions) showToast(t('tests.assign_blocked_empty'), 'error');
         else if (entries.length > 0) showToast(t('tests.assign_blocked', { count: entries.length }), 'error');
-        else setAssigningTestId(test.id);
+        else onReady();
     }
 
     async function handleDelete(testId: string, testName: string) {
@@ -461,6 +514,10 @@ export default function TestListPage() {
                         onDelete={handleDeleteFolder}
                         onMoveFolder={moveFolder}
                         dropFolderId={dropFolderId}
+                        onShare={(f) => setSharingTarget({ kind: 'folder', id: f.id })}
+                        isFolderShared={(f) =>
+                            isShared(resolveFolderSharing(f, testFolders, settings.materialSharing).sharing)
+                        }
                     />
                     {visibleTests.length === 0 ? (
                         <EmptyState
@@ -564,6 +621,17 @@ export default function TestListPage() {
                                                                 </button>
                                                             </>
                                                         )}
+                                                        <button
+                                                            type="button"
+                                                            className="btn btn-ghost btn-icon btn-sm"
+                                                            title={t('sharing.action_share')}
+                                                            aria-label={t('sharing.action_share')}
+                                                            onClick={() =>
+                                                                setSharingTarget({ kind: 'test', id: test.id })
+                                                            }
+                                                        >
+                                                            <Share2 size={14} />
+                                                        </button>
                                                         <button
                                                             type="button"
                                                             className="btn btn-ghost btn-icon btn-sm"
@@ -683,6 +751,18 @@ export default function TestListPage() {
                                                                 <button
                                                                     type="button"
                                                                     className="btn btn-ghost btn-icon btn-sm"
+                                                                    title={t('sharing.action_share')}
+                                                                    aria-label={t('sharing.action_share')}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setSharingTarget({ kind: 'test', id: test.id });
+                                                                    }}
+                                                                >
+                                                                    <Share2 size={14} />
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-ghost btn-icon btn-sm"
                                                                     title={t('tests.action_duplicate')}
                                                                     aria-label={t('tests.action_duplicate')}
                                                                     onClick={(e) => {
@@ -733,6 +813,7 @@ export default function TestListPage() {
                                                                     path={folderPathLabel(testFolders, test.folderId)!}
                                                                 />
                                                             )}
+                                                            <SharingBadge sharing={sharingOf(test)} />
                                                             <span className="badge badge-blue">
                                                                 {t('tests.question_count', {
                                                                     count: test.questions.length,
@@ -1238,6 +1319,40 @@ export default function TestListPage() {
                     )}
                 </DragDropContext>
 
+                <SharedMaterialsSection
+                    kind="test"
+                    onOpen={(id) => navigate(`/tests/${id}`)}
+                    onDuplicate={duplicateShared}
+                    renderActions={(entry) => (
+                        <>
+                            {!entry.item.scoreOnly && (
+                                <button
+                                    type="button"
+                                    className="btn btn-ghost btn-icon btn-sm"
+                                    title={t('tests.action_assign')}
+                                    aria-label={`${t('tests.action_assign')}: ${entry.item.name}`}
+                                    onClick={() => requestAssign(entry.item, () => setAssigningShared(entry))}
+                                >
+                                    <Send size={14} />
+                                </button>
+                            )}
+                            {entry.item.mode !== 'placement' && (
+                                <button
+                                    type="button"
+                                    className="btn btn-ghost btn-icon btn-sm"
+                                    title={t('tests.scoreSheet.action_open')}
+                                    aria-label={`${t('tests.scoreSheet.action_open')}: ${entry.item.name}`}
+                                    onClick={() => navigate(`/tests/${entry.item.id}/scores`)}
+                                >
+                                    <Table2 size={14} />
+                                </button>
+                            )}
+                        </>
+                    )}
+                    subtitle={(x) => t('tests.question_count', { count: x.questions.length })}
+                />
+                {renderSharingModal()}
+
                 {folderModal && (
                     <FolderNameModal
                         title={
@@ -1263,6 +1378,14 @@ export default function TestListPage() {
                         if (!test) return null;
                         return <TestAssignmentModal test={test} onClose={() => setAssigningTestId(null)} />;
                     })()}
+
+                {assigningShared && (
+                    <TestAssignmentModal
+                        test={assigningShared.item}
+                        ownerId={assigningShared.ownerId}
+                        onClose={() => setAssigningShared(null)}
+                    />
+                )}
 
                 {importingTestId &&
                     (() => {

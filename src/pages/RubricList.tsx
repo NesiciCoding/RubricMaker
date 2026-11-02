@@ -13,7 +13,6 @@ import {
     Users,
     Upload,
     GitCompare,
-    Share2,
     ClipboardPaste,
     Check,
     Layers,
@@ -31,7 +30,7 @@ import { useToast } from '../hooks/useToast';
 import { storageSync } from '../services/database';
 import { addToPendingQueue } from '../store/storage';
 import { DEFAULT_FORMAT } from '../types';
-import type { Folder, Rubric } from '../types';
+import type { Folder, MaterialSharing, Rubric } from '../types';
 import type { VoTrack, CefrLevel, CohortFilter as CohortFilterValue } from '../types';
 import { VO_TRACKS, VO_TRACK_LABELS, VO_TRACK_COLORS, VO_TRACK_DEFAULT_CEFR } from '../data/voTracks';
 import { CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
@@ -55,6 +54,16 @@ import { useFolderDropTarget } from '../hooks/useFolderDropTarget';
 import { sortByDisplayOrder, reorderDisplayOrder, displayOrderAfter } from '../utils/displayOrder';
 import { ALL_FOLDERS, filterByFolder, folderPathLabel, foldersForKind, nextFolderOrder } from '../utils/folders';
 import { cloneRubricForCopy, type RubricInput } from '../utils/rubricClone';
+import {
+    inheritedSharing,
+    isShared,
+    resolveFolderSharing,
+    resolveSharing,
+    type SharedEntry,
+} from '../utils/materialSharing';
+import SharingControl from '../components/Sharing/SharingControl';
+import SharingModal from '../components/Sharing/SharingModal';
+import SharedMaterialsSection from '../components/Sharing/SharedMaterialsSection';
 import { getCohortStudentIds, isAllCohorts, ALL_COHORTS } from '../utils/cohortAggregator';
 import CohortFilter from '../components/CohortFilter';
 import { textOnTheme } from '../utils/contrastCheck';
@@ -103,8 +112,7 @@ export default function RubricList() {
     const [differentiateId, setDifferentiateId] = useState<string | null>(null);
     const [diffTrack, setDiffTrack] = useState<VoTrack>('havo');
     const [diffCefr, setDiffCefr] = useState<CefrLevel>('B1');
-    const [sharedWithMe, setSharedWithMe] = useState<Rubric[]>([]);
-    const [schoolShared, setSchoolShared] = useState<Rubric[]>([]);
+    const [folderShare, setFolderShare] = useState<Folder | null>(null);
     const dbStatus = useDbStatus();
 
     // Group grading (phase 1): pick students to share one grade, then jump into the normal
@@ -187,21 +195,26 @@ export default function RubricList() {
         setShareList((prev) => prev.filter((s) => s.userId !== userId));
     }
 
-    useEffect(() => {
-        if (!dbStatus.isConnected) {
-            setSharedWithMe([]);
-            setSchoolShared([]);
-            return;
-        }
-        storageSync.adapter.fetchSharedRubrics().then(setSharedWithMe);
-        storageSync.adapter.fetchSchoolSharedRubrics().then(setSchoolShared);
-    }, [dbStatus.isConnected]);
-
-    function toggleSharedWithSchool(rubricId: string, shared: boolean) {
+    function setRubricSharing(rubricId: string, sharing: MaterialSharing | undefined) {
         const r = rubrics.find((x) => x.id === rubricId);
-        /* v8 ignore next -- provably dead: the department toggle only renders for live rubrics in the share modal */
-        if (r) updateRubric({ ...r, sharedWithSchool: shared });
+        /* v8 ignore next -- provably dead: the sharing control only renders for live rubrics in the share modal */
+        if (r) updateRubric({ ...r, sharing });
     }
+
+    const duplicateShared = useCallback(
+        (entry: SharedEntry<Rubric>) => {
+            const copy = addRubric(
+                cloneRubricForCopy(entry.item, {
+                    name: t('rubricList.copy_name', { name: entry.item.name }),
+                    folderId: undefined,
+                })
+            );
+            showToast(t('rubricList.duplicated_toast', { name: copy.name }), 'success', {
+                action: { label: t('rubricList.open_copy'), onClick: () => navigate(`/rubrics/${copy.id}`) },
+            });
+        },
+        [addRubric, t, showToast, navigate]
+    );
 
     const handleCopyShareCode = useCallback(
         (rubricId: string) => {
@@ -667,6 +680,10 @@ export default function RubricList() {
                         onDelete={handleDeleteFolder}
                         onMoveFolder={moveFolder}
                         dropFolderId={dropFolderId}
+                        onShare={setFolderShare}
+                        isFolderShared={(f) =>
+                            isShared(resolveFolderSharing(f, rubricFolders, settings.materialSharing).sharing)
+                        }
                     />
                     {filtered.length === 0 ? (
                         <EmptyState
@@ -794,6 +811,14 @@ export default function RubricList() {
                                             hasActiveClass={!!settings.activeClassId}
                                             actions={cardActions}
                                             folderLabel={folderPathLabel(rubricFolders, r.folderId)}
+                                            sharing={
+                                                resolveSharing(
+                                                    r.sharing,
+                                                    r.folderId,
+                                                    rubricFolders,
+                                                    settings.materialSharing
+                                                ).sharing
+                                            }
                                             moveMenuFor={(rubric) => (
                                                 <MoveToMenu
                                                     folders={rubricFolders}
@@ -812,145 +837,12 @@ export default function RubricList() {
                     )}
                 </DragDropContext>
 
-                {sharedWithMe.length > 0 && (
-                    <div style={{ marginTop: 32 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                            <Share2 size={15} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
-                            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>
-                                {t('rubricList.shared_with_me')}
-                            </h3>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                            {sharedWithMe.map((r) => (
-                                <div
-                                    key={r.id}
-                                    style={{
-                                        padding: '12px 14px',
-                                        background: 'var(--bg-elevated)',
-                                        borderRadius: 10,
-                                        border: '1px solid var(--border)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 12,
-                                        cursor: 'pointer',
-                                    }}
-                                    onClick={() => navigate(`/rubrics/${r.id}`)}
-                                >
-                                    <BookOpen
-                                        size={16}
-                                        style={{ color: 'var(--text-muted)', flexShrink: 0 }}
-                                        aria-hidden="true"
-                                    />
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div
-                                            style={{
-                                                fontWeight: 600,
-                                                fontSize: '0.9rem',
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap',
-                                            }}
-                                        >
-                                            {r.name}
-                                        </div>
-                                        {r.subject && (
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                                {r.subject}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <span
-                                        style={{
-                                            fontSize: '0.7rem',
-                                            padding: '2px 7px',
-                                            borderRadius: 4,
-                                            background: 'var(--accent-soft)',
-                                            color: 'var(--accent-text)',
-                                            fontWeight: 500,
-                                            flexShrink: 0,
-                                        }}
-                                    >
-                                        {t('rubricList.shared_badge')}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {schoolShared.length > 0 && (
-                    <div style={{ marginTop: 32 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                            <Users2 size={15} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
-                            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>
-                                {t('rubricList.shared_with_department')}
-                            </h3>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                            {schoolShared.map((r) => (
-                                <div
-                                    key={r.id}
-                                    role="button"
-                                    tabIndex={0}
-                                    style={{
-                                        padding: '12px 14px',
-                                        background: 'var(--bg-elevated)',
-                                        borderRadius: 10,
-                                        border: '1px solid var(--border)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 12,
-                                        cursor: 'pointer',
-                                    }}
-                                    onClick={() => navigate(`/rubrics/${r.id}`)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' || e.key === ' ') {
-                                            e.preventDefault();
-                                            navigate(`/rubrics/${r.id}`);
-                                        }
-                                    }}
-                                >
-                                    <BookOpen
-                                        size={16}
-                                        style={{ color: 'var(--text-muted)', flexShrink: 0 }}
-                                        aria-hidden="true"
-                                    />
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div
-                                            style={{
-                                                fontWeight: 600,
-                                                fontSize: '0.9rem',
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap',
-                                            }}
-                                        >
-                                            {r.name}
-                                        </div>
-                                        {r.subject && (
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                                {r.subject}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <span
-                                        style={{
-                                            fontSize: '0.7rem',
-                                            padding: '2px 7px',
-                                            borderRadius: 4,
-                                            background: 'var(--accent-soft)',
-                                            color: 'var(--accent-text)',
-                                            fontWeight: 500,
-                                            flexShrink: 0,
-                                        }}
-                                    >
-                                        {t('rubricList.department_badge')}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
+                <SharedMaterialsSection
+                    kind="rubric"
+                    onOpen={(id) => navigate(`/rubrics/${id}`)}
+                    onDuplicate={duplicateShared}
+                    subtitle={(r) => r.subject || undefined}
+                />
 
                 <ConfirmDialog {...confirmDialogProps} />
 
@@ -1253,6 +1145,22 @@ export default function RubricList() {
                 )}
             </div>
 
+            {folderShare && (
+                <SharingModal
+                    name={folderShare.name}
+                    isFolder
+                    connected={dbStatus.isConnected}
+                    value={folders.find((f) => f.id === folderShare.id)?.sharing}
+                    inherited={inheritedSharing(folderShare.parentId, rubricFolders, settings.materialSharing)}
+                    onChange={(sharing) => {
+                        const current = folders.find((f) => f.id === folderShare.id);
+                        /* v8 ignore next -- provably dead: the modal closes with its folder */
+                        if (current) updateFolder({ ...current, sharing, updatedAt: new Date().toISOString() });
+                    }}
+                    onClose={() => setFolderShare(null)}
+                />
+            )}
+
             {/* ── Share with colleague modal ── */}
             {shareModal && (
                 <Modal
@@ -1283,25 +1191,34 @@ export default function RubricList() {
                             {t('rubricList.share_modal_desc', { rubric: shareModal.rubricName })}
                         </p>
 
-                        <label
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 8,
-                                marginBottom: 16,
-                                padding: '8px 10px',
-                                background: 'var(--bg-elevated)',
-                                borderRadius: 8,
-                                cursor: 'pointer',
-                            }}
-                        >
-                            <input
-                                type="checkbox"
-                                checked={rubrics.find((r) => r.id === shareModal.rubricId)?.sharedWithSchool ?? false}
-                                onChange={(e) => toggleSharedWithSchool(shareModal.rubricId, e.target.checked)}
-                            />
-                            <span style={{ fontSize: '0.85rem' }}>{t('rubricList.share_with_department')}</span>
-                        </label>
+                        {(() => {
+                            const r = rubrics.find((x) => x.id === shareModal.rubricId);
+                            /* v8 ignore next -- provably dead: the share modal only opens for live rubrics */
+                            if (!r) return null;
+                            return (
+                                <div
+                                    style={{
+                                        marginBottom: 16,
+                                        padding: '10px 12px',
+                                        background: 'var(--bg-elevated)',
+                                        borderRadius: 8,
+                                    }}
+                                >
+                                    <SharingControl
+                                        value={r.sharing}
+                                        inherited={inheritedSharing(
+                                            r.folderId,
+                                            rubricFolders,
+                                            settings.materialSharing
+                                        )}
+                                        onChange={(next) => setRubricSharing(r.id, next)}
+                                    />
+                                </div>
+                            );
+                        })()}
+                        <p className="text-sm" style={{ fontWeight: 600, margin: '0 0 8px' }}>
+                            {t('sharing.specific_people')}
+                        </p>
                         <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
                             <input
                                 type="email"

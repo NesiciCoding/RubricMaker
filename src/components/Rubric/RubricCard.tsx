@@ -16,9 +16,10 @@ import {
     UsersRound,
 } from 'lucide-react';
 import { Draggable } from '@hello-pangea/dnd';
-import type { Rubric, Student } from '../../types';
+import type { MaterialSharing, Rubric, Student } from '../../types';
 import CefrBadge from '../CEFR/CefrBadge';
 import FolderLocationBadge from '../Folders/FolderLocationBadge';
+import SharingBadge from '../Sharing/SharingBadge';
 import CardTile from '../ui/CardTile';
 import CardGrip from '../ui/CardGrip';
 import { encodeRubricShareCode } from '../../utils/rubricImport';
@@ -55,6 +56,8 @@ interface RubricCardProps {
     moveMenuFor?: (rubric: Rubric) => React.ReactNode;
     /** Full folder path (“Year 1 / Essays”); undefined when the rubric is unfiled. */
     folderLabel?: string;
+    /** Effective sharing (own, folder or default); a badge shows when it is not private. */
+    sharing?: MaterialSharing;
 }
 
 // The per-card speaking-session picker used to map every student into an <option> for all 300+
@@ -126,6 +129,7 @@ function RubricCard({
     actions,
     moveMenuFor,
     folderLabel,
+    sharing,
 }: RubricCardProps) {
     const { t } = useTranslation();
 
@@ -302,6 +306,7 @@ function RubricCard({
                         }}
                     >
                         {folderLabel && <FolderLocationBadge path={folderLabel} />}
+                        {sharing && <SharingBadge sharing={sharing} />}
                         <span className="badge badge-blue">
                             {t('rubricList.criteria_badge', { count: rubric.criteria.length })}
                         </span>

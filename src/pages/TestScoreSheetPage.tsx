@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Columns3, Download, Edit2, Table2, BarChart3 } from 'lucide-react';
@@ -6,6 +6,11 @@ import Topbar from '../components/Layout/Topbar';
 import { EmptyState } from '../components/ui/EmptyState';
 import SegmentedToggle from '../components/ui/SegmentedToggle';
 import { useStoreActions, useStoreSelector } from '../context/useStore';
+import { useOwnOrSharedItem, useSharedMaterials } from '../hooks/useSharedMaterials';
+import { useToast } from '../hooks/useToast';
+import { useDbStatus } from '../hooks/useDbStatus';
+import { useCanEditStudentWork } from '../hooks/useClassRoles';
+import { SkeletonRow } from '../components/ui/Skeleton';
 import ScoreSheetGrid from '../components/Tests/ScoreSheet/ScoreSheetGrid';
 import TestQualityPanel from '../components/Tests/ScoreSheet/TestQualityPanel';
 import NormConfig, { type NormSettings } from '../components/Tests/ScoreSheet/NormConfig';
@@ -57,7 +62,39 @@ export default function TestScoreSheetPage() {
     const [editingColumns, setEditingColumns] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
 
-    const test = tests.find((x) => x.id === id);
+    const {
+        item: test,
+        entry: sharedEntry,
+        loading: sharedLoading,
+    } = useOwnOrSharedItem(
+        'test',
+        id,
+        tests.find((x) => x.id === id)
+    );
+    const { save: saveSharedTest } = useSharedMaterials('test', false);
+    const dbStatus = useDbStatus();
+    // Same local lastEditedBy stamp as the grading and results pages; the server sets it as well.
+    const saveAnyStudentTest = useCallback(
+        (st: StudentTest) =>
+            saveStudentTest(dbStatus.isConnected && dbStatus.userId ? { ...st, lastEditedBy: dbStatus.userId } : st),
+        [saveStudentTest, dbStatus.isConnected, dbStatus.userId]
+    );
+    const { showToast } = useToast();
+    // A colleague's test: its settings (norm, columns) are saved into their original when they
+    // allowed editing; otherwise only the results on this sheet are ours to change.
+    const updateAnyTest = useCallback(
+        (next: Test) => {
+            if (!sharedEntry) return updateTest(next);
+            if (sharedEntry.access !== 'edit') {
+                showToast(t('sharing.test_settings_owner_only'), 'info');
+                return;
+            }
+            void saveSharedTest(next).then((r) => {
+                if (!r.success) showToast(t('sharing.save_failed'), 'error');
+            });
+        },
+        [sharedEntry, updateTest, saveSharedTest, showToast, t]
+    );
     const testStudentTests = useMemo(() => studentTests.filter((st) => st.testId === id), [studentTests, id]);
     const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
 
@@ -88,6 +125,17 @@ export default function TestScoreSheetPage() {
         return [...picked].sort((a, b) => a.name.localeCompare(b.name));
     }, [classId, students, sheetByStudent]);
 
+    if (!test && sharedLoading) {
+        return (
+            <>
+                <Topbar title={t('tests.scoreSheet.title')} />
+                <div className="page-content fade-in" aria-busy="true">
+                    <SkeletonRow />
+                    <SkeletonRow />
+                </div>
+            </>
+        );
+    }
     if (!test) {
         return (
             <>
@@ -121,8 +169,8 @@ export default function TestScoreSheetPage() {
             gradeScales={gradeScales}
             defaultGradeScaleId={settings.defaultGradeScaleId}
             standardsApiKey={settings.standardsApiKey}
-            updateTest={updateTest}
-            saveStudentTest={saveStudentTest}
+            updateTest={updateAnyTest}
+            saveStudentTest={saveAnyStudentTest}
         />
     );
 }
@@ -243,8 +291,13 @@ function ScoreSheetBody({
         downloadCsv(buildScoreSheetCsv(columns, csvRows), `${sanitizeFilename(test.name)}_scores.csv`);
     }
 
+    // Rows of a class shared with me as "Can view" are read-only: the server refuses the write.
+    const canEditStudentWork = useCanEditStudentWork();
+    const classOfStudent = new Map(rows.map((s) => [s.id, s.classId]));
+    const canEditStudent = (student: Student) => canEditStudentWork(student.classId);
+
     function saveMany(sts: StudentTest[]) {
-        sts.forEach(saveStudentTest);
+        sts.filter((st) => canEditStudentWork(classOfStudent.get(st.studentId))).forEach(saveStudentTest);
     }
 
     return (
@@ -337,6 +390,7 @@ function ScoreSheetBody({
                             scale={scale}
                             items={report.items}
                             onSave={saveMany}
+                            canEdit={canEditStudent}
                         />
                         <p className="text-muted text-xs" style={{ margin: 0 }}>
                             {t('tests.scoreSheet.keyboard_hint')}

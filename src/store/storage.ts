@@ -1103,6 +1103,17 @@ export function migrateLegacyRubricVersions(rubric: Rubric & { versions?: Rubric
 }
 
 /**
+ * Rubrics used to carry a `sharedWithSchool` flag; migration 095 replaced it with `sharing`.
+ * Converting the cached copy too keeps a later push of it from dropping the server's conversion.
+ */
+export function migrateLegacyRubricSharing(rubric: Rubric): Rubric {
+    if (!('sharedWithSchool' in rubric)) return rubric;
+    const { sharedWithSchool, ...rest } = rubric as Rubric & { sharedWithSchool?: boolean };
+    if (sharedWithSchool !== true || rest.sharing) return rest;
+    return { ...rest, sharing: { visibility: 'school', access: 'view' } };
+}
+
+/**
  * The app used to have two parallel comment-bank features: the single-tag
  * `CommentSnippet` (fed only the old standalone Comment Bank page) and the
  * multi-tag, department-shareable `CommentBankItem` (used everywhere during
@@ -1165,7 +1176,7 @@ export interface StoreData {
 
 export function loadStore(): StoreData {
     const rawRubrics = load<(Rubric & { versions?: RubricVersion[] })[]>(KEYS.rubrics, []);
-    const rubrics = rawRubrics.map(migrateLegacyRubricVersions);
+    const rubrics = rawRubrics.map(migrateLegacyRubricVersions).map(migrateLegacyRubricSharing);
     if (rubrics.some((r, i) => r !== rawRubrics[i])) save(KEYS.rubrics, rubrics);
 
     const legacySnippets = load<CommentSnippet[]>(KEYS.commentSnippets, []);
