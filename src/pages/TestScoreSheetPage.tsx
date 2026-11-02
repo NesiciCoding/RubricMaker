@@ -8,6 +8,7 @@ import SegmentedToggle from '../components/ui/SegmentedToggle';
 import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { useOwnOrSharedItem, useSharedMaterials } from '../hooks/useSharedMaterials';
 import { useToast } from '../hooks/useToast';
+import { useDbStatus } from '../hooks/useDbStatus';
 import { SkeletonRow } from '../components/ui/Skeleton';
 import ScoreSheetGrid from '../components/Tests/ScoreSheet/ScoreSheetGrid';
 import TestQualityPanel from '../components/Tests/ScoreSheet/TestQualityPanel';
@@ -70,6 +71,13 @@ export default function TestScoreSheetPage() {
         tests.find((x) => x.id === id)
     );
     const { save: saveSharedTest } = useSharedMaterials('test', false);
+    const dbStatus = useDbStatus();
+    // Same local lastEditedBy stamp as the grading and results pages; the server sets it as well.
+    const saveAnyStudentTest = useCallback(
+        (st: StudentTest) =>
+            saveStudentTest(dbStatus.isConnected && dbStatus.userId ? { ...st, lastEditedBy: dbStatus.userId } : st),
+        [saveStudentTest, dbStatus.isConnected, dbStatus.userId]
+    );
     const { showToast } = useToast();
     // A colleague's test: its settings (norm, columns) are saved into their original when they
     // allowed editing; otherwise only the results on this sheet are ours to change.
@@ -161,7 +169,7 @@ export default function TestScoreSheetPage() {
             defaultGradeScaleId={settings.defaultGradeScaleId}
             standardsApiKey={settings.standardsApiKey}
             updateTest={updateAnyTest}
-            saveStudentTest={saveStudentTest}
+            saveStudentTest={saveAnyStudentTest}
         />
     );
 }

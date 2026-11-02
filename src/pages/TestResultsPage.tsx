@@ -8,6 +8,8 @@ import Topbar from '../components/Layout/Topbar';
 import HelpPopover from '../components/ui/HelpPopover';
 import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { useOwnOrSharedItem } from '../hooks/useSharedMaterials';
+import { useDbStatus } from '../hooks/useDbStatus';
+import LastEditedNote from '../components/Grading/LastEditedNote';
 import { SkeletonRow } from '../components/ui/Skeleton';
 import { calcTestMaxPoints, calcStudentTestRawPoints, calcTestPercentage, autoScoreResponse } from '../utils/testCalc';
 import { scoreSectionPct } from '../utils/placementRouting';
@@ -450,6 +452,7 @@ export default function TestResultsPage() {
     // resolve from a results route.
     const students = React.useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
     const { saveStudentTest, recordCommentBankUsage, addCommentBankItem } = useStoreActions();
+    const dbStatus = useDbStatus();
 
     const { item: test, loading: sharedLoading } = useOwnOrSharedItem(
         'test',
@@ -643,6 +646,9 @@ export default function TestResultsPage() {
         const nextRaw = scoredTest ? calcStudentTestRawPoints(scoredTest, scopedAnswers) : 0;
         saveStudentTest({
             ...studentTest,
+            // The server stamps lastEditedBy too (migration 096); stamping it here keeps the note
+            // right before the next hydrate.
+            ...(dbStatus.isConnected && dbStatus.userId ? { lastEditedBy: dbStatus.userId } : {}),
             answers: nextAnswers,
             rawTotalPoints: nextRaw,
             status: studentTest.status === 'submitted' ? 'graded' : studentTest.status,
@@ -695,6 +701,13 @@ export default function TestResultsPage() {
             <div className="page-content fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div data-tour="tr-summary" className="card">
                     <h2 style={{ margin: '0 0 4px' }}>{test.name}</h2>
+                    {dbStatus.isConnected && (
+                        <LastEditedNote
+                            editorId={studentTest.lastEditedBy}
+                            currentUserId={dbStatus.userId}
+                            at={studentTest.updatedAt ?? studentTest.gradedAt}
+                        />
+                    )}
                     <p className="text-muted text-sm" style={{ margin: '0 0 14px' }}>
                         {t('tests.results.student_label')}: {student?.name ?? studentTest.studentId}
                         {isLateSubmission && (

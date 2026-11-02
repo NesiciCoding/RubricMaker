@@ -416,6 +416,16 @@ describe('TestScoreSheetPage', () => {
         expect(screen.getByText('builder')).toBeInTheDocument();
     });
 
+    it('stamps me as the last editor on a typed score while connected', async () => {
+        sharedDb.connected = true;
+        await renderPage();
+        const cell = await screen.findByLabelText(/"student":"Bram","question":"1a"/);
+        fireEvent.change(cell, { target: { value: '1' } });
+        fireEvent.blur(cell);
+        expect(mockSaveStudentTest).toHaveBeenCalled();
+        expect((mockSaveStudentTest.mock.calls[0][0] as StudentTest).lastEditedBy).toBe('me');
+    });
+
     describe('a colleague’s test from a co-taught class', () => {
         function shareTest(access: 'view' | 'edit') {
             sharedDb.connected = true;
