@@ -1824,11 +1824,14 @@ function AnalyticsTab() {
                         t('docs.an_stats_item_by_rubric'),
                         t('docs.an_stats_item_by_student'),
                         t('docs.an_stats_item_compare'),
+                        t('docs.an_stats_item_query'),
+                        t('docs.an_stats_item_customize'),
                         t('docs.an_stats_item_filters'),
                         t('docs.an_stats_item_custom_views'),
                         t('docs.an_stats_item_elo_chart'),
                     ]}
                 />
+                <InfoBox color="#3b82f6">{t('docs.an_stats_tests_info')}</InfoBox>
             </FeatureSection>
 
             <FeatureSection icon={BarChart3} title={t('docs.an_activity_title')} color="#0ea5e9">

@@ -46,9 +46,9 @@ vi.mock('recharts', async (importOriginal) => {
     };
 });
 
-const makePoint = (rubricName: string, clsA: number | null, clsB: number | null): MultiTrendPoint =>
+const makePoint = (name: string, clsA: number | null, clsB: number | null): MultiTrendPoint =>
     // nulls model "no data for this class yet"; the index signature is number|string, so cast
-    ({ rubricName, date: '2024-01-01', clsA, clsB }) as MultiTrendPoint;
+    ({ name, kind: 'rubric', date: '2024-01-01', clsA, clsB }) as MultiTrendPoint;
 
 describe('MultiClassTrendChart', () => {
     it('renders nothing with fewer than 2 data points', () => {

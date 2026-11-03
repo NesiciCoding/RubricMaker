@@ -1006,6 +1006,12 @@ export interface AppSettings {
     statsVisiblePresetIds?: string[];
     /** Per-preset bar color override for the Statistics "Custom Views" charts */
     statsPresetColors?: Record<string, string>;
+    /** Statistics cards the teacher has switched off; ids from STATS_SECTIONS. Undefined/empty shows everything. */
+    statisticsHiddenSections?: string[];
+    /** Whether the progress trend charts include graded test results next to rubric grades (default true) */
+    statisticsTrendIncludeTests?: boolean;
+    /** Advanced statistics queries the teacher saved for reuse */
+    statisticsSavedQueries?: SavedStatsQuery[];
     /**
      * Active role — determines which settings sections are visible/editable.
      * Defaults to 'admin' so existing installs are unaffected.
@@ -2104,4 +2110,44 @@ export interface ReportCardData {
     className: string;
     periodLabel?: string;
     sections: ReportCardSection[];
+}
+
+// ─── Statistics query builder ────────────────────────────────────────────────
+
+export type StatsQuerySource = 'all' | 'rubric' | 'test';
+export type StatsQueryGroupBy = 'student' | 'class' | 'assessment' | 'subject' | 'month' | 'kind';
+export type StatsQueryMetric = 'avg' | 'median' | 'min' | 'max' | 'count' | 'passRate' | 'stdDev' | 'change';
+
+/** A deterministic filter → group → aggregate query over every rubric grade and graded test result. */
+export interface StatsQuery {
+    source: StatsQuerySource;
+    /** Empty means every class */
+    classIds: string[];
+    /** `rubric:<id>` / `test:<id>` keys; empty means every assessment */
+    assessmentKeys: string[];
+    /** Rubric subject; empty means any */
+    subject?: string;
+    /** Inclusive YYYY-MM-DD bounds on the date a result was graded/submitted */
+    dateFrom?: string;
+    dateTo?: string;
+    /** Only individual results scoring within this percentage range are considered */
+    minScore?: number;
+    maxScore?: number;
+    groupBy: StatsQueryGroupBy;
+    metric: StatsQueryMetric;
+    /** Percentage at or above which a result counts as passed (passRate metric); defaults to 55 */
+    passThreshold?: number;
+    /** Keep only groups whose value is below/above this number */
+    condition?: { op: 'lt' | 'gt'; value: number };
+    /** Keep only groups with at least this many results */
+    minCount?: number;
+    sort: 'value_desc' | 'value_asc' | 'label';
+    /** Show at most this many groups */
+    limit?: number;
+}
+
+export interface SavedStatsQuery {
+    id: string;
+    name: string;
+    query: StatsQuery;
 }

@@ -140,15 +140,15 @@ import MultiClassTrendChart from '../Statistics/MultiClassTrendChart';
 import type { MultiTrendPoint } from '../../utils/classComparisonAggregator';
 
 const trendData: MultiTrendPoint[] = [
-    { rubricName: 'Essay 1', date: '2024-01-01', c1: 75, c2: 80 },
-    { rubricName: 'Essay 2', date: '2024-02-01', c1: 82, c2: 78 },
+    { name: 'Essay 1', kind: 'rubric', date: '2024-01-01', c1: 75, c2: 80 },
+    { name: 'Essay 2', kind: 'rubric', date: '2024-02-01', c1: 82, c2: 78 },
 ];
 
 describe('MultiClassTrendChart', () => {
     it('returns null when data has fewer than 2 points', () => {
         const { container } = render(
             <MultiClassTrendChart
-                data={[{ rubricName: 'Essay 1', date: '2024-01-01', c1: 75 }]}
+                data={[{ name: 'Essay 1', kind: 'rubric', date: '2024-01-01', c1: 75 }]}
                 classIds={['c1']}
                 classNames={{ c1: 'Class A' }}
             />

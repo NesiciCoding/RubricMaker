@@ -3,7 +3,17 @@ import { screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderWithRouter } from '../../test-utils/renderWithProviders';
 import { DEFAULT_FORMAT } from '../../types';
-import type { Class, GradeScale, Rubric, Student, StudentRubric, AppSettings } from '../../types';
+import type {
+    Class,
+    GradeScale,
+    Rubric,
+    Student,
+    StudentRubric,
+    AppSettings,
+    StudentTest,
+    Test,
+    TestQuestion,
+} from '../../types';
 
 const mockGradeScale: GradeScale = {
     id: 'gs1',
@@ -195,6 +205,47 @@ describe('StatisticsPage', () => {
         expect(screen.queryByText('statistics.compare.prompt')).not.toBeInTheDocument();
     });
 
+    it('shows the compare trend from test results when the chosen rubric has no grades', async () => {
+        const quiz = (id: string, createdAt: string): Test => ({
+            id,
+            name: `Quiz ${id}`,
+            questions: [{ id: 'q', points: 10 } as TestQuestion],
+            requireSEB: false,
+            shuffleQuestions: false,
+            createdAt,
+        });
+        const result = (id: string, testId: string, studentId: string): StudentTest => ({
+            id,
+            testId,
+            studentId,
+            answers: [],
+            status: 'graded',
+            startedAt: '2024-02-01T00:00:00Z',
+            rawTotalPoints: 6,
+        });
+        const original = { ...mockAppValue };
+        Object.assign(mockAppValue, {
+            studentRubrics: [],
+            tests: [quiz('t1', '2024-02-01'), quiz('t2', '2024-03-01')],
+            studentTests: [result('a', 't1', 's1'), result('b', 't2', 's1'), result('c', 't1', 's2')],
+        });
+        try {
+            renderPage();
+            await waitForCharts();
+            fireEvent.click(screen.getByText('statistics.view_compare'));
+            await waitForCharts();
+            const checkboxes = screen.getAllByRole('checkbox');
+            fireEvent.click(checkboxes[0]);
+            fireEvent.click(checkboxes[1]);
+            await waitForCharts();
+            expect(screen.queryByText('statistics.compare.no_data')).not.toBeInTheDocument();
+            expect(screen.queryByText('statistics.compare.avg_title')).not.toBeInTheDocument();
+            expect(screen.getByText('statistics.compare.trend_title')).toBeInTheDocument();
+        } finally {
+            Object.assign(mockAppValue, original);
+        }
+    });
+
     it('expands the insights panel in compare mode', async () => {
         renderPage();
         await waitForCharts();
@@ -241,5 +292,54 @@ describe('StatisticsPage', () => {
         // Settings is a static mock here (real toggling is verified via the updateSettings call),
         // so assert the intent rather than the post-toggle label.
         expect(mockUpdateSettings).toHaveBeenCalledWith({ statisticsExcludeNotHandedIn: true });
+    });
+
+    it('runs advanced queries over every grade in the query view', async () => {
+        renderPage();
+        await waitForCharts();
+        fireEvent.click(screen.getByText('statistics.view_query'));
+        await waitForCharts();
+        expect(screen.getByText('statistics.query.builder_title')).toBeInTheDocument();
+        expect(screen.getByText('statistics.query.results_summary:{"records":2,"groups":2}')).toBeInTheDocument();
+        expect(screen.getByRole('cell', { name: 'Alice' })).toBeInTheDocument();
+        expect(screen.getByRole('cell', { name: 'Bob' })).toBeInTheDocument();
+        // Rubric-only controls are not shown in the query view.
+        expect(screen.queryByLabelText('statistics.label_rubric')).not.toBeInTheDocument();
+
+        fireEvent.change(screen.getByLabelText('statistics.query.save_name'), { target: { value: 'Mine' } });
+        fireEvent.click(screen.getByRole('button', { name: /statistics.query.save$/ }));
+        expect(mockUpdateSettings).toHaveBeenCalledWith({
+            statisticsSavedQueries: [expect.objectContaining({ name: 'Mine' })],
+        });
+    });
+
+    it('opens the customise panel and saves which cards are shown', async () => {
+        renderPage();
+        await waitForCharts();
+        fireEvent.click(screen.getByRole('button', { name: /statistics.customize.button/ }));
+        fireEvent.click(screen.getByRole('checkbox', { name: 'statistics.heatmap' }));
+        expect(mockUpdateSettings).toHaveBeenCalledWith({ statisticsHiddenSections: ['heatmap'] });
+        fireEvent.click(screen.getByRole('checkbox', { name: 'statistics.customize.include_tests' }));
+        expect(mockUpdateSettings).toHaveBeenCalledWith({ statisticsTrendIncludeTests: false });
+        fireEvent.click(screen.getByText('statistics.customize.done'));
+        expect(screen.queryByText('statistics.customize.title')).not.toBeInTheDocument();
+    });
+
+    it('leaves out cards the teacher switched off', async () => {
+        const first = renderPage();
+        await waitForCharts();
+        expect(screen.getByText('statistics.heatmap')).toBeInTheDocument();
+        expect(screen.getByText('statistics.grade_distribution')).toBeInTheDocument();
+        first.unmount();
+        mockSettings.statisticsHiddenSections = ['heatmap', 'gradeDistribution'];
+        try {
+            renderPage();
+            await waitForCharts();
+            expect(screen.queryByText('statistics.heatmap')).not.toBeInTheDocument();
+            expect(screen.queryByText('statistics.grade_distribution')).not.toBeInTheDocument();
+            expect(screen.getByText('statistics.criterion_avg')).toBeInTheDocument();
+        } finally {
+            delete mockSettings.statisticsHiddenSections;
+        }
     });
 });

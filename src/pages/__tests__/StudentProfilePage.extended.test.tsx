@@ -512,7 +512,11 @@ describe('StudentProfilePage extended coverage', () => {
 
     it('renders the overview stats, performance chart, CEFR progress and track band', () => {
         renderAt('s1');
-        expect(screen.getByText('60.0%')).toBeInTheDocument();
+        // Three rubric grades averaging 60% plus the graded Grammar Test (50%): tests count towards the average.
+        expect(screen.getByText('57.5%')).toBeInTheDocument();
+        expect(screen.getByText('studentProfile.stat_assessments_graded')).toBeInTheDocument();
+        expect(screen.getByText('statistics.test_results')).toBeInTheDocument();
+        expect(screen.getByText('Grammar Test')).toBeInTheDocument();
         expect(screen.getAllByText('90.0%').length).toBeGreaterThan(0);
         expect(screen.getByText('studentProfile.stat_average')).toBeInTheDocument();
         expect(screen.getByText('studentProfile.stat_highest')).toBeInTheDocument();

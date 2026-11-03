@@ -1,5 +1,6 @@
-import type { StudentRubric, Student, Rubric, RubricCriterion, GradeScale, Class } from '../types';
+import type { StudentRubric, Student, Rubric, RubricCriterion, GradeScale, Class, StudentTest, Test } from '../types';
 import { calcGradeSummary, calcClassStats, calcEntryPoints, criterionMaxPointsOrOne } from './gradeCalc';
+import { buildAssessmentTrend, type AssessmentKind } from './assessmentTimeline';
 
 export interface ClassComparisonResult {
     classId: string;
@@ -13,7 +14,8 @@ export interface ClassComparisonResult {
 }
 
 export interface MultiTrendPoint {
-    rubricName: string;
+    name: string;
+    kind: AssessmentKind;
     date: string;
     [classId: string]: number | string;
 }
@@ -74,36 +76,37 @@ export function buildMultiClassTrend(
     studentRubrics: StudentRubric[],
     students: Student[],
     rubrics: Rubric[],
-    gradeScales: GradeScale[]
+    gradeScales: GradeScale[],
+    tests: Test[] = [],
+    studentTests: StudentTest[] = []
 ): MultiTrendPoint[] {
     const studentClassById = new Map(students.map((s) => [s.id, s.classId]));
-    const relevantRubrics = rubrics
-        .filter((r) =>
-            classIds.some((classId) =>
-                studentRubrics.some((sr) => sr.rubricId === r.id && studentClassById.get(sr.studentId) === classId)
-            )
-        )
-        .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-
-    return relevantRubrics.map((r) => {
-        const scale =
-            r.gradeScaleId === 'none' ? null : (gradeScales.find((g) => g.id === r.gradeScaleId) ?? gradeScales[0]);
-        const point: MultiTrendPoint = { rubricName: r.name, date: r.createdAt };
-        for (const classId of classIds) {
-            const sums = studentRubrics
-                .filter((sr) => sr.rubricId === r.id && studentClassById.get(sr.studentId) === classId)
-                .map((sr) => calcGradeSummary(sr, r.criteria, scale, r).modifiedPercentage);
-            if (sums.length > 0) {
-                point[classId] = parseFloat((sums.reduce((a, b) => a + b, 0) / sums.length).toFixed(1));
-            }
+    const pointsByKey = new Map<string, MultiTrendPoint>();
+    for (const classId of classIds) {
+        const trend = buildAssessmentTrend((studentId) => studentClassById.get(studentId) === classId, {
+            studentRubrics,
+            rubrics,
+            gradeScales,
+            studentTests,
+            tests,
+        });
+        for (const p of trend) {
+            const key = `${p.kind}:${p.id}`;
+            const point = pointsByKey.get(key) ?? { name: p.name, kind: p.kind, date: p.date };
+            point[classId] = p.avg;
+            pointsByKey.set(key, point);
         }
-        // Also carry class names as metadata for the legend (not rendered as a Line)
+    }
+
+    const points = [...pointsByKey.values()].sort((a, b) => a.date.localeCompare(b.date));
+    // Also carry class names as metadata for the legend (not rendered as a Line)
+    for (const point of points) {
         for (const classId of classIds) {
             const cls = classes.find((c) => c.id === classId);
             point[`__name_${classId}`] = cls?.name ?? classId;
         }
-        return point;
-    });
+    }
+    return points;
 }
 
 export function getInsights(results: ClassComparisonResult[], criteria: RubricCriterion[]): Insight[] {

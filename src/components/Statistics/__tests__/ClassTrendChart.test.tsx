@@ -37,7 +37,7 @@ vi.mock('react-i18next', () => ({
 }));
 
 const makePoint = (name: string, avg: number): TrendPoint => ({
-    rubricName: name,
+    name,
     date: '2024-01-01',
     avg,
     median: avg - 2,
