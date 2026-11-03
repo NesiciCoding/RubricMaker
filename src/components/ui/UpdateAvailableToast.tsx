@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { subscribe, getUpdateSW, getUpdateVersion } from '../../pwaUpdateStore';
 import { PWA_UPDATE_NOTES } from '../../pwaChangelog';
+import { forceReload } from '../../utils/forceReload';
 
 const ISSUES_URL = 'https://github.com/NesiciCoding/RubricMaker/issues';
 
@@ -64,7 +65,7 @@ export function UpdateAvailableToast() {
             )}
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginTop: '0.75rem' }}>
                 <button
-                    onClick={() => updateSW(true)}
+                    onClick={() => void forceReload()}
                     style={{
                         padding: '0.4rem 0.9rem',
                         borderRadius: '0.375rem',

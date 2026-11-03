@@ -2,6 +2,7 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 import i18n from 'i18next';
 import { AlertTriangle } from 'lucide-react';
 import { logEvent } from '../../services/logging/clientLogger';
+import { forceReload } from '../../utils/forceReload';
 
 interface Props {
     children: ReactNode;
@@ -31,7 +32,7 @@ export class ErrorBoundary extends Component<Props, State> {
     }
 
     handleReload = () => {
-        window.location.reload();
+        void forceReload();
     };
 
     render() {

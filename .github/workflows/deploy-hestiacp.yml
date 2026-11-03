@@ -55,7 +55,11 @@ jobs:
           # domain-repair/rebuild, which re-drops the default skeleton index.html into
           # the docroot. --chown forces the correct owner on the receiving side (rsync
           # runs as root here, so it's allowed).
-          switches: -avz --delete --chown=rubricmaker:rubricmaker
+          # --delay-updates + --delete-after: new files land in place together at the end and
+          # old ones go only after that, so a visitor (or the service worker installing) mid-deploy
+          # never gets an index.html pointing at assets that aren't there yet. .htaccess is uploaded
+          # by the next step; excluding it keeps --delete from removing it in between.
+          switches: -avz --delete-after --delay-updates --exclude=/.htaccess --chown=rubricmaker:rubricmaker
           path: dist/
           # HestiaCP web root: /home/<user>/web/<domain>/public_html/
           remote_path: /home/rubricmaker/web/${{ secrets.VPS_DOMAIN }}/public_html/
@@ -73,3 +77,20 @@ jobs:
           remote_host: ${{ secrets.VPS_HOST }}
           remote_user: root
           remote_key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: Verify the live site serves RubricMaker
+        env:
+          VPS_DOMAIN: ${{ secrets.VPS_DOMAIN }}
+        # Fails the deploy loudly if the docroot ends up serving something else — e.g. the HestiaCP
+        # "web server is ready" skeleton a domain rebuild can drop in — instead of finding out from users.
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if curl -fsS --max-time 20 -H 'Cache-Control: no-cache' "https://${VPS_DOMAIN}/?deploy-check=${GITHUB_SHA}" \
+              | grep -q 'name="apple-mobile-web-app-title" content="RubricMaker"'; then
+              echo "https://${VPS_DOMAIN}/ serves RubricMaker"
+              exit 0
+            fi
+            sleep $((attempt * 5))
+          done
+          echo "::error::https://${VPS_DOMAIN}/ is not serving RubricMaker's index.html after deploy (HestiaCP default page or stale docroot?)"
+          exit 1
