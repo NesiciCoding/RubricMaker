@@ -2950,7 +2950,11 @@
         "export_chart": "Exporter le graphique en PNG",
         "preset_criterion_averages": "Moyennes par critère",
         "preset_grade_distribution": "Distribution des notes",
-        "preset_test_averages": "Moyennes des tests"
+        "preset_test_averages": "Moyennes des tests",
+        "trend_test_label": "{{name}} (test)",
+        "trend_includes_tests": "Notes des grilles et résultats des tests notés, dans l’ordre de leur création.",
+        "student_progress_title": "Progression dans le temps",
+        "student_progress_desc": "Notes des grilles et résultats des tests notés réunis. Les tests d’entraînement et de positionnement sont exclus."
     },
     "activityDashboard": {
         "title": "Tableau des activités",
@@ -4504,7 +4508,7 @@
         "tab_portfolio": "Portfolio",
         "portfolio_empty": "Aucune activité pour cet élève.",
         "portfolio_kind_grade": "Note de rubrique",
-        "no_grades_yet": "Aucune rubrique notée pour cet élève.",
+        "no_grades_yet": "Aucune grille ni aucun test noté pour cet élève.",
         "past_classes": "Classes précédentes",
         "unknown_class": "Classe inconnue",
         "not_found": "Élève introuvable",
@@ -4518,7 +4522,7 @@
         "no_email": "Aucune adresse e-mail renseignée",
         "stat_average": "Score moyen",
         "stat_highest": "Meilleur score",
-        "stat_rubrics_graded": "Grilles notées",
+        "stat_assessments_graded": "Évaluations notées",
         "timeline_title": "Évolution des résultats"
     },
     "standards": {

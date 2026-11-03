@@ -2950,7 +2950,11 @@
         "export_chart": "Grafiek exporteren als PNG",
         "preset_criterion_averages": "Gemiddelden per criterium",
         "preset_grade_distribution": "Cijferverdeling",
-        "preset_test_averages": "Toetsgemiddelden"
+        "preset_test_averages": "Toetsgemiddelden",
+        "trend_test_label": "{{name}} (toets)",
+        "trend_includes_tests": "Rubriccijfers en nagekeken toetsresultaten, in de volgorde waarin ze zijn aangemaakt.",
+        "student_progress_title": "Voortgang door de tijd",
+        "student_progress_desc": "Rubriccijfers en nagekeken toetsresultaten samen. Oefen- en plaatsingstoetsen tellen niet mee."
     },
     "activityDashboard": {
         "title": "Activiteitenoverzicht",
@@ -4504,7 +4508,7 @@
         "tab_portfolio": "Portfolio",
         "portfolio_empty": "Nog geen activiteit voor deze leerling.",
         "portfolio_kind_grade": "Rubricbeoordeling",
-        "no_grades_yet": "Nog geen beoordeelde rubrieken voor deze leerling.",
+        "no_grades_yet": "Nog geen beoordeelde rubrics of toetsen voor deze leerling.",
         "past_classes": "Eerdere klassen",
         "unknown_class": "Onbekende klas",
         "not_found": "Leerling niet gevonden",
@@ -4518,7 +4522,7 @@
         "no_email": "Geen e-mailadres opgegeven",
         "stat_average": "Gemiddelde score",
         "stat_highest": "Hoogste score",
-        "stat_rubrics_graded": "Beoordeelde rubrics",
+        "stat_assessments_graded": "Beoordeelde opdrachten",
         "timeline_title": "Prestatieverloop"
     },
     "standards": {

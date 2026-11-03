@@ -2,9 +2,11 @@ import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useTranslation } from 'react-i18next';
 import { formatShortDate } from '../../utils/dateInput';
+import type { AssessmentKind } from '../../utils/assessmentTimeline';
 
 export interface TrendPoint {
-    rubricName: string;
+    name: string;
+    kind?: AssessmentKind;
     date: string;
     avg: number;
     median: number;
@@ -17,13 +19,17 @@ interface Props {
 export default function ClassTrendChart({ data }: Props) {
     const { t, i18n } = useTranslation();
     if (data.length < 2) return null;
+    const labelled = data.map((p) => ({
+        ...p,
+        label: p.kind === 'test' ? t('statistics.trend_test_label', { name: p.name }) : p.name,
+    }));
 
     return (
         <ResponsiveContainer width="100%" height={260}>
-            <LineChart data={data} margin={{ top: 10, right: 24, bottom: 40, left: -10 }}>
+            <LineChart data={labelled} margin={{ top: 10, right: 24, bottom: 40, left: -10 }}>
                 <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.3} vertical={false} />
                 <XAxis
-                    dataKey="rubricName"
+                    dataKey="label"
                     tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
                     angle={-30}
                     textAnchor="end"

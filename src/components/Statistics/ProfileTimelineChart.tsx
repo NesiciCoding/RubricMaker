@@ -1,10 +1,13 @@
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import type { TooltipPayloadEntry } from 'recharts';
+import { useTranslation } from 'react-i18next';
+import type { AssessmentKind } from '../../utils/assessmentTimeline';
 
-type TimelinePoint = { dateStr: string; score: number; rubric: { name: string } };
+export type TimelinePoint = { dateStr: string; score: number; name: string; kind?: AssessmentKind };
 
-/** Performance-timeline line chart on the student profile. Split out so recharts loads lazily. */
+/** Performance-timeline line chart of rubric grades and test results. Split out so recharts loads lazily. */
 export default function ProfileTimelineChart({ history }: { history: TimelinePoint[] }) {
+    const { t } = useTranslation();
     return (
         <ResponsiveContainer width="100%" height={260}>
             <LineChart data={history} margin={{ top: 10, right: 10, bottom: 20, left: -20 }}>
@@ -20,10 +23,13 @@ export default function ProfileTimelineChart({ history }: { history: TimelinePoi
                     }}
                     labelStyle={{ color: 'var(--text)', fontWeight: 600, marginBottom: 4 }}
                     itemStyle={{ color: 'var(--accent-text)', fontWeight: 600 }}
-                    formatter={(val: unknown, _name: unknown, props: TooltipPayloadEntry) => [
-                        `${typeof val === 'number' ? val : 0}%`,
-                        (props.payload as TimelinePoint).rubric.name,
-                    ]}
+                    formatter={(val: unknown, _name: unknown, props: TooltipPayloadEntry) => {
+                        const point = props.payload as TimelinePoint;
+                        return [
+                            `${typeof val === 'number' ? val : 0}%`,
+                            point.kind === 'test' ? t('statistics.trend_test_label', { name: point.name }) : point.name,
+                        ];
+                    }}
                 />
                 <Line
                     type="monotone"

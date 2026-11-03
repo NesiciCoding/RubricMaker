@@ -2950,7 +2950,11 @@
         "export_chart": "Export chart as PNG",
         "preset_criterion_averages": "Criterion averages",
         "preset_grade_distribution": "Grade distribution",
-        "preset_test_averages": "Test averages"
+        "preset_test_averages": "Test averages",
+        "trend_test_label": "{{name}} (test)",
+        "trend_includes_tests": "Rubric grades and graded test results, in the order they were created.",
+        "student_progress_title": "Progress over time",
+        "student_progress_desc": "Rubric grades and graded test results combined. Practice and placement tests are left out."
     },
     "activityDashboard": {
         "title": "Activity Dashboard",
@@ -4504,7 +4508,7 @@
         "tab_portfolio": "Portfolio",
         "portfolio_empty": "No activity yet for this student.",
         "portfolio_kind_grade": "Rubric Grade",
-        "no_grades_yet": "No graded rubrics yet for this student.",
+        "no_grades_yet": "No graded rubrics or tests yet for this student.",
         "past_classes": "Past classes",
         "unknown_class": "Unknown class",
         "not_found": "Student not found",
@@ -4518,7 +4522,7 @@
         "no_email": "No email provided",
         "stat_average": "Average score",
         "stat_highest": "Highest score",
-        "stat_rubrics_graded": "Rubrics graded",
+        "stat_assessments_graded": "Assessments graded",
         "timeline_title": "Performance timeline"
     },
     "standards": {

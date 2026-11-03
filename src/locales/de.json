@@ -2950,7 +2950,11 @@
         "export_chart": "Diagramm als PNG exportieren",
         "preset_criterion_averages": "Durchschnitt pro Kriterium",
         "preset_grade_distribution": "Notenverteilung",
-        "preset_test_averages": "Test-Durchschnitte"
+        "preset_test_averages": "Test-Durchschnitte",
+        "trend_test_label": "{{name}} (Test)",
+        "trend_includes_tests": "Rubrikbewertungen und bewertete Testergebnisse, in der Reihenfolge ihrer Erstellung.",
+        "student_progress_title": "Fortschritt im Zeitverlauf",
+        "student_progress_desc": "Rubrikbewertungen und bewertete Testergebnisse zusammen. Übungs- und Einstufungstests werden nicht berücksichtigt."
     },
     "activityDashboard": {
         "title": "Aktivitätsdashboard",
@@ -4504,7 +4508,7 @@
         "tab_portfolio": "Portfolio",
         "portfolio_empty": "Noch keine Aktivitäten für diesen Schüler.",
         "portfolio_kind_grade": "Rubrikbewertung",
-        "no_grades_yet": "Noch keine bewerteten Rubriken für diesen Schüler.",
+        "no_grades_yet": "Noch keine bewerteten Rubriken oder Tests für diesen Schüler.",
         "past_classes": "Frühere Klassen",
         "unknown_class": "Unbekannte Klasse",
         "not_found": "Schüler nicht gefunden",
@@ -4518,7 +4522,7 @@
         "no_email": "Keine E-Mail-Adresse angegeben",
         "stat_average": "Durchschnittliche Punktzahl",
         "stat_highest": "Höchste Punktzahl",
-        "stat_rubrics_graded": "Bewertete Raster",
+        "stat_assessments_graded": "Bewertete Leistungen",
         "timeline_title": "Leistungsverlauf"
     },
     "standards": {

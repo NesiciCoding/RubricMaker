@@ -2950,7 +2950,11 @@
         "export_chart": "Exportar gráfico como PNG",
         "preset_criterion_averages": "Promedios por criterio",
         "preset_grade_distribution": "Distribución de notas",
-        "preset_test_averages": "Promedios de pruebas"
+        "preset_test_averages": "Promedios de pruebas",
+        "trend_test_label": "{{name}} (prueba)",
+        "trend_includes_tests": "Calificaciones de rúbricas y resultados de pruebas calificadas, en el orden en que se crearon.",
+        "student_progress_title": "Progreso a lo largo del tiempo",
+        "student_progress_desc": "Calificaciones de rúbricas y resultados de pruebas calificadas juntos. Las pruebas de práctica y de nivel no se incluyen."
     },
     "activityDashboard": {
         "title": "Panel de actividades",
@@ -4504,7 +4508,7 @@
         "tab_portfolio": "Portfolio",
         "portfolio_empty": "Todavía no hay actividad para este estudiante.",
         "portfolio_kind_grade": "Calificación de rúbrica",
-        "no_grades_yet": "Aún no hay rúbricas calificadas para este estudiante.",
+        "no_grades_yet": "Aún no hay rúbricas ni pruebas calificadas para este estudiante.",
         "past_classes": "Clases anteriores",
         "unknown_class": "Clase desconocida",
         "not_found": "Alumno no encontrado",
@@ -4518,7 +4522,7 @@
         "no_email": "No se ha indicado ningún correo electrónico",
         "stat_average": "Puntuación media",
         "stat_highest": "Puntuación más alta",
-        "stat_rubrics_graded": "Rúbricas calificadas",
+        "stat_assessments_graded": "Evaluaciones calificadas",
         "timeline_title": "Evolución del rendimiento"
     },
     "standards": {

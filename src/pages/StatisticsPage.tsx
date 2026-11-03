@@ -45,6 +45,9 @@ import CriterionRadarChart, { type CriterionRadarDataPoint } from '../components
 import ScoreHistogram from '../components/Statistics/ScoreHistogram';
 import CriterionHeatmap from '../components/Statistics/CriterionHeatmap';
 import ClassTrendChart from '../components/Statistics/ClassTrendChart';
+import ProfileTimelineChart from '../components/Statistics/ProfileTimelineChart';
+import { buildAssessmentTrend, buildStudentTimeline, scoredTestResults } from '../utils/assessmentTimeline';
+import { formatShortDate } from '../utils/dateInput';
 import MultiClassTrendChart from '../components/Statistics/MultiClassTrendChart';
 import EloProgressChart from '../components/Statistics/EloProgressChart';
 import { buildEloProgress } from '../utils/eloProgressAggregator';
@@ -305,42 +308,15 @@ export default function StatisticsPage() {
 
     const classTrendData = useMemo(() => {
         if (selectedClassId === 'all') return [];
-        return rubrics
-            .filter((r) =>
-                studentRubrics.some((sr) => {
-                    if (sr.rubricId !== r.id) return false;
-                    return students.find((s) => s.id === sr.studentId)?.classId === selectedClassId;
-                })
-            )
-            .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
-            .map((r) => {
-                const scaleForR =
-                    r.gradeScaleId === 'none'
-                        ? null
-                        : (gradeScales.find((g) => g.id === r.gradeScaleId) ?? gradeScales[0]);
-                const sums = studentRubrics
-                    .filter(
-                        (sr) =>
-                            sr.rubricId === r.id &&
-                            students.find((s) => s.id === sr.studentId)?.classId === selectedClassId
-                    )
-                    .map((sr) => calcGradeSummary(sr, r.criteria, scaleForR, r).modifiedPercentage);
-                /* v8 ignore start -- the outer rubric filter above guarantees at least one graded submission for this class */
-                if (sums.length === 0) return null;
-                /* v8 ignore stop */
-                const avg = sums.reduce((a, b) => a + b, 0) / sums.length;
-                const sorted = [...sums].sort((a, b) => a - b);
-                const mid = Math.floor(sorted.length / 2);
-                const median = sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
-                return {
-                    rubricName: r.name,
-                    date: r.createdAt,
-                    avg: parseFloat(avg.toFixed(1)),
-                    median: parseFloat(median.toFixed(1)),
-                };
-            })
-            .filter((d): d is NonNullable<typeof d> => d !== null);
-    }, [selectedClassId, rubrics, studentRubrics, students, gradeScales]);
+        const classStudentIds = new Set(students.filter((s) => s.classId === selectedClassId).map((s) => s.id));
+        return buildAssessmentTrend((id) => classStudentIds.has(id), {
+            studentRubrics,
+            rubrics,
+            gradeScales,
+            studentTests,
+            tests,
+        });
+    }, [selectedClassId, rubrics, studentRubrics, students, gradeScales, studentTests, tests]);
 
     // ── Compare mode data ─────────────────────────────────────────────────────
     const compareRubric = rubrics.find((r) => r.id === compareRubricId);
@@ -377,8 +353,17 @@ export default function StatisticsPage() {
 
     const multiTrendData = useMemo(() => {
         if (compareClassIds.length === 0) return [];
-        return buildMultiClassTrend(compareClassIds, classes, studentRubrics, students, rubrics, gradeScales);
-    }, [compareClassIds, classes, studentRubrics, students, rubrics, gradeScales]);
+        return buildMultiClassTrend(
+            compareClassIds,
+            classes,
+            studentRubrics,
+            students,
+            rubrics,
+            gradeScales,
+            tests,
+            studentTests
+        );
+    }, [compareClassIds, classes, studentRubrics, students, rubrics, gradeScales, tests, studentTests]);
 
     const classNamesMap = useMemo(() => {
         const map: Record<string, string> = {};
@@ -475,6 +460,25 @@ export default function StatisticsPage() {
                 } => d !== null
             );
     }, [viewMode, selectedStudentId, studentTests, tests]);
+
+    // Rubric grades and graded tests on one timeline, so progress isn't judged from rubrics alone
+    const studentProgressTimeline = useMemo(() => {
+        if (viewMode !== 'student' || !selectedStudentId) return [];
+        return buildStudentTimeline(
+            studentViewTableData
+                .filter(({ sr }) => !!sr.gradedAt)
+                .map(({ sr, rubric: r, summary }) => ({
+                    id: sr.id,
+                    name: r.name,
+                    date: sr.gradedAt!,
+                    score: parseFloat(summary.modifiedPercentage.toFixed(1)),
+                })),
+            scoredTestResults(
+                studentTests.filter((st) => st.studentId === selectedStudentId),
+                tests
+            )
+        ).map((e) => ({ ...e, dateStr: formatShortDate(e.date, i18n.language) }));
+    }, [viewMode, selectedStudentId, studentViewTableData, studentTests, tests, i18n.language]);
 
     // Elo-scaled CEFR progression across the selected student's placement-test attempts (roadmap Phase 25.5)
     const eloProgressPoints = useMemo(() => {
@@ -1079,7 +1083,10 @@ export default function StatisticsPage() {
                                 {/* Multi-class trend */}
                                 {multiTrendData.length >= 2 && (
                                     <div className="card" style={{ marginBottom: 20 }}>
-                                        <h3 style={{ marginBottom: 16 }}>{t('statistics.compare.trend_title')}</h3>
+                                        <h3 style={{ marginBottom: 6 }}>{t('statistics.compare.trend_title')}</h3>
+                                        <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
+                                            {t('statistics.trend_includes_tests')}
+                                        </p>
                                         <MultiClassTrendChart
                                             data={multiTrendData}
                                             classIds={compareClassIds}
@@ -1145,7 +1152,10 @@ export default function StatisticsPage() {
                         {/* Class trend chart */}
                         {classTrendData.length >= 2 && (
                             <div className="card" style={{ marginBottom: 20 }}>
-                                <h3 style={{ marginBottom: 16 }}>{t('statistics.class_trend')}</h3>
+                                <h3 style={{ marginBottom: 6 }}>{t('statistics.class_trend')}</h3>
+                                <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
+                                    {t('statistics.trend_includes_tests')}
+                                </p>
                                 <ClassTrendChart data={classTrendData} />
                             </div>
                         )}
@@ -1851,6 +1861,16 @@ export default function StatisticsPage() {
                                                 ))}
                                             </tbody>
                                         </table>
+                                    </div>
+                                )}
+
+                                {studentProgressTimeline.length >= 2 && (
+                                    <div className="card" style={{ marginBottom: 20 }}>
+                                        <h3 style={{ marginBottom: 6 }}>{t('statistics.student_progress_title')}</h3>
+                                        <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
+                                            {t('statistics.student_progress_desc')}
+                                        </p>
+                                        <ProfileTimelineChart history={studentProgressTimeline} />
                                     </div>
                                 )}
 

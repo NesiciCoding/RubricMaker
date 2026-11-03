@@ -1,6 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import { compareClasses, buildMultiClassTrend, getInsights } from './classComparisonAggregator';
-import type { Rubric, StudentRubric, Student, Class, RubricCriterion, GradeRange, GradeScale } from '../types';
+import type {
+    Rubric,
+    StudentRubric,
+    Student,
+    Class,
+    RubricCriterion,
+    GradeRange,
+    GradeScale,
+    StudentTest,
+    Test,
+    TestQuestion,
+} from '../types';
 
 // ─── Builders ─────────────────────────────────────────────────────────────────
 
@@ -186,8 +197,8 @@ describe('buildMultiClassTrend', () => {
         const rubrics = [mkRubric('r2', [c1, c2], '2024-03-01'), mkRubric('r1', [c1, c2], '2024-01-01')];
         const srs = [mkSR('a', 'r1', 's1', { c1: 6, c2: 6 }), mkSR('b', 'r2', 's1', { c1: 8, c2: 8 })];
         const trend = buildMultiClassTrend(['cls1'], classes, srs, students, rubrics, []);
-        expect(trend[0].rubricName).toBe('Rubric r1');
-        expect(trend[1].rubricName).toBe('Rubric r2');
+        expect(trend[0].name).toBe('Rubric r1');
+        expect(trend[1].name).toBe('Rubric r2');
     });
 
     it('keys avg values by classId', () => {
@@ -224,7 +235,34 @@ describe('buildMultiClassTrend', () => {
         const srs = [mkSR('a', 'r1', 's1', { c1: 6, c2: 6 })];
         const trend = buildMultiClassTrend(['cls1'], classes, srs, students, rubrics, []);
         expect(trend).toHaveLength(1);
-        expect(trend[0].rubricName).toBe('Rubric r1');
+        expect(trend[0].name).toBe('Rubric r1');
+    });
+
+    it('includes graded tests alongside rubrics, ordered by creation date', () => {
+        const rubrics = [mkRubric('r1', [c1, c2], '2024-01-01')];
+        const srs = [mkSR('a', 'r1', 's1', { c1: 6, c2: 6 })];
+        const tests: Test[] = [
+            {
+                id: 't1',
+                name: 'Quiz',
+                questions: [{ id: 'q1', points: 10 } as TestQuestion],
+                requireSEB: false,
+                shuffleQuestions: false,
+                createdAt: '2023-12-01',
+            },
+        ];
+        const studentTests: StudentTest[] = [
+            { id: 'x', testId: 't1', studentId: 's1', answers: [], status: 'graded', startedAt: '', rawTotalPoints: 9 },
+            { id: 'y', testId: 't1', studentId: 's4', answers: [], status: 'graded', startedAt: '', rawTotalPoints: 3 },
+        ];
+        const trend = buildMultiClassTrend(['cls1', 'cls2'], classes, srs, students, rubrics, [], tests, studentTests);
+        expect(trend.map((p) => [p.kind, p.name])).toEqual([
+            ['test', 'Quiz'],
+            ['rubric', 'Rubric r1'],
+        ]);
+        expect(trend[0]['cls1']).toBe(90);
+        expect(trend[0]['cls2']).toBe(30);
+        expect(trend[1]['cls2']).toBeUndefined();
     });
 
     it('returns empty array when no classIds provided', () => {
@@ -252,7 +290,7 @@ describe('buildMultiClassTrend', () => {
         const scale: GradeScale = { id: 'scale-1', name: 'Fallback', type: 'letter', ranges: [] as GradeRange[] };
         const trend = buildMultiClassTrend(['cls1'], classes, srs, students, rubrics, [scale]);
         expect(trend).toHaveLength(1);
-        expect(trend[0].rubricName).toBe('Rubric r1');
+        expect(trend[0].name).toBe('Rubric r1');
     });
 });
 

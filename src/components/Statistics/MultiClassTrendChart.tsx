@@ -13,15 +13,19 @@ interface Props {
 }
 
 export default function MultiClassTrendChart({ data, classIds, classNames }: Props) {
-    const { i18n } = useTranslation();
+    const { t, i18n } = useTranslation();
     if (data.length < 2) return null;
+    const labelled = data.map((p) => ({
+        ...p,
+        label: p.kind === 'test' ? t('statistics.trend_test_label', { name: p.name }) : p.name,
+    }));
 
     return (
         <ResponsiveContainer width="100%" height={260}>
-            <LineChart data={data} margin={{ top: 10, right: 24, bottom: 40, left: -10 }}>
+            <LineChart data={labelled} margin={{ top: 10, right: 24, bottom: 40, left: -10 }}>
                 <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.3} vertical={false} />
                 <XAxis
-                    dataKey="rubricName"
+                    dataKey="label"
                     tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
                     angle={-30}
                     textAnchor="end"

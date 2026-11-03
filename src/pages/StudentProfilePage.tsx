@@ -27,6 +27,7 @@ import Avatar from '../components/ui/Avatar';
 import DropdownMenu from '../components/ui/DropdownMenu';
 import { ChartSkeleton } from '../components/ui/Skeleton';
 import { formatShortDate } from '../utils/dateInput';
+import { buildStudentTimeline, scoredTestResults } from '../utils/assessmentTimeline';
 import { useStoreSelector } from '../context/useStore';
 import { useToast } from '../hooks/useToast';
 import { calcGradeSummary, type GradeSummary } from '../utils/gradeCalc';
@@ -155,6 +156,27 @@ export default function StudentProfilePage() {
             score: number;
         }[];
     }, [student, studentRubrics, rubrics, gradeScales, settings, i18n.language]);
+
+    const testHistory = useMemo(
+        () =>
+            student
+                ? scoredTestResults(
+                      studentTests.filter((st) => st.studentId === student.id),
+                      tests
+                  )
+                : [],
+        [student, studentTests, tests]
+    );
+
+    // Rubric grades and graded tests together: either alone gives a skewed picture of progress.
+    const timeline = useMemo(
+        () =>
+            buildStudentTimeline(
+                history.map((h) => ({ id: h.sr.id, name: h.rubric.name, date: h.sr.gradedAt!, score: h.score })),
+                testHistory
+            ).map((e) => ({ ...e, dateStr: formatShortDate(e.date, i18n.language) })),
+        [history, testHistory, i18n.language]
+    );
 
     const goals = useMemo(() => {
         if (!student) return [];
@@ -431,9 +453,9 @@ export default function StudentProfilePage() {
         );
     }
 
-    const avgScore = history.length > 0 ? history.reduce((acc, h) => acc + h.score, 0) / history.length : 0;
+    const avgScore = timeline.length > 0 ? timeline.reduce((acc, h) => acc + h.score, 0) / timeline.length : 0;
 
-    const highestScore = history.length > 0 ? Math.max(...history.map((h) => h.score)) : 0;
+    const highestScore = timeline.length > 0 ? Math.max(...timeline.map((h) => h.score)) : 0;
     const percentFormat = new Intl.NumberFormat(i18n.language, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
     function handleCopySALink(rubricId: string) {
@@ -865,7 +887,7 @@ export default function StudentProfilePage() {
                 )}
 
                 {activeTab === 'overview' &&
-                    (history.length === 0 ? (
+                    (timeline.length === 0 ? (
                         <EmptyState icon={TrendingUp} description={t('studentProfile.no_grades_yet')} />
                     ) : (
                         <>
@@ -888,21 +910,21 @@ export default function StudentProfilePage() {
                                 </div>
                                 <div className="card" style={{ borderTop: '3px solid var(--purple)' }}>
                                     <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--purple-text)' }}>
-                                        {history.length}
+                                        {timeline.length}
                                     </div>
                                     <div className="text-muted text-sm" style={{ marginTop: 4 }}>
-                                        {t('studentProfile.stat_rubrics_graded')}
+                                        {t('studentProfile.stat_assessments_graded')}
                                     </div>
                                 </div>
                             </div>
 
-                            {history.length > 1 && (
+                            {timeline.length > 1 && (
                                 <div className="card" style={{ marginBottom: 24 }}>
                                     <h3 style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
                                         <TrendingUp size={18} /> {t('studentProfile.timeline_title')}
                                     </h3>
                                     <Suspense fallback={<ChartSkeleton height="260px" />}>
-                                        <ProfileTimelineChart history={history} />
+                                        <ProfileTimelineChart history={timeline} />
                                     </Suspense>
                                 </div>
                             )}
@@ -1295,117 +1317,156 @@ export default function StudentProfilePage() {
                                 );
                             })()}
 
-                            <div className="card">
-                                <h3 style={{ marginBottom: 14 }}>{t('studentProfile.history_title')}</h3>
-                                <table className="data-table">
-                                    <thead>
-                                        <tr>
-                                            <th>{t('studentProfile.col_date')}</th>
-                                            <th>{t('studentProfile.col_rubric')}</th>
-                                            <th>{t('studentProfile.col_score')}</th>
-                                            <th>{t('studentProfile.col_grade')}</th>
-                                            <th>{t('studentProfile.col_comment')}</th>
-                                            <th>{t('studentProfile.col_action')}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {[...history].reverse().map((h) => (
-                                            <tr key={h.sr.id}>
-                                                <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                                                    {h.dateStr}
-                                                </td>
-                                                <td style={{ fontWeight: 500 }}>{h.rubric.name}</td>
-                                                <td>
-                                                    {percentFormat.format(h.score)}%{' '}
-                                                    <span className="text-muted text-xs">
-                                                        ({h.summary.rawScore}/{h.summary.maxRawScore})
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <span
-                                                        className="grade-chip"
-                                                        style={{
-                                                            background: h.summary.gradeColor + '22',
-                                                            color: h.summary.gradeColor,
-                                                            border: `1.5px solid ${h.summary.gradeColor}`,
-                                                        }}
-                                                    >
-                                                        {h.summary.letterGrade}
-                                                    </span>
-                                                </td>
-                                                <td
-                                                    style={{
-                                                        color: 'var(--text-muted)',
-                                                        fontSize: '0.85rem',
-                                                        maxWidth: 200,
-                                                    }}
-                                                    className="truncate"
-                                                >
-                                                    {h.sr.overallComment || '—'}
-                                                </td>
-                                                <td>
-                                                    <div className="no-print" style={{ display: 'flex', gap: 6 }}>
-                                                        <button
-                                                            className="btn btn-secondary btn-sm"
-                                                            onClick={() => handleExport(h)}
-                                                            disabled={exportingId === h.sr.id}
+                            {history.length > 0 && (
+                                <div className="card">
+                                    <h3 style={{ marginBottom: 14 }}>{t('studentProfile.history_title')}</h3>
+                                    <table className="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>{t('studentProfile.col_date')}</th>
+                                                <th>{t('studentProfile.col_rubric')}</th>
+                                                <th>{t('studentProfile.col_score')}</th>
+                                                <th>{t('studentProfile.col_grade')}</th>
+                                                <th>{t('studentProfile.col_comment')}</th>
+                                                <th>{t('studentProfile.col_action')}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {[...history].reverse().map((h) => (
+                                                <tr key={h.sr.id}>
+                                                    <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                                                        {h.dateStr}
+                                                    </td>
+                                                    <td style={{ fontWeight: 500 }}>{h.rubric.name}</td>
+                                                    <td>
+                                                        {percentFormat.format(h.score)}%{' '}
+                                                        <span className="text-muted text-xs">
+                                                            ({h.summary.rawScore}/{h.summary.maxRawScore})
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <span
+                                                            className="grade-chip"
+                                                            style={{
+                                                                background: h.summary.gradeColor + '22',
+                                                                color: h.summary.gradeColor,
+                                                                border: `1.5px solid ${h.summary.gradeColor}`,
+                                                            }}
                                                         >
-                                                            {exportingId === h.sr.id ? (
-                                                                <Loader size={14} className="spin" />
-                                                            ) : (
-                                                                <Download size={14} />
-                                                            )}{' '}
-                                                            PDF
-                                                        </button>
-                                                        {(h.rubric.cefrTargetLevel ||
-                                                            h.rubric.criteria?.some(
-                                                                (c) => c.cefrDescriptors && c.cefrDescriptors.length > 0
-                                                            )) && (
+                                                            {h.summary.letterGrade}
+                                                        </span>
+                                                    </td>
+                                                    <td
+                                                        style={{
+                                                            color: 'var(--text-muted)',
+                                                            fontSize: '0.85rem',
+                                                            maxWidth: 200,
+                                                        }}
+                                                        className="truncate"
+                                                    >
+                                                        {h.sr.overallComment || '—'}
+                                                    </td>
+                                                    <td>
+                                                        <div className="no-print" style={{ display: 'flex', gap: 6 }}>
+                                                            <button
+                                                                className="btn btn-secondary btn-sm"
+                                                                onClick={() => handleExport(h)}
+                                                                disabled={exportingId === h.sr.id}
+                                                            >
+                                                                {exportingId === h.sr.id ? (
+                                                                    <Loader size={14} className="spin" />
+                                                                ) : (
+                                                                    <Download size={14} />
+                                                                )}{' '}
+                                                                PDF
+                                                            </button>
+                                                            {(h.rubric.cefrTargetLevel ||
+                                                                h.rubric.criteria?.some(
+                                                                    (c) =>
+                                                                        c.cefrDescriptors &&
+                                                                        c.cefrDescriptors.length > 0
+                                                                )) && (
+                                                                <button
+                                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                                    title={t('selfAssess.copy_link')}
+                                                                    style={{
+                                                                        color:
+                                                                            copiedSALink === h.rubric.id
+                                                                                ? 'var(--green, #22c55e)'
+                                                                                : undefined,
+                                                                    }}
+                                                                    onClick={() => handleCopySALink(h.rubric.id)}
+                                                                >
+                                                                    {copiedSALink === h.rubric.id ? (
+                                                                        <CheckCircle size={14} />
+                                                                    ) : (
+                                                                        <ClipboardCheck size={14} />
+                                                                    )}
+                                                                </button>
+                                                            )}
                                                             <button
                                                                 className="btn btn-ghost btn-icon btn-sm"
-                                                                title={t('selfAssess.copy_link')}
-                                                                style={{
-                                                                    color:
-                                                                        copiedSALink === h.rubric.id
-                                                                            ? 'var(--green, #22c55e)'
-                                                                            : undefined,
-                                                                }}
-                                                                onClick={() => handleCopySALink(h.rubric.id)}
+                                                                onClick={() =>
+                                                                    navigate(
+                                                                        `/rubrics/${h.rubric.id}/peer-review/${student.id}`
+                                                                    )
+                                                                }
+                                                                title={t('tooltips.self_peer_review')}
                                                             >
-                                                                {copiedSALink === h.rubric.id ? (
-                                                                    <CheckCircle size={14} />
-                                                                ) : (
-                                                                    <ClipboardCheck size={14} />
-                                                                )}
+                                                                <User size={14} />
                                                             </button>
-                                                        )}
-                                                        <button
-                                                            className="btn btn-ghost btn-icon btn-sm"
-                                                            onClick={() =>
-                                                                navigate(
-                                                                    `/rubrics/${h.rubric.id}/peer-review/${student.id}`
-                                                                )
-                                                            }
-                                                            title={t('tooltips.self_peer_review')}
-                                                        >
-                                                            <User size={14} />
-                                                        </button>
-                                                        <button
-                                                            className="btn btn-ghost btn-icon btn-sm"
-                                                            onClick={() =>
-                                                                navigate(`/rubrics/${h.rubric.id}/grade/${student.id}`)
-                                                            }
-                                                            title={t('tooltips.edit_grade')}
-                                                        >
-                                                            <FileText size={14} />
-                                                        </button>
-                                                    </div>
-                                                </td>
+                                                            <button
+                                                                className="btn btn-ghost btn-icon btn-sm"
+                                                                onClick={() =>
+                                                                    navigate(
+                                                                        `/rubrics/${h.rubric.id}/grade/${student.id}`
+                                                                    )
+                                                                }
+                                                                title={t('tooltips.edit_grade')}
+                                                            >
+                                                                <FileText size={14} />
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+
+                            {testHistory.length > 0 && (
+                                <div className="card" style={{ marginTop: 24 }}>
+                                    <h3 style={{ marginBottom: 14 }}>{t('statistics.test_results')}</h3>
+                                    <table className="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>{t('studentProfile.col_date')}</th>
+                                                <th>{t('statistics.label_test')}</th>
+                                                <th>{t('studentProfile.col_score')}</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                                        </thead>
+                                        <tbody>
+                                            {[...testHistory]
+                                                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                                                .map((r) => (
+                                                    <tr key={r.studentTest.id}>
+                                                        <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                                                            {formatShortDate(r.date, i18n.language)}
+                                                        </td>
+                                                        <td style={{ fontWeight: 500 }}>{r.test.name}</td>
+                                                        <td>
+                                                            {percentFormat.format(r.percentage)}%{' '}
+                                                            <span className="text-muted text-xs">
+                                                                ({r.totalPoints}/{r.maxPoints})
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
                         </>
                     ))}
 
