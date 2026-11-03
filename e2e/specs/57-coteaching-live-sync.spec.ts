@@ -100,7 +100,9 @@ test.describe('Co-teaching live sync (#1061)', () => {
         // the colleague read access to this otherwise-private rubric once they share the class.
         const ownerGrade = new GradeStudentPage(supabasePage);
         await ownerGrade.goto(rubricId, studentId);
-        await expect(supabasePage.getByText('Live Sync Rubric')).toBeVisible({ timeout: 15_000 });
+        // The rubric name itself only ever renders inside a print-only header (GradeStudent.tsx);
+        // the level buttons are what's actually visible once the rubric has hydrated.
+        await expect(ownerGrade.getLevelBtn('Excellent')).toBeVisible({ timeout: 15_000 });
         await ownerGrade.selectLevel(0, 'Excellent');
         await ownerGrade.save();
         await ownerGrade.waitForSaved();
@@ -111,7 +113,6 @@ test.describe('Co-teaching live sync (#1061)', () => {
 
         const colleagueGrade = new GradeStudentPage(colleaguePage);
         await colleagueGrade.goto(rubricId, studentId);
-        await expect(colleaguePage.getByText('Live Sync Rubric')).toBeVisible({ timeout: 15_000 });
         await expect(colleagueGrade.getLevelBtn('Excellent')).toHaveClass(/selected/, { timeout: 15_000 });
         await colleagueGrade.selectLevel(0, 'Good');
         await colleagueGrade.save();
