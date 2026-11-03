@@ -1050,12 +1050,12 @@ export default function StatisticsPage() {
                     <>
                         {compareClassIds.length < 2 ? (
                             <EmptyState icon={TrendingUp} description={t('statistics.compare.prompt')} />
-                        ) : comparisonResults.length === 0 ? (
+                        ) : comparisonResults.length === 0 && multiTrendData.length < 2 ? (
                             <EmptyState icon={TrendingUp} description={t('statistics.compare.no_data')} />
                         ) : (
                             <>
                                 {/* Class average bar chart */}
-                                {show('compareAverages') && (
+                                {show('compareAverages') && comparisonResults.length > 0 && (
                                     <div className="card" style={{ marginBottom: 20 }}>
                                         <h3 style={{ marginBottom: 16 }}>{t('statistics.compare.avg_title')}</h3>
                                         <ResponsiveContainer width="100%" height={220}>

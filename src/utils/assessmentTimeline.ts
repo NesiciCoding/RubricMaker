@@ -96,8 +96,12 @@ export function buildAssessmentTrend(
     for (const rubric of rubrics) {
         const scores = studentRubrics
             .filter((sr) => sr.rubricId === rubric.id && inScope(sr.studentId))
-            .map((sr) => calcGradeSummary(sr, rubric.criteria, scaleForRubric(rubric, gradeScales), rubric))
-            .map((summary) => summary.modifiedPercentage);
+            .map((sr) => {
+                // Score each grade against the rubric as it was when graded, as the rubric table does.
+                const graded = sr.rubricSnapshot ?? rubric;
+                return calcGradeSummary(sr, graded.criteria, scaleForRubric(graded, gradeScales), graded)
+                    .modifiedPercentage;
+            });
         if (scores.length === 0) continue;
         points.push({
             id: rubric.id,

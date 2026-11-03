@@ -170,6 +170,21 @@ describe('buildAssessmentTrend', () => {
     });
 });
 
+describe('buildAssessmentTrend with rubric snapshots', () => {
+    it('scores a grade against the rubric it was graded with, not the edited live rubric', () => {
+        const live = { ...mkRubric('r1', '2024-01-01'), criteria: [{ ...criterion, id: 'renamed' }] };
+        const sr = { ...mkSR('a', 'r1', 's1', 8), rubricSnapshot: mkRubric('r1', '2024-01-01') };
+        const trend = buildAssessmentTrend(() => true, {
+            rubrics: [live],
+            studentRubrics: [sr],
+            gradeScales: [],
+            tests: [],
+            studentTests: [],
+        });
+        expect(trend[0].avg).toBe(80);
+    });
+});
+
 describe('buildStudentTimeline', () => {
     it('interleaves rubric grades and test results by date', () => {
         const timeline = buildStudentTimeline(
