@@ -12,6 +12,7 @@
  */
 import { test, expect, SUPABASE_URL, SUPABASE_SERVICE_KEY } from '../fixtures/supabase.fixture';
 import { GradeStudentPage } from '../pages/GradeStudentPage';
+import { DEFAULT_FORMAT } from '../../src/types';
 
 const svc = {
     'Content-Type': 'application/json',
@@ -63,6 +64,9 @@ test.describe('Co-teaching live sync (#1061)', () => {
             data: {
                 id: rubricId,
                 name: 'Live Sync Rubric',
+                subject: 'English',
+                description: '',
+                gradeScaleId: 'letter-10',
                 criteria: [
                     {
                         id: 'c1',
@@ -82,8 +86,10 @@ test.describe('Co-teaching live sync (#1061)', () => {
                         ],
                     },
                 ],
+                format: DEFAULT_FORMAT,
                 attachmentIds: [],
                 createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
                 totalMaxPoints: 100,
                 scoringMode: 'weighted-percentage',
             },

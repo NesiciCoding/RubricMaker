@@ -9,6 +9,7 @@
  */
 import { test, expect, SUPABASE_URL, SUPABASE_SERVICE_KEY } from '../fixtures/supabase.fixture';
 import { ExportPage } from '../pages/ExportPage';
+import { DEFAULT_FORMAT } from '../../src/types';
 
 const svc = {
     'Content-Type': 'application/json',
@@ -64,6 +65,8 @@ test.describe('Co-teaching: comparative grading and exports with a colleague’s
             data: {
                 id: rubricId,
                 name: 'Export Co Rubric',
+                subject: 'English',
+                description: '',
                 criteria: [
                     {
                         id: criterionId,
@@ -83,8 +86,10 @@ test.describe('Co-teaching: comparative grading and exports with a colleague’s
                     },
                 ],
                 gradeScaleId: 'letter-10',
+                format: DEFAULT_FORMAT,
                 attachmentIds: [],
                 createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
                 totalMaxPoints: 4,
                 scoringMode: 'weighted-percentage',
                 sharing: { visibility: 'coteachers', access: 'view' },
