@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const db = vi.hoisted(() => ({ isConnected: true, userId: 'me' as string | null }));
 const mockFetch = vi.fn();
 const mockUpdate = vi.fn();
+const sharedMaterialHandlers = vi.hoisted(() => [] as Array<(tables: string[]) => void>);
 
 vi.mock('../useDbStatus', () => ({
     useDbStatus: () => ({ isConnected: db.isConnected, userId: db.userId }),
@@ -13,6 +14,10 @@ vi.mock('../../services/database', () => ({
         adapter: {
             fetchSharedMaterials: (...a: unknown[]) => mockFetch(...a),
             updateSharedMaterial: (...a: unknown[]) => mockUpdate(...a),
+        },
+        onSharedMaterialChange: (cb: (tables: string[]) => void) => {
+            sharedMaterialHandlers.push(cb);
+            return () => {};
         },
     },
 }));
@@ -127,6 +132,34 @@ describe('useSharedMaterials', () => {
         await waitFor(() => expect(result.current.status).toBe('ready'));
         act(() => result.current.refresh());
         await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(2));
+    });
+
+    describe('live refresh on a colleague’s material change (#1061)', () => {
+        it('reloads an already-loaded cache when storageSync reports a change for its table', async () => {
+            const { result } = renderHook(() => useSharedMaterials('rubric'));
+            await waitFor(() => expect(result.current.status).toBe('ready'));
+            expect(mockFetch).toHaveBeenCalledTimes(1);
+
+            expect(sharedMaterialHandlers.length).toBeGreaterThan(0);
+            act(() => sharedMaterialHandlers[0](['rubrics']));
+            await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(2));
+        });
+
+        it('a folders change reloads rubric cache too, since a folder’s kind is not in the event', async () => {
+            const { result } = renderHook(() => useSharedMaterials('rubric'));
+            await waitFor(() => expect(result.current.status).toBe('ready'));
+            expect(mockFetch).toHaveBeenCalledTimes(1);
+
+            act(() => sharedMaterialHandlers[0](['folders']));
+            await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(2));
+        });
+
+        it('ignores a table change for a kind nothing has loaded yet', () => {
+            // 'test' kind cache is idle after resetSharedMaterialsCache() in beforeEach — no own
+            // useSharedMaterials('test') hook has mounted in this test, so nothing should fetch.
+            act(() => sharedMaterialHandlers[0](['tests']));
+            expect(mockFetch).not.toHaveBeenCalled();
+        });
     });
 
     describe('useOwnOrSharedItem', () => {

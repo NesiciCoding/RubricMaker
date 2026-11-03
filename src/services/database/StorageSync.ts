@@ -93,17 +93,28 @@ class StorageSyncService {
     private flushInProgress = false;
     private realtimeChannel: ReturnType<SupabaseClient['channel']> | null = null;
     private realtimeDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+    // Co-teaching (096): a change to a colleague's shared/co-taught rubric, test or folder — never
+    // one of the teacher's own rows, see SHARED_MATERIAL_TABLES below — refreshes the
+    // useSharedMaterials cache instead of a StoreData collection, so it gets its own listener set
+    // and debounce rather than feeding pendingRealtimeTables/hydratePartial (whose fetchRubrics()/
+    // fetchTests()/fetchFolders() are owner-scoped and would no-op for someone else's row).
+    private pendingSharedMaterialTables: Set<string> = new Set();
+    private sharedMaterialDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+    private sharedMaterialListeners: Set<(tables: string[]) => void> = new Set();
 
-    // Every table backing a StoreData collection, with the RLS-scoping column to filter
-    // change events by so a client only receives events for rows it can already read.
-    // student_rubrics backs both studentRubrics and peerReviews (split by a boolean
-    // column) — one subscription covers both, since a refresh re-fetches the whole table.
-    private static readonly REALTIME_TABLES: Array<{ table: string; filterColumn: string }> = [
+    // Every table backing a StoreData collection, with the RLS-scoping column to filter change
+    // events by so a client only receives events for rows it can already read. `filterColumn: null`
+    // means no filter at all — RLS alone decides what's delivered, matching the equivalent fetch
+    // (fetchStudentRubrics()/fetchStudentTests() are themselves unscoped selects) — so a grade or
+    // result a co-teacher changes on a shared class's student fires this listener too, not only the
+    // grader's/owner's own edits. student_rubrics backs both studentRubrics and peerReviews (split
+    // by a boolean column) — one subscription covers both, since a refresh re-fetches the whole table.
+    private static readonly REALTIME_TABLES: Array<{ table: string; filterColumn: string | null }> = [
         { table: 'rubrics', filterColumn: 'owner_id' },
         { table: 'folders', filterColumn: 'owner_id' },
         { table: 'classes', filterColumn: 'owner_id' },
         { table: 'students', filterColumn: 'owner_id' },
-        { table: 'student_rubrics', filterColumn: 'grader_id' },
+        { table: 'student_rubrics', filterColumn: null },
         { table: 'attachments', filterColumn: 'owner_id' },
         { table: 'grade_scales', filterColumn: 'owner_id' },
         { table: 'comment_snippets', filterColumn: 'owner_id' },
@@ -114,7 +125,7 @@ class StorageSyncService {
         { table: 'speaking_sessions', filterColumn: 'owner_id' },
         { table: 'analysis_results', filterColumn: 'owner_id' },
         { table: 'tests', filterColumn: 'owner_id' },
-        { table: 'student_tests', filterColumn: 'owner_id' },
+        { table: 'student_tests', filterColumn: null },
         { table: 'essay_templates', filterColumn: 'owner_id' },
         { table: 'grading_tasks', filterColumn: 'owner_id' },
         { table: 'messages', filterColumn: 'owner_id' },
@@ -134,6 +145,12 @@ class StorageSyncService {
         { table: 'comparative_matchups', filterColumn: 'owner_id' },
     ];
     private static readonly REALTIME_DEBOUNCE_MS = 800;
+
+    // Material sharing/co-teaching (095/096): a colleague's rubric, test or folder is readable but
+    // never appears in REALTIME_TABLES's owner-scoped fetch, so it gets a second, narrower
+    // subscription (owner_id <> me — RLS still decides what actually gets delivered) that feeds
+    // pendingSharedMaterialTables/onSharedMaterialChange instead.
+    private static readonly SHARED_MATERIAL_TABLES: readonly string[] = ['rubrics', 'tests', 'folders'];
 
     // Tables hydratePartial() can refresh in isolation (must stay in sync with its switch). Any
     // realtime-subscribed table NOT listed here (e.g. user_settings) degrades to a full hydrate.
@@ -244,6 +261,17 @@ class StorageSyncService {
         return () => this.realtimeListeners.delete(cb);
     }
 
+    /**
+     * Fires when a colleague's shared or co-taught rubric, test or folder changes (see
+     * SHARED_MATERIAL_TABLES) — never the teacher's own rows, which go through
+     * onRealtimeChange/hydratePartial instead. useSharedMaterials uses this to refresh its cache
+     * live rather than waiting for the next manual refresh/reconnect.
+     */
+    onSharedMaterialChange(cb: (tables: string[]) => void): () => void {
+        this.sharedMaterialListeners.add(cb);
+        return () => this.sharedMaterialListeners.delete(cb);
+    }
+
     /** Start listening for browser online/offline events. Idempotent. */
     startNetworkListener(): void {
         if (this.networkListenerActive) return;
@@ -337,13 +365,14 @@ class StorageSyncService {
     }
 
     /**
-     * Subscribes to Postgres change events on every synced table (RLS + a per-row
-     * filter scope it to the current user) so edits made on another device show up
-     * without waiting for reconnect or next login. Bursts of changes are debounced
-     * into a single refresh — this is a "something changed, go refetch" signal, not
-     * a delta transport, so it reuses the already-correct hydrate()+mergeStoreData()
-     * pipeline (via the reconnect-listener callback) instead of hand-decoding ~20
-     * different row shapes into app objects a second time.
+     * Subscribes to Postgres change events on every synced table (RLS, plus a per-row filter for
+     * most tables, scope what's delivered to the current user) so edits made on another device —
+     * or, for student_rubrics/student_tests and shared rubrics/tests/folders, by a co-teacher or
+     * sharing colleague — show up without waiting for reconnect or next login. Bursts of changes
+     * are debounced into a single refresh — this is a "something changed, go refetch" signal, not
+     * a delta transport, so it reuses the already-correct hydrate()+mergeStoreData() pipeline (via
+     * the reconnect-listener callback) instead of hand-decoding ~20 different row shapes into app
+     * objects a second time.
      */
     private startRealtimeSync(): void {
         const client = this.adapter.getClient();
@@ -353,10 +382,25 @@ class StorageSyncService {
         for (const { table, filterColumn } of StorageSyncService.REALTIME_TABLES) {
             channel.on(
                 'postgres_changes',
-                { event: '*', schema: 'public', table, filter: `${filterColumn}=eq.${uid}` },
+                filterColumn
+                    ? { event: '*', schema: 'public', table, filter: `${filterColumn}=eq.${uid}` }
+                    : { event: '*', schema: 'public', table },
                 () => {
                     this.pendingRealtimeTables.add(table);
                     this.scheduleRealtimeRefresh();
+                }
+            );
+        }
+        // Second binding, same channel: a colleague's row on rubrics/tests/folders (owner_id <>
+        // me) — RLS (095/096) still decides what's actually delivered — refreshes
+        // useSharedMaterials instead of hydratePartial (see SHARED_MATERIAL_TABLES above).
+        for (const table of StorageSyncService.SHARED_MATERIAL_TABLES) {
+            channel.on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table, filter: `owner_id=neq.${uid}` },
+                () => {
+                    this.pendingSharedMaterialTables.add(table);
+                    this.scheduleSharedMaterialRefresh();
                 }
             );
         }
@@ -369,11 +413,26 @@ class StorageSyncService {
             clearTimeout(this.realtimeDebounceTimer);
             this.realtimeDebounceTimer = null;
         }
+        if (this.sharedMaterialDebounceTimer) {
+            clearTimeout(this.sharedMaterialDebounceTimer);
+            this.sharedMaterialDebounceTimer = null;
+        }
         this.pendingRealtimeTables.clear();
+        this.pendingSharedMaterialTables.clear();
         if (this.realtimeChannel) {
             this.adapter.getClient()?.removeChannel(this.realtimeChannel);
             this.realtimeChannel = null;
         }
+    }
+
+    private scheduleSharedMaterialRefresh(): void {
+        if (this.sharedMaterialDebounceTimer) clearTimeout(this.sharedMaterialDebounceTimer);
+        this.sharedMaterialDebounceTimer = setTimeout(() => {
+            this.sharedMaterialDebounceTimer = null;
+            const changed = Array.from(this.pendingSharedMaterialTables);
+            this.pendingSharedMaterialTables.clear();
+            if (changed.length > 0) this.sharedMaterialListeners.forEach((cb) => cb(changed));
+        }, StorageSyncService.REALTIME_DEBOUNCE_MS);
     }
 
     private scheduleRealtimeRefresh(): void {

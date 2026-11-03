@@ -67,6 +67,38 @@ export function resetSharedMaterialsCache() {
     setState('test', { ...EMPTY, items: [], folders: [] });
 }
 
+// Live refresh when a colleague's shared/co-taught rubric, test or folder changes (StorageSync's
+// owner_id<>me realtime binding — see onSharedMaterialChange). Registered once, lazily, the first
+// time any component mounts useSharedMaterials; a folder's kind isn't in the event (just the table
+// name), so refresh whichever of the two caches is already loaded. Optional chaining: storageSync
+// mocks in existing tests don't all stub this method.
+let sharedMaterialListenerAttached = false;
+function ensureSharedMaterialListener() {
+    if (sharedMaterialListenerAttached) return;
+    sharedMaterialListenerAttached = true;
+    try {
+        storageSync.onSharedMaterialChange?.((tables: string[]) => {
+            const kinds = new Set<SharedKind>();
+            for (const table of tables) {
+                if (table === 'rubrics') kinds.add('rubric');
+                else if (table === 'tests') kinds.add('test');
+                else if (table === 'folders') {
+                    kinds.add('rubric');
+                    kinds.add('test');
+                }
+            }
+            for (const kind of kinds) {
+                const userId = cache[kind].userId;
+                if (userId) void load(kind, userId);
+            }
+        });
+    } catch {
+        // Some tests mock services/database without a storageSync export at all — nothing to
+        // subscribe to in that case, and the module-level cache this hook serves is otherwise
+        // unaffected.
+    }
+}
+
 /**
  * Colleagues' rubrics or tests shared with the signed-in teacher (co-teachers, school, per-person
  * shares, or everything in the school for an admin). Kept outside AppContext on purpose: these
@@ -77,6 +109,10 @@ export function useSharedMaterials<K extends SharedKind>(kind: K, enabled = true
     const db = useDbStatus();
     const userId = db.isConnected ? db.userId : null;
     const state = useSyncExternalStore(subscribe, () => cache[kind]) as SharedMaterialsState<ItemOf<K>>;
+
+    useEffect(() => {
+        ensureSharedMaterialListener();
+    }, []);
 
     useEffect(() => {
         if (!userId || !enabled) return;

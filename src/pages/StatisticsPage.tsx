@@ -19,6 +19,7 @@ import { getStatisticsTourSteps } from '../data/TutorialSteps';
 import ClassFilterChips from '../components/ui/ClassFilterChips';
 import { useSettings } from '../context/AppContext';
 import { useStoreSelector } from '../context/useStore';
+import { useRubricPool, useTestPool } from '../hooks/useMaterialPool';
 import {
     calcGradeSummary,
     calcClassStats,
@@ -88,9 +89,9 @@ export default function StatisticsPage() {
         students: allStudents,
         studentRubrics: allStudentRubrics,
         classes,
-        rubrics,
+        rubrics: ownRubrics,
         gradeScales,
-        tests,
+        tests: ownTests,
         studentTests,
         standardMasteryTargets,
         essayAssignments,
@@ -107,6 +108,10 @@ export default function StatisticsPage() {
         essayAssignments: s.essayAssignments,
         settings: s.settings,
     }));
+    // Statistics and rubric filters/pickers also cover colleague rubrics/tests used in a
+    // co-taught class, not just the teacher's own library.
+    const { rubrics } = useRubricPool(ownRubrics);
+    const { tests } = useTestPool(ownTests);
     const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
     const studentRubrics = useMemo(
         () => liveStudentRubrics(allStudentRubrics, students, rubrics),

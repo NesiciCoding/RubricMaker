@@ -53,6 +53,19 @@ vi.mock('../../hooks/useDbStatus', () => ({
     useDbStatus: () => ({ isConnected: mockHasDb }),
 }));
 
+// A colleague can assign a test too (#1061's "Check that LiveMonitorPage works when a co-teacher
+// assigned the test") — the assignment row is owned by the test's owner either way. Own test wins
+// by default so every existing test below (which always supplies one) is unaffected; one test
+// overrides this to resolve a test that's absent from mockUseApp.tests at all.
+let mockSharedTest: Test | undefined;
+vi.mock('../../hooks/useSharedMaterials', () => ({
+    useOwnOrSharedItem: (_kind: string, _id: string | undefined, own: Test | undefined) => ({
+        item: own ?? mockSharedTest,
+        entry: undefined,
+        loading: false,
+    }),
+}));
+
 vi.mock('../../services/database', () => ({
     loadSupabaseConfig: () => mockSupabaseConfig,
 }));
@@ -116,6 +129,7 @@ describe('LiveMonitorPage', () => {
     beforeEach(() => {
         mockHasDb = false;
         mockSupabaseConfig = null;
+        mockSharedTest = undefined;
         mockUseApp = {
             settings: { theme: 'dark', overdueReminderThreshold: 7 },
             updateSettings: vi.fn(),
@@ -166,6 +180,17 @@ describe('LiveMonitorPage', () => {
         renderPage(['/tests/unknown-test/monitor']);
 
         expect(screen.getByText('tests.monitor.not_found')).toBeInTheDocument();
+    });
+
+    it('opens the monitor for a test a colleague assigned, not just my own (#1061)', () => {
+        mockHasDb = true;
+        mockSupabaseConfig = { supabaseUrl: 'https://example.supabase.co', supabaseAnonKey: 'anon-key' };
+        mockUseApp = { ...mockUseApp, tests: [mockTest], studentTests: [] };
+        mockSharedTest = { ...mockTest, id: 'colleague-test', name: "Ann's Quiz" };
+
+        renderPage(['/tests/colleague-test/monitor']);
+
+        expect(screen.queryByText('tests.monitor.not_found')).not.toBeInTheDocument();
     });
 
     describe('with database configured', () => {

@@ -87,6 +87,23 @@ const mockEssaySubmission: EssaySubmission = {
 
 const mockShowToast = vi.fn();
 
+// Colleague rubrics/tests a co-teacher can export grades/results with (#1062) — shared, or used
+// in a co-taught class. Empty by default so existing tests are unaffected; one test below fills it.
+const sharedPoolItems = vi.hoisted(() => ({
+    rubric: [] as Array<{ item: Rubric; ownerId: string; ownerName: string; access: string }>,
+    test: [] as Array<{ item: unknown; ownerId: string; ownerName: string; access: string }>,
+}));
+vi.mock('../../hooks/useSharedMaterials', () => ({
+    useSharedMaterials: (kind: 'rubric' | 'test') => ({
+        status: 'ready',
+        connected: true,
+        items: sharedPoolItems[kind],
+        folders: [],
+        refresh: vi.fn(),
+        save: vi.fn(),
+    }),
+}));
+
 let appOverrides: Record<string, unknown> = {};
 
 const makeAppContextMock = () => ({
@@ -197,6 +214,8 @@ function renderPage() {
 describe('ExportPage', () => {
     beforeEach(async () => {
         appOverrides = {};
+        sharedPoolItems.rubric = [];
+        sharedPoolItems.test = [];
         mockShowToast.mockClear();
         vi.clearAllMocks();
         global.URL.createObjectURL = vi.fn(() => 'blob:fake');
@@ -209,6 +228,20 @@ describe('ExportPage', () => {
     it('renders the rubric export section header', () => {
         renderPage();
         expect(screen.getByText('exportPage.rubric_section_title')).toBeInTheDocument();
+    });
+
+    it('offers a colleague’s shared/co-taught rubric in the export picker, not just my own (#1062)', () => {
+        appOverrides = { rubrics: [] };
+        sharedPoolItems.rubric = [
+            {
+                item: { ...mockRubric, id: 'colleague-r', name: "Ann's Rubric" },
+                ownerId: 'ann',
+                ownerName: 'Ann',
+                access: 'view',
+            },
+        ];
+        renderPage();
+        expect(screen.getByText("Ann's Rubric")).toBeInTheDocument();
     });
 
     it('exports the rubric as Word via the template/default button', async () => {

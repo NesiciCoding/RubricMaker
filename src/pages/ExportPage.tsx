@@ -44,6 +44,7 @@ import ExamBookletExportPanel from '../components/Tests/ExamBookletExportPanel';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
 import { EmptyState } from '../components/ui/EmptyState';
+import { useRubricPool, useTestPool } from '../hooks/useMaterialPool';
 
 /** `Class A_period_reports.zip` for a named class, otherwise undefined so the export module names the zip. */
 function classZipName(className: string | undefined, kind: string): string | undefined {
@@ -56,12 +57,12 @@ export default function ExportPage() {
         students: allStudents,
         classes,
         studentRubrics: allStudentRubrics,
-        rubrics,
+        rubrics: ownRubrics,
         gradeScales,
         exportTemplates,
         selfAssessments,
         analysisResults,
-        tests,
+        tests: ownTests,
         studentTests,
         essayAssignments,
         essaySubmissions,
@@ -81,6 +82,10 @@ export default function ExportPage() {
         essaySubmissions: s.essaySubmissions,
         settings: s.settings,
     }));
+    // A co-teacher exports grades/results given with the class owner's rubric/test too — merge in
+    // colleague material (shared, or used in a co-taught class) alongside the teacher's own library.
+    const { rubrics } = useRubricPool(ownRubrics);
+    const { tests } = useTestPool(ownTests);
     // The roster domain hooks filtered soft-deleted rows; keep that behavior here.
     const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
     const studentRubrics = useMemo(() => allStudentRubrics.filter((sr) => !sr.deletedAt), [allStudentRubrics]);
