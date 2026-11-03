@@ -29,6 +29,7 @@ import { ChartSkeleton } from '../components/ui/Skeleton';
 import { formatShortDate } from '../utils/dateInput';
 import { buildStudentTimeline, scoredTestResults } from '../utils/assessmentTimeline';
 import { useStoreSelector } from '../context/useStore';
+import { useRubricPool, useTestPool } from '../hooks/useMaterialPool';
 import { useToast } from '../hooks/useToast';
 import { calcGradeSummary, type GradeSummary } from '../utils/gradeCalc';
 import { exportSinglePdf } from '../utils/pdfExport';
@@ -73,11 +74,11 @@ export default function StudentProfilePage() {
         students: allStudents,
         studentRubrics: allStudentRubrics,
         classes,
-        rubrics,
+        rubrics: ownRubrics,
         gradeScales,
         selfAssessments,
         speakingSessions,
-        tests,
+        tests: ownTests,
         studentTests,
         standardMasteryTargets,
         flashcardDecks,
@@ -102,6 +103,10 @@ export default function StudentProfilePage() {
         essayAssignments: s.essayAssignments,
         settings: s.settings,
     }));
+    // Naming/grouping and rubric filters also need colleague rubrics/tests used in a
+    // co-taught class, not just the teacher's own library.
+    const { rubrics } = useRubricPool(ownRubrics);
+    const { tests } = useTestPool(ownTests);
     // The roster domain exposes active (non-archived) students and non-deleted student
     // rubrics; the store exposes the raw collections, so apply the same filters here.
     const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);

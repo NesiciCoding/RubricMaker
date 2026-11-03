@@ -36,6 +36,14 @@ vi.mock('react-joyride', () => {
 vi.mock('../../services/database', () => ({
     storageSync: {
         feedbackAudioSync: { inlineForShare },
+        // useRubricPool/useTestPool (shared-rubric support, #1062) read connection status via
+        // useDbStatus/useSharedMaterials even when offline, so these need to exist.
+        isConnected: () => false,
+        getStatus: () => 'offline',
+        getLastSyncAt: () => null,
+        getCurrentUserId: () => null,
+        subscribe: () => () => {},
+        onAuthChange: () => () => {},
     },
 }));
 

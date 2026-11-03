@@ -44,6 +44,7 @@ import ExamBookletExportPanel from '../components/Tests/ExamBookletExportPanel';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
 import { EmptyState } from '../components/ui/EmptyState';
+import { useRubricPool, useTestPool } from '../hooks/useMaterialPool';
 
 /** `Class A_period_reports.zip` for a named class, otherwise undefined so the export module names the zip. */
 function classZipName(className: string | undefined, kind: string): string | undefined {
@@ -56,12 +57,12 @@ export default function ExportPage() {
         students: allStudents,
         classes,
         studentRubrics: allStudentRubrics,
-        rubrics,
+        rubrics: ownRubrics,
         gradeScales,
         exportTemplates,
         selfAssessments,
         analysisResults,
-        tests,
+        tests: ownTests,
         studentTests,
         essayAssignments,
         essaySubmissions,
@@ -81,6 +82,10 @@ export default function ExportPage() {
         essaySubmissions: s.essaySubmissions,
         settings: s.settings,
     }));
+    // A co-teacher exports grades/results given with the class owner's rubric/test too — merge in
+    // colleague material (shared, or used in a co-taught class) alongside the teacher's own library.
+    const { rubrics } = useRubricPool(ownRubrics);
+    const { tests } = useTestPool(ownTests);
     // The roster domain hooks filtered soft-deleted rows; keep that behavior here.
     const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
     const studentRubrics = useMemo(() => allStudentRubrics.filter((sr) => !sr.deletedAt), [allStudentRubrics]);
@@ -89,6 +94,10 @@ export default function ExportPage() {
     const { showToast } = useToast();
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
     const [selectedRubricId, setSelectedRubricId] = useState(rubrics[0]?.id ?? '');
+    // useRubricPool's colleague rubrics arrive asynchronously, after this state's initial value is
+    // already locked in — a co-teacher with no own rubrics would otherwise be stuck on '' forever,
+    // even once their only selectable rubric (a colleague's) loads. Recomputed every render instead.
+    const activeRubricId = rubrics.some((r) => r.id === selectedRubricId) ? selectedRubricId : (rubrics[0]?.id ?? '');
     const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
     const [exporting, setExporting] = useState(false);
     const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
@@ -104,7 +113,7 @@ export default function ExportPage() {
             return next;
         });
 
-    const rubric = rubrics.find((r) => r.id === selectedRubricId);
+    const rubric = rubrics.find((r) => r.id === activeRubricId);
 
     const [gradebookPreset, setGradebookPreset] = useState<GradebookPresetId>('generic');
     // Magister and SOMtoday are Dutch systems, whose Excel reads 7,5 and treats 7.5 as text.
@@ -157,7 +166,7 @@ export default function ExportPage() {
             : null;
 
     const gradedStudents = studentRubrics
-        .filter((sr) => sr.rubricId === selectedRubricId)
+        .filter((sr) => sr.rubricId === activeRubricId)
         .map((sr) => {
             const r = sr.rubricSnapshot || rubric;
             return {
@@ -717,7 +726,7 @@ export default function ExportPage() {
                             <label htmlFor="export-rubric-select">{t('exportPage.select_rubric')}</label>
                             <select
                                 id="export-rubric-select"
-                                value={selectedRubricId}
+                                value={activeRubricId}
                                 onChange={(e) => {
                                     setSelectedRubricId(e.target.value);
                                     setSelectedStudentIds(new Set());

@@ -34,6 +34,7 @@ import AttachmentViewer from '../components/Attachments/AttachmentViewer';
 import { ComparativeMatchup, ScoreEntry, Student, StudentRubric, TieredConfig } from '../types';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
+import { useOwnOrSharedItem } from '../hooks/useSharedMaterials';
 
 const COMBINED_ID = '__combined__';
 
@@ -49,7 +50,12 @@ function ClassPicker({ rubricId }: { rubricId: string }) {
 
     const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
 
-    const rubric = rubrics.find((r) => r.id === rubricId);
+    // A colleague's rubric (shared with us, or used in a class we co-teach) names this page too.
+    const { item: rubric } = useOwnOrSharedItem(
+        'rubric',
+        rubricId,
+        rubrics.find((r) => r.id === rubricId)
+    );
 
     const linkedClasses = classes.filter((c) => c.rubricIds?.includes(rubricId));
     const offerClasses = linkedClasses.length > 0 ? linkedClasses : classes;
@@ -226,7 +232,12 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
     const [searchParams] = useSearchParams();
     const startStudentId = searchParams.get('start');
 
-    const rubric = rubrics.find((r) => r.id === rubricId);
+    const ownRubric = rubrics.find((r) => r.id === rubricId);
+    // A co-teacher can run comparative grading with the class owner's rubric too (shared, or used
+    // in a co-taught class). Session settings (pairing, per-student limit) only persist back to
+    // the rubric itself — see setPairing/commitMatchupLimit — when it's the teacher's own.
+    const { item: rubric } = useOwnOrSharedItem('rubric', rubricId, ownRubric);
+    const isOwnRubric = !!ownRubric;
 
     // When COMBINED_ID, pull from every class that has this rubric linked.
     const classStudents = useMemo(() => {
@@ -293,12 +304,12 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
     const countedMatchups = useMemo(() => countable(rubricMatchups), [countable, rubricMatchups]);
 
     function setPairing(next: 'tier' | 'all') {
-        if (!rubric?.tiered) return;
+        if (!rubric?.tiered || !isOwnRubric) return;
         updateRubric({ ...rubric, tiered: { ...rubric.tiered, comparativePairing: next } });
     }
 
     function commitMatchupLimit(limit: number) {
-        if (!rubric || (rubric.comparativeMatchupLimit ?? 0) === limit) return;
+        if (!rubric || !isOwnRubric || (rubric.comparativeMatchupLimit ?? 0) === limit) return;
         updateRubric({ ...rubric, comparativeMatchupLimit: limit });
     }
     const [tourRun, setTourRun] = useState(false);
@@ -865,6 +876,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                     <select
                                         value={pairing}
                                         onChange={(e) => setPairing(e.target.value as 'tier' | 'all')}
+                                        disabled={!isOwnRubric}
                                         style={{ fontSize: '0.8rem', padding: '2px 4px' }}
                                     >
                                         <option value="tier">{t('comparativeGrading.pairing_tier')}</option>

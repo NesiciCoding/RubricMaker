@@ -313,12 +313,19 @@ function GradeStudentEditor() {
     const touchStartRef = useRef<{ id: number; x: number; y: number } | null>(null);
     const { confirm: confirmSwipe, dialogProps: swipeConfirmProps } = useConfirm();
 
-    // A deep link can mount before hydration merges this student's saved grade into state.
-    // Adopt that record when it arrives; if the teacher already started editing, lay their
-    // edits over it so a save neither adds a blank duplicate nor wipes untouched saved scores.
+    // A deep link can mount before hydration merges this student's saved grade into state —
+    // adopt that record when it arrives. The same path also brings in a co-teacher's live edit
+    // to this same grade (migration 096 + the realtime fix in StorageSync.ts): `existingSR` gets
+    // a new object identity whenever the underlying record actually changes, not on every
+    // render, so gate on that identity rather than on `sr.id` (which never changes after the
+    // first adopt and would otherwise make this a one-shot effect). Either way, if the teacher
+    // already started editing, lay their edits over the incoming record so a save neither adds a
+    // blank duplicate nor wipes untouched saved scores — and never clobbers a concurrent one.
     const seedSrRef = useRef(sr);
+    const adoptedExistingSRRef = useRef(existingSR);
     React.useEffect(() => {
-        if (!existingSR || !sr || sr.id === existingSR.id) return;
+        if (!existingSR || !sr || existingSR === adoptedExistingSRRef.current) return;
+        adoptedExistingSRRef.current = existingSR;
         if (isDirty && seedSrRef.current) {
             setSr(mergeEditsOntoSavedGrade(seedSrRef.current, sr, existingSR));
             setFeedbackOnly((f) => f || (existingSR.feedbackOnly ?? false));

@@ -43,7 +43,7 @@ function subscribe(listener: () => void) {
     return () => listeners.delete(listener);
 }
 
-async function load(kind: SharedKind, userId: string) {
+async function load(kind: SharedKind, userId: string, background = false) {
     const sameUser = cache[kind].userId === userId;
     setState(
         kind,
@@ -57,7 +57,12 @@ async function load(kind: SharedKind, userId: string) {
         setState(kind, { status: 'ready', items, folders, userId });
     } catch {
         if (cache[kind].userId !== userId) return;
-        setState(kind, { status: 'error', items: [], folders: [], userId });
+        // A background live-refresh failure (e.g. a transient network blip) shouldn't wipe an
+        // already-loaded cache and blank every picker — keep serving the stale items instead.
+        setState(
+            kind,
+            background ? { ...cache[kind], status: 'ready' } : { status: 'error', items: [], folders: [], userId }
+        );
     }
 }
 
@@ -65,6 +70,38 @@ async function load(kind: SharedKind, userId: string) {
 export function resetSharedMaterialsCache() {
     setState('rubric', { ...EMPTY, items: [], folders: [] });
     setState('test', { ...EMPTY, items: [], folders: [] });
+}
+
+// Live refresh when a colleague's shared/co-taught rubric, test or folder changes (StorageSync's
+// owner_id<>me realtime binding — see onSharedMaterialChange). Registered once, lazily, the first
+// time any component mounts useSharedMaterials; a folder's kind isn't in the event (just the table
+// name), so refresh whichever of the two caches is already loaded. Optional chaining: storageSync
+// mocks in existing tests don't all stub this method.
+let sharedMaterialListenerAttached = false;
+function ensureSharedMaterialListener() {
+    if (sharedMaterialListenerAttached) return;
+    sharedMaterialListenerAttached = true;
+    try {
+        storageSync.onSharedMaterialChange?.((tables: string[]) => {
+            const kinds = new Set<SharedKind>();
+            for (const table of tables) {
+                if (table === 'rubrics') kinds.add('rubric');
+                else if (table === 'tests') kinds.add('test');
+                else if (table === 'folders') {
+                    kinds.add('rubric');
+                    kinds.add('test');
+                }
+            }
+            for (const kind of kinds) {
+                const userId = cache[kind].userId;
+                if (userId) void load(kind, userId, true);
+            }
+        });
+    } catch {
+        // Some tests mock services/database without a storageSync export at all — nothing to
+        // subscribe to in that case, and the module-level cache this hook serves is otherwise
+        // unaffected.
+    }
 }
 
 /**
@@ -77,6 +114,10 @@ export function useSharedMaterials<K extends SharedKind>(kind: K, enabled = true
     const db = useDbStatus();
     const userId = db.isConnected ? db.userId : null;
     const state = useSyncExternalStore(subscribe, () => cache[kind]) as SharedMaterialsState<ItemOf<K>>;
+
+    useEffect(() => {
+        ensureSharedMaterialListener();
+    }, []);
 
     useEffect(() => {
         if (!userId || !enabled) return;

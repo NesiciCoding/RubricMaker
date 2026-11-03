@@ -11,6 +11,7 @@ import { InlineMonitorSkeleton } from '../components/ui/Skeleton';
 import { useAssessment, useEssays, useStudents, useClasses } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { useDbStatus } from '../hooks/useDbStatus';
+import { useOwnOrSharedItem } from '../hooks/useSharedMaterials';
 import { loadSupabaseConfig } from '../services/database';
 import PresenceBadge from '../components/Monitor/PresenceBadge';
 import ResponsesGrid from '../components/Monitor/ResponsesGrid';
@@ -102,7 +103,10 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
 
     const hasDb = dbStatus.isConnected && !!config?.supabaseUrl && !!config?.supabaseAnonKey;
 
-    const test = kind === 'test' ? tests.find((tst) => tst.id === params.testId) : undefined;
+    const ownTest = kind === 'test' ? tests.find((tst) => tst.id === params.testId) : undefined;
+    // A co-teacher can open the monitor for a test a colleague assigned (shared, or used in a
+    // co-taught class) — the assignment row is owned by the test's owner either way.
+    const { item: test } = useOwnOrSharedItem('test', kind === 'test' ? params.testId : undefined, ownTest);
 
     // Derived during render so it is already true for a test whose lookup has not started.
     const testTeacherKeysLoading =
@@ -187,7 +191,13 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         return () => {
             cancelled = true;
         };
-    }, [kind, test, hasDb, fetchTestAssignmentTeacherKeys]);
+        // `test` itself is read above (not just test.id) — depending on test?.id rather than the
+        // object keeps this effect (and the realtime channels it indirectly rebuilds via
+        // testTeacherKeys) from tearing down on every live useSharedMaterials refresh, which
+        // replaces the whole cache array and so gives `test` a new reference even when nothing
+        // about THIS test changed (e.g. a colleague's unrelated rubric or folder changed).
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [kind, test?.id, hasDb, fetchTestAssignmentTeacherKeys]);
 
     // ── Resolve the list of monitored students ───────────────────────────────────
     const monitorStudents = useMemo<MonitorStudent[]>(() => {
