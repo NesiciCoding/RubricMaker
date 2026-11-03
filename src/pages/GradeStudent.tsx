@@ -1214,9 +1214,19 @@ function GradeStudentEditor() {
                             {t('help.score_modifier_body')}
                         </HelpPopover>
                     </span>
-                    <div style={{ display: 'flex', gap: 6, alignItems: 'center', flex: 1, minWidth: 280 }}>
-                        {/* No fixed width: a select sizes itself to its widest option, and the former
-                            110px clipped "Points offset" (and longer translations) mid-word. */}
+                    <div
+                        style={{
+                            display: 'flex',
+                            gap: 6,
+                            alignItems: 'center',
+                            flex: 1,
+                            minWidth: 280,
+                            flexWrap: 'wrap',
+                        }}
+                    >
+                        {/* maxWidth bounds the select so a long translated option can't push the
+                            number input, reason field, or export button out of the row; minWidth
+                            keeps it from clipping "Points offset" (and longer translations) mid-word. */}
                         <select
                             aria-label={t('gradeStudent.label_modifier')}
                             value={sr.globalModifier?.type ?? 'percentage'}
@@ -1236,7 +1246,7 @@ function GradeStudentEditor() {
                                 );
                                 setIsDirty(true);
                             }}
-                            style={{ flexShrink: 0, minWidth: 110 }}
+                            style={{ flexShrink: 0, minWidth: 110, maxWidth: 190 }}
                         >
                             <option value="percentage">{t('gradeStudent.offset_percentage')}</option>
                             <option value="points">{t('gradeStudent.offset_points')}</option>
@@ -1261,7 +1271,7 @@ function GradeStudentEditor() {
                                 );
                                 setIsDirty(true);
                             }}
-                            style={{ width: 60 }}
+                            style={{ width: 60, flexShrink: 0 }}
                         />
                         <input
                             type="text"

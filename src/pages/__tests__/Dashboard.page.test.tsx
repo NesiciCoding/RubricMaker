@@ -366,6 +366,14 @@ vi.mock('react-router-dom', async () => {
     return { ...actual, useNavigate: () => mockNavigate };
 });
 
+vi.mock('@hello-pangea/dnd', () => ({
+    DragDropContext: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    Droppable: ({ children }: { children: (p: unknown) => React.ReactNode }) =>
+        children({ innerRef: vi.fn(), droppableProps: {}, placeholder: null }),
+    Draggable: ({ children }: { children: (p: unknown) => React.ReactNode }) =>
+        children({ innerRef: vi.fn(), draggableProps: {}, dragHandleProps: {} }),
+}));
+
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
         t: (key: string, opts?: string | Record<string, unknown>) => {
@@ -560,7 +568,7 @@ describe('Dashboard page', () => {
         vi.useFakeTimers();
         vi.setSystemTime(new Date('2026-06-28T12:00:00.000Z'));
         await renderPage();
-        expect(screen.getByText('At-Risk Students')).toBeInTheDocument();
+        expect(screen.getByText('dashboard.at_risk_title')).toBeInTheDocument();
         expect(screen.getByText('40%')).toBeInTheDocument();
         // Feedback age is 10 days for the newest grade → red clock icon is shown.
         expect(screen.getByTitle('Last feedback 10 days ago')).toBeInTheDocument();
@@ -780,7 +788,7 @@ describe('Dashboard at-risk panel on a total-points rubric', () => {
         // 8 of the configured 10 points: 80% on the grading page, 40% if scored by weight.
         store = totalPointsStore([5, 3]);
         await renderPage();
-        expect(screen.queryByText('At-Risk Students')).not.toBeInTheDocument();
+        expect(screen.queryByText('dashboard.at_risk_title')).not.toBeInTheDocument();
         expect(screen.queryByText(`${WEIGHTED_PERCENT}%`)).not.toBeInTheDocument();
     });
 
@@ -788,7 +796,7 @@ describe('Dashboard at-risk panel on a total-points rubric', () => {
         // Graded under weighted scoring (40%) before the rubric was switched to total points (80%).
         store = totalPointsStore([5, 3], makeTotalPointsRubric({ scoringMode: 'weighted-percentage' }));
         await renderPage();
-        expect(screen.getByText('At-Risk Students')).toBeInTheDocument();
+        expect(screen.getByText('dashboard.at_risk_title')).toBeInTheDocument();
         expect(screen.getByText(`${WEIGHTED_PERCENT}%`)).toBeInTheDocument();
     });
 
@@ -797,8 +805,67 @@ describe('Dashboard at-risk panel on a total-points rubric', () => {
         const { rubrics, studentRubrics } = store as { rubrics: Rubric[]; studentRubrics: StudentRubric[] };
         const expected = calcGradeSummary(studentRubrics[1], rubrics[0].criteria, totalPointsScale, rubrics[0]);
         await renderPage();
-        expect(screen.getByText('At-Risk Students')).toBeInTheDocument();
+        expect(screen.getByText('dashboard.at_risk_title')).toBeInTheDocument();
         expect(expected.modifiedPercentage).toBe(30);
         expect(screen.getByText('30%')).toBeInTheDocument();
+    });
+});
+
+describe('Dashboard widget customization', () => {
+    beforeEach(() => {
+        store = makeStore();
+        mockUpdateSettings.mockClear();
+    });
+
+    it('only shows the drag handle and hide toggle once Customize is turned on', async () => {
+        await renderPage();
+        expect(screen.queryByLabelText(/dashboard.widget_drag/)).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByText('dashboard.customize_toggle'));
+        expect(screen.getByText('dashboard.customize_done')).toBeInTheDocument();
+        expect(screen.getAllByLabelText(/dashboard.widget_drag/).length).toBeGreaterThan(0);
+        expect(screen.getAllByLabelText(/dashboard.widget_hide/).length).toBeGreaterThan(0);
+    });
+
+    it('hides a widget by eye-toggle and persists the hidden set via updateSettings', async () => {
+        await renderPage();
+        fireEvent.click(screen.getByText('dashboard.customize_toggle'));
+
+        fireEvent.click(screen.getByLabelText('dashboard.widget_hide:{"title":"dashboard.quick_actions"}'));
+
+        expect(mockUpdateSettings).toHaveBeenCalledWith({
+            dashboardWidgets: expect.objectContaining({ hidden: ['quickActions'] }),
+        });
+    });
+
+    it('does not render a widget hidden in settings once Customize is off', async () => {
+        store = {
+            ...makeStore(),
+            settings: {
+                ...(store.settings as object),
+                dashboardWidgets: { order: [], hidden: ['quickActions'] },
+            },
+        };
+        await renderPage();
+        expect(screen.queryByText('dashboard.quick_actions')).not.toBeInTheDocument();
+    });
+
+    it('still lists a hidden widget while customizing, so it can be shown again', async () => {
+        store = {
+            ...makeStore(),
+            settings: {
+                ...(store.settings as object),
+                dashboardWidgets: { order: [], hidden: ['quickActions'] },
+            },
+        };
+        await renderPage();
+        fireEvent.click(screen.getByText('dashboard.customize_toggle'));
+        const showButton = screen.getByLabelText('dashboard.widget_show:{"title":"dashboard.quick_actions"}');
+        expect(showButton).toBeInTheDocument();
+
+        fireEvent.click(showButton);
+        expect(mockUpdateSettings).toHaveBeenCalledWith({
+            dashboardWidgets: expect.objectContaining({ hidden: [] }),
+        });
     });
 });

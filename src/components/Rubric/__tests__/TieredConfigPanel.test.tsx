@@ -182,3 +182,20 @@ describe('TieredConfigPanel — comparative grading', () => {
         expect(last().comparativePairing).toBe('tier');
     });
 });
+
+describe('TieredConfigPanel — collapsing', () => {
+    it('is expanded by default and can be collapsed to a summary', () => {
+        setup();
+        expect(screen.getByText('rubricBuilder.tiered_tiers_title')).toBeInTheDocument();
+        const toggle = screen.getByRole('button', { name: /rubricBuilder.tiered_config_title/ });
+        expect(toggle).toHaveAttribute('aria-expanded', 'true');
+
+        fireEvent.click(toggle);
+        expect(toggle).toHaveAttribute('aria-expanded', 'false');
+        expect(screen.queryByText('rubricBuilder.tiered_tiers_title')).toBeNull();
+        expect(screen.getByText('rubricBuilder.tiered_config_summary:{"tiers":2,"bands":3}')).toBeInTheDocument();
+
+        fireEvent.click(toggle);
+        expect(screen.getByText('rubricBuilder.tiered_tiers_title')).toBeInTheDocument();
+    });
+});
