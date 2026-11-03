@@ -30,9 +30,9 @@ export function resolveDashboardWidgetOrder(stored: AppSettings['dashboardWidget
     order: DashboardWidgetId[];
     hidden: Set<DashboardWidgetId>;
 } {
-    const storedOrder = (stored?.order ?? []).filter(isDashboardWidgetId);
+    const storedOrder = Array.isArray(stored?.order) ? stored.order.filter(isDashboardWidgetId) : [];
     const missing = DASHBOARD_WIDGET_IDS.filter((id) => !storedOrder.includes(id));
-    const hidden = new Set((stored?.hidden ?? []).filter(isDashboardWidgetId));
+    const hidden = new Set(Array.isArray(stored?.hidden) ? stored.hidden.filter(isDashboardWidgetId) : []);
     return { order: [...storedOrder, ...missing], hidden };
 }
 

@@ -57,7 +57,10 @@ export default function DashboardWidgetFrame({
                     {hidden ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>
             </div>
-            {!hidden && <div style={{ pointerEvents: 'none' }}>{children}</div>}
+            {/* inert (not just pointerEvents: none) keeps a keyboard user from tabbing into and
+                activating a widget's own controls — e.g. deleting a quick-start template — while
+                customizing; this frame only renders during customize mode, so it always applies. */}
+            {!hidden && <div inert={true}>{children}</div>}
         </div>
     );
 }

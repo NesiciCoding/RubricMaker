@@ -22,6 +22,16 @@ describe('resolveDashboardWidgetOrder', () => {
         expect(order).not.toContain('retiredWidget');
         expect(order).toHaveLength(DASHBOARD_WIDGET_IDS.length);
     });
+
+    it('falls back to every widget shown when a restored backup has non-array order/hidden', () => {
+        const corrupted = { order: 'snapshot', hidden: 'snapshot' } as unknown as {
+            order: string[];
+            hidden?: string[];
+        };
+        const { order, hidden } = resolveDashboardWidgetOrder(corrupted);
+        expect(order).toEqual(DASHBOARD_WIDGET_IDS);
+        expect(hidden.size).toBe(0);
+    });
 });
 
 describe('moveItem', () => {

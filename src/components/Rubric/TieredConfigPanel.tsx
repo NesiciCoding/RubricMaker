@@ -57,6 +57,8 @@ export default function TieredConfigPanel({ config, onChange }: Props) {
                     width: '100%',
                     gap: 8,
                     padding: '4px 2px',
+                    flexWrap: 'wrap',
+                    whiteSpace: 'normal',
                 }}
             >
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
