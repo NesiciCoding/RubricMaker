@@ -1,7 +1,17 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { TrendingUp, Users, BookOpen, Download, Maximize2, Printer, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+    TrendingUp,
+    Users,
+    BookOpen,
+    Download,
+    Maximize2,
+    Printer,
+    ChevronDown,
+    ChevronUp,
+    SlidersHorizontal,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { BLOOM_LEVELS } from '../data/bloomsTaxonomy';
 import { IB_ATTRIBUTES } from '../data/ibLearnerProfile';
@@ -46,6 +56,10 @@ import ScoreHistogram from '../components/Statistics/ScoreHistogram';
 import CriterionHeatmap from '../components/Statistics/CriterionHeatmap';
 import ClassTrendChart from '../components/Statistics/ClassTrendChart';
 import ProfileTimelineChart from '../components/Statistics/ProfileTimelineChart';
+import StatsCustomizeModal from '../components/Statistics/StatsCustomizeModal';
+import StatsQueryPanel from '../components/Statistics/StatsQueryPanel';
+import { collectAssessmentRecords } from '../utils/statsQuery';
+import { isSectionVisible } from '../utils/statsSections';
 import { buildAssessmentTrend, buildStudentTimeline, scoredTestResults } from '../utils/assessmentTimeline';
 import { formatShortDate } from '../utils/dateInput';
 import MultiClassTrendChart from '../components/Statistics/MultiClassTrendChart';
@@ -58,6 +72,7 @@ import { liveStudentRubrics, rubricGradesInScope } from '../utils/liveStudentRub
 import { EmptyState } from '../components/ui/EmptyState';
 
 const STUDENT_COLORS = ['var(--purple)', 'var(--green)', 'var(--yellow)', 'var(--red)'];
+const NO_STUDENT_TESTS: StudentTest[] = [];
 
 function exportChartAsPng(containerRef: React.RefObject<HTMLDivElement | null>, filename: string) {
     /* v8 ignore next -- every export button renders alongside a chart container with an svg */
@@ -123,7 +138,11 @@ export default function StatisticsPage() {
     // ── View mode ────────────────────────────────────────────────────────────
     const [tourRun, setTourRun] = useState(false);
     const statsTourSteps = useMemo(() => getStatisticsTourSteps(t), [t]);
-    const [viewMode, setViewMode] = useState<'rubric' | 'student' | 'compare'>('rubric');
+    const [viewMode, setViewMode] = useState<'rubric' | 'student' | 'compare' | 'query'>('rubric');
+    const [customizeOpen, setCustomizeOpen] = useState(false);
+    const show = (id: string) => isSectionVisible(settings.statisticsHiddenSections, id);
+    const trendIncludeTests = settings.statisticsTrendIncludeTests ?? true;
+    const trendStudentTests = trendIncludeTests ? studentTests : NO_STUDENT_TESTS;
 
     // ── Track / year filters (shared across rubric + compare modes) ───────────
     const [filterTrack, setFilterTrack] = useState<VoTrack | 'all'>('all');
@@ -313,10 +332,10 @@ export default function StatisticsPage() {
             studentRubrics,
             rubrics,
             gradeScales,
-            studentTests,
+            studentTests: trendStudentTests,
             tests,
         });
-    }, [selectedClassId, rubrics, studentRubrics, students, gradeScales, studentTests, tests]);
+    }, [selectedClassId, rubrics, studentRubrics, students, gradeScales, trendStudentTests, tests]);
 
     // ── Compare mode data ─────────────────────────────────────────────────────
     const compareRubric = rubrics.find((r) => r.id === compareRubricId);
@@ -361,9 +380,9 @@ export default function StatisticsPage() {
             rubrics,
             gradeScales,
             tests,
-            studentTests
+            trendStudentTests
         );
-    }, [compareClassIds, classes, studentRubrics, students, rubrics, gradeScales, tests, studentTests]);
+    }, [compareClassIds, classes, studentRubrics, students, rubrics, gradeScales, tests, trendStudentTests]);
 
     const classNamesMap = useMemo(() => {
         const map: Record<string, string> = {};
@@ -474,11 +493,38 @@ export default function StatisticsPage() {
                     score: parseFloat(summary.modifiedPercentage.toFixed(1)),
                 })),
             scoredTestResults(
-                studentTests.filter((st) => st.studentId === selectedStudentId),
+                trendStudentTests.filter((st) => st.studentId === selectedStudentId),
                 tests
             )
         ).map((e) => ({ ...e, dateStr: formatShortDate(e.date, i18n.language) }));
-    }, [viewMode, selectedStudentId, studentViewTableData, studentTests, tests, i18n.language]);
+    }, [viewMode, selectedStudentId, studentViewTableData, trendStudentTests, tests, i18n.language]);
+
+    // Every rubric grade and graded test, flattened for the advanced query builder
+    const queryRecords = useMemo(() => {
+        if (viewMode !== 'query') return [];
+        const visibleClassIds = new Set(filteredClasses.map((c) => c.id));
+        return collectAssessmentRecords({
+            students: students.filter((s) => visibleClassIds.has(s.classId)),
+            classes,
+            studentRubrics,
+            rubrics,
+            gradeScales,
+            studentTests,
+            tests,
+            excludeNotHandedIn: excludeNHI,
+        });
+    }, [
+        viewMode,
+        filteredClasses,
+        students,
+        classes,
+        studentRubrics,
+        rubrics,
+        gradeScales,
+        studentTests,
+        tests,
+        excludeNHI,
+    ]);
 
     // Elo-scaled CEFR progression across the selected student's placement-test attempts (roadmap Phase 25.5)
     const eloProgressPoints = useMemo(() => {
@@ -688,12 +734,23 @@ export default function StatisticsPage() {
                         <button className="btn btn-ghost btn-sm no-print" onClick={() => setTourRun(true)}>
                             {t('tutorial.stats_tour_button')}
                         </button>
+                        <button className="btn btn-ghost btn-sm no-print" onClick={() => setCustomizeOpen(true)}>
+                            <SlidersHorizontal size={14} /> {t('statistics.customize.button')}
+                        </button>
                         <button className="btn btn-ghost btn-sm no-print" onClick={() => window.print()}>
                             <Printer size={14} /> {t('common.print')}
                         </button>
                     </>
                 }
             />
+            {customizeOpen && (
+                <StatsCustomizeModal
+                    hiddenSections={settings.statisticsHiddenSections}
+                    includeTestsInTrends={trendIncludeTests}
+                    onChange={updateSettings}
+                    onClose={() => setCustomizeOpen(false)}
+                />
+            )}
             <div className="page-content fade-in">
                 {/* ── Top controls ── */}
                 <div
@@ -722,6 +779,12 @@ export default function StatisticsPage() {
                                 onClick={() => setViewMode('compare')}
                             >
                                 {t('statistics.view_compare')}
+                            </button>
+                            <button
+                                className={`btn btn-sm ${viewMode === 'query' ? 'btn-primary' : 'btn-ghost'}`}
+                                onClick={() => setViewMode('query')}
+                            >
+                                {t('statistics.view_query')}
                             </button>
                         </div>
                     </div>
@@ -900,7 +963,7 @@ export default function StatisticsPage() {
                                 </div>
                             </div>
                         </>
-                    ) : (
+                    ) : viewMode === 'student' ? (
                         <>
                             <div className="form-group" style={{ flex: 2, minWidth: 200, marginBottom: 0 }}>
                                 <label>{t('statistics.label_class_filter')}</label>
@@ -966,7 +1029,7 @@ export default function StatisticsPage() {
                                 </div>
                             )}
                         </>
-                    )}
+                    ) : null}
                 </div>
 
                 {/* ── Compare view ── */}
@@ -992,45 +1055,47 @@ export default function StatisticsPage() {
                         ) : (
                             <>
                                 {/* Class average bar chart */}
-                                <div className="card" style={{ marginBottom: 20 }}>
-                                    <h3 style={{ marginBottom: 16 }}>{t('statistics.compare.avg_title')}</h3>
-                                    <ResponsiveContainer width="100%" height={220}>
-                                        <BarChart
-                                            data={comparisonResults}
-                                            margin={{ top: 4, right: 16, bottom: 0, left: -16 }}
-                                        >
-                                            <XAxis
-                                                dataKey="className"
-                                                tick={{ fill: 'var(--text-muted)', fontSize: 12 }}
-                                            />
-                                            <YAxis
-                                                domain={[0, 100]}
-                                                tick={{ fill: 'var(--text-muted)', fontSize: 12 }}
-                                                tickFormatter={(v: number) => `${v}%`}
-                                            />
-                                            <Tooltip
-                                                contentStyle={{
-                                                    background: 'var(--bg-card)',
-                                                    border: '1px solid var(--border)',
-                                                    borderRadius: 8,
-                                                }}
-                                                /* v8 ignore next -- recharts tooltips never trigger in jsdom */
-                                                formatter={(v: unknown) => [`${v}%`, t('statistics.stat_average')]}
-                                            />
-                                            <Bar dataKey="average" radius={[4, 4, 0, 0]} maxBarSize={80}>
-                                                {comparisonResults.map((r, i) => (
-                                                    <Cell
-                                                        key={r.classId}
-                                                        fill={CLASS_COMPARE_COLORS[i % CLASS_COMPARE_COLORS.length]}
-                                                    />
-                                                ))}
-                                            </Bar>
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                </div>
+                                {show('compareAverages') && (
+                                    <div className="card" style={{ marginBottom: 20 }}>
+                                        <h3 style={{ marginBottom: 16 }}>{t('statistics.compare.avg_title')}</h3>
+                                        <ResponsiveContainer width="100%" height={220}>
+                                            <BarChart
+                                                data={comparisonResults}
+                                                margin={{ top: 4, right: 16, bottom: 0, left: -16 }}
+                                            >
+                                                <XAxis
+                                                    dataKey="className"
+                                                    tick={{ fill: 'var(--text-muted)', fontSize: 12 }}
+                                                />
+                                                <YAxis
+                                                    domain={[0, 100]}
+                                                    tick={{ fill: 'var(--text-muted)', fontSize: 12 }}
+                                                    tickFormatter={(v: number) => `${v}%`}
+                                                />
+                                                <Tooltip
+                                                    contentStyle={{
+                                                        background: 'var(--bg-card)',
+                                                        border: '1px solid var(--border)',
+                                                        borderRadius: 8,
+                                                    }}
+                                                    /* v8 ignore next -- recharts tooltips never trigger in jsdom */
+                                                    formatter={(v: unknown) => [`${v}%`, t('statistics.stat_average')]}
+                                                />
+                                                <Bar dataKey="average" radius={[4, 4, 0, 0]} maxBarSize={80}>
+                                                    {comparisonResults.map((r, i) => (
+                                                        <Cell
+                                                            key={r.classId}
+                                                            fill={CLASS_COMPARE_COLORS[i % CLASS_COMPARE_COLORS.length]}
+                                                        />
+                                                    ))}
+                                                </Bar>
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                )}
 
                                 {/* Per-criterion gap */}
-                                {comparisonCriterionGap.length > 0 && (
+                                {show('criterionGap') && comparisonCriterionGap.length > 0 && (
                                     <div className="card" style={{ marginBottom: 20 }}>
                                         <h3 style={{ marginBottom: 16 }}>{t('statistics.compare.criterion_gap')}</h3>
                                         <ResponsiveContainer
@@ -1081,11 +1146,15 @@ export default function StatisticsPage() {
                                 )}
 
                                 {/* Multi-class trend */}
-                                {multiTrendData.length >= 2 && (
+                                {show('compareTrend') && multiTrendData.length >= 2 && (
                                     <div className="card" style={{ marginBottom: 20 }}>
                                         <h3 style={{ marginBottom: 6 }}>{t('statistics.compare.trend_title')}</h3>
                                         <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
-                                            {t('statistics.trend_includes_tests')}
+                                            {t(
+                                                trendIncludeTests
+                                                    ? 'statistics.trend_includes_tests'
+                                                    : 'statistics.trend_rubrics_only'
+                                            )}
                                         </p>
                                         <MultiClassTrendChart
                                             data={multiTrendData}
@@ -1096,7 +1165,7 @@ export default function StatisticsPage() {
                                 )}
 
                                 {/* Insights panel */}
-                                {insights.length > 0 && (
+                                {show('insights') && insights.length > 0 && (
                                     <div className="card" style={{ marginBottom: 20 }}>
                                         <button
                                             style={{
@@ -1141,8 +1210,10 @@ export default function StatisticsPage() {
                 {/* ── Rubric view ── */}
                 {chartsReady && viewMode === 'rubric' && (
                     <>
-                        {selectedClassId !== 'all' && classGoals.length > 0 && <LearningGoalChart goals={classGoals} />}
-                        {selectedClassId !== 'all' && (
+                        {show('learningGoals') && selectedClassId !== 'all' && classGoals.length > 0 && (
+                            <LearningGoalChart goals={classGoals} />
+                        )}
+                        {show('writingTrends') && selectedClassId !== 'all' && (
                             <ClassWritingTrendsCard
                                 rows={classWritingWeak}
                                 students={students.filter((s) => s.classId === selectedClassId)}
@@ -1150,18 +1221,22 @@ export default function StatisticsPage() {
                         )}
 
                         {/* Class trend chart */}
-                        {classTrendData.length >= 2 && (
+                        {show('classTrend') && classTrendData.length >= 2 && (
                             <div className="card" style={{ marginBottom: 20 }}>
                                 <h3 style={{ marginBottom: 6 }}>{t('statistics.class_trend')}</h3>
                                 <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
-                                    {t('statistics.trend_includes_tests')}
+                                    {t(
+                                        trendIncludeTests
+                                            ? 'statistics.trend_includes_tests'
+                                            : 'statistics.trend_rubrics_only'
+                                    )}
                                 </p>
                                 <ClassTrendChart data={classTrendData} />
                             </div>
                         )}
 
                         {/* Test averages for this class */}
-                        {classTestAverages.length > 0 && (
+                        {show('classTestAverages') && classTestAverages.length > 0 && (
                             <div className="card" style={{ marginBottom: 20 }}>
                                 <h3 style={{ marginBottom: 16 }}>{t('statistics.class_test_averages')}</h3>
                                 <ResponsiveContainer width="100%" height={180}>
@@ -1190,124 +1265,132 @@ export default function StatisticsPage() {
                         ) : (
                             <>
                                 {/* Stat cards */}
-                                {(() => {
-                                    const totalEnrolled =
-                                        selectedClassId === 'all'
-                                            ? students.length
-                                            : students.filter((s) => s.classId === selectedClassId).length;
-                                    const completionPct =
-                                        /* v8 ignore start -- summaries can only be non-empty when students exist */
-                                        totalEnrolled > 0 ? Math.round((summaries.length / totalEnrolled) * 100) : 0;
-                                    /* v8 ignore stop */
-                                    return (
-                                        <div
-                                            style={{
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                gap: 12,
-                                                marginBottom: 24,
-                                            }}
-                                        >
-                                            {/* Completion banner */}
+                                {show('summaryCards') &&
+                                    (() => {
+                                        const totalEnrolled =
+                                            selectedClassId === 'all'
+                                                ? students.length
+                                                : students.filter((s) => s.classId === selectedClassId).length;
+                                        const completionPct =
+                                            /* v8 ignore start -- summaries can only be non-empty when students exist */
+                                            totalEnrolled > 0
+                                                ? Math.round((summaries.length / totalEnrolled) * 100)
+                                                : 0;
+                                        /* v8 ignore stop */
+                                        return (
                                             <div
-                                                className="card"
                                                 style={{
-                                                    padding: '10px 16px',
                                                     display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: 16,
+                                                    flexDirection: 'column',
+                                                    gap: 12,
+                                                    marginBottom: 24,
                                                 }}
                                             >
-                                                <div style={{ flex: 1 }}>
-                                                    <div
-                                                        style={{
-                                                            display: 'flex',
-                                                            justifyContent: 'space-between',
-                                                            fontSize: '0.8rem',
-                                                            color: 'var(--text-muted)',
-                                                            marginBottom: 4,
-                                                        }}
-                                                    >
-                                                        <span>{t('statistics.stat_students_graded')}</span>
-                                                        <span style={{ fontWeight: 600, color: 'var(--text)' }}>
-                                                            {summaries.length} / {totalEnrolled}
-                                                        </span>
-                                                    </div>
-                                                    <div
-                                                        style={{
-                                                            height: 6,
-                                                            background: 'var(--bg-elevated)',
-                                                            borderRadius: 3,
-                                                            overflow: 'hidden',
-                                                        }}
-                                                    >
-                                                        <div
-                                                            style={{
-                                                                width: `${completionPct}%`,
-                                                                height: '100%',
-                                                                background: 'var(--accent)',
-                                                                borderRadius: 3,
-                                                                transition: 'width 0.4s ease',
-                                                            }}
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <span
+                                                {/* Completion banner */}
+                                                <div
+                                                    className="card"
                                                     style={{
-                                                        fontSize: '1.1rem',
-                                                        fontWeight: 700,
-                                                        color: 'var(--accent-text)',
-                                                        minWidth: 42,
-                                                        textAlign: 'right',
+                                                        padding: '10px 16px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 16,
                                                     }}
                                                 >
-                                                    {completionPct}%
-                                                </span>
-                                            </div>
-                                            {/* Compact metric row */}
-                                            <div className="grid-4">
-                                                {[
-                                                    {
-                                                        label: t('statistics.stat_average'),
-                                                        value: `${stats.average.toFixed(1)}%`,
-                                                        color: 'var(--green-text)',
-                                                    },
-                                                    {
-                                                        label: t('statistics.stat_median'),
-                                                        value: `${stats.median.toFixed(1)}%`,
-                                                        color: 'var(--purple-text)',
-                                                    },
-                                                    {
-                                                        label: t('statistics.stat_highest'),
-                                                        value: `${stats.highest.toFixed(1)}%`,
-                                                        color: 'var(--teal-text, #0c6e64)',
-                                                    },
-                                                    {
-                                                        label: t('statistics.stat_lowest'),
-                                                        value: `${stats.lowest.toFixed(1)}%`,
-                                                        color: 'var(--yellow-text)',
-                                                    },
-                                                ].map(({ label, value, color }) => (
-                                                    <div
-                                                        key={label}
-                                                        className="card"
-                                                        style={{
-                                                            borderTop: `3px solid ${color}`,
-                                                            padding: '10px 14px',
-                                                        }}
-                                                    >
-                                                        <div style={{ fontSize: '1.35rem', fontWeight: 700, color }}>
-                                                            {value}
+                                                    <div style={{ flex: 1 }}>
+                                                        <div
+                                                            style={{
+                                                                display: 'flex',
+                                                                justifyContent: 'space-between',
+                                                                fontSize: '0.8rem',
+                                                                color: 'var(--text-muted)',
+                                                                marginBottom: 4,
+                                                            }}
+                                                        >
+                                                            <span>{t('statistics.stat_students_graded')}</span>
+                                                            <span style={{ fontWeight: 600, color: 'var(--text)' }}>
+                                                                {summaries.length} / {totalEnrolled}
+                                                            </span>
                                                         </div>
-                                                        <div className="text-muted text-sm" style={{ marginTop: 2 }}>
-                                                            {label}
+                                                        <div
+                                                            style={{
+                                                                height: 6,
+                                                                background: 'var(--bg-elevated)',
+                                                                borderRadius: 3,
+                                                                overflow: 'hidden',
+                                                            }}
+                                                        >
+                                                            <div
+                                                                style={{
+                                                                    width: `${completionPct}%`,
+                                                                    height: '100%',
+                                                                    background: 'var(--accent)',
+                                                                    borderRadius: 3,
+                                                                    transition: 'width 0.4s ease',
+                                                                }}
+                                                            />
                                                         </div>
                                                     </div>
-                                                ))}
+                                                    <span
+                                                        style={{
+                                                            fontSize: '1.1rem',
+                                                            fontWeight: 700,
+                                                            color: 'var(--accent-text)',
+                                                            minWidth: 42,
+                                                            textAlign: 'right',
+                                                        }}
+                                                    >
+                                                        {completionPct}%
+                                                    </span>
+                                                </div>
+                                                {/* Compact metric row */}
+                                                <div className="grid-4">
+                                                    {[
+                                                        {
+                                                            label: t('statistics.stat_average'),
+                                                            value: `${stats.average.toFixed(1)}%`,
+                                                            color: 'var(--green-text)',
+                                                        },
+                                                        {
+                                                            label: t('statistics.stat_median'),
+                                                            value: `${stats.median.toFixed(1)}%`,
+                                                            color: 'var(--purple-text)',
+                                                        },
+                                                        {
+                                                            label: t('statistics.stat_highest'),
+                                                            value: `${stats.highest.toFixed(1)}%`,
+                                                            color: 'var(--teal-text, #0c6e64)',
+                                                        },
+                                                        {
+                                                            label: t('statistics.stat_lowest'),
+                                                            value: `${stats.lowest.toFixed(1)}%`,
+                                                            color: 'var(--yellow-text)',
+                                                        },
+                                                    ].map(({ label, value, color }) => (
+                                                        <div
+                                                            key={label}
+                                                            className="card"
+                                                            style={{
+                                                                borderTop: `3px solid ${color}`,
+                                                                padding: '10px 14px',
+                                                            }}
+                                                        >
+                                                            <div
+                                                                style={{ fontSize: '1.35rem', fontWeight: 700, color }}
+                                                            >
+                                                                {value}
+                                                            </div>
+                                                            <div
+                                                                className="text-muted text-sm"
+                                                                style={{ marginTop: 2 }}
+                                                            >
+                                                                {label}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
-                                        </div>
-                                    );
-                                })()}
+                                        );
+                                    })()}
                                 {nhiCount > 0 && (
                                     <div
                                         className="card"
@@ -1336,133 +1419,142 @@ export default function StatisticsPage() {
                                     </div>
                                 )}
 
-                                <div className="grid-2" style={{ gap: 20, marginBottom: 20 }}>
+                                <div
+                                    className={
+                                        show('gradeDistribution') && show('criterionChart') ? 'grid-2' : undefined
+                                    }
+                                    style={{ display: 'grid', gap: 20, marginBottom: 20 }}
+                                >
                                     {/* Score distribution — Letter grade or percentage bucket */}
-                                    <div className="card">
-                                        <div
-                                            style={{
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                alignItems: 'center',
-                                                marginBottom: 16,
-                                            }}
-                                        >
-                                            <h3 style={{ margin: 0 }}>{t('statistics.grade_distribution')}</h3>
+                                    {show('gradeDistribution') && (
+                                        <div className="card">
                                             <div
                                                 style={{
                                                     display: 'flex',
-                                                    background: 'var(--bg-elevated)',
-                                                    borderRadius: 8,
-                                                    padding: 4,
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    marginBottom: 16,
                                                 }}
                                             >
-                                                <button
-                                                    className={`btn btn-sm ${distributionMode === 'letter' ? 'btn-primary' : 'btn-ghost'}`}
-                                                    onClick={() =>
-                                                        updateSettings({ statisticsDistributionMode: 'letter' })
-                                                    }
+                                                <h3 style={{ margin: 0 }}>{t('statistics.grade_distribution')}</h3>
+                                                <div
+                                                    style={{
+                                                        display: 'flex',
+                                                        background: 'var(--bg-elevated)',
+                                                        borderRadius: 8,
+                                                        padding: 4,
+                                                    }}
                                                 >
-                                                    {t('statistics.distribution_letter')}
-                                                </button>
-                                                <button
-                                                    className={`btn btn-sm ${distributionMode === 'percentage' ? 'btn-primary' : 'btn-ghost'}`}
-                                                    onClick={() =>
-                                                        updateSettings({ statisticsDistributionMode: 'percentage' })
-                                                    }
-                                                >
-                                                    {t('statistics.distribution_percentage')}
-                                                </button>
+                                                    <button
+                                                        className={`btn btn-sm ${distributionMode === 'letter' ? 'btn-primary' : 'btn-ghost'}`}
+                                                        onClick={() =>
+                                                            updateSettings({ statisticsDistributionMode: 'letter' })
+                                                        }
+                                                    >
+                                                        {t('statistics.distribution_letter')}
+                                                    </button>
+                                                    <button
+                                                        className={`btn btn-sm ${distributionMode === 'percentage' ? 'btn-primary' : 'btn-ghost'}`}
+                                                        onClick={() =>
+                                                            updateSettings({ statisticsDistributionMode: 'percentage' })
+                                                        }
+                                                    >
+                                                        {t('statistics.distribution_percentage')}
+                                                    </button>
+                                                </div>
                                             </div>
-                                        </div>
-                                        {distributionMode === 'letter' ? (
-                                            stats.distribution.length === 0 ? (
+                                            {distributionMode === 'letter' ? (
+                                                stats.distribution.length === 0 ? (
+                                                    <EmptyState
+                                                        style={{ height: 280 }}
+                                                        description={t('statistics.no_grade_scale')}
+                                                    />
+                                                ) : (
+                                                    <ResponsiveContainer width="100%" height={280}>
+                                                        <BarChart
+                                                            data={stats.distribution}
+                                                            margin={{ top: 4, right: 8, bottom: 0, left: -16 }}
+                                                        >
+                                                            <XAxis
+                                                                dataKey="label"
+                                                                tick={{ fill: 'var(--text-muted)', fontSize: 12 }}
+                                                            />
+                                                            <YAxis
+                                                                tick={{ fill: 'var(--text-muted)', fontSize: 12 }}
+                                                                allowDecimals={false}
+                                                                domain={[0, (max: number) => Math.max(max + 1, 3)]}
+                                                            />
+                                                            <Tooltip
+                                                                contentStyle={{
+                                                                    background: 'var(--bg-card)',
+                                                                    border: '1px solid var(--border)',
+                                                                    borderRadius: 8,
+                                                                }}
+                                                                labelStyle={{ color: 'var(--text)', fontWeight: 600 }}
+                                                                itemStyle={{ color: 'var(--text-muted)' }}
+                                                                /* v8 ignore next -- recharts tooltips never trigger in jsdom */
+                                                                formatter={(v: unknown) => [
+                                                                    typeof v === 'number' ? v : 0,
+                                                                    t('statistics.students'),
+                                                                ]}
+                                                            />
+                                                            <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={60}>
+                                                                {stats.distribution.map((entry, i) => (
+                                                                    <Cell key={i} fill={entry.color} />
+                                                                ))}
+                                                            </Bar>
+                                                        </BarChart>
+                                                    </ResponsiveContainer>
+                                                )
+                                            ) : summaries.length >= 2 ? (
+                                                <ScoreHistogram scores={summaries.map((s) => s.modifiedPercentage)} />
+                                            ) : (
                                                 <EmptyState
                                                     style={{ height: 280 }}
                                                     description={t('statistics.no_grade_scale')}
                                                 />
-                                            ) : (
-                                                <ResponsiveContainer width="100%" height={280}>
-                                                    <BarChart
-                                                        data={stats.distribution}
-                                                        margin={{ top: 4, right: 8, bottom: 0, left: -16 }}
-                                                    >
-                                                        <XAxis
-                                                            dataKey="label"
-                                                            tick={{ fill: 'var(--text-muted)', fontSize: 12 }}
-                                                        />
-                                                        <YAxis
-                                                            tick={{ fill: 'var(--text-muted)', fontSize: 12 }}
-                                                            allowDecimals={false}
-                                                            domain={[0, (max: number) => Math.max(max + 1, 3)]}
-                                                        />
-                                                        <Tooltip
-                                                            contentStyle={{
-                                                                background: 'var(--bg-card)',
-                                                                border: '1px solid var(--border)',
-                                                                borderRadius: 8,
-                                                            }}
-                                                            labelStyle={{ color: 'var(--text)', fontWeight: 600 }}
-                                                            itemStyle={{ color: 'var(--text-muted)' }}
-                                                            /* v8 ignore next -- recharts tooltips never trigger in jsdom */
-                                                            formatter={(v: unknown) => [
-                                                                typeof v === 'number' ? v : 0,
-                                                                t('statistics.students'),
-                                                            ]}
-                                                        />
-                                                        <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={60}>
-                                                            {stats.distribution.map((entry, i) => (
-                                                                <Cell key={i} fill={entry.color} />
-                                                            ))}
-                                                        </Bar>
-                                                    </BarChart>
-                                                </ResponsiveContainer>
-                                            )
-                                        ) : summaries.length >= 2 ? (
-                                            <ScoreHistogram scores={summaries.map((s) => s.modifiedPercentage)} />
-                                        ) : (
-                                            <EmptyState
-                                                style={{ height: 280 }}
-                                                description={t('statistics.no_grade_scale')}
-                                            />
-                                        )}
-                                    </div>
+                                            )}
+                                        </div>
+                                    )}
 
                                     {/* Per-criterion chart — Bar or Radar */}
-                                    <div className="card" data-tour="stats-criterion-chart">
-                                        <div
-                                            style={{
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                alignItems: 'center',
-                                                marginBottom: 16,
-                                            }}
-                                        >
-                                            <h3 style={{ margin: 0 }}>{t('statistics.criterion_avg')}</h3>
-                                            <div style={{ display: 'flex', gap: 6 }}>
-                                                <button
-                                                    className="btn btn-ghost btn-icon btn-sm"
-                                                    title={t('statistics.action_export_chart')}
-                                                    onClick={() =>
-                                                        exportChartAsPng(criterionChartRef, 'criterion-chart.png')
-                                                    }
-                                                >
-                                                    <Download size={14} />
-                                                </button>
-                                                <button
-                                                    className="btn btn-ghost btn-icon btn-sm"
-                                                    title={t('statistics.action_fullscreen')}
-                                                    onClick={() => setCriterionFullscreen(true)}
-                                                >
-                                                    <Maximize2 size={14} />
-                                                </button>
+                                    {show('criterionChart') && (
+                                        <div className="card" data-tour="stats-criterion-chart">
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    marginBottom: 16,
+                                                }}
+                                            >
+                                                <h3 style={{ margin: 0 }}>{t('statistics.criterion_avg')}</h3>
+                                                <div style={{ display: 'flex', gap: 6 }}>
+                                                    <button
+                                                        className="btn btn-ghost btn-icon btn-sm"
+                                                        title={t('statistics.action_export_chart')}
+                                                        onClick={() =>
+                                                            exportChartAsPng(criterionChartRef, 'criterion-chart.png')
+                                                        }
+                                                    >
+                                                        <Download size={14} />
+                                                    </button>
+                                                    <button
+                                                        className="btn btn-ghost btn-icon btn-sm"
+                                                        title={t('statistics.action_fullscreen')}
+                                                        onClick={() => setCriterionFullscreen(true)}
+                                                    >
+                                                        <Maximize2 size={14} />
+                                                    </button>
+                                                </div>
                                             </div>
+                                            <div ref={criterionChartRef}>{renderCriterionChart(340)}</div>
                                         </div>
-                                        <div ref={criterionChartRef}>{renderCriterionChart(340)}</div>
-                                    </div>
+                                    )}
                                 </div>
 
                                 {/* Bloom's taxonomy pyramid */}
-                                {bloomsData && summaries.length > 0 && (
+                                {show('frameworks') && bloomsData && summaries.length > 0 && (
                                     <div className="card" style={{ marginBottom: 20 }}>
                                         <h3 style={{ marginBottom: 16 }}>{t('statistics.blooms_title')}</h3>
                                         <BloomsPyramidChart
@@ -1482,7 +1574,7 @@ export default function StatisticsPage() {
                                 )}
 
                                 {/* IB Learner Profile rose chart */}
-                                {ibData && summaries.length > 0 && (
+                                {show('frameworks') && ibData && summaries.length > 0 && (
                                     <div className="card" style={{ marginBottom: 20 }}>
                                         <h3 style={{ marginBottom: 16 }}>{t('statistics.ib_title')}</h3>
                                         <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -1504,7 +1596,8 @@ export default function StatisticsPage() {
                                 )}
 
                                 {/* SLO kerndoelen (English) — only the core goals this rubric links to */}
-                                {sloData &&
+                                {show('frameworks') &&
+                                    sloData &&
                                     summaries.length > 0 &&
                                     (() => {
                                         const scored = sloData.filter((bucket) => bucket.count > 0);
@@ -1584,127 +1677,142 @@ export default function StatisticsPage() {
                                     })()}
 
                                 {/* Custom Views — recommended chart presets, toggleable + recolorable */}
-                                <div className="card" style={{ marginBottom: 20 }}>
-                                    <h3 style={{ marginBottom: 4 }}>{t('statistics.custom_views_title')}</h3>
-                                    <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
-                                        {t('statistics.custom_views_subtitle')}
-                                    </p>
-                                    <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 16 }}>
-                                        {STATS_PRESETS.map((preset) => (
-                                            <label
-                                                key={preset.id}
-                                                style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}
-                                            >
-                                                <input
-                                                    type="checkbox"
-                                                    checked={visiblePresetIds.includes(preset.id)}
-                                                    onChange={() => toggleVisiblePreset(preset.id)}
-                                                />
-                                                {t(preset.titleKey)}
-                                            </label>
-                                        ))}
-                                    </div>
-                                    <div
-                                        style={{
-                                            display: 'grid',
-                                            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-                                            gap: 16,
-                                        }}
-                                    >
-                                        {STATS_PRESETS.filter((p) => visiblePresetIds.includes(p.id)).map((preset) => {
-                                            /* v8 ignore next -- presetData always defines all three presets */
-                                            const data = presetData[preset.id] ?? [];
-                                            const color =
-                                                settings.statsPresetColors?.[preset.id] ?? preset.defaultColor;
-                                            return (
-                                                <div key={preset.id}>
-                                                    <div
-                                                        style={{
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'space-between',
-                                                            marginBottom: 6,
-                                                        }}
-                                                    >
-                                                        <span style={{ fontSize: 13, fontWeight: 600 }}>
-                                                            {t(preset.titleKey)}
-                                                        </span>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                            <input
-                                                                type="color"
-                                                                value={color}
-                                                                title={t('statistics.custom_views_color_label')}
-                                                                onChange={(e) =>
-                                                                    updateSettings({
-                                                                        statsPresetColors: {
-                                                                            ...settings.statsPresetColors,
-                                                                            [preset.id]: e.target.value,
-                                                                        },
-                                                                    })
-                                                                }
-                                                                style={{ width: 24, height: 24, padding: 0 }}
-                                                            />
-                                                            <button
-                                                                className="btn btn-ghost btn-icon btn-sm"
-                                                                title={t('statistics.export_chart')}
-                                                                disabled={data.length === 0}
-                                                                onClick={() =>
-                                                                    exportChartAsPng(
-                                                                        {
-                                                                            current:
-                                                                                /* v8 ignore next -- the ref callback always registers the container before the button renders */
-                                                                                presetContainerRefs.current.get(
-                                                                                    preset.id
-                                                                                ) ?? null,
-                                                                        },
-                                                                        `${preset.id}.png`
-                                                                    )
-                                                                }
+                                {show('customViews') && (
+                                    <div className="card" style={{ marginBottom: 20 }}>
+                                        <h3 style={{ marginBottom: 4 }}>{t('statistics.custom_views_title')}</h3>
+                                        <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
+                                            {t('statistics.custom_views_subtitle')}
+                                        </p>
+                                        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 16 }}>
+                                            {STATS_PRESETS.map((preset) => (
+                                                <label
+                                                    key={preset.id}
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 6,
+                                                        fontSize: 13,
+                                                    }}
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={visiblePresetIds.includes(preset.id)}
+                                                        onChange={() => toggleVisiblePreset(preset.id)}
+                                                    />
+                                                    {t(preset.titleKey)}
+                                                </label>
+                                            ))}
+                                        </div>
+                                        <div
+                                            style={{
+                                                display: 'grid',
+                                                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                                                gap: 16,
+                                            }}
+                                        >
+                                            {STATS_PRESETS.filter((p) => visiblePresetIds.includes(p.id)).map(
+                                                (preset) => {
+                                                    /* v8 ignore next -- presetData always defines all three presets */
+                                                    const data = presetData[preset.id] ?? [];
+                                                    const color =
+                                                        settings.statsPresetColors?.[preset.id] ?? preset.defaultColor;
+                                                    return (
+                                                        <div key={preset.id}>
+                                                            <div
+                                                                style={{
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'space-between',
+                                                                    marginBottom: 6,
+                                                                }}
                                                             >
-                                                                <Download size={13} />
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                    {data.length === 0 ? (
-                                                        <p className="text-muted text-sm">
-                                                            {t('statistics.custom_views_no_data')}
-                                                        </p>
-                                                    ) : (
-                                                        <div
-                                                            ref={(el) => {
-                                                                presetContainerRefs.current.set(preset.id, el);
-                                                            }}
-                                                            style={{ height: 220 }}
-                                                        >
-                                                            <ResponsiveContainer width="100%" height="100%">
-                                                                <BarChart data={data}>
-                                                                    <XAxis
-                                                                        dataKey="name"
-                                                                        tick={{ fontSize: 11 }}
-                                                                        interval={0}
-                                                                        angle={-20}
-                                                                        textAnchor="end"
-                                                                        height={50}
+                                                                <span style={{ fontSize: 13, fontWeight: 600 }}>
+                                                                    {t(preset.titleKey)}
+                                                                </span>
+                                                                <div
+                                                                    style={{
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: 6,
+                                                                    }}
+                                                                >
+                                                                    <input
+                                                                        type="color"
+                                                                        value={color}
+                                                                        title={t('statistics.custom_views_color_label')}
+                                                                        onChange={(e) =>
+                                                                            updateSettings({
+                                                                                statsPresetColors: {
+                                                                                    ...settings.statsPresetColors,
+                                                                                    [preset.id]: e.target.value,
+                                                                                },
+                                                                            })
+                                                                        }
+                                                                        style={{ width: 24, height: 24, padding: 0 }}
                                                                     />
-                                                                    <YAxis tick={{ fontSize: 11 }} />
-                                                                    <Tooltip />
-                                                                    <Bar
-                                                                        dataKey="value"
-                                                                        fill={color}
-                                                                        radius={[4, 4, 0, 0]}
-                                                                    />
-                                                                </BarChart>
-                                                            </ResponsiveContainer>
+                                                                    <button
+                                                                        className="btn btn-ghost btn-icon btn-sm"
+                                                                        title={t('statistics.export_chart')}
+                                                                        disabled={data.length === 0}
+                                                                        onClick={() =>
+                                                                            exportChartAsPng(
+                                                                                {
+                                                                                    current:
+                                                                                        /* v8 ignore next -- the ref callback always registers the container before the button renders */
+                                                                                        presetContainerRefs.current.get(
+                                                                                            preset.id
+                                                                                        ) ?? null,
+                                                                                },
+                                                                                `${preset.id}.png`
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <Download size={13} />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                            {data.length === 0 ? (
+                                                                <p className="text-muted text-sm">
+                                                                    {t('statistics.custom_views_no_data')}
+                                                                </p>
+                                                            ) : (
+                                                                <div
+                                                                    ref={(el) => {
+                                                                        presetContainerRefs.current.set(preset.id, el);
+                                                                    }}
+                                                                    style={{ height: 220 }}
+                                                                >
+                                                                    <ResponsiveContainer width="100%" height="100%">
+                                                                        <BarChart data={data}>
+                                                                            <XAxis
+                                                                                dataKey="name"
+                                                                                tick={{ fontSize: 11 }}
+                                                                                interval={0}
+                                                                                angle={-20}
+                                                                                textAnchor="end"
+                                                                                height={50}
+                                                                            />
+                                                                            <YAxis tick={{ fontSize: 11 }} />
+                                                                            <Tooltip />
+                                                                            <Bar
+                                                                                dataKey="value"
+                                                                                fill={color}
+                                                                                radius={[4, 4, 0, 0]}
+                                                                            />
+                                                                        </BarChart>
+                                                                    </ResponsiveContainer>
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
+                                                    );
+                                                }
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
+                                )}
 
                                 {/* Criterion heat map — click a student's name to expand score/grade detail */}
-                                {tableData.length > 0 && rubric && (
+                                {show('heatmap') && tableData.length > 0 && rubric && (
                                     <div className="card">
                                         <h3 style={{ marginBottom: 4 }}>{t('statistics.heatmap')}</h3>
                                         <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
@@ -1773,6 +1881,16 @@ export default function StatisticsPage() {
                     </>
                 )}
 
+                {/* ── Advanced query view ── */}
+                {chartsReady && viewMode === 'query' && (
+                    <StatsQueryPanel
+                        records={queryRecords}
+                        classes={filteredClasses}
+                        savedQueries={settings.statisticsSavedQueries ?? []}
+                        onSavedQueriesChange={(statisticsSavedQueries) => updateSettings({ statisticsSavedQueries })}
+                    />
+                )}
+
                 {/* ── Student view ── */}
                 {chartsReady && viewMode === 'student' && (
                     <>
@@ -1783,7 +1901,7 @@ export default function StatisticsPage() {
                         ) : (
                             <>
                                 {/* Graded rubrics table */}
-                                {studentViewTableData.length > 0 && (
+                                {show('gradedRubrics') && studentViewTableData.length > 0 && (
                                     <div className="card" style={{ marginBottom: 20 }}>
                                         <h3 style={{ marginBottom: 14 }}>{t('statistics.graded_rubrics')}</h3>
                                         <table className="data-table">
@@ -1832,7 +1950,7 @@ export default function StatisticsPage() {
                                 )}
 
                                 {/* Test results table */}
-                                {studentTestData.length > 0 && (
+                                {show('testResults') && studentTestData.length > 0 && (
                                     <div className="card" style={{ marginBottom: 20 }}>
                                         <h3 style={{ marginBottom: 14 }}>{t('statistics.test_results')}</h3>
                                         <table className="data-table">
@@ -1864,7 +1982,7 @@ export default function StatisticsPage() {
                                     </div>
                                 )}
 
-                                {studentProgressTimeline.length >= 2 && (
+                                {show('studentProgress') && studentProgressTimeline.length >= 2 && (
                                     <div className="card" style={{ marginBottom: 20 }}>
                                         <h3 style={{ marginBottom: 6 }}>{t('statistics.student_progress_title')}</h3>
                                         <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
@@ -1875,14 +1993,14 @@ export default function StatisticsPage() {
                                 )}
 
                                 {/* Elo-scaled CEFR progression across placement-test attempts */}
-                                {eloProgressPoints.length > 0 && (
+                                {show('eloProgress') && eloProgressPoints.length > 0 && (
                                     <div className="card" style={{ marginBottom: 20 }}>
                                         <EloProgressChart points={eloProgressPoints} />
                                     </div>
                                 )}
 
                                 {/* Criterion radar comparison */}
-                                {selectedStudentRubricId && (
+                                {show('criterionRadar') && selectedStudentRubricId && (
                                     <>
                                         {/* Multi-student comparison chips */}
                                         {rubricPeers.length > 0 && (

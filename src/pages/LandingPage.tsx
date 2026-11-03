@@ -70,7 +70,7 @@ const TEACHER_FEATURES = [
     {
         icon: BarChart3,
         title: 'Analytics & Export',
-        desc: 'Your dashboard opens with a student snapshot — CEFR, grammar, and vocabulary mastery plus a needs-attention flag for every student, colour-coded and filterable by class — then export grades (with ready-made gradebook presets), report cards, essays, and assignment deadlines in the format that works for you.',
+        desc: 'Your dashboard opens with a student snapshot — CEFR, grammar, and vocabulary mastery plus a needs-attention flag for every student, colour-coded and filterable by class — follow progress across rubrics and tests, ask your own statistics questions, then export grades (with ready-made gradebook presets), report cards, essays, and assignment deadlines in the format that works for you.',
         color: '#06b6d4',
     },
     {

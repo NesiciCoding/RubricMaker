@@ -242,4 +242,53 @@ describe('StatisticsPage', () => {
         // so assert the intent rather than the post-toggle label.
         expect(mockUpdateSettings).toHaveBeenCalledWith({ statisticsExcludeNotHandedIn: true });
     });
+
+    it('runs advanced queries over every grade in the query view', async () => {
+        renderPage();
+        await waitForCharts();
+        fireEvent.click(screen.getByText('statistics.view_query'));
+        await waitForCharts();
+        expect(screen.getByText('statistics.query.builder_title')).toBeInTheDocument();
+        expect(screen.getByText('statistics.query.results_summary:{"records":2,"groups":2}')).toBeInTheDocument();
+        expect(screen.getByRole('cell', { name: 'Alice' })).toBeInTheDocument();
+        expect(screen.getByRole('cell', { name: 'Bob' })).toBeInTheDocument();
+        // Rubric-only controls are not shown in the query view.
+        expect(screen.queryByLabelText('statistics.label_rubric')).not.toBeInTheDocument();
+
+        fireEvent.change(screen.getByLabelText('statistics.query.save_name'), { target: { value: 'Mine' } });
+        fireEvent.click(screen.getByRole('button', { name: /statistics.query.save$/ }));
+        expect(mockUpdateSettings).toHaveBeenCalledWith({
+            statisticsSavedQueries: [expect.objectContaining({ name: 'Mine' })],
+        });
+    });
+
+    it('opens the customise panel and saves which cards are shown', async () => {
+        renderPage();
+        await waitForCharts();
+        fireEvent.click(screen.getByRole('button', { name: /statistics.customize.button/ }));
+        fireEvent.click(screen.getByRole('checkbox', { name: 'statistics.heatmap' }));
+        expect(mockUpdateSettings).toHaveBeenCalledWith({ statisticsHiddenSections: ['heatmap'] });
+        fireEvent.click(screen.getByRole('checkbox', { name: 'statistics.customize.include_tests' }));
+        expect(mockUpdateSettings).toHaveBeenCalledWith({ statisticsTrendIncludeTests: false });
+        fireEvent.click(screen.getByText('statistics.customize.done'));
+        expect(screen.queryByText('statistics.customize.title')).not.toBeInTheDocument();
+    });
+
+    it('leaves out cards the teacher switched off', async () => {
+        const first = renderPage();
+        await waitForCharts();
+        expect(screen.getByText('statistics.heatmap')).toBeInTheDocument();
+        expect(screen.getByText('statistics.grade_distribution')).toBeInTheDocument();
+        first.unmount();
+        mockSettings.statisticsHiddenSections = ['heatmap', 'gradeDistribution'];
+        try {
+            renderPage();
+            await waitForCharts();
+            expect(screen.queryByText('statistics.heatmap')).not.toBeInTheDocument();
+            expect(screen.queryByText('statistics.grade_distribution')).not.toBeInTheDocument();
+            expect(screen.getByText('statistics.criterion_avg')).toBeInTheDocument();
+        } finally {
+            delete mockSettings.statisticsHiddenSections;
+        }
+    });
 });
