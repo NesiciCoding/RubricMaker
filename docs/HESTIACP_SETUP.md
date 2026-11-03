@@ -345,8 +345,8 @@ Both run in the `production` GitHub environment (add required reviewers there un
 
 1. `npm ci` and `npm run build` on Node 24, with the `VITE_SUPABASE_*`, `SUPABASE_PUBLIC_URL` secrets and the `VITE_STRESS_TEST_LOGGING` variable.
 2. Rsync `dist/` to `/home/rubricmaker/web/<VPS_DOMAIN>/public_html/` with `--delete-after --delay-updates`, connecting as **`root`**. New files are swapped in together at the end and old ones removed only after that, so nobody loading the site mid-deploy gets an `index.html` that points at assets that aren't there yet.
-3. Rsync `deploy/.htaccess` into the same web root (the first rsync excludes it, so it is never briefly missing).
-4. Fetch `https://<VPS_DOMAIN>/` and fail the job if it isn't RubricMaker's `index.html` — e.g. when HestiaCP's default "web server is ready" page is being served instead.
+3. Rsync `deploy/.htaccess` into the same web root (the first rsync protects it from `--delete-after`, so it is never briefly missing).
+4. Fetch `https://<VPS_DOMAIN>/` and fail the job unless it is this build's `index.html` — e.g. when HestiaCP's default "web server is ready" page or an old build is being served instead.
 
 Both rsync steps pass `--chown=rubricmaker:rubricmaker`. Without it the files keep the runner's uid/gid 1001, which is `hestiamail` on a HestiaCP server, and a later HestiaCP domain rebuild can drop the default skeleton `index.html` back into the web root.
 

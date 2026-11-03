@@ -639,9 +639,10 @@ jobs:
           # deploy-hestiacp.yml.
           # --delay-updates + --delete-after: new files land in place together at the end and
           # old ones go only after that, so a visitor (or the service worker installing) mid-deploy
-          # never gets an index.html pointing at assets that aren't there yet. .htaccess is uploaded
-          # by the next step; excluding it keeps --delete from removing it in between.
-          switches: -avz --delete-after --delay-updates --exclude=/.htaccess --chown=rubricmaker:rubricmaker
+          # never gets an index.html pointing at assets that aren't there yet. The protect filter
+          # keeps --delete from removing the server's .htaccess (uploaded by the next step) while
+          # still deploying one that is shipped inside dist/.
+          switches: -avz --delete-after --delay-updates --filter='P /.htaccess' --chown=rubricmaker:rubricmaker
           path: dist/
           # HestiaCP web root: /home/<user>/web/<domain>/public_html/
           remote_path: /home/rubricmaker/web/${{ secrets.VPS_DOMAIN }}/public_html/
@@ -667,13 +668,16 @@ jobs:
         # Fails the deploy loudly if the docroot ends up serving something else — e.g. the HestiaCP
         # "web server is ready" skeleton a domain rebuild can drop in — instead of finding out from users.
         run: |
+          # The hashed entry script pins this build, so a stale docroot fails too, not only a foreign page.
+          entry=$(grep -o 'assets/index-[^"]*\.js' dist/index.html | head -n 1)
+          test -n "$entry" || { echo "::error::No entry script found in dist/index.html"; exit 1; }
           for attempt in 1 2 3 4 5; do
-            if curl -fsS --max-time 20 -H 'Cache-Control: no-cache' "https://${VPS_DOMAIN}/?deploy-check=${GITHUB_SHA}" \
-              | grep -q 'name="apple-mobile-web-app-title" content="RubricMaker"'; then
-              echo "https://${VPS_DOMAIN}/ serves RubricMaker"
+            page=$(curl -fsS --max-time 20 -H 'Cache-Control: no-cache' "https://${VPS_DOMAIN}/?deploy-check=${GITHUB_SHA}" || true)
+            if grep -q 'name="apple-mobile-web-app-title" content="RubricMaker"' <<<"$page" && grep -qF "$entry" <<<"$page"; then
+              echo "https://${VPS_DOMAIN}/ serves this build ($entry)"
               exit 0
             fi
             sleep $((attempt * 5))
           done
-          echo "::error::https://${VPS_DOMAIN}/ is not serving RubricMaker's index.html after deploy (HestiaCP default page or stale docroot?)"
+          echo "::error::https://${VPS_DOMAIN}/ is not serving this build's index.html after deploy (HestiaCP default page or stale docroot?)"
           exit 1
