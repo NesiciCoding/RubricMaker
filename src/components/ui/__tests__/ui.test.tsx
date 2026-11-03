@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach, beforeAll } from 'vitest';
 import { FileText } from 'lucide-react';
 import Modal from '../Modal';
@@ -264,7 +264,7 @@ describe('ErrorBoundary', () => {
         expect(screen.getByRole('button', { name: /reload page/i })).toBeInTheDocument();
     });
 
-    it('reloads the page when the Reload page button is clicked', () => {
+    it('reloads the page when the Reload page button is clicked', async () => {
         const reload = vi.fn();
         const originalLocation = window.location;
         Object.defineProperty(window, 'location', {
@@ -278,7 +278,7 @@ describe('ErrorBoundary', () => {
             </ErrorBoundary>
         );
         fireEvent.click(screen.getByRole('button', { name: /reload page/i }));
-        expect(reload).toHaveBeenCalledTimes(1);
+        await waitFor(() => expect(reload).toHaveBeenCalledTimes(1));
 
         Object.defineProperty(window, 'location', { configurable: true, value: originalLocation });
     });

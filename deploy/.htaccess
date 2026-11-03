@@ -9,6 +9,10 @@
     RewriteEngine On
     RewriteBase /
     RewriteRule ^index\.html$ - [L]
+    # A missing hashed asset must 404 rather than fall back to index.html: HTML served
+    # under a .js URL breaks the page, and the service worker would precache it as that file.
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^assets/ - [R=404,L]
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule . /index.html [L]
@@ -52,8 +56,9 @@
         Header set Cache-Control "public, max-age=31536000, immutable"
     </FilesMatch>
 
-    # Never cache index.html so the browser always fetches the latest asset hashes
-    <FilesMatch "^index\.html$">
+    # Never cache index.html, the service worker or the manifest, so a reload always sees the
+    # latest deploy (sw.js would otherwise match the 1-year .js rule above)
+    <FilesMatch "^(index\.html|sw\.js|manifest\.webmanifest)$">
         Header set Cache-Control "no-cache, no-store, must-revalidate"
         Header set Pragma "no-cache"
         Header set Expires "0"

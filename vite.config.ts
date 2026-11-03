@@ -57,18 +57,52 @@ export default defineConfig({
                 // below caches whichever ones actually get requested, so offline use of a language
                 // still works once it's been opened at least once.
                 globIgnores: ['**/stats.html', '**/assets/{nl,fr,de,es}-*.js'],
-                // Serve the precached app shell for any navigation whose network fetch fails —
-                // so a brief origin/container outage mid-session (see the reverse-proxy 502s in
-                // the ops logs) can't drop an already-installed student onto an error page or
-                // fail a lazy route/chunk load. Supabase API paths are never navigations, but
-                // deny them explicitly so the fallback can never shadow a data request.
-                navigateFallback: 'index.html',
-                navigateFallbackDenylist: [/\/(rest|auth|realtime|storage|functions)\/v\d+\//],
+                // vite-plugin-pwa otherwise defaults to a cache-only NavigationRoute for index.html,
+                // which would shadow the network-first navigation route below.
+                navigateFallback: null,
+                // Likewise the precache route would answer `/` from its cached index.html (it maps a
+                // trailing slash to the directory index) before the navigation route ever ran.
+                directoryIndex: '',
                 // Never let the service worker cache Supabase requests — a cached
                 // response could make a failed sync request look like it succeeded.
                 // Path-only (no host) so this matches both hosted (*.supabase.co)
                 // and self-hosted/reverse-proxied Supabase deployments.
                 runtimeCaching: [
+                    {
+                        // Navigations go to the network first, so a reload always picks up the
+                        // latest deploy instead of a precached shell from whichever build the worker
+                        // was installed with. The precached shell is only the offline / outage
+                        // fallback (a brief origin or reverse-proxy 502 mid-session must not drop a
+                        // student onto an error page). A 200 that isn't our app — the HestiaCP
+                        // "web server is ready" skeleton a domain rebuild can drop into the docroot —
+                        // is treated as a failure, so it is never shown or cached over the real shell.
+                        urlPattern: ({ request, url }) =>
+                            request.mode === 'navigate' &&
+                            !/\/(rest|auth|realtime|storage|functions)\/v\d+\//.test(url.pathname),
+                        handler: 'NetworkFirst',
+                        options: {
+                            cacheName: 'rm-app-shell',
+                            networkTimeoutSeconds: 6,
+                            expiration: { maxEntries: 4 },
+                            precacheFallback: { fallbackURL: 'index.html' },
+                            plugins: [
+                                {
+                                    fetchDidSucceed: async ({ response }) => {
+                                        if (response.status >= 500) {
+                                            throw new Error(`Navigation failed with ${response.status}`);
+                                        }
+                                        const type = response.headers.get('content-type') || '';
+                                        if (!response.ok || !type.includes('text/html')) return response;
+                                        const body = await response.clone().text();
+                                        if (!body.includes('name="apple-mobile-web-app-title" content="RubricMaker"')) {
+                                            throw new Error('Navigation returned a page that is not RubricMaker');
+                                        }
+                                        return response;
+                                    },
+                                },
+                            ],
+                        },
+                    },
                     {
                         urlPattern: /\/(rest|auth|realtime|storage|functions)\/v\d+\//,
                         handler: 'NetworkOnly',
