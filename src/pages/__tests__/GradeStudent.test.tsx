@@ -582,6 +582,65 @@ describe('GradeStudent', () => {
         });
     });
 
+    describe('a co-teacher’s live edit to an already-loaded grade (#1061)', () => {
+        const original: StudentRubric = {
+            id: 'sr1',
+            rubricId: 'r1',
+            studentId: 's1',
+            entries: [{ criterionId: 'c1', levelId: 'l1', checkedSubItems: [], comment: '' }],
+            overallComment: '',
+            isPeerReview: false,
+            gradedAt: '2026-01-01T00:00:00Z',
+        };
+        // The colleague changes the level only (comment untouched) — used by the "not editing" case.
+        const remoteLevelChange: StudentRubric = {
+            ...original,
+            entries: [{ criterionId: 'c1', levelId: 'l2', checkedSubItems: [], comment: '' }],
+            lastEditedBy: 'colleague-id',
+        };
+        // The colleague adds feedback only, without touching the level — used by the "already
+        // editing" case, so a real conflict exists between the teacher's own level pick and the
+        // colleague's comment, on two different fields.
+        const remoteCommentOnly: StudentRubric = {
+            ...original,
+            overallComment: 'Changed by a colleague',
+            lastEditedBy: 'colleague-id',
+        };
+
+        it('adopts the colleague’s edit when the teacher has not started editing', () => {
+            mockAppValue.studentRubrics = [original] as never[];
+            renderPage();
+            // Realtime (StorageSync.ts's unfiltered student_rubrics subscription) drives a
+            // hydratePartial merge that hands this page a NEW array — same record id, changed
+            // content — without the page ever reloading or re-navigating.
+            mockAppValue.studentRubrics = [remoteLevelChange] as never[];
+            fireEvent.keyDown(window, { key: '?' });
+            fireEvent.click(screen.getAllByText('gradeStudent.action_save')[0]);
+            expect(mockSaveStudentRubric).toHaveBeenLastCalledWith(
+                expect.objectContaining({
+                    id: 'sr1',
+                    entries: [expect.objectContaining({ levelId: 'l2' })],
+                })
+            );
+        });
+
+        it('lays the teacher’s own in-progress edit over the colleague’s, instead of being clobbered by it', () => {
+            mockAppValue.studentRubrics = [original] as never[];
+            renderPage();
+            fireEvent.click(screen.getAllByText('Good')[0]); // teacher's own unsaved change (l1 -> l2)
+            mockAppValue.studentRubrics = [remoteCommentOnly] as never[];
+            fireEvent.keyDown(window, { key: '?' });
+            fireEvent.click(screen.getAllByText('gradeStudent.action_save')[0]);
+            expect(mockSaveStudentRubric).toHaveBeenLastCalledWith(
+                expect.objectContaining({
+                    id: 'sr1',
+                    overallComment: 'Changed by a colleague', // the field the teacher never touched
+                    entries: [expect.objectContaining({ levelId: 'l2' })], // the teacher's own pick
+                })
+            );
+        });
+    });
+
     it('toggles to the grid layout and selects a level cell', () => {
         renderPage();
         fireEvent.click(screen.getByText('common.view_grid'));
