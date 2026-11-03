@@ -1059,6 +1059,13 @@ export interface AppSettings {
     masteryColorBands?: GradeRange[];
     /** Spelling variant LanguageTool checks English documents against (default 'en-US'). */
     grammarEnglishVariant?: 'en-GB' | 'en-US';
+    /**
+     * Per-teacher Dashboard widget layout: `order` lists DashboardWidgetId values top-to-bottom;
+     * `hidden` lists ones currently hidden. Undefined means every widget shown in its default order.
+     * A widget id missing from `order` (new widget shipped after this setting was saved) is appended
+     * at the end; an id in `order` that no longer exists is ignored.
+     */
+    dashboardWidgets?: { order: string[]; hidden?: string[] };
 }
 
 export type UiFontFamily = 'Inter' | 'Nunito' | 'Source Sans 3' | 'Lato' | 'Roboto';

@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import {
     BookOpen,
     Users,
@@ -15,9 +16,12 @@ import {
     Clock,
     Layers,
     Mail,
+    LayoutGrid,
+    Check,
 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import StudentSnapshotTable from '../components/Dashboard/StudentSnapshotTable';
+import DashboardWidgetFrame from '../components/Dashboard/DashboardWidgetFrame';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import type { Message, Rubric } from '../types';
@@ -33,6 +37,7 @@ import { useToast } from '../hooks/useToast';
 import { useActiveClassCohorts } from '../hooks/useActiveClassCohorts';
 import { formatShortDate } from '../utils/dateInput';
 import { EmptyState } from '../components/ui/EmptyState';
+import { type DashboardWidgetId, moveItem, resolveDashboardWidgetOrder } from '../utils/dashboardWidgets';
 
 function dayKey(iso: string): string {
     return new Date(iso).toDateString();
@@ -391,36 +396,82 @@ export default function Dashboard() {
         showToast(t('dashboard.at_risk_message_sent'), 'success');
     }
 
-    return (
-        <>
-            <Topbar
-                classSelector
-                title={t('dashboard.title')}
-                actions={
-                    <button className="btn btn-primary btn-sm" onClick={() => navigate('/rubrics/new')}>
-                        <Plus size={15} /> {t('dashboard.new_rubric')}
-                    </button>
-                }
-            />
-            <div className="page-content fade-in dashboard-container">
-                {/* Student snapshot — CEFR / Grammar / Vocabulary / needs-attention at a glance */}
-                <div style={{ marginBottom: 28 }}>
-                    <div
+    const [customizing, setCustomizing] = useState(false);
+    const { order: widgetOrder, hidden: hiddenWidgets } = useMemo(
+        () => resolveDashboardWidgetOrder(settings.dashboardWidgets),
+        [settings.dashboardWidgets]
+    );
+
+    function toggleWidgetHidden(id: DashboardWidgetId) {
+        const nextHidden = new Set(hiddenWidgets);
+        if (nextHidden.has(id)) nextHidden.delete(id);
+        else nextHidden.add(id);
+        updateSettings({ dashboardWidgets: { order: widgetOrder, hidden: Array.from(nextHidden) } });
+    }
+
+    function handleWidgetDragEnd(result: DropResult) {
+        if (!result.destination || result.destination.index === result.source.index) return;
+        updateSettings({
+            dashboardWidgets: {
+                order: moveItem(widgetOrder, result.source.index, result.destination.index),
+                hidden: Array.from(hiddenWidgets),
+            },
+        });
+    }
+
+    const widgetTitle: Record<DashboardWidgetId, string> = {
+        snapshot: t('dashboard.snapshot_title'),
+        greeting: t('dashboard.widget_greeting_title'),
+        stats: t('dashboard.widget_stats_title'),
+        atRisk: t('dashboard.at_risk_title'),
+        needsGrading: t('dashboard.needs_grading'),
+        recentActivity: t('dashboard.recent_activity'),
+        classCefr: t('dashboard.class_cefr_title'),
+        quickActions: t('dashboard.quick_actions'),
+        quickStart: t('dashboard.quick_start_templates'),
+    };
+
+    const snapshotWidget = (
+        <div>
+            <div
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: 10,
+                    marginBottom: 12,
+                }}
+            >
+                <h2 style={{ margin: 0, fontSize: '1.15rem' }}>{t('dashboard.snapshot_title')}</h2>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    <button
+                        type="button"
+                        aria-pressed={isAllCohorts}
+                        onClick={selectAllCohorts}
                         style={{
-                            display: 'flex',
+                            display: 'inline-flex',
                             alignItems: 'center',
-                            justifyContent: 'space-between',
-                            flexWrap: 'wrap',
-                            gap: 10,
-                            marginBottom: 12,
+                            padding: '5px 12px',
+                            borderRadius: 999,
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            border: '1px solid var(--border)',
+                            background: isAllCohorts ? 'var(--accent)' : 'var(--bg-raised)',
+                            color: isAllCohorts ? 'var(--accent-fg)' : 'var(--text-muted)',
                         }}
                     >
-                        <h2 style={{ margin: 0, fontSize: '1.15rem' }}>{t('dashboard.snapshot_title')}</h2>
-                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {t('statistics.all_classes')}
+                    </button>
+                    {classes.map((c) => {
+                        const active = selectedCohorts.includes(c.id);
+                        return (
                             <button
                                 type="button"
-                                aria-pressed={isAllCohorts}
-                                onClick={selectAllCohorts}
+                                key={c.id}
+                                aria-pressed={active}
+                                onClick={() => toggleCohort(c.id)}
                                 style={{
                                     display: 'inline-flex',
                                     alignItems: 'center',
@@ -430,743 +481,767 @@ export default function Dashboard() {
                                     fontWeight: 600,
                                     cursor: 'pointer',
                                     border: '1px solid var(--border)',
-                                    background: isAllCohorts ? 'var(--accent)' : 'var(--bg-raised)',
-                                    color: isAllCohorts ? 'var(--accent-fg)' : 'var(--text-muted)',
+                                    background: active ? 'var(--accent)' : 'var(--bg-raised)',
+                                    color: active ? 'var(--accent-fg)' : 'var(--text-muted)',
                                 }}
                             >
-                                {t('statistics.all_classes')}
+                                {c.name}
                             </button>
-                            {classes.map((c) => {
-                                const active = selectedCohorts.includes(c.id);
-                                return (
-                                    <button
-                                        type="button"
-                                        key={c.id}
-                                        aria-pressed={active}
-                                        onClick={() => toggleCohort(c.id)}
-                                        style={{
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            padding: '5px 12px',
-                                            borderRadius: 999,
-                                            fontSize: '0.85rem',
-                                            fontWeight: 600,
-                                            cursor: 'pointer',
-                                            border: '1px solid var(--border)',
-                                            background: active ? 'var(--accent)' : 'var(--bg-raised)',
-                                            color: active ? 'var(--accent-fg)' : 'var(--text-muted)',
-                                        }}
-                                    >
-                                        {c.name}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-                    <StudentSnapshotTable
-                        students={snapshotStudents}
-                        classes={classes}
-                        studentRubrics={studentRubrics}
-                        rubrics={rubrics}
-                        selfAssessments={selfAssessments}
-                        analysisResults={analysisResults}
-                        tests={tests}
-                        studentTests={studentTests}
-                        flashcardDecks={flashcardDecks}
-                        flashcardAssignments={flashcardAssignments}
-                        flashcardReviews={flashcardReviews}
-                        cefrAchieveThreshold={settings.cefrAchieveThreshold ?? 70}
-                        masteryColorBands={settings.masteryColorBands}
-                    />
+                        );
+                    })}
                 </div>
+            </div>
+            <StudentSnapshotTable
+                students={snapshotStudents}
+                classes={classes}
+                studentRubrics={studentRubrics}
+                rubrics={rubrics}
+                selfAssessments={selfAssessments}
+                analysisResults={analysisResults}
+                tests={tests}
+                studentTests={studentTests}
+                flashcardDecks={flashcardDecks}
+                flashcardAssignments={flashcardAssignments}
+                flashcardReviews={flashcardReviews}
+                cefrAchieveThreshold={settings.cefrAchieveThreshold ?? 70}
+                masteryColorBands={settings.masteryColorBands}
+            />
+        </div>
+    );
 
-                {/* Greeting header */}
+    const greetingWidget = (
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+            <div>
                 <div
                     style={{
-                        display: 'flex',
-                        alignItems: 'flex-end',
-                        justifyContent: 'space-between',
-                        marginBottom: 20,
+                        fontFamily: 'var(--font-display)',
+                        fontSize: '1.55rem',
+                        fontWeight: 700,
+                        letterSpacing: '-0.02em',
                     }}
                 >
+                    {t(greetingKey(new Date().getHours()))}
+                </div>
+                <div className="text-muted text-sm" style={{ marginTop: 3 }}>
+                    {t('dashboard.header_meta', {
+                        rubrics: rubrics.length,
+                        classes: classes.length,
+                        students: students.length,
+                    })}
+                </div>
+            </div>
+            <div
+                style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    height: 32,
+                    padding: '0 12px',
+                    borderRadius: 8,
+                    background: 'var(--bg-elevated)',
+                    border: '1px solid var(--border)',
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                    color: 'var(--text-muted)',
+                    flexShrink: 0,
+                }}
+            >
+                {t('dashboard.this_week')}
+            </div>
+        </div>
+    );
+
+    const statsWidget = (
+        <div className="grid-4">
+            <div
+                className="card hoverable"
+                onClick={() => navigate('/rubrics')}
+                style={{ borderTop: '3px solid var(--accent)', cursor: 'pointer' }}
+            >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ background: 'var(--accent-soft)', padding: 10, borderRadius: 10 }}>
+                        <BookOpen size={20} style={{ color: 'var(--accent-text)' }} />
+                    </div>
                     <div>
+                        <div style={{ fontSize: '1.8rem', fontWeight: 700 }}>{rubrics.length}</div>
+                        <div className="text-muted text-sm">{t('dashboard.rubrics')}</div>
+                    </div>
+                </div>
+                <div style={{ marginTop: 10 }}>
+                    <TrendBadge count={weeklyTrends.rubrics} t={t} />
+                </div>
+            </div>
+            <div
+                className="card hoverable"
+                onClick={() => navigate('/students')}
+                style={{ borderTop: '3px solid var(--green)', cursor: 'pointer' }}
+            >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ background: 'rgba(34,197,94,0.12)', padding: 10, borderRadius: 10 }}>
+                        <Users size={20} style={{ color: 'var(--green-text)' }} />
+                    </div>
+                    <div>
+                        <div style={{ fontSize: '1.8rem', fontWeight: 700 }}>{students.length}</div>
+                        <div className="text-muted text-sm">{t('dashboard.students')}</div>
+                    </div>
+                </div>
+                <div style={{ marginTop: 10 }}>
+                    <TrendBadge count={weeklyTrends.students} t={t} />
+                </div>
+            </div>
+            <div
+                className="card hoverable"
+                data-tour="dashboard-grades"
+                onClick={() => navigate('/export')}
+                style={{ borderTop: '3px solid var(--purple)', cursor: 'pointer' }}
+            >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ background: 'rgba(139,92,246,0.12)', padding: 10, borderRadius: 10 }}>
+                        <TrendingUp size={20} style={{ color: 'var(--purple-text)' }} />
+                    </div>
+                    <div>
+                        <div style={{ fontSize: '1.8rem', fontWeight: 700 }}>{completedCount}</div>
+                        <div className="text-muted text-sm">{t('dashboard.grades_submitted')}</div>
+                    </div>
+                </div>
+                <div style={{ marginTop: 10 }}>
+                    <TrendBadge count={weeklyTrends.grades} t={t} />
+                </div>
+            </div>
+            <div
+                className="card hoverable"
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate('/rubrics')}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') navigate('/rubrics');
+                }}
+                style={{ borderTop: '3px solid var(--yellow)', cursor: 'pointer' }}
+            >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ background: 'rgba(201,133,31,0.12)', padding: 10, borderRadius: 10 }}>
+                        <ClipboardList size={20} style={{ color: 'var(--yellow-text)' }} />
+                    </div>
+                    <div>
+                        <div style={{ fontSize: '1.8rem', fontWeight: 700 }}>{needsGrading.length}</div>
+                        <div className="text-muted text-sm">{t('dashboard.needs_grading')}</div>
+                    </div>
+                </div>
+                <div style={{ marginTop: 10 }}>
+                    <TrendBadge count={weeklyTrends.needsGrading} t={t} />
+                </div>
+            </div>
+        </div>
+    );
+
+    const atRiskWidget =
+        atRiskStudents.length > 0 ? (
+            <div className="card" style={{ borderLeft: '4px solid var(--red)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                    <AlertTriangle size={16} style={{ color: 'var(--red-text)' }} />
+                    <h3 style={{ margin: 0, color: 'var(--red-text)' }}>{t('dashboard.at_risk_title')}</h3>
+                    <span className="text-muted text-xs" style={{ marginLeft: 4 }}>
+                        {t('dashboard.at_risk_subtitle')}
+                    </span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {atRiskStudents.map(({ student, recentPct, rubricId }) => (
                         <div
+                            key={student.id}
+                            style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}
+                        >
+                            <button
+                                type="button"
+                                className="btn btn-secondary btn-sm"
+                                title={t('dashboard.at_risk_go_to_grading', 'Go to grading')}
+                                onClick={() => navigate(`/rubrics/${rubricId}/grade/${student.id}`)}
+                                style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}
+                            >
+                                <span style={{ fontWeight: 600 }}>{student.name}</span>
+                                <span style={{ color: 'var(--red-text)', fontSize: '0.78rem' }}>
+                                    {recentPct.toFixed(0)}%
+                                </span>
+                                {feedbackAge.has(student.id) && feedbackAge.get(student.id)! >= 7 && (
+                                    <span title={`Last feedback ${feedbackAge.get(student.id)} days ago`}>
+                                        <Clock
+                                            size={11}
+                                            style={{
+                                                color:
+                                                    feedbackAge.get(student.id)! >= 10
+                                                        ? 'var(--red)'
+                                                        : 'var(--yellow, #f59e0b)',
+                                            }}
+                                        />
+                                    </span>
+                                )}
+                                <ChevronRight size={13} style={{ opacity: 0.6 }} />
+                            </button>
+                            {recommendedDeckByStudent.has(student.id) && (
+                                <button
+                                    type="button"
+                                    className="btn btn-ghost btn-icon btn-sm"
+                                    title={t('dashboard.at_risk_assign_deck')}
+                                    aria-label={t('dashboard.at_risk_assign_deck')}
+                                    onClick={() => assignRecommendedDeck(student.id)}
+                                >
+                                    <Layers size={14} />
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                className="btn btn-ghost btn-icon btn-sm"
+                                title={t('dashboard.at_risk_message')}
+                                aria-label={t('dashboard.at_risk_message')}
+                                onClick={() => setMessagingStudentId((cur) => (cur === student.id ? null : student.id))}
+                            >
+                                <Mail size={14} />
+                            </button>
+                            {messagingStudentId === student.id && (
+                                <div style={{ display: 'flex', gap: 6, width: '100%', marginTop: 4 }}>
+                                    <input
+                                        type="text"
+                                        aria-label={t('dashboard.at_risk_message_placeholder')}
+                                        value={messageText}
+                                        onChange={(e) => setMessageText(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') sendAtRiskMessage(student.id);
+                                        }}
+                                        placeholder={t('dashboard.at_risk_message_placeholder')}
+                                        style={{ flex: 1 }}
+                                    />
+                                    <button
+                                        type="button"
+                                        className="btn btn-primary btn-sm"
+                                        disabled={!messageText.trim()}
+                                        onClick={() => sendAtRiskMessage(student.id)}
+                                    >
+                                        {t('dashboard.at_risk_message_send')}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </div>
+        ) : null;
+
+    const needsGradingWidget = (
+        <div className="card">
+            <div
+                className="card-header"
+                style={{ marginBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+            >
+                <h3>{t('dashboard.needs_grading')}</h3>
+                <span
+                    className="text-muted text-xs"
+                    role="button"
+                    tabIndex={0}
+                    style={{ fontWeight: 600, cursor: 'pointer' }}
+                    onClick={() => navigate('/rubrics')}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') navigate('/rubrics');
+                    }}
+                >
+                    {t('dashboard.view_queue')}
+                </span>
+            </div>
+            {needsGrading.length === 0 ? (
+                <div className="text-muted text-sm">{t('dashboard.needs_grading_empty')}</div>
+            ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {needsGrading.slice(0, 6).map((item) => (
+                        <div
+                            key={`${item.rubricId}_${item.studentId}`}
+                            className="hoverable"
+                            role="button"
+                            tabIndex={0}
                             style={{
-                                fontFamily: 'var(--font-display)',
-                                fontSize: '1.55rem',
-                                fontWeight: 700,
-                                letterSpacing: '-0.02em',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 12,
+                                padding: '8px 6px',
+                                borderRadius: 10,
+                                cursor: 'pointer',
+                            }}
+                            onClick={() => navigate(`/rubrics/${item.rubricId}/grade/${item.studentId}`)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ')
+                                    navigate(`/rubrics/${item.rubricId}/grade/${item.studentId}`);
                             }}
                         >
-                            {t(greetingKey(new Date().getHours()))}
+                            <div
+                                style={{
+                                    width: 34,
+                                    height: 34,
+                                    borderRadius: 99,
+                                    background: 'var(--bg-elevated)',
+                                    color: 'var(--text-muted)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontWeight: 700,
+                                    fontSize: '0.8rem',
+                                    flexShrink: 0,
+                                }}
+                            >
+                                {item.studentName
+                                    .split(' ')
+                                    .map((p) => p[0])
+                                    .join('')
+                                    .slice(0, 2)
+                                    .toUpperCase()}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{item.studentName}</div>
+                                <div
+                                    className="text-muted text-xs"
+                                    style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                                >
+                                    {item.rubricName}
+                                </div>
+                            </div>
+                            {item.className && (
+                                <span
+                                    className="text-muted text-xs"
+                                    style={{
+                                        background: 'var(--bg-elevated)',
+                                        padding: '3px 9px',
+                                        borderRadius: 99,
+                                        flexShrink: 0,
+                                    }}
+                                >
+                                    {item.className}
+                                </span>
+                            )}
+                            <span className="text-muted text-xs" style={{ flexShrink: 0 }}>
+                                {timeAgo(item.submittedAt, t)}
+                            </span>
                         </div>
-                        <div className="text-muted text-sm" style={{ marginTop: 3 }}>
-                            {t('dashboard.header_meta', {
-                                rubrics: rubrics.length,
-                                classes: classes.length,
-                                students: students.length,
-                            })}
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+
+    const recentActivityWidget = (
+        <div className="card">
+            <div className="card-header" style={{ marginBottom: 14 }}>
+                <h3>{t('dashboard.recent_activity')}</h3>
+            </div>
+            {recentActivity.length === 0 ? (
+                <EmptyState
+                    icon={BookOpen}
+                    description={t('dashboard.no_rubrics')}
+                    action={{
+                        label: t('dashboard.create_first'),
+                        icon: Plus,
+                        onClick: () => navigate('/rubrics/new'),
+                    }}
+                />
+            ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {recentActivity.map((item, idx) => {
+                        const groupLabel = dateGroupLabel(item.timestamp, t, i18n.language);
+                        const showGroupHeader =
+                            idx === 0 ||
+                            groupLabel !== dateGroupLabel(recentActivity[idx - 1].timestamp, t, i18n.language);
+                        return (
+                            <React.Fragment
+                                key={
+                                    item.type === 'grading'
+                                        ? `grading_${item.rubricId}_${item.studentId}`
+                                        : `edit_${item.rubricId}`
+                                }
+                            >
+                                {showGroupHeader && (
+                                    <div
+                                        style={{
+                                            fontSize: '0.72rem',
+                                            fontWeight: 600,
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.04em',
+                                            color: 'var(--text-muted)',
+                                            marginTop: idx === 0 ? 0 : 8,
+                                            padding: '0 2px',
+                                        }}
+                                    >
+                                        {groupLabel}
+                                    </div>
+                                )}
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 12,
+                                        padding: '9px 12px',
+                                        background: 'var(--bg-elevated)',
+                                        borderRadius: 8,
+                                        border: '1px solid var(--border)',
+                                    }}
+                                >
+                                    <div style={{ flexShrink: 0 }}>
+                                        {item.type === 'grading' ? (
+                                            <CheckCircle size={16} style={{ color: 'var(--green-text)' }} />
+                                        ) : (
+                                            <BookOpen size={16} style={{ color: 'var(--accent-text)' }} />
+                                        )}
+                                    </div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        {item.type === 'grading' ? (
+                                            <div style={{ fontSize: '0.85rem' }}>
+                                                {t('dashboard.activity_graded_prefix', 'Graded')}{' '}
+                                                <strong>{item.studentName}</strong>
+                                                {' — '}
+                                                {item.rubricName}
+                                            </div>
+                                        ) : (
+                                            <div style={{ fontSize: '0.85rem' }}>
+                                                {t('dashboard.activity_updated_prefix', 'Updated')}{' '}
+                                                <strong>{item.rubricName}</strong>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <span
+                                        className="text-muted text-xs"
+                                        style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 }}
+                                    >
+                                        {item.type === 'grading' &&
+                                            (() => {
+                                                const days = feedbackAge.get(item.studentId);
+                                                // v8 ignore next: grading items always come from graded records that set feedbackAge
+                                                if (days === undefined) return null;
+                                                if (days >= 10)
+                                                    return (
+                                                        <span title={`${days}d ago — feedback may be stale`}>
+                                                            <Clock size={11} style={{ color: 'var(--red-text)' }} />
+                                                        </span>
+                                                    );
+                                                if (days >= 7)
+                                                    return (
+                                                        <span title={`${days}d ago`}>
+                                                            <Clock
+                                                                size={11}
+                                                                style={{ color: 'var(--yellow, #f59e0b)' }}
+                                                            />
+                                                        </span>
+                                                    );
+                                                return null;
+                                            })()}
+                                        {timeAgo(item.timestamp, t)}
+                                    </span>
+                                    <button
+                                        className="btn btn-ghost btn-sm"
+                                        style={{ flexShrink: 0, fontSize: '0.75rem', padding: '3px 8px' }}
+                                        onClick={() =>
+                                            item.type === 'grading'
+                                                ? navigate(`/rubrics/${item.rubricId}/grade/${item.studentId}`)
+                                                : navigate(`/rubrics/${item.rubricId}`)
+                                        }
+                                    >
+                                        {item.type === 'grading'
+                                            ? t('dashboard.action_resume')
+                                            : t('dashboard.action_open')}{' '}
+                                        <ArrowRight size={12} />
+                                    </button>
+                                </div>
+                            </React.Fragment>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+
+    const classCefrWidget = (
+        <div className="card">
+            <h3 style={{ marginBottom: 4 }}>{t('dashboard.class_cefr_title')}</h3>
+            <div className="text-muted text-sm" style={{ marginBottom: 14 }}>
+                {classCriterionAverages.rubric
+                    ? t(activeClassName ? 'dashboard.class_cefr_sub_class' : 'dashboard.class_cefr_sub_all', {
+                          class: activeClassName,
+                          rubric: classCriterionAverages.rubric.name,
+                      })
+                    : t('dashboard.class_cefr_empty')}
+            </div>
+            {classCriterionAverages.bars.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {classCriterionAverages.bars.map((bar) => (
+                        <div key={bar.name}>
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    fontSize: '0.8rem',
+                                    marginBottom: 5,
+                                }}
+                            >
+                                <span className="text-muted">{bar.name}</span>
+                                <span style={{ fontWeight: 700 }}>{bar.pct}%</span>
+                            </div>
+                            <div
+                                style={{
+                                    height: 8,
+                                    borderRadius: 99,
+                                    background: 'var(--bg-elevated)',
+                                    overflow: 'hidden',
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        height: '100%',
+                                        width: `${bar.pct}%`,
+                                        borderRadius: 99,
+                                        background: 'var(--accent)',
+                                    }}
+                                />
+                            </div>
                         </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+
+    const quickActionsWidget = (
+        <div className="card">
+            <h3 style={{ marginBottom: 16 }}>{t('dashboard.quick_actions')}</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {[
+                    {
+                        label: t('dashboard.action_create_rubric'),
+                        icon: BookOpen,
+                        color: 'var(--accent-text)',
+                        path: '/rubrics/new',
+                    },
+                    {
+                        label: t('dashboard.action_add_student'),
+                        icon: Users,
+                        color: 'var(--green-text)',
+                        path: '/students',
+                    },
+                    {
+                        label: t('dashboard.action_upload_attachment'),
+                        icon: FileText,
+                        color: 'var(--purple-text)',
+                        path: '/attachments',
+                    },
+                ].map(({ label, icon: Icon, color, path }) => (
+                    <button
+                        key={path}
+                        className="btn btn-secondary"
+                        onClick={() => navigate(path)}
+                        style={{ justifyContent: 'flex-start', gap: 12 }}
+                    >
+                        <Icon size={16} style={{ color }} />
+                        {label}
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+
+    const quickStartWidget = (
+        <div className="card">
+            <h3 style={{ marginBottom: 16 }}>{t('dashboard.quick_start_templates')}</h3>
+            {userTemplates.length > 0 && (
+                <>
+                    <div
+                        style={{
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            textTransform: 'uppercase',
+                            color: 'var(--text-muted)',
+                            marginBottom: 8,
+                            letterSpacing: '0.04em',
+                        }}
+                    >
+                        {t('dashboard.my_templates', 'My Templates')}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+                        {userTemplates.map((tpl) => (
+                            <div
+                                key={tpl.id}
+                                style={{
+                                    padding: '10px 12px',
+                                    background: 'color-mix(in srgb, var(--accent) 6%, transparent)',
+                                    border: '1px solid color-mix(in srgb, var(--accent) 25%, transparent)',
+                                    borderRadius: 8,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    gap: 10,
+                                }}
+                                onClick={() => navigate('/rubrics/new', { state: { template: tpl } })}
+                                className="hoverable"
+                            >
+                                <div>
+                                    <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{tpl.name}</div>
+                                    {tpl.subject && (
+                                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                                            {/* Only rendered when subject is truthy (outer && guard) */}
+                                            {tpl.subject}
+                                        </div>
+                                    )}
+                                </div>
+                                <button
+                                    className="btn btn-ghost btn-icon btn-sm"
+                                    style={{ color: 'var(--red-text)', flexShrink: 0 }}
+                                    title={t('dashboard.remove_template')}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        deleteUserTemplate(tpl.id);
+                                    }}
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                        ))}
                     </div>
                     <div
                         style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            height: 32,
-                            padding: '0 12px',
-                            borderRadius: 8,
-                            background: 'var(--bg-elevated)',
-                            border: '1px solid var(--border)',
-                            fontSize: '0.8rem',
+                            fontSize: '0.75rem',
                             fontWeight: 600,
+                            textTransform: 'uppercase',
                             color: 'var(--text-muted)',
-                            flexShrink: 0,
+                            marginBottom: 8,
+                            letterSpacing: '0.04em',
                         }}
                     >
-                        {t('dashboard.this_week')}
+                        {t('dashboard.builtin_templates')}
                     </div>
-                </div>
-
-                {/* Stat cards */}
-                <div className="grid-4 mb-4">
+                </>
+            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {QUICK_START_TEMPLATES.map((tpl, i) => (
                     <div
-                        className="card hoverable"
-                        onClick={() => navigate('/rubrics')}
-                        style={{ borderTop: '3px solid var(--accent)', cursor: 'pointer' }}
-                    >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                            <div style={{ background: 'var(--accent-soft)', padding: 10, borderRadius: 10 }}>
-                                <BookOpen size={20} style={{ color: 'var(--accent-text)' }} />
-                            </div>
-                            <div>
-                                <div style={{ fontSize: '1.8rem', fontWeight: 700 }}>{rubrics.length}</div>
-                                <div className="text-muted text-sm">{t('dashboard.rubrics')}</div>
-                            </div>
-                        </div>
-                        <div style={{ marginTop: 10 }}>
-                            <TrendBadge count={weeklyTrends.rubrics} t={t} />
-                        </div>
-                    </div>
-                    <div
-                        className="card hoverable"
-                        onClick={() => navigate('/students')}
-                        style={{ borderTop: '3px solid var(--green)', cursor: 'pointer' }}
-                    >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                            <div style={{ background: 'rgba(34,197,94,0.12)', padding: 10, borderRadius: 10 }}>
-                                <Users size={20} style={{ color: 'var(--green-text)' }} />
-                            </div>
-                            <div>
-                                <div style={{ fontSize: '1.8rem', fontWeight: 700 }}>{students.length}</div>
-                                <div className="text-muted text-sm">{t('dashboard.students')}</div>
-                            </div>
-                        </div>
-                        <div style={{ marginTop: 10 }}>
-                            <TrendBadge count={weeklyTrends.students} t={t} />
-                        </div>
-                    </div>
-                    <div
-                        className="card hoverable"
-                        data-tour="dashboard-grades"
-                        onClick={() => navigate('/export')}
-                        style={{ borderTop: '3px solid var(--purple)', cursor: 'pointer' }}
-                    >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                            <div style={{ background: 'rgba(139,92,246,0.12)', padding: 10, borderRadius: 10 }}>
-                                <TrendingUp size={20} style={{ color: 'var(--purple-text)' }} />
-                            </div>
-                            <div>
-                                <div style={{ fontSize: '1.8rem', fontWeight: 700 }}>{completedCount}</div>
-                                <div className="text-muted text-sm">{t('dashboard.grades_submitted')}</div>
-                            </div>
-                        </div>
-                        <div style={{ marginTop: 10 }}>
-                            <TrendBadge count={weeklyTrends.grades} t={t} />
-                        </div>
-                    </div>
-                    <div
-                        className="card hoverable"
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => navigate('/rubrics')}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') navigate('/rubrics');
+                        key={i}
+                        style={{
+                            padding: '12px 14px',
+                            background: 'var(--bg-elevated)',
+                            borderRadius: 10,
+                            border: '1px solid var(--border)',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
                         }}
-                        style={{ borderTop: '3px solid var(--yellow)', cursor: 'pointer' }}
+                        onClick={() => {
+                            const newRubric: Partial<Rubric> = {
+                                ...tpl,
+                                id: undefined,
+                                createdAt: undefined,
+                                updatedAt: undefined,
+                            };
+                            navigate('/rubrics/new', { state: { template: newRubric } });
+                        }}
+                        className="hoverable"
                     >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                            <div style={{ background: 'rgba(201,133,31,0.12)', padding: 10, borderRadius: 10 }}>
-                                <ClipboardList size={20} style={{ color: 'var(--yellow-text)' }} />
-                            </div>
-                            <div>
-                                <div style={{ fontSize: '1.8rem', fontWeight: 700 }}>{needsGrading.length}</div>
-                                <div className="text-muted text-sm">{t('dashboard.needs_grading')}</div>
-                            </div>
-                        </div>
-                        <div style={{ marginTop: 10 }}>
-                            <TrendBadge count={weeklyTrends.needsGrading} t={t} />
-                        </div>
+                        <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: 2 }}>{tpl.name}</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{tpl.subject}</div>
                     </div>
-                </div>
+                ))}
+            </div>
+        </div>
+    );
 
-                {/* At-risk students panel */}
-                {atRiskStudents.length > 0 && (
-                    <div className="card" style={{ marginBottom: 20, borderLeft: '4px solid var(--red)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                            <AlertTriangle size={16} style={{ color: 'var(--red-text)' }} />
-                            <h3 style={{ margin: 0, color: 'var(--red-text)' }}>At-Risk Students</h3>
-                            <span className="text-muted text-xs" style={{ marginLeft: 4 }}>
-                                (scored below 55% on 2+ recent assessments)
-                            </span>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                            {atRiskStudents.map(({ student, recentPct, rubricId }) => (
-                                <div
-                                    key={student.id}
-                                    style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}
-                                >
-                                    <button
-                                        type="button"
-                                        className="btn btn-secondary btn-sm"
-                                        title={t('dashboard.at_risk_go_to_grading', 'Go to grading')}
-                                        onClick={() => navigate(`/rubrics/${rubricId}/grade/${student.id}`)}
-                                        style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}
-                                    >
-                                        <span style={{ fontWeight: 600 }}>{student.name}</span>
-                                        <span style={{ color: 'var(--red-text)', fontSize: '0.78rem' }}>
-                                            {recentPct.toFixed(0)}%
-                                        </span>
-                                        {feedbackAge.has(student.id) && feedbackAge.get(student.id)! >= 7 && (
-                                            <span title={`Last feedback ${feedbackAge.get(student.id)} days ago`}>
-                                                <Clock
-                                                    size={11}
-                                                    style={{
-                                                        color:
-                                                            feedbackAge.get(student.id)! >= 10
-                                                                ? 'var(--red)'
-                                                                : 'var(--yellow, #f59e0b)',
-                                                    }}
-                                                />
-                                            </span>
-                                        )}
-                                        <ChevronRight size={13} style={{ opacity: 0.6 }} />
-                                    </button>
-                                    {recommendedDeckByStudent.has(student.id) && (
-                                        <button
-                                            type="button"
-                                            className="btn btn-ghost btn-icon btn-sm"
-                                            title={t('dashboard.at_risk_assign_deck')}
-                                            aria-label={t('dashboard.at_risk_assign_deck')}
-                                            onClick={() => assignRecommendedDeck(student.id)}
-                                        >
-                                            <Layers size={14} />
-                                        </button>
-                                    )}
-                                    <button
-                                        type="button"
-                                        className="btn btn-ghost btn-icon btn-sm"
-                                        title={t('dashboard.at_risk_message')}
-                                        aria-label={t('dashboard.at_risk_message')}
-                                        onClick={() =>
-                                            setMessagingStudentId((cur) => (cur === student.id ? null : student.id))
-                                        }
-                                    >
-                                        <Mail size={14} />
-                                    </button>
-                                    {messagingStudentId === student.id && (
-                                        <div style={{ display: 'flex', gap: 6, width: '100%', marginTop: 4 }}>
-                                            <input
-                                                type="text"
-                                                aria-label={t('dashboard.at_risk_message_placeholder')}
-                                                value={messageText}
-                                                onChange={(e) => setMessageText(e.target.value)}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter') sendAtRiskMessage(student.id);
-                                                }}
-                                                placeholder={t('dashboard.at_risk_message_placeholder')}
-                                                style={{ flex: 1 }}
-                                            />
-                                            <button
-                                                type="button"
-                                                className="btn btn-primary btn-sm"
-                                                disabled={!messageText.trim()}
-                                                onClick={() => sendAtRiskMessage(student.id)}
-                                            >
-                                                {t('dashboard.at_risk_message_send')}
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
+    const widgetContent: Record<DashboardWidgetId, React.ReactNode> = {
+        snapshot: snapshotWidget,
+        greeting: greetingWidget,
+        stats: statsWidget,
+        atRisk: atRiskWidget,
+        needsGrading: needsGradingWidget,
+        recentActivity: recentActivityWidget,
+        classCefr: classCefrWidget,
+        quickActions: quickActionsWidget,
+        quickStart: quickStartWidget,
+    };
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                        {/* Needs grading */}
-                        <div className="card">
-                            <div
-                                className="card-header"
-                                style={{
-                                    marginBottom: 14,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                }}
-                            >
-                                <h3>{t('dashboard.needs_grading')}</h3>
-                                <span
-                                    className="text-muted text-xs"
-                                    role="button"
-                                    tabIndex={0}
-                                    style={{ fontWeight: 600, cursor: 'pointer' }}
-                                    onClick={() => navigate('/rubrics')}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' || e.key === ' ') navigate('/rubrics');
-                                    }}
-                                >
-                                    {t('dashboard.view_queue')}
-                                </span>
-                            </div>
-                            {needsGrading.length === 0 ? (
-                                <div className="text-muted text-sm">{t('dashboard.needs_grading_empty')}</div>
-                            ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                    {needsGrading.slice(0, 6).map((item) => (
-                                        <div
-                                            key={`${item.rubricId}_${item.studentId}`}
-                                            className="hoverable"
-                                            role="button"
-                                            tabIndex={0}
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: 12,
-                                                padding: '8px 6px',
-                                                borderRadius: 10,
-                                                cursor: 'pointer',
-                                            }}
-                                            onClick={() =>
-                                                navigate(`/rubrics/${item.rubricId}/grade/${item.studentId}`)
-                                            }
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter' || e.key === ' ')
-                                                    navigate(`/rubrics/${item.rubricId}/grade/${item.studentId}`);
-                                            }}
-                                        >
-                                            <div
-                                                style={{
-                                                    width: 34,
-                                                    height: 34,
-                                                    borderRadius: 99,
-                                                    background: 'var(--bg-elevated)',
-                                                    color: 'var(--text-muted)',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    fontWeight: 700,
-                                                    fontSize: '0.8rem',
-                                                    flexShrink: 0,
-                                                }}
-                                            >
-                                                {item.studentName
-                                                    .split(' ')
-                                                    .map((p) => p[0])
-                                                    .join('')
-                                                    .slice(0, 2)
-                                                    .toUpperCase()}
-                                            </div>
-                                            <div style={{ flex: 1, minWidth: 0 }}>
-                                                <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>
-                                                    {item.studentName}
-                                                </div>
-                                                <div
-                                                    className="text-muted text-xs"
-                                                    style={{
-                                                        overflow: 'hidden',
-                                                        textOverflow: 'ellipsis',
-                                                        whiteSpace: 'nowrap',
-                                                    }}
-                                                >
-                                                    {item.rubricName}
-                                                </div>
-                                            </div>
-                                            {item.className && (
-                                                <span
-                                                    className="text-muted text-xs"
-                                                    style={{
-                                                        background: 'var(--bg-elevated)',
-                                                        padding: '3px 9px',
-                                                        borderRadius: 99,
-                                                        flexShrink: 0,
-                                                    }}
-                                                >
-                                                    {item.className}
-                                                </span>
-                                            )}
-                                            <span className="text-muted text-xs" style={{ flexShrink: 0 }}>
-                                                {timeAgo(item.submittedAt, t)}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Recent Activity feed */}
-                        <div className="card">
-                            <div className="card-header" style={{ marginBottom: 14 }}>
-                                <h3>{t('dashboard.recent_activity')}</h3>
-                            </div>
-                            {recentActivity.length === 0 ? (
-                                <EmptyState
-                                    icon={BookOpen}
-                                    description={t('dashboard.no_rubrics')}
-                                    action={{
-                                        label: t('dashboard.create_first'),
-                                        icon: Plus,
-                                        onClick: () => navigate('/rubrics/new'),
-                                    }}
-                                />
-                            ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                    {recentActivity.map((item, idx) => {
-                                        const groupLabel = dateGroupLabel(item.timestamp, t, i18n.language);
-                                        const showGroupHeader =
-                                            idx === 0 ||
-                                            groupLabel !==
-                                                dateGroupLabel(recentActivity[idx - 1].timestamp, t, i18n.language);
-                                        return (
-                                            <React.Fragment
-                                                key={
-                                                    item.type === 'grading'
-                                                        ? `grading_${item.rubricId}_${item.studentId}`
-                                                        : `edit_${item.rubricId}`
-                                                }
-                                            >
-                                                {showGroupHeader && (
-                                                    <div
-                                                        style={{
-                                                            fontSize: '0.72rem',
-                                                            fontWeight: 600,
-                                                            textTransform: 'uppercase',
-                                                            letterSpacing: '0.04em',
-                                                            color: 'var(--text-muted)',
-                                                            marginTop: idx === 0 ? 0 : 8,
-                                                            padding: '0 2px',
-                                                        }}
-                                                    >
-                                                        {groupLabel}
-                                                    </div>
-                                                )}
-                                                <div
-                                                    style={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: 12,
-                                                        padding: '9px 12px',
-                                                        background: 'var(--bg-elevated)',
-                                                        borderRadius: 8,
-                                                        border: '1px solid var(--border)',
-                                                    }}
-                                                >
-                                                    <div style={{ flexShrink: 0 }}>
-                                                        {item.type === 'grading' ? (
-                                                            <CheckCircle
-                                                                size={16}
-                                                                style={{ color: 'var(--green-text)' }}
-                                                            />
-                                                        ) : (
-                                                            <BookOpen
-                                                                size={16}
-                                                                style={{ color: 'var(--accent-text)' }}
-                                                            />
-                                                        )}
-                                                    </div>
-                                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                                        {item.type === 'grading' ? (
-                                                            <div style={{ fontSize: '0.85rem' }}>
-                                                                {t('dashboard.activity_graded_prefix', 'Graded')}{' '}
-                                                                <strong>{item.studentName}</strong>
-                                                                {' — '}
-                                                                {item.rubricName}
-                                                            </div>
-                                                        ) : (
-                                                            <div style={{ fontSize: '0.85rem' }}>
-                                                                {t('dashboard.activity_updated_prefix', 'Updated')}{' '}
-                                                                <strong>{item.rubricName}</strong>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <span
-                                                        className="text-muted text-xs"
-                                                        style={{
-                                                            flexShrink: 0,
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            gap: 4,
-                                                        }}
-                                                    >
-                                                        {item.type === 'grading' &&
-                                                            (() => {
-                                                                const days = feedbackAge.get(item.studentId);
-                                                                // v8 ignore next: grading items always come from graded records that set feedbackAge
-                                                                if (days === undefined) return null;
-                                                                if (days >= 10)
-                                                                    return (
-                                                                        <span
-                                                                            title={`${days}d ago — feedback may be stale`}
-                                                                        >
-                                                                            <Clock
-                                                                                size={11}
-                                                                                style={{ color: 'var(--red-text)' }}
-                                                                            />
-                                                                        </span>
-                                                                    );
-                                                                if (days >= 7)
-                                                                    return (
-                                                                        <span title={`${days}d ago`}>
-                                                                            <Clock
-                                                                                size={11}
-                                                                                style={{
-                                                                                    color: 'var(--yellow, #f59e0b)',
-                                                                                }}
-                                                                            />
-                                                                        </span>
-                                                                    );
-                                                                return null;
-                                                            })()}
-                                                        {timeAgo(item.timestamp, t)}
-                                                    </span>
-                                                    <button
-                                                        className="btn btn-ghost btn-sm"
-                                                        style={{
-                                                            flexShrink: 0,
-                                                            fontSize: '0.75rem',
-                                                            padding: '3px 8px',
-                                                        }}
-                                                        onClick={() =>
-                                                            item.type === 'grading'
-                                                                ? navigate(
-                                                                      `/rubrics/${item.rubricId}/grade/${item.studentId}`
-                                                                  )
-                                                                : navigate(`/rubrics/${item.rubricId}`)
-                                                        }
-                                                    >
-                                                        {item.type === 'grading'
-                                                            ? t('dashboard.action_resume')
-                                                            : t('dashboard.action_open')}{' '}
-                                                        <ArrowRight size={12} />
-                                                    </button>
-                                                </div>
-                                            </React.Fragment>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                        {/* Class CEFR — Writing */}
-                        <div className="card">
-                            <h3 style={{ marginBottom: 4 }}>{t('dashboard.class_cefr_title')}</h3>
-                            <div className="text-muted text-sm" style={{ marginBottom: 14 }}>
-                                {classCriterionAverages.rubric
-                                    ? t(
-                                          activeClassName
-                                              ? 'dashboard.class_cefr_sub_class'
-                                              : 'dashboard.class_cefr_sub_all',
-                                          { class: activeClassName, rubric: classCriterionAverages.rubric.name }
-                                      )
-                                    : t('dashboard.class_cefr_empty')}
-                            </div>
-                            {classCriterionAverages.bars.length > 0 && (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                                    {classCriterionAverages.bars.map((bar) => (
-                                        <div key={bar.name}>
-                                            <div
-                                                style={{
-                                                    display: 'flex',
-                                                    justifyContent: 'space-between',
-                                                    fontSize: '0.8rem',
-                                                    marginBottom: 5,
-                                                }}
-                                            >
-                                                <span className="text-muted">{bar.name}</span>
-                                                <span style={{ fontWeight: 700 }}>{bar.pct}%</span>
-                                            </div>
-                                            <div
-                                                style={{
-                                                    height: 8,
-                                                    borderRadius: 99,
-                                                    background: 'var(--bg-elevated)',
-                                                    overflow: 'hidden',
-                                                }}
-                                            >
-                                                <div
-                                                    style={{
-                                                        height: '100%',
-                                                        width: `${bar.pct}%`,
-                                                        borderRadius: 99,
-                                                        background: 'var(--accent)',
-                                                    }}
-                                                />
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Quick actions */}
-                        <div className="card">
-                            <h3 style={{ marginBottom: 16 }}>{t('dashboard.quick_actions')}</h3>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                {[
-                                    {
-                                        label: t('dashboard.action_create_rubric'),
-                                        icon: BookOpen,
-                                        color: 'var(--accent-text)',
-                                        path: '/rubrics/new',
-                                    },
-                                    {
-                                        label: t('dashboard.action_add_student'),
-                                        icon: Users,
-                                        color: 'var(--green-text)',
-                                        path: '/students',
-                                    },
-                                    {
-                                        label: t('dashboard.action_upload_attachment'),
-                                        icon: FileText,
-                                        color: 'var(--purple-text)',
-                                        path: '/attachments',
-                                    },
-                                ].map(({ label, icon: Icon, color, path }) => (
-                                    <button
-                                        key={path}
-                                        className="btn btn-secondary"
-                                        onClick={() => navigate(path)}
-                                        style={{ justifyContent: 'flex-start', gap: 12 }}
-                                    >
-                                        <Icon size={16} style={{ color }} />
-                                        {label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="card">
-                            <h3 style={{ marginBottom: 16 }}>{t('dashboard.quick_start_templates')}</h3>
-                            {userTemplates.length > 0 && (
+    return (
+        <>
+            <Topbar
+                classSelector
+                title={t('dashboard.title')}
+                actions={
+                    <div style={{ display: 'flex', gap: 8 }}>
+                        <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => setCustomizing((c) => !c)}
+                        >
+                            {customizing ? (
                                 <>
-                                    <div
-                                        style={{
-                                            fontSize: '0.75rem',
-                                            fontWeight: 600,
-                                            textTransform: 'uppercase',
-                                            color: 'var(--text-muted)',
-                                            marginBottom: 8,
-                                            letterSpacing: '0.04em',
-                                        }}
-                                    >
-                                        {t('dashboard.my_templates', 'My Templates')}
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
-                                        {userTemplates.map((tpl) => (
-                                            <div
-                                                key={tpl.id}
-                                                style={{
-                                                    padding: '10px 12px',
-                                                    background: 'color-mix(in srgb, var(--accent) 6%, transparent)',
-                                                    border: '1px solid color-mix(in srgb, var(--accent) 25%, transparent)',
-                                                    borderRadius: 8,
-                                                    cursor: 'pointer',
-                                                    display: 'flex',
-                                                    justifyContent: 'space-between',
-                                                    alignItems: 'center',
-                                                    gap: 10,
-                                                }}
-                                                onClick={() => navigate('/rubrics/new', { state: { template: tpl } })}
-                                                className="hoverable"
-                                            >
-                                                <div>
-                                                    <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>
-                                                        {tpl.name}
-                                                    </div>
-                                                    {tpl.subject && (
-                                                        <div
-                                                            style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}
-                                                        >
-                                                            {/* Only rendered when subject is truthy (outer && guard) */}
-                                                            {tpl.subject}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <button
-                                                    className="btn btn-ghost btn-icon btn-sm"
-                                                    style={{ color: 'var(--red-text)', flexShrink: 0 }}
-                                                    title={t('dashboard.remove_template')}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        deleteUserTemplate(tpl.id);
-                                                    }}
-                                                >
-                                                    ✕
-                                                </button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div
-                                        style={{
-                                            fontSize: '0.75rem',
-                                            fontWeight: 600,
-                                            textTransform: 'uppercase',
-                                            color: 'var(--text-muted)',
-                                            marginBottom: 8,
-                                            letterSpacing: '0.04em',
-                                        }}
-                                    >
-                                        {t('dashboard.builtin_templates')}
-                                    </div>
+                                    <Check size={15} /> {t('dashboard.customize_done')}
+                                </>
+                            ) : (
+                                <>
+                                    <LayoutGrid size={15} /> {t('dashboard.customize_toggle')}
                                 </>
                             )}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                {QUICK_START_TEMPLATES.map((tpl, i) => (
-                                    <div
-                                        key={i}
-                                        style={{
-                                            padding: '12px 14px',
-                                            background: 'var(--bg-elevated)',
-                                            borderRadius: 10,
-                                            border: '1px solid var(--border)',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s',
-                                        }}
-                                        onClick={() => {
-                                            const newRubric: Partial<Rubric> = {
-                                                ...tpl,
-                                                id: undefined,
-                                                createdAt: undefined,
-                                                updatedAt: undefined,
-                                            };
-                                            navigate('/rubrics/new', { state: { template: newRubric } });
-                                        }}
-                                        className="hoverable"
-                                    >
-                                        <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: 2 }}>
-                                            {tpl.name}
-                                        </div>
-                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                            {tpl.subject}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+                        </button>
+                        <button className="btn btn-primary btn-sm" onClick={() => navigate('/rubrics/new')}>
+                            <Plus size={15} /> {t('dashboard.new_rubric')}
+                        </button>
                     </div>
-                </div>
+                }
+            />
+            <div className="page-content fade-in dashboard-container">
+                {customizing && (
+                    <div className="text-muted text-sm" style={{ marginBottom: 16 }}>
+                        {t('dashboard.customize_hint')}
+                    </div>
+                )}
+                {customizing ? (
+                    <DragDropContext onDragEnd={handleWidgetDragEnd}>
+                        <Droppable droppableId="dashboard-widgets">
+                            {(droppableProvided) => (
+                                <div
+                                    ref={droppableProvided.innerRef}
+                                    {...droppableProvided.droppableProps}
+                                    style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
+                                >
+                                    {widgetOrder.map((id, index) => (
+                                        <Draggable key={id} draggableId={id} index={index}>
+                                            {(dragProvided) => (
+                                                <div
+                                                    ref={dragProvided.innerRef}
+                                                    {...dragProvided.draggableProps}
+                                                    style={dragProvided.draggableProps.style}
+                                                >
+                                                    <DashboardWidgetFrame
+                                                        title={widgetTitle[id]}
+                                                        hidden={hiddenWidgets.has(id)}
+                                                        dragHandleProps={dragProvided.dragHandleProps}
+                                                        onToggleHidden={() => toggleWidgetHidden(id)}
+                                                        hideLabel={t('dashboard.widget_hide', {
+                                                            title: widgetTitle[id],
+                                                        })}
+                                                        showLabel={t('dashboard.widget_show', {
+                                                            title: widgetTitle[id],
+                                                        })}
+                                                        dragLabel={t('dashboard.widget_drag', {
+                                                            title: widgetTitle[id],
+                                                        })}
+                                                    >
+                                                        {widgetContent[id] ?? (
+                                                            <div className="text-muted text-sm">
+                                                                {t('dashboard.widget_empty')}
+                                                            </div>
+                                                        )}
+                                                    </DashboardWidgetFrame>
+                                                </div>
+                                            )}
+                                        </Draggable>
+                                    ))}
+                                    {droppableProvided.placeholder}
+                                </div>
+                            )}
+                        </Droppable>
+                    </DragDropContext>
+                ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                        {widgetOrder.map((id) =>
+                            hiddenWidgets.has(id) ? null : <React.Fragment key={id}>{widgetContent[id]}</React.Fragment>
+                        )}
+                    </div>
+                )}
             </div>
         </>
     );
