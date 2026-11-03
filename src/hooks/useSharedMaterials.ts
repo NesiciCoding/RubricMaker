@@ -43,7 +43,7 @@ function subscribe(listener: () => void) {
     return () => listeners.delete(listener);
 }
 
-async function load(kind: SharedKind, userId: string) {
+async function load(kind: SharedKind, userId: string, background = false) {
     const sameUser = cache[kind].userId === userId;
     setState(
         kind,
@@ -57,7 +57,12 @@ async function load(kind: SharedKind, userId: string) {
         setState(kind, { status: 'ready', items, folders, userId });
     } catch {
         if (cache[kind].userId !== userId) return;
-        setState(kind, { status: 'error', items: [], folders: [], userId });
+        // A background live-refresh failure (e.g. a transient network blip) shouldn't wipe an
+        // already-loaded cache and blank every picker — keep serving the stale items instead.
+        setState(
+            kind,
+            background ? { ...cache[kind], status: 'ready' } : { status: 'error', items: [], folders: [], userId }
+        );
     }
 }
 
@@ -89,7 +94,7 @@ function ensureSharedMaterialListener() {
             }
             for (const kind of kinds) {
                 const userId = cache[kind].userId;
-                if (userId) void load(kind, userId);
+                if (userId) void load(kind, userId, true);
             }
         });
     } catch {

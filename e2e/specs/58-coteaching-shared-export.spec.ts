@@ -120,7 +120,8 @@ test.describe('Co-teaching: comparative grading and exports with a colleague’s
         await exportPage.selectRubricById(rubricId);
         await expect(colleaguePage.getByText('Export Co Student')).toBeVisible({ timeout: 15_000 });
         await exportPage.selectAllStudents();
-        const download = await exportPage.exportDocx();
-        expect(download.suggestedFilename()).toBeTruthy();
+        // The student's graded result, not the blank rubric — exportDocx() downloads the latter.
+        const download = await exportPage.exportStudentGradesDocx();
+        expect(download.suggestedFilename()).toMatch(/_grades\.docx$/);
     });
 });

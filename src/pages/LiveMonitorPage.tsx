@@ -191,7 +191,13 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         return () => {
             cancelled = true;
         };
-    }, [kind, test, hasDb, fetchTestAssignmentTeacherKeys]);
+        // `test` itself is read above (not just test.id) — depending on test?.id rather than the
+        // object keeps this effect (and the realtime channels it indirectly rebuilds via
+        // testTeacherKeys) from tearing down on every live useSharedMaterials refresh, which
+        // replaces the whole cache array and so gives `test` a new reference even when nothing
+        // about THIS test changed (e.g. a colleague's unrelated rubric or folder changed).
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [kind, test?.id, hasDb, fetchTestAssignmentTeacherKeys]);
 
     // ── Resolve the list of monitored students ───────────────────────────────────
     const monitorStudents = useMemo<MonitorStudent[]>(() => {

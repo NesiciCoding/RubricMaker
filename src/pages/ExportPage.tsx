@@ -94,6 +94,10 @@ export default function ExportPage() {
     const { showToast } = useToast();
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
     const [selectedRubricId, setSelectedRubricId] = useState(rubrics[0]?.id ?? '');
+    // useRubricPool's colleague rubrics arrive asynchronously, after this state's initial value is
+    // already locked in — a co-teacher with no own rubrics would otherwise be stuck on '' forever,
+    // even once their only selectable rubric (a colleague's) loads. Recomputed every render instead.
+    const activeRubricId = rubrics.some((r) => r.id === selectedRubricId) ? selectedRubricId : (rubrics[0]?.id ?? '');
     const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
     const [exporting, setExporting] = useState(false);
     const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
@@ -109,7 +113,7 @@ export default function ExportPage() {
             return next;
         });
 
-    const rubric = rubrics.find((r) => r.id === selectedRubricId);
+    const rubric = rubrics.find((r) => r.id === activeRubricId);
 
     const [gradebookPreset, setGradebookPreset] = useState<GradebookPresetId>('generic');
     // Magister and SOMtoday are Dutch systems, whose Excel reads 7,5 and treats 7.5 as text.
@@ -162,7 +166,7 @@ export default function ExportPage() {
             : null;
 
     const gradedStudents = studentRubrics
-        .filter((sr) => sr.rubricId === selectedRubricId)
+        .filter((sr) => sr.rubricId === activeRubricId)
         .map((sr) => {
             const r = sr.rubricSnapshot || rubric;
             return {
@@ -722,7 +726,7 @@ export default function ExportPage() {
                             <label htmlFor="export-rubric-select">{t('exportPage.select_rubric')}</label>
                             <select
                                 id="export-rubric-select"
-                                value={selectedRubricId}
+                                value={activeRubricId}
                                 onChange={(e) => {
                                     setSelectedRubricId(e.target.value);
                                     setSelectedStudentIds(new Set());

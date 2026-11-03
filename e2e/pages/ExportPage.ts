@@ -47,4 +47,13 @@ export class ExportPage extends BasePage {
         ]);
         return download;
     }
+
+    /** Exports the selected students' graded results (not the blank rubric) as a Word document. */
+    async exportStudentGradesDocx(): Promise<Download> {
+        const [download] = await Promise.all([
+            this.page.waitForEvent('download'),
+            this.page.getByRole('button', { name: /export \d+ as docx/i }).click(),
+        ]);
+        return download;
+    }
 }

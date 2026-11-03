@@ -162,6 +162,13 @@ export default function StatisticsPage() {
     // ── Rubric view state ─────────────────────────────────────────────────────
     const [selectedRubricId, setSelectedRubricId] = useState(rubrics[0]?.id ?? '');
     const [selectedClassId, setSelectedClassId] = useState<string>(settings.activeClassId ?? 'all');
+    // useRubricPool's colleague rubrics arrive asynchronously, after these states' initial values
+    // are already locked in — a co-teacher with no own rubrics would otherwise be stuck on ''
+    // forever, even once their only selectable rubric (a colleague's) loads. Recomputed every render.
+    const activeRubricId = rubrics.some((r) => r.id === selectedRubricId) ? selectedRubricId : (rubrics[0]?.id ?? '');
+    const activeCompareRubricId = rubrics.some((r) => r.id === compareRubricId)
+        ? compareRubricId
+        : (rubrics[0]?.id ?? '');
 
     const classWritingWeak = useMemo(() => {
         if (selectedClassId === 'all') return [];
@@ -219,7 +226,7 @@ export default function StatisticsPage() {
     const excludeNHI = settings.statisticsExcludeNotHandedIn ?? false;
 
     // ── Rubric view data ──────────────────────────────────────────────────────
-    const rubric = rubrics.find((r) => r.id === selectedRubricId);
+    const rubric = rubrics.find((r) => r.id === activeRubricId);
     const scaleId = rubric?.gradeScaleId ?? settings.defaultGradeScaleId;
     const scale = scaleId === 'none' ? null : (gradeScales.find((g) => g.id === scaleId) ?? gradeScales[0]);
 
@@ -348,7 +355,7 @@ export default function StatisticsPage() {
     }, [selectedClassId, rubrics, studentRubrics, students, gradeScales]);
 
     // ── Compare mode data ─────────────────────────────────────────────────────
-    const compareRubric = rubrics.find((r) => r.id === compareRubricId);
+    const compareRubric = rubrics.find((r) => r.id === activeCompareRubricId);
     const compareScale = compareRubric
         ? compareRubric.gradeScaleId === 'none'
             ? null
@@ -359,14 +366,14 @@ export default function StatisticsPage() {
         if (!compareRubric || compareClassIds.length === 0) return [];
         return compareClasses(
             compareClassIds,
-            compareRubricId,
+            activeCompareRubricId,
             studentRubrics,
             students,
             classes,
             compareRubric,
             compareScale
         );
-    }, [compareClassIds, compareRubricId, studentRubrics, students, classes, compareRubric, compareScale]);
+    }, [compareClassIds, activeCompareRubricId, studentRubrics, students, classes, compareRubric, compareScale]);
 
     const comparisonCriterionGap = useMemo(() => {
         if (comparisonResults.length < 2 || !compareRubric) return [];
@@ -774,7 +781,7 @@ export default function StatisticsPage() {
                                 <label htmlFor="stats-rubric">{t('statistics.label_rubric')}</label>
                                 <select
                                     id="stats-rubric"
-                                    value={selectedRubricId}
+                                    value={activeRubricId}
                                     onChange={(e) => setSelectedRubricId(e.target.value)}
                                 >
                                     {rubrics.map((r) => (
@@ -846,7 +853,7 @@ export default function StatisticsPage() {
                                 <label htmlFor="stats-compare-rubric">{t('statistics.label_rubric')}</label>
                                 <select
                                     id="stats-compare-rubric"
-                                    value={compareRubricId}
+                                    value={activeCompareRubricId}
                                     onChange={(e) => setCompareRubricId(e.target.value)}
                                 >
                                     {rubrics.map((r) => (
