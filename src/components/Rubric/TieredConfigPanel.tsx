@@ -10,19 +10,21 @@ import { VO_TRACKS, VO_TRACK_LABELS } from '../../data/voTracks';
 interface Props {
     config: TieredConfig;
     onChange: (next: TieredConfig) => void;
+    /** Starts collapsed when the config was already set up before this panel mounted (editing an existing tiered rubric). */
+    defaultCollapsed?: boolean;
 }
 
 const sectionTitle = { fontSize: '0.85rem', fontWeight: 700, margin: '14px 0 6px' } as const;
 const cell = { padding: '3px 4px', verticalAlign: 'middle' } as const;
 
 /** Rubric-level setup of a tiered rubric: its tier columns, shared bands with verdict cutoffs, and requirements. */
-export default function TieredConfigPanel({ config, onChange }: Props) {
+export default function TieredConfigPanel({ config, onChange, defaultCollapsed }: Props) {
     const { t } = useTranslation();
     const { tiers, bands } = config;
     const requirements = config.requirements ?? [];
     const cutoffDefaults = defaultCutoffs(bands);
     const issues = validateTiered(config);
-    const [collapsed, setCollapsed] = useState(false);
+    const [collapsed, setCollapsed] = useState(() => !!defaultCollapsed && issues.length === 0);
 
     const setTiers = (next: RubricTier[]) => onChange({ ...config, tiers: next });
     const setBands = (next: RubricBand[]) => onChange({ ...config, bands: next });

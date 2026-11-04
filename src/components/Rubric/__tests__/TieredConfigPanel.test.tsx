@@ -24,11 +24,20 @@ const initial: TieredConfig = {
     requirements: [{ id: 'r1', text: 'Op tijd' }],
 };
 
-function Harness({ start = initial, onChange }: { start?: TieredConfig; onChange?: (c: TieredConfig) => void }) {
+function Harness({
+    start = initial,
+    onChange,
+    defaultCollapsed,
+}: {
+    start?: TieredConfig;
+    onChange?: (c: TieredConfig) => void;
+    defaultCollapsed?: boolean;
+}) {
     const [config, setConfig] = useState(start);
     return (
         <TieredConfigPanel
             config={config}
+            defaultCollapsed={defaultCollapsed}
             onChange={(next) => {
                 onChange?.(next);
                 setConfig(next);
@@ -37,9 +46,9 @@ function Harness({ start = initial, onChange }: { start?: TieredConfig; onChange
     );
 }
 
-function setup(start?: TieredConfig) {
+function setup(start?: TieredConfig, defaultCollapsed?: boolean) {
     const changes: TieredConfig[] = [];
-    render(<Harness start={start} onChange={(c) => changes.push(c)} />);
+    render(<Harness start={start} defaultCollapsed={defaultCollapsed} onChange={(c) => changes.push(c)} />);
     return { last: () => changes[changes.length - 1] };
 }
 
@@ -197,5 +206,17 @@ describe('TieredConfigPanel — collapsing', () => {
 
         fireEvent.click(toggle);
         expect(screen.getByText('rubricBuilder.tiered_tiers_title')).toBeInTheDocument();
+    });
+
+    it('starts collapsed when a valid config was already set up, but stays open when it has issues', () => {
+        setup(undefined, true);
+        expect(screen.getByRole('button', { name: /rubricBuilder.tiered_config_title/ })).toHaveAttribute(
+            'aria-expanded',
+            'false'
+        );
+
+        setup({ ...initial, bands: [] }, true);
+        const toggles = screen.getAllByRole('button', { name: /rubricBuilder.tiered_config_title/ });
+        expect(toggles[1]).toHaveAttribute('aria-expanded', 'true');
     });
 });

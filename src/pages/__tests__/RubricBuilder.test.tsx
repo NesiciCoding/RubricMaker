@@ -2504,7 +2504,11 @@ describe('RubricBuilder — tiered rubrics', () => {
         const router = createMemoryRouter([{ path: '/rubrics/:id', element: <RubricBuilderLazy /> }], {
             initialEntries: ['/rubrics/r1'],
         });
-        return render(<RouterProvider router={router} />);
+        const result = render(<RouterProvider router={router} />);
+        // The tiered config panel starts collapsed for an already-configured rubric; expand it
+        // so the tests below can reach the tier/band controls.
+        fireEvent.click(screen.getByRole('button', { name: /tiered_config_title/ }));
+        return result;
     }
 
     const lastSaved = () => mockUpdateRubric.mock.calls.at(-1)![0] as Rubric;
@@ -2574,6 +2578,24 @@ describe('RubricBuilder — tiered rubrics', () => {
         expect(screen.getByText('rubricBuilder.label_scoring_mode')).toBeInTheDocument();
         save();
         expect(lastSaved().tiered).toBeUndefined();
+    });
+
+    it('re-expands the tiered config panel when tiered mode is toggled off and back on in the same session', async () => {
+        renderTieredEdit();
+        // Collapse it, as if the teacher had tidied it up after their last edit.
+        const toggle = screen.getByRole('button', { name: /tiered_config_title/ });
+        fireEvent.click(toggle);
+        expect(toggle).toHaveAttribute('aria-expanded', 'false');
+
+        fireEvent.click(screen.getByRole('radio', { name: 'rubricBuilder.rubric_type_standard' }));
+        await act(async () => fireEvent.click(await screen.findByText('common.confirm')));
+
+        fireEvent.click(screen.getByRole('radio', { name: 'rubricBuilder.rubric_type_tiered' }));
+        await act(async () => fireEvent.click(await screen.findByText('common.confirm')));
+
+        // The freshly created default config must stay open to edit, not inherit the stale
+        // collapsed state from the rubric that was tiered when the page first opened.
+        expect(screen.getByRole('button', { name: /tiered_config_title/ })).toHaveAttribute('aria-expanded', 'true');
     });
 
     it('switches an empty rubric to tiered without asking', async () => {
