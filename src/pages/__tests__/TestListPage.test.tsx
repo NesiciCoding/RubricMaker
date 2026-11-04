@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, within, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
@@ -679,6 +679,53 @@ describe('TestListPage', () => {
         (mockUseApp as Record<string, unknown>).tests = [{ ...mockTest, questions: [] }];
         await loadPage();
         expect(screen.getByTitle('tests.action_assign')).toBeDisabled();
+    });
+
+    it('imports a single test from a JSON file and opens it', async () => {
+        await loadPage();
+        fireEvent.click(screen.getByRole('button', { name: /importTest\.import_button/ }));
+        expect(screen.getByText('importTest.import_title')).toBeInTheDocument();
+
+        const file = new File(
+            [JSON.stringify({ name: 'Imported test', questions: [{ prompt: 'Q', type: 'open', points: 2 }] })],
+            'imported.json',
+            { type: 'application/json' }
+        );
+        const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+        await act(async () => {
+            fireEvent.change(input, { target: { files: [file] } });
+        });
+
+        await waitFor(() => expect(screen.getByText('Imported test')).toBeInTheDocument());
+        fireEvent.click(screen.getByText(/importTest\.import_confirm/));
+
+        expect(mockAddTest).toHaveBeenCalledTimes(1);
+        expect(mockAddTest.mock.calls[0][0].name).toBe('Imported test');
+        expect(mockNavigate).toHaveBeenCalledWith('/tests/new-test');
+    });
+
+    it('imports a batch of tests, stays on the list and reports the count', async () => {
+        await loadPage();
+        fireEvent.click(screen.getByRole('button', { name: /importTest\.import_button/ }));
+
+        const batch = [
+            { name: 'First', questions: [{ prompt: 'Q1', type: 'open', points: 1 }] },
+            { name: 'Second', questions: [{ prompt: 'Q2', type: 'open', points: 1 }] },
+        ];
+        const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+        await act(async () => {
+            fireEvent.change(input, { target: { files: [new File([JSON.stringify(batch)], 'batch.json')] } });
+        });
+
+        await waitFor(() => expect(screen.getByText('Second')).toBeInTheDocument());
+        fireEvent.click(screen.getByText(/importTest\.import_confirm/));
+
+        expect(mockAddTest).toHaveBeenCalledTimes(2);
+        expect(mockNavigate).not.toHaveBeenCalled();
+        expect(mockShowToast).toHaveBeenCalledWith(
+            expect.stringContaining('importTest.import_success_toast'),
+            'success'
+        );
     });
 
     it('enables assign for a generator placement test even though its question pool is empty', async () => {

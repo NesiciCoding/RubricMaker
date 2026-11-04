@@ -1,0 +1,67 @@
+{
+    "name": "Sample test — reading and grammar",
+    "description": "A tiny test showing the shape the importer accepts: sections, four question types and a norm table. Everything here can be edited after importing.",
+    "mode": "assessment",
+    "cefrTargetLevel": "A2",
+    "contentLanguage": "en",
+    "durationMinutes": 20,
+    "requireSEB": false,
+    "shuffleQuestions": false,
+    "printIntro": "<p>Read the passage and answer the questions. You may not use a dictionary.</p>",
+    "gradingNorm": {
+        "type": "table",
+        "tiers": [{ "id": "all", "label": "Alle niveaus", "passFrom": "B" }],
+        "rows": [
+            { "minPoints": 0, "grades": { "all": "IO" } },
+            { "minPoints": 4, "grades": { "all": "B" } },
+            { "minPoints": 6, "grades": { "all": "E" } }
+        ]
+    },
+    "sections": [
+        {
+            "id": "reading",
+            "title": "A weekend trip",
+            "content": "<p>Last weekend, Tom and his family drove to the coast. They stayed in a small hotel near the beach.</p>",
+            "cefrLevel": "A2"
+        },
+        {
+            "id": "grammar",
+            "title": "Grammar",
+            "content": "<p>Fill in the correct form of <em>to be</em>.</p>",
+            "cefrLevel": "A2"
+        }
+    ],
+    "questions": [
+        {
+            "sectionId": "reading",
+            "prompt": "Where did Tom's family stay?",
+            "type": "multiple-choice",
+            "points": 1,
+            "options": [
+                { "text": "A small hotel", "isCorrect": true },
+                { "text": "A campsite", "isCorrect": false },
+                { "text": "With relatives", "isCorrect": false }
+            ]
+        },
+        {
+            "sectionId": "reading",
+            "prompt": "True or false: they went home on Saturday.",
+            "type": "true-false",
+            "points": 1,
+            "correctBoolean": false
+        },
+        {
+            "sectionId": "grammar",
+            "prompt": "She {{is}} tall.",
+            "type": "cloze",
+            "points": 1
+        },
+        {
+            "sectionId": "grammar",
+            "prompt": "Write a sentence of at least five words with the word \"hotel\".",
+            "type": "open",
+            "points": 3,
+            "hint": "1 point for correct word use, 1 for punctuation and capitals, 1 for length."
+        }
+    ]
+}
