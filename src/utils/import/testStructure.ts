@@ -33,6 +33,12 @@ export interface DraftItem {
     blanks: number;
     /** For an item that came from a table row: the row's cells, so a later phase can read columns. */
     tableCells?: string[];
+    /** Every accepted answer, once a key has been paired in. */
+    answers?: string[];
+    /** One answer per blank, for a cloze that fills more than one gap. */
+    gapAnswers?: string[];
+    /** The key's grading note, e.g. that a near-synonym must not be accepted. */
+    keyNote?: string;
 }
 
 export interface DraftSection {
@@ -392,7 +398,9 @@ export function detectTestStructure(model: DocumentModel, fallbackName = ''): Te
         if (ordinal || numbered) {
             const label = ordinal?.[1] ?? String((listCounters.get(currentSection) ?? 0) + 1);
             listCounters.set(currentSection, Number(label));
-            const item = itemFromText(block.text, currentSection, `${title ?? 'Item'} · ${label}`);
+            // A warning names the section before the test: "Assignment 2 · 7" is findable on paper.
+            const sectionTitle = currentSection >= 0 ? draft.sections[currentSection].title : undefined;
+            const item = itemFromText(block.text, currentSection, `${sectionTitle ?? title ?? 'Item'} · ${label}`);
             if (numbered && !item.number) item.number = label;
             draft.items.push(item);
             continue;

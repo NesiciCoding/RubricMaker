@@ -63,7 +63,7 @@ describe('detectTestStructure — flat pdf layout', () => {
 
         expect(draft.sections[0].instruction).toBe('Lees de zinnen hieronder en vul de juiste vorm van to be in.');
         expect(draft.items[0].number).toBe('1');
-        expect(draft.items[0].label).toBe('Vocabulary and grammar test · 1');
+        expect(draft.items[0].label).toBe('Assignment 1 | TO BE (2p in totaal te behalen) · 1');
     });
 
     it('counts blank runs and splits off a printed option pair', () => {
