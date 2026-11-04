@@ -2580,6 +2580,24 @@ describe('RubricBuilder — tiered rubrics', () => {
         expect(lastSaved().tiered).toBeUndefined();
     });
 
+    it('re-expands the tiered config panel when tiered mode is toggled off and back on in the same session', async () => {
+        renderTieredEdit();
+        // Collapse it, as if the teacher had tidied it up after their last edit.
+        const toggle = screen.getByRole('button', { name: /tiered_config_title/ });
+        fireEvent.click(toggle);
+        expect(toggle).toHaveAttribute('aria-expanded', 'false');
+
+        fireEvent.click(screen.getByRole('radio', { name: 'rubricBuilder.rubric_type_standard' }));
+        await act(async () => fireEvent.click(await screen.findByText('common.confirm')));
+
+        fireEvent.click(screen.getByRole('radio', { name: 'rubricBuilder.rubric_type_tiered' }));
+        await act(async () => fireEvent.click(await screen.findByText('common.confirm')));
+
+        // The freshly created default config must stay open to edit, not inherit the stale
+        // collapsed state from the rubric that was tiered when the page first opened.
+        expect(screen.getByRole('button', { name: /tiered_config_title/ })).toHaveAttribute('aria-expanded', 'true');
+    });
+
     it('switches an empty rubric to tiered without asking', async () => {
         appOverrides = {
             rubrics: [
