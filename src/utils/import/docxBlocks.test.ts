@@ -21,7 +21,16 @@ function documentXml(body: string): string {
 <w:document xmlns:w="${W}"><w:body>${body}</w:body></w:document>`;
 }
 
-async function buildDocx(body: string, opts: { styles?: boolean } = {}): Promise<ArrayBuffer> {
+const NUMBERING = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:numbering xmlns:w="${W}">
+  <w:abstractNum w:abstractNumId="0">
+    <w:lvl w:ilvl="0"><w:numFmt w:val="decimal"/></w:lvl>
+    <w:lvl w:ilvl="1"><w:numFmt w:val="bullet"/></w:lvl>
+  </w:abstractNum>
+  <w:num w:numId="3"><w:abstractNumId w:val="0"/></w:num>
+</w:numbering>`;
+
+async function buildDocx(body: string, opts: { styles?: boolean; numbering?: boolean } = {}): Promise<ArrayBuffer> {
     const zip = new JSZip();
     zip.file(
         '[Content_Types].xml',
@@ -29,6 +38,7 @@ async function buildDocx(body: string, opts: { styles?: boolean } = {}): Promise
     );
     zip.file('word/document.xml', documentXml(body));
     if (opts.styles !== false) zip.file('word/styles.xml', STYLES);
+    if (opts.numbering) zip.file('word/numbering.xml', NUMBERING);
     return zip.generateAsync({ type: 'arraybuffer' });
 }
 
@@ -67,6 +77,21 @@ describe('docxToBlocks', () => {
         expect(model.blocks[0]).toMatchObject({ text: 'Section', headingLevel: 2 });
         expect(model.blocks[1]).toMatchObject({ text: 'item one', listLevel: 2 });
         expect((model.blocks[2] as { listLevel?: number }).listLevel).toBeUndefined();
+    });
+
+    it('tells a numbered list from a bulleted one through numbering.xml', async () => {
+        const model = await docxToBlocks(
+            await buildDocx(
+                para(run('counted'), '<w:numPr><w:ilvl w:val="0"/><w:numId w:val="3"/></w:numPr>') +
+                    para(run('marked'), '<w:numPr><w:ilvl w:val="1"/><w:numId w:val="3"/></w:numPr>'),
+                { numbering: true }
+            )
+        );
+
+        // Word renders the ordinal at layout time, so the numbering definition is the only evidence
+        // that the first paragraph is a list item that counts and the second is only underlined.
+        expect(model.blocks[0]).toMatchObject({ text: 'counted', listLevel: 0, listFormat: 'numbered' });
+        expect(model.blocks[1]).toMatchObject({ text: 'marked', listLevel: 1, listFormat: 'bullet' });
     });
 
     it('turns tabs into spacing, keeps line breaks, and drops tracked deletions and field codes', async () => {

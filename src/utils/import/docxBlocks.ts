@@ -45,10 +45,15 @@ function allElements(doc: Document): Element[] {
     return Array.from(doc.getElementsByTagName('*'));
 }
 
-function val(node: Element | undefined): string | undefined {
+/** Reads a WordprocessingML attribute by name, whatever prefix the document used for it. */
+function attr(node: Element | undefined, name: string): string | undefined {
     if (!node) return undefined;
-    const raw = node.getAttributeNS(WORD_NS, 'val') ?? node.getAttribute('w:val') ?? node.getAttribute('val');
-    return raw === null || raw === undefined ? undefined : raw;
+    const raw = node.getAttributeNS(WORD_NS, name) ?? node.getAttribute(`w:${name}`) ?? node.getAttribute(name);
+    return raw === null || raw === '' ? undefined : raw;
+}
+
+function val(node: Element | undefined): string | undefined {
+    return attr(node, 'val');
 }
 
 function intVal(node: Element | undefined): number | undefined {
@@ -132,6 +137,53 @@ function readDefaultFontSize(xml: string | undefined): number | undefined {
     return undefined;
 }
 
+/** numId → list level → whether that level numbers its items or only bullets them. */
+type NumberingFormats = Map<number, Map<number, 'numbered' | 'bullet'>>;
+
+/**
+ * Reads `word/numbering.xml`. Word renders ordinals at layout time, so a numbered paper's "1. 2. 3."
+ * exists nowhere in the text; the numbering definition is the only way to know the items were numbered.
+ */
+function readNumbering(xml: string | undefined): NumberingFormats {
+    const formats: NumberingFormats = new Map();
+    if (!xml) return formats;
+    const doc = parseXml(xml);
+
+    const abstractFormats = new Map<string, Map<number, 'numbered' | 'bullet'>>();
+    const numToAbstract = new Map<string, string>();
+
+    for (const node of allElements(doc)) {
+        if (node.localName === 'abstractNum') {
+            const id = attr(node, 'abstractNumId');
+            if (!id) continue;
+            const levels = new Map<number, 'numbered' | 'bullet'>();
+            for (const lvl of wordChildren(node)) {
+                if (lvl.localName !== 'lvl') continue;
+                // The level number is an attribute on <w:lvl>; the format is a child element.
+                const level = attr(lvl, 'ilvl');
+                const numFmt = val(wordChild(lvl, 'numFmt'))?.toLowerCase();
+                if (level === undefined || !numFmt) continue;
+                levels.set(
+                    Number.parseInt(level, 10),
+                    numFmt === 'bullet' || numFmt === 'none' ? 'bullet' : 'numbered'
+                );
+            }
+            abstractFormats.set(id, levels);
+        } else if (node.localName === 'num') {
+            const id = attr(node, 'numId');
+            const abstractId = val(wordChild(node, 'abstractNumId'));
+            if (!id || !abstractId) continue;
+            numToAbstract.set(id, abstractId);
+        }
+    }
+
+    for (const [numId, abstractId] of numToAbstract) {
+        const levels = abstractFormats.get(abstractId);
+        if (levels) formats.set(Number(numId), levels);
+    }
+    return formats;
+}
+
 interface TextSegment {
     text: string;
     bold: boolean;
@@ -181,7 +233,13 @@ function collectText(node: Element, out: TextSegment[]): void {
     }
 }
 
-function readParagraph(paragraph: Element, page: number, styles: Map<string, StyleInfo>, defaultSize?: number) {
+function readParagraph(
+    paragraph: Element,
+    page: number,
+    styles: Map<string, StyleInfo>,
+    numbering: NumberingFormats,
+    defaultSize?: number
+) {
     const pPr = wordChild(paragraph, 'pPr');
     const pStyleId = val(wordChild(pPr ?? paragraph, 'pStyle'));
     const style = pStyleId ? styles.get(pStyleId) : undefined;
@@ -196,8 +254,9 @@ function readParagraph(paragraph: Element, page: number, styles: Map<string, Sty
 
     const numPr = wordChild(pPr ?? paragraph, 'numPr');
     const numId = intVal(wordChild(numPr ?? paragraph, 'numId'));
-    const numbering = numPr && numId !== 0;
-    const listLevel = numbering ? (intVal(wordChild(numPr!, 'ilvl')) ?? 0) : undefined;
+    const isListed = numPr !== undefined && numId !== undefined && numId !== 0;
+    const listLevel = isListed ? (intVal(wordChild(numPr!, 'ilvl')) ?? 0) : undefined;
+    const listFormat = isListed ? (numbering.get(numId!)?.get(listLevel!) ?? 'numbered') : undefined;
 
     const runProps = wordChild(pPr ?? paragraph, 'rPr');
     const sizeHalfPoints = intVal(wordChild(runProps ?? paragraph, 'sz'));
@@ -214,6 +273,7 @@ function readParagraph(paragraph: Element, page: number, styles: Map<string, Sty
     else if (style?.fontSizePt !== undefined) block.fontSizePt = style.fontSizePt;
     else if (defaultSize !== undefined) block.fontSizePt = defaultSize;
     if (listLevel !== undefined) block.listLevel = listLevel;
+    if (listFormat) block.listFormat = listFormat;
     return block;
 }
 
@@ -251,27 +311,29 @@ function readTable(table: Element, page: number): DocumentTable {
     return { kind: 'table', page, rows };
 }
 
-/** Walks the body in reading order, descending into content controls (which wrap real content). */
-function readBlocks(
+/** Walks the body in reading order, descending into content controls (which wrap real content). */ function readBlocks(
     node: Element,
     page: number,
     styles: Map<string, StyleInfo>,
+    numbering: NumberingFormats,
     defaultSize?: number
 ): DocumentBlock[] {
     const blocks: DocumentBlock[] = [];
     for (const child of wordChildren(node)) {
         switch (child.localName) {
             case 'p':
-                blocks.push(readParagraph(child, page, styles, defaultSize));
+                blocks.push(readParagraph(child, page, styles, numbering, defaultSize));
                 break;
             case 'tbl':
                 blocks.push(readTable(child, page));
                 break;
             case 'sdt':
-                blocks.push(...readBlocks(wordChild(child, 'sdtContent') ?? child, page, styles, defaultSize));
+                blocks.push(
+                    ...readBlocks(wordChild(child, 'sdtContent') ?? child, page, styles, numbering, defaultSize)
+                );
                 break;
             case 'sdtContent':
-                blocks.push(...readBlocks(child, page, styles, defaultSize));
+                blocks.push(...readBlocks(child, page, styles, numbering, defaultSize));
                 break;
             default:
                 break;
@@ -299,13 +361,16 @@ export async function docxToBlocks(data: ArrayBuffer | Uint8Array | Blob): Promi
     const documentXml = await readEntry(zip, 'word/document.xml');
     if (!documentXml) throw new DocumentReadError('unreadable', 'word/document.xml is missing');
     const stylesXml = await readEntry(zip, 'word/styles.xml');
+    const numberingXml = await readEntry(zip, 'word/numbering.xml');
 
     let styles: Map<string, StyleInfo>;
+    let numberingFormats: NumberingFormats;
     let defaultSize: number | undefined;
     let doc: Document;
     try {
         styles = readStyles(stylesXml);
         defaultSize = readDefaultFontSize(stylesXml);
+        numberingFormats = readNumbering(numberingXml);
         doc = parseXml(documentXml);
     } catch (err) {
         if (err instanceof DocumentReadError) throw err;
@@ -315,5 +380,9 @@ export async function docxToBlocks(data: ArrayBuffer | Uint8Array | Blob): Promi
     const body = allElements(doc).find((el) => el.localName === 'body');
     if (!body) throw new DocumentReadError('unreadable', 'word/document.xml has no body');
 
-    return { source: 'docx', pageCount: 1, blocks: readBlocks(body, 1, styles, defaultSize) };
+    return {
+        source: 'docx',
+        pageCount: 1,
+        blocks: readBlocks(body, 1, styles, numberingFormats, defaultSize),
+    };
 }

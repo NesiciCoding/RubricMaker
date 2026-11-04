@@ -24,8 +24,14 @@ export interface DocumentParagraph {
     italic?: boolean;
     /** Effective font size in points, when the source states one. */
     fontSizePt?: number;
-    /** 0 for the outermost list level, when the source numbers the paragraph. */
+    /** 0 for the outermost list level, when the source lists the paragraph. */
     listLevel?: number;
+    /**
+     * Whether that list counts ("1.", "2.") or merely marks bullets. A numbered Word list is a strong
+     * item cue even though the ordinal never appears in the text; a bulleted one is usually an
+     * instruction, so the two must not be confused.
+     */
+    listFormat?: 'numbered' | 'bullet';
     /** Left edge of the text, in PDF points from the page's left margin. PDF only. */
     x?: number;
 }
