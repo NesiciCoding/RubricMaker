@@ -277,9 +277,9 @@ export default function ActivityDashboardPage() {
 
                 {pendingTasks.length > 0 && (
                     <div className="card" style={{ marginBottom: 20 }}>
-                        <h3 style={{ margin: '0 0 10px 0', fontSize: '0.95rem' }}>
+                        <h2 style={{ margin: '0 0 10px 0', fontSize: '0.95rem' }}>
                             {t('gradingTasks.pending_title', { count: pendingTasks.length })}
-                        </h3>
+                        </h2>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                             {pendingTasks.map((task) => {
                                 const rubric = rubrics.find((r) => r.id === task.rubricId);
@@ -662,7 +662,7 @@ export default function ActivityDashboardPage() {
                 {visibleClasses.length > 0 && (
                     <div style={{ marginTop: 28 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-                            <h3 style={{ margin: 0, fontSize: '1rem' }}>{t('activityDashboard.coverage_title')}</h3>
+                            <h2 style={{ margin: 0, fontSize: '1rem' }}>{t('activityDashboard.coverage_title')}</h2>
                             <div className="form-group" style={{ marginBottom: 0, maxWidth: 200 }}>
                                 <label htmlFor="coverage-class-select" className="sr-only">
                                     {t('activityDashboard.coverage_title')}

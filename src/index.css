@@ -459,6 +459,10 @@ h3 {
 }
 
 .topbar-title {
+    /* This is the page's <h1> (#533): pin the type to what the old non-heading span looked
+       like so promoting the tag does not restyle the bar. */
+    font-family: var(--font);
+    letter-spacing: normal;
     font-weight: 600;
     font-size: 1rem;
     /* Keep a long page title on one line: it used to wrap to three lines when the action
@@ -1819,6 +1823,23 @@ select.input-error {
     font-weight: 700;
     letter-spacing: -0.015em;
     color: var(--text);
+}
+
+/* Section headings promoted from h3 to h2 to keep the page outline in order (#533). Size follows
+   the section, not the level: a card's big title is an explicit size of its own, so only these
+   opt in. Anything without a class keeps the global h2 scale. */
+.card-heading {
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    color: var(--text);
+}
+
+/* Titles of rows and empty states, promoted the same way: they stay at body-heading size rather
+   than reaching for the global h2 scale. */
+.item-heading {
+    font-size: 1rem;
+    font-weight: 600;
 }
 
 /* Role badge */

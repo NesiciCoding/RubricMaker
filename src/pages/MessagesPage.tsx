@@ -123,7 +123,7 @@ export default function MessagesPage() {
 
                 {newThreadOpen && (
                     <div className="card" style={{ marginBottom: 16 }}>
-                        <h3 style={{ marginTop: 0 }}>{t('messages.new_thread_title')}</h3>
+                        <h2 style={{ marginTop: 0 }}>{t('messages.new_thread_title')}</h2>
                         <div className="form-group">
                             <label htmlFor="new-thread-student">{t('messages.select_student')}</label>
                             <select
@@ -171,6 +171,7 @@ export default function MessagesPage() {
                     <EmptyState
                         icon={Mail}
                         title={t('messages.inbox_empty')}
+                        titleLevel={2}
                         description={t('messages.inbox_empty_desc')}
                     />
                 ) : (
@@ -218,7 +219,9 @@ export default function MessagesPage() {
                                                         }}
                                                     />
                                                 )}
-                                                <h3 style={{ margin: 0 }}>{studentLabel}</h3>
+                                                <h2 className="item-heading" style={{ margin: 0 }}>
+                                                    {studentLabel}
+                                                </h2>
                                                 <span className="badge badge-secondary">
                                                     {thread.contextLabel ?? t(CONTEXT_BADGE_KEY[thread.contextType])}
                                                 </span>

@@ -646,7 +646,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                 >
                     <div className="card" style={{ textAlign: 'center', padding: '40px 32px', maxWidth: 380 }}>
                         <Equal size={36} style={{ color: 'var(--text-dim)', marginBottom: 16 }} />
-                        <h3 style={{ marginBottom: 8 }}>{t('comparativeGrading.not_enough_students')}</h3>
+                        <h2 style={{ marginBottom: 8 }}>{t('comparativeGrading.not_enough_students')}</h2>
                         <p className="text-muted text-sm" style={{ marginBottom: 24 }}>
                             {t('comparativeGrading.not_enough_explanation')}
                         </p>

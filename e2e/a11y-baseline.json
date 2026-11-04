@@ -5,122 +5,62 @@
     {
       "route": "/",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/activity-dashboard",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/activity-dashboard",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/admin",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/admin",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/attachments",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/attachments",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/cefr-overview",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/cefr-overview",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/comments",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/comments",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/docs",
@@ -128,10 +68,6 @@
       "violations": [
         {
           "rule": "landmark-unique",
-          "nodes": 1
-        },
-        {
-          "rule": "page-has-heading-one",
           "nodes": 1
         }
       ]
@@ -143,10 +79,6 @@
         {
           "rule": "landmark-unique",
           "nodes": 1
-        },
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
         }
       ]
     },
@@ -156,10 +88,6 @@
       "violations": [
         {
           "rule": "aria-progressbar-name",
-          "nodes": 1
-        },
-        {
-          "rule": "page-has-heading-one",
           "nodes": 1
         }
       ]
@@ -171,132 +99,68 @@
         {
           "rule": "aria-progressbar-name",
           "nodes": 1
-        },
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
         }
       ]
     },
     {
       "route": "/essays/essay-a11y-1",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/essays/essay-a11y-1",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/essays/essay-a11y-1/monitor",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/essays/essay-a11y-1/monitor",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/essays/new",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/essays/new",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/export",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/export",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/flashcards",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/flashcards",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/flashcards/deck-a11y-1",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/flashcards/deck-a11y-1",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/grade-comparative/class-a11y-1/rubric-a11y-1",
@@ -304,10 +168,6 @@
       "violations": [
         {
           "rule": "label-title-only",
-          "nodes": 1
-        },
-        {
-          "rule": "page-has-heading-one",
           "nodes": 1
         },
         {
@@ -325,10 +185,6 @@
           "nodes": 1
         },
         {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        },
-        {
           "rule": "select-name",
           "nodes": 6
         }
@@ -337,122 +193,62 @@
     {
       "route": "/marketplace",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/marketplace",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/messages",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/messages",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/moderation",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/moderation",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/news-flashes",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/news-flashes",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/notifications",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/notifications",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/peer-analytics/rubric-a11y-1",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/peer-analytics/rubric-a11y-1",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/portal/student-a11y-1",
@@ -460,10 +256,6 @@
       "violations": [
         {
           "rule": "aria-prohibited-attr",
-          "nodes": 1
-        },
-        {
-          "rule": "heading-order",
           "nodes": 1
         }
       ]
@@ -474,10 +266,6 @@
       "violations": [
         {
           "rule": "aria-prohibited-attr",
-          "nodes": 1
-        },
-        {
-          "rule": "heading-order",
           "nodes": 1
         }
       ]
@@ -495,82 +283,42 @@
     {
       "route": "/privacy",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/privacy",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/question-bank",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/question-bank",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/rubrics",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/rubrics",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/rubrics/new",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/rubrics/new",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/rubrics/rubric-a11y-1",
@@ -578,14 +326,6 @@
       "violations": [
         {
           "rule": "label",
-          "nodes": 1
-        },
-        {
-          "rule": "nested-interactive",
-          "nodes": 3
-        },
-        {
-          "rule": "page-has-heading-one",
           "nodes": 1
         }
       ]
@@ -596,14 +336,6 @@
       "violations": [
         {
           "rule": "label",
-          "nodes": 1
-        },
-        {
-          "rule": "nested-interactive",
-          "nodes": 3
-        },
-        {
-          "rule": "page-has-heading-one",
           "nodes": 1
         }
       ]
@@ -615,10 +347,6 @@
         {
           "rule": "label",
           "nodes": 3
-        },
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
         },
         {
           "rule": "target-size",
@@ -635,10 +363,6 @@
           "nodes": 3
         },
         {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        },
-        {
           "rule": "target-size",
           "nodes": 1
         }
@@ -647,82 +371,42 @@
     {
       "route": "/rubrics/rubric-a11y-1/peer-review/student-a11y-1",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/rubrics/rubric-a11y-1/peer-review/student-a11y-1",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/rubrics/rubric-a11y-1/self-assess/student-a11y-1",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/rubrics/rubric-a11y-1/self-assess/student-a11y-1",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/settings",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/settings",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/speaking/rubric2-a11y-1/student-a11y-1",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/speaking/rubric2-a11y-1/student-a11y-1",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/statistics",
@@ -731,10 +415,6 @@
         {
           "rule": "label-title-only",
           "nodes": 3
-        },
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
         }
       ]
     },
@@ -745,140 +425,68 @@
         {
           "rule": "label-title-only",
           "nodes": 3
-        },
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
         }
       ]
     },
     {
       "route": "/students",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        },
-        {
-          "rule": "target-size",
-          "nodes": 2
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/students",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        },
-        {
-          "rule": "target-size",
-          "nodes": 2
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/students/student-a11y-1",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/students/student-a11y-1",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/students/student-a11y-1/cefr-overview",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/students/student-a11y-1/cefr-overview",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/students/student-a11y-1/learning-path",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/students/student-a11y-1/learning-path",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/tests",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/tests",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/tests/new",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/tests/new",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/tests/test-a11y-1",
@@ -887,10 +495,6 @@
         {
           "rule": "label-title-only",
           "nodes": 12
-        },
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
         }
       ]
     },
@@ -901,72 +505,38 @@
         {
           "rule": "label-title-only",
           "nodes": 12
-        },
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
         }
       ]
     },
     {
       "route": "/tests/test-a11y-1/monitor",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/tests/test-a11y-1/monitor",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/tests/test-a11y-1/results/student-test-a11y-1",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/tests/test-a11y-1/results/student-test-a11y-1",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/tests/test-a11y-1/scores",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/tests/test-a11y-1/scores",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/this-route-does-not-exist",
@@ -981,22 +551,12 @@
     {
       "route": "/vocabulary",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/vocabulary",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "page-has-heading-one",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     }
   ]
 }

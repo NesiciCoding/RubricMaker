@@ -196,6 +196,7 @@ export default function EssayListPage() {
                     <EmptyState
                         icon={FileText}
                         title={t('essays.no_essays')}
+                        titleLevel={2}
                         description={t('essays.create_first_instruction')}
                         action={{ label: t('essays.new_essay'), icon: Plus, onClick: () => navigate('/essays/new') }}
                     />
@@ -262,7 +263,7 @@ export default function EssayListPage() {
                                                                         />
                                                                     )}
                                                                     <div style={{ minWidth: 0 }}>
-                                                                        <h3>{first.title}</h3>
+                                                                        <h2 className="item-heading">{first.title}</h2>
                                                                         <div
                                                                             className="text-muted text-xs"
                                                                             style={{ marginTop: 2 }}

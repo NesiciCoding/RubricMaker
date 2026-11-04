@@ -1069,7 +1069,7 @@ export default function StatisticsPage() {
                                 {/* Class average bar chart */}
                                 {show('compareAverages') && comparisonResults.length > 0 && (
                                     <div className="card" style={{ marginBottom: 20 }}>
-                                        <h3 style={{ marginBottom: 16 }}>{t('statistics.compare.avg_title')}</h3>
+                                        <h2 style={{ marginBottom: 16 }}>{t('statistics.compare.avg_title')}</h2>
                                         <ResponsiveContainer width="100%" height={220}>
                                             <BarChart
                                                 data={comparisonResults}
@@ -1109,7 +1109,7 @@ export default function StatisticsPage() {
                                 {/* Per-criterion gap */}
                                 {show('criterionGap') && comparisonCriterionGap.length > 0 && (
                                     <div className="card" style={{ marginBottom: 20 }}>
-                                        <h3 style={{ marginBottom: 16 }}>{t('statistics.compare.criterion_gap')}</h3>
+                                        <h2 style={{ marginBottom: 16 }}>{t('statistics.compare.criterion_gap')}</h2>
                                         <ResponsiveContainer
                                             width="100%"
                                             height={Math.max(160, comparisonCriterionGap.length * 36)}
@@ -1160,7 +1160,7 @@ export default function StatisticsPage() {
                                 {/* Multi-class trend */}
                                 {show('compareTrend') && multiTrendData.length >= 2 && (
                                     <div className="card" style={{ marginBottom: 20 }}>
-                                        <h3 style={{ marginBottom: 6 }}>{t('statistics.compare.trend_title')}</h3>
+                                        <h2 style={{ marginBottom: 6 }}>{t('statistics.compare.trend_title')}</h2>
                                         <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
                                             {t(
                                                 trendIncludeTests
@@ -1235,7 +1235,9 @@ export default function StatisticsPage() {
                         {/* Class trend chart */}
                         {show('classTrend') && classTrendData.length >= 2 && (
                             <div className="card" style={{ marginBottom: 20 }}>
-                                <h3 style={{ marginBottom: 6 }}>{t('statistics.class_trend')}</h3>
+                                <h2 className="card-heading" style={{ marginBottom: 6 }}>
+                                    {t('statistics.class_trend')}
+                                </h2>
                                 <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
                                     {t(
                                         trendIncludeTests
@@ -1250,7 +1252,9 @@ export default function StatisticsPage() {
                         {/* Test averages for this class */}
                         {show('classTestAverages') && classTestAverages.length > 0 && (
                             <div className="card" style={{ marginBottom: 20 }}>
-                                <h3 style={{ marginBottom: 16 }}>{t('statistics.class_test_averages')}</h3>
+                                <h2 className="card-heading" style={{ marginBottom: 16 }}>
+                                    {t('statistics.class_test_averages')}
+                                </h2>
                                 <ResponsiveContainer width="100%" height={180}>
                                     <BarChart
                                         data={classTestAverages.map((d) => ({
@@ -1448,7 +1452,9 @@ export default function StatisticsPage() {
                                                     marginBottom: 16,
                                                 }}
                                             >
-                                                <h3 style={{ margin: 0 }}>{t('statistics.grade_distribution')}</h3>
+                                                <h2 className="card-heading" style={{ margin: 0 }}>
+                                                    {t('statistics.grade_distribution')}
+                                                </h2>
                                                 <div
                                                     style={{
                                                         display: 'flex',
@@ -1540,7 +1546,9 @@ export default function StatisticsPage() {
                                                     marginBottom: 16,
                                                 }}
                                             >
-                                                <h3 style={{ margin: 0 }}>{t('statistics.criterion_avg')}</h3>
+                                                <h2 className="card-heading" style={{ margin: 0 }}>
+                                                    {t('statistics.criterion_avg')}
+                                                </h2>
                                                 <div style={{ display: 'flex', gap: 6 }}>
                                                     <button
                                                         className="btn btn-ghost btn-icon btn-sm"
@@ -1568,7 +1576,7 @@ export default function StatisticsPage() {
                                 {/* Bloom's taxonomy pyramid */}
                                 {show('frameworks') && bloomsData && summaries.length > 0 && (
                                     <div className="card" style={{ marginBottom: 20 }}>
-                                        <h3 style={{ marginBottom: 16 }}>{t('statistics.blooms_title')}</h3>
+                                        <h2 style={{ marginBottom: 16 }}>{t('statistics.blooms_title')}</h2>
                                         <BloomsPyramidChart
                                             lang={lang}
                                             levels={BLOOM_LEVELS.map((bl) => ({
@@ -1588,7 +1596,7 @@ export default function StatisticsPage() {
                                 {/* IB Learner Profile rose chart */}
                                 {show('frameworks') && ibData && summaries.length > 0 && (
                                     <div className="card" style={{ marginBottom: 20 }}>
-                                        <h3 style={{ marginBottom: 16 }}>{t('statistics.ib_title')}</h3>
+                                        <h2 style={{ marginBottom: 16 }}>{t('statistics.ib_title')}</h2>
                                         <div style={{ display: 'flex', justifyContent: 'center' }}>
                                             <FrameworkRoseChart
                                                 sectors={IB_ATTRIBUTES.map((attr) => {
@@ -1621,7 +1629,7 @@ export default function StatisticsPage() {
                                         };
                                         return (
                                             <div className="card" style={{ marginBottom: 20 }}>
-                                                <h3 style={{ marginBottom: 16 }}>{t('statistics.slo_title')}</h3>
+                                                <h2 style={{ marginBottom: 16 }}>{t('statistics.slo_title')}</h2>
                                                 {/* A rose needs two sectors; one would be a full circle that draws nothing. */}
                                                 {scored.length > 1 && (
                                                     <div
@@ -1691,7 +1699,9 @@ export default function StatisticsPage() {
                                 {/* Custom Views — recommended chart presets, toggleable + recolorable */}
                                 {show('customViews') && (
                                     <div className="card" style={{ marginBottom: 20 }}>
-                                        <h3 style={{ marginBottom: 4 }}>{t('statistics.custom_views_title')}</h3>
+                                        <h2 className="card-heading" style={{ marginBottom: 4 }}>
+                                            {t('statistics.custom_views_title')}
+                                        </h2>
                                         <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
                                             {t('statistics.custom_views_subtitle')}
                                         </p>
@@ -1826,7 +1836,9 @@ export default function StatisticsPage() {
                                 {/* Criterion heat map — click a student's name to expand score/grade detail */}
                                 {show('heatmap') && tableData.length > 0 && rubric && (
                                     <div className="card">
-                                        <h3 style={{ marginBottom: 4 }}>{t('statistics.heatmap')}</h3>
+                                        <h2 className="card-heading" style={{ marginBottom: 4 }}>
+                                            {t('statistics.heatmap')}
+                                        </h2>
                                         <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
                                             {t('statistics.heatmap_subtitle')}
                                         </p>
@@ -1915,7 +1927,7 @@ export default function StatisticsPage() {
                                 {/* Graded rubrics table */}
                                 {show('gradedRubrics') && studentViewTableData.length > 0 && (
                                     <div className="card" style={{ marginBottom: 20 }}>
-                                        <h3 style={{ marginBottom: 14 }}>{t('statistics.graded_rubrics')}</h3>
+                                        <h2 style={{ marginBottom: 14 }}>{t('statistics.graded_rubrics')}</h2>
                                         <table className="data-table">
                                             <thead>
                                                 <tr>
@@ -1964,7 +1976,7 @@ export default function StatisticsPage() {
                                 {/* Test results table */}
                                 {show('testResults') && studentTestData.length > 0 && (
                                     <div className="card" style={{ marginBottom: 20 }}>
-                                        <h3 style={{ marginBottom: 14 }}>{t('statistics.test_results')}</h3>
+                                        <h2 style={{ marginBottom: 14 }}>{t('statistics.test_results')}</h2>
                                         <table className="data-table">
                                             <thead>
                                                 <tr>
@@ -1996,7 +2008,7 @@ export default function StatisticsPage() {
 
                                 {show('studentProgress') && studentProgressTimeline.length >= 2 && (
                                     <div className="card" style={{ marginBottom: 20 }}>
-                                        <h3 style={{ marginBottom: 6 }}>{t('statistics.student_progress_title')}</h3>
+                                        <h2 style={{ marginBottom: 6 }}>{t('statistics.student_progress_title')}</h2>
                                         <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
                                             {t('statistics.student_progress_desc')}
                                         </p>
@@ -2059,9 +2071,9 @@ export default function StatisticsPage() {
 
                                         {studentRadarData && studentRadarData.length >= 3 ? (
                                             <div className="card">
-                                                <h3 style={{ marginBottom: 16 }}>
+                                                <h2 style={{ marginBottom: 16 }}>
                                                     {t('statistics.criterion_comparison')}
-                                                </h3>
+                                                </h2>
                                                 <CriterionRadarChart
                                                     data={studentRadarData}
                                                     accentColor={settings.accentColor || 'var(--accent)'}
@@ -2121,7 +2133,7 @@ export default function StatisticsPage() {
                                     marginBottom: 16,
                                 }}
                             >
-                                <h3 style={{ margin: 0 }}>{t('statistics.criterion_avg')}</h3>
+                                <h2 style={{ margin: 0 }}>{t('statistics.criterion_avg')}</h2>
                                 <button className="btn btn-ghost btn-sm" onClick={() => setCriterionFullscreen(false)}>
                                     {t('statistics.action_close_fullscreen')}
                                 </button>

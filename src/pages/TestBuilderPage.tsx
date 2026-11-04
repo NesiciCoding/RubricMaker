@@ -754,9 +754,9 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
 
                     {/* Settings panel */}
                     <div className="card" data-tour="tb-settings" style={{ marginBottom: 20 }}>
-                        <h3 style={{ marginTop: 0, marginBottom: 14, fontSize: '0.95rem' }}>
+                        <h2 className="card-heading" style={{ marginTop: 0, marginBottom: 14, fontSize: '0.95rem' }}>
                             {t('tests.settings_title')}
-                        </h3>
+                        </h2>
                         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
                             <div className="form-group" style={{ marginBottom: 0, flex: '1 1 200px' }}>
                                 <label htmlFor="test-mode">{t('tests.mode_label')}</label>
@@ -991,9 +991,9 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                     engine, since questions are pulled live from the bank rather than authored. */}
                     {mode === 'placement' && placementEngine === 'generator' && (
                         <div className="card" data-tour="tb-sections" style={{ marginBottom: 20 }}>
-                            <h3 style={{ marginTop: 0, marginBottom: 4, fontSize: '0.95rem' }}>
+                            <h2 className="card-heading" style={{ marginTop: 0, marginBottom: 4, fontSize: '0.95rem' }}>
                                 {t('tests.generator_config_title')}
-                            </h3>
+                            </h2>
                             <p className="text-muted text-sm" style={{ marginTop: 0, marginBottom: 14 }}>
                                 {t('tests.generator_config_hint')}
                             </p>
@@ -1192,9 +1192,12 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                     {/* Sections panel */}
                     {!(mode === 'placement' && placementEngine === 'generator') && (
                         <div className="card" data-tour="tb-sections" style={{ marginBottom: 20 }}>
-                            <h3 style={{ marginTop: 0, marginBottom: 14, fontSize: '0.95rem' }}>
+                            <h2
+                                className="card-heading"
+                                style={{ marginTop: 0, marginBottom: 14, fontSize: '0.95rem' }}
+                            >
                                 {t('tests.sections_title')}
-                            </h3>
+                            </h2>
                             {sections.length === 0 ? (
                                 <p className="text-muted text-sm" style={{ marginBottom: 12 }}>
                                     {t('tests.sections_none_hint')}
@@ -1524,7 +1527,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                             marginBottom: 14,
                         }}
                     >
-                        <h3 style={{ margin: 0, fontSize: '0.95rem' }}>
+                        <h2 style={{ margin: 0, fontSize: '0.95rem' }}>
                             {t('tests.questions_title')}{' '}
                             <span className="text-muted text-sm">
                                 {t('tests.questions_summary', {
@@ -1532,7 +1535,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                                     points: t('tests.points_total', { count: totalPoints }),
                                 })}
                             </span>
-                        </h3>
+                        </h2>
                         <div style={{ display: 'flex', gap: 8 }}>
                             <button
                                 type="button"

@@ -335,7 +335,7 @@ export default function PrivacyPage({ studentPortalPath }: { studentPortalPath?:
                     <Link to={studentPortalPath} className="btn btn-ghost btn-sm">
                         <ArrowLeft size={15} aria-hidden="true" /> {t('studentPortal.back_to_portal')}
                     </Link>
-                    <span className="topbar-title">{title}</span>
+                    <h1 className="topbar-title">{title}</h1>
                 </header>
                 <main
                     id="portal-main-content"

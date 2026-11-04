@@ -59,7 +59,7 @@ export default function Topbar({ title, actions, classSelector = false }: Topbar
             >
                 <Menu size={20} aria-hidden="true" />
             </button>
-            <span className="topbar-title">{title}</span>
+            <h1 className="topbar-title">{title}</h1>
             {classSelector && classes.length > 0 && (
                 <select
                     className="topbar-class-select"

@@ -185,6 +185,7 @@ export default function NewsFlashesPage() {
                     <EmptyState
                         icon={Newspaper}
                         title={t('newsFlashes.no_flashes')}
+                        titleLevel={2}
                         description={t('newsFlashes.create_first_instruction')}
                         action={{ label: t('newsFlashes.new_flash'), icon: Plus, onClick: openCreate }}
                     />
@@ -200,7 +201,9 @@ export default function NewsFlashesPage() {
                                                 <span style={{ color: 'var(--accent-text)' }}>
                                                     {KIND_ICONS[flash.kind]}
                                                 </span>
-                                                <h3 style={{ margin: 0 }}>{flash.title}</h3>
+                                                <h2 className="item-heading" style={{ margin: 0 }}>
+                                                    {flash.title}
+                                                </h2>
                                             </div>
                                             {flash.summary && (
                                                 <p className="text-muted text-sm" style={{ marginTop: 6 }}>

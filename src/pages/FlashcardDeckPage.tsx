@@ -268,7 +268,9 @@ export default function FlashcardDeckPage() {
                             marginBottom: 12,
                         }}
                     >
-                        <h3 style={{ margin: 0 }}>{t('flashcards.cards_heading', { count: draft.cards.length })}</h3>
+                        <h2 className="card-heading" style={{ margin: 0 }}>
+                            {t('flashcards.cards_heading', { count: draft.cards.length })}
+                        </h2>
                         <button className="btn btn-secondary btn-sm" onClick={addCard}>
                             <Plus size={15} /> {t('flashcards.add_card')}
                         </button>
@@ -358,7 +360,9 @@ export default function FlashcardDeckPage() {
                 </div>
 
                 <div className="card" style={{ marginBottom: 20 }}>
-                    <h3 style={{ marginTop: 0 }}>{t('flashcards.assign_heading')}</h3>
+                    <h2 className="card-heading" style={{ marginTop: 0 }}>
+                        {t('flashcards.assign_heading')}
+                    </h2>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                         <select
                             className="input"
@@ -388,7 +392,7 @@ export default function FlashcardDeckPage() {
 
                     {assignments.length > 0 && (
                         <div style={{ marginTop: 16 }}>
-                            <h4 style={{ marginBottom: 8 }}>{t('flashcards.student_progress_heading')}</h4>
+                            <h3 style={{ marginBottom: 8 }}>{t('flashcards.student_progress_heading')}</h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                                 {assignments.map((a) => {
                                     const student = students.find((s) => s.id === a.studentId);

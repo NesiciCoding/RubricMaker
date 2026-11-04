@@ -211,6 +211,7 @@ export default function AttachmentsPage() {
                     <EmptyState
                         icon={Paperclip}
                         title={t('attachments.empty_state')}
+                        titleLevel={2}
                         description={t('attachments.empty_state_subtitle')}
                         action={{
                             label: t('attachments.empty_state_cta'),

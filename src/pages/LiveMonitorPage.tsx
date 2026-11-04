@@ -520,7 +520,9 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                     >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             <Database size={20} style={{ color: 'var(--text-muted)' }} />
-                            <h3 style={{ margin: 0 }}>{t('tests.monitor.no_database_title')}</h3>
+                            <h2 className="item-heading" style={{ margin: 0 }}>
+                                {t('tests.monitor.no_database_title')}
+                            </h2>
                         </div>
                         <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
                             {t('tests.monitor.noDatabase')}
