@@ -211,6 +211,19 @@ function asOptionalString(value: unknown): string | undefined {
     return typeof value === 'string' && value ? value : undefined;
 }
 
+/** The elements of an array from a file are untrusted as well: a `null` in `options` must not throw. */
+function asRecords<T>(value: unknown): T[] {
+    return Array.isArray(value) ? (value.filter(isRecord) as T[]) : [];
+}
+
+/** A routing rule resolved after every section has its imported id (a rule may point forward). */
+interface PendingRouting {
+    section: TestSection;
+    thresholdPct: number;
+    passRef: string;
+    failRef: string;
+}
+
 /**
  * Parses an exported test file. Never throws: unreadable or unrecognised files come back as an empty
  * result plus warnings, so the dialog can explain what went wrong.
@@ -302,9 +315,22 @@ function normaliseTest(
 
     // Sections first: a question's sectionId has to point at a section that will really exist.
     const sectionIds = new Map<string, string>();
+    const pendingRouting: PendingRouting[] = [];
     const sections: TestSection[] = (Array.isArray(raw.sections) ? raw.sections : [])
         .filter(isRecord)
-        .map((s: RawSection, si) => normaliseSection(s, si, sectionIds, name, warnings));
+        .map((s: RawSection, si) => normaliseSection(s, si, sectionIds, name, warnings, pendingRouting));
+
+    // Placement routing points at sibling sections by their ids in the file. Every section gets a fresh
+    // id, and a rule may target a section further down, so resolve the references in a second pass.
+    for (const pending of pendingRouting) {
+        const passSectionId = sectionIds.get(pending.passRef);
+        const failSectionId = sectionIds.get(pending.failRef);
+        if (passSectionId && failSectionId) {
+            pending.section.routing = { thresholdPct: pending.thresholdPct, passSectionId, failSectionId };
+        } else {
+            warnings.push({ key: 'importTest.warn_invalid_routing', params: { name, title: pending.section.title } });
+        }
+    }
 
     const questions: TestQuestion[] = [];
     rawQuestions.forEach((q, qi) => {
@@ -362,7 +388,8 @@ function normaliseSection(
     index: number,
     sectionIds: Map<string, string>,
     testName: string,
-    warnings: ImportWarning[]
+    warnings: ImportWarning[],
+    pendingRouting: PendingRouting[]
 ): TestSection {
     const id = nanoid();
     if (typeof raw.id === 'string') sectionIds.set(raw.id, id);
@@ -377,10 +404,10 @@ function normaliseSection(
     if (cefrLevel) section.cefrLevel = cefrLevel;
     if (isRecord(raw.routing)) {
         const thresholdPct = asFiniteNumber(raw.routing.thresholdPct);
-        const passSectionId = asOptionalString(raw.routing.passSectionId);
-        const failSectionId = asOptionalString(raw.routing.failSectionId);
-        if (thresholdPct !== undefined && passSectionId && failSectionId) {
-            section.routing = { thresholdPct, passSectionId, failSectionId };
+        const passRef = asOptionalString(raw.routing.passSectionId);
+        const failRef = asOptionalString(raw.routing.failSectionId);
+        if (thresholdPct !== undefined && passRef && failRef) {
+            pendingRouting.push({ section, thresholdPct, passRef, failRef });
         } else {
             warnings.push({ key: 'importTest.warn_invalid_routing', params: { name: testName, title: section.title } });
         }
@@ -430,8 +457,9 @@ function normaliseQuestion(
         else warnings.push({ key: 'importTest.warn_unknown_section', params: { item: label, section: sectionId } });
     }
 
-    if (Array.isArray(q.options) && q.options.length) {
-        question.options = q.options.map((o: RawOption): TestOption => {
+    const rawOptions = asRecords<RawOption>(q.options);
+    if (rawOptions.length) {
+        question.options = rawOptions.map((o: RawOption): TestOption => {
             const option: TestOption = {
                 id: nanoid(),
                 text: typeof o.text === 'string' ? o.text : '',
@@ -461,14 +489,15 @@ function normaliseQuestion(
     else if (type === 'true-false')
         warnings.push({ key: 'importTest.warn_missing_correct_boolean', params: { item: label } });
 
-    if (Array.isArray(q.matrixColumns) && q.matrixColumns.length) {
-        const columnIds = q.matrixColumns.map(() => nanoid());
+    const rawColumns = asRecords<RawMatrixColumn>(q.matrixColumns);
+    if (rawColumns.length) {
+        const columnIds = rawColumns.map(() => nanoid());
         const byRef = new Map<string, string>();
-        question.matrixColumns = q.matrixColumns.map((c: RawMatrixColumn, ci): MatrixColumn => {
+        question.matrixColumns = rawColumns.map((c: RawMatrixColumn, ci): MatrixColumn => {
             if (typeof c.id === 'string') byRef.set(c.id, columnIds[ci]);
             return { id: columnIds[ci], text: typeof c.text === 'string' ? c.text : '' };
         });
-        question.matrixRows = (Array.isArray(q.matrixRows) ? q.matrixRows : []).map((r: RawMatrixRow) => {
+        question.matrixRows = asRecords<RawMatrixRow>(q.matrixRows).map((r: RawMatrixRow) => {
             const ref = asOptionalString(r.correctColumnId) ?? '';
             return {
                 id: nanoid(),
@@ -481,36 +510,37 @@ function normaliseQuestion(
         }
     }
 
-    if (Array.isArray(q.matchingPairs) && q.matchingPairs.length) {
-        question.matchingPairs = q.matchingPairs.map((p: RawPair) => ({
+    const rawPairs = asRecords<RawPair>(q.matchingPairs);
+    if (rawPairs.length) {
+        question.matchingPairs = rawPairs.map((p: RawPair) => ({
             id: nanoid(),
             left: typeof p.left === 'string' ? p.left : '',
             right: typeof p.right === 'string' ? p.right : '',
         }));
     }
-    if (Array.isArray(q.orderItems) && q.orderItems.length) {
-        question.orderItems = q.orderItems.map((o: RawTextItem) => ({
+    const rawOrderItems = asRecords<RawTextItem>(q.orderItems);
+    if (rawOrderItems.length) {
+        question.orderItems = rawOrderItems.map((o: RawTextItem) => ({
             id: nanoid(),
             text: typeof o.text === 'string' ? o.text : '',
         }));
     }
-    if (Array.isArray(q.categories) && q.categories.length) {
-        const categoryIds = q.categories.map(() => nanoid());
+    const rawCategories = asRecords<RawCategory>(q.categories);
+    if (rawCategories.length) {
+        const categoryIds = rawCategories.map(() => nanoid());
         const byRef = new Map<string, string>();
-        question.categories = q.categories.map((c: RawCategory, ci): TestCategory => {
+        question.categories = rawCategories.map((c: RawCategory, ci): TestCategory => {
             if (typeof c.id === 'string') byRef.set(c.id, categoryIds[ci]);
             return { id: categoryIds[ci], label: typeof c.label === 'string' ? c.label : '' };
         });
-        question.categorizeItems = (Array.isArray(q.categorizeItems) ? q.categorizeItems : []).map(
-            (ci: RawCategorizeItem) => {
-                const ref = asOptionalString(ci.categoryId) ?? '';
-                return {
-                    id: nanoid(),
-                    text: typeof ci.text === 'string' ? ci.text : '',
-                    categoryId: byRef.get(ref) ?? '',
-                };
-            }
-        );
+        question.categorizeItems = asRecords<RawCategorizeItem>(q.categorizeItems).map((ci: RawCategorizeItem) => {
+            const ref = asOptionalString(ci.categoryId) ?? '';
+            return {
+                id: nanoid(),
+                text: typeof ci.text === 'string' ? ci.text : '',
+                categoryId: byRef.get(ref) ?? '',
+            };
+        });
         if (question.categorizeItems.some((ci) => !ci.categoryId)) {
             warnings.push({ key: 'importTest.warn_unknown_category', params: { item: label } });
         }

@@ -106,4 +106,22 @@ describe('TestImportModal', () => {
         expect(onImport).not.toHaveBeenCalled();
         expect(onClose).toHaveBeenCalledTimes(1);
     });
+
+    it('re-enables the picker and explains the failure when reading the file rejects', async () => {
+        const onImport = vi.fn();
+        render(<TestImportModal onImport={onImport} onClose={vi.fn()} />);
+
+        const unreadable = {
+            name: 'unreadable.json',
+            size: 12,
+            text: () => Promise.reject(new Error('disk gone')),
+        } as unknown as File;
+
+        await selectFile(unreadable);
+
+        await waitFor(() => expect(screen.getByText(/importTest\.warn_parse_failed/)).toBeInTheDocument());
+        expect(screen.getByText(/disk gone/)).toBeInTheDocument();
+        expect(screen.getByText(/importTest\.import_choose_file/)).toBeInTheDocument();
+        expect(screen.queryByText(/importTest\.import_confirm/)).not.toBeInTheDocument();
+    });
 });

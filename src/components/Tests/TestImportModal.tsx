@@ -23,10 +23,18 @@ export default function TestImportModal({ onImport, onClose }: Props) {
         setParsing(true);
         setTests(null);
         setWarnings([]);
-        const result = await parseTestFile(file);
-        setWarnings(result.warnings);
-        setTests(result.tests.length > 0 ? result.tests : null);
-        setParsing(false);
+        try {
+            const result = await parseTestFile(file);
+            setWarnings(result.warnings);
+            setTests(result.tests.length > 0 ? result.tests : null);
+        } catch (err) {
+            // Reading the file can fail (a vanished pick, a permission error), and parseTestFile is only
+            // 'never throws' for the parsing itself — the button must never stay stuck on "Parsing...".
+            const message = err instanceof Error ? err.message : String(err);
+            setWarnings([{ key: 'importTest.warn_parse_failed', params: { message } }]);
+        } finally {
+            setParsing(false);
+        }
     }
 
     const totalPoints = (test: ImportedTest) => test.questions.reduce((sum, q) => sum + q.points, 0);

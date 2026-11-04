@@ -615,7 +615,7 @@ describe('parseTestJson — full fidelity', () => {
             spokenText: 'read me',
             transcript: 'tr',
             cefrLevel: 'B1',
-            routing: { thresholdPct: 60, passSectionId: 's2', failSectionId: 's2' },
+            routing: { thresholdPct: 60, passSectionId: second.id, failSectionId: second.id },
         });
         expect(second.title).toBe('Second');
 
@@ -785,5 +785,87 @@ describe('parseTestJson — full fidelity', () => {
                 { minPoints: 10, grades: { t2: 7 } },
             ],
         });
+    });
+
+    it('remaps placement routing to the imported section ids, including forward references', () => {
+        const result = parseTestJson(
+            JSON.stringify({
+                name: 'Placement',
+                sections: [
+                    { id: 's1', title: 'One', routing: { thresholdPct: 55, passSectionId: 's3', failSectionId: 's2' } },
+                    { id: 's2', title: 'Two' },
+                    { id: 's3', title: 'Three' },
+                ],
+                questions: [baseQuestion],
+            })
+        );
+
+        const [one, two, three] = result.tests[0].sections!;
+        expect(one.routing).toEqual({ thresholdPct: 55, passSectionId: three.id, failSectionId: two.id });
+        expect([one.id, two.id, three.id]).not.toContain('s3');
+        expect(warningKeys(result)).not.toContain('importTest.warn_invalid_routing');
+    });
+
+    it('drops a routing rule that points at a section the file does not have', () => {
+        const result = parseTestJson(
+            JSON.stringify({
+                name: 'Placement',
+                sections: [
+                    {
+                        id: 's1',
+                        title: 'One',
+                        routing: { thresholdPct: 55, passSectionId: 'gone', failSectionId: 's1' },
+                    },
+                ],
+                questions: [baseQuestion],
+            })
+        );
+
+        expect(result.tests[0].sections?.[0].routing).toBeUndefined();
+        expect(warningKeys(result)).toContain('importTest.warn_invalid_routing');
+    });
+
+    it('skips nulls and primitives inside list fields instead of throwing', () => {
+        const result = parseTestJson(
+            JSON.stringify({
+                name: 'Junk lists',
+                questions: [
+                    {
+                        prompt: 'Matrix',
+                        type: 'matrix',
+                        points: 2,
+                        matrixColumns: [null, { id: 'c1', text: 'Good' }],
+                        matrixRows: [null, 3, { text: 'Row', correctColumnId: 'c1' }],
+                    },
+                    { prompt: 'Match', type: 'matching', points: 1, matchingPairs: [null, { left: 'l', right: 'r' }] },
+                    { prompt: 'Order', type: 'ordering', points: 1, orderItems: [7, { text: 'first' }] },
+                    {
+                        prompt: 'Group',
+                        type: 'categorize',
+                        points: 1,
+                        categories: [null, { id: 'cat1', label: 'Verbs' }],
+                        categorizeItems: [null, { text: 'lopen', categoryId: 'cat1' }],
+                    },
+                    {
+                        prompt: 'Pick',
+                        type: 'multiple-choice',
+                        points: 1,
+                        options: [null, { text: 'yes', isCorrect: true }],
+                    },
+                ],
+            })
+        );
+
+        const [matrix, matching, ordering, categorize, choice] = result.tests[0].questions;
+        expect(matrix.matrixColumns).toHaveLength(1);
+        expect(matrix.matrixRows).toHaveLength(1);
+        expect(matrix.matrixRows?.[0].text).toBe('Row');
+        expect(matrix.matrixRows?.[0].correctColumnId).toBe(matrix.matrixColumns?.[0].id);
+        expect(matching.matchingPairs?.map((p) => p.left)).toEqual(['l']);
+        expect(ordering.orderItems?.map((o) => o.text)).toEqual(['first']);
+        expect(categorize.categories?.map((c) => c.label)).toEqual(['Verbs']);
+        expect(categorize.categorizeItems?.map((ci) => ci.text)).toEqual(['lopen']);
+        expect(choice.options?.map((o) => o.text)).toEqual(['yes']);
+        expect(choice.options?.[0].isCorrect).toBe(true);
     });
 });
