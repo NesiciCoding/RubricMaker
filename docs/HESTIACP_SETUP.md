@@ -147,7 +147,7 @@ ssh rubricmaker@YOUR_VPS_IP "sudo hestia-nginx rebuild"
 ssh root@YOUR_VPS_IP "systemctl reload nginx"
 ```
 
-> **What the `nginx.ssl.conf_after` file does:** HestiaCP appends `*.conf_after` files to the end of the matching `server {}` block. The file in `deploy/nginx-hestiacp.conf` adds security headers and 1-year cache rules for hashed static assets at the Nginx layer — before Apache even sees the request.
+> **What the `nginx.ssl.conf_after` file does:** HestiaCP appends `*.conf_after` files to the end of the matching `server {}` block. The file in `deploy/nginx-hestiacp.conf` adds security headers at the Nginx layer. It also routes `/`, `/index.html`, `/sw.js` and `/manifest.webmanifest` to Apache through HestiaCP's own `@fallback` location, so HestiaCP's static-file rule can't cache them for years; `.htaccess` then marks them `no-cache`. Don't change those blocks to `proxy_pass http://127.0.0.1:8080`: HestiaCP binds Apache to the server's IP, and `127.0.0.1` reaches Apache's default site, which is the HestiaCP "web server is ready" page.
 
 For Apache-level directives (an alternative to `.htaccess`), see `deploy/apache-hestiacp.conf`. Paste the `<Directory>` block into:
 
