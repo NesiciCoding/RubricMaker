@@ -15,19 +15,20 @@
     --border: #332e26;
     --border-light: #433c31;
 
-    /* text — body copy is AAA (>=7:1) on every surface, secondary text >=5.5:1 and
-       tertiary text >=4.5:1, so no label falls below AA (#533). contrastPalette.test.ts
-       reads these very values and fails if a pair drops under its floor. */
+    /* text — every text tone is AAA (>=7:1) on every surface and on every tint it is painted
+       over, body copy included, so 1.4.6 Contrast (Enhanced) holds throughout (#533).
+       contrastPalette.test.ts reads these very values and fails if a pair drops under its floor. */
     --text: #f1ebdf;
-    --text-muted: #b4aa99;
-    --text-dim: #958c7f;
+    --text-muted: #c6bfb2;
+    --text-dim: #b7b1a8;
 
     /* accent - CSS variables for dynamic themes. `--accent` is the fill (buttons, chips);
        `--accent-text` is the same colour made safe for normal text on these surfaces. When
        settings pick another accent, AppContext recomputes both from the accent (#533). */
     --accent: #37b49c;
-    --accent-text: #5fc3b0;
-    --accent-hover: #2f9c87;
+    --accent-text: #8fd5c8;
+    /* Dark mode lightens on hover: with a near-black label, a darker fill would drop below AAA. */
+    --accent-hover: #45bda6;
     --accent-fg: #0e1512;
     --accent-soft: #1c3a35;
     --accent-glow: rgba(55, 180, 156, 0.4);
@@ -35,16 +36,16 @@
     /* semantic. The `-text` variants are the same hue made safe for text on the surfaces and on
        the 15% badge tints, exactly like --accent-text (#533). */
     --green: #46b783;
-    --green-text: #46b783;
+    --green-text: #97d7ba;
     --yellow: #e3a648;
-    --yellow-text: #e3a648;
+    --yellow-text: #edc68a;
     --red: #e07a62;
-    --red-text: #e38772;
+    --red-text: #eeb5a8;
     --purple: #8b5cf6;
-    --purple-text: #a986f8;
+    --purple-text: #cbb6fb;
     --teal: #14b8a6;
-    --teal-text: #14b8a6;
-    --blue-text: #629bf8;
+    --teal-text: #3ec5b6;
+    --blue-text: #a4c5fb;
 
     /* sizing */
     --radius: 10px;
@@ -75,25 +76,27 @@
     --border: #e7decf;
     --border-light: #d9ceba;
     --text: #2b2722;
-    --text-muted: #635b51;
-    --text-dim: #70685d;
-    --accent: #0e7c6b;
-    --accent-text: #09564a;
-    --accent-hover: #0b6657;
+    --text-muted: #4a443d;
+    --text-dim: #534d45;
+    /* The fill is deep enough that its white label clears AAA; the raw #0e7c6b only reached
+       5.1:1 under a white label (#533). */
+    --accent: #0b6356;
+    --accent-text: #08473e;
+    --accent-hover: #0a574c;
     --accent-fg: #ffffff;
     --accent-soft: #e2f0ed;
     --accent-glow: rgba(14, 124, 107, 0.3);
     --green: #2e9e6b;
-    --green-text: #1f6b49;
+    --green-text: #174f36;
     --yellow: #c9851f;
-    --yellow-text: #855814;
+    --yellow-text: #62410f;
     --red: #c9543c;
-    --red-text: #9d422f;
+    --red-text: #6e2e21;
     --purple: #8b5cf6;
-    --purple-text: #6a46bb;
+    --purple-text: #4c3287;
     --teal: #14b8a6;
-    --teal-text: #0c6e64;
-    --blue-text: #2a5eb1;
+    --teal-text: #0a5850;
+    --blue-text: #1d427c;
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
     --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.1);
@@ -574,8 +577,10 @@ h3 {
 }
 
 .btn-danger:hover {
-    background: var(--red);
-    color: #fff;
+    /* A filled danger button paints a label on the red, which white only reaches 3.9:1 against in
+       light mode and 2.5:1 in dark. The text-safe red with the page colour as its label clears AAA. */
+    background: var(--red-text);
+    color: var(--bg);
 }
 
 .btn-sm {

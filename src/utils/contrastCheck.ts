@@ -1,3 +1,5 @@
+import { themeSurfaces, type ThemeName, type Surface } from '../data/themeSurfaces';
+
 export interface Rgb {
     r: number;
     g: number;
@@ -55,8 +57,7 @@ export const AAA_NORMAL = 7;
 /** AA for large text and for non-text UI such as icons and meaningful borders. */
 export const AA_LARGE = 3;
 
-export type ThemeName = 'light' | 'dark';
-export type Surface = 'bg' | 'bg-card' | 'bg-elevated' | 'bg-raised';
+export type { ThemeName, Surface };
 
 /** The lowest ratio `color` has against any of `backgrounds`. */
 export function worstContrast(color: string, backgrounds: readonly string[]): number {
@@ -115,14 +116,68 @@ export function accentTextFor(
  * Any data colour — a CEFR level, a grade from the school's own scale — used as *text*.
  *
  * Mixing it with the theme's body text darkens it on the light palette and lightens it on the dark
- * one, so one expression is legible in both themes without a second per-theme map. 60% of the
- * source colour leaves every app-owned colour at 5:1 or better on every surface (#533).
+ * one, so one expression is legible in both themes without a second per-theme map. A third of the
+ * source colour leaves every app-owned colour at 7:1 or better on every surface (#533).
  */
-export function textOnTheme(color: string, weight = 60): string {
+export function textOnTheme(color: string, weight = 35): string {
     return `color-mix(in srgb, ${color} ${weight}%, var(--text))`;
 }
 
-/** A readable label colour for an accent used as a button fill. */
+/** Three- or six-digit hex, the only shapes `parseHex` accepts. */
+const HEX_COLOUR = /^#?(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
+
+/**
+ * A readable label colour for an accent used as a button fill. A colour that is not hex (a data
+ * colour from a seeded or mocked palette) keeps the conventional white label instead of throwing.
+ */
 export function accentLabelFor(accent: string): string {
+    if (!HEX_COLOUR.test(accent)) return '#ffffff';
     return contrastRatio('#ffffff', accent) >= contrastRatio('#000000', accent) ? '#ffffff' : '#000000';
 }
+
+/**
+ * The surfaces a `--accent-soft` tint creates: the accent at the 15% alpha the runtime uses for
+ * `--accent-soft` (`${accent}26`), flattened over each surface, exactly as the browser paints it.
+ * Accent-coloured text is routinely set on that tint (active nav rows, chips), so it belongs in the
+ * background list the text variant is derived against (#533).
+ */
+export function accentTintSurfaces(accent: string, theme: ThemeName): string[] {
+    const { r, g, b } = parseHex(accent);
+    const alpha = 0x26 / 0xff;
+    return themeSurfaces(theme).map((background) => {
+        const bg = parseHex(background);
+        const channel = (fg: number, base: number) =>
+            Math.round(fg * alpha + base * (1 - alpha))
+                .toString(16)
+                .padStart(2, '0');
+        return `#${channel(r, bg.r)}${channel(g, bg.g)}${channel(b, bg.b)}`;
+    });
+}
+
+/**
+ * Every background the accent family is painted on: the four theme surfaces plus the accent's own
+ * soft tint.
+ */
+export function accentBackgrounds(accent: string, theme: ThemeName): string[] {
+    return [...themeSurfaces(theme), ...accentTintSurfaces(accent, theme)];
+}
+
+/**
+ * A theme bundle's or preset's accent, pushed away from its own label until that label clears AAA.
+ *
+ * Raw brand colours are picked to look right as a swatch; a primary button paints its label *on*
+ * them, and at 1.4.6 that label needs 7:1. The defaults already pass, so they come back untouched;
+ * a lighter preset is deepened (never desaturated) until its label is legible (#533).
+ */
+export function accentFillFor(accent: string, min: number = AAA_NORMAL): string {
+    if (!HEX_COLOUR.test(accent)) return accent;
+    const label = accentLabelFor(accent);
+    if (contrastRatio(label, accent) >= min) return accent;
+    return ensureContrast(accent, [label], min, label === '#ffffff' ? 'dark' : 'light');
+}
+
+/**
+ * A data colour (a CEFR level, a school's own grade) painted as a filled chip with its label on
+ * top. Same rule as an accent fill: darken it until the label it would carry clears AAA (#533).
+ */
+export const legibleFillFor = accentFillFor;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { contrastRatio, meetsAAA, parseHex } from './contrastCheck';
+import { accentFillFor, accentLabelFor, contrastRatio, meetsAAA, parseHex } from './contrastCheck';
 import { THEME_BUNDLES, ACCENT_PRESETS } from '../data/themes';
 import { CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
 
@@ -49,8 +49,9 @@ describe('contrastRatio', () => {
 
 describe('theme bundles meet AAA accent contrast', () => {
     for (const theme of THEME_BUNDLES) {
-        it(`${theme.id} button: white label on accent (>=4.5:1 large)`, () => {
-            expect(contrastRatio('#ffffff', theme.accentColor)).toBeGreaterThanOrEqual(AAA_LARGE);
+        it(`${theme.id} button: fill label on the derived accent fill (>=7:1)`, () => {
+            const fill = accentFillFor(theme.accentColor);
+            expect(contrastRatio(accentLabelFor(fill), fill)).toBeGreaterThanOrEqual(AAA_NORMAL);
         });
 
         it(`${theme.id} export header text on white (>=7:1)`, () => {
@@ -61,8 +62,9 @@ describe('theme bundles meet AAA accent contrast', () => {
 
 describe('accent presets meet AAA button contrast', () => {
     for (const preset of ACCENT_PRESETS) {
-        it(`${preset.id} button: white label on accent (>=4.5:1 large)`, () => {
-            expect(contrastRatio('#ffffff', preset.color)).toBeGreaterThanOrEqual(AAA_LARGE);
+        it(`${preset.id} button: fill label on the derived accent fill (>=7:1)`, () => {
+            const fill = accentFillFor(preset.color);
+            expect(contrastRatio(accentLabelFor(fill), fill)).toBeGreaterThanOrEqual(AAA_NORMAL);
         });
     }
 });

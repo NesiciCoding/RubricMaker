@@ -2,11 +2,13 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import {
-    AA_NORMAL,
     AAA_NORMAL,
+    accentBackgrounds,
+    accentFillFor,
     accentLabelFor,
     accentTextFor,
     contrastRatio,
+    legibleFillFor,
     parseHex,
     worstContrast,
 } from './contrastCheck';
@@ -18,12 +20,11 @@ import { THEME_SURFACES, themeSurfaces, type ThemeName } from '../data/themeSurf
  * The contrast guard for #533.
  *
  * Everything below reads the *real* stylesheet and the real theme data rather than a copy of them,
- * so a palette tweak cannot silently ship a pair that fails. The floors are deliberately graded:
- * body copy is AAA, secondary text (`.text-muted`, hints) stays a step above AA, and tertiary text
- * (captions, meta) sits exactly at AA — the dimmest thing a teacher is still meant to read.
+ * so a palette tweak cannot silently ship a pair that fails. Every floor is AAA: 1.4.6 Contrast
+ * (Enhanced) is not graded, so body copy, secondary text (`.text-muted`, hints), tertiary text
+ * (captions, meta), badge labels and accent text all have to clear 7:1 on every background they are
+ * painted on (#533).
  */
-const MUTED_FLOOR = 5.5;
-const DIM_FLOOR = AA_NORMAL;
 
 const srcDir = resolve(__dirname, '..');
 const css = readFileSync(join(srcDir, 'index.css'), 'utf8');
@@ -66,20 +67,32 @@ describe('theme surfaces in index.css are real and mirrored in themeSurfaces.ts'
     }
 });
 
-describe('text tones clear their floors on every surface', () => {
-    const floors = { text: AAA_NORMAL, 'text-muted': MUTED_FLOOR, 'text-dim': DIM_FLOOR } as const;
+describe('text tones clear AAA on every surface', () => {
+    const tokens = ['text', 'text-muted', 'text-dim'] as const;
 
     for (const theme of ['dark', 'light'] as const) {
         const palette = themeTokens(theme);
         const backgrounds = SURFACES.map((surface) => palette[surface]);
 
-        for (const [token, floor] of Object.entries(floors)) {
-            it(`${theme} --${token} >= ${floor}:1`, () => {
+        for (const token of tokens) {
+            it(`${theme} --${token} >= ${AAA_NORMAL}:1`, () => {
                 expect(palette[token], `--${token} missing from the ${theme} block`).toBeTruthy();
-                expect(worstContrast(palette[token], backgrounds)).toBeGreaterThanOrEqual(floor);
+                expect(worstContrast(palette[token], backgrounds)).toBeGreaterThanOrEqual(AAA_NORMAL);
             });
         }
     }
+
+    it('keeps secondary text above tertiary text', () => {
+        // Both clear AAA, so the hierarchy has to come from the extra headroom rather than from one
+        // of them dropping under the floor.
+        for (const theme of ['dark', 'light'] as const) {
+            const palette = themeTokens(theme);
+            const backgrounds = SURFACES.map((surface) => palette[surface]);
+            expect(worstContrast(palette['text-muted'], backgrounds)).toBeGreaterThan(
+                worstContrast(palette['text-dim'], backgrounds)
+            );
+        }
+    });
 });
 
 describe('the accent is readable as text and as a fill', () => {
@@ -88,19 +101,34 @@ describe('the accent is readable as text and as a fill', () => {
         const backgrounds = SURFACES.map((surface) => palette[surface]);
 
         it(`${theme} --accent-text >= AAA on every surface`, () => {
-            expect(palette['accent-text'], `--accent-text missing from the ${theme} block`).toBeTruthy();
-            expect(worstContrast(palette['accent-text'], backgrounds)).toBeGreaterThanOrEqual(AAA_NORMAL);
+            const text = palette['accent-text'];
+            expect(text, `--accent-text missing from the ${theme} block`).toBeTruthy();
+            expect(worstContrast(text, backgrounds)).toBeGreaterThanOrEqual(AAA_NORMAL);
         });
 
-        it(`${theme} --accent-fg label on the --accent fill >= AA`, () => {
-            expect(contrastRatio(palette['accent-fg'], palette.accent)).toBeGreaterThanOrEqual(AA_NORMAL);
+        it(`${theme} --accent-text >= AAA on the --accent-soft tint`, () => {
+            const text = palette['accent-text'];
+            const soft = palette['accent-soft'];
+            expect(soft, `--accent-soft missing from the ${theme} block`).toBeTruthy();
+            expect(worstContrast(text, accentBackgrounds(palette.accent, theme))).toBeGreaterThanOrEqual(AAA_NORMAL);
+            if (/^#[0-9a-f]{6}$/i.test(soft)) {
+                expect(contrastRatio(text, soft)).toBeGreaterThanOrEqual(AAA_NORMAL);
+            }
+        });
+
+        it(`${theme} --accent-fg label on the --accent fill >= AAA`, () => {
+            expect(contrastRatio(palette['accent-fg'], palette.accent)).toBeGreaterThanOrEqual(AAA_NORMAL);
+        });
+
+        it(`${theme} --accent-fg on the --accent-hover fill >= AAA`, () => {
+            expect(contrastRatio(palette['accent-fg'], palette['accent-hover'])).toBeGreaterThanOrEqual(AAA_NORMAL);
         });
     }
 });
 
 describe('every bundle and preset accent becomes legible text in both themes', () => {
-    // AppContext derives --accent-text from the chosen accent with exactly this helper, so what the
-    // bundles and the colour picker can produce is what gets verified here.
+    // AppContext derives --accent, --accent-text and --accent-fg from the chosen accent with exactly
+    // these helpers, so what the bundles and the colour picker can produce is what is verified here.
     const accents = [
         ...THEME_BUNDLES.map((bundle) => [bundle.id, bundle.accentColor] as const),
         ...ACCENT_PRESETS.map((preset) => [`preset:${preset.id}`, preset.color] as const),
@@ -109,9 +137,10 @@ describe('every bundle and preset accent becomes legible text in both themes', (
     for (const [id, accent] of accents) {
         for (const theme of ['dark', 'light'] as const) {
             it(`${id} (${theme})`, () => {
-                const text = accentTextFor(accent, themeSurfaces(theme), theme);
-                expect(worstContrast(text, themeSurfaces(theme))).toBeGreaterThanOrEqual(AAA_NORMAL);
-                expect(contrastRatio(accentLabelFor(accent), accent)).toBeGreaterThanOrEqual(AA_NORMAL);
+                const fill = accentFillFor(accent);
+                const text = accentTextFor(fill, accentBackgrounds(fill, theme), theme);
+                expect(worstContrast(text, accentBackgrounds(fill, theme))).toBeGreaterThanOrEqual(AAA_NORMAL);
+                expect(contrastRatio(accentLabelFor(fill), fill)).toBeGreaterThanOrEqual(AAA_NORMAL);
             });
         }
     }
@@ -145,7 +174,7 @@ function badgeRules(): { selector: string; rgba: [number, number, number, number
     });
 }
 
-describe('badge labels stay AA on their own tint', () => {
+describe('badge labels stay AAA on their own tint', () => {
     const badges = badgeRules();
 
     it('finds the badge rules', () => {
@@ -160,7 +189,7 @@ describe('badge labels stay AA on their own tint', () => {
                     blendOver(badge.rgba, palette[surface])
                 );
                 expect(palette[badge.token], `--${badge.token} missing from the ${theme} block`).toBeTruthy();
-                expect(worstContrast(palette[badge.token], backgrounds)).toBeGreaterThanOrEqual(AA_NORMAL);
+                expect(worstContrast(palette[badge.token], backgrounds)).toBeGreaterThanOrEqual(AAA_NORMAL);
             });
         }
     }
@@ -170,7 +199,7 @@ describe('data colours used as text are mixed with the body colour', () => {
     // CEFR level colours and a school's own grade colours live in data, not in the palette, so they
     // cannot have a per-theme token. `textOnTheme` mixes them with --text, which darkens them on the
     // light palette and lightens them on the dark one; this replays the browser's blend.
-    const MIX_PERCENT = 60;
+    const MIX_PERCENT = 35;
 
     function mixedOverText(color: string, bodyText: string): string {
         const from = parseHex(color);
@@ -183,6 +212,12 @@ describe('data colours used as text are mixed with the body colour', () => {
     }
 
     for (const [level, color] of Object.entries(CEFR_LEVEL_COLORS)) {
+        it(`CEFR ${level} filled badge label clears AAA`, () => {
+            // CefrBadge paints the level on the level colour, exactly like a primary button.
+            const fill = legibleFillFor(color);
+            expect(contrastRatio(accentLabelFor(fill), fill)).toBeGreaterThanOrEqual(AAA_NORMAL);
+        });
+
         for (const theme of ['dark', 'light'] as const) {
             it(`CEFR ${level} (${theme})`, () => {
                 const palette = themeTokens(theme);
@@ -192,7 +227,7 @@ describe('data colours used as text are mixed with the body colour', () => {
                         text,
                         SURFACES.map((surface) => palette[surface])
                     )
-                ).toBeGreaterThanOrEqual(AA_NORMAL);
+                ).toBeGreaterThanOrEqual(AAA_NORMAL);
             });
         }
     }
