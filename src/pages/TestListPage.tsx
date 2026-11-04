@@ -19,6 +19,7 @@ import {
     ScanLine,
     Table2,
     Share2,
+    FileJson,
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { useTranslation } from 'react-i18next';
@@ -46,6 +47,8 @@ import ClassAverageAdjuster from '../components/Tests/ClassAverageAdjuster';
 import ItemAnalysisPanel from '../components/Tests/ItemAnalysisPanel';
 import PlacementAnalysisPanel from '../components/Tests/PlacementAnalysisPanel';
 import GenerateTestModal from '../components/Tests/GenerateTestModal';
+import TestImportModal from '../components/Tests/TestImportModal';
+import type { ImportedTest } from '../utils/testImport';
 import ExamBookletExportPanel from '../components/Tests/ExamBookletExportPanel';
 import type { Folder, MaterialSharing, Test, StudentTest, CohortFilter as CohortFilterValue } from '../types';
 import { useDbStatus } from '../hooks/useDbStatus';
@@ -213,6 +216,7 @@ export default function TestListPage() {
     const [gradebookDecimal, setGradebookDecimal] = useState<DecimalSeparator>('comma');
     const [exporting, setExporting] = useState(false);
     const [showGenerateModal, setShowGenerateModal] = useState(false);
+    const [showImportTest, setShowImportTest] = useState(false);
 
     async function handleExportTestSummaryText(test: Test, relevantStudentTests: StudentTest[]) {
         const { buildTestStudentSummary, pickLatestAttempt } = await import('../utils/testAnswerText');
@@ -436,6 +440,15 @@ export default function TestListPage() {
         navigate(`/tests/${created.id}/scores`);
     }
 
+    // Imported tests land in the folder that is open, the same way a new test does; with one test in
+    // the file the teacher expects to land on it, while a batch stays on the list with a count.
+    function handleImportTests(imported: ImportedTest[]) {
+        const folderId = activeFolder === ALL_FOLDERS ? undefined : activeFolder;
+        const created = imported.map((draft) => addTest(folderId ? { ...draft, folderId } : draft));
+        if (created.length === 1) navigate(`/tests/${created[0].id}`);
+        else showToast(t('importTest.import_success_toast', { count: created.length }), 'success');
+    }
+
     function requestAssign(test: Test, onReady: () => void = () => setAssigningTestId(test.id)) {
         const { noQuestions, entries } = testAssignBlockers(test);
         if (noQuestions) showToast(t('tests.assign_blocked_empty'), 'error');
@@ -472,6 +485,9 @@ export default function TestListPage() {
                         <button className="btn btn-secondary btn-sm" onClick={() => setShowGenerateModal(true)}>
                             <Sparkles size={15} /> {t('generateTest.entry_point')}
                         </button>
+                        <button className="btn btn-secondary btn-sm" onClick={() => setShowImportTest(true)}>
+                            <FileJson size={15} /> {t('importTest.import_button')}
+                        </button>
                         <button
                             data-tour="tl-new"
                             className="btn btn-primary btn-sm"
@@ -483,6 +499,9 @@ export default function TestListPage() {
                 }
             />
             {showGenerateModal && <GenerateTestModal onClose={() => setShowGenerateModal(false)} />}
+            {showImportTest && (
+                <TestImportModal onClose={() => setShowImportTest(false)} onImport={handleImportTests} />
+            )}
             <div className="page-content fade-in">
                 <div data-tour="tl-filters" style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
                     <CohortFilter classes={classes} value={cohortFilter} onChange={setCohortFilter} />
