@@ -79,7 +79,13 @@ export default function PageTour({
             onEvent={handleEvent}
             options={TOUR_OPTIONS}
             locale={locale}
-            styles={{ tooltipContainer: { textAlign: 'left' } }}
+            styles={{
+                tooltipContainer: { textAlign: 'left' },
+                // Joyride labels its primary button with `backgroundColor`, which painted the tour's
+                // background colour on the accent fill (6.36:1 light, 5.85:1 dark) instead of the
+                // accent's own label that clears AAA (#533).
+                buttonPrimary: { background: 'var(--accent)', color: 'var(--accent-fg)' },
+            }}
         />
     );
 }

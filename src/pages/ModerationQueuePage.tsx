@@ -213,6 +213,7 @@ export default function ModerationQueuePage() {
                     <EmptyState
                         icon={UserCheck}
                         title={t('coGrading.moderation_empty')}
+                        titleLevel={2}
                         description={t('coGrading.moderation_empty_desc')}
                     />
                 ) : (
@@ -233,7 +234,7 @@ export default function ModerationQueuePage() {
                                         <div>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                                 <AlertTriangle size={15} style={{ color: 'var(--orange, #f59e0b)' }} />
-                                                <h3 style={{ margin: 0 }}>{student?.name ?? item.studentId}</h3>
+                                                <h2 style={{ margin: 0 }}>{student?.name ?? item.studentId}</h2>
                                             </div>
                                             <div className="text-muted text-xs" style={{ marginTop: 4 }}>
                                                 {rubric?.name} ·{' '}

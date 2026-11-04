@@ -34,8 +34,23 @@ export const GATED_IMPACTS: readonly ImpactValue[] = ['serious', 'critical'];
  */
 const LAYOUT_RULE_TOLERANCE: Record<string, number> = { 'target-size': 4 };
 
-/** WCAG 2.0/2.1/2.2 A + AA, plus axe best-practice rules. */
-export const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa', 'best-practice'];
+/**
+ * WCAG 2.0/2.1/2.2 A + AA + AAA, plus axe best-practice rules.
+ *
+ * `wcag2aaa` is the automatable slice of the AAA push in #533 — `color-contrast-enhanced` (1.4.6),
+ * `identical-links-same-purpose` (2.4.9) and `meta-refresh-no-exceptions` (2.2.4). Most AAA criteria
+ * (sign language, reading level, focus appearance) have no automated rule and stay manual.
+ */
+export const AXE_TAGS = [
+    'wcag2a',
+    'wcag2aa',
+    'wcag2aaa',
+    'wcag21a',
+    'wcag21aa',
+    'wcag22a',
+    'wcag22aa',
+    'best-practice',
+];
 
 export const A11Y_THEMES = ['light', 'dark'] as const;
 export type A11yTheme = (typeof A11Y_THEMES)[number];

@@ -144,6 +144,7 @@ export default function TestScoreSheetPage() {
                     <EmptyState
                         icon={Table2}
                         title={t('tests.scoreSheet.not_found')}
+                        titleLevel={2}
                         description=""
                         action={{ label: t('tests.list_title'), icon: ArrowLeft, onClick: () => navigate('/tests') }}
                     />
@@ -378,6 +379,7 @@ function ScoreSheetBody({
                     <EmptyState
                         icon={Table2}
                         title={t('tests.scoreSheet.no_students')}
+                        titleLevel={2}
                         description={t('tests.scoreSheet.no_students_hint')}
                     />
                 ) : tab === 'sheet' ? (

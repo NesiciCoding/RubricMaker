@@ -129,8 +129,8 @@ test.describe('Statistics — Compare tab', () => {
 
         // Wait for bar chart first (proves compare data is loaded)
         await expect(appPage.locator('.recharts-bar-rectangle').first()).toBeVisible({ timeout: 10_000 });
-        // The trend section heading appears when multiTrendData.length >= 2 — assert on a plain <h3>
-        // not on SVG elements (recharts <path>/<g> are unreliable in headless chromium)
-        await expect(appPage.locator('h3', { hasText: /class progress trend/i })).toBeVisible({ timeout: 10_000 });
+        // The trend section heading appears when multiTrendData.length >= 2 — assert on the heading
+        // by role, not on SVG elements (recharts <path>/<g> are unreliable in headless chromium).
+        await expect(appPage.getByRole('heading', { name: /class progress trend/i })).toBeVisible({ timeout: 10_000 });
     });
 });

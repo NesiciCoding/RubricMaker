@@ -22,7 +22,8 @@ export default function NotFoundPage() {
                 }}
             >
                 <FileQuestion size={48} style={{ color: 'var(--text-dim)' }} aria-hidden="true" />
-                <h1 style={{ fontSize: '1.4rem', color: 'var(--text)' }}>{t('notFound.heading')}</h1>
+                {/* The Topbar owns the page's <h1>; the 404 message is its content heading. */}
+                <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text)' }}>{t('notFound.heading')}</h2>
                 <p style={{ color: 'var(--text-muted)', maxWidth: '360px', fontSize: '0.9rem' }}>
                     {t('notFound.body')}
                 </p>

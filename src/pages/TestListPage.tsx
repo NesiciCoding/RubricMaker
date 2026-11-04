@@ -712,7 +712,7 @@ export default function TestListPage() {
                                                                     />
                                                                 )}
                                                                 <div>
-                                                                    <h3>{test.name}</h3>
+                                                                    <h2 className="item-heading">{test.name}</h2>
                                                                     <div
                                                                         className="text-muted text-xs"
                                                                         style={{ marginTop: 2 }}

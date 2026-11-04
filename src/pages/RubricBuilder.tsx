@@ -72,6 +72,7 @@ import { CEFR_LEVELS, CEFR_SKILLS, CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '
 import { exportRubricGridPdf } from '../utils/pdfExport';
 import { sanitizeFilename } from '../utils/exportDataPrep';
 import { distributeWeights, hasEvenWeights, remainingWeight } from '../utils/rubricWeights';
+import { accentLabelFor, legibleFillFor } from '../utils/contrastCheck';
 import { logAuditEvent } from '../services/database/AuditLogger';
 import { getSpeakingDimensions } from '../data/speakingDimensions';
 import { useToast } from '../hooks/useToast';
@@ -1188,7 +1189,9 @@ function RubricBuilderEditor({ shared }: { shared?: SharedEntry<Rubric> }) {
                     <div style={{ display: viewMode === 'form' ? 'block' : 'none' }}>
                         {/* Rubric Meta */}
                         <div className="card" style={{ marginBottom: 20 }}>
-                            <h3 style={{ marginBottom: 16 }}>{t('rubricBuilder.section_rubric_details')}</h3>
+                            <h2 className="card-heading" style={{ marginBottom: 16 }}>
+                                {t('rubricBuilder.section_rubric_details')}
+                            </h2>
                             <div data-tour="rb-meta" className="grid-2" style={{ gap: 12 }}>
                                 <div className="form-group">
                                     <label htmlFor="rb-name">{t('rubricBuilder.name_label')}</label>
@@ -1259,9 +1262,16 @@ function RubricBuilderEditor({ shared }: { shared?: SharedEntry<Rubric> }) {
                                     border: '1px solid var(--border)',
                                 }}
                             >
-                                <h4 style={{ margin: '0 0 6px', fontSize: '0.9rem', color: 'var(--text)' }}>
+                                <h3
+                                    style={{
+                                        margin: '0 0 6px',
+                                        fontSize: '0.9rem',
+                                        fontWeight: 700,
+                                        color: 'var(--text)',
+                                    }}
+                                >
                                     {t('rubricBuilder.rubric_type_label')}
-                                </h4>
+                                </h3>
                                 <div
                                     role="radiogroup"
                                     aria-label={t('rubricBuilder.rubric_type_label')}
@@ -1325,9 +1335,16 @@ function RubricBuilderEditor({ shared }: { shared?: SharedEntry<Rubric> }) {
                                         border: '1px solid var(--border)',
                                     }}
                                 >
-                                    <h4 style={{ margin: '0 0 12px', fontSize: '0.9rem', color: 'var(--text)' }}>
+                                    <h3
+                                        style={{
+                                            margin: '0 0 12px',
+                                            fontSize: '0.9rem',
+                                            fontWeight: 700,
+                                            color: 'var(--text)',
+                                        }}
+                                    >
                                         {t('rubricBuilder.label_scoring_mode')}
-                                    </h4>
+                                    </h3>
                                     <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                                         {(['weighted-percentage', 'total-points', 'single-point'] as ScoringMode[]).map(
                                             (mode) => (
@@ -1389,9 +1406,16 @@ function RubricBuilderEditor({ shared }: { shared?: SharedEntry<Rubric> }) {
                             >
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                                     <BookOpen size={15} style={{ color: 'var(--accent-text)' }} />
-                                    <h4 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text)' }}>
+                                    <h3
+                                        style={{
+                                            margin: 0,
+                                            fontSize: '0.9rem',
+                                            fontWeight: 700,
+                                            color: 'var(--text)',
+                                        }}
+                                    >
                                         {t('cefr.rubric_section_title')}
-                                    </h4>
+                                    </h3>
                                     <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 4 }}>
                                         {t('cefr.rubric_section_subtitle')}
                                     </span>
@@ -1440,8 +1464,12 @@ function RubricBuilderEditor({ shared }: { shared?: SharedEntry<Rubric> }) {
                                             </span>
                                             <span
                                                 style={{
-                                                    background: CEFR_LEVEL_COLORS[cefrTargetLevel as CefrLevel],
-                                                    color: '#fff',
+                                                    background: legibleFillFor(
+                                                        CEFR_LEVEL_COLORS[cefrTargetLevel as CefrLevel]
+                                                    ),
+                                                    color: accentLabelFor(
+                                                        legibleFillFor(CEFR_LEVEL_COLORS[cefrTargetLevel as CefrLevel])
+                                                    ),
                                                     borderRadius: 5,
                                                     padding: '2px 10px',
                                                     fontSize: 13,
@@ -1504,7 +1532,15 @@ function RubricBuilderEditor({ shared }: { shared?: SharedEntry<Rubric> }) {
                                 onClick={() => setShowVocabulary((v) => !v)}
                             >
                                 <BookOpen size={15} style={{ color: 'var(--accent-text)' }} />
-                                <h4 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text)', flex: 1 }}>
+                                <h3
+                                    style={{
+                                        margin: 0,
+                                        fontSize: '0.9rem',
+                                        fontWeight: 700,
+                                        color: 'var(--text)',
+                                        flex: 1,
+                                    }}
+                                >
                                     {t('vocabulary.section_title', 'Vocabulary & Grammar List')}
                                     {existing?.vocabularyItems?.length ? (
                                         <span
@@ -1518,7 +1554,7 @@ function RubricBuilderEditor({ shared }: { shared?: SharedEntry<Rubric> }) {
                                             {existing.vocabularyItems.length} {t('vocabulary.items', 'items')}
                                         </span>
                                     ) : null}
-                                </h4>
+                                </h3>
                                 <ChevronDown
                                     size={15}
                                     style={{
@@ -1568,10 +1604,10 @@ function RubricBuilderEditor({ shared }: { shared?: SharedEntry<Rubric> }) {
                                 const ok = totalWeight >= 98 && totalWeight <= 102;
                                 const warn = !ok && totalWeight >= 85 && totalWeight <= 115;
                                 const color = ok
-                                    ? 'var(--green, #10b981)'
+                                    ? 'var(--green-text)'
                                     : warn
-                                      ? 'var(--yellow, #f59e0b)'
-                                      : 'var(--red, #ef4444)';
+                                      ? 'var(--yellow-text)'
+                                      : 'var(--red-text)';
                                 return (
                                     <div
                                         style={{
@@ -1582,8 +1618,8 @@ function RubricBuilderEditor({ shared }: { shared?: SharedEntry<Rubric> }) {
                                             padding: '6px 12px',
                                             borderRadius: 8,
                                             background: ok
-                                                ? 'color-mix(in srgb, var(--green, #10b981) 10%, transparent)'
-                                                : 'color-mix(in srgb, var(--yellow, #f59e0b) 10%, transparent)',
+                                                ? 'color-mix(in srgb, var(--green) 10%, transparent)'
+                                                : 'color-mix(in srgb, var(--yellow) 10%, transparent)',
                                             border: `1px solid ${color}40`,
                                             marginTop: 16,
                                             marginBottom: 4,
@@ -1786,7 +1822,7 @@ function RubricBuilderEditor({ shared }: { shared?: SharedEntry<Rubric> }) {
                     {/* Format Panel */}
                     {showFormat && (
                         <div className="card no-print" style={{ height: 'fit-content', position: 'sticky', top: 0 }}>
-                            <h3 style={{ marginBottom: 16 }}>{t('rubricBuilder.format_title')}</h3>
+                            <h2 style={{ marginBottom: 16 }}>{t('rubricBuilder.format_title')}</h2>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                                 {(
                                     [

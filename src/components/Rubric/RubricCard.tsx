@@ -164,7 +164,8 @@ function RubricCard({
                                 <CardGrip {...dragProvided.dragHandleProps} label={t('rubricList.drag_to_reorder')} />
                             )}
                             <div style={{ minWidth: 0 }}>
-                                <h3
+                                <h2
+                                    className="item-heading"
                                     title={rubric.name}
                                     style={{
                                         overflowWrap: 'anywhere',
@@ -175,7 +176,7 @@ function RubricCard({
                                     }}
                                 >
                                     {rubric.name}
-                                </h3>
+                                </h2>
                                 {rubric.subject && (
                                     <div className="text-muted text-xs" style={{ marginTop: 2 }}>
                                         {rubric.subject}

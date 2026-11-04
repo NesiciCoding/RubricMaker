@@ -705,9 +705,9 @@ export default function ExportPage() {
                     }}
                 >
                     <FileText size={16} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
-                    <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, flex: 1 }}>
+                    <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, flex: 1 }}>
                         {t('exportPage.rubric_section_title')}
-                    </h3>
+                    </h2>
                     <ChevronDown
                         size={16}
                         style={{
@@ -948,9 +948,9 @@ export default function ExportPage() {
                         }}
                     >
                         <Users size={16} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
-                        <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, flex: 1 }}>
+                        <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, flex: 1 }}>
                             {t('exportPage.rubric_students_section_title')}
-                        </h3>
+                        </h2>
                         <ChevronDown
                             size={16}
                             style={{
@@ -1311,9 +1311,9 @@ export default function ExportPage() {
                         }}
                     >
                         <ClipboardList size={16} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
-                        <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, flex: 1 }}>
+                        <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, flex: 1 }}>
                             {t('tests.export.exam.section_title')}
-                        </h3>
+                        </h2>
                         <ChevronDown
                             size={16}
                             style={{
@@ -1378,9 +1378,9 @@ export default function ExportPage() {
                         }}
                     >
                         <FileText size={16} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
-                        <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, flex: 1 }}>
+                        <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, flex: 1 }}>
                             {t('exportPage.essays_title')}
-                        </h3>
+                        </h2>
                         <ChevronDown
                             size={16}
                             style={{
@@ -1550,9 +1550,9 @@ export default function ExportPage() {
                         }}
                     >
                         <ClipboardList size={16} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
-                        <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, flex: 1 }}>
+                        <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, flex: 1 }}>
                             {t('exportPage.period_report_title')}
-                        </h3>
+                        </h2>
                         <ChevronDown
                             size={16}
                             style={{
@@ -1707,9 +1707,9 @@ export default function ExportPage() {
                         }}
                     >
                         <ClipboardList size={16} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
-                        <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, flex: 1 }}>
+                        <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, flex: 1 }}>
                             {t('reportCard.title')}
-                        </h3>
+                        </h2>
                         <ChevronDown
                             size={16}
                             style={{

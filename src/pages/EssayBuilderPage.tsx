@@ -291,7 +291,9 @@ export default function EssayBuilderPage() {
             >
                 {/* 1. Prompt editor */}
                 <div className="card" data-tour="eb-prompt">
-                    <h3 style={{ marginTop: 0 }}>{t('essays.prompt_editor_label')}</h3>
+                    <h2 className="card-heading" style={{ marginTop: 0 }}>
+                        {t('essays.prompt_editor_label')}
+                    </h2>
                     <div className="form-group">
                         <label className="form-label" htmlFor="eb-title">
                             {t('essays.title_label')}
@@ -404,7 +406,9 @@ export default function EssayBuilderPage() {
 
                 {/* 2. Rubric connector */}
                 <div className="card" data-tour="eb-rubric">
-                    <h3 style={{ marginTop: 0 }}>{t('essays.rubric_connector_label')}</h3>
+                    <h2 className="card-heading" style={{ marginTop: 0 }}>
+                        {t('essays.rubric_connector_label')}
+                    </h2>
                     <select
                         className="form-input"
                         aria-label={t('essays.rubric_connector_label')}
@@ -422,7 +426,9 @@ export default function EssayBuilderPage() {
 
                 {/* 3. Assign to students */}
                 <div className="card" data-tour="eb-assign">
-                    <h3 style={{ marginTop: 0 }}>{t('essays.assigned_students_title')}</h3>
+                    <h2 className="card-heading" style={{ marginTop: 0 }}>
+                        {t('essays.assigned_students_title')}
+                    </h2>
                     {rows.length > 0 && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
                             {rows.map((row) => {

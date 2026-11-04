@@ -357,7 +357,9 @@ export default function SpeakingSession() {
                 <div className="card" data-tour="sp-timer" style={{ marginBottom: 24 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
                         <Mic size={18} style={{ color: 'var(--accent-text)' }} />
-                        <h3 style={{ margin: 0 }}>{t('speaking.timer_label')}</h3>
+                        <h2 className="card-heading" style={{ margin: 0 }}>
+                            {t('speaking.timer_label')}
+                        </h2>
                     </div>
 
                     {!timerLocked && (
@@ -468,7 +470,9 @@ export default function SpeakingSession() {
 
                 {/* ── Pronunciation Quick-Marks ── */}
                 <div className="card" data-tour="sp-pronunciation" style={{ marginBottom: 24 }}>
-                    <h3 style={{ marginBottom: 12 }}>{t('speaking.pronunciation_panel')}</h3>
+                    <h2 className="card-heading" style={{ marginBottom: 12 }}>
+                        {t('speaking.pronunciation_panel')}
+                    </h2>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
                         {ERROR_TYPES.map((type) => (
                             <button
@@ -540,7 +544,9 @@ export default function SpeakingSession() {
 
                 {/* ── Recordings ── */}
                 <div className="card" data-tour="sp-recordings" style={{ marginBottom: 24 }}>
-                    <h3 style={{ marginBottom: 12 }}>{t('recordings.panel_title')}</h3>
+                    <h2 className="card-heading" style={{ marginBottom: 12 }}>
+                        {t('recordings.panel_title')}
+                    </h2>
                     <p className="text-sm text-muted" style={{ marginTop: 0, marginBottom: 12 }}>
                         {t('recordings.student_disclosure')}
                     </p>
@@ -553,7 +559,9 @@ export default function SpeakingSession() {
 
                 {/* ── Rubric Scoring ── */}
                 <div className="card" data-tour="sp-scoring" style={{ marginBottom: 24 }}>
-                    <h3 style={{ marginBottom: 16 }}>{rubric.name}</h3>
+                    <h2 className="card-heading" style={{ marginBottom: 16 }}>
+                        {rubric.name}
+                    </h2>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                         {criteria.map((criterion) => {
                             const entry = entries.find((e) => e.criterionId === criterion.id);

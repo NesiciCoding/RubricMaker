@@ -49,10 +49,12 @@ interface CardMetrics {
 async function measureCards(page: Page): Promise<CardMetrics> {
     // The store hydrates asynchronously, so the shell (and its loading status) is on screen
     // before the seeded cards are; wait for a titled card instead of the page container.
-    await page.locator('.page-content .card h3').first().waitFor({ state: 'visible' });
+    await page.locator('.page-content .card .item-heading').first().waitFor({ state: 'visible' });
     return page.evaluate(() => {
         const list = document.querySelector('.page-content');
-        const cards = [...document.querySelectorAll('.page-content .card')].filter((card) => card.querySelector('h3'));
+        const cards = [...document.querySelectorAll('.page-content .card')].filter((card) =>
+            card.querySelector('.item-heading')
+        );
         const widths = cards.map((card) => Math.round(card.getBoundingClientRect().width));
         return {
             widths,

@@ -1060,9 +1060,9 @@ export default function StudentsPage() {
                     {/* Student list */}
                     <div className="card" data-tour="students-roster">
                         <div className="card-header">
-                            <h3>
+                            <h2 className="card-heading">
                                 {rosterLabel} — {filteredStudents.length} {t('studentsPage.students_count')}
-                            </h3>
+                            </h2>
                         </div>
                         {/* Student search */}
                         <div style={{ position: 'relative', marginBottom: 14 }}>

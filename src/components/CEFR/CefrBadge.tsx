@@ -2,7 +2,7 @@ import React from 'react';
 import { CEFR_LEVEL_COLORS } from '../../data/cefrDescriptors';
 import { cambridgeExamForLevel } from '../../data/cambridgeExams';
 import type { CefrLevel } from '../../types';
-import { textOnTheme } from '../../utils/contrastCheck';
+import { accentLabelFor, legibleFillFor, textOnTheme } from '../../utils/contrastCheck';
 
 interface Props {
     level: CefrLevel;
@@ -36,6 +36,9 @@ export default function CefrBadge({
     style,
 }: Props) {
     const color = CEFR_LEVEL_COLORS[level];
+    // A filled badge paints its level on the level colour: deepen the fill until that label clears
+    // AAA rather than trusting white to carry it (#533).
+    const fill = legibleFillFor(color);
     const sizeStyle = SIZE_MAP[size];
     const cambridgeExam = showCambridgeLabel ? cambridgeExamForLevel(level) : null;
 
@@ -45,8 +48,8 @@ export default function CefrBadge({
                 data-developing={developing ? 'true' : undefined}
                 style={{
                     ...sizeStyle,
-                    background: developing ? 'transparent' : color,
-                    color: developing ? textOnTheme(CEFR_LEVEL_COLORS[level]) : '#fff',
+                    background: developing ? 'transparent' : fill,
+                    color: developing ? textOnTheme(CEFR_LEVEL_COLORS[level]) : accentLabelFor(fill),
                     border: developing ? `1.5px dashed ${color}` : '1.5px solid transparent',
                     display: 'inline-block',
                     letterSpacing: '0.03em',

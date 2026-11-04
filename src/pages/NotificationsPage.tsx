@@ -82,7 +82,7 @@ export default function NotificationsPage() {
                         >
                             {t(`notifications.filter_${kind}`)}
                             {kind !== 'all' && (
-                                <span style={{ marginLeft: 6, opacity: 0.75 }}>
+                                <span style={{ marginLeft: 6 }}>
                                     (
                                     {kind === 'overdue_grading'
                                         ? overdueItems.length
@@ -110,6 +110,7 @@ export default function NotificationsPage() {
                     <EmptyState
                         icon={CheckCircle2}
                         title={t('notifications.all_up_to_date', { threshold })}
+                        titleLevel={2}
                         description={t('notifications.empty_desc')}
                     />
                 ) : (

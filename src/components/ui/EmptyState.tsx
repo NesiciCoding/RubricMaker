@@ -54,7 +54,7 @@ export function EmptyState({
     return (
         <div className={className ? `empty-state ${className}` : 'empty-state'} style={style}>
             {Icon && <Icon size={iconSize} aria-hidden="true" />}
-            {title && React.createElement(`h${titleLevel}`, null, title)}
+            {title && React.createElement(`h${titleLevel}`, { className: 'item-heading' }, title)}
             {description && <p className="text-muted text-sm">{description}</p>}
             {children}
             {action && (

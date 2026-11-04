@@ -171,6 +171,7 @@ export default function FlashcardsPage() {
                     <EmptyState
                         icon={Layers}
                         title={t('flashcards.no_decks')}
+                        titleLevel={2}
                         description={t('flashcards.create_first_instruction')}
                         action={{ label: t('flashcards.new_deck'), icon: Plus, onClick: handleCreate }}
                     />
@@ -247,7 +248,10 @@ export default function FlashcardsPage() {
                                                                         />
                                                                     )}
                                                                     <div style={{ minWidth: 0 }}>
-                                                                        <h3 style={{ margin: 0 }}>
+                                                                        <h2
+                                                                            className="item-heading"
+                                                                            style={{ margin: 0 }}
+                                                                        >
                                                                             {deck.ownerStudentId ? (
                                                                                 // A shared student deck is read-only for teachers (RLS blocks
                                                                                 // owner writes on student rows); no editor link.
@@ -265,7 +269,7 @@ export default function FlashcardsPage() {
                                                                                     {deck.name}
                                                                                 </button>
                                                                             )}
-                                                                        </h3>
+                                                                        </h2>
                                                                         <div
                                                                             className="text-muted text-xs"
                                                                             style={{ marginTop: 2 }}

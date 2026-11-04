@@ -724,7 +724,9 @@ export default function SettingsPage() {
                                         aria-hidden="true"
                                     />
                                 )}
-                                <h3 style={{ margin: 0 }}>{t('settings.role_access')}</h3>
+                                <h2 className="card-heading" style={{ margin: 0 }}>
+                                    {t('settings.role_access')}
+                                </h2>
                                 <span className={`role-badge ${ROLE_META[role].badgeClass}`} style={{ marginLeft: 4 }}>
                                     {ROLE_META[role].icon} {t(ROLE_META[role].labelKey)}
                                 </span>
@@ -785,7 +787,9 @@ export default function SettingsPage() {
 
                         {/* Display */}
                         <div data-tour="set-display" className="card" style={{ marginBottom: 24 }}>
-                            <h3 style={{ marginBottom: 16 }}>{t('settings.general')}</h3>
+                            <h2 className="card-heading" style={{ marginBottom: 16 }}>
+                                {t('settings.general')}
+                            </h2>
                             <div className="grid-2" style={{ gap: 16 }}>
                                 <div className="form-group">
                                     <label htmlFor="setting-theme">{t('settings.theme')}</label>
@@ -965,7 +969,9 @@ export default function SettingsPage() {
                         <div className="card" style={{ marginBottom: 24, borderLeft: '4px solid var(--accent)' }}>
                             <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
                                 <Globe size={20} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
-                                <h3 style={{ margin: 0 }}>{t('navigation.localization') || 'Localization'}</h3>
+                                <h2 className="card-heading" style={{ margin: 0 }}>
+                                    {t('navigation.localization') || 'Localization'}
+                                </h2>
                             </div>
                             <div className="form-group">
                                 <label htmlFor="setting-language">{t('settings.language_selection')}</label>
@@ -980,7 +986,9 @@ export default function SettingsPage() {
                         <div className="card" style={{ marginBottom: 24 }}>
                             <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
                                 <GraduationCap size={20} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
-                                <h3 style={{ margin: 0 }}>{t('cambridge.settings_section_title')}</h3>
+                                <h2 className="card-heading" style={{ margin: 0 }}>
+                                    {t('cambridge.settings_section_title')}
+                                </h2>
                             </div>
                             <label
                                 style={{
@@ -1034,7 +1042,9 @@ export default function SettingsPage() {
                         <div className="card" style={{ marginBottom: 24 }}>
                             <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
                                 <BookOpen size={20} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
-                                <h3 style={{ margin: 0 }}>{t('settings.dyslexia_section_title')}</h3>
+                                <h2 className="card-heading" style={{ margin: 0 }}>
+                                    {t('settings.dyslexia_section_title')}
+                                </h2>
                             </div>
                             <label
                                 style={{
@@ -1062,7 +1072,9 @@ export default function SettingsPage() {
 
                         {/* Guided tour */}
                         <div data-tour="set-tutorial" className="card">
-                            <h3 style={{ marginBottom: 16 }}>{t('tutorial.restart_section_title')}</h3>
+                            <h2 className="card-heading" style={{ marginBottom: 16 }}>
+                                {t('tutorial.restart_section_title')}
+                            </h2>
                             <button
                                 className="btn btn-secondary"
                                 onClick={() => {
@@ -1081,7 +1093,9 @@ export default function SettingsPage() {
                     <>
                         {/* Grading preferences */}
                         <div className="card" style={{ marginBottom: 24 }}>
-                            <h3 style={{ marginBottom: 16 }}>{t('settings.general')}</h3>
+                            <h2 className="card-heading" style={{ marginBottom: 16 }}>
+                                {t('settings.general')}
+                            </h2>
                             <div className="grid-2" style={{ gap: 16 }}>
                                 <div className="form-group">
                                     <label htmlFor="setting-grade-scale">{t('settings.default_grade_scale')}</label>
@@ -1151,9 +1165,9 @@ export default function SettingsPage() {
                         {/* Grade notification (Supabase mode only) */}
                         {dbStatus.isConnected && (
                             <div className="card" style={{ marginBottom: 24 }}>
-                                <h3 style={{ marginBottom: 12 }}>
+                                <h2 style={{ marginBottom: 12 }}>
                                     {t('settings.notify_students_title', 'Student Notifications')}
-                                </h3>
+                                </h2>
                                 <label
                                     style={{
                                         display: 'flex',
@@ -1217,7 +1231,7 @@ export default function SettingsPage() {
                             Notification Center surfaces. */}
                         {dbStatus.isConnected && (
                             <div className="card" style={{ marginBottom: 24 }}>
-                                <h3 style={{ marginBottom: 4 }}>{t('settings.digest_title', 'Email Digest')}</h3>
+                                <h2 style={{ marginBottom: 4 }}>{t('settings.digest_title', 'Email Digest')}</h2>
                                 <div className="text-xs text-muted" style={{ marginBottom: 12 }}>
                                     {t(
                                         'settings.digest_intro',
@@ -1320,7 +1334,7 @@ export default function SettingsPage() {
                         {/* Default sharing of rubrics, tests and their folders (migration 095) */}
                         <div className="card" style={{ marginBottom: 24 }}>
                             <div className="card-header">
-                                <h3>{t('sharing.settings_title')}</h3>
+                                <h2>{t('sharing.settings_title')}</h2>
                             </div>
                             <p className="text-muted text-sm" style={{ marginTop: 0 }}>
                                 {t('sharing.settings_desc')}
@@ -1334,7 +1348,7 @@ export default function SettingsPage() {
                         {/* Overdue Reminder Threshold */}
                         <div className="card" style={{ marginBottom: 24 }}>
                             <div className="card-header">
-                                <h3>{t('settings.overdue_reminder')}</h3>
+                                <h2>{t('settings.overdue_reminder')}</h2>
                             </div>
                             <div className="form-group">
                                 <label htmlFor="setting-overdue-threshold">
@@ -1366,7 +1380,7 @@ export default function SettingsPage() {
                                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}
                             >
                                 <div>
-                                    <h3 style={{ margin: 0 }}>{t('settings.mastery_targets_title')}</h3>
+                                    <h2 style={{ margin: 0 }}>{t('settings.mastery_targets_title')}</h2>
                                     <p className="text-muted text-sm" style={{ marginTop: 4, marginBottom: 0 }}>
                                         {t('settings.mastery_targets_help')}
                                     </p>
@@ -1432,7 +1446,7 @@ export default function SettingsPage() {
                                 style={{ marginTop: 20, borderTop: '1px solid var(--border)', paddingTop: 16 }}
                                 data-testid="calibration-status"
                             >
-                                <h4 style={{ margin: 0 }}>{t('settings.calibration_title')}</h4>
+                                <h3 style={{ margin: 0 }}>{t('settings.calibration_title')}</h3>
                                 <p className="text-muted text-sm" style={{ marginTop: 4, marginBottom: 0 }}>
                                     {t('settings.calibration_help')}
                                 </p>
@@ -1582,7 +1596,7 @@ export default function SettingsPage() {
                             }}
                         >
                             <div>
-                                <h3 style={{ margin: 0 }}>{t('settings.comment_bank')}</h3>
+                                <h2 style={{ margin: 0 }}>{t('settings.comment_bank')}</h2>
                                 <p className="text-muted text-sm" style={{ marginTop: 4 }}>
                                     {t('settings.comment_bank_help').replace('{{count}}', String(commentBank.length))}
                                 </p>
@@ -1595,7 +1609,7 @@ export default function SettingsPage() {
                         {/* Grade Scales */}
                         <div className="card" style={{ marginBottom: 24 }}>
                             <div className="card-header">
-                                <h3>{t('settings.grade_scales')}</h3>
+                                <h2>{t('settings.grade_scales')}</h2>
                                 <button
                                     className="btn btn-primary btn-sm"
                                     onClick={() => {
@@ -1834,7 +1848,7 @@ export default function SettingsPage() {
                         {/* Mastery Colors (Dashboard student snapshot) */}
                         <div className="card" style={{ marginBottom: 24 }}>
                             <div className="card-header">
-                                <h3>{t('settings.mastery_colors_title')}</h3>
+                                <h2>{t('settings.mastery_colors_title')}</h2>
                             </div>
                             <p className="text-muted text-sm" style={{ marginTop: 0, marginBottom: 14 }}>
                                 {t('settings.mastery_colors_help')}
@@ -1967,7 +1981,7 @@ export default function SettingsPage() {
                                 <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                                     <Layout size={20} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
                                     <div>
-                                        <h3 style={{ margin: 0 }}>{t('settings.export_templates')}</h3>
+                                        <h2 style={{ margin: 0 }}>{t('settings.export_templates')}</h2>
                                         <p className="text-muted text-xs" style={{ marginTop: 2 }}>
                                             {t('settings.export_templates_help')}
                                         </p>
@@ -2131,7 +2145,7 @@ export default function SettingsPage() {
 
                         {/* Backup export (non-destructive — safe for teachers) */}
                         <div className="card">
-                            <h3 style={{ marginBottom: 16 }}>{t('settings.backup_restore')}</h3>
+                            <h2 style={{ marginBottom: 16 }}>{t('settings.backup_restore')}</h2>
                             <div style={{ display: 'flex', gap: 12 }}>
                                 <button className="btn btn-secondary" onClick={handleBackupExport}>
                                     <Download size={16} aria-hidden="true" /> {t('settings.action_export_backup')}
@@ -2152,7 +2166,7 @@ export default function SettingsPage() {
                             <div className="card">
                                 <div className="admin-locked-card">
                                     <Lock size={40} style={{ color: 'var(--text-dim)' }} aria-hidden="true" />
-                                    <h3 style={{ margin: 0 }}>{t('settings.admin_access_required')}</h3>
+                                    <h2 style={{ margin: 0 }}>{t('settings.admin_access_required')}</h2>
                                     <p className="text-muted text-sm" style={{ maxWidth: 400 }}>
                                         {t('settings.admin_access_desc')}
                                     </p>
@@ -2253,7 +2267,7 @@ export default function SettingsPage() {
 
                                 {/* Backup — full (export + import) */}
                                 <div className="card" style={{ marginBottom: 24 }}>
-                                    <h3 style={{ marginBottom: 16 }}>{t('settings.backup_restore')}</h3>
+                                    <h2 style={{ marginBottom: 16 }}>{t('settings.backup_restore')}</h2>
                                     <div style={{ display: 'flex', gap: 12 }}>
                                         <button className="btn btn-secondary" onClick={handleBackupExport}>
                                             <Download size={16} aria-hidden="true" />{' '}
@@ -2298,7 +2312,7 @@ export default function SettingsPage() {
                                 {/* Dev-only: seed demo data for design/UX review — never shown in production builds */}
                                 {import.meta.env.DEV && (
                                     <div className="card" style={{ marginBottom: 24 }}>
-                                        <h3 style={{ marginBottom: 16 }}>{t('settings.dev_sample_title')}</h3>
+                                        <h2 style={{ marginBottom: 16 }}>{t('settings.dev_sample_title')}</h2>
                                         <button className="btn btn-secondary" onClick={handleLoadSampleData}>
                                             <Sparkles size={16} aria-hidden="true" /> {t('settings.dev_sample_load')}
                                         </button>
@@ -2316,7 +2330,7 @@ export default function SettingsPage() {
                                     <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
                                         <Lock size={20} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
                                         <div>
-                                            <h3 style={{ margin: 0 }}>{t('settings.admin_password_heading')}</h3>
+                                            <h2 style={{ margin: 0 }}>{t('settings.admin_password_heading')}</h2>
                                             <p className="text-muted text-xs" style={{ marginTop: 2 }}>
                                                 {settings.adminPin
                                                     ? t('settings.admin_pw_set_desc')
@@ -2373,13 +2387,13 @@ export default function SettingsPage() {
                                         <div
                                             style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 340 }}
                                         >
-                                            <h4 style={{ margin: 0, fontSize: '0.9rem' }}>
+                                            <h3 style={{ margin: 0, fontSize: '0.9rem' }}>
                                                 {pinSetupMode === 'setting'
                                                     ? t('settings.admin_set_password_title')
                                                     : pinSetupMode === 'changing'
                                                       ? t('settings.admin_change_password_title')
                                                       : t('settings.admin_remove_password_title')}
-                                            </h4>
+                                            </h3>
 
                                             {(pinSetupMode === 'changing' || pinSetupMode === 'removing') && (
                                                 <div className="form-group" style={{ marginBottom: 0 }}>
@@ -2494,7 +2508,7 @@ export default function SettingsPage() {
                                 <div className="card">
                                     <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
                                         <User size={20} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
-                                        <h3 style={{ margin: 0 }}>{t('settings.role_reference')}</h3>
+                                        <h2 style={{ margin: 0 }}>{t('settings.role_reference')}</h2>
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                                         {(['admin', 'teacher', 'student'] as UserRole[]).map((r) => (

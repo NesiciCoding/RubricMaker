@@ -28,8 +28,8 @@ import { SettingsProvider } from './domains/settings';
 import { PlatformProvider } from './domains/platform';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../hooks/useToast';
-import { accentLabelFor, accentTextFor } from '../utils/contrastCheck';
-import { ThemeName, themeSurfaces } from '../data/themeSurfaces';
+import { accentBackgrounds, accentFillFor, accentLabelFor, accentTextFor } from '../utils/contrastCheck';
+import { ThemeName } from '../data/themeSurfaces';
 import { loadDb, getDb } from '../services/database/lazyDb';
 import {
     loadStore,
@@ -202,16 +202,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
             return;
         }
         const theme: ThemeName = state.settings.theme === 'light' ? 'light' : 'dark';
-        root.style.setProperty('--accent', accent);
-        root.style.setProperty('--accent-hover', accent);
-        // A bundle accent is picked to look good as a button fill; as *text* it can fall well under
-        // AA (academy's #1d4ed8 is 2.7:1 on the dark page). Derive the legible variant here so every
-        // link, tab label and badge follows whatever accent the teacher chose (#533).
-        root.style.setProperty('--accent-text', accentTextFor(accent, themeSurfaces(theme), theme));
-        root.style.setProperty('--accent-fg', accentLabelFor(accent));
-        root.style.setProperty('--accent-soft', `${accent}26`);
-        root.style.setProperty('--accent-glow', `${accent}66`);
-        const scale = buildAccentScale(accent);
+        // A bundle accent is picked to look good as a button fill, but the label sits *on* it and
+        // at 1.4.6 that needs 7:1. Deepen the fill until its own label clears AAA (#533).
+        const fill = accentFillFor(accent);
+        root.style.setProperty('--accent', fill);
+        root.style.setProperty('--accent-hover', fill);
+        // The same colour as *text* can fall well under AA (academy's #1d4ed8 is 2.7:1 on the dark
+        // page). Derive the legible variant here so every link, tab label and badge follows
+        // whatever accent the teacher chose, on the surfaces and on the accent's own soft tint.
+        root.style.setProperty('--accent-text', accentTextFor(fill, accentBackgrounds(fill, theme), theme));
+        root.style.setProperty('--accent-fg', accentLabelFor(fill));
+        root.style.setProperty('--accent-soft', `${fill}26`);
+        root.style.setProperty('--accent-glow', `${fill}66`);
+        const scale = buildAccentScale(fill);
         for (const step of ACCENT_SCALE_STEPS) {
             root.style.setProperty(`--accent-${step}`, scale[step]);
         }

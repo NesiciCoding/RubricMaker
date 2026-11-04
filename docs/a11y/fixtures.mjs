@@ -225,4 +225,13 @@ export const routes = [
     ['/this-route-does-not-exist', 'Not found'],
 ];
 
-export const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa', 'best-practice'];
+export const AXE_TAGS = [
+    'wcag2a',
+    'wcag2aa',
+    'wcag2aaa',
+    'wcag21a',
+    'wcag21aa',
+    'wcag22a',
+    'wcag22aa',
+    'best-practice',
+];

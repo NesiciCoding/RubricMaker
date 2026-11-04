@@ -72,7 +72,16 @@ export default function NewsFlashTimeline({ studentId, flashes, readFlashIds, on
                                 {KIND_ICONS[flash.kind]}
                             </span>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontWeight: unread ? 700 : 600, fontSize: '0.9rem' }}>
+                                {/* One heading per announcement, under the section's h2, so a
+                                    screen-reader user can jump between updates (#533). */}
+                                <h3
+                                    style={{
+                                        fontWeight: unread ? 700 : 600,
+                                        fontSize: '0.9rem',
+                                        fontFamily: 'var(--font)',
+                                        letterSpacing: 'normal',
+                                    }}
+                                >
                                     <button
                                         type="button"
                                         className="stretched-link"
@@ -81,7 +90,7 @@ export default function NewsFlashTimeline({ studentId, flashes, readFlashIds, on
                                     >
                                         {flash.title}
                                     </button>
-                                </div>
+                                </h3>
                                 {flash.summary && (
                                     <p className="text-muted text-sm" style={{ margin: '4px 0 0' }}>
                                         {flash.summary}

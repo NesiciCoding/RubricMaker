@@ -208,11 +208,11 @@ export default function VocabularyDashboardPage() {
                         <div className="card" style={{ marginBottom: 20 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                                 <Users size={16} style={{ color: 'var(--text-muted)' }} />
-                                <h3 style={{ margin: 0, fontSize: '0.95rem' }}>
+                                <h2 className="card-heading" style={{ margin: 0, fontSize: '0.95rem' }}>
                                     {selectedClassId === 'all'
                                         ? t('vocabProfile.class_distribution_title')
                                         : t('vocabProfile.class_distribution_title_single')}
-                                </h3>
+                                </h2>
                             </div>
                             <VocabCefrDistributionChart entries={classChartEntries} />
 
@@ -268,9 +268,9 @@ export default function VocabularyDashboardPage() {
                             <div className="card">
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                                     <BookOpen size={16} style={{ color: 'var(--text-muted)' }} />
-                                    <h3 style={{ margin: 0, fontSize: '0.95rem' }}>
+                                    <h2 className="card-heading" style={{ margin: 0, fontSize: '0.95rem' }}>
                                         {t('vocabProfile.student_drilldown_title')}
-                                    </h3>
+                                    </h2>
                                 </div>
                                 <VocabCefrDistributionChart entries={studentChartEntries} />
 
