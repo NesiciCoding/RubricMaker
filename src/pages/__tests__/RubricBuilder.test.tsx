@@ -2504,7 +2504,11 @@ describe('RubricBuilder — tiered rubrics', () => {
         const router = createMemoryRouter([{ path: '/rubrics/:id', element: <RubricBuilderLazy /> }], {
             initialEntries: ['/rubrics/r1'],
         });
-        return render(<RouterProvider router={router} />);
+        const result = render(<RouterProvider router={router} />);
+        // The tiered config panel starts collapsed for an already-configured rubric; expand it
+        // so the tests below can reach the tier/band controls.
+        fireEvent.click(screen.getByRole('button', { name: /tiered_config_title/ }));
+        return result;
     }
 
     const lastSaved = () => mockUpdateRubric.mock.calls.at(-1)![0] as Rubric;

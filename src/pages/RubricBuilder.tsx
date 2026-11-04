@@ -224,6 +224,10 @@ function RubricBuilderEditor({ shared }: { shared?: SharedEntry<Rubric> }) {
     );
     const [totalMaxPoints, setTotalMaxPoints] = useState(existing?.totalMaxPoints ?? template?.totalMaxPoints ?? 100);
     const [tiered, setTiered] = useState<TieredConfig | undefined>(existing?.tiered ?? template?.tiered);
+    // Captured once at mount: true only when a tiered config already existed before this page
+    // opened (editing an existing rubric, or duplicating a tiered template), not when the user
+    // switches a rubric to tiered within this session — that case should stay open to edit.
+    const [tieredPanelDefaultCollapsed] = useState(() => !!(existing?.tiered ?? template?.tiered));
     const [showFormat, setShowFormat] = useState(false);
     const [showVocabulary, setShowVocabulary] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
@@ -1306,6 +1310,7 @@ function RubricBuilderEditor({ shared }: { shared?: SharedEntry<Rubric> }) {
                                     <TieredConfigPanel
                                         config={tiered}
                                         onChange={(next) => void changeTieredConfig(next)}
+                                        defaultCollapsed={tieredPanelDefaultCollapsed}
                                     />
                                 )}
                             </div>
