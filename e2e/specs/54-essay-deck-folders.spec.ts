@@ -51,7 +51,7 @@ test.describe('Folders on Essays and Flashcards', () => {
         // The folder tiles filter the list like they do on the Rubrics and Tests lists.
         // Click the folder's name: the tile also holds its Move to / rename / delete buttons.
         await tile.getByRole('button', { name: 'Term 1', exact: true }).click();
-        await expect(appPage.locator('.card h3')).toHaveText(['File Me']);
+        await expect(appPage.locator('.card .item-heading')).toHaveText(['File Me']);
     });
 
     test('dragging a flashcard deck onto a flashcard folder files it', async ({ appPage, seedStorage }) => {

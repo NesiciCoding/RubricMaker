@@ -15,7 +15,8 @@ export class TestListPage extends BasePage {
     }
 
     cardTitles() {
-        return this.page.locator('.card h3').allTextContents();
+        // Row titles, not heading levels: the level follows the page outline (#533).
+        return this.page.locator('.card .item-heading').allTextContents();
     }
 
     dragHandle(name: string): Locator {

@@ -48,7 +48,7 @@ export class RubricListPage extends BasePage {
     }
 
     getRubricNames() {
-        return this.page.locator('.rubric-card h3, .rubric-name, [data-rubric-name]').allTextContents();
+        return this.page.locator('.rubric-card .item-heading, [data-rubric-name]').allTextContents();
     }
 
     isRubricVisible(name: string) {
@@ -57,7 +57,8 @@ export class RubricListPage extends BasePage {
 
     /** Ordered card titles as currently rendered — reflects manual drag-reorder/displayOrder. */
     cardTitles() {
-        return this.page.locator('.card h3').allTextContents();
+        // Row titles, not heading levels: the level follows the page outline (#533).
+        return this.page.locator('.card .item-heading').allTextContents();
     }
 
     dragHandle(name: string) {
