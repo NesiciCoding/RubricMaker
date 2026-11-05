@@ -274,6 +274,11 @@ vi.mock('../../hooks/useSharedMaterials', () => ({
     useSharedMaterials: () => ({ items: sharedRubricState.items, folders: [], status: 'ready', connected: true }),
 }));
 
+const coTaughtClassIds = new Set<string>();
+vi.mock('../../hooks/useClassRoles', () => ({
+    useCanEditRoster: () => (classId: string | undefined) => !classId || !coTaughtClassIds.has(classId),
+}));
+
 vi.mock('../../hooks/useDbStatus', () => ({
     useDbStatus: () => ({ isConnected: true, status: 'idle', lastSyncAt: null, userId: null, currentUser: null }),
 }));
@@ -332,6 +337,7 @@ function renderPage() {
 
 function resetFixtures() {
     sharedRubricState.items = [];
+    coTaughtClassIds.clear();
     mockAppValue.classes = classesArr;
     mockAppValue.students = studentsArr;
     mockAppValue.studentRubrics = studentRubricsArr;
@@ -584,6 +590,18 @@ describe('StudentsPage extended', () => {
                 pastClassMemberships: [expect.objectContaining({ classId: 'c1', leftAt: expect.any(String) })],
             })
         );
+    });
+
+    it("opens a co-taught class's student read-only so the owner-only write never reaches the queue", () => {
+        coTaughtClassIds.add('c1');
+        renderPage();
+        const aliceRow = screen.getAllByRole('row').find((r) => within(r).queryByText('Alice'))!;
+        fireEvent.click(within(aliceRow).getByLabelText('studentsPage.action_edit_student'));
+        expect(screen.getByRole('note')).toHaveTextContent('studentsPage.roster_read_only_notice');
+        expect(screen.getByLabelText('studentsPage.form_full_name')).toBeDisabled();
+        expect(screen.getByLabelText('studentsPage.form_class')).toBeDisabled();
+        expect(screen.queryByText('studentsPage.action_save_changes')).not.toBeInTheDocument();
+        expect(mockUpdateStudent).not.toHaveBeenCalled();
     });
 
     it('assigns a student to one of a mixed class\u2019s years', () => {

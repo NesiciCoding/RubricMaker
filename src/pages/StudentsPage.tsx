@@ -31,6 +31,7 @@ import Modal from '../components/ui/Modal';
 import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { useSharedMaterials } from '../hooks/useSharedMaterials';
 import { useDbStatus } from '../hooks/useDbStatus';
+import { useCanEditRoster } from '../hooks/useClassRoles';
 import { useActiveClassCohorts } from '../hooks/useActiveClassCohorts';
 import { useToast } from '../hooks/useToast';
 import Papa from 'papaparse';
@@ -331,6 +332,7 @@ export default function StudentsPage() {
 
     const dbStatus = useDbStatus();
     const { showToast } = useToast();
+    const canEditRoster = useCanEditRoster();
 
     const { selectedCohorts, setSelectedCohorts, toggleCohort, isAllCohorts, singleClassId } = useActiveClassCohorts({
         activeClassId: settings.activeClassId,
@@ -677,9 +679,11 @@ export default function StudentsPage() {
         ? findDuplicateStudent(students, name, studentFormClassId, editStudent?.id)
         : undefined;
 
+    const rosterReadOnly = !!editStudent && !canEditRoster(students.find((s) => s.id === editStudent.id)?.classId);
+
     function handleAddStudent() {
-        /* v8 ignore next -- the submit button is disabled while the name is empty or the email is invalid */
-        if (!name.trim() || emailInvalid) return;
+        /* v8 ignore next -- the submit button is disabled while the name is empty, the email is invalid or the student is read-only */
+        if (!name.trim() || emailInvalid || rosterReadOnly) return;
         const trimmedName = name.trim();
         const trimmedEmail = email.trim();
         if (editStudent) {
@@ -1477,144 +1481,159 @@ export default function StudentsPage() {
                             </button>
                         </div>
                         <div className="modal-body">
-                            <div className="form-group" style={{ marginBottom: 12 }}>
-                                <label htmlFor="student-name">{t('studentsPage.form_full_name')}</label>
-                                <input
-                                    id="student-name"
-                                    type="text"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    placeholder={t('studentsPage.form_name_placeholder')}
-                                    aria-describedby={duplicateStudent ? 'student-name-duplicate' : undefined}
-                                    autoFocus
-                                />
-                                {duplicateStudent && (
-                                    <p
-                                        id="student-name-duplicate"
-                                        role="status"
-                                        className="text-xs"
-                                        style={{ margin: '4px 0 0', color: 'var(--yellow, #b45309)' }}
-                                    >
-                                        {t('studentsPage.form_duplicate_warning', {
-                                            name: duplicateStudent.name,
-                                            className:
-                                                classes.find((c) => c.id === duplicateStudent.classId)?.name ?? '',
-                                        })}
-                                    </p>
-                                )}
-                            </div>
-                            <div className="form-group" style={{ marginBottom: 12 }}>
-                                <label htmlFor="student-email">{t('studentsPage.form_email')}</label>
-                                <input
-                                    id="student-email"
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    placeholder={t('studentsPage.form_email_placeholder')}
-                                    aria-invalid={emailInvalid || undefined}
-                                    aria-describedby={emailInvalid ? 'student-email-error' : undefined}
-                                />
-                                {emailInvalid && (
-                                    <p
-                                        id="student-email-error"
-                                        className="text-xs"
-                                        style={{ margin: '4px 0 0', color: 'var(--red, #ef4444)' }}
-                                    >
-                                        {t('studentsPage.form_email_invalid')}
-                                    </p>
-                                )}
-                            </div>
-                            {(editStudent || !singleClassId) && (
-                                <div className="form-group">
-                                    <label htmlFor="student-class">{t('studentsPage.form_class')}</label>
-                                    <select
-                                        id="student-class"
-                                        value={editStudentClassId}
-                                        onChange={(e) => {
-                                            setEditStudentClassId(e.target.value);
-                                            setEditStudentTrack('');
-                                            setEditStudentYear('');
-                                        }}
-                                    >
-                                        {classes.map((c) => (
-                                            <option key={c.id} value={c.id}>
-                                                {c.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
-                            {/* A class may teach several years and/or several tracks: the student is
-                                pinned to one of each, defaulting to the class's primary cohort. */}
-                            {(() => {
-                                const cls = classes.find((c) => c.id === editStudentClassId);
-                                const classYears = getClassYears(cls);
-                                if (classYears.length === 0) return null;
-                                return (
-                                    <div className="form-group" style={{ marginTop: 12 }}>
-                                        <label htmlFor="student-year">{t('studentsPage.form_school_year')}</label>
-                                        <select
-                                            id="student-year"
-                                            value={editStudentYear}
-                                            onChange={(e) => setEditStudentYear(e.target.value as SchoolYear | '')}
-                                        >
-                                            <option value="">
-                                                {t('studentsPage.form_student_year_same_as_class')}
-                                            </option>
-                                            {classYears.map((year) => (
-                                                <option key={year} value={year}>
-                                                    {SCHOOL_YEAR_LABELS[year]}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                );
-                            })()}
-                            {(() => {
-                                const cls = classes.find((c) => c.id === editStudentClassId);
-                                const classTracks = getClassVoTracks(cls);
-                                if (classTracks.length === 0) return null;
-                                return (
-                                    <div className="form-group" style={{ marginTop: 12 }}>
-                                        <label htmlFor="student-track">{t('voTrack.section_label')}</label>
-                                        <select
-                                            id="student-track"
-                                            value={editStudentTrack}
-                                            onChange={(e) => setEditStudentTrack(e.target.value as VoTrack | '')}
-                                        >
-                                            <option value="">
-                                                {classTracks.length === 1
-                                                    ? t('voTrack.same_as_class', {
-                                                          track: VO_TRACK_LABELS[classTracks[0]],
-                                                      })
-                                                    : t('studentsPage.form_student_track_same_as_class')}
-                                            </option>
-                                            {classTracks.map((track) => (
-                                                <option key={track} value={track}>
-                                                    {VO_TRACK_LABELS[track]}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                );
-                            })()}
-                            <div className="form-group" style={{ marginTop: 12 }}>
-                                <label
-                                    htmlFor="student-read-aloud"
-                                    style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+                            {rosterReadOnly && (
+                                <p
+                                    role="note"
+                                    className="text-sm text-muted"
+                                    data-testid="student-roster-read-only"
+                                    style={{ marginTop: 0, marginBottom: 12 }}
                                 >
-                                    <input
-                                        id="student-read-aloud"
-                                        type="checkbox"
-                                        checked={editStudentReadAloud}
-                                        onChange={(e) => setEditStudentReadAloud(e.target.checked)}
-                                    />
-                                    {t('studentsPage.form_read_aloud_accommodation')}
-                                </label>
-                                <p className="text-xs text-muted" style={{ margin: '4px 0 0' }}>
-                                    {t('studentsPage.form_read_aloud_accommodation_hint')}
+                                    {t('studentsPage.roster_read_only_notice')}
                                 </p>
-                            </div>
+                            )}
+                            <fieldset
+                                disabled={rosterReadOnly}
+                                style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+                            >
+                                <div className="form-group" style={{ marginBottom: 12 }}>
+                                    <label htmlFor="student-name">{t('studentsPage.form_full_name')}</label>
+                                    <input
+                                        id="student-name"
+                                        type="text"
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
+                                        placeholder={t('studentsPage.form_name_placeholder')}
+                                        aria-describedby={duplicateStudent ? 'student-name-duplicate' : undefined}
+                                        autoFocus
+                                    />
+                                    {duplicateStudent && (
+                                        <p
+                                            id="student-name-duplicate"
+                                            role="status"
+                                            className="text-xs"
+                                            style={{ margin: '4px 0 0', color: 'var(--yellow, #b45309)' }}
+                                        >
+                                            {t('studentsPage.form_duplicate_warning', {
+                                                name: duplicateStudent.name,
+                                                className:
+                                                    classes.find((c) => c.id === duplicateStudent.classId)?.name ?? '',
+                                            })}
+                                        </p>
+                                    )}
+                                </div>
+                                <div className="form-group" style={{ marginBottom: 12 }}>
+                                    <label htmlFor="student-email">{t('studentsPage.form_email')}</label>
+                                    <input
+                                        id="student-email"
+                                        type="email"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        placeholder={t('studentsPage.form_email_placeholder')}
+                                        aria-invalid={emailInvalid || undefined}
+                                        aria-describedby={emailInvalid ? 'student-email-error' : undefined}
+                                    />
+                                    {emailInvalid && (
+                                        <p
+                                            id="student-email-error"
+                                            className="text-xs"
+                                            style={{ margin: '4px 0 0', color: 'var(--red, #ef4444)' }}
+                                        >
+                                            {t('studentsPage.form_email_invalid')}
+                                        </p>
+                                    )}
+                                </div>
+                                {(editStudent || !singleClassId) && (
+                                    <div className="form-group">
+                                        <label htmlFor="student-class">{t('studentsPage.form_class')}</label>
+                                        <select
+                                            id="student-class"
+                                            value={editStudentClassId}
+                                            onChange={(e) => {
+                                                setEditStudentClassId(e.target.value);
+                                                setEditStudentTrack('');
+                                                setEditStudentYear('');
+                                            }}
+                                        >
+                                            {classes.map((c) => (
+                                                <option key={c.id} value={c.id}>
+                                                    {c.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
+                                {/* A class may teach several years and/or several tracks: the student is
+                                pinned to one of each, defaulting to the class's primary cohort. */}
+                                {(() => {
+                                    const cls = classes.find((c) => c.id === editStudentClassId);
+                                    const classYears = getClassYears(cls);
+                                    if (classYears.length === 0) return null;
+                                    return (
+                                        <div className="form-group" style={{ marginTop: 12 }}>
+                                            <label htmlFor="student-year">{t('studentsPage.form_school_year')}</label>
+                                            <select
+                                                id="student-year"
+                                                value={editStudentYear}
+                                                onChange={(e) => setEditStudentYear(e.target.value as SchoolYear | '')}
+                                            >
+                                                <option value="">
+                                                    {t('studentsPage.form_student_year_same_as_class')}
+                                                </option>
+                                                {classYears.map((year) => (
+                                                    <option key={year} value={year}>
+                                                        {SCHOOL_YEAR_LABELS[year]}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    );
+                                })()}
+                                {(() => {
+                                    const cls = classes.find((c) => c.id === editStudentClassId);
+                                    const classTracks = getClassVoTracks(cls);
+                                    if (classTracks.length === 0) return null;
+                                    return (
+                                        <div className="form-group" style={{ marginTop: 12 }}>
+                                            <label htmlFor="student-track">{t('voTrack.section_label')}</label>
+                                            <select
+                                                id="student-track"
+                                                value={editStudentTrack}
+                                                onChange={(e) => setEditStudentTrack(e.target.value as VoTrack | '')}
+                                            >
+                                                <option value="">
+                                                    {classTracks.length === 1
+                                                        ? t('voTrack.same_as_class', {
+                                                              track: VO_TRACK_LABELS[classTracks[0]],
+                                                          })
+                                                        : t('studentsPage.form_student_track_same_as_class')}
+                                                </option>
+                                                {classTracks.map((track) => (
+                                                    <option key={track} value={track}>
+                                                        {VO_TRACK_LABELS[track]}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    );
+                                })()}
+                                <div className="form-group" style={{ marginTop: 12 }}>
+                                    <label
+                                        htmlFor="student-read-aloud"
+                                        style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+                                    >
+                                        <input
+                                            id="student-read-aloud"
+                                            type="checkbox"
+                                            checked={editStudentReadAloud}
+                                            onChange={(e) => setEditStudentReadAloud(e.target.checked)}
+                                        />
+                                        {t('studentsPage.form_read_aloud_accommodation')}
+                                    </label>
+                                    <p className="text-xs text-muted" style={{ margin: '4px 0 0' }}>
+                                        {t('studentsPage.form_read_aloud_accommodation_hint')}
+                                    </p>
+                                </div>
+                            </fieldset>
                         </div>
                         <div className="modal-footer">
                             <button
@@ -1626,13 +1645,17 @@ export default function StudentsPage() {
                             >
                                 {t('common.cancel')}
                             </button>
-                            <button
-                                className="btn btn-primary"
-                                onClick={handleAddStudent}
-                                disabled={!name.trim() || emailInvalid}
-                            >
-                                {editStudent ? t('studentsPage.action_save_changes') : t('studentsPage.add_student')}
-                            </button>
+                            {!rosterReadOnly && (
+                                <button
+                                    className="btn btn-primary"
+                                    onClick={handleAddStudent}
+                                    disabled={!name.trim() || emailInvalid}
+                                >
+                                    {editStudent
+                                        ? t('studentsPage.action_save_changes')
+                                        : t('studentsPage.add_student')}
+                                </button>
+                            )}
                         </div>
                     </Modal>
                 )}

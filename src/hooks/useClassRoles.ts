@@ -38,12 +38,8 @@ export function resetClassRolesCache() {
     set({ userId: null, roles: {}, status: 'idle' });
 }
 
-/**
- * Whether I may change grades and test results for a student in `classId`. Only a class shared
- * with me as "Can view" is read-only (migration 096 refuses those writes); my own classes, and
- * everything while offline, stay editable.
- */
-export function useCanEditStudentWork() {
+/** My co-teacher roles by class id, or null while offline/unknown. */
+function useMyClassRoles(): Roles | null {
     const db = useDbStatus();
     const userId = db.isConnected ? db.userId : null;
     const current = useSyncExternalStore(subscribe, () => state);
@@ -52,6 +48,26 @@ export function useCanEditStudentWork() {
         if (userId && (state.userId !== userId || state.status === 'idle')) void load(userId);
     }, [userId]);
 
-    const roles = userId && current.userId === userId ? current.roles : null;
+    return userId && current.userId === userId ? current.roles : null;
+}
+
+/**
+ * Whether I may change grades and test results for a student in `classId`. Only a class shared
+ * with me as "Can view" is read-only (migration 096 refuses those writes); my own classes, and
+ * everything while offline, stay editable.
+ */
+export function useCanEditStudentWork() {
+    const roles = useMyClassRoles();
     return useCallback((classId: string | undefined) => !classId || roles?.[classId] !== 'viewer', [roles]);
+}
+
+/**
+ * Whether I may change roster fields (name, class, track, year…) of a student in `classId`.
+ * Students are owner-only rows (`students_owner_all`, migration 026): any co-taught class — even
+ * as "Can edit" — refuses the write, and the rejected push would sit in the pending queue forever,
+ * shielding a divergent local copy from hydrate. My own classes, and everything offline, stay editable.
+ */
+export function useCanEditRoster() {
+    const roles = useMyClassRoles();
+    return useCallback((classId: string | undefined) => !classId || !roles?.[classId], [roles]);
 }
