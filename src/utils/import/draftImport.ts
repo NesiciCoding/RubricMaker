@@ -37,6 +37,8 @@ export interface DocumentReviewNote {
 /** What the reader recognised, shown before the teacher confirms the import. */
 export interface DocumentReview {
     title: string;
+    /** How sure the detector is that this is a paper: `low` means it found items but little else. */
+    confidence: TypedDraft['confidence'];
     sections: DocumentReviewSection[];
     /** Questions per inferred type — the part a teacher is most likely to want to check. */
     types: Partial<Record<TestQuestionType, number>>;
@@ -122,6 +124,7 @@ export function testFromDraft(
 
     const review: DocumentReview = {
         title: name,
+        confidence: draft.confidence,
         sections: draft.sections.map((section, index) => {
             const items = draft.items.filter((item) => item.sectionIndex === index);
             return {
