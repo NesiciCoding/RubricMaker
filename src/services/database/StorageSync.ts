@@ -105,15 +105,17 @@ class StorageSyncService {
     // Every table backing a StoreData collection, with the RLS-scoping column to filter change
     // events by so a client only receives events for rows it can already read. `filterColumn: null`
     // means no filter at all — RLS alone decides what's delivered, matching the equivalent fetch
-    // (fetchStudentRubrics()/fetchStudentTests() are themselves unscoped selects) — so a grade or
-    // result a co-teacher changes on a shared class's student fires this listener too, not only the
-    // grader's/owner's own edits. student_rubrics backs both studentRubrics and peerReviews (split
+    // (fetchClasses()/fetchStudents()/fetchStudentRubrics()/fetchStudentTests() are themselves
+    // unscoped selects) — so a grade or result a co-teacher changes on a shared class's student fires
+    // this listener too, not only the grader's/owner's own edits. classes/students too: a co-teacher
+    // grades with the owner's track/year settings, and a stale copy falls back to the class's
+    // lowest track. student_rubrics backs both studentRubrics and peerReviews (split
     // by a boolean column) — one subscription covers both, since a refresh re-fetches the whole table.
     private static readonly REALTIME_TABLES: Array<{ table: string; filterColumn: string | null }> = [
         { table: 'rubrics', filterColumn: 'owner_id' },
         { table: 'folders', filterColumn: 'owner_id' },
-        { table: 'classes', filterColumn: 'owner_id' },
-        { table: 'students', filterColumn: 'owner_id' },
+        { table: 'classes', filterColumn: null },
+        { table: 'students', filterColumn: null },
         { table: 'student_rubrics', filterColumn: null },
         { table: 'attachments', filterColumn: 'owner_id' },
         { table: 'grade_scales', filterColumn: 'owner_id' },
