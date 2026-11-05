@@ -58,14 +58,41 @@ describe('StorageSync realtime subscriptions (co-teaching, 095/096)', () => {
         expect(st[0].filter).toBeUndefined();
     });
 
+    it('subscribes classes and students with no filter, so a co-teacher sees roster changes', () => {
+        const { bindings } = connectFakeClient();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (storageSync as any).startRealtimeSync();
+
+        for (const table of ['classes', 'students']) {
+            const forTable = bindings.filter((b) => b.table === table);
+            expect(forTable).toHaveLength(1);
+            expect(forTable[0].filter).toBeUndefined();
+        }
+    });
+
+    it('routes a colleague’s student change (e.g. a new track) to a students refresh', () => {
+        vi.useFakeTimers();
+        const { bindings } = connectFakeClient();
+        const onRealtime = vi.fn();
+        const unsubscribe = storageSync.onRealtimeChange(onRealtime);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (storageSync as any).startRealtimeSync();
+
+        bindings.find((b) => b.table === 'students')!.handler();
+        vi.runAllTimers();
+
+        expect(onRealtime).toHaveBeenCalledWith(['students']);
+        unsubscribe();
+    });
+
     it('keeps the owner-scoped filter on rows that only ever belong to the signed-in user', () => {
         const { bindings } = connectFakeClient();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (storageSync as any).startRealtimeSync();
 
-        const classesBindings = bindings.filter((b) => b.table === 'classes');
-        expect(classesBindings).toHaveLength(1);
-        expect(classesBindings[0].filter).toBe('owner_id=eq.me');
+        const scalesBindings = bindings.filter((b) => b.table === 'grade_scales');
+        expect(scalesBindings).toHaveLength(1);
+        expect(scalesBindings[0].filter).toBe('owner_id=eq.me');
     });
 
     it('adds a second owner_id<>me binding for rubrics/tests/folders alongside the owner-scoped one', () => {
