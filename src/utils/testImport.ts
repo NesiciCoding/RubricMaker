@@ -23,6 +23,8 @@ import type {
 } from '../types';
 import type { ImportWarning } from './questionBankImport';
 import { nanoid } from './nanoid';
+import { isDocumentImportFile } from './import/extractBlocks';
+import { importTestDocument, type DocumentReview } from './import/draftImport';
 
 /** A test stripped of the ids and timestamps the store assigns on insert. */
 export type ImportedTest = Omit<Test, 'id' | 'createdAt' | 'updatedAt'>;
@@ -30,6 +32,8 @@ export type ImportedTest = Omit<Test, 'id' | 'createdAt' | 'updatedAt'>;
 export interface TestImportResult {
     tests: ImportedTest[];
     warnings: ImportWarning[];
+    /** Present when the file was a .docx or .pdf: what the layout detector recognised in it. */
+    review?: DocumentReview;
 }
 
 /** Files larger than this are rejected outright — a test is text, not megabytes of embedded media. */
@@ -227,8 +231,13 @@ interface PendingRouting {
 /**
  * Parses an exported test file. Never throws: unreadable or unrecognised files come back as an empty
  * result plus warnings, so the dialog can explain what went wrong.
+ *
+ * A paper is a document rather than an export, so .docx and .pdf take the detection path: read the
+ * blocks, find the sections and items, pair the answer key, infer the types. A JSON export keeps its
+ * exact parse, because it is already RubricMaker's own shape and needs no guessing.
  */
 export async function parseTestFile(file: File): Promise<TestImportResult> {
+    if (isDocumentImportFile(file)) return importTestDocument(file);
     if (!file.name.toLowerCase().endsWith('.json')) {
         return {
             tests: [],

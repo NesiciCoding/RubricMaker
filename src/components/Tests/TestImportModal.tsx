@@ -63,7 +63,7 @@ export default function TestImportModal({ onImport, onClose }: Props) {
             <input
                 ref={fileInputRef}
                 type="file"
-                accept=".json"
+                accept=".json,.docx,.pdf"
                 style={{ display: 'none' }}
                 onChange={(e) => {
                     const file = e.target.files?.[0];

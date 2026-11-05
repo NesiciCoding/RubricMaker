@@ -123,12 +123,17 @@ describe('parseTestJson — rejected input', () => {
         expect(warningKeys(result)).toEqual(['importTest.warn_looks_like_question_bank']);
     });
 
-    it('rejects a non-JSON file by extension and an oversized file', async () => {
-        const docx = await parseTestFile(new File(['x'], 'test.docx', { type: 'application/msword' }));
-        expect(warningKeys(docx)).toEqual(['importTest.warn_unsupported_file_type']);
+    it('rejects a file that is neither an export nor a document, and an oversized export', async () => {
+        const other = await parseTestFile(new File(['x'], 'test.xlsx'));
+        expect(warningKeys(other)).toEqual(['importTest.warn_unsupported_file_type']);
 
         const huge = await parseTestFile(new File([new Uint8Array(5 * 1024 * 1024 + 1)], 'big.json'));
         expect(warningKeys(huge)).toEqual(['importTest.warn_file_too_large']);
+    });
+
+    it('reads a .docx as a document instead of rejecting it', async () => {
+        const docx = await parseTestFile(new File([new Uint8Array([1, 2, 3])], 'test.docx'));
+        expect(warningKeys(docx)).toEqual(['importTest.warn_document_unreadable']);
     });
 });
 
