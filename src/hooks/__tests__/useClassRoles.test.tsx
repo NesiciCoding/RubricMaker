@@ -11,7 +11,7 @@ vi.mock('../../services/database', () => ({
     storageSync: { adapter: { fetchMyClassRoles: (...a: unknown[]) => mockFetchRoles(...a) } },
 }));
 
-import { useCanEditStudentWork, resetClassRolesCache } from '../useClassRoles';
+import { useCanEditRoster, useCanEditStudentWork, resetClassRolesCache } from '../useClassRoles';
 
 describe('useCanEditStudentWork', () => {
     beforeEach(() => {
@@ -45,5 +45,28 @@ describe('useCanEditStudentWork', () => {
         db.userId = 'other';
         mockFetchRoles.mockReturnValueOnce(new Promise(() => {}));
         expect(renderHook(() => useCanEditStudentWork()).result.current('shared')).toBe(true);
+    });
+});
+
+describe('useCanEditRoster', () => {
+    beforeEach(() => {
+        resetClassRolesCache();
+        db.isConnected = true;
+        db.userId = 'me';
+        mockFetchRoles.mockReset().mockResolvedValue({ shared: 'viewer', coTaught: 'editor' });
+    });
+
+    it('makes every co-taught class read-only, even as "Can edit", since students are owner-only rows', async () => {
+        const { result } = renderHook(() => useCanEditRoster());
+        await waitFor(() => expect(result.current('shared')).toBe(false));
+        expect(result.current('coTaught')).toBe(false);
+        expect(result.current('mine')).toBe(true);
+        expect(result.current(undefined)).toBe(true);
+    });
+
+    it('allows everything while offline', () => {
+        db.isConnected = false;
+        expect(renderHook(() => useCanEditRoster()).result.current('coTaught')).toBe(true);
+        expect(mockFetchRoles).not.toHaveBeenCalled();
     });
 });
