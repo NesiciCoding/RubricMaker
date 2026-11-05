@@ -73,7 +73,8 @@ const TRAILING_CUE = /\(\s*([^()]{1,40}?)\s*\)\s*$/;
  * three-way choice. Reading only the last pair would leave "a/" behind in the prompt.
  */
 const TRAILING_OPTIONS = /((?:[\p{L}][\p{L}'-]*)(?:\s*\/\s*[\p{L}][\p{L}'-]*)+)\s*$/u;
-const BLANK_RUN = /_{2,}|\.{4,}|…{2,}|·{3,}/gu;
+/** What a paper prints where an answer goes: an underline, a dotted leader or a row of middots. */
+export const BLANK_RUN = /_{2,}|\.{4,}|…{2,}|·{3,}/gu;
 const BARE_NUMBER = /^\d{1,3}$/;
 const FORM_FIELD = /^(naam|name|klas|class|datum|date|groep|group|leerling|student|cursist|cijfer)\b\s*[:：]/i;
 const BULLET = /^\s*[•·▪\-–—*]\s+/u;
