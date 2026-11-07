@@ -1389,6 +1389,7 @@
         "builder_targets_placeholder": "Yesterday I went to school.\nI went to school yesterday.",
         "builder_tile_count": "{{count}} tuiles de mots",
         "builder_alt_mismatch": "La ou les phrases {{lines}} ne peuvent pas être construites avec les tuiles de la première phrase. Les variantes doivent réordonner les mêmes tuiles, en gardant les groupes de mots ensemble.",
+        "builder_unbalanced_brackets": "La ou les phrases {{lines}} contiennent un [ ou un ] sans son partenaire, ou des crochets imbriqués : ces mots ne sont donc pas groupés comme prévu. Mettez chaque groupe de mots entre une seule paire de crochets.",
         "builder_scoring_label": "Notation",
         "builder_scoring_longest_run": "Points pour la plus longue suite de tuiles bien ordonnée",
         "builder_scoring_all_or_nothing": "Tout ou rien",

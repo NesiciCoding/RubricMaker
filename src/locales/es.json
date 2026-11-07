@@ -1389,6 +1389,7 @@
         "builder_targets_placeholder": "Yesterday I went to school.\nI went to school yesterday.",
         "builder_tile_count": "{{count}} fichas de palabras",
         "builder_alt_mismatch": "La(s) frase(s) {{lines}} no se pueden construir con las fichas de la primera frase. Las alternativas deben reordenar las mismas fichas, manteniendo juntos los grupos de palabras.",
+        "builder_unbalanced_brackets": "La(s) frase(s) {{lines}} tienen un [ o ] sin su pareja, o corchetes dentro de corchetes, así que esas palabras no se agrupan como se pretendía. Pon cada grupo de palabras dentro de un solo par de corchetes.",
         "builder_scoring_label": "Puntuación",
         "builder_scoring_longest_run": "Puntos por la serie más larga de fichas bien ordenada",
         "builder_scoring_all_or_nothing": "Todo o nada",

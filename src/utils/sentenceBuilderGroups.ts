@@ -44,16 +44,37 @@ export function canBuildFromTiles(sentence: string, tiles: string[]): boolean {
     }
     const totalWords = tiles.reduce((sum, tile) => sum + tile.split(' ').length, 0);
     if (totalWords !== target.length) return false;
+    const entries = [...counts.values()];
+    // A position with the same tiles left over fails the same way however it was reached.
+    const failed = new Set<string>();
     const place = (pos: number): boolean => {
         if (pos === target.length) return true;
-        for (const entry of counts.values()) {
+        const key = `${pos}|${entries.map((entry) => entry.left).join(',')}`;
+        if (failed.has(key)) return false;
+        for (const entry of entries) {
             if (entry.left === 0 || !entry.words.every((word, k) => target[pos + k] === word)) continue;
             entry.left--;
             const done = place(pos + entry.words.length);
             entry.left++;
             if (done) return true;
         }
+        failed.add(key);
         return false;
     };
     return place(0);
+}
+
+/** True when a `[` or `]` has no partner, or groups are nested — the parser would then not group what the teacher meant. */
+export function hasUnbalancedBrackets(sentence: string): boolean {
+    let open = false;
+    for (const ch of sentence) {
+        if (ch === '[') {
+            if (open) return true;
+            open = true;
+        } else if (ch === ']') {
+            if (!open) return true;
+            open = false;
+        }
+    }
+    return open;
 }

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link2, Plus, Trash2, Unlink } from 'lucide-react';
 import { sentenceBuilderChunks } from '../../../supabase/functions/_shared/testScoring';
 import type { TestQuestion } from '../../types';
-import { canBuildFromTiles, joinTiles, splitTile } from '../../utils/sentenceBuilderGroups';
+import { canBuildFromTiles, hasUnbalancedBrackets, joinTiles, splitTile } from '../../utils/sentenceBuilderGroups';
 import HelpPopover from './HelpPopover';
 import LineListTextarea from './LineListTextarea';
 import RawTextToggle from './RawTextToggle';
@@ -25,6 +25,7 @@ export default function SentenceBuilderFields({ question, update }: Props) {
     const unbuildable = targets
         .map((sentence, i) => (i > 0 && !canBuildFromTiles(sentence, tiles) ? i + 1 : 0))
         .filter(Boolean);
+    const unbalanced = targets.map((sentence, i) => (hasUnbalancedBrackets(sentence) ? i + 1 : 0)).filter(Boolean);
     const setFirst = (first: string) => update({ sentenceTargets: [first, ...targets.slice(1)] });
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -52,6 +53,11 @@ export default function SentenceBuilderFields({ question, update }: Props) {
                     />
                 }
             />
+            {unbalanced.length > 0 && (
+                <p role="alert" className="text-xs" style={{ margin: 0, color: 'var(--red-text)' }}>
+                    {t('tests.builder_unbalanced_brackets', { lines: unbalanced.join(', ') })}
+                </p>
+            )}
             {unbuildable.length > 0 && (
                 <p role="alert" className="text-xs" style={{ margin: 0, color: 'var(--red-text)' }}>
                     {t('tests.builder_alt_mismatch', { lines: unbuildable.join(', ') })}

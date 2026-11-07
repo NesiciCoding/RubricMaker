@@ -1389,6 +1389,7 @@
         "builder_targets_placeholder": "Yesterday I went to school.\nI went to school yesterday.",
         "builder_tile_count": "{{count}} woordtegels",
         "builder_alt_mismatch": "Zin(nen) {{lines}} kunnen niet met de tegels van de eerste zin gebouwd worden. Alternatieven moeten dezelfde tegels in een andere volgorde gebruiken, met woordgroepen bij elkaar.",
+        "builder_unbalanced_brackets": "Zin(nen) {{lines}} hebben een [ of ] zonder partner, of haken binnen haken, waardoor die woorden niet gegroepeerd worden zoals bedoeld. Zet elke woordgroep tussen één paar vierkante haken.",
         "builder_scoring_label": "Beoordeling",
         "builder_scoring_longest_run": "Punten voor de langste correct geordende reeks tegels",
         "builder_scoring_all_or_nothing": "Alles of niets",

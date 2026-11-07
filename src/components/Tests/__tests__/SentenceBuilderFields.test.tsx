@@ -68,4 +68,14 @@ describe('SentenceBuilderFields', () => {
         fireEvent.click(screen.getByRole('button', { name: /tests.builder_split_tile .*"tile":"went to"/ }));
         expect(update).toHaveBeenLastCalledWith({ sentenceTargets: ['I went to school', 'To school I went'] });
     });
+
+    it('warns about a bracket without its partner', () => {
+        render(
+            <SentenceBuilderFields
+                question={{ ...base, sentenceTargets: ['She [has been waiting'] }}
+                update={vi.fn()}
+            />
+        );
+        expect(screen.getByRole('alert')).toHaveTextContent('tests.builder_unbalanced_brackets');
+    });
 });

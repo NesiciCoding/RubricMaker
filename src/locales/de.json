@@ -1389,6 +1389,7 @@
         "builder_targets_placeholder": "Yesterday I went to school.\nI went to school yesterday.",
         "builder_tile_count": "{{count}} Wortkärtchen",
         "builder_alt_mismatch": "Satz/Sätze {{lines}} lassen sich nicht aus den Kacheln des ersten Satzes bauen. Alternativen müssen dieselben Kacheln umstellen und Wortgruppen zusammenlassen.",
+        "builder_unbalanced_brackets": "Satz/Sätze {{lines}} enthalten eine [ oder ] ohne Gegenstück oder verschachtelte Klammern, daher werden diese Wörter nicht wie gewollt gruppiert. Setzen Sie jede Wortgruppe in genau ein Paar eckiger Klammern.",
         "builder_scoring_label": "Bewertung",
         "builder_scoring_longest_run": "Punkte für die längste richtig geordnete Kärtchenfolge",
         "builder_scoring_all_or_nothing": "Alles oder nichts",

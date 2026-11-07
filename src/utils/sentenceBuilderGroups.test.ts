@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { canBuildFromTiles, chunksToSentence, joinTiles, splitTile } from './sentenceBuilderGroups';
+import {
+    canBuildFromTiles,
+    chunksToSentence,
+    hasUnbalancedBrackets,
+    joinTiles,
+    splitTile,
+} from './sentenceBuilderGroups';
 
 describe('sentenceBuilderGroups', () => {
     it('joins a tile with its neighbour and splits a group back into words', () => {
@@ -29,5 +35,21 @@ describe('sentenceBuilderGroups', () => {
     it('backtracks across tiles that share a first word', () => {
         expect(canBuildFromTiles('to go to school', ['to', 'to school', 'go'])).toBe(true);
         expect(canBuildFromTiles('to school to go', ['to go', 'to', 'school'])).toBe(true);
+    });
+
+    it('flags a bracket without its partner and nested groups', () => {
+        expect(hasUnbalancedBrackets('She [has been] waiting [for ages].')).toBe(false);
+        expect(hasUnbalancedBrackets('I go home')).toBe(false);
+        expect(hasUnbalancedBrackets('She [has been waiting')).toBe(true);
+        expect(hasUnbalancedBrackets('She has] been')).toBe(true);
+        expect(hasUnbalancedBrackets('[a [b] c]')).toBe(true);
+    });
+
+    it('stays fast on long sentences full of look-alike tiles', () => {
+        const words = Array.from({ length: 40 }, () => 'the');
+        const tiles = [...words.slice(0, 20), 'the the', ...words.slice(22)];
+        const started = performance.now();
+        expect(canBuildFromTiles([...words.slice(1), 'end'].join(' '), tiles)).toBe(false);
+        expect(performance.now() - started).toBeLessThan(500);
     });
 });
