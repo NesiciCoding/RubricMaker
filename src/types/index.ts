@@ -1008,6 +1008,10 @@ export interface AppSettings {
     statsPresetColors?: Record<string, string>;
     /** Statistics cards the teacher has switched off; ids from STATS_SECTIONS. Undefined/empty shows everything. */
     statisticsHiddenSections?: string[];
+    /** Live Monitor: per-student "answered / total" progress column (default off) */
+    monitorShowStudentProgress?: boolean;
+    /** Live Monitor: class-wide completion row above the response grid (default off) */
+    monitorShowClassProgress?: boolean;
     /** Whether the progress trend charts include graded test results next to rubric grades (default true) */
     statisticsTrendIncludeTests?: boolean;
     /** Advanced statistics queries the teacher saved for reuse */

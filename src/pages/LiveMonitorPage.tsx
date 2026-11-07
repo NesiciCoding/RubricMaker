@@ -3,12 +3,12 @@ import PageTour from '../components/Tour/PageTour';
 import { usePageTourState } from '../hooks/usePageTourState';
 import { useParams } from 'react-router-dom';
 import { createClient, type RealtimeChannel, type SupabaseClient } from '@supabase/supabase-js';
-import { Eye, EyeOff, AlertTriangle, Database, Send, SlidersHorizontal } from 'lucide-react';
+import { Eye, EyeOff, AlertTriangle, Database, Send, SlidersHorizontal, BarChart3, ListChecks } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import HelpPopover from '../components/ui/HelpPopover';
 import { InlineMonitorSkeleton } from '../components/ui/Skeleton';
-import { useAssessment, useEssays, useStudents, useClasses } from '../context/AppContext';
+import { useAssessment, useEssays, useStudents, useClasses, useSettings } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { useOwnOrSharedItem } from '../hooks/useSharedMaterials';
@@ -21,6 +21,7 @@ import LiveDraftPanel from '../components/Monitor/LiveDraftPanel';
 import PlacementLevelPanel from '../components/Monitor/PlacementLevelPanel';
 import { derivePresence, summarizeProctorFlags, mergeProctorEvents } from '../utils/proctorAggregator';
 import { estimatePlacement } from '../utils/placementResult';
+import { MAX_QUESTIONS as STAIRCASE_MAX_QUESTIONS } from '../utils/placementStaircase';
 import { stripCommentHtml } from '../utils/exportDataPrep';
 import type { ColumnSortRule } from '../utils/responseGridOrder';
 import type { ProctorEvent, TestAnswer, CefrLevel, StudentTest, StaircaseStep } from '../types';
@@ -74,6 +75,10 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     const { classes } = useClasses();
 
     const { tests, studentTests, fetchTestAssignmentTeacherKeys, setPlacementOverride } = useAssessment();
+
+    const { settings, updateSettings } = useSettings();
+    const showProgress = settings.monitorShowStudentProgress ?? false;
+    const showClassProgress = settings.monitorShowClassProgress ?? false;
 
     const { showToast } = useToast();
     const dbStatus = useDbStatus();
@@ -615,6 +620,28 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                             )}
                         </button>
                     )}
+                    {kind === 'test' && (
+                        <>
+                            <button
+                                type="button"
+                                className="btn btn-secondary btn-sm"
+                                aria-pressed={showProgress}
+                                onClick={() => updateSettings({ monitorShowStudentProgress: !showProgress })}
+                            >
+                                <ListChecks size={14} />
+                                {t('tests.monitor.progress_toggle')}
+                            </button>
+                            <button
+                                type="button"
+                                className="btn btn-secondary btn-sm"
+                                aria-pressed={showClassProgress}
+                                onClick={() => updateSettings({ monitorShowClassProgress: !showClassProgress })}
+                            >
+                                <BarChart3 size={14} />
+                                {t('tests.monitor.class_progress_toggle')}
+                            </button>
+                        </>
+                    )}
                     <HelpPopover title={t('help.proctoring_title')}>{t('help.proctoring_body')}</HelpPopover>
                 </div>
 
@@ -738,6 +765,8 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                             <ResponsesGrid
                                 test={test}
                                 sortRules={columnSortRules}
+                                showProgress={showProgress}
+                                showClassProgress={showClassProgress}
                                 rows={sortedRows.map((row, index) => ({
                                     studentId: row.studentId,
                                     displayName: displayName(row, index),
@@ -753,14 +782,34 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                             questions, so align on CEFR level rather than question identity. */}
                         {kind === 'test' && isLevelGrid && (
                             <LevelResponsesGrid
-                                rows={sortedRows.map((row, index) => ({
-                                    studentId: row.studentId,
-                                    displayName: displayName(row, index),
-                                    classId: row.classId,
-                                    className: row.className,
-                                    levelPath: row.levelPath,
-                                    estimatedLevel: row.placementLevel,
-                                }))}
+                                showProgress={showProgress}
+                                showClassProgress={showClassProgress}
+                                maxQuestions={
+                                    test?.placementEngine === 'generator'
+                                        ? test.generatorConfig?.maxQuestions
+                                        : STAIRCASE_MAX_QUESTIONS
+                                }
+                                rows={sortedRows.map((row, index) => {
+                                    const finished = row.status === 'submitted' || row.status === 'late';
+                                    return {
+                                        studentId: row.studentId,
+                                        displayName: displayName(row, index),
+                                        classId: row.classId,
+                                        className: row.className,
+                                        levelPath: row.levelPath,
+                                        estimatedLevel: row.placementLevel,
+                                        finished,
+                                        // A live 'submitted' broadcast can land before the persisted trace does.
+                                        questionsAnswered: finished
+                                            ? Math.max(
+                                                  row.levelPath.length,
+                                                  row.live.snapshot?.questionsAsked ?? 0,
+                                                  row.mergedAnswers.length
+                                              )
+                                            : (row.live.snapshot?.questionsAsked ??
+                                              Math.max(row.levelPath.length, row.mergedAnswers.length)),
+                                    };
+                                })}
                             />
                         )}
 

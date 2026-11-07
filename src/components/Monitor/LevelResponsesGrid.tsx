@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { CEFR_LEVELS } from '../../data/cefrDescriptors';
+import CompletionBar from './CompletionBar';
 import type { CefrLevel, StaircaseStep } from '../../types';
 
 export interface LevelResponsesGridStudentRow {
@@ -15,10 +16,18 @@ export interface LevelResponsesGridStudentRow {
     levelPath: StaircaseStep[];
     /** Provisional CEFR estimate for the TOTALS column. */
     estimatedLevel?: CefrLevel;
+    /** Questions answered so far; falls back to the trace length. Live runs report it before hand-in. */
+    questionsAnswered?: number;
+    /** A finished run is complete however few questions it took to converge. */
+    finished?: boolean;
 }
 
 export interface LevelResponsesGridProps {
     rows: LevelResponsesGridStudentRow[];
+    /** Upper bound on questions per run; adaptive runs may stop earlier once the level converges. */
+    maxQuestions?: number;
+    showProgress?: boolean;
+    showClassProgress?: boolean;
 }
 
 function levelStats(steps: StaircaseStep[], level: CefrLevel): { correct: number; attempted: number } {
@@ -38,7 +47,12 @@ const stickyLeft: React.CSSProperties = {
  * questions, so columns align on CEFR level rather than question identity: each cell is a
  * green-over-red bar of correct/attempted at that level, and TOTALS shows the estimated level.
  */
-export default function LevelResponsesGrid({ rows }: LevelResponsesGridProps) {
+export default function LevelResponsesGrid({
+    rows,
+    maxQuestions,
+    showProgress = false,
+    showClassProgress = false,
+}: LevelResponsesGridProps) {
     const { t } = useTranslation();
     const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
@@ -59,6 +73,14 @@ export default function LevelResponsesGrid({ rows }: LevelResponsesGridProps) {
         return Array.from(byClass.values());
     }, [rows]);
     const showGroupHeaders = groups.length > 1 || (groups.length === 1 && groups[0].key !== '');
+
+    const progressOf = (row: LevelResponsesGridStudentRow) => {
+        const answered = row.questionsAnswered ?? row.levelPath.length;
+        const total = row.finished ? answered : Math.max(maxQuestions ?? answered, answered);
+        return { answered, total };
+    };
+
+    const finishedCount = rows.filter((r) => r.finished).length;
 
     const th: React.CSSProperties = {
         padding: '6px 8px',
@@ -110,12 +132,57 @@ export default function LevelResponsesGrid({ rows }: LevelResponsesGridProps) {
                         <th style={{ ...th, textAlign: 'center', color: 'var(--text-muted)' }}>
                             {t('tests.monitor.grid.estimated_level')}
                         </th>
+                        {showProgress && (
+                            <th style={{ ...th, textAlign: 'center', color: 'var(--text-muted)' }}>
+                                {t('tests.monitor.grid.progress')}
+                            </th>
+                        )}
                         {levels.map((level) => (
                             <th key={level} style={{ ...th, textAlign: 'center', color: 'var(--accent-text)' }}>
                                 {level}
                             </th>
                         ))}
                     </tr>
+                    {showClassProgress && (
+                        <tr style={{ background: 'var(--bg-elevated)' }} data-testid="class-progress-row">
+                            <td style={{ ...stickyLeft, padding: '4px 8px', fontWeight: 700 }}>
+                                {t('tests.monitor.grid.class_reached')}
+                            </td>
+                            <td style={{ padding: '4px 8px' }}>
+                                <CompletionBar
+                                    value={finishedCount}
+                                    max={rows.length}
+                                    text={t('tests.monitor.grid.progress_value', {
+                                        answered: finishedCount,
+                                        total: rows.length,
+                                    })}
+                                    label={t('tests.monitor.grid.class_finished_aria', {
+                                        finished: finishedCount,
+                                        total: rows.length,
+                                    })}
+                                />
+                            </td>
+                            {showProgress && <td />}
+                            {levels.map((level) => {
+                                const reached = rows.filter((r) => r.levelPath.some((s) => s.level === level)).length;
+                                const percent = rows.length > 0 ? Math.round((reached / rows.length) * 100) : 0;
+                                return (
+                                    <td key={`cp-${level}`} style={{ padding: '4px 8px' }}>
+                                        <CompletionBar
+                                            value={reached}
+                                            max={rows.length}
+                                            text={`${percent}%`}
+                                            label={t('tests.monitor.grid.class_reached_aria', {
+                                                reached,
+                                                total: rows.length,
+                                                level,
+                                            })}
+                                        />
+                                    </td>
+                                );
+                            })}
+                        </tr>
+                    )}
                 </thead>
                 <tbody>
                     {groups.map((group) => {
@@ -125,7 +192,7 @@ export default function LevelResponsesGrid({ rows }: LevelResponsesGridProps) {
                                 {showGroupHeaders && (
                                     <tr style={{ background: 'var(--bg-panel)' }}>
                                         <td
-                                            colSpan={levels.length + 2}
+                                            colSpan={levels.length + (showProgress ? 3 : 2)}
                                             style={{ ...stickyLeft, background: 'var(--bg-panel)', padding: '4px 8px' }}
                                         >
                                             <button
@@ -172,6 +239,32 @@ export default function LevelResponsesGrid({ rows }: LevelResponsesGridProps) {
                                                     <span className="text-muted">—</span>
                                                 )}
                                             </td>
+                                            {showProgress &&
+                                                (() => {
+                                                    const p = progressOf(row);
+                                                    return (
+                                                        <td style={{ padding: '4px 8px' }}>
+                                                            <CompletionBar
+                                                                value={p.answered}
+                                                                max={p.total}
+                                                                text={t('tests.monitor.grid.progress_value', p)}
+                                                                label={
+                                                                    row.finished
+                                                                        ? t(
+                                                                              'tests.monitor.grid.progress_finished_aria',
+                                                                              {
+                                                                                  count: p.answered,
+                                                                              }
+                                                                          )
+                                                                        : t(
+                                                                              'tests.monitor.grid.progress_adaptive_aria',
+                                                                              p
+                                                                          )
+                                                                }
+                                                            />
+                                                        </td>
+                                                    );
+                                                })()}
                                             {levels.map((level) => {
                                                 const { correct, attempted } = levelStats(row.levelPath, level);
                                                 return renderBar(correct, attempted, `${row.studentId}-${level}`);

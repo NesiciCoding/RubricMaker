@@ -354,7 +354,7 @@ The deep operational detail is in the [self-hosting docs](docs/SELF_HOSTING_OPS.
 | `/tests/new`                                | New test                                                                                                                                            |
 | `/tests/:id`                                | Test builder                                                                                                                                        |
 | `/tests/:testId/results/:studentTestId`     | Test results, manual grading, and class-average adjustment                                                                                          |
-| `/tests/:testId/monitor`                    | Live test monitor (presence, response grid, proctoring flags)                                                                                       |
+| `/tests/:testId/monitor`                    | Live test monitor (presence, response grid, optional student/class progress bars, proctoring flags)                                                 |
 | `/tests/:id/scores`                         | Score sheet: type in points per question per student, per-test grading norm, and test quality analysis (P-value, Rit/Rir, Cronbach's α)             |
 | `/students`                                 | Students list                                                                                                                                       |
 | `/students/:id`                             | Student profile                                                                                                                                     |

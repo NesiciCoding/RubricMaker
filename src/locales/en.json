@@ -1313,7 +1313,18 @@
                 },
                 "gallery_title": "Question {{index}} — all answers",
                 "no_answer": "No answer yet",
-                "audio_recorded": "Audio recorded ({{seconds}}s)"
+                "audio_recorded": "Audio recorded ({{seconds}}s)",
+                "progress": "Progress",
+                "progress_value": "{{answered}}/{{total}}",
+                "progress_aria": "{{answered}} of {{total}} questions answered",
+                "progress_adaptive_aria": "{{answered}} of at most {{total}} questions answered",
+                "progress_finished_aria_one": "Finished after {{count}} question",
+                "progress_finished_aria_other": "Finished after {{count}} questions",
+                "class_progress": "Answered by class",
+                "class_progress_aria": "{{answered}} of {{total}} students answered this question",
+                "class_reached": "Reached by class",
+                "class_reached_aria": "{{reached}} of {{total}} students reached {{level}}",
+                "class_finished_aria": "{{finished}} of {{total}} students finished"
             },
             "draft": {
                 "word_count": "{{count}} words",
@@ -1321,7 +1332,9 @@
                 "toggle_preview": "Toggle draft preview",
                 "empty": "No draft text yet."
             },
-            "advisory_note": "Presence, drafts, and proctoring flags are advisory signals reported by the student's browser — a determined student can spoof them. Use them to spot patterns, not as definitive proof."
+            "advisory_note": "Presence, drafts, and proctoring flags are advisory signals reported by the student's browser — a determined student can spoof them. Use them to spot patterns, not as definitive proof.",
+            "progress_toggle": "Student progress",
+            "class_progress_toggle": "Class progress"
         },
         "sections_title": "Sections",
         "sections_none_hint": "No sections yet. Sections help you group questions into labelled parts (e.g. Reading, Listening).",
@@ -4530,6 +4543,7 @@
         "gr_scan_body": "In the feedback panel for a criterion, choose \"Scan handwriting\" to photograph a paper answer with your device camera or import a photo or scanned PDF. The text is recognised on your device (nothing is uploaded); you review and correct it — the least-confident words are highlighted — and it is inserted into your feedback. This is a teacher-only tool; students never upload scans. The image is used only for recognition and is not stored. The recognition engine and language data are downloaded once from cdn.jsdelivr.net the first time you scan, so the first scan (and the first scan after the browser cache is cleared) needs an internet connection; if your school network blocks that site, ask IT to allow it.",
         "rb_live_monitor_item_sort": "Sort & group columns — reorder the question columns by section, CEFR level, question type, linked grammar/standard, or cumulative class score, combining several rules at once.",
         "rb_live_monitor_item_placement": "Adaptive placement view — staircase and generator placement runs give every student different questions, so the grid aligns on CEFR level instead: a per-level accuracy bar per student, with their estimated level in a separate column before the level columns.",
+        "rb_live_monitor_item_progress": "Progress toggles (tests) — \"Student progress\" adds an answered/total bar per student, separate from their score; \"Class progress\" adds a row above the grid showing how much of the class has answered each question (or, on adaptive placement tests, reached each CEFR level) and how many students have finished. Both are off by default and remembered in your settings.",
         "rb_tests_exam_export_label": "Exam booklet export:",
         "rb_tests_exam_export_body": "From the test list or the Export page, export a print-ready exam paper styled after a Dutch CITO exam: a question booklet, a separate answer sheet, an optional attachment document for reading passages, and a grading sheet with correct answers and scoring guidance — as PDF or Word, with your chosen font applied. Choose which students get a personalised answer sheet by clicking a class chip to select the whole class, or tick individual students. Question and option pictures, line breaks and text formatting carry over to the booklet; scan markers are only added to the PDF answer sheet, on every page of it. Listening questions get a \"listen to the recording\" note, and the margin point labels follow the interface language.",
         "gr_exam_scan_title": "Scan a paper exam's answer sheet",

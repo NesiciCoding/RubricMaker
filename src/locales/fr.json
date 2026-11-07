@@ -1313,7 +1313,18 @@
                     "type": "Type de question",
                     "grammar": "Grammaire / référentiel",
                     "score": "Score cumulé"
-                }
+                },
+                "progress": "Progression",
+                "progress_value": "{{answered}}/{{total}}",
+                "progress_aria": "{{answered}} questions répondues sur {{total}}",
+                "progress_adaptive_aria": "{{answered}} questions répondues sur {{total}} au maximum",
+                "progress_finished_aria_one": "Terminé après {{count}} question",
+                "progress_finished_aria_other": "Terminé après {{count}} questions",
+                "class_progress": "Réponses de la classe",
+                "class_progress_aria": "{{answered}} élèves sur {{total}} ont répondu à cette question",
+                "class_reached": "Atteint par la classe",
+                "class_reached_aria": "{{reached}} élèves sur {{total}} ont atteint {{level}}",
+                "class_finished_aria": "{{finished}} élèves sur {{total}} ont terminé"
             },
             "draft": {
                 "word_count": "{{count}} mots",
@@ -1321,7 +1332,9 @@
                 "toggle_preview": "Afficher/masquer l'aperçu du brouillon",
                 "empty": "Pas encore de texte de brouillon."
             },
-            "advisory_note": "La présence, les brouillons et les signaux de surveillance sont des indications fournies par le navigateur de l'élève — un élève déterminé peut les contourner. Utilisez-les pour repérer des tendances, pas comme preuve définitive."
+            "advisory_note": "La présence, les brouillons et les signaux de surveillance sont des indications fournies par le navigateur de l'élève — un élève déterminé peut les contourner. Utilisez-les pour repérer des tendances, pas comme preuve définitive.",
+            "progress_toggle": "Progression élève",
+            "class_progress_toggle": "Progression classe"
         },
         "sections_title": "Sections",
         "sections_none_hint": "Pas encore de sections. Les sections permettent de regrouper les questions en parties (ex. Lecture, Compréhension orale).",
@@ -4532,6 +4545,7 @@
         "gr_scan_body": "Dans le panneau de retour d'un critère, choisissez « Numériser l'écriture » pour photographier une copie papier avec la caméra de votre appareil ou importer une photo ou un PDF numérisé. Le texte est reconnu sur votre appareil (rien n'est téléversé) ; vous le vérifiez et le corrigez — les mots les moins sûrs sont surlignés — puis il est inséré dans votre retour. Cet outil est réservé aux enseignants ; les élèves ne téléversent jamais de numérisations. L'image sert uniquement à la reconnaissance et n'est pas conservée. Le moteur de reconnaissance et les données de langue sont téléchargés une seule fois depuis cdn.jsdelivr.net lors de la première numérisation : la première numérisation (et la première après un vidage du cache du navigateur) nécessite donc une connexion Internet ; si le réseau de l'établissement bloque ce site, demandez au service informatique de l'autoriser.",
         "rb_live_monitor_item_sort": "Trier et regrouper les colonnes — réordonnez les colonnes de questions par section, niveau CECR, type de question, grammaire/référentiel lié ou score cumulé de la classe, en combinant plusieurs règles.",
         "rb_live_monitor_item_placement": "Vue de placement adaptatif — les tests staircase et générateur donnent des questions différentes à chaque élève ; la grille s’aligne donc sur le niveau CECR : une barre de précision par niveau et par élève, avec leur niveau estimé dans une colonne dédiée avant les colonnes de niveau.",
+        "rb_live_monitor_item_progress": "Boutons de progression (tests) — « Progression élève » ajoute pour chaque élève une barre répondu/total, indépendante de la note ; « Progression classe » ajoute au-dessus de la grille une ligne indiquant quelle part de la classe a répondu à chaque question (ou, pour les tests de placement adaptatifs, atteint chaque niveau CECR) et combien d’élèves ont terminé. Les deux sont désactivés par défaut et mémorisés dans vos paramètres.",
         "rb_tests_exam_export_label": "Exportation du cahier d'examen :",
         "rb_tests_exam_export_body": "Depuis la liste des tests ou la page d'exportation, exportez un examen prêt à imprimer dans le style d'un examen CITO néerlandais : un cahier de questions, une feuille de réponses séparée, une annexe facultative pour les textes de lecture, et un barème de correction avec les bonnes réponses — en PDF ou Word, avec la police de votre choix. Choisissez les élèves qui reçoivent une feuille de réponses personnalisée en cliquant sur une pastille de classe (toute la classe) ou en cochant les élèves un par un. Les images des questions et des options, les sauts de ligne et la mise en forme sont repris dans le cahier ; les repères de numérisation ne figurent que sur la feuille de réponses PDF, sur chacune de ses pages. Les questions d’écoute reçoivent une mention « écoutez l’enregistrement » et les points en marge suivent la langue de l’interface.",
         "gr_exam_scan_title": "Scanner la feuille de réponses d'un examen papier",
