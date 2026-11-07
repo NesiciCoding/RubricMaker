@@ -1313,7 +1313,18 @@
                     "type": "Vraagtype",
                     "grammar": "Grammatica / standaard",
                     "score": "Cumulatieve score"
-                }
+                },
+                "progress": "Voortgang",
+                "progress_value": "{{answered}}/{{total}}",
+                "progress_aria": "{{answered}} van {{total}} vragen beantwoord",
+                "progress_adaptive_aria": "{{answered}} van maximaal {{total}} vragen beantwoord",
+                "progress_finished_aria_one": "Klaar na {{count}} vraag",
+                "progress_finished_aria_other": "Klaar na {{count}} vragen",
+                "class_progress": "Beantwoord door klas",
+                "class_progress_aria": "{{answered}} van {{total}} leerlingen hebben deze vraag beantwoord",
+                "class_reached": "Bereikt door klas",
+                "class_reached_aria": "{{reached}} van {{total}} leerlingen hebben {{level}} bereikt",
+                "class_finished_aria": "{{finished}} van {{total}} leerlingen zijn klaar"
             },
             "draft": {
                 "word_count": "{{count}} woorden",
@@ -1321,7 +1332,9 @@
                 "toggle_preview": "Conceptvoorbeeld tonen/verbergen",
                 "empty": "Nog geen concepttekst."
             },
-            "advisory_note": "Aanwezigheid, concepten en proctoringsignalen zijn indicatieve signalen vanuit de browser van de leerling — een vastberaden leerling kan deze omzeilen. Gebruik ze om patronen te herkennen, niet als definitief bewijs."
+            "advisory_note": "Aanwezigheid, concepten en proctoringsignalen zijn indicatieve signalen vanuit de browser van de leerling — een vastberaden leerling kan deze omzeilen. Gebruik ze om patronen te herkennen, niet als definitief bewijs.",
+            "progress_toggle": "Voortgang leerling",
+            "class_progress_toggle": "Voortgang klas"
         },
         "sections_title": "Secties",
         "sections_none_hint": "Nog geen secties. Secties helpen je vragen te groeperen in gelabelde onderdelen (bijv. Lezen, Luisteren).",
@@ -4532,6 +4545,7 @@
         "gr_scan_body": "Kies in het feedbackpaneel van een criterium \"Handschrift scannen\" om een papieren antwoord met je camera te fotograferen of een foto of gescande pdf te importeren. De tekst wordt op je apparaat herkend (er wordt niets geüpload); je controleert en corrigeert hem — de minst betrouwbare woorden zijn gemarkeerd — en hij wordt in je feedback ingevoegd. Dit is een tool alleen voor docenten; leerlingen uploaden nooit scans. De afbeelding wordt alleen voor herkenning gebruikt en wordt niet bewaard. De herkenningsengine en taalgegevens worden bij de eerste scan eenmalig gedownload van cdn.jsdelivr.net, dus voor de eerste scan (en de eerste scan nadat de browsercache is gewist) heb je internet nodig; blokkeert het schoolnetwerk die site, vraag dan de ICT-afdeling om hem toe te staan.",
         "rb_live_monitor_item_sort": "Kolommen sorteren en groeperen — orden de vraagkolommen op sectie, ERK-niveau, vraagtype, gekoppelde grammatica/standaard of cumulatieve klasscore, met meerdere regels tegelijk.",
         "rb_live_monitor_item_placement": "Adaptieve plaatsingsweergave — staircase- en generatortoetsen geven elke leerling andere vragen, dus het raster lijnt uit op ERK-niveau: een nauwkeurigheidsbalk per niveau per leerling, met hun geschatte niveau in een aparte kolom vóór de niveaukolommen.",
+        "rb_live_monitor_item_progress": "Voortgangsknoppen (toetsen) — \"Voortgang leerling\" voegt per leerling een balk beantwoord/totaal toe, los van de score; \"Voortgang klas\" voegt boven het raster een rij toe die laat zien welk deel van de klas elke vraag heeft beantwoord (of, bij adaptieve plaatsingstoetsen, elk ERK-niveau heeft bereikt) en hoeveel leerlingen klaar zijn. Beide staan standaard uit en worden in je instellingen onthouden.",
         "rb_tests_exam_export_label": "Examenboekje exporteren:",
         "rb_tests_exam_export_body": "Exporteer vanuit de toetsenlijst of de exportpagina een printklaar examen in CITO-stijl: een vragenboekje, een apart antwoordblad, een optionele bijlage met leesteksten en een correctievoorschrift met de juiste antwoorden en scoreregels — als PDF of Word, met je gekozen lettertype. Kies voor welke leerlingen een persoonlijk antwoordblad wordt gemaakt door op een klasknop te klikken (hele klas) of leerlingen afzonderlijk aan te vinken. Afbeeldingen bij vragen en antwoordopties, regeleinden en opmaak worden overgenomen in het boekje; scanmarkeringen komen alleen op het pdf-antwoordblad, op elke pagina ervan. Luistervragen krijgen de opmerking \"luister naar de opname\" en de puntlabels in de marge volgen de interfacetaal.",
         "gr_exam_scan_title": "Een antwoordblad van een papieren toets scannen",

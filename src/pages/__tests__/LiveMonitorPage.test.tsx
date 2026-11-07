@@ -223,6 +223,53 @@ describe('LiveMonitorPage', () => {
             expect(screen.getAllByText('Alice').length).toBeGreaterThan(0);
         });
 
+        it('persists the student and class progress toggles to settings', async () => {
+            renderPage(['/tests/test-1/monitor']);
+            await settleTeacherKeys();
+
+            const studentToggle = screen.getByRole('button', { name: 'tests.monitor.progress_toggle' });
+            const classToggle = screen.getByRole('button', { name: 'tests.monitor.class_progress_toggle' });
+            expect(studentToggle).toHaveAttribute('aria-pressed', 'false');
+            expect(classToggle).toHaveAttribute('aria-pressed', 'false');
+
+            fireEvent.click(studentToggle);
+            expect(mockUseApp.updateSettings).toHaveBeenCalledWith({ monitorShowStudentProgress: true });
+            fireEvent.click(classToggle);
+            expect(mockUseApp.updateSettings).toHaveBeenCalledWith({ monitorShowClassProgress: true });
+        });
+
+        it('renders the progress column and class row when the settings are on', async () => {
+            mockUseApp = {
+                ...mockUseApp,
+                settings: { ...mockUseApp.settings, monitorShowStudentProgress: true, monitorShowClassProgress: true },
+                tests: [
+                    {
+                        ...mockTest,
+                        questions: [{ id: 'q1', prompt: 'p', type: 'open', points: 1 }],
+                    },
+                ],
+            };
+            renderPage(['/tests/test-1/monitor']);
+            await settleTeacherKeys();
+
+            expect(screen.getByRole('button', { name: 'tests.monitor.progress_toggle' })).toHaveAttribute(
+                'aria-pressed',
+                'true'
+            );
+            expect(screen.getByText('tests.monitor.grid.progress')).toBeInTheDocument();
+            expect(screen.getByText('tests.monitor.grid.class_progress')).toBeInTheDocument();
+        });
+
+        it('hides the progress toggles on the essay monitor', async () => {
+            mockUseApp.fetchEssayAssignmentByKey = vi
+                .fn()
+                .mockResolvedValue({ rubricId: 'r1', studentId: 'student-1', title: 'Essay' });
+            renderPage(['/essays/assign-1/monitor']);
+            await act(async () => {});
+
+            expect(screen.queryByText('tests.monitor.progress_toggle')).not.toBeInTheDocument();
+        });
+
         it('reflects presence based on heartbeat age using fake timers', async () => {
             vi.useFakeTimers();
 

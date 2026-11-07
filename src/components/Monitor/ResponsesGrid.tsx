@@ -8,6 +8,7 @@ import { parseErrorPassage } from '../../../supabase/functions/_shared/testScori
 import { parseAudioResponse } from '../../utils/audioResponseCode';
 import { buildColumnMeta, orderColumns, type ColumnSortRule } from '../../utils/responseGridOrder';
 import Modal from '../ui/Modal';
+import CompletionBar from './CompletionBar';
 import type { Test, TestAnswer, TestQuestion } from '../../types';
 
 export interface ResponsesGridStudentRow {
@@ -28,6 +29,10 @@ export interface ResponsesGridProps {
     rows: ResponsesGridStudentRow[];
     /** Column ordering from the sort/filter modal. Defaults to the test's authored order. */
     sortRules?: ColumnSortRule[];
+    /** Adds a per-student "answered / presented" column, independent of correctness. */
+    showProgress?: boolean;
+    /** Adds a row above the students showing what share of the class has answered each question. */
+    showClassProgress?: boolean;
 }
 
 type CellState = 'correct' | 'incorrect' | 'ungraded' | 'empty';
@@ -219,7 +224,13 @@ const stickyLeft: React.CSSProperties = {
     zIndex: 1,
 };
 
-export default function ResponsesGrid({ test, rows, sortRules }: ResponsesGridProps) {
+export default function ResponsesGrid({
+    test,
+    rows,
+    sortRules,
+    showProgress = false,
+    showClassProgress = false,
+}: ResponsesGridProps) {
     const { t } = useTranslation();
     const [galleryQuestion, setGalleryQuestion] = useState<TestQuestion | null>(null);
     const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
@@ -272,6 +283,50 @@ export default function ResponsesGrid({ test, rows, sortRules }: ResponsesGridPr
         }
         return pct(earned, max);
     };
+
+    const studentProgress = (row: ResponsesGridStudentRow): { answered: number; total: number } => {
+        let answered = 0;
+        let total = 0;
+        for (const q of test.questions) {
+            if (!isPresented(row, q)) continue;
+            total++;
+            if (
+                cellState(
+                    q,
+                    row.answers.find((a) => a.questionId === q.id)
+                ) !== 'empty'
+            )
+                answered++;
+        }
+        return { answered, total };
+    };
+
+    const classProgress = useMemo(() => {
+        if (!showClassProgress) return null;
+        const perQuestion = new Map<string, { answered: number; presented: number }>();
+        for (const q of test.questions) {
+            let answered = 0;
+            let presented = 0;
+            for (const row of rows) {
+                if (!isPresented(row, q)) continue;
+                presented++;
+                if (
+                    cellState(
+                        q,
+                        row.answers.find((a) => a.questionId === q.id)
+                    ) !== 'empty'
+                )
+                    answered++;
+            }
+            perQuestion.set(q.id, { answered, presented });
+        }
+        const finished = rows.filter((row) => {
+            const p = studentProgress(row);
+            return p.total > 0 && p.answered === p.total;
+        }).length;
+        return { perQuestion, finished };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [showClassProgress, test.questions, rows]);
 
     // Group rows by class identity (not the display name — duplicate names must stay separate);
     // a single implicit group (no classId set) renders without a header band.
@@ -382,6 +437,11 @@ export default function ResponsesGrid({ test, rows, sortRules }: ResponsesGridPr
                             <th style={{ ...th, textAlign: 'center', color: 'var(--text-muted)' }}>
                                 {t('tests.monitor.grid.totals')}
                             </th>
+                            {showProgress && (
+                                <th style={{ ...th, textAlign: 'center', color: 'var(--text-muted)' }}>
+                                    {t('tests.monitor.grid.progress')}
+                                </th>
+                            )}
                             {orderedColumns.map((col) => {
                                 const q = questionsById.get(col.id)!;
                                 const shortLabel = t('tests.monitor.grid.question_short', {
@@ -412,8 +472,50 @@ export default function ResponsesGrid({ test, rows, sortRules }: ResponsesGridPr
                                 {t('tests.monitor.grid.average')}
                             </td>
                             {renderAvgCell(overallAvg, 'avg-total')}
+                            {showProgress && <td />}
                             {orderedColumns.map((col) => renderAvgCell(avgByQuestion.get(col.id), `avg-${col.id}`))}
                         </tr>
+                        {classProgress && (
+                            <tr style={{ background: 'var(--bg-elevated)' }} data-testid="class-progress-row">
+                                <td style={{ ...stickyLeft, padding: '4px 8px', fontWeight: 700 }}>
+                                    {t('tests.monitor.grid.class_progress')}
+                                </td>
+                                <td style={{ padding: '4px 8px' }}>
+                                    <CompletionBar
+                                        value={classProgress.finished}
+                                        max={rows.length}
+                                        text={t('tests.monitor.grid.progress_value', {
+                                            answered: classProgress.finished,
+                                            total: rows.length,
+                                        })}
+                                        label={t('tests.monitor.grid.class_finished_aria', {
+                                            finished: classProgress.finished,
+                                            total: rows.length,
+                                        })}
+                                    />
+                                </td>
+                                {showProgress && <td />}
+                                {orderedColumns.map((col) => {
+                                    const cp = classProgress.perQuestion.get(col.id) ?? { answered: 0, presented: 0 };
+                                    const percent =
+                                        cp.presented > 0 ? Math.round((cp.answered / cp.presented) * 100) : 0;
+                                    return (
+                                        <td key={`cp-${col.id}`} style={{ padding: '4px 8px' }}>
+                                            <CompletionBar
+                                                value={cp.answered}
+                                                max={cp.presented}
+                                                minWidth={46}
+                                                text={cp.presented > 0 ? `${percent}%` : '—'}
+                                                label={t('tests.monitor.grid.class_progress_aria', {
+                                                    answered: cp.answered,
+                                                    total: cp.presented,
+                                                })}
+                                            />
+                                        </td>
+                                    );
+                                })}
+                            </tr>
+                        )}
                     </thead>
                     <tbody>
                         {groups.map((group) => {
@@ -457,6 +559,7 @@ export default function ResponsesGrid({ test, rows, sortRules }: ResponsesGridPr
                                                 </button>
                                             </td>
                                             {renderAvgCell(ga!.total, `g-total-${group.key}`)}
+                                            {showProgress && <td />}
                                             {orderedColumns.map((col) =>
                                                 renderAvgCell(ga!.perQuestion.get(col.id), `g-${group.key}-${col.id}`)
                                             )}
@@ -480,6 +583,20 @@ export default function ResponsesGrid({ test, rows, sortRules }: ResponsesGridPr
                                                 >
                                                     {formatPct(studentTotal(row))}
                                                 </td>
+                                                {showProgress &&
+                                                    (() => {
+                                                        const p = studentProgress(row);
+                                                        return (
+                                                            <td style={{ padding: '4px 8px' }}>
+                                                                <CompletionBar
+                                                                    value={p.answered}
+                                                                    max={p.total}
+                                                                    text={t('tests.monitor.grid.progress_value', p)}
+                                                                    label={t('tests.monitor.grid.progress_aria', p)}
+                                                                />
+                                                            </td>
+                                                        );
+                                                    })()}
                                                 {orderedColumns.map((col) =>
                                                     renderCell(row, questionsById.get(col.id)!)
                                                 )}

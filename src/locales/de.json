@@ -1313,7 +1313,18 @@
                     "type": "Fragetyp",
                     "grammar": "Grammatik / Standard",
                     "score": "Kumulative Punktzahl"
-                }
+                },
+                "progress": "Fortschritt",
+                "progress_value": "{{answered}}/{{total}}",
+                "progress_aria": "{{answered}} von {{total}} Fragen beantwortet",
+                "progress_adaptive_aria": "{{answered}} von höchstens {{total}} Fragen beantwortet",
+                "progress_finished_aria_one": "Fertig nach {{count}} Frage",
+                "progress_finished_aria_other": "Fertig nach {{count}} Fragen",
+                "class_progress": "Von der Klasse beantwortet",
+                "class_progress_aria": "{{answered}} von {{total}} Schülern haben diese Frage beantwortet",
+                "class_reached": "Von der Klasse erreicht",
+                "class_reached_aria": "{{reached}} von {{total}} Schülern haben {{level}} erreicht",
+                "class_finished_aria": "{{finished}} von {{total}} Schülern sind fertig"
             },
             "draft": {
                 "word_count": "{{count}} Wörter",
@@ -1321,7 +1332,9 @@
                 "toggle_preview": "Entwurfsvorschau ein-/ausblenden",
                 "empty": "Noch kein Entwurfstext."
             },
-            "advisory_note": "Anwesenheit, Entwürfe und Proctoring-Signale sind unterstützende Hinweise aus dem Browser des Schülers — ein entschlossener Schüler kann sie umgehen. Nutze sie, um Muster zu erkennen, nicht als endgültigen Beweis."
+            "advisory_note": "Anwesenheit, Entwürfe und Proctoring-Signale sind unterstützende Hinweise aus dem Browser des Schülers — ein entschlossener Schüler kann sie umgehen. Nutze sie, um Muster zu erkennen, nicht als endgültigen Beweis.",
+            "progress_toggle": "Fortschritt Schüler",
+            "class_progress_toggle": "Fortschritt Klasse"
         },
         "sections_title": "Abschnitte",
         "sections_none_hint": "Noch keine Abschnitte. Abschnitte helfen dir, Fragen in beschriftete Teile zu gruppieren (z. B. Lesen, Hören).",
@@ -4532,6 +4545,7 @@
         "gr_scan_body": "Wähle im Feedback-Bereich eines Kriteriums „Handschrift scannen“, um eine Papierantwort mit der Gerätekamera zu fotografieren oder ein Foto bzw. ein gescanntes PDF zu importieren. Der Text wird auf deinem Gerät erkannt (nichts wird hochgeladen); du prüfst und korrigierst ihn — die unsichersten Wörter sind markiert — und er wird in dein Feedback eingefügt. Dies ist ein Werkzeug nur für Lehrkräfte; Schülerinnen und Schüler laden nie Scans hoch. Das Bild wird nur zur Erkennung verwendet und nicht gespeichert. Die Erkennungs-Engine und die Sprachdaten werden beim ersten Scan einmalig von cdn.jsdelivr.net heruntergeladen, daher braucht der erste Scan (und der erste Scan nach dem Leeren des Browser-Caches) eine Internetverbindung; blockiert das Schulnetz diese Seite, bitte die IT, sie freizugeben.",
         "rb_live_monitor_item_sort": "Spalten sortieren und gruppieren — ordnen Sie die Fragespalten nach Abschnitt, GER-Niveau, Fragetyp, verknüpfter Grammatik/Standard oder kumulativer Klassenpunktzahl, auch mehrere Regeln kombiniert.",
         "rb_live_monitor_item_placement": "Adaptive Einstufungsansicht — Staircase- und Generator-Tests geben jedem Schüler andere Fragen; das Raster richtet sich daher am GER-Niveau aus: ein Genauigkeitsbalken je Niveau und Schüler, mit dem geschätzten Niveau in einer eigenen Spalte vor den Niveau-Spalten.",
+        "rb_live_monitor_item_progress": "Fortschrittsschalter (Tests) — „Fortschritt Schüler“ fügt pro Schüler einen Balken beantwortet/gesamt hinzu, unabhängig von der Punktzahl; „Fortschritt Klasse“ fügt über dem Raster eine Zeile hinzu, die zeigt, welcher Anteil der Klasse jede Frage beantwortet (bzw. bei adaptiven Einstufungstests jedes GER-Niveau erreicht) hat und wie viele Schüler fertig sind. Beide sind standardmäßig aus und werden in deinen Einstellungen gespeichert.",
         "rb_tests_exam_export_label": "Prüfungsheft exportieren:",
         "rb_tests_exam_export_body": "Exportieren Sie über die Testliste oder die Exportseite eine druckfertige Prüfung im Stil einer niederländischen CITO-Prüfung: ein Fragenheft, ein separates Antwortblatt, eine optionale Anlage für Lesetexte und ein Korrekturschema mit den richtigen Antworten — als PDF oder Word, mit der von Ihnen gewählten Schriftart. Wählen Sie die Schüler für personalisierte Antwortblätter, indem Sie auf einen Klassen-Chip klicken (ganze Klasse) oder einzelne Schüler ankreuzen. Bilder bei Fragen und Antwortoptionen, Zeilenumbrüche und Formatierung werden ins Heft übernommen; Scan-Markierungen erscheinen nur auf dem PDF-Antwortblatt, dort auf jeder Seite. Hörfragen erhalten den Hinweis „Hören Sie sich die Aufnahme an“, und die Punktangaben am Rand folgen der Oberflächensprache.",
         "gr_exam_scan_title": "Den Antwortbogen einer Papierprüfung scannen",
