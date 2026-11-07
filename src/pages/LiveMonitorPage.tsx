@@ -799,8 +799,13 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                         levelPath: row.levelPath,
                                         estimatedLevel: row.placementLevel,
                                         finished,
+                                        // A live 'submitted' broadcast can land before the persisted trace does.
                                         questionsAnswered: finished
-                                            ? row.levelPath.length
+                                            ? Math.max(
+                                                  row.levelPath.length,
+                                                  row.live.snapshot?.questionsAsked ?? 0,
+                                                  row.mergedAnswers.length
+                                              )
                                             : (row.live.snapshot?.questionsAsked ??
                                               Math.max(row.levelPath.length, row.mergedAnswers.length)),
                                     };

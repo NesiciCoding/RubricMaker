@@ -600,6 +600,28 @@ describe('LiveMonitorPage', () => {
             });
         });
 
+        it('counts a live-submitted adaptive run before its persisted trace arrives', async () => {
+            vi.useFakeTimers();
+            mockUseApp = {
+                ...mockUseApp,
+                settings: { ...mockUseApp.settings, monitorShowStudentProgress: true },
+                tests: [{ ...mockTest, mode: 'placement', placementEngine: 'generator' }],
+                studentTests: [],
+                fetchTestAssignmentTeacherKeys: vi.fn().mockResolvedValue({ 'student-1': 'key-1' }),
+            };
+            renderPage(['/tests/test-1/monitor']);
+            await settleTeacherKeys();
+            const ch = channels[0];
+            act(() => {
+                ch.handlers.snapshot({ payload: { questionsAsked: 5 } });
+                ch.handlers.submitted({ payload: {} });
+                vi.advanceTimersByTime(300);
+            });
+            expect(
+                screen.getByRole('progressbar', { name: 'tests.monitor.grid.progress_finished_aria (5)' })
+            ).toHaveAttribute('aria-valuenow', '5');
+        });
+
         it('sends a placement override nudge from the level panel', async () => {
             mockUseApp = {
                 ...mockUseApp,

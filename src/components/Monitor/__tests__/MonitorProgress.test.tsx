@@ -60,6 +60,29 @@ describe('ResponsesGrid progress', () => {
         expect(bob).toHaveAttribute('aria-valuemax', '2');
     });
 
+    it('does not count a graded but untouched structured answer as answered', () => {
+        const clozeTest: Test = {
+            ...test,
+            questions: [{ id: 'c1', prompt: 'I [[am]] here', type: 'cloze', points: 1 }],
+        };
+        render(
+            <ResponsesGrid
+                test={clozeTest}
+                rows={[
+                    {
+                        studentId: 's1',
+                        displayName: 'Alice',
+                        answers: [{ questionId: 'c1', response: '{}', pointsEarned: 0 }],
+                    },
+                ]}
+                showProgress
+            />
+        );
+        expect(
+            screen.getByRole('progressbar', { name: 'tests.monitor.grid.progress_aria answered=0 total=1' })
+        ).toBeInTheDocument();
+    });
+
     it('shows the share of presented students who answered each question, and how many finished', () => {
         render(<ResponsesGrid test={test} rows={rows} showClassProgress />);
         const row = screen.getByTestId('class-progress-row');

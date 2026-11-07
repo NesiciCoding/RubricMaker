@@ -124,6 +124,11 @@ function cellState(question: TestQuestion, answer: TestAnswer | undefined): Cell
     return 'ungraded';
 }
 
+/** Grading sets pointsEarned even on an untouched structured answer ("{}", "[]"), so judge emptiness without it. */
+function isAnswered(question: TestQuestion, answer: TestAnswer | undefined): boolean {
+    return !!answer && cellState(question, { ...answer, pointsEarned: undefined }) !== 'empty';
+}
+
 const CELL_COLORS: Record<CellState, string> = {
     correct: 'var(--green)',
     incorrect: 'var(--red)',
@@ -291,10 +296,10 @@ export default function ResponsesGrid({
             if (!isPresented(row, q)) continue;
             total++;
             if (
-                cellState(
+                isAnswered(
                     q,
                     row.answers.find((a) => a.questionId === q.id)
-                ) !== 'empty'
+                )
             )
                 answered++;
         }
@@ -311,10 +316,10 @@ export default function ResponsesGrid({
                 if (!isPresented(row, q)) continue;
                 presented++;
                 if (
-                    cellState(
+                    isAnswered(
                         q,
                         row.answers.find((a) => a.questionId === q.id)
-                    ) !== 'empty'
+                    )
                 )
                     answered++;
             }
