@@ -14,6 +14,8 @@ interface Sentence {
     text: string;
     /** Ends in . ? ! or … (optionally followed by closing quotes/brackets). */
     terminated: boolean;
+    /** Follows a quoted ? or ! or an ellipsis, where a lowercase start is a speech tag or continuation. */
+    continues: boolean;
 }
 
 interface Paragraph {
@@ -37,21 +39,25 @@ function paragraphs(text: string): Paragraph[] {
         .map((p) => ({ text: p, sentences: splitSentences(p) }));
 }
 
+const SPEECH_OR_ELLIPSIS_END = new RegExp(`(?:[?!][${CLOSERS}]|…|\\.\\.\\.)[${CLOSERS}]*$`);
+
 function splitSentences(paragraph: string): Sentence[] {
     const out: Sentence[] = [];
     const boundary = new RegExp(`[.?!…]+[${CLOSERS}]*(?=\\s+|$)`, 'g');
     let start = 0;
+    let continues = false;
     let m: RegExpExecArray | null;
     while ((m = boundary.exec(paragraph)) !== null) {
         const end = m.index + m[0].length;
         const candidate = paragraph.slice(start, end);
         if (ABBREVIATION.test(candidate) || SINGLE_INITIAL.test(candidate)) continue;
         const trimmed = candidate.trim();
-        if (trimmed) out.push({ text: trimmed, terminated: true });
+        if (trimmed) out.push({ text: trimmed, terminated: true, continues });
+        continues = SPEECH_OR_ELLIPSIS_END.test(m[0]);
         start = end;
     }
     const rest = paragraph.slice(start).trim();
-    if (rest) out.push({ text: rest, terminated: TERMINATED.test(rest) });
+    if (rest) out.push({ text: rest, terminated: TERMINATED.test(rest), continues });
     return out;
 }
 
@@ -69,7 +75,7 @@ function capitalSentenceStart(text: string): MechanicsCount {
             // Lists, numbers, and brand-style words (iPhone, eBay) or links don't start with a letter to judge.
             if (!/^\p{L}/u.test(first) || /^\p{Ll}+\p{Lu}/u.test(first) || /[@/]|www\./i.test(first)) continue;
             if (/^\p{Lu}/u.test(first)) uses++;
-            else mistakes++;
+            else if (!s.continues) mistakes++;
         }
     }
     return { uses, mistakes };
@@ -186,8 +192,9 @@ function endPunctuation(text: string): MechanicsCount {
 
 const AUX = 'am|is|are|was|were|do|does|did|have|has|had|can|could|will|would|should|shall|may|might|must';
 const QUESTION_START = new RegExp(
-    // "Do it now." is an imperative, not a question.
-    `^(?!do\\s+(?:it|this|that)\\b)(?:(?:what|where|when|why|who|whom|whose|which|how)\\s+(?:${AUX})(?:n['’]t)?\\b|(?:${AUX})(?:n['’]t)?\\s+(?:i|you|he|she|it|we|they|there|this|that)\\b)`,
+    // Not questions: "Do it now." (imperative), "What is more, …" / "What is important is …" (pseudo-cleft),
+    // "Had he known, …" / "Were I rich, …" / "Should you need help, …" (conditional inversion).
+    `^(?!do\\s+(?:it|this|that)\\b)(?!what\\s+is\\s+(?:more|worse|better)\\b)(?!(?:what|which)\\s+(?:is|was)\\s+\\w+\\s+(?:is|was)\\b)(?!(?:had|were|should)\\s+(?:i|you|he|she|it|we|they|there)\\b[^?]*,)(?:(?:what|where|when|why|who|whom|whose|which|how)\\s+(?:${AUX})(?:n['’]t)?\\b|(?:${AUX})(?:n['’]t)?\\s+(?:i|you|he|she|it|we|they|there|this|that)\\b)`,
     'i'
 );
 const QUESTION_END = new RegExp(`\\?[${CLOSERS}]*$`);
@@ -226,7 +233,7 @@ function apostropheContractions(text: string): MechanicsCount {
 }
 
 const OPENING_LINKER =
-    /^(?:however|therefore|moreover|furthermore|firstly|secondly|thirdly|finally|lastly|first of all|in addition(?! to\b)|for example|for instance|in conclusion|to conclude|to sum up|on the other hand|nevertheless|consequently|as a result(?! of\b)|in my opinion|meanwhile|in fact|of course)\b(.?)/i;
+    /^(?:however(?! (?:much|many|hard|long|little|often|well|far|good|bad|big|small|you)\b)|therefore|moreover|furthermore|firstly|secondly|thirdly|finally|lastly|first of all|in addition(?! to\b)|for example|for instance|in conclusion|to conclude|to sum up|on the other hand|nevertheless|consequently|as a result(?! of\b)|in my opinion|meanwhile|in fact)\b(.?)/i;
 
 function commaAfterLinker(text: string): MechanicsCount {
     let uses = 0;

@@ -36,6 +36,16 @@ describe('mechanicsChecker', () => {
         it('looks past opening quotes', () => {
             expect(run('MECH.CAP.START', '"hello," she said.')).toEqual({ uses: 0, mistakes: 1 });
         });
+
+        it('does not flag a speech tag after a quoted question or a continuation after an ellipsis', () => {
+            expect(run('MECH.CAP.START', '"Where are you?" she asked.')).toEqual({ uses: 1, mistakes: 0 });
+            expect(run('MECH.CAP.START', 'I thought... maybe not. Then I left… and it rained.')).toEqual({
+                uses: 2,
+                mistakes: 0,
+            });
+            // Without a closing quote, "?" still ends the sentence.
+            expect(run('MECH.CAP.START', 'Where are you? i am here.')).toEqual({ uses: 1, mistakes: 1 });
+        });
     });
 
     describe('capital I', () => {
@@ -78,6 +88,12 @@ describe('mechanicsChecker', () => {
         it("recognises negative inversions such as Don't you", () => {
             expect(run('MECH.QMARK', "Don't you like it. Isn't it great?")).toEqual({ uses: 1, mistakes: 1 });
         });
+
+        it('does not treat pseudo-clefts or conditional inversion as questions', () => {
+            const text =
+                'What is more, we left early. What is important is that we try. Had he known, he would have come. Were I rich, I would travel. Should you need help, call us.';
+            expect(run('MECH.QMARK', text)).toEqual({ uses: 0, mistakes: 0 });
+        });
     });
 
     describe('spacing around punctuation', () => {
@@ -105,6 +121,12 @@ describe('mechanicsChecker', () => {
             const text =
                 'However, it rained. For example we stayed in. In addition to that, we read. As a result of this we slept. Finally!';
             expect(run('MECH.COMMA.LINKER', text)).toEqual({ uses: 1, mistakes: 1 });
+        });
+
+        it('ignores however as a degree or manner word, and of course', () => {
+            const text =
+                'However hard I try, I fail. However you look at it, it is wrong. Of course I will. However I disagree.';
+            expect(run('MECH.COMMA.LINKER', text)).toEqual({ uses: 0, mistakes: 1 });
         });
     });
 
