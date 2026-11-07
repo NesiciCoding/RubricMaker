@@ -40,6 +40,7 @@ import {
     renderClozeSegments,
 } from '../../utils/clozeParse';
 import LineListTextarea from './LineListTextarea';
+import PipeListInput from './PipeListInput';
 import { gapStems, suggestDerivedForms } from '../../utils/wordFormation';
 import ErrorCorrectionFields from './ErrorCorrectionFields';
 import SentenceBuilderFields from './SentenceBuilderFields';
@@ -1351,15 +1352,10 @@ export default function QuestionEditor({
                             ({t('essay_assignment.optional')})
                         </span>
                     </label>
-                    <input
+                    <PipeListInput
                         id={`question-expected-${question.id}`}
-                        type="text"
-                        value={question.expectedAnswers?.join(' | ') ?? question.expectedAnswer ?? ''}
-                        onChange={(e) => {
-                            const answers = e.target.value
-                                .split('|')
-                                .map((a) => a.trim())
-                                .filter(Boolean);
+                        value={question.expectedAnswers ?? (question.expectedAnswer ? [question.expectedAnswer] : [])}
+                        onChange={(answers) => {
                             update({
                                 expectedAnswers: answers.length ? answers : undefined,
                                 expectedAnswer: undefined,

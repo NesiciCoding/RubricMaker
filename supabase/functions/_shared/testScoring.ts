@@ -267,7 +267,8 @@ function answerTokens(text: string, tol: AnswerTolerance): string[] {
 /** True when a typed response matches an accepted answer under the question's opt-in tolerances. */
 export function answersMatch(expected: string, response: string, tol?: AnswerTolerance): boolean {
     if (!tol || !(tol.punctuation || tol.contractions || tol.spelling || tol.slips)) {
-        return expected.trim().toLowerCase() === response.trim().toLowerCase();
+        const normalize = (text: string) => text.trim().replace(/\s+/g, ' ').toLowerCase();
+        return normalize(expected) === normalize(response);
     }
     const a = answerTokens(expected, tol);
     const b = answerTokens(response, tol);
@@ -284,7 +285,7 @@ function partialOrAll(question: ScorableQuestion, correctCount: number, total: n
 
 /**
  * Exact-match auto-score for a short-answer question: full points when the
- * trimmed, case-insensitive response matches any of expectedAnswers (or the
+ * trimmed, whitespace-collapsed, case-insensitive response matches any of expectedAnswers (or the
  * legacy single expectedAnswer); 0 otherwise. Returns null when the question
  * has no expected answer to match against.
  */
