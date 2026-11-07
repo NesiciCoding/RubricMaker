@@ -22,6 +22,7 @@ import { sanitizeTiered } from './tieredRubric';
 import { encodeUrlSafeBase64, decodeUrlSafeBase64 } from './urlSafeBase64';
 import type { ImportWarning } from './questionBankImport';
 import { draftToParsedRubric, parseSheetHtml, parseSheetPdf, type PdfTextItem } from './import/sheetImport';
+import { loadPdfjs } from './pdfjsWorker';
 
 /** Shape of a rubric JSON export — loosely typed since it's untrusted file input. */
 interface RawRubricJson {
@@ -145,12 +146,7 @@ export function extractTableFromHtml(table: Element): RawTable {
 // ─── PDF Parsing ───────────────────────────────────────────────────────────────
 
 export async function parsePdfToRubric(file: File): Promise<ParsedRubric> {
-    // Dynamically import pdfjs-dist
-    const pdfjsLib = await import('pdfjs-dist');
-
-    // Use the worker bundled with the app — Vite resolves this to the hashed
-    // asset path at build time, avoiding any external CDN dependency.
-    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).href;
+    const pdfjsLib = await loadPdfjs();
 
     const arrayBuffer = await file.arrayBuffer();
     const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;

@@ -5,6 +5,8 @@
  * handed to scanStore by the caller — nothing here touches storage or state.
  */
 
+import { loadPdfjs } from './pdfjsWorker';
+
 export interface ScanImage {
     blob: Blob;
     mimeType: string;
@@ -60,8 +62,7 @@ export async function rasterizePdf(file: File, opts: RasterizePdfOptions = {}): 
     if (!Number.isFinite(scale) || scale <= 0) {
         throw new Error(`Invalid rasterization scale: ${scale}`);
     }
-    const pdfjsLib = await import('pdfjs-dist');
-    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).href;
+    const pdfjsLib = await loadPdfjs();
 
     const arrayBuffer = await file.arrayBuffer();
     const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });

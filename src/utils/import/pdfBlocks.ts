@@ -16,6 +16,7 @@ import {
     type DocumentModel,
     type DocumentParagraph,
 } from './documentModel';
+import { loadPdfjs } from '../pdfjsWorker';
 
 /** One positioned text run as the extractor sees it, measured from the page's top-left corner. */
 export interface PdfTextItem {
@@ -126,10 +127,7 @@ export function pdfPagesToBlocks(pages: PdfTextItem[][], pageCount = pages.lengt
 
 /** Reads every page's text layer through pdf.js; a scan without one comes back empty plus a note. */
 export async function pdfToBlocks(data: ArrayBuffer | Uint8Array): Promise<DocumentModel> {
-    const pdfjsLib = await import('pdfjs-dist');
-    // Use the worker bundled with the app to avoid an external CDN dependency. Vite resolves this to
-    // the hashed asset path at build time.
-    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).href;
+    const pdfjsLib = await loadPdfjs();
 
     let loadingTask: ReturnType<typeof pdfjsLib.getDocument>;
     try {

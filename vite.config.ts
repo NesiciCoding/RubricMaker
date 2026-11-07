@@ -56,7 +56,9 @@ export default defineConfig({
                 // of which language (if any) the visitor picks. The runtimeCaching CacheFirst route
                 // below caches whichever ones actually get requested, so offline use of a language
                 // still works once it's been opened at least once.
-                globIgnores: ['**/stats.html', '**/assets/{nl,fr,de,es}-*.js'],
+                // The pdf.js worker (~1.2MB) is only needed by PDF import, so it is cached on first
+                // use instead of being precached onto every device.
+                globIgnores: ['**/stats.html', '**/assets/{nl,fr,de,es}-*.js', '**/assets/pdf.worker*.js'],
                 // vite-plugin-pwa otherwise defaults to a cache-only NavigationRoute for index.html,
                 // which would shadow the network-first navigation route below.
                 navigateFallback: null,
@@ -116,6 +118,14 @@ export default defineConfig({
                         },
                     },
                     {
+                        urlPattern: /\/assets\/pdf\.worker[^/]*\.js$/,
+                        handler: 'CacheFirst',
+                        options: {
+                            cacheName: 'rm-pdf-worker',
+                            expiration: { maxEntries: 2, maxAgeSeconds: 60 * 60 * 24 * 365 },
+                        },
+                    },
+                    {
                         // Self-hosted fonts (#701): already served from our own origin, cached on
                         // first use so an offline session keeps the right face — and like the locale
                         // chunks, kept out of the precache so a visitor who never opens an export
@@ -135,6 +145,19 @@ export default defineConfig({
         }),
     ],
     base: './',
+    build: {
+        rollupOptions: {
+            output: {
+                // Emit `.mjs` assets (the pdf.js worker) as `.js`: plenty of servers have no `.mjs`
+                // entry in their MIME table and answer `application/octet-stream`, which browsers
+                // reject for module scripts — PDF import then dies with "Setting up fake worker".
+                assetFileNames: (asset) =>
+                    (asset.names?.[0] ?? '').endsWith('.mjs')
+                        ? 'assets/[name]-[hash].js'
+                        : 'assets/[name]-[hash][extname]',
+            },
+        },
+    },
     // Advertise which checkout this dev server is serving. The e2e suite compares this stamp with
     // its own root, so a server left running from another worktree can't silently pass the run
     // against the wrong code (#1015). Vite resolves its root from cwd, so cwd is the served tree.
