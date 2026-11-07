@@ -5474,7 +5474,7 @@
             "warn_document_unreadable": "Dit bestand kon niet als Word-document of PDF worden geopend.",
             "warn_no_items": "Er zijn geen vragen herkend in dit document. Is dit alleen de antwoordsleutel? Importeer dan de toets zelf.",
             "warn_no_sections": "Sommige vragen staan buiten een opdracht — ze zijn zonder sectie geïmporteerd.",
-            "warn_points_unknown": "{{section}}: de punten zijn onbekend, elke vraag staat op 1.",
+            "warn_points_unknown": "{{section}}: alleen vragen die nog geen punten hebben, kregen 1 punt.",
             "warn_points_from_section_total": "{{section}}: het opgegeven totaal is over de vragen verdeeld.",
             "warn_section_points_mismatch": "{{section}}: de titel noemt {{stated}} punten, maar de vragen tellen op tot {{counted}}.",
             "warn_key_points_mismatch": "{{item}}: de toets drukt {{printed}} punten af en de sleutel zegt {{key}}.",
@@ -5491,6 +5491,7 @@
             "review_section_row": "{{questions}} vragen · {{points}} punten",
             "review_types": "Vraagtypes",
             "review_notes": "Beoordelingsnotities uit de sleutel",
+            "review_notes_hint": "Deze notities zijn alleen ter controle en worden niet opgeslagen — kopieer ze vóór het importeren.",
             "read_note_pdf_no_text_layer": "Deze PDF heeft geen tekstlaag, er konden geen woorden uit worden gelezen."
     }
 }

@@ -5474,7 +5474,7 @@
             "warn_document_unreadable": "No se pudo abrir este archivo como documento de Word o PDF.",
             "warn_no_items": "No se reconocieron preguntas en este documento. Si es solo la clave de respuestas, importa el examen.",
             "warn_no_sections": "Algunas preguntas quedan fuera de toda tarea: se importaron sin sección.",
-            "warn_points_unknown": "{{section}}: los puntos son desconocidos, cada pregunta quedó en 1.",
+            "warn_points_unknown": "{{section}}: solo las preguntas que aún no tenían puntos quedaron en 1.",
             "warn_points_from_section_total": "{{section}}: el total indicado se repartió entre sus preguntas.",
             "warn_section_points_mismatch": "{{section}}: el título indica {{stated}} puntos, pero las preguntas suman {{counted}}.",
             "warn_key_points_mismatch": "{{item}}: el examen imprime {{printed}} puntos y la clave dice {{key}}.",
@@ -5491,6 +5491,7 @@
             "review_section_row": "{{questions}} preguntas · {{points}} puntos",
             "review_types": "Tipos de pregunta",
             "review_notes": "Notas de corrección de la clave",
+            "review_notes_hint": "Estas notas son solo de revisión y no se guardarán — cópialas antes de importar.",
             "read_note_pdf_no_text_layer": "Este PDF no tiene capa de texto, así que no se pudo leer ninguna palabra."
     }
 }

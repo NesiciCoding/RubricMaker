@@ -5474,7 +5474,7 @@
             "warn_document_unreadable": "Diese Datei konnte nicht als Word-Dokument oder PDF geöffnet werden.",
             "warn_no_items": "In diesem Dokument wurden keine Fragen erkannt. Ist es nur der Lösungsschlüssel? Importiere dann die Arbeit selbst.",
             "warn_no_sections": "Einige Fragen stehen außerhalb jeder Aufgabe — sie wurden ohne Abschnitt importiert.",
-            "warn_points_unknown": "{{section}}: die Punkte sind unbekannt, jede Frage steht auf 1.",
+            "warn_points_unknown": "{{section}}: nur Fragen, die noch keine Punkte haben, wurden auf 1 gesetzt.",
             "warn_points_from_section_total": "{{section}}: die angegebene Summe wurde auf die Fragen verteilt.",
             "warn_section_points_mismatch": "{{section}}: die Überschrift nennt {{stated}} Punkte, die Fragen ergeben aber {{counted}}.",
             "warn_key_points_mismatch": "{{item}}: die Arbeit druckt {{printed}} Punkte, der Schlüssel sagt {{key}}.",
@@ -5491,6 +5491,7 @@
             "review_section_row": "{{questions}} Fragen · {{points}} Punkte",
             "review_types": "Fragetypen",
             "review_notes": "Bewertungshinweise aus dem Schlüssel",
+            "review_notes_hint": "Diese Hinweise dienen nur zur Kontrolle und werden nicht gespeichert — bitte vor dem Import kopieren.",
             "read_note_pdf_no_text_layer": "Dieses PDF hat keine Textebene, es konnten keine Wörter daraus gelesen werden."
     }
 }

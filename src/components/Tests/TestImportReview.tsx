@@ -76,6 +76,9 @@ export default function TestImportReview({ review }: { review: DocumentReview })
                     <div className="text-xs" style={{ fontWeight: 600 }}>
                         {t('importTest.review_notes')}
                     </div>
+                    <div className="text-xs text-muted" style={{ marginTop: 2 }}>
+                        {t('importTest.review_notes_hint')}
+                    </div>
                     <ul style={{ margin: '2px 0 0', paddingLeft: 18 }} className="text-xs text-muted">
                         {review.notes.map((note) => (
                             <li key={`${note.item}:${note.note}`}>

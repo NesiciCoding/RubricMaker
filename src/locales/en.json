@@ -5474,7 +5474,7 @@
             "warn_document_unreadable": "This file could not be opened as a Word document or PDF.",
             "warn_no_items": "No questions were recognised in this document. If it is only the answer key, import the paper itself.",
             "warn_no_sections": "Some questions sit outside any assignment — they were imported without a section.",
-            "warn_points_unknown": "{{section}}: the points are unknown, so each question was set to 1.",
+            "warn_points_unknown": "{{section}}: only questions still missing points were set to 1.",
             "warn_points_from_section_total": "{{section}}: the stated total was divided over its questions.",
             "warn_section_points_mismatch": "{{section}}: the heading states {{stated}} points, but the questions add up to {{counted}}.",
             "warn_key_points_mismatch": "{{item}}: the paper prints {{printed}} points and the key says {{key}}.",
@@ -5491,6 +5491,7 @@
             "review_section_row": "{{questions}} questions · {{points}} points",
             "review_types": "Question types",
             "review_notes": "Grading notes from the key",
+            "review_notes_hint": "These notes are review-only and will not be saved with the test — copy them before importing.",
             "read_note_pdf_no_text_layer": "This PDF has no text layer, so no words could be read from it."
     }
 }
