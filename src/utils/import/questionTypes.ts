@@ -72,7 +72,7 @@ const GRADING_INSTRUCTION =
 const OPENS_WITH_BLANK = /^\s*(?:_{2,}|\.{4,}|…{2,}|·{3,})/u;
 const TRUE_WORDS = /^(true|waar|juist|correct)$/i;
 const FALSE_WORDS = /^(false|onwaar|onjuist|incorrect|niet waar)$/i;
-const APOSTROPHE = /[\p{L}]'[\p{L}]/u;
+const APOSTROPHE = /[\p{L}]['’‘`][\p{L}]/u;
 const INNER_PUNCTUATION = /[\p{L}][.,;:!?"()][\p{L}\s]|[\p{L}][.,;:!?"]\s*$/u;
 /** Characters ignored when comparing a key answer with a printed option. */
 const IGNORED = /[^\p{L}\p{N}]+/gu;
@@ -222,7 +222,7 @@ export function typeDraftItem(item: DraftItem): TypedItem {
         if (answers.every((answer) => GRADING_INSTRUCTION.test(answer))) {
             return { ...base, type: 'open', keyNote: answers[0], uncertain: 'no_answer' };
         }
-        const boolean = booleanAnswer(answers);
+        const boolean = words(prompt) >= 2 ? booleanAnswer(answers) : undefined;
         if (boolean !== undefined) {
             return { ...base, type: 'true-false', correctBoolean: boolean };
         }
