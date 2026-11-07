@@ -364,20 +364,29 @@ Earlier versions of these workflows deployed as `root`, so a leaked `VPS_SSH_KEY
 ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/rubricmaker_deploy -N ""
 ```
 
-**2. Install `rrsync` on the VPS**, as root, if it isn't already on `$PATH` (it ships inside the `rsync` package on Debian/Ubuntu but isn't installed as a runnable command by default):
+**2. Install `rrsync` on the VPS**, as root, if it isn't already on `$PATH`. Recent Debian/Ubuntu
+`rsync` packages install it straight to `/usr/bin/rrsync`; older ones only ship it as a gzipped
+script under `/usr/share/doc/rsync/scripts/` that needs unpacking:
 
 ```bash
 ssh root@YOUR_VPS_IP '
   set -e
-  if ! command -v rrsync >/dev/null 2>&1; then
+  if command -v rrsync >/dev/null 2>&1; then
+    echo "rrsync already installed at $(command -v rrsync)"
+  else
     gunzip -c /usr/share/doc/rsync/scripts/rrsync.gz > /usr/local/bin/rrsync
     chmod 755 /usr/local/bin/rrsync
+    echo "rrsync installed to /usr/local/bin/rrsync"
   fi
-  rrsync --version >/dev/null && echo "rrsync ready"
 '
 ```
 
-If that path does not exist on your distro, find the script with `dpkg -L rsync | grep rrsync`, or take it from the [upstream rsync repository](https://github.com/WayneD/rsync/blob/master/support/rrsync).
+Don't check it with `rrsync --version` — plenty of shipped builds don't support that flag at all and
+will exit complaining `DIR` is a required argument no matter what you pass; that error alone already
+proves the binary is present and runs. Step 4 below is the real functional test. If `command -v`
+finds nothing and the doc-script path above doesn't exist either, locate it with
+`dpkg -L rsync | grep rrsync`, or take it from the
+[upstream rsync repository](https://github.com/WayneD/rsync/blob/master/support/rrsync).
 
 **3. Add the public key to `rubricmaker`'s `authorized_keys`**, forced to `rrsync` scoped to the web root, with every other SSH feature turned off:
 
