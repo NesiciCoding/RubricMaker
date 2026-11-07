@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { splitPastedList, spreadPastedLines } from './pastedList';
+import { splitPastedList, splitPastedPair, spreadPastedLines, spreadPastedPairs } from './pastedList';
 
 const make = (text: string) => ({ id: `new-${text}`, text });
 
@@ -43,6 +43,32 @@ describe('spreadPastedLines', () => {
             { id: 'new-x', text: 'x' },
             { id: 'new-y', text: 'y' },
             { id: 'b', text: 'later' },
+        ]);
+    });
+});
+
+describe('pasted matching pairs', () => {
+    it('splits on the first tab, dash, equals sign or colon', () => {
+        expect(splitPastedPair('apple\tfruit - red or green')).toEqual({
+            left: 'apple',
+            right: 'fruit - red or green',
+        });
+        expect(splitPastedPair('run – to move fast')).toEqual({ left: 'run', right: 'to move fast' });
+        expect(splitPastedPair('big = large')).toEqual({ left: 'big', right: 'large' });
+        expect(splitPastedPair('time: 3:00')).toEqual({ left: 'time', right: '3:00' });
+        expect(splitPastedPair('well-known')).toEqual({ left: 'well-known', right: '' });
+    });
+
+    it('fills blank pairs first and keeps a filled pair at the paste point', () => {
+        const make = (left: string, right: string) => ({ id: `new-${left}`, left, right });
+        const pairs = [
+            { id: 'p1', left: 'cat', right: 'animal' },
+            { id: 'p2', left: '', right: '' },
+        ];
+        expect(spreadPastedPairs(pairs, 0, ['dog – pet', 'oak – tree'], make)).toEqual([
+            { id: 'p1', left: 'cat', right: 'animal' },
+            { id: 'p2', left: 'dog', right: 'pet' },
+            { id: 'new-oak', left: 'oak', right: 'tree' },
         ]);
     });
 });

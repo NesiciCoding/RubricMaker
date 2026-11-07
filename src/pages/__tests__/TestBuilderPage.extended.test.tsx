@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
@@ -915,9 +915,9 @@ describe('TestBuilderPage extended', () => {
             } as RmTest,
         ];
         renderBuilder('/tests/incomplete');
-        expect(screen.getByText('tests.issues_title')).toBeInTheDocument();
-        expect(screen.getByText(/tests\.issue_question.*"number":2/)).toBeInTheDocument();
-        expect(screen.getByText(/tests\.issue_no_numeric_answer/)).toBeInTheDocument();
+        const panel = within(screen.getByText('tests.issues_title').closest('[role="status"]') as HTMLElement);
+        expect(panel.getByText(/tests\.issue_question.*"number":2/)).toBeInTheDocument();
+        expect(panel.getByText(/tests\.issue_no_numeric_answer/)).toBeInTheDocument();
     });
 
     it('blocks saving with an inline error for a zero or negative time limit (#702)', () => {

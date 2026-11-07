@@ -353,6 +353,30 @@ describe('TestBuilderPage', () => {
         );
     });
 
+    it('collapses all questions and jumps to an incomplete one from the issue list', async () => {
+        const questions: RmTest['questions'] = [
+            { id: 'qa', prompt: 'First', type: 'short-answer', points: 1, expectedAnswers: ['a'] },
+            { id: 'qb', prompt: '', type: 'short-answer', points: 1 },
+        ];
+        mockTests = [{ ...mockExistingTest, questions }];
+        const { default: TestBuilderPage } = await import('../TestBuilderPage');
+        renderBuilder(TestBuilderPage, '/tests/t1');
+
+        expect(screen.getAllByLabelText('tests.question_type_label')).toHaveLength(2);
+        fireEvent.click(screen.getByRole('button', { name: 'tests.collapse_all_questions' }));
+        expect(screen.queryAllByLabelText('tests.question_type_label')).toHaveLength(0);
+        expect(screen.getByText('tests.question_incomplete')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: 'tests.issue_question:{"number":2}' }));
+        expect(screen.getAllByLabelText('tests.question_type_label')).toHaveLength(1);
+        expect(document.activeElement?.id).toBe('question-card-qb');
+
+        fireEvent.click(screen.getByRole('button', { name: 'tests.collapse_all_questions' }));
+        expect(screen.getByRole('button', { name: 'tests.expand_all_questions' })).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'tests.expand_all_questions' }));
+        expect(screen.getAllByLabelText('tests.question_type_label')).toHaveLength(2);
+    });
+
     it('reloads the form when navigating between tests and to /tests/new (#612)', async () => {
         const other: RmTest = { ...mockExistingTest, id: 't2', name: 'Other Test', description: 'other' };
         mockTests = [mockExistingTest, other];

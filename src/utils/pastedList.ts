@@ -28,3 +28,33 @@ export function spreadPastedLines<T extends { text: string }>(
     }
     return next;
 }
+
+const PAIR_SEPARATORS = ['\t', ' – ', ' — ', ' - ', ' = ', ': '];
+
+/** "word – definition" (or a tab from a spreadsheet, " = ", ": ") → left and right; no separator → left only. */
+export function splitPastedPair(line: string): { left: string; right: string } {
+    for (const separator of PAIR_SEPARATORS) {
+        const at = line.indexOf(separator);
+        if (at > 0) return { left: line.slice(0, at).trim(), right: line.slice(at + separator.length).trim() };
+    }
+    return { left: line.trim(), right: '' };
+}
+
+/** Like spreadPastedLines for matching pairs: blank pairs are filled first and a filled pair at `index` is kept. */
+export function spreadPastedPairs<T extends { left: string; right: string }>(
+    pairs: T[],
+    index: number,
+    lines: string[],
+    create: (left: string, right: string) => T
+): T[] {
+    const blank = (pair: T) => !pair.left.trim() && !pair.right.trim();
+    const next = [...pairs];
+    let pos = next[index] && !blank(next[index]) ? index + 1 : index;
+    for (const line of lines) {
+        const { left, right } = splitPastedPair(line);
+        if (pos < next.length && blank(next[pos])) next[pos] = { ...next[pos], left, right };
+        else next.splice(pos, 0, create(left, right));
+        pos++;
+    }
+    return next;
+}

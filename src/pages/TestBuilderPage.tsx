@@ -134,6 +134,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
     const [showBankModal, setShowBankModal] = useState(false);
     const [sections, setSections] = useState<TestSection[]>(existing?.sections ?? generated?.sections ?? []);
     const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+    const [collapsedQuestions, setCollapsedQuestions] = useState<Set<string>>(new Set());
     const [expandedPassages, setExpandedPassages] = useState<Set<string>>(
         new Set((existing?.sections ?? generated?.sections ?? []).filter((s) => s.content).map((s) => s.id))
     );
@@ -163,6 +164,10 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         const noQuestions = blockers.noQuestions && !!existing;
         return noQuestions || blockers.entries.length > 0 ? { noQuestions, entries: blockers.entries } : null;
     }, [questions, mode, placementEngine, existing]);
+    const issuesByQuestion = React.useMemo(
+        () => new Map((draftBlockers?.entries ?? []).map((entry) => [entry.questionId, entry.issues])),
+        [draftBlockers]
+    );
     const [generatorMinLevel, setGeneratorMinLevel] = useState<CefrLevel>(
         existing?.generatorConfig?.minCefrLevel ?? 'A1'
     );
@@ -434,6 +439,36 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         setQuestions((prev) => prev.map((q) => (q.id === qid ? question : q)));
     }
 
+    function toggleQuestionCollapsed(qid: string) {
+        setCollapsedQuestions((prev) => {
+            const next = new Set(prev);
+            if (!next.delete(qid)) next.add(qid);
+            return next;
+        });
+    }
+
+    /** Opens the question (and its section) and moves focus to it, from the issue list. */
+    function jumpToQuestion(qid: string) {
+        const sectionId = questions.find((q) => q.id === qid)?.sectionId;
+        flushSync(() => {
+            setCollapsedQuestions((prev) => {
+                const next = new Set(prev);
+                next.delete(qid);
+                return next;
+            });
+            if (sectionId) {
+                setCollapsedSections((prev) => {
+                    const next = new Set(prev);
+                    next.delete(sectionId);
+                    return next;
+                });
+            }
+        });
+        const card = document.getElementById(`question-card-${qid}`);
+        card?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+        card?.focus({ preventScroll: true });
+    }
+
     function copyQuestion(qid: string) {
         setQuestions((prev) => {
             const index = prev.findIndex((q) => q.id === qid);
@@ -636,6 +671,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
     }, []);
 
     const totalPoints = questions.reduce((sum, q) => sum + (q.points || 0), 0);
+    const allQuestionsCollapsed = questions.length > 0 && questions.every((q) => collapsedQuestions.has(q.id));
     const uncategorised = questionsFor(null);
 
     if (notFound) {
@@ -740,8 +776,23 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                                 {draftBlockers.noQuestions && <li>{t('tests.issue_no_questions')}</li>}
                                 {draftBlockers.entries.map((entry) => (
                                     <li key={entry.questionId}>
-                                        <strong>{t('tests.issue_question', { number: entry.number })}:</strong>{' '}
-                                        {entry.issues.map((issue) => t(`tests.issue_${issue}`)).join(' ')}
+                                        <button
+                                            type="button"
+                                            style={{
+                                                padding: 0,
+                                                border: 'none',
+                                                background: 'none',
+                                                color: 'inherit',
+                                                font: 'inherit',
+                                                fontWeight: 700,
+                                                textDecoration: 'underline',
+                                                cursor: 'pointer',
+                                            }}
+                                            onClick={() => jumpToQuestion(entry.questionId)}
+                                        >
+                                            {t('tests.issue_question', { number: entry.number })}
+                                        </button>
+                                        : {entry.issues.map((issue) => t(`tests.issue_${issue}`)).join(' ')}
                                     </li>
                                 ))}
                             </ul>
@@ -1577,7 +1628,22 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                                 })}
                             </span>
                         </h2>
-                        <div style={{ display: 'flex', gap: 8 }}>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                            {questions.length > 1 && (
+                                <button
+                                    type="button"
+                                    className="btn btn-ghost btn-sm"
+                                    onClick={() =>
+                                        setCollapsedQuestions(
+                                            allQuestionsCollapsed ? new Set() : new Set(questions.map((q) => q.id))
+                                        )
+                                    }
+                                >
+                                    {allQuestionsCollapsed
+                                        ? t('tests.expand_all_questions')
+                                        : t('tests.collapse_all_questions')}
+                                </button>
+                            )}
                             <button
                                 type="button"
                                 className="btn btn-secondary btn-sm"
@@ -1632,6 +1698,11 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                                                                 onChange={(q) => updateQuestion(question.id, q)}
                                                                 onRemove={() => removeQuestion(question.id)}
                                                                 onDuplicate={() => copyQuestion(question.id)}
+                                                                collapsed={collapsedQuestions.has(question.id)}
+                                                                onToggleCollapsed={() =>
+                                                                    toggleQuestionCollapsed(question.id)
+                                                                }
+                                                                issues={issuesByQuestion.get(question.id)}
                                                             />
                                                         </div>
                                                     )}
@@ -1925,6 +1996,15 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                                                                                 onDuplicate={() =>
                                                                                     copyQuestion(question.id)
                                                                                 }
+                                                                                collapsed={collapsedQuestions.has(
+                                                                                    question.id
+                                                                                )}
+                                                                                onToggleCollapsed={() =>
+                                                                                    toggleQuestionCollapsed(question.id)
+                                                                                }
+                                                                                issues={issuesByQuestion.get(
+                                                                                    question.id
+                                                                                )}
                                                                             />
                                                                         </div>
                                                                     )}
