@@ -1,7 +1,19 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import TestImportModal from '../TestImportModal';
+import type { TestImportResult } from '../../../utils/testImport';
+
+/** Lets one test answer like a document import would, without building a Word file for it. */
+let documentResult: TestImportResult | null = null;
+
+vi.mock('../../../utils/testImport', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../../utils/testImport')>();
+    return {
+        ...actual,
+        parseTestFile: async (file: File) => documentResult ?? actual.parseTestFile(file),
+    };
+});
 
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
@@ -32,6 +44,42 @@ const sampleTest = {
 };
 
 describe('TestImportModal', () => {
+    beforeEach(() => {
+        documentResult = null;
+    });
+
+    it('shows what the reader recognised when the file is a paper', async () => {
+        documentResult = {
+            tests: [{ name: 'Vocabulary and grammar test', requireSEB: false, shuffleQuestions: false, questions: [] }],
+            warnings: [{ key: 'importTest.warn_type_uncertain', params: { item: 'Assignment 8 · 1', type: 'open' } }],
+            review: {
+                title: 'Vocabulary and grammar test',
+                confidence: 'medium',
+                sections: [{ title: 'Assignment 1 | TO BE', items: 7, points: 7 }],
+                types: { cloze: 7 },
+                points: 7,
+                notes: [],
+                readNotes: [],
+            },
+        };
+        render(<TestImportModal onImport={vi.fn()} onClose={vi.fn()} />);
+
+        await selectFile(jsonFile({}, 'paper.docx'));
+
+        await waitFor(() => expect(screen.getByTestId('import-review')).toBeInTheDocument());
+        expect(screen.getByText('importTest.review_title')).toBeInTheDocument();
+        expect(screen.getByText(/importTest\.warn_type_uncertain/)).toBeInTheDocument();
+    });
+
+    it('leaves the review out for a JSON export, which needs no checking', async () => {
+        render(<TestImportModal onImport={vi.fn()} onClose={vi.fn()} />);
+
+        await selectFile(jsonFile(sampleTest));
+
+        await waitFor(() => expect(screen.getByText('Vocabulary and grammar test')).toBeInTheDocument());
+        expect(screen.queryByTestId('import-review')).toBeNull();
+    });
+
     it('previews a parsed test and imports it on confirm', async () => {
         const onImport = vi.fn();
         const onClose = vi.fn();

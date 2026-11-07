@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import Modal from '../ui/Modal';
 import type { ImportWarning } from '../../utils/questionBankImport';
 import { parseTestFile, type ImportedTest } from '../../utils/testImport';
+import type { DocumentReview } from '../../utils/import/draftImport';
+import TestImportReview from './TestImportReview';
 
 interface Props {
     onImport: (tests: ImportedTest[]) => void;
@@ -17,15 +19,18 @@ export default function TestImportModal({ onImport, onClose }: Props) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [tests, setTests] = useState<ImportedTest[] | null>(null);
     const [warnings, setWarnings] = useState<ImportWarning[]>([]);
+    const [review, setReview] = useState<DocumentReview | null>(null);
     const [parsing, setParsing] = useState(false);
 
     async function handleFile(file: File) {
         setParsing(true);
         setTests(null);
         setWarnings([]);
+        setReview(null);
         try {
             const result = await parseTestFile(file);
             setWarnings(result.warnings);
+            setReview(result.review ?? null);
             setTests(result.tests.length > 0 ? result.tests : null);
         } catch (err) {
             // Reading the file can fail (a vanished pick, a permission error), and parseTestFile is only
@@ -63,7 +68,7 @@ export default function TestImportModal({ onImport, onClose }: Props) {
             <input
                 ref={fileInputRef}
                 type="file"
-                accept=".json"
+                accept=".json,.docx,.pdf"
                 style={{ display: 'none' }}
                 onChange={(e) => {
                     const file = e.target.files?.[0];
@@ -109,6 +114,8 @@ export default function TestImportModal({ onImport, onClose }: Props) {
                     {t('importTest.import_no_tests')}
                 </div>
             )}
+
+            {review && <TestImportReview review={review} />}
 
             {tests && (
                 <div style={{ marginTop: 16 }}>
