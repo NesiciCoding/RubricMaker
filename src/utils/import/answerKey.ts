@@ -42,7 +42,8 @@ export interface AnswerKey {
     tables: number;
 }
 
-const KEY_HEADER = /\b(answer|answers|antwoord|antwoorden|key|solution|oplossing)\b/i;
+const KEY_HEADER =
+    /\b(answer|answers|antwoord|antwoorden|key|solution|oplossing|points to be|punten to be|puntenwaardering|toegekend)\b/i;
 const POINTS_HEADER = /\b(points?|punten|pnt|score)\b/i;
 const ORDER_HEADER = /\b(question|vraag|nr|no\.?|number|item)\b/i;
 const TOTAL_IN_TITLE = /\(\s*(\d+(?:[.,]\d+)?)\s*(?:p|pt|pnt|punten|points?)\b[^)]*\)/i;
@@ -53,12 +54,30 @@ const ALTERNATIVE_SEPARATOR = /\s*,\s*|\s+\/\s+/;
 const normalized = (text: string): string => text.replace(/\s+/g, ' ').trim();
 
 /** Splits "don't have, do not have" into alternatives and keeps a single answer intact. */
-function splitAlternatives(raw: string): string[] {
-    const parts = raw.split(ALTERNATIVE_SEPARATOR).map(normalized).filter(Boolean);
-    // A real answer may contain a comma of its own ("Yes, I do"); only treat it as a list when every
-    // part is short, which is what a list of accepted translations looks like.
-    if (parts.length > 1 && parts.every((part) => part.split(' ').length <= 4)) return parts;
-    return [normalized(raw)];
+export function splitAlternatives(raw: string): string[] {
+    const text = normalized(raw);
+    if (!text) return [];
+    // Slash always separates alternatives ("her/hers"); a comma inside one answer ("Yes, I do")
+    // must not split it. Only treat a comma list as alternatives when every part has at least
+    // two words — a single leading "Yes" is a clause, not a list entry.
+    if (/\//.test(text)) {
+        const parts = text.split(ALTERNATIVE_SEPARATOR).map(normalized).filter(Boolean);
+        if (parts.length > 1 && parts.every((part) => part.split(' ').length <= 4)) return parts;
+        return [text];
+    }
+    const commaParts = text
+        .split(/\s*,\s*/)
+        .map(normalized)
+        .filter(Boolean);
+    if (
+        commaParts.length > 1 &&
+        commaParts.every((part) => {
+            const wc = part.split(' ').length;
+            return wc >= 2 && wc <= 4;
+        })
+    )
+        return commaParts;
+    return [text];
 }
 
 function parseEntry(cells: string[], columns: { order?: number; answer: number; points?: number }): KeyEntry | null {
@@ -198,12 +217,26 @@ function reconcilePoints(item: DraftItem, entry: KeyEntry, warnings: ImportWarni
     }
 }
 
-function entryFor(items: DraftItem[], entry: KeyEntry, index: number): DraftItem | undefined {
-    if (entry.number) {
-        const match = items.find((item) => item.number === entry.number);
-        if (match) return match;
-    }
-    return items[index];
+function sectionNumber(title: string | undefined): string | undefined {
+    if (!title) return undefined;
+    const match = /(\d{1,3})/.exec(title);
+    return match ? match[1].replace(/^0+/, '') || '0' : undefined;
+}
+
+function resolveSectionIndex(draft: TestDraft, keyTitle: string | undefined, fallback: number): number | undefined {
+    if (!keyTitle) return fallback;
+    const keyNum = sectionNumber(keyTitle);
+    if (!keyNum) return fallback;
+    const candidates: number[] = [];
+    draft.sections.forEach((section, index) => {
+        if (sectionNumber(section.title) === keyNum) candidates.push(index);
+    });
+    if (candidates.length === 1) return candidates[0];
+    // No match or ambiguous: fall back to order only when the fallback section carries the same
+    // number; otherwise the caller warns and skips so a key is never applied to the wrong assignment.
+    const fallbackNum = sectionNumber(draft.sections[fallback]?.title);
+    if (candidates.length === 0 && fallbackNum === keyNum) return fallback;
+    return undefined;
 }
 
 /**
@@ -215,8 +248,19 @@ export function applyAnswerKey(draft: TestDraft, key: AnswerKey): ImportWarning[
     const warnings: ImportWarning[] = [];
 
     key.sections.forEach((section, sectionIndex) => {
-        const items = draft.items.filter((item) => item.sectionIndex === sectionIndex);
-        const title = draft.sections[sectionIndex]?.title ?? section.title ?? `Section ${sectionIndex + 1}`;
+        const resolved = resolveSectionIndex(draft, section.title, sectionIndex);
+        const title =
+            (resolved !== undefined ? draft.sections[resolved]?.title : undefined) ??
+            section.title ??
+            `Section ${sectionIndex + 1}`;
+        if (resolved === undefined) {
+            warnings.push({
+                key: 'importTest.warn_key_section_mismatch',
+                params: { section: section.title ?? title, items: 0, answers: section.entries.length },
+            });
+            return;
+        }
+        const items = draft.items.filter((item) => item.sectionIndex === resolved);
 
         if (items.length === 0) {
             if (section.entries.length > 0) {
@@ -232,16 +276,55 @@ export function applyAnswerKey(draft: TestDraft, key: AnswerKey): ImportWarning[
                 key: 'importTest.warn_key_section_mismatch',
                 params: { section: title, items: items.length, answers: section.entries.length },
             });
+            return;
         }
 
-        section.entries.forEach((entry, index) => {
-            const item = entryFor(items, entry, index);
-            if (!item) return;
+        // Reserve numbered matches before positional fallback so two entries never share one item.
+        const used = new Set<DraftItem>();
+        const byNumber = new Map<string, DraftItem[]>();
+        for (const item of items) {
+            if (item.number) {
+                const list = byNumber.get(item.number) ?? [];
+                list.push(item);
+                byNumber.set(item.number, list);
+            }
+        }
+        const assigned = new Map<KeyEntry, DraftItem>();
+        for (const entry of section.entries) {
+            if (!entry.number) continue;
+            const candidates = (byNumber.get(entry.number) ?? []).filter((item) => !used.has(item));
+            if (candidates.length > 0) {
+                const item = candidates[0];
+                used.add(item);
+                assigned.set(entry, item);
+            }
+        }
+        const free = items.filter((item) => !used.has(item));
+        let cursor = 0;
+        for (const entry of section.entries) {
+            if (assigned.has(entry)) continue;
+            // Entries with a number that matched nothing keep their number for the warning context
+            // but must not steal the positional slot of another entry.
+            if (entry.number) {
+                warnings.push({
+                    key: 'importTest.warn_key_without_items',
+                    params: { section: title, answers: 1 },
+                });
+                continue;
+            }
+            const item = free[cursor];
+            cursor += 1;
+            if (!item) continue;
+            used.add(item);
+            assigned.set(entry, item);
+        }
+
+        for (const [entry, item] of assigned) {
             item.answers = entry.answers;
             if (entry.gapAnswers) item.gapAnswers = entry.gapAnswers;
             if (entry.note) item.keyNote = entry.note;
             reconcilePoints(item, entry, warnings);
-        });
+        }
     });
 
     return warnings;

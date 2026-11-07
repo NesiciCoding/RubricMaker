@@ -78,7 +78,8 @@ const BARE_NUMBER = /^\d{1,3}$/;
 const FORM_FIELD = /^(naam|name|klas|class|datum|date|groep|group|leerling|student|cursist|cijfer)\b\s*[:：]/i;
 const BULLET = /^\s*[•·▪\-–—*]\s+/u;
 /** A table header that says this table is the answer key, not the paper. */
-const KEY_HEADER = /\b(answer|answers|antwoord|antwoorden|key|points to be|punten to be|puntenwaardering|toegekend)\b/i;
+export const KEY_HEADER =
+    /\b(answer|answers|antwoord|antwoorden|key|solution|oplossing|points to be|punten to be|puntenwaardering|toegekend)\b/i;
 /** A line that ends a sentence, so the next paragraph is unlikely to be a wrapped continuation. */
 const ENDS_SENTENCE = /[.?!:;)"'”’]\s*$/;
 
