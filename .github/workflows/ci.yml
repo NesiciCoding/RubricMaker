@@ -628,37 +628,42 @@ jobs:
           # flag, not sensitive data).
           VITE_STRESS_TEST_LOGGING: ${{ vars.VITE_STRESS_TEST_LOGGING }}
 
-      - name: Deploy via rsync
+      # #404: the `rubricmaker` HestiaCP user is locked to SFTP at the server level — that
+      # overrides anything in authorized_keys (a forced rsync command never gets a chance to
+      # run), so rsync-over-SSH is not possible here at all. lftp's sftp:// backend speaks
+      # plain SFTP (list/put/delete), which this restricted account does allow; it shells out
+      # to the system ssh for the actual connection (sftp:connect-program), so the key and
+      # host-key handling below mirror the drift-check step further down.
+      # deploy/.htaccess is copied into dist/ first so one mirror pass carries both — it's
+      # not the same file Vite would otherwise copy from public/.htaccess (that one's stale;
+      # deploy/.htaccess has this deployment's real CSP and the asset-404 rewrite).
+      # mirror's default (no --delete-first) deletes extraneous remote files only *after*
+      # transferring new/changed ones, matching rsync's --delete-after: nobody loading the
+      # site mid-deploy gets an index.html pointing at assets that aren't there yet.
+      - name: Deploy via SFTP
         if: steps.changes.outputs.changed == 'true'
-        uses: burnett01/rsync-deployments@2cbb5ed94b73d111d07a40b071b1c7d3c0272435 # v9.0.2
-        with:
-          # #404: connects as the `rubricmaker` HestiaCP user itself (via a dedicated,
-          # forced-command-restricted deploy key — see docs/HESTIACP_SETUP.md §9.1), not root.
-          # Files land already owned by `rubricmaker`, so no --chown is needed (and a non-root
-          # connection can't perform one anyway).
-          # --delay-updates + --delete-after: new files land in place together at the end and
-          # old ones go only after that, so a visitor (or the service worker installing) mid-deploy
-          # never gets an index.html pointing at assets that aren't there yet. The protect filter
-          # keeps --delete from removing the server's .htaccess (uploaded by the next step) while
-          # still deploying one that is shipped inside dist/.
-          switches: -avz --delete-after --delay-updates --filter='P /.htaccess'
-          path: dist/
-          # HestiaCP web root: /home/<user>/web/<domain>/public_html/
-          remote_path: /home/rubricmaker/web/${{ secrets.VPS_DOMAIN }}/public_html/
-          remote_host: ${{ secrets.VPS_HOST }}
-          remote_user: rubricmaker
-          remote_key: ${{ secrets.VPS_DEPLOY_SSH_KEY }}
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_DOMAIN: ${{ secrets.VPS_DOMAIN }}
+          VPS_DEPLOY_SSH_KEY: ${{ secrets.VPS_DEPLOY_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq lftp
+          cp deploy/.htaccess dist/.htaccess
 
-      - name: Upload .htaccess
-        if: steps.changes.outputs.changed == 'true'
-        uses: burnett01/rsync-deployments@2cbb5ed94b73d111d07a40b071b1c7d3c0272435 # v9.0.2
-        with:
-          switches: -avz
-          path: deploy/.htaccess
-          remote_path: /home/rubricmaker/web/${{ secrets.VPS_DOMAIN }}/public_html/.htaccess
-          remote_host: ${{ secrets.VPS_HOST }}
-          remote_user: rubricmaker
-          remote_key: ${{ secrets.VPS_DEPLOY_SSH_KEY }}
+          key_file=$(mktemp)
+          trap 'rm -f "$key_file"' EXIT
+          printf '%s\n' "$VPS_DEPLOY_SSH_KEY" > "$key_file"
+          chmod 600 "$key_file"
+
+          lftp -u rubricmaker, "sftp://${VPS_HOST}" <<SFTP
+          set cmd:fail-exit true
+          set sftp:connect-program "ssh -a -x -i $key_file -o StrictHostKeyChecking=accept-new -o BatchMode=yes"
+          set mirror:parallel-transfer-count 4
+          mirror --reverse --delete --verbose dist/ /home/rubricmaker/web/${VPS_DOMAIN}/public_html/
+          bye
+          SFTP
 
       - name: Verify the live site serves RubricMaker
         if: steps.changes.outputs.changed == 'true'

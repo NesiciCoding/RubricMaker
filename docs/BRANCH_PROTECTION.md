@@ -69,14 +69,15 @@ The `deploy-hestiacp` job (in `ci.yml`) runs in the
 - **Deployment branches → Selected branches: `main`** — deploys may only run
   for `main`. This blocks accidental manual deploys of feature branches.
 - **Deployment timeout** — leave the default (30 min) or lower it; deploys are
-  quick rsyncs.
+  quick file transfers.
 - **Environment secrets** — `VPS_HOST`, `VPS_DEPLOY_SSH_KEY`, `VPS_SSH_KEY`,
   `VPS_DOMAIN`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`,
   `SUPABASE_PUBLIC_URL` (HestiaCP only) live here and are only injected into
-  jobs that use this environment. `VPS_DEPLOY_SSH_KEY` is the restricted,
-  `rrsync`-only key the file deploy uses (see `HESTIACP_SETUP.md` §9.1,
-  #404); `VPS_SSH_KEY` (root) is read only by the migration/function
-  drift-check step, which needs `docker exec`.
+  jobs that use this environment. `VPS_DEPLOY_SSH_KEY` is the dedicated
+  `rubricmaker` key the file deploy uses over SFTP (see `HESTIACP_SETUP.md`
+  §9.1, #404) — that account is locked to SFTP at the server level, with no
+  shell access at all; `VPS_SSH_KEY` (root) is read only by the
+  migration/function drift-check step, which needs `docker exec`.
 
 ### How approval interacts with the pipeline
 

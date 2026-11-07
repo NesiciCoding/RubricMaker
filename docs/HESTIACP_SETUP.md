@@ -259,7 +259,7 @@ Add these repository secrets in **GitHub → Settings → Secrets and variables 
 | `SUPABASE_PUBLIC_URL`  | Public URL of the Supabase API (optional)                                                          |
 | `VPS_HOST`             | Your VPS IP address or hostname                                                                    |
 | `VPS_DOMAIN`           | Your domain, e.g. `rubricmaker.example.com`                                                        |
-| `VPS_DEPLOY_SSH_KEY`   | Private key of the restricted, `rrsync`-only deploy key (see §9.1) — used to rsync `dist/` and `.htaccess` into the web root |
+| `VPS_DEPLOY_SSH_KEY`   | Private key of the dedicated `rubricmaker` deploy key (see §9.1) — used to SFTP `dist/` (with `.htaccess` copied in) into the web root |
 | `VPS_SSH_KEY`          | Private key for **root** access (see §9.1) — used only by the post-deploy migration/function drift check, which needs `docker exec` |
 
 The file-deploy steps connect as the `rubricmaker` web-domain user itself (over `VPS_DEPLOY_SSH_KEY`), not root (#404); only the drift-check step still uses root. There is no `VPS_USER` secret — the username is written into the workflows directly; see §9 for using a different HestiaCP user.
@@ -345,18 +345,19 @@ Two jobs deploy to the VPS:
 Both run in the `production` GitHub environment (add required reviewers there under **Settings → Environments** if you want to approve each deploy) and do the same thing:
 
 1. `npm ci` and `npm run build` on Node 24, with the `VITE_SUPABASE_*`, `SUPABASE_PUBLIC_URL` secrets and the `VITE_STRESS_TEST_LOGGING` variable.
-2. Rsync `dist/` to `/home/rubricmaker/web/<VPS_DOMAIN>/public_html/` with `--delete-after --delay-updates`, connecting as the **`rubricmaker`** HestiaCP user itself, over a dedicated, `rrsync`-restricted deploy key (§9.1) — not root (#404). New files are swapped in together at the end and old ones removed only after that, so nobody loading the site mid-deploy gets an `index.html` that points at assets that aren't there yet.
-3. Rsync `deploy/.htaccess` into the same web root, same user and key (the first rsync protects it from `--delete-after`, so it is never briefly missing).
-4. Fetch `https://<VPS_DOMAIN>/` and fail the job unless it is this build's `index.html` — e.g. when HestiaCP's default "web server is ready" page or an old build is being served instead.
-5. Ship `scripts/stack-drift.py` and `supabase/migrations/` to the VPS over SSH and run a read-only check of the database and deployed edge functions against this repo, failing the job loudly if a merged migration or function change hasn't reached production yet. This step always runs, even on a push that only changed `supabase/`. See `docs/SELF_HOSTING_OPS.md` → "Migrations and edge functions on the official stack" for how to apply what it flags. **This step still connects as root** (`VPS_SSH_KEY`) because it needs `docker exec` into the Supabase stack — a broader privilege than serving static files, with its own narrower account tracked separately under #935's full fix, not this one.
+2. Copy `deploy/.htaccess` into `dist/`, then mirror `dist/` to `/home/rubricmaker/web/<VPS_DOMAIN>/public_html/` over **SFTP** (`lftp`, `mirror --reverse --delete`), connecting as the **`rubricmaker`** HestiaCP user itself over a dedicated key (§9.1) — not root (#404). New/changed files upload first and extraneous remote files are removed only afterward (lftp's default — see §9.1), so nobody loading the site mid-deploy gets an `index.html` that points at assets that aren't there yet.
+3. Fetch `https://<VPS_DOMAIN>/` and fail the job unless it is this build's `index.html` — e.g. when HestiaCP's default "web server is ready" page or an old build is being served instead.
+4. Ship `scripts/stack-drift.py` and `supabase/migrations/` to the VPS over SSH and run a read-only check of the database and deployed edge functions against this repo, failing the job loudly if a merged migration or function change hasn't reached production yet. This step always runs, even on a push that only changed `supabase/`. See `docs/SELF_HOSTING_OPS.md` → "Migrations and edge functions on the official stack" for how to apply what it flags. **This step still connects as root** (`VPS_SSH_KEY`) because it needs `docker exec` into the Supabase stack — a broader privilege than serving static files, with its own narrower account tracked separately under #935's full fix, not this one.
 
-Steps 2–3 connect directly as `rubricmaker`, so files already land owned by that user — no `--chown` is needed (and a non-root SSH session couldn't perform one anyway, which is exactly the point of #404).
+Step 2 connects directly as `rubricmaker`, so files already land owned by that user — no `--chown` or similar is needed (and a non-root SSH session couldn't perform one anyway, which is exactly the point of #404).
 
-**Different HestiaCP user?** The user name `rubricmaker` is written into both workflows (`remote_user`, `remote_path`) and into the `authorized_keys` command below. If your web domain belongs to another user, change it everywhere.
+**Different HestiaCP user?** The user name `rubricmaker` is written into both workflows and into the `authorized_keys` command below. If your web domain belongs to another user, change it everywhere.
 
-### 9.1 Create a dedicated, restricted deploy SSH key (#404)
+### 9.1 Create a dedicated deploy SSH key (#404)
 
-Earlier versions of these workflows deployed as `root`, so a leaked `VPS_SSH_KEY` meant full control of the box. The file deploy now connects as the HestiaCP web-domain user (`rubricmaker`) itself, over a key used for nothing else, and the server is configured to run only `rrsync` (restricted rsync) scoped to that one domain's web root for it — whatever command the client asks for. A leaked key can rsync into `public_html` and nowhere else: no shell, no other domain, no root.
+Earlier versions of these workflows deployed as `root`, so a leaked `VPS_SSH_KEY` meant full control of the box. The file deploy now connects as the HestiaCP web-domain user (`rubricmaker`) itself, over a key used for nothing else.
+
+**HestiaCP locks each web-domain user to SFTP at the server level** (confirmed by testing against a live box while building this) — a plain `ssh rubricmaker@host whoami` gets refused with "This service allows sftp connections only," and that restriction overrides anything you put in `authorized_keys`: a forced `command=` (e.g. the restricted-rsync wrapper `rrsync`, which earlier drafts of this guide used) never even gets a chance to run, because the server substitutes its own SFTP-only handler first. Genuine SFTP, though, works fine for the account. So the deploy uses plain SFTP instead of rsync-over-SSH: `lftp`'s `sftp://` backend (list/put/delete over the real SFTP protocol) does everything rsync's `--delete-after` did, and it's what HestiaCP already permits — no `rrsync`, no `command=` wrapper, no server-side setup beyond the key itself. A leaked key can SFTP into `rubricmaker`'s home directory and nowhere else on the box: no shell, no other domain, no root. (That's the account's home directory, not `public_html` specifically — HestiaCP doesn't chroot it further, and adding that chroot yourself risks fighting HestiaCP's own management of the account, so this guide doesn't attempt it.)
 
 **1. Generate the key pair** (on your own machine — do **not** reuse your personal key):
 
@@ -364,60 +365,34 @@ Earlier versions of these workflows deployed as `root`, so a leaked `VPS_SSH_KEY
 ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/rubricmaker_deploy -N ""
 ```
 
-**2. Install `rrsync` on the VPS**, as root, if it isn't already on `$PATH`. Recent Debian/Ubuntu
-`rsync` packages install it straight to `/usr/bin/rrsync`; older ones only ship it as a gzipped
-script under `/usr/share/doc/rsync/scripts/` that needs unpacking:
-
-```bash
-ssh root@YOUR_VPS_IP '
-  set -e
-  if command -v rrsync >/dev/null 2>&1; then
-    echo "rrsync already installed at $(command -v rrsync)"
-  else
-    gunzip -c /usr/share/doc/rsync/scripts/rrsync.gz > /usr/local/bin/rrsync
-    chmod 755 /usr/local/bin/rrsync
-    echo "rrsync installed to /usr/local/bin/rrsync"
-  fi
-'
-```
-
-Don't check it with `rrsync --version` — plenty of shipped builds don't support that flag at all and
-will exit complaining `DIR` is a required argument no matter what you pass; that error alone already
-proves the binary is present and runs. Step 4 below is the real functional test. If `command -v`
-finds nothing and the doc-script path above doesn't exist either, locate it with
-`dpkg -L rsync | grep rrsync`, or take it from the
-[upstream rsync repository](https://github.com/WayneD/rsync/blob/master/support/rrsync).
-
-**3. Add the public key to `rubricmaker`'s `authorized_keys`**, forced to `rrsync` scoped to the web root, with every other SSH feature turned off:
+**2. Add the public key to `rubricmaker`'s `authorized_keys`**, with every non-SFTP SSH feature turned off (belt-and-braces — the server-side SFTP lock already does the real restricting):
 
 Written via **root** — not `rubricmaker` — since that account may have no working login yet (no key, and HestiaCP may not leave password SSH auth enabled):
 
 ```bash
-DOMAIN="rubricmaker.example.com"   # your actual VPS_DOMAIN
 PUBKEY="$(cat ~/.ssh/rubricmaker_deploy.pub)"
 ssh root@YOUR_VPS_IP "
   install -d -m 700 -o rubricmaker -g rubricmaker /home/rubricmaker/.ssh
-  echo 'command=\"rrsync /home/rubricmaker/web/${DOMAIN}/public_html\",no-pty,no-port-forwarding,no-X11-forwarding,no-agent-forwarding ${PUBKEY}' >> /home/rubricmaker/.ssh/authorized_keys
+  printf '%s\n' 'no-pty,no-port-forwarding,no-X11-forwarding,no-agent-forwarding ${PUBKEY}' >> /home/rubricmaker/.ssh/authorized_keys
   chown rubricmaker:rubricmaker /home/rubricmaker/.ssh/authorized_keys
   chmod 600 /home/rubricmaker/.ssh/authorized_keys
 "
 ```
 
-No `-no-del` on the `rrsync` command: the deploy needs `--delete-after` to prune stale build assets, so the restriction is the path, not read-only access — the key can touch files only under that one web root, nothing else on the box.
-
-**4. Test it directly** before wiring up CI:
+**3. Test it directly** before wiring up CI — type these rather than pasting multi-line blocks (a terminal or editor that turns straight quotes into curly ones will leave your shell stuck at a `quote>` prompt; `Ctrl-C` gets you out):
 
 ```bash
-# Should succeed and copy dist/ into the web root:
-rsync -avz --delete-after -e "ssh -i ~/.ssh/rubricmaker_deploy" dist/ \
-  rubricmaker@YOUR_VPS_IP:/home/rubricmaker/web/${DOMAIN}/public_html/
+# Confirms plain SFTP works for this key (prints a remote path):
+echo -e "pwd\nbye" | sftp -i ~/.ssh/rubricmaker_deploy rubricmaker@YOUR_VPS_IP
 
-# Should fail — the server substitutes `rrsync` for whatever command you ask it to run,
-# so this never actually prints a username:
-ssh -i ~/.ssh/rubricmaker_deploy rubricmaker@YOUR_VPS_IP "whoami"
+# Should fail and never print a username — the account has no shell access at all,
+# only SFTP:
+ssh -i ~/.ssh/rubricmaker_deploy rubricmaker@YOUR_VPS_IP whoami
 ```
 
-**5. Add the private key as a GitHub secret:**
+If you'd rather test the actual upload before touching CI, install `lftp` locally (`apt install lftp` / `brew install lftp`) and run the same `mirror` invocation the workflow uses — see the `Deploy via SFTP` step in `.github/workflows/ci.yml` for the exact script.
+
+**4. Add the private key as a GitHub secret:**
 
 ```
 Secret name : VPS_DEPLOY_SSH_KEY
