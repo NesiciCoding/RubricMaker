@@ -109,6 +109,9 @@ function bodyFontSize(paragraphs: DocumentParagraph[]): number {
 export function headingScore(paragraph: DocumentParagraph, bodySize: number): number {
     const text = paragraph.text;
     if (!text || ITEM_START.test(text) || FORM_FIELD.test(text) || BARE_NUMBER.test(text)) return 0;
+    if (paragraph.listFormat === 'numbered' && paragraph.headingLevel === undefined && !SECTION_KEYWORD.test(text)) {
+        return 0;
+    }
 
     let score = 0;
     if (paragraph.headingLevel !== undefined) score += 3;
@@ -289,7 +292,13 @@ function applyPoints(draft: TestDraft): void {
             continue;
         }
 
-        const share = Math.round((total / items.length) * 100) / 100;
+        const missing = items.length - explicit.length;
+        const explicitSum = explicit.reduce((acc, item) => acc + (item.points ?? 0), 0);
+        const share = missing > 0 ? Math.round(((total - explicitSum) / missing) * 100) / 100 : NaN;
+        if (!Number.isFinite(share) || share <= 0) {
+            draft.warnings.push({ key: 'importTest.warn_points_unknown', params: { section: title } });
+            continue;
+        }
         const even = Math.abs(share - Math.round(share * 10) / 10) < 0.001;
         if (!even) {
             draft.warnings.push({ key: 'importTest.warn_points_unknown', params: { section: title } });
@@ -378,7 +387,7 @@ export function detectTestStructure(model: DocumentModel, fallbackName = ''): Te
             continue;
         }
 
-        const numbered = block.listFormat === 'numbered' && block.listLevel !== undefined;
+        const numbered = block.listFormat === 'numbered' && block.listLevel === 0;
         const ordinal = numbered ? null : ITEM_START.exec(block.text);
         if (ordinal || numbered) {
             const label = ordinal?.[1] ?? String((listCounters.get(currentSection) ?? 0) + 1);
