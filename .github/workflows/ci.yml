@@ -632,34 +632,33 @@ jobs:
         if: steps.changes.outputs.changed == 'true'
         uses: burnett01/rsync-deployments@2cbb5ed94b73d111d07a40b071b1c7d3c0272435 # v9.0.2
         with:
-          # --chown forces the web-domain user on the receiving side: rsync -a would
-          # otherwise preserve the runner's uid/gid 1001 (→ `hestiamail` on the box),
-          # and that wrong ownership can trigger HestiaCP's domain-repair, which
-          # re-drops the default skeleton index.html into the docroot. Mirrors
-          # deploy-hestiacp.yml.
+          # #404: connects as the `rubricmaker` HestiaCP user itself (via a dedicated,
+          # forced-command-restricted deploy key — see docs/HESTIACP_SETUP.md §9.1), not root.
+          # Files land already owned by `rubricmaker`, so no --chown is needed (and a non-root
+          # connection can't perform one anyway).
           # --delay-updates + --delete-after: new files land in place together at the end and
           # old ones go only after that, so a visitor (or the service worker installing) mid-deploy
           # never gets an index.html pointing at assets that aren't there yet. The protect filter
           # keeps --delete from removing the server's .htaccess (uploaded by the next step) while
           # still deploying one that is shipped inside dist/.
-          switches: -avz --delete-after --delay-updates --filter='P /.htaccess' --chown=rubricmaker:rubricmaker
+          switches: -avz --delete-after --delay-updates --filter='P /.htaccess'
           path: dist/
           # HestiaCP web root: /home/<user>/web/<domain>/public_html/
           remote_path: /home/rubricmaker/web/${{ secrets.VPS_DOMAIN }}/public_html/
           remote_host: ${{ secrets.VPS_HOST }}
-          remote_user: root
-          remote_key: ${{ secrets.VPS_SSH_KEY }}
+          remote_user: rubricmaker
+          remote_key: ${{ secrets.VPS_DEPLOY_SSH_KEY }}
 
       - name: Upload .htaccess
         if: steps.changes.outputs.changed == 'true'
         uses: burnett01/rsync-deployments@2cbb5ed94b73d111d07a40b071b1c7d3c0272435 # v9.0.2
         with:
-          switches: -avz --chown=rubricmaker:rubricmaker
+          switches: -avz
           path: deploy/.htaccess
           remote_path: /home/rubricmaker/web/${{ secrets.VPS_DOMAIN }}/public_html/.htaccess
           remote_host: ${{ secrets.VPS_HOST }}
-          remote_user: root
-          remote_key: ${{ secrets.VPS_SSH_KEY }}
+          remote_user: rubricmaker
+          remote_key: ${{ secrets.VPS_DEPLOY_SSH_KEY }}
 
       - name: Verify the live site serves RubricMaker
         if: steps.changes.outputs.changed == 'true'
