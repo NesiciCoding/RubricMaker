@@ -62,8 +62,20 @@ export class StudentTestPage {
         return this.page.getByRole('button', { name: /submit test/i });
     }
 
+    /** "Submit anyway" in the review dialog shown when questions are unanswered or flagged. */
+    submitAnywayButton(): Locator {
+        return this.page.getByRole('button', { name: /submit anyway/i });
+    }
+
+    /** Submits, confirming the unanswered/flagged review if it appears. */
     async submit(): Promise<void> {
         await this.submitButton().click();
+        // The dialog renders on the same click, so a short wait tells it apart from a direct hand-in.
+        const asked = await this.submitAnywayButton()
+            .waitFor({ state: 'visible', timeout: 1_000 })
+            .then(() => true)
+            .catch(() => false);
+        if (asked) await this.submitAnywayButton().click();
     }
 
     /** Green "Test submitted!" confirmation area (offline mode). */
