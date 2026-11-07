@@ -123,7 +123,7 @@ export interface GrammarItem {
     labelEn: string;
     labelNl: string;
     examplesEn?: string[];
-    /** Links to a GRAMMAR_PATTERNS rule in grammarChecker.ts. Absent = not auto-detectable. */
+    /** Links to a GRAMMAR_PATTERNS rule in grammarChecker.ts or a MECHANICS_RULES rule in mechanicsChecker.ts. Absent = not auto-detectable. */
     detectShorthand?: string;
 }
 

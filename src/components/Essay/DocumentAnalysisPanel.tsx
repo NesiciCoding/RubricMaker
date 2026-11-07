@@ -30,7 +30,7 @@ import { checkGrammar, profileGrammar, LT_ATTRIBUTION_URL } from '../../utils/gr
 import { resolveGrammarLanguage, type GrammarEnglishVariant } from '../../utils/grammarLanguage';
 import { profileText, buildPersistedVocabProfile, estimateLevelFromCounts } from '../../utils/cefrVocabularyProfiler';
 import { computeTargetVerdict } from '../../utils/textLevelVerdict';
-import { evaluateGrammar, buildGrammarComment } from '../../utils/grammarQualification';
+import { evaluateGrammar, buildGrammarComment, mechanicsSummary } from '../../utils/grammarQualification';
 import { CEFR_LEVEL_COLORS } from '../../data/cefrDescriptors';
 import { nanoid } from '../../utils/nanoid';
 import { Skeleton, SkeletonCard } from '../ui/Skeleton';
@@ -804,18 +804,27 @@ export default function DocumentAnalysisPanel({
                                                     )}
                                                 </div>
                                                 <ul style={{ margin: 0, paddingLeft: 18 }}>
-                                                    {qual.items.map((item) => (
-                                                        <li
-                                                            key={item.descriptorId}
-                                                            style={{ fontSize: '0.8rem', lineHeight: 1.6 }}
-                                                        >
-                                                            {!item.autoDetectable
-                                                                ? `⊘ ${lang === 'nl' ? item.descriptionNl : item.descriptionEn} (${t('analysis.manual_check')})`
-                                                                : item.found
-                                                                  ? `✔ ${lang === 'nl' ? item.descriptionNl : item.descriptionEn} (${item.occurrences}×)`
-                                                                  : `✘ ${lang === 'nl' ? item.descriptionNl : item.descriptionEn} — ${t('analysis.not_found')}`}
-                                                        </li>
-                                                    ))}
+                                                    {qual.items.map((item) => {
+                                                        const desc =
+                                                            lang === 'nl' ? item.descriptionNl : item.descriptionEn;
+                                                        const summary = mechanicsSummary(item, t);
+                                                        return (
+                                                            <li
+                                                                key={item.descriptorId}
+                                                                style={{ fontSize: '0.8rem', lineHeight: 1.6 }}
+                                                            >
+                                                                {!item.autoDetectable
+                                                                    ? `⊘ ${desc} (${t('analysis.manual_check')})`
+                                                                    : summary &&
+                                                                        (item.occurrences > 0 ||
+                                                                            (item.mistakes ?? 0) > 0)
+                                                                      ? `${item.found ? '✔' : '✘'} ${desc} (${summary})`
+                                                                      : item.found
+                                                                        ? `✔ ${desc} (${item.occurrences}×)`
+                                                                        : `✘ ${desc} — ${t('analysis.not_found')}`}
+                                                            </li>
+                                                        );
+                                                    })}
                                                 </ul>
                                             </div>
                                         );
