@@ -66,6 +66,8 @@ vi.mock('../../../utils/textLevelVerdict', () => ({
 vi.mock('../../../utils/grammarQualification', () => ({
     evaluateGrammar: mocks.evaluateGrammar,
     buildGrammarComment: mocks.buildGrammarComment,
+    mechanicsSummary: (item: { occurrences: number; mistakes?: number }) =>
+        item.mistakes === undefined ? undefined : `${item.occurrences} used, ${item.mistakes} mistakes`,
 }));
 
 vi.mock('react-i18next', () => ({
@@ -235,8 +237,20 @@ function setDefaultMocks() {
                 found: false,
                 occurrences: 0,
             },
+            {
+                descriptorId: 'g4',
+                descriptionEn: 'Capital I',
+                descriptionNl: 'Hoofdletter I',
+                categoryLabelEn: 'Punctuation & capital letters',
+                categoryLabelNl: 'Leestekens & hoofdletters',
+                autoDetectable: true,
+                found: false,
+                occurrences: 4,
+                mistakes: 2,
+                detectedBy: 'mechanics',
+            },
         ],
-        autoDetectableCount: 2,
+        autoDetectableCount: 3,
         foundCount: 1,
         passed: false,
     });
@@ -298,10 +312,11 @@ describe('DocumentAnalysisPanel coverage', () => {
 
         // grammar qualification
         expect(screen.getByText('Task completion')).toBeInTheDocument();
-        expect(screen.getByText('1/2')).toBeInTheDocument();
+        expect(screen.getByText('1/3')).toBeInTheDocument();
         expect(screen.getByText(/✔ Uses past tense \(3×\)/)).toBeInTheDocument();
         expect(screen.getByText(/⊘ Uses passive/)).toBeInTheDocument();
         expect(screen.getByText(/✘ Uses conditionals/)).toBeInTheDocument();
+        expect(screen.getByText('✘ Capital I (4 used, 2 mistakes)')).toBeInTheDocument();
 
         // grammar errors
         expect(screen.getByText('Missing comma')).toBeInTheDocument();
