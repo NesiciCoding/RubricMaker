@@ -310,6 +310,49 @@ describe('TestBuilderPage', () => {
         expect(payload.name).toBe('Existing Test');
     });
 
+    it('saves with Ctrl+S and Cmd+S from anywhere in the builder', async () => {
+        mockTests = [mockExistingTest];
+        const { default: TestBuilderPage } = await import('../TestBuilderPage');
+        renderBuilder(TestBuilderPage, '/tests/t1');
+
+        fireEvent.keyDown(screen.getByDisplayValue('Existing Test'), { key: 's', ctrlKey: true });
+        expect(mockUpdateTest).toHaveBeenCalledTimes(1);
+        fireEvent.keyDown(window, { key: 'S', metaKey: true });
+        expect(mockUpdateTest).toHaveBeenCalledTimes(2);
+        fireEvent.keyDown(window, { key: 's' });
+        expect(mockUpdateTest).toHaveBeenCalledTimes(2);
+    });
+
+    it('duplicates a question in place and restores a removed one with Undo', async () => {
+        const questions: RmTest['questions'] = [
+            { id: 'qa', prompt: 'First', type: 'short-answer', points: 1, expectedAnswers: ['a'] },
+            { id: 'qb', prompt: 'Second', type: 'short-answer', points: 2, expectedAnswers: ['b'] },
+        ];
+        mockTests = [{ ...mockExistingTest, questions }];
+        const { default: TestBuilderPage } = await import('../TestBuilderPage');
+        renderBuilder(TestBuilderPage, '/tests/t1');
+
+        fireEvent.click(screen.getAllByRole('button', { name: 'tests.duplicate_question' })[0]);
+        fireEvent.click(screen.getByText('common.save'));
+        const saved = mockUpdateTest.mock.calls.at(-1)![0].questions as RmTest['questions'];
+        expect(saved.map((q) => q.points)).toEqual([1, 1, 2]);
+        expect(saved[1].id).not.toBe('qa');
+        expect(saved[1].expectedAnswers).toEqual(['a']);
+
+        mockShowToast.mockClear();
+        fireEvent.click(screen.getAllByRole('button', { name: 'tests.remove_question' })[2]);
+        const [message, , options] = mockShowToast.mock.calls.at(-1)!;
+        expect(message).toBe('tests.question_removed:{"number":3}');
+        fireEvent.click(screen.getByText('common.save'));
+        expect(mockUpdateTest.mock.calls.at(-1)![0].questions).toHaveLength(2);
+
+        act(() => options.action.onClick());
+        fireEvent.click(screen.getByText('common.save'));
+        expect((mockUpdateTest.mock.calls.at(-1)![0].questions as RmTest['questions']).map((q) => q.id).at(-1)).toBe(
+            'qb'
+        );
+    });
+
     it('reloads the form when navigating between tests and to /tests/new (#612)', async () => {
         const other: RmTest = { ...mockExistingTest, id: 't2', name: 'Other Test', description: 'other' };
         mockTests = [mockExistingTest, other];

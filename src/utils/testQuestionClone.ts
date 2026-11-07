@@ -24,6 +24,7 @@ export function newQuestion(sectionId?: string): TestQuestion {
  */
 export function cloneQuestionWithFreshIds(question: TestQuestion): TestQuestion {
     const categoryIdMap = new Map((question.categories ?? []).map((c) => [c.id, nanoid()]));
+    const columnIdMap = new Map((question.matrixColumns ?? []).map((c) => [c.id, nanoid()]));
     return {
         ...question,
         id: nanoid(),
@@ -37,7 +38,21 @@ export function cloneQuestionWithFreshIds(question: TestQuestion): TestQuestion 
             id: nanoid(),
             categoryId: categoryIdMap.get(i.categoryId) ?? i.categoryId,
         })),
+        matrixColumns: question.matrixColumns?.map((c) => ({ ...c, id: columnIdMap.get(c.id)! })),
+        matrixRows: question.matrixRows?.map((r) => ({
+            ...r,
+            id: nanoid(),
+            correctColumnId: columnIdMap.get(r.correctColumnId) ?? r.correctColumnId,
+        })),
     };
+}
+
+/**
+ * A copy of a question to insert right after it in the same test: fresh ids, same section. The Elo
+ * calibration is dropped because it was earned by the original item, not by the edited copy.
+ */
+export function duplicateQuestion(question: TestQuestion): TestQuestion {
+    return { ...cloneQuestionWithFreshIds(question), sectionId: question.sectionId, eloRating: undefined };
 }
 
 /**

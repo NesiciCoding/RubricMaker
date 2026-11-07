@@ -18,6 +18,7 @@ import {
     ChevronDown,
     Settings2,
     BookmarkPlus,
+    Copy,
     Gauge,
     Sparkles,
 } from 'lucide-react';
@@ -40,6 +41,7 @@ import {
     renderClozeSegments,
 } from '../../utils/clozeParse';
 import LineListTextarea from './LineListTextarea';
+import { splitPastedList, spreadPastedLines } from '../../utils/pastedList';
 import { gapStems, suggestDerivedForms } from '../../utils/wordFormation';
 import ErrorCorrectionFields from './ErrorCorrectionFields';
 import SentenceBuilderFields from './SentenceBuilderFields';
@@ -78,6 +80,8 @@ interface Props {
     dragHandleProps?: DraggableProvidedDragHandleProps | null;
     onChange: (question: TestQuestion) => void;
     onRemove: () => void;
+    /** Insert a copy right after this question; the button is hidden when omitted. */
+    onDuplicate?: () => void;
     /** Hide the remove/trash button — set false when the question IS the item being edited (e.g. a Question Bank item), where "remove" is meaningless. Defaults to true. */
     showRemove?: boolean;
     /** Hide the "save to bank" button — set false when already editing a bank item, where saving-to-bank is confusing. Defaults to true. */
@@ -116,6 +120,7 @@ export default function QuestionEditor({
     dragHandleProps,
     onChange,
     onRemove,
+    onDuplicate,
     showRemove = true,
     showSaveToBank = true,
 }: Props) {
@@ -348,6 +353,20 @@ export default function QuestionEditor({
         update({ options: remaining });
     }
 
+    /** A multi-line paste (a list copied from a worksheet) becomes one entry per line. */
+    function pasteList<T extends { text: string }>(
+        e: React.ClipboardEvent<HTMLInputElement>,
+        items: T[],
+        index: number,
+        create: (text: string) => T,
+        apply: (items: T[]) => void
+    ) {
+        const lines = splitPastedList(e.clipboardData.getData('text'));
+        if (lines.length < 2) return;
+        e.preventDefault();
+        apply(spreadPastedLines(items, index, lines, create));
+    }
+
     function updateOption(optionId: string, patch: Partial<TestOption>) {
         update({
             /* v8 ignore next 2 -- option inputs only render when options is non-empty */
@@ -544,6 +563,17 @@ export default function QuestionEditor({
                             <BookmarkPlus size={14} />
                         </button>
                     )}
+                    {onDuplicate && (
+                        <button
+                            type="button"
+                            className="btn btn-ghost btn-icon btn-sm"
+                            aria-label={t('tests.duplicate_question')}
+                            title={t('tests.duplicate_question')}
+                            onClick={onDuplicate}
+                        >
+                            <Copy size={14} />
+                        </button>
+                    )}
                     {showRemove && (
                         <button
                             type="button"
@@ -734,6 +764,15 @@ export default function QuestionEditor({
                                         type="text"
                                         value={option.text}
                                         onChange={(e) => updateOption(option.id, { text: e.target.value })}
+                                        onPaste={(e) =>
+                                            pasteList(
+                                                e,
+                                                question.options ?? [],
+                                                (question.options ?? []).indexOf(option),
+                                                (text) => ({ id: nanoid(), text, isCorrect: false }),
+                                                (options) => update({ options })
+                                            )
+                                        }
                                         placeholder={t('tests.option_placeholder')}
                                         style={{ flex: 1 }}
                                         aria-label={t('tests.option_text_label')}
@@ -1203,6 +1242,15 @@ export default function QuestionEditor({
                                 type="text"
                                 value={item.text}
                                 onChange={(e) => updateOrderItem(item.id, e.target.value)}
+                                onPaste={(e) =>
+                                    pasteList(
+                                        e,
+                                        question.orderItems ?? [],
+                                        idx,
+                                        (text) => ({ id: nanoid(), text }),
+                                        (orderItems) => update({ orderItems })
+                                    )
+                                }
                                 placeholder={t('tests.ordering_item_placeholder')}
                                 style={{ flex: 1 }}
                                 aria-label={t('tests.ordering_item_placeholder')}

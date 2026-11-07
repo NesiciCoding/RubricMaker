@@ -36,7 +36,7 @@ import AudioUrlStatus from '../components/Tests/AudioUrlStatus';
 import EssayEditor from '../components/Editor/EssayEditor';
 import QuestionBankModal from '../components/Tests/QuestionBankModal';
 import TagFilterChips from '../components/Tests/TagFilterChips';
-import { cloneBankItemIntoTest, newQuestion } from '../utils/testQuestionClone';
+import { cloneBankItemIntoTest, duplicateQuestion, newQuestion } from '../utils/testQuestionClone';
 import { testAssignBlockers } from '../utils/testQuestionIssues';
 import type {
     Test,
@@ -434,8 +434,33 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         setQuestions((prev) => prev.map((q) => (q.id === qid ? question : q)));
     }
 
+    function copyQuestion(qid: string) {
+        setQuestions((prev) => {
+            const index = prev.findIndex((q) => q.id === qid);
+            /* v8 ignore next -- the duplicate button only renders for existing questions */
+            if (index < 0) return prev;
+            return [...prev.slice(0, index + 1), duplicateQuestion(prev[index]), ...prev.slice(index + 1)];
+        });
+    }
+
     function removeQuestion(qid: string) {
+        const index = questions.findIndex((q) => q.id === qid);
+        /* v8 ignore next -- remove buttons only render for existing questions */
+        if (index < 0) return;
+        const removed = questions[index];
         setQuestions((prev) => prev.filter((q) => q.id !== qid));
+        showToast(t('tests.question_removed', { number: index + 1 }), 'info', {
+            action: {
+                label: t('common.undo'),
+                onClick: () =>
+                    setQuestions((prev) => {
+                        if (prev.some((q) => q.id === removed.id)) return prev;
+                        const next = [...prev];
+                        next.splice(Math.min(index, next.length), 0, removed);
+                        return next;
+                    }),
+            },
+        });
     }
 
     function addSection() {
@@ -593,6 +618,22 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
             navigate(`/tests/${created.id}`, { replace: true });
         }
     }
+
+    // Ctrl/Cmd+S saves from anywhere in the builder, inputs included, as in the Rubric Builder.
+    const saveRef = useRef(handleSave);
+    useEffect(() => {
+        saveRef.current = handleSave;
+    });
+    useEffect(() => {
+        function handleKeyDown(e: KeyboardEvent) {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+                e.preventDefault();
+                saveRef.current();
+            }
+        }
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
     const totalPoints = questions.reduce((sum, q) => sum + (q.points || 0), 0);
     const uncategorised = questionsFor(null);
@@ -1590,6 +1631,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                                                                 dragHandleProps={draggable.dragHandleProps}
                                                                 onChange={(q) => updateQuestion(question.id, q)}
                                                                 onRemove={() => removeQuestion(question.id)}
+                                                                onDuplicate={() => copyQuestion(question.id)}
                                                             />
                                                         </div>
                                                     )}
@@ -1879,6 +1921,9 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                                                                                 }
                                                                                 onRemove={() =>
                                                                                     removeQuestion(question.id)
+                                                                                }
+                                                                                onDuplicate={() =>
+                                                                                    copyQuestion(question.id)
                                                                                 }
                                                                             />
                                                                         </div>
