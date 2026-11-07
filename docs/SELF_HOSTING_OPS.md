@@ -208,6 +208,14 @@ python3 /tmp/rm/scripts/stack-drift.py apply             # run what is pending
 - `apply` runs the pending migrations in order. Each one runs in a single transaction together with its
   record row, and the run stops at the first failure. Take a backup first.
 
+**CI runs `check` automatically.** Both `deploy-hestiacp` (in `ci.yml`, after every push to `main`) and
+the manual `deploy-hestiacp.yml` workflow ship `stack-drift.py` and `supabase/migrations/` to the VPS over
+SSH and run `check` read-only once the frontend deploy finishes, failing the job loudly if anything is
+pending or differs (#935's interim fix — the full version, which would apply migrations and redeploy
+functions from CI directly, is blocked on #404's restricted deploy account). A red "Check Supabase
+migration & edge-function drift" step means a merged change under `supabase/` hasn't reached production
+yet: run `baseline`/`apply` and/or `deploy-edge-functions.sh` below on the server, then re-run the job.
+
 **`scripts/deploy-edge-functions.sh`** refreshes the deployed functions from the repository:
 
 ```bash

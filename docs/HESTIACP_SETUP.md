@@ -347,6 +347,7 @@ Both run in the `production` GitHub environment (add required reviewers there un
 2. Rsync `dist/` to `/home/rubricmaker/web/<VPS_DOMAIN>/public_html/` with `--delete-after --delay-updates`, connecting as **`root`**. New files are swapped in together at the end and old ones removed only after that, so nobody loading the site mid-deploy gets an `index.html` that points at assets that aren't there yet.
 3. Rsync `deploy/.htaccess` into the same web root (the first rsync protects it from `--delete-after`, so it is never briefly missing).
 4. Fetch `https://<VPS_DOMAIN>/` and fail the job unless it is this build's `index.html` — e.g. when HestiaCP's default "web server is ready" page or an old build is being served instead.
+5. Ship `scripts/stack-drift.py` and `supabase/migrations/` to the VPS over SSH and run a read-only check of the database and deployed edge functions against this repo, failing the job loudly if a merged migration or function change hasn't reached production yet. This step always runs, even on a push that only changed `supabase/`. See `docs/SELF_HOSTING_OPS.md` → "Migrations and edge functions on the official stack" for how to apply what it flags.
 
 Both rsync steps pass `--chown=rubricmaker:rubricmaker`. Without it the files keep the runner's uid/gid 1001, which is `hestiamail` on a HestiaCP server, and a later HestiaCP domain rebuild can drop the default skeleton `index.html` back into the web root.
 

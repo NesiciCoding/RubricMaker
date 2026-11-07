@@ -681,3 +681,44 @@ jobs:
           done
           echo "::error::https://${VPS_DOMAIN}/ is not serving this build's index.html after deploy (HestiaCP default page or stale docroot?)"
           exit 1
+
+      # Interim fix for #935: the official Supabase stack on the VPS isn't deployed from CI yet (the
+      # full version needs the restricted account from #404 first), so a merged migration or
+      # edge-function change can sit undeployed indefinitely and teachers find out via sync errors.
+      # Runs unconditionally (not gated by `steps.changes`, unlike the frontend steps above) so it
+      # also catches a supabase/-only push that didn't touch dist/. stack-drift.py already knows how
+      # to detect this by inspecting the live database and volumes/functions/ directly — see
+      # docs/SELF_HOSTING_OPS.md "Migrations and edge functions on the official stack" — this just
+      # ships it to the VPS and runs it read-only after every deploy.
+      - name: Check Supabase migration & edge-function drift
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          key_file=$(mktemp)
+          remote_dir="/root/.rm-ci-stack-drift-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          cleanup() {
+            ssh -i "$key_file" -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 -o BatchMode=yes \
+                "root@${VPS_HOST}" "rm -rf '$remote_dir'" >/dev/null 2>&1 || true
+            rm -f "$key_file"
+          }
+          trap cleanup EXIT
+          printf '%s\n' "$VPS_SSH_KEY" > "$key_file"
+          chmod 600 "$key_file"
+          ssh_opts=(-i "$key_file" -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 -o BatchMode=yes)
+
+          ssh "${ssh_opts[@]}" "root@${VPS_HOST}" "mkdir -p '$remote_dir/scripts' '$remote_dir/supabase/migrations'"
+          scp "${ssh_opts[@]}" scripts/stack-drift.py "root@${VPS_HOST}:$remote_dir/scripts/stack-drift.py"
+          scp "${ssh_opts[@]}" supabase/migrations/*.sql "root@${VPS_HOST}:$remote_dir/supabase/migrations/"
+
+          set +e
+          ssh "${ssh_opts[@]}" "root@${VPS_HOST}" "python3 '$remote_dir/scripts/stack-drift.py' check --repo-dir '$remote_dir'"
+          status=$?
+          set -e
+
+          if [ "$status" -ne 0 ]; then
+            echo "::error::Production's database and/or deployed edge functions have drifted from supabase/ in this repo (stack-drift.py exit $status — see output above). Apply pending migrations with 'stack-drift.py apply' and/or redeploy functions with 'scripts/deploy-edge-functions.sh' on the VPS, then re-run this job."
+            exit 1
+          fi
+          echo "Production's database and edge functions match this repository."
