@@ -131,43 +131,63 @@ export async function pdfToBlocks(data: ArrayBuffer | Uint8Array): Promise<Docum
     // the hashed asset path at build time.
     pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).href;
 
-    let pdf: { numPages: number; getPage: (n: number) => Promise<unknown> };
+    let loadingTask: ReturnType<typeof pdfjsLib.getDocument>;
     try {
-        pdf = (await pdfjsLib.getDocument({ data }).promise) as unknown as typeof pdf;
+        loadingTask = pdfjsLib.getDocument({ data });
     } catch (err) {
         throw new DocumentReadError('unreadable', err instanceof Error ? err.message : String(err));
     }
 
-    const pages: PdfTextItem[][] = [];
-    for (let index = 1; index <= pdf.numPages; index += 1) {
-        const page = (await pdf.getPage(index)) as {
-            getViewport: (opts: { scale: number }) => { height: number };
-            getTextContent: () => Promise<{ items: unknown[] }>;
-        };
-        const height = page.getViewport({ scale: 1 }).height;
-        const content = await page.getTextContent();
-        const items: PdfTextItem[] = [];
-        for (const raw of content.items) {
-            if (!raw || typeof raw !== 'object' || !('str' in raw)) continue;
-            const item = raw as {
-                str: string;
-                transform: number[];
-                width?: number;
-                height?: number;
-                fontName?: string;
-            };
-            const [, b, , d, e, f] = item.transform;
-            const size = Math.hypot(b, d) || item.height || 0;
-            items.push({
-                str: item.str,
-                x: e,
-                y: height - f,
-                width: item.width,
-                height: size,
-                fontName: item.fontName,
-            });
+    try {
+        let pdf: { numPages: number; getPage: (n: number) => Promise<unknown> };
+        try {
+            pdf = (await loadingTask.promise) as unknown as typeof pdf;
+        } catch (err) {
+            throw new DocumentReadError('unreadable', err instanceof Error ? err.message : String(err));
         }
-        pages.push(items);
+
+        const pages: PdfTextItem[][] = [];
+        try {
+            for (let index = 1; index <= pdf.numPages; index += 1) {
+                const page = (await pdf.getPage(index)) as {
+                    getViewport: (opts: { scale: number }) => { height: number };
+                    getTextContent: () => Promise<{ items: unknown[] }>;
+                };
+                const height = page.getViewport({ scale: 1 }).height;
+                const content = await page.getTextContent();
+                const items: PdfTextItem[] = [];
+                for (const raw of content.items) {
+                    if (!raw || typeof raw !== 'object' || !('str' in raw)) continue;
+                    const item = raw as {
+                        str: string;
+                        transform: number[];
+                        width?: number;
+                        height?: number;
+                        fontName?: string;
+                    };
+                    const [, b, , d, e, f] = item.transform;
+                    const size = Math.hypot(b, d) || item.height || 0;
+                    items.push({
+                        str: item.str,
+                        x: e,
+                        y: height - f,
+                        width: item.width,
+                        height: size,
+                        fontName: item.fontName,
+                    });
+                }
+                pages.push(items);
+            }
+        } catch (err) {
+            if (err instanceof DocumentReadError) throw err;
+            throw new DocumentReadError('unreadable', err instanceof Error ? err.message : String(err));
+        }
+        return pdfPagesToBlocks(pages, pdf.numPages);
+    } finally {
+        try {
+            await loadingTask.destroy?.();
+        } catch {
+            // Worker cleanup is best-effort; extraction already succeeded or has its own error.
+        }
     }
-    return pdfPagesToBlocks(pages, pdf.numPages);
 }

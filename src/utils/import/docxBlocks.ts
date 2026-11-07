@@ -76,6 +76,7 @@ function parseXml(xml: string): Document {
 /** Reads `word/styles.xml` so a paragraph's style id can say "this is heading 2 at 14pt". */
 function readStyles(xml: string | undefined): Map<string, StyleInfo> {
     const styles = new Map<string, StyleInfo>();
+    const parents = new Map<string, string>();
     if (!xml) return styles;
     const doc = parseXml(xml);
     for (const style of allElements(doc)) {
@@ -86,6 +87,8 @@ function readStyles(xml: string | undefined): Map<string, StyleInfo> {
             style.getAttribute('styleId');
         if (!styleId) continue;
         const name = val(wordChild(style, 'name'));
+        const basedOn = val(wordChild(style, 'basedOn'));
+        if (basedOn) parents.set(styleId, basedOn);
         const pPr = wordChild(style, 'pPr');
         const rPr = wordChild(style, 'rPr');
         const outline = intVal(wordChild(pPr ?? style, 'outlineLvl'));
@@ -100,6 +103,20 @@ function readStyles(xml: string | undefined): Map<string, StyleInfo> {
         const bold = toggle(wordChild(rPr ?? style, 'b'));
         if (bold !== undefined) info.bold = bold;
         styles.set(styleId, info);
+    }
+    // Inherit missing properties from each ancestor; a style's own values win.
+    for (const [styleId, info] of styles) {
+        const seen = new Set<string>([styleId]);
+        let parentId = parents.get(styleId);
+        while (parentId !== undefined && !seen.has(parentId)) {
+            seen.add(parentId);
+            const parent = styles.get(parentId);
+            if (!parent) break;
+            if (info.headingLevel === undefined) info.headingLevel = parent.headingLevel;
+            if (info.fontSizePt === undefined) info.fontSizePt = parent.fontSizePt;
+            if (info.bold === undefined) info.bold = parent.bold;
+            parentId = parents.get(parentId);
+        }
     }
     return styles;
 }
@@ -200,6 +217,16 @@ function readParagraph(paragraph: Element, page: number, styles: Map<string, Sty
     return block;
 }
 
+/** Collects a cell's paragraphs, descending into content controls that wrap them. */
+function cellParagraphs(node: Element): Element[] {
+    const paragraphs: Element[] = [];
+    for (const child of wordChildren(node)) {
+        if (child.localName === 'p') paragraphs.push(child);
+        else if (child.localName === 'sdt') paragraphs.push(...cellParagraphs(wordChild(child, 'sdtContent') ?? child));
+    }
+    return paragraphs;
+}
+
 function readTable(table: Element, page: number): DocumentTable {
     const rows: DocumentTableCell[][] = [];
     for (const row of wordChildren(table)) {
@@ -208,8 +235,7 @@ function readTable(table: Element, page: number): DocumentTable {
         for (const cell of wordChildren(row)) {
             if (cell.localName !== 'tc') continue;
             const paragraphs: string[] = [];
-            for (const child of wordChildren(cell)) {
-                if (child.localName !== 'p') continue;
+            for (const child of cellParagraphs(cell)) {
                 const segments: TextSegment[] = [];
                 collectText(child, segments);
                 const text = cleanDocumentText(segments.map((s) => s.text).join(''));

@@ -103,6 +103,34 @@ describe('docxToBlocks', () => {
         expect(model.blocks.map((b) => (b.kind === 'paragraph' ? b.text : ''))).toEqual(['inside a control']);
     });
 
+    it('inherits heading cues through w:basedOn', async () => {
+        const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:styles xmlns:w="${W}">
+  <w:style w:type="paragraph" w:styleId="Base"><w:name w:val="heading 2"/><w:pPr><w:outlineLvl w:val="1"/></w:pPr><w:rPr><w:b/><w:sz w:val="28"/></w:rPr></w:style>
+  <w:style w:type="paragraph" w:styleId="Child"><w:name w:val="Custom"/><w:basedOn w:val="Base"/></w:style>
+</w:styles>`;
+        const zip = new JSZip();
+        zip.file(
+            '[Content_Types].xml',
+            `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>`
+        );
+        zip.file('word/document.xml', documentXml(para(run('Derived'), '<w:pStyle w:val="Child"/>')));
+        zip.file('word/styles.xml', styles);
+        const model = await docxToBlocks(await zip.generateAsync({ type: 'arraybuffer' }));
+
+        expect(model.blocks[0]).toMatchObject({ text: 'Derived', headingLevel: 2, fontSizePt: 14, bold: true });
+    });
+
+    it('reads table cells wrapped in content controls', async () => {
+        const table = `<w:tbl><w:tr><w:tc><w:sdt><w:sdtContent>${para(run('controlled'))}</w:sdtContent></w:sdt></w:tc></w:tr></w:tbl>`;
+        const model = await docxToBlocks(await buildDocx(table));
+
+        const block = model.blocks[0];
+        expect(block.kind).toBe('table');
+        if (block.kind !== 'table') return;
+        expect(block.rows[0]).toEqual([{ text: 'controlled' }]);
+    });
+
     it('reports a broken package as unreadable instead of throwing a zip error', async () => {
         await expect(docxToBlocks(new TextEncoder().encode('not a zip'))).rejects.toBeInstanceOf(DocumentReadError);
         await expect(docxToBlocks(new TextEncoder().encode('not a zip'))).rejects.toMatchObject({
