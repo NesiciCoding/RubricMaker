@@ -319,6 +319,17 @@ describe('QuestionEditor extended', () => {
             );
         });
 
+        it('keeps spaces while typing a sentence as the expected answer', () => {
+            const { onChange } = renderEditor(makeQuestion({ type: 'short-answer' }));
+            const input = screen.getByLabelText(/tests\.expected_answer_label/) as HTMLInputElement;
+            fireEvent.change(input, { target: { value: 'She has ' } });
+            expect(input.value).toBe('She has ');
+            fireEvent.change(input, { target: { value: 'She has lived here' } });
+            expect(onChange).toHaveBeenLastCalledWith(
+                expect.objectContaining({ expectedAnswers: ['She has lived here'] })
+            );
+        });
+
         it('updates the numeric value and tolerance', () => {
             const { onChange } = renderEditor(makeQuestion({ type: 'numeric' }));
             fireEvent.change(screen.getByLabelText(/tests\.numeric_expected_value_label/), {

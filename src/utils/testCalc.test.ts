@@ -151,6 +151,12 @@ describe('scoreShortAnswerExact', () => {
         expect(scoreShortAnswerExact(question, 'green')).toBe(0);
     });
 
+    it('matches a multi-word sentence answer regardless of repeated inner whitespace', () => {
+        const question = { ...saQuestion, expectedAnswers: ['She has lived here since 2010.'] };
+        expect(scoreShortAnswerExact(question, 'she has  lived here\tsince 2010.')).toBe(2);
+        expect(scoreShortAnswerExact(question, 'She has lived here for 2010.')).toBe(0);
+    });
+
     it('prefers expectedAnswers over the legacy expectedAnswer when both are set', () => {
         const question = { ...saQuestion, expectedAnswer: 'Paris', expectedAnswers: ['Lyon'] };
         expect(scoreShortAnswerExact(question, 'Paris')).toBe(0);
