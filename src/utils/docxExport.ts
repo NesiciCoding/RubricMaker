@@ -47,6 +47,11 @@ import { sanitizeFilename, formatPointsRange, stripHtmlTags, stripCommentHtml } 
 import { plainQuestionPromptText } from './clozeParse';
 import { buildTieredSheet } from './tieredSheet';
 import { tieredSheetDocument, tieredSheetDocxChildren } from './tieredSheetDocx';
+import { yieldToMain } from './yieldToMain';
+
+/** Give the main thread a breath every this-many students while building a batch document tree,
+ *  so a large class export doesn't freeze the tab for the whole build. */
+const BATCH_YIELD_EVERY = 10;
 
 const docLabel = (key: string, opts?: Record<string, unknown>): string => i18n.t(`exportDoc.${key}`, opts);
 
@@ -533,14 +538,17 @@ export async function exportBatchDocx(
 
     const children: (Paragraph | Table)[] = [];
 
-    entries.forEach(({ sr, student }, idx) => {
+    for (let idx = 0; idx < entries.length; idx++) {
+        const { sr, student } = entries[idx];
         // Page break before every student except the first
         if (idx > 0) {
             children.push(new Paragraph({ children: [new PageBreak()] }));
         }
 
         children.push(...buildRubricGridDocxChildren(rubric, sr, scale, student));
-    });
+
+        if (idx > 0 && idx % BATCH_YIELD_EVERY === 0) await yieldToMain();
+    }
 
     const doc = new Document({
         styles: buildDocxStyles(fmt.fontFamily),
@@ -870,10 +878,13 @@ export async function exportBatchTestSummaryDocx(
     achieveThreshold?: number
 ): Promise<void> {
     const children: (Paragraph | Table)[] = [];
-    entries.forEach(({ studentId, student }, idx) => {
+    for (let idx = 0; idx < entries.length; idx++) {
+        const { studentId, student } = entries[idx];
         if (idx > 0) children.push(new Paragraph({ children: [new PageBreak()] }));
         children.push(...buildTestSummaryChildren(studentId, studentTests, test, student, achieveThreshold));
-    });
+
+        if (idx > 0 && idx % BATCH_YIELD_EVERY === 0) await yieldToMain();
+    }
 
     const doc = new Document({ sections: [{ children }] });
     const blob = await Packer.toBlob(doc);

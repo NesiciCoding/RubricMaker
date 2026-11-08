@@ -23,6 +23,11 @@ import { orderedLevels as sharedOrderedLevels } from './gradeCalc';
 import type { DocxStyleTemplateOverrides } from './docxExport';
 import { buildTieredSheet, type TieredSheet } from './tieredSheet';
 import { tieredSheetHtml } from './tieredSheetHtml';
+import { yieldToMain } from './yieldToMain';
+
+/** Give the main thread a breath every this-many students while building batch HTML, so a large
+ *  class export doesn't freeze the tab for the whole build. */
+const BATCH_YIELD_EVERY = 10;
 
 /**
  * Minimal emphasis parser for the free text that reaches a printout: `**bold**` and `*italic*`.
@@ -588,11 +593,14 @@ export async function exportBatchPdf(
         styleTemplate?: DocxStyleTemplateOverrides;
     } = {}
 ): Promise<void> {
-    const htmlParts = entries.map(({ sr, student }, index) => {
+    const htmlParts: string[] = [];
+    for (let index = 0; index < entries.length; index++) {
+        const { sr, student } = entries[index];
         // For double-sided mode: break-before: right lets the browser insert a blank
         // page only when needed so each student always starts on the front of a sheet.
-        return buildRubricHTML(sr, rubric, student, scale, options.padForDoubleSided === true && index > 0);
-    });
+        htmlParts.push(buildRubricHTML(sr, rubric, student, scale, options.padForDoubleSided === true && index > 0));
+        if (index > 0 && index % BATCH_YIELD_EVERY === 0) await yieldToMain();
+    }
     await printForExport(
         htmlParts.join(''),
         options.orientation || rubric.format.orientation || 'portrait',
