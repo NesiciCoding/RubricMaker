@@ -124,6 +124,7 @@ jobs:
           ssh "${ssh_opts[@]}" "root@${VPS_HOST}" "mkdir -p '$remote_dir/scripts' '$remote_dir/supabase/migrations'"
           scp "${ssh_opts[@]}" scripts/stack-drift.py "root@${VPS_HOST}:$remote_dir/scripts/stack-drift.py"
           scp "${ssh_opts[@]}" supabase/migrations/*.sql "root@${VPS_HOST}:$remote_dir/supabase/migrations/"
+          scp -r "${ssh_opts[@]}" supabase/functions "root@${VPS_HOST}:$remote_dir/supabase/"
 
           set +e
           ssh "${ssh_opts[@]}" "root@${VPS_HOST}" "python3 '$remote_dir/scripts/stack-drift.py' check --repo-dir '$remote_dir'"
