@@ -15,7 +15,7 @@
 import type { RgbaImage, Test, TestQuestion } from '../types';
 import { answerSheetPages, groupQuestionsBySection } from './testExamContent';
 import { detectChoiceAnswer, cropAnswerBlock } from './examScanRegions';
-import { recognizeImage } from './textExtraction';
+import { recognizeImage, type OcrResult, type RecognizeImageOptions } from './textExtraction';
 import { examAnswerVocabulary } from './examScanVocabulary';
 import { rgbaImageToDataUrl } from './rgbaImageCanvas';
 
@@ -58,8 +58,18 @@ export function choiceLettersToResponse(question: TestQuestion, letters: string[
  * follows `answerSheetPages()`: only the blocks the renderer actually placed on that page are read,
  * so a multi-page sheet is scanned page by page rather than assumed to fit on one page. The layout
  * is the same for markerless and marker sheets, so no marker-mode argument is needed.
+ *
+ * `recognize` defaults to a one-shot `recognizeImage()` call per OCR'd block, but a caller
+ * detecting a whole batch of sheets (many pages x many open-answer blocks) should pass
+ * `createOcrSession(...).recognize` instead, so every block in the batch shares one Tesseract
+ * worker rather than re-initializing the engine per block (docs/PERFORMANCE_AUDIT_2026-11.md #1112).
  */
-export async function detectScannedAnswers(pageImage: RgbaImage, test: Test, pageNumber = 1): Promise<ScannedAnswer[]> {
+export async function detectScannedAnswers(
+    pageImage: RgbaImage,
+    test: Test,
+    pageNumber = 1,
+    recognize: (dataUrl: string, opts?: Omit<RecognizeImageOptions, 'langs'>) => Promise<OcrResult> = recognizeImage
+): Promise<ScannedAnswer[]> {
     const page = answerSheetPages(test).find((p) => p.pageNumber === pageNumber);
     if (!page) throw new UnsupportedAnswerSheetError(`The answer sheet has no page ${pageNumber}.`);
 
@@ -85,7 +95,7 @@ export async function detectScannedAnswers(pageImage: RgbaImage, test: Test, pag
         if (block.space.kind === 'short' || block.space.kind === 'numeric' || block.space.kind === 'long') {
             const region = cropAnswerBlock(pageImage, block);
             const dataUrl = rgbaImageToDataUrl(region);
-            const ocr = await recognizeImage(dataUrl, { captureHint: 'sparse', userWords });
+            const ocr = await recognize(dataUrl, { captureHint: 'sparse', userWords });
             results.push({
                 questionId: block.questionId,
                 number: block.number,

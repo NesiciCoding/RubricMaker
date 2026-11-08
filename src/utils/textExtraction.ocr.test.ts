@@ -17,7 +17,7 @@ vi.mock('tesseract.js', () => ({
 }));
 
 import { PSM } from 'tesseract.js';
-import { recognizeImage, extractText } from './textExtraction';
+import { recognizeImage, extractText, createOcrSession } from './textExtraction';
 import { OcrUnavailableError } from './ocrErrors';
 
 beforeEach(() => {
@@ -131,6 +131,46 @@ describe('recognizeImage', () => {
             user_words_suffix: 'user-words',
             user_patterns_suffix: 'user-patterns',
         });
+    });
+});
+
+describe('createOcrSession (docs/PERFORMANCE_AUDIT_2026-11.md #1112)', () => {
+    it('creates one worker and reuses it across several recognize() calls', async () => {
+        recognize.mockResolvedValue({ data: { text: 'hi', words: [] } });
+        const session = await createOcrSession(['en', 'nl']);
+
+        await session.recognize(imageUrl);
+        await session.recognize(imageUrl);
+        await session.recognize(imageUrl);
+
+        expect(createWorkerSpy).toHaveBeenCalledTimes(1);
+        expect(createWorkerSpy).toHaveBeenCalledWith('eng+nld', 1);
+        expect(recognize).toHaveBeenCalledTimes(3);
+        expect(terminate).not.toHaveBeenCalled();
+
+        await session.terminate();
+        expect(terminate).toHaveBeenCalledTimes(1);
+    });
+
+    it('still applies per-call options (capture hint, user words) on the shared worker', async () => {
+        recognize.mockResolvedValue({ data: { text: '', words: [] } });
+        const session = await createOcrSession('en');
+
+        await session.recognize(imageUrl, { captureHint: 'sparse' });
+        expect(setParameters).toHaveBeenCalledWith({ tessedit_pageseg_mode: '11' });
+
+        await session.recognize(imageUrl, { userWords: ['Rembrandt'] });
+        expect(writeText).toHaveBeenCalledWith('eng.user-words', 'Rembrandt');
+
+        await session.terminate();
+    });
+
+    it('wraps a failed engine start in OcrUnavailableError, same as recognizeImage', async () => {
+        const cause = new Error('NetworkError: Failed to execute importScripts');
+        createWorkerSpy.mockRejectedValueOnce(cause);
+        const err = await createOcrSession().catch((e: unknown) => e);
+        expect(err).toBeInstanceOf(OcrUnavailableError);
+        expect((err as Error).cause).toBe(cause);
     });
 });
 

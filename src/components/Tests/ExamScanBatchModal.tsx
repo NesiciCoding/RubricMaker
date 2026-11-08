@@ -33,7 +33,7 @@ import { decodeAnswerSheetQr } from '../../utils/examScanQr';
 import { cropAnswerSheetNameRegion, matchStudentByName } from '../../utils/examScanStudentMatch';
 import { groupPagesByStudent, pageCountMismatches, unassignedPages } from '../../utils/examScanBatch';
 import { OcrUnavailableError } from '../../utils/ocrErrors';
-import { recognizeImage } from '../../utils/textExtraction';
+import { createOcrSession } from '../../utils/textExtraction';
 import { calcStudentTestRawPoints } from '../../utils/testCalc';
 import { nanoid } from '../../utils/nanoid';
 import type { RgbaImage, Student, StudentTest, Test, TestAnswer, TestQuestion } from '../../types';
@@ -359,7 +359,11 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
         if (targets.length === 0) return;
         setErrorMsg('');
         setBusy({ label: t('tests.scan.batch_reading_names'), done: 0, total: targets.length });
+        // One OCR session for the whole batch — reuses a single Tesseract worker across every
+        // page instead of re-initializing the engine per page (perf audit #1112).
+        let session: Awaited<ReturnType<typeof createOcrSession>> | null = null;
         try {
+            session = await createOcrSession(defaultLang);
             let done = 0;
             for (const page of targets) {
                 if (cancelledRef.current) return;
@@ -367,7 +371,7 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
                     const corrected = await pageImage(page);
                     const header = cropAnswerSheetNameRegion(corrected);
                     const dataUrl = rgbaImageToDataUrl(header);
-                    const ocr = await recognizeImage(dataUrl, { langs: defaultLang, captureHint: 'block' });
+                    const ocr = await session.recognize(dataUrl, { captureHint: 'block' });
                     const studentId = matchStudentByName(ocr.text, students);
                     if (studentId) updatePage(page.id, { studentId });
                 } catch (err) {
@@ -386,6 +390,7 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
                       : String(err)
             );
         } finally {
+            await session?.terminate();
             setBusy(null);
         }
     }, [defaultLang, pageImage, pages, students, t, updatePage]);
@@ -432,32 +437,50 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
         let done = 0;
         setBusy({ label: t('tests.scan.batch_detecting'), done, total });
 
+        // One OCR session for the whole batch — every open-answer block of every page of every
+        // student's sheet shares one Tesseract worker instead of re-initializing the engine per
+        // block (perf audit #1112). detectScannedAnswers only calls recognize() for short/
+        // numeric/long-answer blocks, so a choice-only test never actually creates one.
+        let session: Awaited<ReturnType<typeof createOcrSession>>;
+        try {
+            session = await createOcrSession(defaultLang);
+        } catch (err) {
+            setErrorMsg(err instanceof OcrUnavailableError ? t('scan.error_engine_unavailable') : String(err));
+            setBusy(null);
+            setPhase('intake');
+            return;
+        }
+
         const results: Record<string, ScannedAnswer[]> = {};
-        for (const group of groups) {
-            const pageResults: ScannedAnswer[][] = [];
-            for (let i = 0; i < group.pages.length; i += 1) {
-                const page = group.pages[i];
-                try {
-                    const corrected = await pageImage(page);
-                    const prepared = preprocessScan(corrected, { deskew: false });
-                    pageResults.push(await detectScannedAnswers(prepared, test, i + 1));
-                    updatePage(page.id, { error: undefined });
-                } catch (err) {
-                    const message =
-                        err instanceof UnsupportedAnswerSheetError
-                            ? t('tests.scan.batch_page_not_printed', { number: i + 1 })
-                            : err instanceof OcrUnavailableError
-                              ? t('scan.error_engine_unavailable')
-                              : err instanceof Error
-                                ? err.message
-                                : String(err);
-                    updatePage(page.id, { error: message });
+        try {
+            for (const group of groups) {
+                const pageResults: ScannedAnswer[][] = [];
+                for (let i = 0; i < group.pages.length; i += 1) {
+                    const page = group.pages[i];
+                    try {
+                        const corrected = await pageImage(page);
+                        const prepared = preprocessScan(corrected, { deskew: false });
+                        pageResults.push(await detectScannedAnswers(prepared, test, i + 1, session.recognize));
+                        updatePage(page.id, { error: undefined });
+                    } catch (err) {
+                        const message =
+                            err instanceof UnsupportedAnswerSheetError
+                                ? t('tests.scan.batch_page_not_printed', { number: i + 1 })
+                                : err instanceof OcrUnavailableError
+                                  ? t('scan.error_engine_unavailable')
+                                  : err instanceof Error
+                                    ? err.message
+                                    : String(err);
+                        updatePage(page.id, { error: message });
+                    }
+                    done += 1;
+                    setBusy({ label: t('tests.scan.batch_detecting'), done, total });
+                    if (cancelledRef.current) return;
                 }
-                done += 1;
-                setBusy({ label: t('tests.scan.batch_detecting'), done, total });
-                if (cancelledRef.current) return;
+                results[group.studentId] = mergeScannedAnswers(test, pageResults);
             }
-            results[group.studentId] = mergeScannedAnswers(test, pageResults);
+        } finally {
+            await session.terminate();
         }
 
         setDetectedByStudent(results);
@@ -471,7 +494,7 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
         );
         setBusy(null);
         setPhase('review');
-    }, [groups, pageImage, t, test, updatePage]);
+    }, [defaultLang, groups, pageImage, t, test, updatePage]);
 
     const setResponse = useCallback((studentId: string, questionId: string, response: string) => {
         setResponsesByStudent((prev) => ({

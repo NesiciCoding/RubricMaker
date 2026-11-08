@@ -51,6 +51,13 @@ vi.mock('../../../utils/examScanAnswers', async () => {
 const { decodeAnswerSheetQr } = vi.hoisted(() => ({ decodeAnswerSheetQr: vi.fn() }));
 vi.mock('../../../utils/examScanQr', () => ({ decodeAnswerSheetQr }));
 
+const { ocrRecognize, ocrTerminate, createOcrSession } = vi.hoisted(() => ({
+    ocrRecognize: vi.fn(async () => ({ text: '', confidence: 0, words: [] })),
+    ocrTerminate: vi.fn(async () => undefined),
+    createOcrSession: vi.fn(),
+}));
+vi.mock('../../../utils/textExtraction', () => ({ createOcrSession }));
+
 const students: Student[] = [
     { id: 's1', name: 'Ada Lovelace', classId: 'c1' },
     { id: 's2', name: 'Grace Hopper', classId: 'c1' },
@@ -111,6 +118,9 @@ function renderModal(onSave = vi.fn()) {
 beforeEach(() => {
     vi.clearAllMocks();
     start.mockResolvedValue(true);
+    ocrRecognize.mockResolvedValue({ text: '', confidence: 0, words: [] });
+    ocrTerminate.mockResolvedValue(undefined);
+    createOcrSession.mockResolvedValue({ recognize: ocrRecognize, terminate: ocrTerminate });
     importScanFiles.mockResolvedValue({
         images: [
             {
@@ -158,6 +168,11 @@ describe('ExamScanBatchModal', () => {
         expect(detectScannedAnswers).toHaveBeenCalledTimes(2);
         expect((detectScannedAnswers.mock.calls[0] as unknown[])[2]).toBe(1);
         expect((detectScannedAnswers.mock.calls[1] as unknown[])[2]).toBe(1);
+        // One OCR session shared by both students' sheets, not one per student (perf audit #1112).
+        expect(createOcrSession).toHaveBeenCalledTimes(1);
+        expect((detectScannedAnswers.mock.calls[0] as unknown[])[3]).toBe(ocrRecognize);
+        expect((detectScannedAnswers.mock.calls[1] as unknown[])[3]).toBe(ocrRecognize);
+        expect(ocrTerminate).toHaveBeenCalledTimes(1);
 
         fireEvent.click(screen.getByText('tests.scan.batch_save_all'));
 

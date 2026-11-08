@@ -137,63 +137,105 @@ function collectWords(data: RecognizeData): OcrWord[] {
     }));
 }
 
+type TesseractModule = typeof import('tesseract.js');
+type TesseractWorker = Awaited<ReturnType<TesseractModule['createWorker']>>;
+
+/** Lazily imports tesseract.js and creates a worker — the one engine-load point shared by a
+ *  one-shot recognizeImage() call and a reused OcrSession. */
+async function loadTesseractWorker(langs: string): Promise<{ tesseract: TesseractModule; worker: TesseractWorker }> {
+    try {
+        const tesseract = await import('tesseract.js');
+        const worker = await tesseract.createWorker(langs, Oem.LSTM_ONLY);
+        return { tesseract, worker };
+    } catch (err) {
+        throw new OcrUnavailableError(err);
+    }
+}
+
+/** Runs one recognition on an already-created worker — the shared core of recognizeImage() and
+ *  OcrSession.recognize(), so a batch can reuse one worker without duplicating this logic. */
+async function recognizeWithWorker(
+    worker: TesseractWorker,
+    tesseract: TesseractModule,
+    langs: string,
+    dataUrl: string,
+    opts: Omit<RecognizeImageOptions, 'langs'>
+): Promise<OcrResult> {
+    const psm = opts.psm ?? tesseract.PSM[psmForCaptureHint(opts.captureHint)];
+    // Dictionary seeding needs Tesseract's Init()-time config, so it can only take effect via
+    // reinitialize() after the worker's first load — setParameters silently ignores
+    // user_words_suffix/user_patterns_suffix/load_*_dawg (they're init-only members).
+    const userWordsText = buildUserWords(opts.userWords ?? []);
+    const userPatternsText = buildUserPatterns(opts.userPatterns ?? []);
+    if (userWordsText || userPatternsText) {
+        const primaryLang = (Array.isArray(langs) ? langs[0] : langs).split('+')[0];
+        // Keep the standard dictionaries on: user words/patterns are meant to *supplement*
+        // recognition, not replace it — disabling load_system_dawg/load_freq_dawg is for
+        // code/identifier-heavy text and would hurt recognition of ordinary student prose.
+        const config: Record<string, string> = { load_system_dawg: '1', load_freq_dawg: '1' };
+        if (userWordsText) {
+            await worker.writeText(`${primaryLang}.user-words`, userWordsText);
+            config.user_words_suffix = 'user-words';
+        }
+        if (userPatternsText) {
+            await worker.writeText(`${primaryLang}.user-patterns`, userPatternsText);
+            config.user_patterns_suffix = 'user-patterns';
+        }
+        await worker.reinitialize(langs, Oem.LSTM_ONLY, config);
+    }
+    await worker.setParameters({ tessedit_pageseg_mode: psm });
+    const { data } = (await worker.recognize(dataUrl, {}, { blocks: true })) as unknown as { data: RecognizeData };
+    const words = collectWords(data);
+    const meanWordConfidence =
+        words.length > 0 ? words.reduce((sum, w) => sum + w.confidence, 0) / words.length : undefined;
+    return {
+        text: data.text ?? '',
+        confidence: meanWordConfidence ?? toUnitConfidence(data.confidence),
+        words,
+    };
+}
+
 /**
  * OCR an image data URL into text plus per-word confidence, keeping a human in the loop:
  * the confidence lets the review UI flag low-confidence spans. Uses the LSTM engine and a
  * capture-driven page-segmentation mode. `tesseract.js` is imported lazily so its WASM
  * payload stays out of routes that never OCR.
+ *
+ * One-shot: creates and tears down its own worker. A caller OCR-ing several images in the same
+ * batch (a multi-page scan, a class of answer sheets) should use `createOcrSession()` instead —
+ * re-creating the engine (and reloading its language data) per image is the expensive part.
  */
 export async function recognizeImage(dataUrl: string, opts: RecognizeImageOptions = {}): Promise<OcrResult> {
     const langs = resolveOcrLanguages(opts.langs);
-    // The import stays lazy so tesseract.js' WASM payload never reaches routes that don't OCR, but
-    // it belongs inside this try: a rejected import (offline first use) is the same engine-load
-    // failure callers already map to the translated "engine unavailable" guidance.
-    type TesseractModule = typeof import('tesseract.js');
-    let tesseract: TesseractModule;
-    let psm: PSM;
-    let worker: Awaited<ReturnType<TesseractModule['createWorker']>>;
+    const { tesseract, worker } = await loadTesseractWorker(langs);
     try {
-        tesseract = await import('tesseract.js');
-        psm = opts.psm ?? tesseract.PSM[psmForCaptureHint(opts.captureHint)];
-        worker = await tesseract.createWorker(langs, Oem.LSTM_ONLY);
-    } catch (err) {
-        throw new OcrUnavailableError(err);
-    }
-    try {
-        // Dictionary seeding needs Tesseract's Init()-time config, so it can only take effect
-        // via reinitialize() after the worker's first load — setParameters silently ignores
-        // user_words_suffix/user_patterns_suffix/load_*_dawg (they're init-only members).
-        const userWordsText = buildUserWords(opts.userWords ?? []);
-        const userPatternsText = buildUserPatterns(opts.userPatterns ?? []);
-        if (userWordsText || userPatternsText) {
-            const primaryLang = (Array.isArray(langs) ? langs[0] : langs).split('+')[0];
-            // Keep the standard dictionaries on: user words/patterns are meant to *supplement*
-            // recognition, not replace it — disabling load_system_dawg/load_freq_dawg is for
-            // code/identifier-heavy text and would hurt recognition of ordinary student prose.
-            const config: Record<string, string> = { load_system_dawg: '1', load_freq_dawg: '1' };
-            if (userWordsText) {
-                await worker.writeText(`${primaryLang}.user-words`, userWordsText);
-                config.user_words_suffix = 'user-words';
-            }
-            if (userPatternsText) {
-                await worker.writeText(`${primaryLang}.user-patterns`, userPatternsText);
-                config.user_patterns_suffix = 'user-patterns';
-            }
-            await worker.reinitialize(langs, Oem.LSTM_ONLY, config);
-        }
-        await worker.setParameters({ tessedit_pageseg_mode: psm });
-        const { data } = (await worker.recognize(dataUrl, {}, { blocks: true })) as unknown as { data: RecognizeData };
-        const words = collectWords(data);
-        const meanWordConfidence =
-            words.length > 0 ? words.reduce((sum, w) => sum + w.confidence, 0) / words.length : undefined;
-        return {
-            text: data.text ?? '',
-            confidence: meanWordConfidence ?? toUnitConfidence(data.confidence),
-            words,
-        };
+        return await recognizeWithWorker(worker, tesseract, langs, dataUrl, opts);
     } finally {
         await worker.terminate();
     }
+}
+
+/** A Tesseract engine instance kept alive across several recognize() calls — see recognizeImage()'s doc. */
+export interface OcrSession {
+    recognize(dataUrl: string, opts?: Omit<RecognizeImageOptions, 'langs'>): Promise<OcrResult>;
+    terminate(): Promise<void>;
+}
+
+/**
+ * Opens one OCR session for a batch of images sharing the same language(s) — a multi-page scan,
+ * a class of answer sheets. Reuses one Tesseract worker across every `recognize()` call instead
+ * of re-initializing the engine per image, so a caller must terminate() it once the batch is done
+ * (a `try`/`finally` around the batch loop, same as any other resource with manual cleanup).
+ */
+export async function createOcrSession(langs?: RecognizeImageOptions['langs']): Promise<OcrSession> {
+    const resolvedLangs = resolveOcrLanguages(langs);
+    const { tesseract, worker } = await loadTesseractWorker(resolvedLangs);
+    return {
+        recognize: (dataUrl, opts = {}) => recognizeWithWorker(worker, tesseract, resolvedLangs, dataUrl, opts),
+        terminate: async () => {
+            await worker.terminate();
+        },
+    };
 }
 
 async function extractFromImage(dataUrl: string): Promise<string> {
