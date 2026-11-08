@@ -30,8 +30,12 @@ vi.mock('../../../utils/fileToDataUrl', () => ({
     fileToDataUrl: vi.fn(async () => 'data:image/png;base64,aGk='),
 }));
 
-const { recognizeImage } = vi.hoisted(() => ({ recognizeImage: vi.fn() }));
-vi.mock('../../../utils/textExtraction', () => ({ recognizeImage }));
+const { recognize, terminate, createOcrSession } = vi.hoisted(() => ({
+    recognize: vi.fn(),
+    terminate: vi.fn(async () => undefined),
+    createOcrSession: vi.fn(),
+}));
+vi.mock('../../../utils/textExtraction', () => ({ createOcrSession }));
 
 const ocr: OcrResult = {
     text: 'teh cat sat',
@@ -56,7 +60,9 @@ function pickFile() {
 beforeEach(() => {
     vi.clearAllMocks();
     importScanFiles.mockResolvedValue({ images: [imageFile()], skipped: [] });
-    recognizeImage.mockResolvedValue(ocr);
+    recognize.mockResolvedValue(ocr);
+    terminate.mockResolvedValue(undefined);
+    createOcrSession.mockResolvedValue({ recognize, terminate });
 });
 
 describe('ScanCaptureModal', () => {
@@ -69,10 +75,8 @@ describe('ScanCaptureModal', () => {
 
         const textarea = (await screen.findByLabelText('scan.review_label')) as HTMLTextAreaElement;
         expect(textarea.value).toBe('teh cat sat');
-        expect(recognizeImage).toHaveBeenCalledWith('data:image/png;base64,aGk=', {
-            langs: 'eng',
-            captureHint: 'auto',
-        });
+        expect(createOcrSession).toHaveBeenCalledWith('eng');
+        expect(recognize).toHaveBeenCalledWith('data:image/png;base64,aGk=', { captureHint: 'auto' });
 
         fireEvent.change(textarea, { target: { value: 'the cat sat' } });
         fireEvent.click(screen.getByText('scan.insert'));
@@ -81,9 +85,9 @@ describe('ScanCaptureModal', () => {
         expect(onClose).toHaveBeenCalled();
     });
 
-    it('OCRs every page of a multi-page import and combines the text', async () => {
+    it('OCRs every page of a multi-page import through one shared session, combining the text', async () => {
         importScanFiles.mockResolvedValueOnce({ images: [imageFile(), imageFile()], skipped: [] });
-        recognizeImage
+        recognize
             .mockResolvedValueOnce({ text: 'page one', confidence: 0.8, words: [] })
             .mockResolvedValueOnce({ text: 'page two', confidence: 0.6, words: [] });
         render(<ScanCaptureModal defaultLang="eng" onInsert={vi.fn()} onClose={vi.fn()} />);
@@ -91,8 +95,11 @@ describe('ScanCaptureModal', () => {
         pickFile();
 
         const textarea = (await screen.findByLabelText('scan.review_label')) as HTMLTextAreaElement;
-        expect(recognizeImage).toHaveBeenCalledTimes(2);
+        // One Tesseract worker for the whole multi-page import, not one per page (perf audit #1112).
+        expect(createOcrSession).toHaveBeenCalledTimes(1);
+        expect(recognize).toHaveBeenCalledTimes(2);
         expect(textarea.value).toBe('page one\n\npage two');
+        expect(terminate).toHaveBeenCalledTimes(1);
     });
 
     it('highlights low-confidence words for the teacher to check', async () => {
@@ -114,7 +121,7 @@ describe('ScanCaptureModal', () => {
     });
 
     it('surfaces an OCR failure and lets the teacher scan again', async () => {
-        recognizeImage.mockRejectedValueOnce(new Error('ocr boom'));
+        recognize.mockRejectedValueOnce(new Error('ocr boom'));
         render(<ScanCaptureModal defaultLang="eng" onInsert={vi.fn()} onClose={vi.fn()} />);
         pickFile();
         expect(await screen.findByText('scan.error_generic')).toBeInTheDocument();
@@ -124,14 +131,14 @@ describe('ScanCaptureModal', () => {
     });
 
     it('explains that the engine needs a connection when it cannot be loaded', async () => {
-        recognizeImage.mockRejectedValueOnce(new OcrUnavailableError(new Error('NetworkError: importScripts')));
+        createOcrSession.mockRejectedValueOnce(new OcrUnavailableError(new Error('NetworkError: importScripts')));
         render(<ScanCaptureModal defaultLang="eng" onInsert={vi.fn()} onClose={vi.fn()} />);
         pickFile();
         expect(await screen.findByText('scan.error_engine_unavailable')).toBeInTheDocument();
         expect(screen.queryByText(/importScripts/)).not.toBeInTheDocument();
     });
 
-    it('passes rubric/roster user words through to recognizeImage', async () => {
+    it('passes rubric/roster user words through to the shared session', async () => {
         render(
             <ScanCaptureModal
                 defaultLang="eng"
@@ -142,8 +149,7 @@ describe('ScanCaptureModal', () => {
         );
         pickFile();
         await screen.findByLabelText('scan.review_label');
-        expect(recognizeImage).toHaveBeenCalledWith('data:image/png;base64,aGk=', {
-            langs: 'eng',
+        expect(recognize).toHaveBeenCalledWith('data:image/png;base64,aGk=', {
             captureHint: 'auto',
             userWords: ['Rembrandt', 'Vermeer'],
         });

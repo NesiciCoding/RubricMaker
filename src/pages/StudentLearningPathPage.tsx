@@ -10,6 +10,7 @@ import CefrBadge from '../components/CEFR/CefrBadge';
 import CefrPlacementCard from '../components/CEFR/CefrPlacementCard';
 import { useStoreSelector } from '../context/useStore';
 import { getCefrStudentOverview } from '../utils/cefrStudentAggregator';
+import { groupByStudentId } from '../utils/groupByStudentId';
 import {
     getLearningPathRecommendations,
     buildCohortAverages,
@@ -80,8 +81,22 @@ export default function StudentLearningPathPage() {
     );
 
     const cohortAverages = useMemo(() => {
+        // Index per-student records once instead of having getCefrStudentOverview re-filter the
+        // full app-wide arrays for every cohort student (it filters by studentId internally, so
+        // a pre-sliced array is behavior-identical — see StudentsPage.tsx).
+        const srsByStudent = groupByStudentId(studentRubrics, (sr) => sr.studentId);
+        const sasByStudent = groupByStudentId(selfAssessments, (sa) => sa.studentId);
+        const arsByStudent = groupByStudentId(analysisResults, (ar) => ar.studentId);
+
         const allCells = cohortStudents.map(
-            (s) => getCefrStudentOverview(s.id, studentRubrics, rubrics, selfAssessments, analysisResults).cells
+            (s) =>
+                getCefrStudentOverview(
+                    s.id,
+                    srsByStudent.get(s.id) ?? [],
+                    rubrics,
+                    sasByStudent.get(s.id) ?? [],
+                    arsByStudent.get(s.id) ?? []
+                ).cells
         );
         return buildCohortAverages(allCells);
     }, [cohortStudents, studentRubrics, rubrics, selfAssessments, analysisResults]);

@@ -43,6 +43,28 @@ export function makeSequencedClient(tableResults: Record<string, QueryResult[]>)
     return { from };
 }
 
+/**
+ * Mocks a `.range()`-paged select against a single table, serving `allRows` back
+ * in `pageSize`-sized slices so `fetchPaged`'s loop-until-short-page logic is
+ * actually exercised (the plain `makeClient` builder has no `.range()` at all).
+ */
+export function makePagedClient(table: string, allRows: unknown[]) {
+    const from = vi.fn((t: string) => {
+        if (t !== table) return makeQueryBuilder({ data: [], error: null });
+        const builder: Record<string, unknown> = {};
+        const chain = () => builder;
+        builder.select = vi.fn(chain);
+        builder.eq = vi.fn(chain);
+        builder.order = vi.fn(chain);
+        builder.range = vi.fn(async (from: number, to: number) => ({
+            data: allRows.slice(from, to + 1),
+            error: null,
+        }));
+        return builder;
+    });
+    return { from };
+}
+
 export function adapterWithClient(client: unknown, userId: string | null = 'user1') {
     const adapter = new SupabaseAdapter();
     // Reach into private fields — SupabaseAdapter has no public setter for a

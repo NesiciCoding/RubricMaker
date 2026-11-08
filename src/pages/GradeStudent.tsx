@@ -468,8 +468,8 @@ function GradeStudentEditor() {
             ...(tierId && { tierId }),
             feedbackOnly,
             isAnchor,
-            rubricSnapshot: JSON.parse(JSON.stringify(rubric)),
-            gradeScaleSnapshot: scale ? JSON.parse(JSON.stringify(scale)) : undefined,
+            rubricSnapshot: structuredClone(rubric),
+            gradeScaleSnapshot: scale ? structuredClone(scale) : undefined,
             gradedAt: new Date().toISOString(),
         });
         setSaved(true);
@@ -522,8 +522,8 @@ function GradeStudentEditor() {
             ...(tierId && { tierId }),
             feedbackOnly,
             isAnchor,
-            rubricSnapshot: JSON.parse(JSON.stringify(rubric)),
-            gradeScaleSnapshot: scale ? JSON.parse(JSON.stringify(scale)) : undefined,
+            rubricSnapshot: structuredClone(rubric),
+            gradeScaleSnapshot: scale ? structuredClone(scale) : undefined,
             gradedAt: new Date().toISOString(),
         });
         setIsDirty(false);
@@ -576,8 +576,8 @@ function GradeStudentEditor() {
             ...(tierId && { tierId }),
             feedbackOnly,
             isAnchor,
-            rubricSnapshot: JSON.parse(JSON.stringify(rubric)),
-            gradeScaleSnapshot: scale ? JSON.parse(JSON.stringify(scale)) : undefined,
+            rubricSnapshot: structuredClone(rubric),
+            gradeScaleSnapshot: scale ? structuredClone(scale) : undefined,
             gradedAt: new Date().toISOString(),
         };
         saveGrade(nhiSR);
@@ -876,6 +876,21 @@ function GradeStudentEditor() {
         document.head.removeChild(style);
     }, [rubric]);
 
+    // Memoized so a keystroke in the comment editor (which re-renders this component on every
+    // change) doesn't re-scan the full app-wide attachments/analysisResults arrays each time.
+    const rubricAttachments = useMemo(
+        () => attachments.filter((a) => a.rubricId === rubricId),
+        [attachments, rubricId]
+    );
+    const studentAttachments = useMemo(
+        () => attachments.filter((a) => a.studentId === studentId),
+        [attachments, studentId]
+    );
+    const existingAnalysisResult = useMemo(
+        () => analysisResults.find((r) => r.rubricId === rubricId && r.studentId === studentId),
+        [analysisResults, rubricId, studentId]
+    );
+
     if (!rubric || !student || !sr)
         return (
             <div className="page-content">
@@ -898,9 +913,6 @@ function GradeStudentEditor() {
 
     const fmt = rubric.format;
     const orderedLevels = (c: (typeof rubric.criteria)[0]) => sharedOrderedLevels(c, fmt);
-    const rubricAttachments = attachments.filter((a) => a.rubricId === rubricId);
-    const studentAttachments = attachments.filter((a) => a.studentId === studentId);
-    const existingAnalysisResult = analysisResults.find((r) => r.rubricId === rubricId && r.studentId === studentId);
 
     const selfAssessmentEntries = rubric.criteria.flatMap((criterion) => {
         const levelId = sr?.selfAssessmentLevels?.[criterion.id];

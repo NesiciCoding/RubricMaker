@@ -10,6 +10,7 @@ import { getStudentGrammarMasteryScore, type MasteryProfileDeps } from '../../ut
 import { getCriterionInterventionFlags, getCefrSkillInterventionFlags } from '../../utils/learningPathAggregator';
 import { scoreToMasteryColor } from '../../utils/masteryColorScale';
 import { getEffectiveVoTrack } from '../../data/voTracks';
+import { groupByStudentId } from '../../utils/groupByStudentId';
 import type {
     Student,
     Class,
@@ -93,45 +94,56 @@ export default function StudentSnapshotTable({
     const { t } = useTranslation();
     const navigate = useNavigate();
 
-    const masteryDeps: MasteryProfileDeps = useMemo(
-        () => ({
-            tests,
-            studentTests,
-            rubrics,
-            studentRubrics,
-            flashcardDecks,
-            flashcardAssignments,
-            flashcardReviews,
-        }),
-        [tests, studentTests, rubrics, studentRubrics, flashcardDecks, flashcardAssignments, flashcardReviews]
-    );
-
     const rows: Row[] = useMemo(() => {
+        // Index every per-student collection once, rather than having each aggregator re-filter
+        // the full app-wide arrays for every student (the aggregators filter by studentId
+        // internally, so passing a pre-sliced array is behavior-identical — see StudentsPage.tsx).
+        const classById = new Map(classes.map((c) => [c.id, c]));
+        const srsByStudent = groupByStudentId(studentRubrics, (sr) => sr.studentId);
+        const sasByStudent = groupByStudentId(selfAssessments, (sa) => sa.studentId);
+        const arsByStudent = groupByStudentId(analysisResults, (ar) => ar.studentId);
+        const stsByStudent = groupByStudentId(studentTests, (st) => st.studentId);
+        const faByStudent = groupByStudentId(flashcardAssignments, (fa) => fa.studentId);
+        const frByStudent = groupByStudentId(flashcardReviews, (fr) => fr.studentId);
+
         const computed = students.map((student) => {
-            const cls = classes.find((c) => c.id === student.classId);
+            const cls = classById.get(student.classId);
+            const srs = srsByStudent.get(student.id) ?? [];
+            const sas = sasByStudent.get(student.id) ?? [];
+            const ars = arsByStudent.get(student.id) ?? [];
+            const sts = stsByStudent.get(student.id) ?? [];
             const cefrOverview = getCefrStudentOverview(
                 student.id,
-                studentRubrics,
+                srs,
                 rubrics,
-                selfAssessments,
-                analysisResults,
+                sas,
+                ars,
                 cls?.year,
                 getEffectiveVoTrack(student, cls),
                 tests,
-                studentTests,
+                sts,
                 cefrAchieveThreshold
             );
-            const vocabProfile = getStudentVocabProfile(student, analysisResults);
+            const vocabProfile = getStudentVocabProfile(student, ars);
             const flagCount =
-                getCriterionInterventionFlags(student.id, studentRubrics, rubrics).length +
-                getCefrSkillInterventionFlags(student.id, studentRubrics, rubrics).length;
+                getCriterionInterventionFlags(student.id, srs, rubrics).length +
+                getCefrSkillInterventionFlags(student.id, srs, rubrics).length;
+            const studentMasteryDeps: MasteryProfileDeps = {
+                tests,
+                studentTests: sts,
+                rubrics,
+                studentRubrics: srs,
+                flashcardDecks,
+                flashcardAssignments: faByStudent.get(student.id) ?? [],
+                flashcardReviews: frByStudent.get(student.id) ?? [],
+            };
 
             return {
                 student,
                 cls,
                 cefrLevel: overallLevelStatus(cefrOverview.cells),
                 vocabLevel: vocabProfile.analysisCount > 0 ? vocabProfile.estimatedLevel : null,
-                grammarScore: getStudentGrammarMasteryScore(student.id, masteryDeps),
+                grammarScore: getStudentGrammarMasteryScore(student.id, studentMasteryDeps),
                 flagCount,
             };
         });
@@ -149,8 +161,10 @@ export default function StudentSnapshotTable({
         analysisResults,
         tests,
         studentTests,
+        flashcardDecks,
+        flashcardAssignments,
+        flashcardReviews,
         cefrAchieveThreshold,
-        masteryDeps,
     ]);
 
     if (students.length === 0) {

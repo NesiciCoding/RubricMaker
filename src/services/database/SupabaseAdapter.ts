@@ -753,6 +753,21 @@ export class SupabaseAdapter {
         return error ? { success: false, error: error.message } : { success: true };
     }
 
+    /** Batched upsert — one round-trip for a bulk action (e.g. a CSV roster import creating several new classes). */
+    async upsertClasses(classes: Class[]): Promise<SyncResult> {
+        if (classes.length === 0) return { success: true };
+        const ownerId = this.uid();
+        const rows = classes.map((c) => ({ id: c.id, owner_id: ownerId, data: c }));
+        const { error } = await this.db().from('classes').upsert(rows, { onConflict: 'id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteClasses(ids: string[]): Promise<SyncResult> {
+        if (ids.length === 0) return { success: true };
+        const { error } = await this.db().from('classes').delete().in('id', ids).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
     // ── Students ──────────────────────────────────────────────────────────────
 
     async fetchStudents(): Promise<Student[]> {
@@ -776,6 +791,21 @@ export class SupabaseAdapter {
 
     async deleteStudent(id: string): Promise<SyncResult> {
         const { error } = await this.db().from('students').delete().eq('id', id).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    /** Batched upsert — one round-trip for a bulk action (e.g. a CSV roster import). */
+    async upsertStudents(students: Student[]): Promise<SyncResult> {
+        if (students.length === 0) return { success: true };
+        const ownerId = this.uid();
+        const rows = students.map((s) => ({ id: s.id, owner_id: ownerId, class_id: s.classId, data: s }));
+        const { error } = await this.db().from('students').upsert(rows, { onConflict: 'id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteStudents(ids: string[]): Promise<SyncResult> {
+        if (ids.length === 0) return { success: true };
+        const { error } = await this.db().from('students').delete().in('id', ids).eq('owner_id', this.uid());
         return error ? { success: false, error: error.message } : { success: true };
     }
 
@@ -881,9 +911,10 @@ export class SupabaseAdapter {
     // ── Attachments ───────────────────────────────────────────────────────────
 
     async fetchAttachments(): Promise<Array<Omit<Attachment, 'dataUrl'> & { storagePath?: string }>> {
-        const { data, error } = await this.db().from('attachments').select('data, storage_path');
-        if (error) throw error;
-        return (data ?? []).map((r) => ({ ...(r.data as Omit<Attachment, 'dataUrl'>), storagePath: r.storage_path }));
+        const rows = await this.fetchPaged<{ data: Omit<Attachment, 'dataUrl'>; storage_path: string | null }>(() =>
+            this.db().from('attachments').select('data, storage_path').order('id')
+        );
+        return rows.map((r) => ({ ...r.data, storagePath: r.storage_path ?? undefined }));
     }
 
     async upsertAttachment(a: Omit<Attachment, 'dataUrl'>, storagePath?: string): Promise<SyncResult> {

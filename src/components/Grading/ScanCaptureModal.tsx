@@ -5,7 +5,7 @@ import Modal from '../ui/Modal';
 import { useCameraCapture } from '../../hooks/useCameraCapture';
 import { importScanFiles } from '../../utils/scanImport';
 import { fileToDataUrl } from '../../utils/fileToDataUrl';
-import { recognizeImage, type OcrResult, type OcrWord } from '../../utils/textExtraction';
+import { createOcrSession, type OcrResult, type OcrWord } from '../../utils/textExtraction';
 import { OcrUnavailableError } from '../../utils/ocrErrors';
 import { logEvent } from '../../services/logging/clientLogger';
 import { confidenceBand, lowConfidenceWords, type ConfidenceBand } from '../../utils/ocrReview';
@@ -57,14 +57,18 @@ export default function ScanCaptureModal({ defaultLang, userWords, onInsert, onC
             cancelledRef.current = false;
             setPhase('processing');
             setErrorMsg('');
+            // One OCR session for the whole import — a multi-page capture shares one Tesseract
+            // worker across pages instead of re-initializing the engine per page (perf audit #1112).
+            let session: Awaited<ReturnType<typeof createOcrSession>> | null = null;
             try {
                 const firstUrl = await fileToDataUrl(blobs[0]);
+                session = await createOcrSession(defaultLang);
                 // OCR every page of a multi-page import and combine, so a multi-page answer
                 // isn't silently reduced to its first page.
                 const pages: OcrResult[] = [];
                 for (const b of blobs) {
                     const dataUrl = b === blobs[0] ? firstUrl : await fileToDataUrl(b);
-                    pages.push(await recognizeImage(dataUrl, { langs: defaultLang, captureHint, userWords }));
+                    pages.push(await session.recognize(dataUrl, { captureHint, userWords }));
                 }
                 if (cancelledRef.current) return;
                 const words: OcrWord[] = pages.flatMap((p) => p.words);
@@ -91,6 +95,8 @@ export default function ScanCaptureModal({ defaultLang, userWords, onInsert, onC
                     setErrorMsg(t('scan.error_generic'));
                 }
                 setPhase('error');
+            } finally {
+                await session?.terminate();
             }
         },
         [defaultLang, captureHint, userWords, t]
