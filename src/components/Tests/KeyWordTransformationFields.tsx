@@ -6,6 +6,7 @@ import type { TestQuestion } from '../../types';
 import AnswerToleranceFields from './AnswerToleranceFields';
 import ChipListEditor from './ChipListEditor';
 import HelpPopover from './HelpPopover';
+import PipeListInput from './PipeListInput';
 import RawTextToggle from './RawTextToggle';
 
 interface Props {
@@ -61,9 +62,11 @@ export default function KeyWordTransformationFields({ question, update, partialC
                         />
                     }
                     raw={
-                        <KwtAnswersRaw
-                            id={id}
-                            answers={answers}
+                        <PipeListInput
+                            id={`kwt-answers-${id}`}
+                            aria-label={t('tests.kwt_answers_label')}
+                            placeholder={t('tests.kwt_answers_placeholder')}
+                            value={answers}
                             onChange={(next) =>
                                 update({ expectedAnswers: next.length ? next : undefined, expectedAnswer: undefined })
                             }
@@ -195,37 +198,5 @@ function KwtAnswerCards({
                 <Plus size={14} /> {t('tests.kwt_add_answer')}
             </button>
         </div>
-    );
-}
-
-function KwtAnswersRaw({
-    id,
-    answers,
-    onChange,
-}: {
-    id: string;
-    answers: string[];
-    onChange: (answers: string[]) => void;
-}) {
-    const { t } = useTranslation();
-    // Raw text, so a typed separator ("a |") survives until the next alternative is written.
-    const [raw, setRaw] = useState(() => answers.join(' | '));
-    return (
-        <input
-            id={`kwt-answers-${id}`}
-            type="text"
-            aria-label={t('tests.kwt_answers_label')}
-            value={raw}
-            onChange={(e) => {
-                setRaw(e.target.value);
-                onChange(
-                    e.target.value
-                        .split('|')
-                        .map((a) => a.trim())
-                        .filter(Boolean)
-                );
-            }}
-            placeholder={t('tests.kwt_answers_placeholder')}
-        />
     );
 }
