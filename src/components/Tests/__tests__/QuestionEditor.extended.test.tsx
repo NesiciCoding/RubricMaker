@@ -346,6 +346,43 @@ describe('QuestionEditor extended', () => {
             ]);
         });
 
+        it('turns pasted "word – definition" lines into matching pairs', () => {
+            const { onChange } = renderEditor(
+                makeQuestion({ type: 'matching', matchingPairs: [{ id: 'p1', left: '', right: '' }] })
+            );
+            paste(screen.getAllByLabelText('tests.matching_right_placeholder')[0], 'big – large\nfast\tquick');
+            expect(
+                (onChange.mock.calls.at(-1)![0] as TestQuestion).matchingPairs!.map((p) => [p.left, p.right])
+            ).toEqual([
+                ['big', 'large'],
+                ['fast', 'quick'],
+            ]);
+        });
+
+        it('collapses to a one-line summary and flags an incomplete question', () => {
+            const onToggleCollapsed = vi.fn();
+            render(
+                <QuestionEditor
+                    question={makeQuestion({ type: 'short-answer', prompt: '<p>Capital of France?</p>', points: 2 })}
+                    index={0}
+                    total={1}
+                    sections={sections}
+                    onChange={vi.fn()}
+                    onRemove={vi.fn()}
+                    collapsed
+                    onToggleCollapsed={onToggleCollapsed}
+                    issues={['no_model_answer']}
+                />
+            );
+            expect(screen.queryByLabelText('tests.question_type_label')).toBeNull();
+            expect(screen.getByText(/Capital of France\?/)).toBeInTheDocument();
+            expect(screen.getByText('tests.question_incomplete')).toBeInTheDocument();
+            const toggle = screen.getByRole('button', { name: /tests.expand_question/ });
+            expect(toggle).toHaveAttribute('aria-expanded', 'false');
+            fireEvent.click(toggle);
+            expect(onToggleCollapsed).toHaveBeenCalledTimes(1);
+        });
+
         it('shows a duplicate button only when the builder offers one', () => {
             const onDuplicate = vi.fn();
             const { view } = renderEditor();

@@ -16,6 +16,7 @@ import {
     MessageCircle,
     ChevronUp,
     ChevronDown,
+    ChevronRight,
     Settings2,
     BookmarkPlus,
     Copy,
@@ -42,7 +43,8 @@ import {
 } from '../../utils/clozeParse';
 import LineListTextarea from './LineListTextarea';
 import PipeListInput from './PipeListInput';
-import { splitPastedList, spreadPastedLines } from '../../utils/pastedList';
+import { splitPastedList, spreadPastedLines, spreadPastedPairs } from '../../utils/pastedList';
+import type { TestQuestionIssue } from '../../utils/testQuestionIssues';
 import { gapStems, suggestDerivedForms } from '../../utils/wordFormation';
 import ErrorCorrectionFields from './ErrorCorrectionFields';
 import SentenceBuilderFields from './SentenceBuilderFields';
@@ -83,6 +85,12 @@ interface Props {
     onRemove: () => void;
     /** Insert a copy right after this question; the button is hidden when omitted. */
     onDuplicate?: () => void;
+    /** Show only the header and a one-line summary. */
+    collapsed?: boolean;
+    /** Collapse/expand toggle in the header; hidden when omitted. */
+    onToggleCollapsed?: () => void;
+    /** What keeps the question from being answered or scored, flagged in the header. */
+    issues?: TestQuestionIssue[];
     /** Hide the remove/trash button — set false when the question IS the item being edited (e.g. a Question Bank item), where "remove" is meaningless. Defaults to true. */
     showRemove?: boolean;
     /** Hide the "save to bank" button — set false when already editing a bank item, where saving-to-bank is confusing. Defaults to true. */
@@ -122,6 +130,9 @@ export default function QuestionEditor({
     onChange,
     onRemove,
     onDuplicate,
+    collapsed = false,
+    onToggleCollapsed,
+    issues,
     showRemove = true,
     showSaveToBank = true,
 }: Props) {
@@ -368,6 +379,22 @@ export default function QuestionEditor({
         apply(spreadPastedLines(items, index, lines, create));
     }
 
+    /** Lines like "word – definition" pasted into either side of a pair become one pair per line. */
+    function pastePairs(index: number) {
+        return (e: React.ClipboardEvent<HTMLInputElement>) => {
+            const lines = splitPastedList(e.clipboardData.getData('text'));
+            if (lines.length < 2) return;
+            e.preventDefault();
+            update({
+                matchingPairs: spreadPastedPairs(question.matchingPairs ?? [], index, lines, (left, right) => ({
+                    id: nanoid(),
+                    left,
+                    right,
+                })),
+            });
+        };
+    }
+
     function updateOption(optionId: string, patch: Partial<TestOption>) {
         update({
             /* v8 ignore next 2 -- option inputs only render when options is non-empty */
@@ -525,70 +552,132 @@ export default function QuestionEditor({
     const sectionLevel = sections.find((s) => s.id === question.sectionId)?.cefrLevel;
     const eloRange = sectionLevel ? cefrEloRange(sectionLevel) : null;
 
-    return (
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {/* Drag handle. Outside a Droppable (the question-bank modal) it has no role,
-                        and a name on a role-less element is invalid (#697) — so the name is only
-                        an aria-label when dnd supplied the role, and is text otherwise. */}
-                    <CardGrip
-                        {...(dragHandleProps ?? {})}
-                        label={dragHandleProps ? t('tests.drag_question') : undefined}
-                        size={16}
-                        // The glyph is 16px and the padding only grows the box vertically, so pin
-                        // the 25px touch target from the other side too.
-                        style={{
-                            padding: '2px 0',
-                            margin: 0,
-                            color: 'var(--text-muted)',
-                            minWidth: 25,
-                            minHeight: 25,
-                            justifyContent: 'center',
-                        }}
+    const header = (
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {/* Drag handle. Outside a Droppable (the question-bank modal) it has no role,
+                    and a name on a role-less element is invalid (#697) — so the name is only
+                    an aria-label when dnd supplied the role, and is text otherwise. */}
+                <CardGrip
+                    {...(dragHandleProps ?? {})}
+                    label={dragHandleProps ? t('tests.drag_question') : undefined}
+                    size={16}
+                    // The glyph is 16px and the padding only grows the box vertically, so pin
+                    // the 25px touch target from the other side too.
+                    style={{
+                        padding: '2px 0',
+                        margin: 0,
+                        color: 'var(--text-muted)',
+                        minWidth: 25,
+                        minHeight: 25,
+                        justifyContent: 'center',
+                    }}
+                >
+                    <GripVertical size={16} aria-hidden="true" />
+                    {!dragHandleProps && <span className="sr-only">{t('tests.drag_question')}</span>}
+                </CardGrip>
+                <span className="badge badge-blue">{t('tests.question_number', { number: index + 1 })}</span>
+                {issues && issues.length > 0 && (
+                    <span
+                        className="badge badge-yellow"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                        title={issues.map((issue) => t(`tests.issue_${issue}`)).join(' ')}
                     >
-                        <GripVertical size={16} aria-hidden="true" />
-                        {!dragHandleProps && <span className="sr-only">{t('tests.drag_question')}</span>}
-                    </CardGrip>
-                    <span className="badge badge-blue">{t('tests.question_number', { number: index + 1 })}</span>
-                </div>
-                <div style={{ display: 'flex', gap: 4 }}>
-                    {showSaveToBank && (
-                        <button
-                            type="button"
-                            className="btn btn-ghost btn-icon btn-sm"
-                            aria-label={t('questionBank.save_to_bank')}
-                            title={t('questionBank.save_to_bank')}
-                            onClick={saveToBank}
-                        >
-                            <BookmarkPlus size={14} />
-                        </button>
-                    )}
-                    {onDuplicate && (
-                        <button
-                            type="button"
-                            className="btn btn-ghost btn-icon btn-sm"
-                            aria-label={t('tests.duplicate_question')}
-                            title={t('tests.duplicate_question')}
-                            onClick={onDuplicate}
-                        >
-                            <Copy size={14} />
-                        </button>
-                    )}
-                    {showRemove && (
-                        <button
-                            type="button"
-                            className="btn btn-ghost btn-icon btn-sm"
-                            aria-label={t('tests.remove_question')}
-                            style={{ color: 'var(--red-text)' }}
-                            onClick={onRemove}
-                        >
-                            <Trash2 size={14} />
-                        </button>
-                    )}
-                </div>
+                        <AlertCircle size={12} aria-hidden="true" />
+                        {t('tests.question_incomplete')}
+                        <span className="sr-only">: {issues.map((issue) => t(`tests.issue_${issue}`)).join(' ')}</span>
+                    </span>
+                )}
             </div>
+            <div style={{ display: 'flex', gap: 4 }}>
+                {onToggleCollapsed && (
+                    <button
+                        type="button"
+                        className="btn btn-ghost btn-icon btn-sm"
+                        aria-expanded={!collapsed}
+                        aria-label={t(collapsed ? 'tests.expand_question' : 'tests.collapse_question', {
+                            number: index + 1,
+                        })}
+                        title={t(collapsed ? 'tests.expand_question' : 'tests.collapse_question', {
+                            number: index + 1,
+                        })}
+                        onClick={onToggleCollapsed}
+                    >
+                        {collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+                    </button>
+                )}
+                {showSaveToBank && (
+                    <button
+                        type="button"
+                        className="btn btn-ghost btn-icon btn-sm"
+                        aria-label={t('questionBank.save_to_bank')}
+                        title={t('questionBank.save_to_bank')}
+                        onClick={saveToBank}
+                    >
+                        <BookmarkPlus size={14} />
+                    </button>
+                )}
+                {onDuplicate && (
+                    <button
+                        type="button"
+                        className="btn btn-ghost btn-icon btn-sm"
+                        aria-label={t('tests.duplicate_question')}
+                        title={t('tests.duplicate_question')}
+                        onClick={onDuplicate}
+                    >
+                        <Copy size={14} />
+                    </button>
+                )}
+                {showRemove && (
+                    <button
+                        type="button"
+                        className="btn btn-ghost btn-icon btn-sm"
+                        aria-label={t('tests.remove_question')}
+                        style={{ color: 'var(--red-text)' }}
+                        onClick={onRemove}
+                    >
+                        <Trash2 size={14} />
+                    </button>
+                )}
+            </div>
+        </div>
+    );
 
+    if (collapsed) {
+        const promptText = plainQuestionPromptText(question).trim();
+        return (
+            <div
+                className="card"
+                id={`question-card-${question.id}`}
+                tabIndex={-1}
+                style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
+            >
+                {header}
+                <p
+                    className="text-sm"
+                    style={{
+                        margin: 0,
+                        color: 'var(--text-muted)',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                    }}
+                >
+                    {t(questionTypeLabelKey(question.type))} · {t('tests.points_total', { count: question.points })}
+                    {promptText && ` · ${promptText}`}
+                </p>
+            </div>
+        );
+    }
+
+    return (
+        <div
+            className="card"
+            id={`question-card-${question.id}`}
+            tabIndex={-1}
+            style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+        >
+            {header}
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                 <div className="form-group" style={{ marginBottom: 0, flex: '1 1 200px' }}>
                     <label htmlFor={`question-type-${question.id}`}>{t('tests.question_type_label')}</label>
@@ -902,7 +991,9 @@ export default function QuestionEditor({
                         answer={(question.options ?? []).find((o) => o.isCorrect)?.text ?? ''}
                         exclude={(question.options ?? []).map((o) => o.text)}
                         onPick={(text) =>
-                            update({ options: [...(question.options ?? []), { id: nanoid(), text, isCorrect: false }] })
+                            update({
+                                options: [...(question.options ?? []), { id: nanoid(), text, isCorrect: false }],
+                            })
                         }
                     />
                     {question.type === 'multiple-response' && (
@@ -1188,12 +1279,13 @@ export default function QuestionEditor({
                             {t('tests.help.matching_teacher_body')}
                         </HelpPopover>
                     </label>
-                    {(question.matchingPairs ?? []).map((pair) => (
+                    {(question.matchingPairs ?? []).map((pair, pairIndex) => (
                         <div key={pair.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <input
                                 type="text"
                                 value={pair.left}
                                 onChange={(e) => updateMatchingPair(pair.id, { left: e.target.value })}
+                                onPaste={pastePairs(pairIndex)}
                                 placeholder={t('tests.matching_left_placeholder')}
                                 style={{ flex: 1 }}
                                 aria-label={t('tests.matching_left_placeholder')}
@@ -1203,6 +1295,7 @@ export default function QuestionEditor({
                                 type="text"
                                 value={pair.right}
                                 onChange={(e) => updateMatchingPair(pair.id, { right: e.target.value })}
+                                onPaste={pastePairs(pairIndex)}
                                 placeholder={t('tests.matching_right_placeholder')}
                                 style={{ flex: 1 }}
                                 aria-label={t('tests.matching_right_placeholder')}
@@ -1453,7 +1546,9 @@ export default function QuestionEditor({
                             min={0}
                             value={question.numericTolerance ?? ''}
                             onChange={(e) =>
-                                update({ numericTolerance: e.target.value === '' ? undefined : Number(e.target.value) })
+                                update({
+                                    numericTolerance: e.target.value === '' ? undefined : Number(e.target.value),
+                                })
                             }
                             placeholder="0"
                         />
