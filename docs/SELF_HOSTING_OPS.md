@@ -208,14 +208,6 @@ python3 /tmp/rm/scripts/stack-drift.py apply             # run what is pending
 - `apply` runs the pending migrations in order. Each one runs in a single transaction together with its
   record row, and the run stops at the first failure. Take a backup first.
 
-**CI runs `check` automatically.** Both `deploy-hestiacp` (in `ci.yml`, after every push to `main`) and
-the manual `deploy-hestiacp.yml` workflow ship `stack-drift.py` and `supabase/migrations/` to the VPS over
-SSH and run `check` read-only once the frontend deploy finishes, failing the job loudly if anything is
-pending or differs (#935's interim fix — the full version, which would apply migrations and redeploy
-functions from CI directly, is blocked on #404's restricted deploy account). A red "Check Supabase
-migration & edge-function drift" step means a merged change under `supabase/` hasn't reached production
-yet: run `baseline`/`apply` and/or `deploy-edge-functions.sh` below on the server, then re-run the job.
-
 **`scripts/deploy-edge-functions.sh`** refreshes the deployed functions from the repository:
 
 ```bash
@@ -224,11 +216,115 @@ sudo bash /tmp/rm/scripts/deploy-edge-functions.sh
 
 It refuses while `stack-drift.py` reports pending migrations, because new function code can need new
 schema (`--force` skips that check). It then shows which functions change and asks before touching
-anything. Before copying, it saves `volumes/functions` as `volumes/functions.bak-<timestamp>` and keeps
-the newest five. It replaces only the directories the repository has, so the stack's own `main` router
-is left alone. Finally it restarts the edge-runtime container and sends an `OPTIONS` request to every
-function through `127.0.0.1:8000`. If a function fails to boot, it prints the command that restores
-the backup.
+anything (`--yes` skips the prompt — this is how CI drives it). Before copying, it saves
+`volumes/functions` as `volumes/functions.bak-<timestamp>` and keeps the newest five. It replaces only
+the directories the repository has, so the stack's own `main` router is left alone. Finally it restarts
+the edge-runtime container and sends an `OPTIONS` request to every function through `127.0.0.1:8000`. If
+a function fails to boot, it prints the command that restores the backup.
+
+### Deploying from CI (#935)
+
+Two things happen automatically on every push to `main`, in `ci.yml`'s `deploy-backend` and
+`deploy-hestiacp` jobs, in that order — so a frontend that needs a new RPC, table or column never goes
+live before the schema it depends on:
+
+1. **`deploy-backend`** runs `stack-drift.py apply --yes` then `deploy-edge-functions.sh --yes` on the
+   VPS. Both are no-ops when there's nothing pending, so this runs on every deploy, not only ones that
+   touched `supabase/`. It then smoke-tests `${SUPABASE_PUBLIC_URL}/rest/v1/`.
+2. **`deploy-hestiacp`** (the frontend deploy) only runs after `deploy-backend` succeeds, and still ends
+   with the read-only `stack-drift.py check` from the interim fix, as a second, cheap confirmation.
+
+Both connect over SSH, but as **different, narrowly scoped accounts** — neither is `root`, and neither
+is a member of the `docker` group (which is root-equivalent: anyone who can run arbitrary `docker`
+commands can mount the host filesystem into a container and read/write anything on the box):
+
+- The frontend deploy (#404) uses the `rubricmaker` HestiaCP user over SFTP — see
+  `docs/HESTIACP_SETUP.md` §9.1.
+- The read-only drift check still uses `root` (`VPS_SSH_KEY`) — it predates this account and only ever
+  runs `docker exec ... psql` in read-only queries and `docker inspect`, never a write.
+- **`deploy-backend` uses a new, dedicated account, `rm-backend-deploy`**, provisioned as follows.
+
+#### Provisioning `rm-backend-deploy`
+
+This account's only privilege is running exactly one fixed, no-argument script as root through sudo —
+not arbitrary `docker exec`, and not `docker`-group membership. The script
+(`scripts/ci-backend-deploy.sh` in this repository) just calls the two tools above; review it before
+installing it, same as any other root-run script.
+
+**1. Create the account and let it receive files over SSH** (as root on the VPS):
+
+```bash
+useradd -m -s /bin/bash rm-backend-deploy
+usermod -L rm-backend-deploy   # locks the password — key auth only, ever
+install -d -m 700 -o rm-backend-deploy -g rm-backend-deploy /home/rm-backend-deploy/.ssh
+touch /home/rm-backend-deploy/.ssh/authorized_keys
+chown rm-backend-deploy:rm-backend-deploy /home/rm-backend-deploy/.ssh/authorized_keys
+chmod 600 /home/rm-backend-deploy/.ssh/authorized_keys
+```
+
+**2. Generate a dedicated key pair** (on your own machine) and add the public half, with port/X11/agent
+forwarding turned off (no `command=` here, unlike #404's key — this one needs both plain file copies
+and a later command, so it can't be forced to one fixed command):
+
+```bash
+ssh-keygen -t ed25519 -C "github-actions-backend-deploy" -f ~/.ssh/rm_backend_deploy -N ""
+PUBKEY="$(cat ~/.ssh/rm_backend_deploy.pub)"
+ssh root@YOUR_VPS_IP "printf '%s\n' 'no-pty,no-port-forwarding,no-X11-forwarding,no-agent-forwarding ${PUBKEY}' >> /home/rm-backend-deploy/.ssh/authorized_keys"
+```
+
+Confirm it connects and has no `sudo` access yet: `ssh -i ~/.ssh/rm_backend_deploy rm-backend-deploy@YOUR_VPS_IP whoami` should print `rm-backend-deploy`; `... sudo -n true` should fail (`sudo: a password is required`) until the next step.
+
+**3. Install the wrapper script and the sudoers rule** (as root):
+
+```bash
+# From a checkout of this repository on the server (or scp the one file over):
+install -m 755 -o root -g root scripts/ci-backend-deploy.sh /usr/local/sbin/rm-backend-deploy.sh
+
+cat > /etc/sudoers.d/rm-backend-deploy <<'EOF'
+rm-backend-deploy ALL=(root) NOPASSWD: /usr/local/sbin/rm-backend-deploy.sh
+EOF
+chmod 440 /etc/sudoers.d/rm-backend-deploy
+visudo -c   # validates every file under /etc/sudoers.d — fix before moving on if this reports an error
+```
+
+The sudoers entry takes **no arguments** — `rm-backend-deploy.sh` always reads from the fixed path
+`/home/rm-backend-deploy/incoming` (overridable via `INCOMING` for manual testing), which CI populates
+with an SSH file copy before invoking `sudo`. That file copy needs no privilege of its own: it's just
+`rm-backend-deploy` writing into its own home directory.
+
+**4. Test the whole path by hand** before wiring up CI — stage a snapshot the same way CI will, as the
+restricted user (no root needed for this part):
+
+```bash
+ssh -i ~/.ssh/rm_backend_deploy rm-backend-deploy@YOUR_VPS_IP "mkdir -p ~/incoming/scripts ~/incoming/supabase/migrations"
+scp -i ~/.ssh/rm_backend_deploy scripts/stack-drift.py scripts/deploy-edge-functions.sh \
+  rm-backend-deploy@YOUR_VPS_IP:incoming/scripts/
+scp -i ~/.ssh/rm_backend_deploy supabase/migrations/*.sql \
+  rm-backend-deploy@YOUR_VPS_IP:incoming/supabase/migrations/
+scp -i ~/.ssh/rm_backend_deploy -r supabase/functions rm-backend-deploy@YOUR_VPS_IP:incoming/supabase/
+
+# The real thing — this applies any pending migrations and redeploys any changed functions:
+ssh -i ~/.ssh/rm_backend_deploy rm-backend-deploy@YOUR_VPS_IP "sudo -n /usr/local/sbin/rm-backend-deploy.sh"
+```
+
+Run this from a clean checkout (`git status` shows nothing uncommitted) so what you're testing matches
+what's in `main`. If it reports "No pending migrations." and "Every deployed function already matches
+the repository," that's success — it means production was already caught up.
+
+If `sudo` refuses with `sorry, you must have a tty to run sudo`, your `sudoers` has `requiretty` set
+and conflicts with the key's `no-pty` restriction above — add
+`Defaults:rm-backend-deploy !requiretty` to `/etc/sudoers.d/rm-backend-deploy` (before the `NOPASSWD`
+line, then `visudo -c` again) rather than dropping `no-pty`.
+
+**5. Add the private key as a GitHub secret:**
+
+```
+Secret name : VPS_BACKEND_SSH_KEY
+Secret value: (paste the entire contents of ~/.ssh/rm_backend_deploy, including the -----BEGIN----- lines)
+```
+
+**Updating the wrapper script later:** re-run step 3's `install` line after pulling the new version — it
+overwrites the file in place; the sudoers rule doesn't change.
 
 ---
 
