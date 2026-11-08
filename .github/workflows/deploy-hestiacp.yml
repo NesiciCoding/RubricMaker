@@ -64,6 +64,7 @@ jobs:
           VPS_DEPLOY_SSH_KEY: ${{ secrets.VPS_DEPLOY_SSH_KEY }}
         run: |
           set -euo pipefail
+          export DEBIAN_FRONTEND=noninteractive
           sudo apt-get update -qq
           sudo apt-get install -y -qq lftp
           cp deploy/.htaccess dist/.htaccess
@@ -73,13 +74,28 @@ jobs:
           printf '%s\n' "$VPS_DEPLOY_SSH_KEY" > "$key_file"
           chmod 600 "$key_file"
 
-          lftp -u rubricmaker, "sftp://${VPS_HOST}" <<SFTP
+          echo "=== Pre-flight SFTP check (fails fast, 30s max) ==="
+          printf 'pwd\n' | timeout 30 sftp -i "$key_file" \
+          -o BatchMode=yes -o ConnectTimeout=10 \
+          -o StrictHostKeyChecking=accept-new \
+          -b - "rubricmaker@${VPS_HOST}"
+
+          echo "=== Starting lftp mirror ==="
+          timeout 300 lftp -u rubricmaker, "sftp://${VPS_HOST}" <<SFTP
           set cmd:fail-exit true
-          set sftp:connect-program "ssh -a -x -i $key_file -o StrictHostKeyChecking=accept-new -o BatchMode=yes"
+          set cmd:verbose yes
+          set net:timeout 20
+          set net:max-retries 2
+          set net:reconnect-interval-base 5
+          set net:reconnect-interval-max 10
+          set sftp:auto-confirm yes
+          set sftp:connect-program "ssh -a -x -i $key_file -o BatchMode=yes -o ConnectTimeout=20 -o StrictHostKeyChecking=accept-new"
           set mirror:parallel-transfer-count 4
+          debug 3
           mirror --reverse --delete --verbose dist/ /home/rubricmaker/web/${VPS_DOMAIN}/public_html/
           bye
           SFTP
+          echo "=== lftp mirror done (exit $?) ==="
 
       - name: Verify the live site serves RubricMaker
         env:
