@@ -640,6 +640,9 @@ function GettingStartedTab() {
                     <strong>&ldquo;{t('tutorial.rb_tour_button')}&rdquo;</strong>{' '}
                     {t('docs.guided_tour_page_tours_suffix')}
                 </InfoBox>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginTop: 12 }}>
+                    {t('docs.gs_palette_body')}
+                </p>
             </FeatureSection>
 
             <FeatureSection icon={LayoutDashboard} title={t('docs.gs_snapshot_title')} color="#0ea5e9">
