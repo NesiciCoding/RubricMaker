@@ -26,6 +26,7 @@ import { VO_TRACKS } from '../data/voTracks';
 import { CEFR_SKILLS } from '../data/cefrDescriptors';
 import { getStudentMasteryProfile } from './masteryProfileAggregator';
 import { getCefrStudentOverview } from './cefrStudentAggregator';
+import { groupByStudentId } from './groupByStudentId';
 import { achievedLevelForSkill } from './masteryTargetAnalysis';
 import { calibrateGrammarWeights } from './grammarWeightCalibration';
 import type { GrammarWeightCalibration } from './grammarWeightCalibration';
@@ -137,23 +138,40 @@ function groupByCohort(students: Student[], classes: Class[], options: Calibrati
     return sortCohorts([...groups.values()]);
 }
 
+/** Per-student record indexes, built once per `buildCefrExpectations`/`buildCalibrationCohorts`
+ *  call and reused across every cohort — see docs/PERFORMANCE_AUDIT_2026-11.md #1107. */
+interface StudentRecordIndex {
+    srsByStudent: Map<string, StudentRubric[]>;
+    sasByStudent: Map<string, SelfAssessment[]>;
+    stsByStudent: Map<string, StudentTest[]>;
+}
+
+function indexStudentRecords(input: CefrExpectationInput): StudentRecordIndex {
+    return {
+        srsByStudent: groupByStudentId(input.studentRubrics, (sr) => sr.studentId),
+        sasByStudent: groupByStudentId(input.selfAssessments, (sa) => sa.studentId),
+        stsByStudent: groupByStudentId(input.studentTests, (st) => st.studentId),
+    };
+}
+
 function collectCefrObservations(
     students: Student[],
     group: Pick<CohortGroup, 'year' | 'voTrack'>,
-    input: CefrExpectationInput
+    input: Pick<CefrExpectationInput, 'rubrics' | 'tests' | 'cefrAchieveThreshold'>,
+    index: StudentRecordIndex
 ): CefrSkillObservation[] {
     const observations: CefrSkillObservation[] = [];
     for (const s of students) {
         const overview = getCefrStudentOverview(
             s.id,
-            input.studentRubrics,
+            index.srsByStudent.get(s.id) ?? [],
             input.rubrics,
-            input.selfAssessments,
+            index.sasByStudent.get(s.id) ?? [],
             undefined,
             group.year,
             group.voTrack,
             input.tests,
-            input.studentTests,
+            index.stsByStudent.get(s.id) ?? [],
             input.cefrAchieveThreshold ?? 70
         );
         for (const skill of CEFR_SKILLS) {
@@ -174,6 +192,7 @@ export function buildCefrExpectations(
     options: CalibrationCohortOptions = {}
 ): CefrCohortExpectations[] {
     const limit = options.limitPerCohort ?? DEFAULT_LIMIT_PER_COHORT;
+    const index = indexStudentRecords(input);
     return groupByCohort(input.students, input.classes, options).map((group) => {
         const students = group.students.slice(0, limit);
         return {
@@ -182,7 +201,11 @@ export function buildCefrExpectations(
             voTrack: group.voTrack,
             classNames: [...group.classNames].sort(),
             studentCount: group.students.length,
-            cefr: calibrateCefrExpectations(collectCefrObservations(students, group, input), group.year, group.voTrack),
+            cefr: calibrateCefrExpectations(
+                collectCefrObservations(students, group, input, index),
+                group.year,
+                group.voTrack
+            ),
         };
     });
 }
@@ -197,17 +220,20 @@ export function buildCalibrationCohorts(
     options: CalibrationCohortOptions = {}
 ): CalibrationCohort[] {
     const limit = options.limitPerCohort ?? DEFAULT_LIMIT_PER_COHORT;
+    const index = indexStudentRecords(input);
+    const faByStudent = groupByStudentId(input.flashcardAssignments, (fa) => fa.studentId);
+    const frByStudent = groupByStudentId(input.flashcardReviews, (fr) => fr.studentId);
     return groupByCohort(input.students, input.classes, options).map((group) => {
         const students = group.students.slice(0, limit);
         const grammarRows = students.flatMap((s) =>
             getStudentMasteryProfile(s.id, {
                 tests: input.tests,
-                studentTests: input.studentTests,
+                studentTests: index.stsByStudent.get(s.id) ?? [],
                 rubrics: input.rubrics,
-                studentRubrics: input.studentRubrics,
+                studentRubrics: index.srsByStudent.get(s.id) ?? [],
                 flashcardDecks: input.flashcardDecks,
-                flashcardAssignments: input.flashcardAssignments,
-                flashcardReviews: input.flashcardReviews,
+                flashcardAssignments: faByStudent.get(s.id) ?? [],
+                flashcardReviews: frByStudent.get(s.id) ?? [],
             })
         );
         return {
@@ -217,7 +243,11 @@ export function buildCalibrationCohorts(
             classNames: [...group.classNames].sort(),
             studentCount: group.students.length,
             grammar: calibrateGrammarWeights(grammarRows),
-            cefr: calibrateCefrExpectations(collectCefrObservations(students, group, input), group.year, group.voTrack),
+            cefr: calibrateCefrExpectations(
+                collectCefrObservations(students, group, input, index),
+                group.year,
+                group.voTrack
+            ),
         };
     });
 }

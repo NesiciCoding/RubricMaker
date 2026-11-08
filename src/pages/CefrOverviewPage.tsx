@@ -23,6 +23,7 @@ import { PROGRESS_STATUS_COLOR, progressStatusLabelKey } from '../utils/cefrOrdi
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
 import { VO_TRACK_LABELS, VO_TRACK_DEFAULT_CEFR, getTrackBadgeColor, getEffectiveVoTrack } from '../data/voTracks';
 import { getEffectiveSchoolYear } from '../data/schoolYears';
+import { groupByStudentId } from '../utils/groupByStudentId';
 import type { CefrSkill } from '../types';
 import { EmptyState } from '../components/ui/EmptyState';
 
@@ -76,39 +77,46 @@ export default function CefrOverviewPage() {
         [students, selectedClassId]
     );
 
-    const studentOverviews = useMemo(
-        () =>
-            filteredStudents.map((s) => {
-                const sCls = classes.find((c) => c.id === s.classId);
-                return {
-                    student: s,
-                    overview: getCefrStudentOverview(
-                        s.id,
-                        studentRubrics,
-                        rubrics,
-                        selfAssessments,
-                        analysisResults,
-                        getEffectiveSchoolYear(s, sCls),
-                        getEffectiveVoTrack(s, sCls),
-                        tests,
-                        studentTests,
-                        settings.cefrAchieveThreshold
-                    ),
-                    cls: sCls,
-                };
-            }),
-        [
-            filteredStudents,
-            studentRubrics,
-            rubrics,
-            selfAssessments,
-            analysisResults,
-            classes,
-            tests,
-            studentTests,
-            settings.cefrAchieveThreshold,
-        ]
-    );
+    const studentOverviews = useMemo(() => {
+        // Index the per-student collections once instead of having getCefrStudentOverview
+        // re-filter the full app-wide arrays for every student shown (it filters by studentId
+        // internally, so a pre-sliced array is behavior-identical — see StudentsPage.tsx).
+        const classById = new Map(classes.map((c) => [c.id, c]));
+        const srsByStudent = groupByStudentId(studentRubrics, (sr) => sr.studentId);
+        const sasByStudent = groupByStudentId(selfAssessments, (sa) => sa.studentId);
+        const arsByStudent = groupByStudentId(analysisResults, (ar) => ar.studentId);
+        const stsByStudent = groupByStudentId(studentTests, (st) => st.studentId);
+
+        return filteredStudents.map((s) => {
+            const sCls = classById.get(s.classId);
+            return {
+                student: s,
+                overview: getCefrStudentOverview(
+                    s.id,
+                    srsByStudent.get(s.id) ?? [],
+                    rubrics,
+                    sasByStudent.get(s.id) ?? [],
+                    arsByStudent.get(s.id) ?? [],
+                    getEffectiveSchoolYear(s, sCls),
+                    getEffectiveVoTrack(s, sCls),
+                    tests,
+                    stsByStudent.get(s.id) ?? [],
+                    settings.cefrAchieveThreshold
+                ),
+                cls: sCls,
+            };
+        });
+    }, [
+        filteredStudents,
+        studentRubrics,
+        rubrics,
+        selfAssessments,
+        analysisResults,
+        classes,
+        tests,
+        studentTests,
+        settings.cefrAchieveThreshold,
+    ]);
 
     const student = students.find((s) => s.id === selectedStudentId);
     const cls = classes.find((c) => c.id === student?.classId);
