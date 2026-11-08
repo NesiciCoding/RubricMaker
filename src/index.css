@@ -913,6 +913,19 @@ select.input-error {
     }
 }
 
+/* AAA 2.3.3 — honour reduced-motion globally, not just for modals/skeletons (F15).
+   The 0.01ms duration (instead of none) keeps transitionend/animationend handlers firing. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
 .modal-header {
     display: flex;
     align-items: center;

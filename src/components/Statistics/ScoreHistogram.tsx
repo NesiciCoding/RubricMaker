@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 interface Props {
@@ -17,6 +18,7 @@ export function buildHistogramData(scores: number[]) {
 }
 
 export default function ScoreHistogram({ scores }: Props) {
+    const { t } = useTranslation();
     const data = useMemo(() => buildHistogramData(scores), [scores]);
     const total = scores.length;
 
@@ -29,32 +31,53 @@ export default function ScoreHistogram({ scores }: Props) {
     }
 
     return (
-        <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: -16 }}>
-                <XAxis dataKey="range" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} />
-                <YAxis allowDecimals={false} tick={{ fill: 'var(--text-muted)', fontSize: 11 }} />
-                <Tooltip
-                    contentStyle={{
-                        background: 'var(--bg-card)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 8,
-                    }}
-                    formatter={(count: unknown) => {
-                        const c = typeof count === 'number' ? count : 0;
-                        /* v8 ignore start -- the chart only renders when total > 0 */
-                        return [
-                            `${c} student${c !== 1 ? 's' : ''} (${total > 0 ? ((c / total) * 100).toFixed(0) : 0}%)`,
-                            'Count',
-                        ];
-                        /* v8 ignore stop */
-                    }}
-                />
-                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                    {data.map((_, i) => (
-                        <Cell key={i} fill="var(--accent)" fillOpacity={0.75} />
+        <div>
+            <div role="img" aria-label={t('statistics.score_histogram_aria_label')}>
+                <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: -16 }}>
+                        <XAxis dataKey="range" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} />
+                        <YAxis allowDecimals={false} tick={{ fill: 'var(--text-muted)', fontSize: 11 }} />
+                        <Tooltip
+                            contentStyle={{
+                                background: 'var(--bg-card)',
+                                border: '1px solid var(--border)',
+                                borderRadius: 8,
+                            }}
+                            formatter={(count: unknown) => {
+                                const c = typeof count === 'number' ? count : 0;
+                                /* v8 ignore start -- the chart only renders when total > 0 */
+                                return [
+                                    `${c} student${c !== 1 ? 's' : ''} (${total > 0 ? ((c / total) * 100).toFixed(0) : 0}%)`,
+                                    'Count',
+                                ];
+                                /* v8 ignore stop */
+                            }}
+                        />
+                        <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                            {data.map((_, i) => (
+                                <Cell key={i} fill="var(--accent)" fillOpacity={0.75} />
+                            ))}
+                        </Bar>
+                    </BarChart>
+                </ResponsiveContainer>
+            </div>
+            <table className="sr-only">
+                <caption>{t('statistics.score_histogram_aria_label')}</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">{t('statistics.score_histogram_table_range')}</th>
+                        <th scope="col">{t('statistics.score_histogram_table_count')}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {data.map((row) => (
+                        <tr key={row.range}>
+                            <td>{row.range}</td>
+                            <td>{row.count}</td>
+                        </tr>
                     ))}
-                </Bar>
-            </BarChart>
-        </ResponsiveContainer>
+                </tbody>
+            </table>
+        </div>
     );
 }

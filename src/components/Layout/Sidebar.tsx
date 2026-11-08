@@ -271,7 +271,9 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
                             <X size={15} />
                         </button>
                     </div>
-                    <nav className="sidebar-nav">{activeDomain.items.map(renderNavLink)}</nav>
+                    <nav className="sidebar-nav" aria-label={activeDomain.label}>
+                        {activeDomain.items.map(renderNavLink)}
+                    </nav>
 
                     <div className="sidebar-footer">
                         <NavLink

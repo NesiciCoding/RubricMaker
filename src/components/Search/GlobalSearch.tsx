@@ -113,6 +113,10 @@ export default function GlobalSearch({ onClose, growFrom }: Props) {
                 </div>
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0' }}>
+                {/* Screen-reader announcement of the live result count (F17). */}
+                <span role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+                    {query.trim() === '' ? '' : t('search.results_count', { count: results.length })}
+                </span>
                 {query.trim() === '' ? (
                     <EmptyState style={{ padding: 32 }} description={t('search.hint')} />
                 ) : results.length === 0 ? (
