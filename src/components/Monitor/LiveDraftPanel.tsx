@@ -1,8 +1,16 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, TrendingUp, TrendingDown, MoveRight, PauseCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import PresenceBadge from './PresenceBadge';
 import type { PresenceState } from '../../utils/proctorAggregator';
+import { elapsedParts, writingPace, type WordSample, type WritingTrend } from '../../utils/monitorSignals';
+
+const TREND_ICON: Record<WritingTrend, { Icon: typeof TrendingUp; color: string }> = {
+    speeding_up: { Icon: TrendingUp, color: 'var(--green-text)' },
+    steady: { Icon: MoveRight, color: 'var(--text-muted)' },
+    slowing: { Icon: TrendingDown, color: 'var(--yellow-text)' },
+    stopped: { Icon: PauseCircle, color: 'var(--red-text)' },
+};
 
 export interface LiveDraftPanelProps {
     displayName: string;
@@ -13,6 +21,13 @@ export interface LiveDraftPanelProps {
     lastActivityAt?: string;
     /** Live draft text from the snapshot broadcast, stripped of markup. */
     draftText?: string;
+    /** Adds words-per-minute, its trend, and the time since the draft last changed. */
+    showWritingPace?: boolean;
+    wordSamples?: WordSample[];
+    /** Epoch ms of the last snapshot whose text changed — snapshots are only sent on change, so this tracks the last keystroke to within a few seconds. */
+    lastChangeAt?: number;
+    /** Epoch ms the page last ticked; passed in so every panel ages from the same clock. */
+    now?: number;
 }
 
 export default function LiveDraftPanel({
@@ -22,9 +37,18 @@ export default function LiveDraftPanel({
     wordCount,
     lastActivityAt,
     draftText,
+    showWritingPace = false,
+    wordSamples,
+    lastChangeAt,
+    now,
 }: LiveDraftPanelProps) {
     const { t } = useTranslation();
     const [expanded, setExpanded] = useState(false);
+    const clock = now ?? lastChangeAt ?? 0;
+    const finished = status === 'submitted' || status === 'late';
+    const pace = showWritingPace && !finished && wordSamples ? writingPace(wordSamples, clock) : undefined;
+    const sinceChange =
+        showWritingPace && !finished && lastChangeAt !== undefined ? elapsedParts(lastChangeAt, clock) : undefined;
 
     return (
         <div
@@ -59,6 +83,29 @@ export default function LiveDraftPanel({
                 >
                     {wordCount !== undefined && (
                         <span>{t('tests.monitor.draft.word_count', { count: wordCount })}</span>
+                    )}
+                    {pace && (
+                        <span
+                            data-testid="writing-pace"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                        >
+                            {t('tests.monitor.draft.wpm', { count: Math.round(pace.wpm) })}
+                            {pace.trend &&
+                                (() => {
+                                    const { Icon, color } = TREND_ICON[pace.trend];
+                                    return (
+                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color }}>
+                                            <Icon size={12} aria-hidden="true" />
+                                            {t(`tests.monitor.draft.trend.${pace.trend}`)}
+                                        </span>
+                                    );
+                                })()}
+                        </span>
+                    )}
+                    {sinceChange && (
+                        <span data-testid="since-last-change">
+                            {t(`tests.monitor.draft.last_typed_${sinceChange.unit}`, { count: sinceChange.value })}
+                        </span>
                     )}
                     {lastActivityAt && (
                         <span>

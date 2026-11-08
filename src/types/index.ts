@@ -1012,6 +1012,18 @@ export interface AppSettings {
     monitorShowStudentProgress?: boolean;
     /** Live Monitor: class-wide completion row above the response grid (default off) */
     monitorShowClassProgress?: boolean;
+    /** Live Monitor: flag connected students whose answers have not changed for monitorStallMinutes (default off) */
+    monitorFlagStalled?: boolean;
+    /** Live Monitor: minutes without progress before a student is flagged as stalled (default 4) */
+    monitorStallMinutes?: number;
+    /** Live Monitor: per-student ahead / on pace / behind indicator against the class median (default off) */
+    monitorShowPace?: boolean;
+    /** Live Monitor: one-line status summary under each student's name (default off) */
+    monitorShowStatusSummary?: boolean;
+    /** Live Monitor: halfway and final-question markers on the response grid header (default off) */
+    monitorShowMilestones?: boolean;
+    /** Live Monitor (essays): words-per-minute trend and time since the draft last changed (default off) */
+    monitorShowWritingPace?: boolean;
     /** Whether the progress trend charts include graded test results next to rubric grades (default true) */
     statisticsTrendIncludeTests?: boolean;
     /** Advanced statistics queries the teacher saved for reuse */

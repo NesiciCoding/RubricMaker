@@ -1340,17 +1340,53 @@
                 "class_progress_aria": "{{answered}} de {{total}} alumnos han respondido esta pregunta",
                 "class_reached": "Alcanzado por la clase",
                 "class_reached_aria": "{{reached}} de {{total}} alumnos han alcanzado {{level}}",
-                "class_finished_aria": "{{finished}} de {{total}} alumnos han terminado"
+                "class_finished_aria": "{{finished}} de {{total}} alumnos han terminado",
+                "milestone_halfway": "Mitad",
+                "milestone_final": "Última"
             },
             "draft": {
                 "word_count": "{{count}} palabras",
                 "last_activity": "Última actividad {{time}}",
                 "toggle_preview": "Mostrar/ocultar vista previa del borrador",
-                "empty": "Aún no hay texto en el borrador."
+                "empty": "Aún no hay texto en el borrador.",
+                "wpm_one": "{{count}} palabra/min",
+                "wpm_other": "{{count}} palabras/min",
+                "last_typed_seconds_one": "Escribió hace {{count}} s",
+                "last_typed_seconds_other": "Escribió hace {{count}} s",
+                "last_typed_minutes_one": "Escribió hace {{count}} min",
+                "last_typed_minutes_other": "Escribió hace {{count}} min",
+                "trend": {
+                    "speeding_up": "Acelera",
+                    "steady": "Constante",
+                    "slowing": "Se ralentiza",
+                    "stopped": "Detenido"
+                }
             },
             "advisory_note": "La presencia, los borradores y las señales de supervisión son indicios informativos del navegador del estudiante; un estudiante decidido puede falsearlos. Úsalos para detectar patrones, no como prueba definitiva.",
             "progress_toggle": "Progreso del alumno",
-            "class_progress_toggle": "Progreso de la clase"
+            "class_progress_toggle": "Progreso de la clase",
+            "pace_toggle": "Ritmo vs. clase",
+            "status_summary_toggle": "Resumen de estado",
+            "milestones_toggle": "Hitos",
+            "stall_toggle": "Marcar alumnos atascados",
+            "stall_threshold_label": "tras",
+            "stall_threshold_unit": "min",
+            "writing_pace_toggle": "Ritmo de escritura",
+            "stalled_badge_one": "Sin avance desde hace {{count}} min",
+            "stalled_badge_other": "Sin avance desde hace {{count}} min",
+            "pace": {
+                "ahead": "Por delante de la clase",
+                "on_pace": "Al ritmo",
+                "behind": "Por detrás de la clase"
+            },
+            "summary": {
+                "handed_in": "Entregado",
+                "stalled_one": "Atascado {{count}} min",
+                "stalled_other": "Atascado {{count}} min",
+                "done": "{{percent}} % hecho",
+                "correct": "{{percent}} % correcto",
+                "no_data": "Aún sin respuestas"
+            }
         },
         "sections_title": "Secciones",
         "sections_none_hint": "Aún no hay secciones. Las secciones te permiten agrupar preguntas en partes etiquetadas (p. ej. Lectura, Comprensión oral).",
@@ -4151,6 +4187,7 @@
         "rb_live_monitor_item_presence": "Presencia — un punto de color muestra si cada alumno está activo, inactivo o desconectado, según cuán recientemente se conectó su navegador.",
         "rb_live_monitor_item_grid": "Cuadrícula de respuestas (pruebas) — una matriz de alumnos por preguntas con barras de color, agrupada por clase con una media de clase por pregunta y un total por alumno. Cada fila es un alumno, cada columna una pregunta; pulsa un encabezado de pregunta para abrir una galería con todas las respuestas.",
         "rb_live_monitor_item_draft": "Vista previa de borrador en vivo (redacciones) — una tarjeta por alumno con recuento de palabras en vivo, marca de tiempo de última actividad y una vista previa expandible de lo que están escribiendo actualmente.",
+        "rb_live_monitor_item_writing_pace": "Ritmo de escritura (redacciones) — el botón «Ritmo de escritura» muestra las palabras por minuto de los últimos tres minutos, si el alumno acelera, escribe constante, se ralentiza o se ha detenido, y hace cuánto cambió el borrador por última vez.",
         "rb_live_monitor_item_hide_names": "Ocultar nombres — activar para anonimizar la vista, útil al compartir tu pantalla.",
         "rb_live_monitor_item_proctoring": "Señales de supervisión — recuentos de cambios de pestaña, copiar/pegar/cortar, nivel de batería y estado de Safe Exam Browser. Estas son solo señales orientativas: un alumno decidido puede falsearlas, así que úsalas para iniciar una conversación, no como prueba definitiva.",
         "rb_live_monitor_item_nudge": "Avisar — envía un breve mensaje de seguimiento a la pantalla de un alumno mediante una notificación en vivo.",
@@ -4572,6 +4609,7 @@
         "rb_live_monitor_item_sort": "Ordenar y agrupar columnas — reordena las columnas de preguntas por sección, nivel MCER, tipo de pregunta, gramática/estándar vinculado o puntuación acumulada de la clase, combinando varias reglas.",
         "rb_live_monitor_item_placement": "Vista de colocación adaptativa — las pruebas de escalera y de generador dan preguntas distintas a cada alumno, así que la cuadrícula se alinea por nivel MCER: una barra de acierto por nivel y alumno, con su nivel estimado en una columna aparte antes de las columnas de nivel.",
         "rb_live_monitor_item_progress": "Botones de progreso (pruebas): «Progreso del alumno» añade una barra respondidas/total por alumno, independiente de la nota; «Progreso de la clase» añade encima de la cuadrícula una fila que muestra qué parte de la clase ha respondido cada pregunta (o, en pruebas de nivel adaptativas, ha alcanzado cada nivel MCER) y cuántos alumnos han terminado. Ambos están desactivados por defecto y se guardan en tu configuración.",
+        "rb_live_monitor_item_signals": "Señales de ritmo, estado y bloqueo (pruebas) — «Ritmo vs. clase» indica si cada alumno va por delante, al ritmo o por detrás de la mediana de preguntas respondidas por la clase en este momento (a partir de tres alumnos); «Resumen de estado» añade una línea bajo cada nombre, como «65 % hecho · 80 % correcto · Al ritmo»; «Marcar alumnos atascados» muestra una insignia cuando las respuestas de un alumno conectado no cambian durante los minutos que elijas (4 por defecto); «Hitos» marca la pregunta central y la última en la cabecera de la cuadrícula. Todo está desactivado por defecto y se guarda en tus ajustes.",
         "rb_tests_exam_export_label": "Exportación del cuadernillo de examen:",
         "rb_tests_exam_export_body": "Desde la lista de exámenes o la página de exportación, exporte un examen listo para imprimir con el estilo de un examen CITO neerlandés: un cuadernillo de preguntas, una hoja de respuestas aparte, un anexo opcional con los textos de lectura y una hoja de calificación con las respuestas correctas — en PDF o Word, con la fuente que elijas. Elige qué alumnos reciben una hoja de respuestas personalizada haciendo clic en la etiqueta de una clase (toda la clase) o marcando alumnos individuales. Las imágenes de preguntas y opciones, los saltos de línea y el formato pasan al cuadernillo; las marcas de escaneo solo aparecen en la hoja de respuestas en PDF, en todas sus páginas. Las preguntas de audio llevan una nota «escucha la grabación» y las puntuaciones del margen siguen el idioma de la interfaz.",
         "gr_exam_scan_title": "Escanear la hoja de respuestas de un examen en papel",

@@ -346,7 +346,7 @@ The deep operational detail is in the [self-hosting docs](docs/SELF_HOSTING_OPS.
 | `/essays`                                   | Essay list                                                                                                                                          |
 | `/essays/new`                               | New essay                                                                                                                                           |
 | `/essays/:teacherKey`                       | Essay builder (prompt, rubric link, assign students, import submissions)                                                                            |
-| `/essays/:assignmentId/monitor`             | Live essay monitor (presence, live word counts, draft preview)                                                                                      |
+| `/essays/:assignmentId/monitor`             | Live essay monitor (presence, live word counts, optional writing pace, draft preview)                                                               |
 | `/speaking/:rubricId/:studentId`            | Speaking session                                                                                                                                    |
 | `/grade-comparative/:classId/:rubricId`     | Comparative grading                                                                                                                                 |
 | `/marketplace`                              | School marketplace for rubrics, tests, flashcard decks, and question bank items (browse, publish, clone, upvote)                                    |
@@ -354,7 +354,7 @@ The deep operational detail is in the [self-hosting docs](docs/SELF_HOSTING_OPS.
 | `/tests/new`                                | New test                                                                                                                                            |
 | `/tests/:id`                                | Test builder                                                                                                                                        |
 | `/tests/:testId/results/:studentTestId`     | Test results, manual grading, and class-average adjustment                                                                                          |
-| `/tests/:testId/monitor`                    | Live test monitor (presence, response grid, optional student/class progress bars, proctoring flags)                                                 |
+| `/tests/:testId/monitor`                    | Live test monitor (presence, response grid, optional progress bars, pace/stall/status signals and milestones, proctoring flags)                     |
 | `/tests/:id/scores`                         | Score sheet: type in points per question per student, per-test grading norm, and test quality analysis (P-value, Rit/Rir, Cronbach's α)             |
 | `/students`                                 | Students list                                                                                                                                       |
 | `/students/:id`                             | Student profile                                                                                                                                     |
@@ -505,6 +505,8 @@ The deep operational detail is in the [self-hosting docs](docs/SELF_HOSTING_OPS.
 | `src/services/wordnetPack.ts`                                             | Optional offline definitions: downloads the Open English WordNet pack (`public/wordnet/`, built by `scripts/build-wordnet-pack.mjs`, CC BY 4.0) after confirmation and stores it in IndexedDB                                                                        |
 | `src/services/wordLookup.ts`                                              | Definition lookup chain (Free Dictionary → offline WordNet) plus keyless MyMemory word translation, used to fill decks seeded from Text screening                                                                                                                    |
 | `src/services/freeDictionaryApi.ts`                                       | Keyless word lookup (definition, phonetic, part of speech) via the Free Dictionary API (`dictionaryapi.dev`) for the vocabulary panel                                                                                                                                |
+| `src/utils/responseCells.ts`                                              | Live Monitor cell scoring shared by the response grid and the per-student summary: correct/incorrect/ungraded/empty state, answered-ness and per-student completion                                                                                                  |
+| `src/utils/monitorSignals.ts`                                             | Live Monitor signals: stall threshold, ahead/on pace/behind against the class median, and essay words-per-minute trend from a word-count history                                                                                                                     |
 
 ---
 

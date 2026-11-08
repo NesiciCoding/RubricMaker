@@ -270,6 +270,221 @@ describe('LiveMonitorPage', () => {
             expect(screen.queryByText('tests.monitor.progress_toggle')).not.toBeInTheDocument();
         });
 
+        describe('pace, stall, status and milestone signals', () => {
+            const mcQuestion = (id: string) => ({
+                id,
+                type: 'multiple-choice' as const,
+                points: 1,
+                prompt: id,
+                options: [
+                    { id: 'a', text: 'Wrong', isCorrect: false },
+                    { id: 'b', text: 'Right', isCorrect: true },
+                ],
+            });
+            const fourQuestionTest: Test = {
+                ...mockTest,
+                questions: ['q1', 'q2', 'q3', 'q4'].map(mcQuestion),
+            };
+            const attempt = (studentId: string, answers: { questionId: string; response: string }[]) => ({
+                id: `st-${studentId}`,
+                testId: 'test-1',
+                studentId,
+                answers,
+                status: 'in_progress' as const,
+                startedAt: '2026-01-01T00:00:00.000Z',
+                events: [],
+            });
+
+            it('persists each new toggle to settings', async () => {
+                renderPage(['/tests/test-1/monitor']);
+                await settleTeacherKeys();
+                fireEvent.click(screen.getByRole('button', { name: 'tests.monitor.pace_toggle' }));
+                expect(mockUseApp.updateSettings).toHaveBeenCalledWith({ monitorShowPace: true });
+                fireEvent.click(screen.getByRole('button', { name: 'tests.monitor.status_summary_toggle' }));
+                expect(mockUseApp.updateSettings).toHaveBeenCalledWith({ monitorShowStatusSummary: true });
+                fireEvent.click(screen.getByRole('button', { name: 'tests.monitor.milestones_toggle' }));
+                expect(mockUseApp.updateSettings).toHaveBeenCalledWith({ monitorShowMilestones: true });
+                fireEvent.click(screen.getByRole('button', { name: 'tests.monitor.stall_toggle' }));
+                expect(mockUseApp.updateSettings).toHaveBeenCalledWith({ monitorFlagStalled: true });
+                expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
+                expect(screen.queryByRole('button', { name: 'tests.monitor.writing_pace_toggle' })).toBeNull();
+            });
+
+            it('clamps the stall threshold the teacher types', async () => {
+                mockUseApp = { ...mockUseApp, settings: { ...mockUseApp.settings, monitorFlagStalled: true } };
+                renderPage(['/tests/test-1/monitor']);
+                await settleTeacherKeys();
+                const input = screen.getByRole('spinbutton');
+                expect(input).toHaveValue(4);
+                fireEvent.change(input, { target: { value: '90' } });
+                expect(mockUseApp.updateSettings).toHaveBeenCalledWith({ monitorStallMinutes: 30 });
+                mockUseApp.updateSettings.mockClear();
+                fireEvent.change(input, { target: { value: '' } });
+                expect(mockUseApp.updateSettings).not.toHaveBeenCalled();
+            });
+
+            it('flags a connected student whose answers stop changing, and clears it on progress', async () => {
+                vi.useFakeTimers();
+                const start = new Date('2026-06-13T10:00:00.000Z').getTime();
+                vi.setSystemTime(start);
+                mockUseApp = {
+                    ...mockUseApp,
+                    settings: { ...mockUseApp.settings, monitorFlagStalled: true, monitorStallMinutes: 2 },
+                    tests: [fourQuestionTest],
+                    studentTests: [attempt('student-1', [])],
+                };
+                renderPage(['/tests/test-1/monitor']);
+                await settleTeacherKeys();
+                const ch = channels[0];
+                const heartbeatAt = (ms: number) =>
+                    act(() => {
+                        vi.setSystemTime(ms);
+                        ch.handlers.event({
+                            payload: { type: 'heartbeat', at: new Date(ms).toISOString(), value: 'active' },
+                        });
+                        vi.advanceTimersByTime(5_000);
+                    });
+                act(() => {
+                    ch.handlers.snapshot({ payload: { answers: { q1: 'b' } } });
+                    vi.advanceTimersByTime(300);
+                });
+                heartbeatAt(start + 60_000);
+                expect(screen.queryByText(/tests\.monitor\.stalled_badge/)).toBeNull();
+                heartbeatAt(start + 150_000);
+                expect(screen.getByText('tests.monitor.stalled_badge (2)')).toBeInTheDocument();
+
+                // The same answers again (e.g. a generator field changing) is not progress…
+                act(() => {
+                    ch.handlers.snapshot({ payload: { answers: { q1: 'b' } } });
+                    vi.advanceTimersByTime(300);
+                });
+                expect(screen.getByText('tests.monitor.stalled_badge (2)')).toBeInTheDocument();
+                // …but a new answer is.
+                act(() => {
+                    ch.handlers.snapshot({ payload: { answers: { q1: 'b', q2: 'a' } } });
+                    vi.advanceTimersByTime(300);
+                });
+                heartbeatAt(start + 160_000);
+                expect(screen.queryByText(/tests\.monitor\.stalled_badge/)).toBeNull();
+            });
+
+            it('does not flag a student who has answered every question', async () => {
+                vi.useFakeTimers();
+                const start = new Date('2026-06-13T10:00:00.000Z').getTime();
+                vi.setSystemTime(start);
+                mockUseApp = {
+                    ...mockUseApp,
+                    settings: { ...mockUseApp.settings, monitorFlagStalled: true, monitorStallMinutes: 1 },
+                    tests: [{ ...mockTest, questions: [mcQuestion('q1')] }],
+                    studentTests: [attempt('student-1', [])],
+                };
+                renderPage(['/tests/test-1/monitor']);
+                await settleTeacherKeys();
+                const ch = channels[0];
+                act(() => {
+                    ch.handlers.snapshot({ payload: { answers: { q1: 'b' } } });
+                    vi.advanceTimersByTime(300);
+                });
+                act(() => {
+                    vi.setSystemTime(start + 120_000);
+                    ch.handlers.event({
+                        payload: { type: 'heartbeat', at: new Date(start + 120_000).toISOString(), value: 'active' },
+                    });
+                    vi.advanceTimersByTime(5_000);
+                });
+                expect(screen.queryByText(/tests\.monitor\.stalled_badge/)).toBeNull();
+            });
+
+            it('shows pace against the class and a status summary per student', async () => {
+                const students: Student[] = [
+                    { id: 's-a', name: 'Ann', classId: 'class-1' },
+                    { id: 's-b', name: 'Ben', classId: 'class-1' },
+                    { id: 's-c', name: 'Cas', classId: 'class-1' },
+                ];
+                mockUseApp = {
+                    ...mockUseApp,
+                    settings: { ...mockUseApp.settings, monitorShowPace: true, monitorShowStatusSummary: true },
+                    students,
+                    tests: [fourQuestionTest],
+                    studentTests: [
+                        attempt('s-a', []),
+                        attempt('s-b', [
+                            { questionId: 'q1', response: 'b' },
+                            { questionId: 'q2', response: 'a' },
+                        ]),
+                        attempt('s-c', [
+                            { questionId: 'q1', response: 'b' },
+                            { questionId: 'q2', response: 'b' },
+                            { questionId: 'q3', response: 'b' },
+                            { questionId: 'q4', response: 'b' },
+                        ]),
+                    ],
+                };
+                renderPage(['/tests/test-1/monitor']);
+                await settleTeacherKeys();
+                // Badge in the summary row, icon in the grid row.
+                expect(screen.getByText('tests.monitor.pace.behind', { selector: 'span.badge' })).toBeInTheDocument();
+                expect(screen.getByText('tests.monitor.pace.ahead', { selector: 'span.badge' })).toBeInTheDocument();
+                expect(screen.getByRole('img', { name: 'tests.monitor.pace.on_pace' })).toBeInTheDocument();
+                const summaries = screen.getAllByTestId('monitor-status-summary').map((el) => el.textContent);
+                expect(summaries).toEqual(
+                    expect.arrayContaining([
+                        'tests.monitor.summary.done · tests.monitor.pace.behind',
+                        'tests.monitor.summary.done · tests.monitor.summary.correct · tests.monitor.pace.on_pace',
+                    ])
+                );
+            });
+
+            it('passes the milestone setting to the grid', async () => {
+                mockUseApp = {
+                    ...mockUseApp,
+                    settings: { ...mockUseApp.settings, monitorShowMilestones: true },
+                    tests: [fourQuestionTest],
+                };
+                renderPage(['/tests/test-1/monitor']);
+                await settleTeacherKeys();
+                expect(screen.getByRole('button', { name: 'tests.monitor.milestones_toggle' })).toHaveAttribute(
+                    'aria-pressed',
+                    'true'
+                );
+                expect(screen.getByText('tests.monitor.grid.milestone_halfway')).toBeInTheDocument();
+                expect(screen.getByText('tests.monitor.grid.milestone_final')).toBeInTheDocument();
+            });
+
+            it('tracks essay writing pace from snapshot word counts', async () => {
+                vi.useFakeTimers({ shouldAdvanceTime: true });
+                const start = new Date('2026-06-13T10:00:00.000Z').getTime();
+                vi.setSystemTime(start);
+                mockUseApp = {
+                    ...mockUseApp,
+                    settings: { ...mockUseApp.settings, monitorShowWritingPace: true },
+                    fetchEssayAssignmentByKey: vi
+                        .fn()
+                        .mockResolvedValue({ rubricId: 'r1', studentId: 'student-1', title: 'My Essay' }),
+                };
+                renderPage(['/essays/assn-1/monitor']);
+                await screen.findByText('tests.monitor.title_essay: My Essay');
+                await waitFor(() => expect(channels.length).toBeGreaterThan(0));
+                const ch = channels[0];
+                expect(screen.getByRole('button', { name: 'tests.monitor.writing_pace_toggle' })).toHaveAttribute(
+                    'aria-pressed',
+                    'true'
+                );
+                act(() => {
+                    ch.handlers.snapshot({ payload: { text: 'a', wordCount: 0 } });
+                    vi.advanceTimersByTime(300);
+                });
+                act(() => {
+                    vi.setSystemTime(start + 120_000);
+                    ch.handlers.snapshot({ payload: { text: 'b', wordCount: 40 } });
+                    vi.advanceTimersByTime(5_000);
+                });
+                // 40 words in a little over two minutes (the refresh tick lands a few seconds later).
+                expect(screen.getByText(/^tests\.monitor\.draft\.wpm \((19|20)\)$/)).toBeInTheDocument();
+                expect(screen.getByText(/^tests\.monitor\.draft\.last_typed_seconds \(\d\)$/)).toBeInTheDocument();
+            });
+        });
+
         it('reflects presence based on heartbeat age using fake timers', async () => {
             vi.useFakeTimers();
 

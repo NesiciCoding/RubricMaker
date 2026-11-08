@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { X, ChevronDown, ChevronRight } from 'lucide-react';
+import { X, ChevronDown, ChevronRight, Flag, TrendingUp, TrendingDown, MoveRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { scoreShortAnswerExact, scoreNumeric, autoScoreResponse } from '../../utils/testCalc';
+import { cellState, cellPoints, isAnswered, type CellState } from '../../utils/responseCells';
 import { parseClozeGaps, parseHotTextFragments, plainQuestionPromptText } from '../../utils/clozeParse';
 import { parseErrorPicks, parsePlacedWords } from '../../utils/answerResponseParsers';
 import { parseErrorPassage } from '../../../supabase/functions/_shared/testScoring';
@@ -9,6 +9,7 @@ import { parseAudioResponse } from '../../utils/audioResponseCode';
 import { buildColumnMeta, orderColumns, type ColumnSortRule } from '../../utils/responseGridOrder';
 import Modal from '../ui/Modal';
 import CompletionBar from './CompletionBar';
+import type { PaceTrend } from '../../utils/monitorSignals';
 import type { Test, TestAnswer, TestQuestion } from '../../types';
 
 export interface ResponsesGridStudentRow {
@@ -22,7 +23,15 @@ export interface ResponsesGridStudentRow {
     className?: string;
     /** Sections this student actually routed through (mst placement) — cells outside it render as "not presented". */
     sectionPath?: string[];
+    /** Ahead / on pace / behind against the class median; omitted when the pace indicator is off. */
+    pace?: PaceTrend;
 }
+
+const PACE_ICON: Record<PaceTrend, { Icon: typeof TrendingUp; color: string }> = {
+    ahead: { Icon: TrendingUp, color: 'var(--green-text)' },
+    on_pace: { Icon: MoveRight, color: 'var(--text-muted)' },
+    behind: { Icon: TrendingDown, color: 'var(--red-text)' },
+};
 
 export interface ResponsesGridProps {
     test: Test;
@@ -33,100 +42,8 @@ export interface ResponsesGridProps {
     showProgress?: boolean;
     /** Adds a row above the students showing what share of the class has answered each question. */
     showClassProgress?: boolean;
-}
-
-type CellState = 'correct' | 'incorrect' | 'ungraded' | 'empty';
-
-function cellState(question: TestQuestion, answer: TestAnswer | undefined): CellState {
-    if (!answer || answer.response.trim() === '') return 'empty';
-    if (answer.pointsEarned !== undefined) {
-        return answer.pointsEarned >= question.points ? 'correct' : 'incorrect';
-    }
-    if (question.type === 'multiple-choice') {
-        const selected = question.options?.find((o) => o.id === answer.response);
-        return selected?.isCorrect ? 'correct' : 'incorrect';
-    }
-    if (question.type === 'multiple-response') {
-        let selected: string[] = [];
-        try {
-            selected = JSON.parse(answer.response) as string[];
-        } catch {
-            /* ignore malformed response */
-        }
-        if (selected.length === 0) return 'empty';
-        return autoScoreResponse(question, answer.response) >= question.points ? 'correct' : 'incorrect';
-    }
-    if (question.type === 'true-false') {
-        return autoScoreResponse(question, answer.response) >= question.points ? 'correct' : 'incorrect';
-    }
-    if (question.type === 'key-word-transformation' || question.type === 'dictation') {
-        if (!answer.response.trim()) return 'empty';
-        return autoScoreResponse(question, answer.response) >= question.points ? 'correct' : 'incorrect';
-    }
-    if (question.type === 'short-answer') {
-        const score = scoreShortAnswerExact(question, answer.response);
-        if (score === null) return 'ungraded';
-        return score > 0 ? 'correct' : 'incorrect';
-    }
-    if (question.type === 'numeric') {
-        const score = scoreNumeric(question, answer.response);
-        if (score === null) return 'ungraded';
-        return score > 0 ? 'correct' : 'incorrect';
-    }
-    if (question.type === 'cloze' || question.type === 'cloze-dropdown' || question.type === 'cloze-bank') {
-        let answers: Record<string, string> = {};
-        try {
-            answers = JSON.parse(answer.response) as Record<string, string>;
-        } catch {
-            /* ignore malformed response */
-        }
-        if (!Object.values(answers).some((v) => v.trim() !== '')) return 'empty';
-        return autoScoreResponse(question, answer.response) >= question.points ? 'correct' : 'incorrect';
-    }
-    if (question.type === 'matching' || question.type === 'categorize' || question.type === 'matrix') {
-        let answers: Record<string, string> = {};
-        try {
-            answers = JSON.parse(answer.response) as Record<string, string>;
-        } catch {
-            /* ignore malformed response */
-        }
-        if (Object.keys(answers).length === 0) return 'empty';
-        return autoScoreResponse(question, answer.response) >= question.points ? 'correct' : 'incorrect';
-    }
-    if (question.type === 'error-correction') {
-        if (Object.keys(parseErrorPicks(answer.response)).length === 0) return 'empty';
-        return autoScoreResponse(question, answer.response) >= question.points ? 'correct' : 'incorrect';
-    }
-    if (question.type === 'sentence-builder') {
-        if (parsePlacedWords(answer.response).length === 0) return 'empty';
-        return autoScoreResponse(question, answer.response) >= question.points ? 'correct' : 'incorrect';
-    }
-    if (question.type === 'ordering') {
-        let order: string[] = [];
-        try {
-            order = JSON.parse(answer.response) as string[];
-        } catch {
-            /* ignore malformed response */
-        }
-        if (order.length === 0) return 'empty';
-        return autoScoreResponse(question, answer.response) >= question.points ? 'correct' : 'incorrect';
-    }
-    if (question.type === 'hot-text') {
-        let selected: number[] = [];
-        try {
-            selected = JSON.parse(answer.response) as number[];
-        } catch {
-            /* ignore malformed response */
-        }
-        if (selected.length === 0) return 'empty';
-        return autoScoreResponse(question, answer.response) >= question.points ? 'correct' : 'incorrect';
-    }
-    return 'ungraded';
-}
-
-/** Grading sets pointsEarned even on an untouched structured answer ("{}", "[]"), so judge emptiness without it. */
-function isAnswered(question: TestQuestion, answer: TestAnswer | undefined): boolean {
-    return !!answer && cellState(question, { ...answer, pointsEarned: undefined }) !== 'empty';
+    /** Marks the halfway question and the final question (in the test's authored order) on the header. */
+    showMilestones?: boolean;
 }
 
 const CELL_COLORS: Record<CellState, string> = {
@@ -135,15 +52,6 @@ const CELL_COLORS: Record<CellState, string> = {
     ungraded: 'var(--yellow)',
     empty: 'transparent',
 };
-
-/** Earned/max contribution of one cell. Ungraded and not-presented cells contribute nothing (excluded from averages). */
-function cellPoints(question: TestQuestion, answer: TestAnswer | undefined): { earned: number; max: number } | null {
-    const state = cellState(question, answer);
-    if (state === 'ungraded') return null;
-    if (state === 'empty') return { earned: 0, max: question.points };
-    const earned = answer?.pointsEarned ?? autoScoreResponse(question, answer!.response);
-    return { earned, max: question.points };
-}
 
 function pct(earned: number, max: number): number | undefined {
     return max > 0 ? (earned / max) * 100 : undefined;
@@ -235,6 +143,7 @@ export default function ResponsesGrid({
     sortRules,
     showProgress = false,
     showClassProgress = false,
+    showMilestones = false,
 }: ResponsesGridProps) {
     const { t } = useTranslation();
     const [galleryQuestion, setGalleryQuestion] = useState<TestQuestion | null>(null);
@@ -272,6 +181,19 @@ export default function ResponsesGrid({
         () => orderColumns(buildColumnMeta(test, avgByQuestion), sortRules ?? [{ key: 'original', dir: 'asc' }]),
         [test, avgByQuestion, sortRules]
     );
+
+    const milestones = useMemo(() => {
+        const count = test.questions.length;
+        if (!showMilestones || count < 2) return null;
+        return { halfwayIndex: Math.ceil(count / 2) - 1, lastIndex: count - 1 };
+    }, [showMilestones, test.questions.length]);
+
+    // The halfway divider only reads as "half the test" while columns are in authored order.
+    const inAuthoredOrder = orderedColumns.every((col, i) => col.originalIndex === i);
+    const dividerAfter = (originalIndex: number): React.CSSProperties =>
+        milestones && inAuthoredOrder && originalIndex === milestones.halfwayIndex
+            ? { borderRight: '2px dashed var(--accent)' }
+            : {};
 
     const studentTotal = (row: ResponsesGridStudentRow): number | undefined => {
         let earned = 0;
@@ -381,9 +303,9 @@ export default function ResponsesGrid({
         whiteSpace: 'nowrap',
     };
 
-    function renderAvgCell(p: number | undefined, key: string) {
+    function renderAvgCell(p: number | undefined, key: string, divider: React.CSSProperties = {}) {
         return (
-            <td key={key} style={{ padding: '4px 8px', textAlign: 'center', minWidth: 46 }}>
+            <td key={key} style={{ padding: '4px 8px', textAlign: 'center', minWidth: 46, ...divider }}>
                 <div style={{ fontWeight: 600, fontSize: '0.8rem' }}>{formatPct(p)}</div>
                 {p !== undefined && (
                     <div style={{ height: 3, borderRadius: 2, marginTop: 2, background: avgColor(p) }} />
@@ -392,10 +314,10 @@ export default function ResponsesGrid({
         );
     }
 
-    function renderCell(row: ResponsesGridStudentRow, q: TestQuestion) {
+    function renderCell(row: ResponsesGridStudentRow, q: TestQuestion, divider: React.CSSProperties) {
         if (!isPresented(row, q)) {
             return (
-                <td key={q.id} style={{ padding: '4px 8px', textAlign: 'center' }}>
+                <td key={q.id} style={{ padding: '4px 8px', textAlign: 'center', ...divider }}>
                     <div
                         aria-label={t('tests.monitor.grid.state.absent')}
                         title={t('tests.monitor.grid.state.absent')}
@@ -415,7 +337,7 @@ export default function ResponsesGrid({
             row.answers.find((a) => a.questionId === q.id)
         );
         return (
-            <td key={q.id} style={{ padding: '4px 8px', textAlign: 'center' }}>
+            <td key={q.id} style={{ padding: '4px 8px', textAlign: 'center', ...divider }}>
                 <div
                     aria-label={t(`tests.monitor.grid.state.${state}`)}
                     title={t(`tests.monitor.grid.state.${state}`)}
@@ -452,11 +374,25 @@ export default function ResponsesGrid({
                                 const shortLabel = t('tests.monitor.grid.question_short', {
                                     index: col.originalIndex + 1,
                                 });
-                                const fullLabel = `${shortLabel}: ${plainQuestionPromptText(q)}`;
+                                const milestone =
+                                    milestones?.halfwayIndex === col.originalIndex
+                                        ? 'halfway'
+                                        : milestones?.lastIndex === col.originalIndex
+                                          ? 'final'
+                                          : null;
+                                const milestoneLabel = milestone
+                                    ? t(`tests.monitor.grid.milestone_${milestone}`)
+                                    : null;
+                                const fullLabel = `${shortLabel}${milestoneLabel ? ` (${milestoneLabel})` : ''}: ${plainQuestionPromptText(q)}`;
                                 return (
                                     <th
                                         key={col.id}
-                                        style={{ ...th, textAlign: 'center', color: 'var(--accent-text)' }}
+                                        style={{
+                                            ...th,
+                                            textAlign: 'center',
+                                            color: 'var(--accent-text)',
+                                            ...dividerAfter(col.originalIndex),
+                                        }}
                                     >
                                         <button
                                             type="button"
@@ -467,6 +403,24 @@ export default function ResponsesGrid({
                                         >
                                             {shortLabel}
                                         </button>
+                                        {milestoneLabel && (
+                                            <div
+                                                aria-hidden="true"
+                                                data-testid={`milestone-${milestone}`}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    gap: 3,
+                                                    fontSize: '0.68rem',
+                                                    fontWeight: 600,
+                                                    color: 'var(--text-muted)',
+                                                }}
+                                            >
+                                                <Flag size={10} />
+                                                {milestoneLabel}
+                                            </div>
+                                        )}
                                     </th>
                                 );
                             })}
@@ -478,7 +432,13 @@ export default function ResponsesGrid({
                             </td>
                             {renderAvgCell(overallAvg, 'avg-total')}
                             {showProgress && <td />}
-                            {orderedColumns.map((col) => renderAvgCell(avgByQuestion.get(col.id), `avg-${col.id}`))}
+                            {orderedColumns.map((col) =>
+                                renderAvgCell(
+                                    avgByQuestion.get(col.id),
+                                    `avg-${col.id}`,
+                                    dividerAfter(col.originalIndex)
+                                )
+                            )}
                         </tr>
                         {classProgress && (
                             <tr style={{ background: 'var(--bg-elevated)' }} data-testid="class-progress-row">
@@ -505,7 +465,10 @@ export default function ResponsesGrid({
                                     const percent =
                                         cp.presented > 0 ? Math.round((cp.answered / cp.presented) * 100) : 0;
                                     return (
-                                        <td key={`cp-${col.id}`} style={{ padding: '4px 8px' }}>
+                                        <td
+                                            key={`cp-${col.id}`}
+                                            style={{ padding: '4px 8px', ...dividerAfter(col.originalIndex) }}
+                                        >
                                             <CompletionBar
                                                 value={cp.answered}
                                                 max={cp.presented}
@@ -566,7 +529,11 @@ export default function ResponsesGrid({
                                             {renderAvgCell(ga!.total, `g-total-${group.key}`)}
                                             {showProgress && <td />}
                                             {orderedColumns.map((col) =>
-                                                renderAvgCell(ga!.perQuestion.get(col.id), `g-${group.key}-${col.id}`)
+                                                renderAvgCell(
+                                                    ga!.perQuestion.get(col.id),
+                                                    `g-${group.key}-${col.id}`,
+                                                    dividerAfter(col.originalIndex)
+                                                )
                                             )}
                                         </tr>
                                     )}
@@ -582,6 +549,26 @@ export default function ResponsesGrid({
                                                     }}
                                                 >
                                                     {row.displayName}
+                                                    {row.pace &&
+                                                        (() => {
+                                                            const { Icon, color } = PACE_ICON[row.pace];
+                                                            const label = t(`tests.monitor.pace.${row.pace}`);
+                                                            return (
+                                                                <span
+                                                                    role="img"
+                                                                    aria-label={label}
+                                                                    title={label}
+                                                                    style={{
+                                                                        display: 'inline-flex',
+                                                                        verticalAlign: 'middle',
+                                                                        marginLeft: 6,
+                                                                        color,
+                                                                    }}
+                                                                >
+                                                                    <Icon size={13} aria-hidden="true" />
+                                                                </span>
+                                                            );
+                                                        })()}
                                                 </td>
                                                 <td
                                                     style={{ padding: '4px 8px', textAlign: 'center', fontWeight: 600 }}
@@ -603,7 +590,11 @@ export default function ResponsesGrid({
                                                         );
                                                     })()}
                                                 {orderedColumns.map((col) =>
-                                                    renderCell(row, questionsById.get(col.id)!)
+                                                    renderCell(
+                                                        row,
+                                                        questionsById.get(col.id)!,
+                                                        dividerAfter(col.originalIndex)
+                                                    )
                                                 )}
                                             </tr>
                                         ))}
