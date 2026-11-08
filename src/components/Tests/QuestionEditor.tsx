@@ -720,6 +720,23 @@ export default function QuestionEditor({
                         </select>
                     </div>
                 )}
+                <div className="form-group" style={{ marginBottom: 0, flex: '0 0 150px' }}>
+                    <label htmlFor={`question-language-${question.id}`}>
+                        {t('tests.question_content_language_label')}
+                    </label>
+                    <select
+                        id={`question-language-${question.id}`}
+                        value={question.contentLanguage ?? ''}
+                        onChange={(e) => update({ contentLanguage: e.target.value || undefined })}
+                    >
+                        <option value="">{t('tests.content_language_inherit')}</option>
+                        <option value="en">{t('settings.language_en')}</option>
+                        <option value="nl">{t('settings.language_nl')}</option>
+                        <option value="fr">{t('settings.language_fr')}</option>
+                        <option value="de">{t('settings.language_de')}</option>
+                        <option value="es">{t('settings.language_es')}</option>
+                    </select>
+                </div>
             </div>
 
             <div className="form-group" style={{ marginBottom: 0 }}>

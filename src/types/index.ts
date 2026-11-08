@@ -1405,6 +1405,8 @@ export interface TestSection {
     transcript?: string;
     /** Target CEFR level this section is written at, for placement-test routing and result estimation */
     cefrLevel?: CefrLevel;
+    /** BCP-47 base code of the language this section's content is written in — overrides the test default for read-aloud voices and `lang` attributes (#956). Unset inherits. */
+    contentLanguage?: string;
     /** Deterministic branching rule for placement tests (roadmap Phase 25.1): scoring at/above the threshold on this section routes to passSectionId, otherwise failSectionId */
     routing?: {
         thresholdPct: number;
@@ -1465,6 +1467,8 @@ export interface TestQuestion {
     frameworkDescriptors?: LinkedFrameworkDescriptor[];
     /** Section this question belongs to */
     sectionId?: string;
+    /** BCP-47 base code of the language this question is written in — overrides the section and test defaults for read-aloud voices and `lang` attributes (#956). Unset inherits. */
+    contentLanguage?: string;
     /** Image shown above the answer area — either a public URL or a data URI */
     imageUrl?: string;
     /** Audio shown above the answer area — either a public URL or a data URI; for listening practice/tests */

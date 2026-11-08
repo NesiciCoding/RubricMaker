@@ -36,6 +36,7 @@ import { isStagedTest, entrySectionId, sectionQuestions, resolveNextSection } fr
 import { isStaircaseTest, resolveNextStaircaseQuestion } from '../utils/placementStaircase';
 import { isGeneratorTest, type NextPlacementQuestionResult } from '../utils/placementGenerator';
 import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse';
+import { resolveContentLanguage, resolveQuestionContentLanguage } from '../utils/contentLanguage';
 import { initClientLogger, logEvent } from '../services/logging/clientLogger';
 import { TestAdapter } from '../services/database/TestAdapter';
 import { isAllowedSupabaseUrl } from '../services/database/trustedSupabaseUrl';
@@ -203,7 +204,8 @@ export default function StudentTestPage() {
     const test = resolvedContent?.test ?? null;
     // Test content keeps its own language (English unless set) rather than inheriting <html lang> from the
     // interface, so a student who picked Dutch doesn't get English passages read by a Dutch screen-reader voice.
-    const contentLang = test?.contentLanguage ?? 'en';
+    // Test default; per-section and per-question overrides resolve at each render site (#956).
+    const contentLang = resolveContentLanguage(test?.contentLanguage);
     // Read-aloud is always on in practice mode (today's behaviour); in graded modes
     // (assessment/placement) it's gated on the student's accommodation setting (roadmap
     // Phase 44, §6.2) so it doesn't quietly help everyone on a test that's meant to measure
@@ -1070,6 +1072,8 @@ export default function StudentTestPage() {
                                 const response = answers.get(q.id) ?? '';
                                 const earned = autoScoreResponse(q, response);
                                 const isCorrect = earned >= q.points;
+                                const qSection = (test?.sections ?? []).find((sec) => sec.id === q.sectionId);
+                                const qLang = resolveQuestionContentLanguage(q, qSection, test);
                                 return (
                                     <div key={q.id} className="card" style={{ padding: 14 }}>
                                         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
@@ -1096,7 +1100,7 @@ export default function StudentTestPage() {
                                                         q.type === 'cloze-dropdown' ||
                                                         q.type === 'cloze-bank'
                                                             ? undefined
-                                                            : contentLang
+                                                            : qLang
                                                     }
                                                     style={{ fontWeight: 600, marginTop: 2 }}
                                                 >
@@ -1108,7 +1112,7 @@ export default function StudentTestPage() {
                                                 </div>
                                                 {q.explanation && (
                                                     <p
-                                                        lang={contentLang}
+                                                        lang={qLang}
                                                         className="text-muted text-sm"
                                                         style={{
                                                             marginTop: 8,
@@ -1135,7 +1139,7 @@ export default function StudentTestPage() {
                                                                 {t('tests.taking.transcript_title')}
                                                             </summary>
                                                             <p
-                                                                lang={contentLang}
+                                                                lang={qLang}
                                                                 className="text-muted text-sm"
                                                                 style={{ whiteSpace: 'pre-wrap', margin: '6px 0 0' }}
                                                             >
@@ -1157,7 +1161,7 @@ export default function StudentTestPage() {
                             {/* Section label */}
                             {currentSection && (
                                 <div
-                                    lang={contentLang}
+                                    lang={resolveContentLanguage(currentSection.contentLanguage, test?.contentLanguage)}
                                     style={{
                                         fontSize: '0.75rem',
                                         fontWeight: 700,
@@ -1185,9 +1189,21 @@ export default function StudentTestPage() {
                                     }}
                                 >
                                     {readAloudAllowed && (
-                                        <PassageReadAloud contentHtml={currentSection.content} lang={contentLang} />
+                                        <PassageReadAloud
+                                            contentHtml={currentSection.content}
+                                            lang={resolveContentLanguage(
+                                                currentSection.contentLanguage,
+                                                test?.contentLanguage
+                                            )}
+                                        />
                                     )}
-                                    <RichContent html={currentSection.content} lang={contentLang} />
+                                    <RichContent
+                                        html={currentSection.content}
+                                        lang={resolveContentLanguage(
+                                            currentSection.contentLanguage,
+                                            test?.contentLanguage
+                                        )}
+                                    />
                                 </div>
                             )}
                             {(sectionAudioSrc || sectionStimulus?.spokenText) && currentSection && (
@@ -1198,7 +1214,10 @@ export default function StudentTestPage() {
                                         maxPlays={sectionStimulus?.maxPlays}
                                         plays={audioPlays[`section:${currentSection.id}`] ?? 0}
                                         onPlay={(count) => handleAudioPlay(`section:${currentSection.id}`, count)}
-                                        lang={contentLang}
+                                        lang={resolveContentLanguage(
+                                            currentSection.contentLanguage,
+                                            test?.contentLanguage
+                                        )}
                                         label={t('tests.taking.section_audio_alt')}
                                     />
                                 </div>
@@ -1216,7 +1235,11 @@ export default function StudentTestPage() {
                                     onRecordingChange={setIsRecordingAudio}
                                     hideTotal={isStaircase || isGenerator}
                                     readAloudAllowed={readAloudAllowed}
-                                    lang={contentLang}
+                                    lang={resolveQuestionContentLanguage(
+                                        question,
+                                        (test?.sections ?? []).find((sec) => sec.id === question.sectionId),
+                                        test
+                                    )}
                                     audioPlays={audioPlays[`question:${question.id}`] ?? 0}
                                     onAudioPlay={(count) => handleAudioPlay(`question:${question.id}`, count)}
                                 />
@@ -1437,14 +1460,15 @@ function QuestionTimeline({
     const { t } = useTranslation();
 
     // Group consecutive questions with same sectionId
-    const groups: { sectionTitle: string | null; indices: number[] }[] = [];
+    const groups: { sectionTitle: string | null; sectionId?: string; indices: number[] }[] = [];
     questions.forEach((q, i) => {
-        const sectionTitle = q.sectionId ? (sections.find((s) => s.id === q.sectionId)?.title ?? null) : null;
+        const section = q.sectionId ? sections.find((s) => s.id === q.sectionId) : undefined;
+        const sectionTitle = section?.title ?? null;
         const last = groups[groups.length - 1];
         if (last && last.sectionTitle === sectionTitle) {
             last.indices.push(i);
         } else {
-            groups.push({ sectionTitle, indices: [i] });
+            groups.push({ sectionTitle, sectionId: section?.id, indices: [i] });
         }
     });
 
@@ -1498,7 +1522,10 @@ function QuestionTimeline({
                 >
                     {group.sectionTitle && (
                         <span
-                            lang={contentLang}
+                            lang={resolveContentLanguage(
+                                sections.find((s) => s.id === group.sectionId)?.contentLanguage,
+                                contentLang
+                            )}
                             style={{
                                 fontSize: '0.7rem',
                                 fontWeight: 600,
