@@ -526,6 +526,8 @@ export default function StudentTestPage() {
         /* v8 ignore next -- the submit button/timer are the only callers and both gate on state */
         if (submitInFlightRef.current || submitted) return;
         submitInFlightRef.current = true;
+        // The timer can hand in while the review dialog is open; it must not survive into a retake.
+        setReviewOpen(false);
 
         /* v8 ignore next -- resolvedContent (when set) always carries a testId */
         const effectiveTestId = resolvedContent?.testId || assignment.testId;
@@ -693,6 +695,7 @@ export default function StudentTestPage() {
         setAnswers(new Map());
         setCurrentIndex(0);
         setFlagged(new Set());
+        setReviewOpen(false);
         setSeenIndices(new Set([0]));
         setSectionPath([]);
         setLevelPath([]);
