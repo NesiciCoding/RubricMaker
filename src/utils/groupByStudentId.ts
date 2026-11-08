@@ -5,9 +5,9 @@
  * array is behavior-identical, just without the O(students × records) rescan. See
  * docs/PERFORMANCE_AUDIT_2026-11.md #1107.
  */
-export function groupByStudentId<T>(items: T[], studentId: (item: T) => string): Map<string, T[]> {
+export function groupByStudentId<T>(items: T[] | null | undefined, studentId: (item: T) => string): Map<string, T[]> {
     const map = new Map<string, T[]>();
-    for (const item of items) {
+    for (const item of items ?? []) {
         const id = studentId(item);
         const arr = map.get(id);
         if (arr) arr.push(item);

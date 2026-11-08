@@ -17,4 +17,10 @@ describe('groupByStudentId', () => {
     it('returns an empty map for an empty input', () => {
         expect(groupByStudentId([], (i: { studentId: string }) => i.studentId).size).toBe(0);
     });
+
+    it('tolerates undefined/null input (some contexts leave an optional collection unset)', () => {
+        const key = (i: { studentId: string }) => i.studentId;
+        expect(groupByStudentId(undefined, key).size).toBe(0);
+        expect(groupByStudentId(null, key).size).toBe(0);
+    });
 });
