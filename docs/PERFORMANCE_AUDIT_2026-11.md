@@ -14,15 +14,23 @@ first recommended follow-up.
 Each finding below has a tracking issue (linked) with a fix plan. Severity is about user/operator
 impact if left unfixed, not difficulty to fix.
 
+**Status as of this audit's own fix PR (#1117, applied against commit `eaeba34`, the audit's
+original revision):** #13/#1105 (`fetchAttachments` pagination), #16+#17/#1106+#1111 (the two
+co-teaching RLS indexes), #12/#1109, #20/#1108, #21/#1112, and the #1115 quick-wins bundle are
+implemented in the repository. The SQL migration for #16/#17 still needs to be **deployed** to
+every environment's Postgres before those two actually stop costing anything in production — being
+in the repo isn't the same as being applied. Everything else below is accurate as written. See the
+`## Tracking` table for the full up-to-date status per issue.
+
 ## Top 5 worst offenders
 
-| # | Area | Issue | Why it's worst |
-|---|------|-------|-----------------|
-| 1 | Supabase/RLS | `test_in_coteaching()` does an unindexed full scan of `student_tests` per row of `tests` | Scales as O(tests × student_tests); gets worse every day the schools using co-teaching grow, and is invisible until a school hits it |
-| 2 | Supabase/data integrity | `fetchAttachments` has no pagination | Schools with >1000 attachment rows **silently lose rows** past PostgREST's cap on every hydrate — this is a data-loss bug wearing a performance costume |
-| 3 | Aggregation | `CefrOverviewPage`, `StudentLearningPathPage`, `calibrationCohorts.ts`, and the Dashboard `StudentSnapshotTable` all call per-student aggregators with the **full, unsliced** district-wide collections, instead of pre-grouping into `Map<studentId, T[]>` once (the pattern `StudentsPage.tsx` already uses) | O(students × total-records); these are exactly the "whole school at a glance" pages that get used most and will be the first ones to feel slow |
-| 4 | Export | Batch DOCX/PDF export builds the entire document tree synchronously on the main thread, no worker, no yielding | A 30-student × 10-criteria batch export freezes the UI tab for the whole build |
-| 5 | CI pipeline | `npm ci` runs fresh in ~9 separate jobs with no shared cache; 6 independent steps in the `ci` job run serially instead of in parallel jobs | Direct, compounding cost on every single push and PR — the only item here that costs money/time today regardless of any school's data size |
+| #   | Area                    | Issue                                                                                                                                                                                                                                                                                                          | Why it's worst                                                                                                                                          |
+| --- | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Supabase/RLS            | `test_in_coteaching()` does an unindexed full scan of `student_tests` per row of `tests`                                                                                                                                                                                                                       | Scales as O(tests × student_tests); gets worse every day the schools using co-teaching grow, and is invisible until a school hits it                    |
+| 2   | Supabase/data integrity | `fetchAttachments` has no pagination                                                                                                                                                                                                                                                                           | Schools with >1000 attachment rows **silently lose rows** past PostgREST's cap on every hydrate — this is a data-loss bug wearing a performance costume |
+| 3   | Aggregation             | `CefrOverviewPage`, `StudentLearningPathPage`, `calibrationCohorts.ts`, and the Dashboard `StudentSnapshotTable` all call per-student aggregators with the **full, unsliced** district-wide collections, instead of pre-grouping into `Map<studentId, T[]>` once (the pattern `StudentsPage.tsx` already uses) | O(students × total-records); these are exactly the "whole school at a glance" pages that get used most and will be the first ones to feel slow          |
+| 4   | Export                  | Batch DOCX/PDF export builds the entire document tree synchronously on the main thread, no worker, no yielding                                                                                                                                                                                                 | A 30-student × 10-criteria batch export freezes the UI tab for the whole build                                                                          |
+| 5   | CI pipeline             | `npm ci` runs fresh in ~9 separate jobs with no shared cache; 6 independent steps in the `ci` job run serially instead of in parallel jobs                                                                                                                                                                     | Direct, compounding cost on every single push and PR — the only item here that costs money/time today regardless of any school's data size              |
 
 ## Findings by layer
 
@@ -35,7 +43,7 @@ Severity: 🔴 high · 🟡 medium · 🟢 low/minor.
    `cefrVocabularyProfiler.ts`, `wordFormation.ts`, `clozeGenerators.ts`,
    `distractorSuggestions.ts`) by `QuestionEditor.tsx`, `DocumentAnalysisPanel.tsx`,
    `TextScreeningPanel.tsx`, `OpenAnswerInsightsPanel.tsx`. All of those sit behind
-   already-`lazy()` routes, so it's *not* in the main bundle — but whichever chunk(s) it lands in
+   already-`lazy()` routes, so it's _not_ in the main bundle — but whichever chunk(s) it lands in
    still pay ~1.5 MB of JS-literal construction at import time (test-builder / essay-analysis
    cold start).
    **Fix:** ship it as a static JSON asset loaded via dynamic `import('./cefrLevels.json', { with: { type: 'json' } })`, or split by CEFR level so a panel only loads the levels it needs.
@@ -56,7 +64,7 @@ Severity: 🔴 high · 🟡 medium · 🟢 low/minor.
 4. 🔴 **`StudentSnapshotTable.tsx:109-142`** — for every student on the dashboard, calls
    `getCefrStudentOverview`, `getCriterionInterventionFlags`, `getCefrSkillInterventionFlags`,
    and `getStudentGrammarMasteryScore`, each of which rebuilds `rubricById`/`testById` lookup
-   Maps from the *entire* `rubrics`/`tests` arrays and `.filter()`s the full `studentRubrics`/
+   Maps from the _entire_ `rubrics`/`tests` arrays and `.filter()`s the full `studentRubrics`/
    `assignments`/`reviews` collections per student (`cefrStudentAggregator.ts:329,332-333`,
    `masteryProfileAggregator.ts:109-110`). Wrapped in `useMemo`, but the deps are the raw
    collections, so one grade edit anywhere invalidates the memo and recomputes for every student.
@@ -122,7 +130,7 @@ not the O(n²) the audit went in suspecting. Real findings:
     **Fix:** add `upsertMany`/`deleteMany` adapter methods per entity (mirror the `studentRubric` pattern) and register them in `tryBatchUpsert`/`tryBatchDelete`.
 
 13. 🔴 **`fetchAttachments` is unpaginated** (`SupabaseAdapter.ts:883-887`) — `.select('data,
-    storage_path')` with no `.range()`, called on every hydrate. Unlike `fetchStudentRubrics`/
+storage_path')` with no `.range()`, called on every hydrate. Unlike `fetchStudentRubrics`/
     `fetchPeerReviews` (lines 804-809, 855-859), which explicitly route through the `fetchPaged`
     helper "so the heaviest tables aren't silently capped at PostgREST's default 1000-row limit,"
     attachments has no such protection. This is the top-5 item above — a correctness bug, not just slowness.
@@ -145,7 +153,7 @@ not the O(n²) the audit went in suspecting. Real findings:
 16. 🔴 **`96_coteacher_grading.sql`, `test_in_coteaching()` (lines 93-111)**, used by the
     `tests_coteaching_select` RLS policy — for every row scanned on `tests` by a non-owner, runs
     `EXISTS (SELECT 1 FROM student_tests st WHERE st.data->>'testId' = p_test_id AND
-    st.owner_id = p_owner ...)`. `student_tests` has **no index** on `data->>'testId'` (only
+st.owner_id = p_owner ...)`. `student_tests` has **no index** on `data->>'testId'` (only
     `owner_id`, `student_user_id`, and a partial unique index on `assignment_id`) — a full
     sequential scan of `student_tests` per row of `tests`. This is the top-1 item above.
     **Fix:** `CREATE INDEX ON student_tests ((data->>'testId'))`, or better, promote `test_id`/`student_id` to real columns the way `student_rubrics` already does.
@@ -190,7 +198,7 @@ not the O(n²) the audit went in suspecting. Real findings:
     **Fix:** create one worker lazily per batch/session, reuse it across `recognizeImage` calls, terminate only when the batch ends.
 
 22. 🟢 **Deep-clone anti-pattern** — `JSON.parse(JSON.stringify(...))` at `GradeStudent.tsx:471-472,
-    525-526, 579-580` and `ComparativeGrading.tsx:440,444`, cloning `rubric`/`scale` on every
+525-526, 579-580` and `ComparativeGrading.tsx:440,444`, cloning `rubric`/`scale` on every
     grade save. Not in a per-dispatch hot path (only fires on explicit save), but an avoidable
     round-trip of a potentially large rubric tree.
     **Fix:** `structuredClone(rubric)` — faster, no string round-trip, handles `Date`s correctly.
@@ -227,22 +235,26 @@ not the O(n²) the audit went in suspecting. Real findings:
 ## Action plan
 
 **Do first (data-loss / unbounded-growth risk, small fix):**
-- #13 `fetchAttachments` pagination (data loss, not just slowness)
-- #16 `student_tests` expression index (unbounded RLS cost)
+
+- #13 `fetchAttachments` pagination (data loss, not just slowness) — ✅ implemented (#1117)
+- #16 `student_tests` expression index (unbounded RLS cost) — ✅ migration written (#1117); **still needs deployment** to take effect
 
 **Quick wins (small diff, clear win, no architecture change):**
+
 - #6 memoize `GradeStudent.tsx` attachment/analysis filters
 - #11 `StatisticsPage.tsx` memoize chart data array
 - #22 `structuredClone` instead of JSON round-trip
 - #24 cache `node_modules` in CI
 
 **Near-term (real but contained refactor):**
+
 - #4 / #5 pre-group collections into per-student Maps before calling the aggregators (one fix pattern, four call sites: `StudentSnapshotTable`, `CefrOverviewPage`, `StudentLearningPathPage`, `calibrationCohorts`)
 - #12 batched upsert/delete for entities beyond `studentRubric`
 - #17 GIN index for `classes.data->'rubricIds'`
 - #23 split the serial `ci` job into parallel jobs
 
 **Needs design before building (bigger change or needs measurement first):**
+
 - #20 worker/chunking strategy for batch export
 - #21 OCR worker pooling
 - #2 vendor chunk splitting — measure with `build:analyze` first
@@ -254,20 +266,20 @@ not the O(n²) the audit went in suspecting. Real findings:
 
 ## Tracking
 
-| Issue | Finding(s) | Severity |
-|---|---|---|
-| [#1105](https://github.com/NesiciCoding/RubricMaker/issues/1105) | #13 — attachments fetch unpaginated (data-loss risk) | 🔴 |
-| [#1106](https://github.com/NesiciCoding/RubricMaker/issues/1106) | #16 — `test_in_coteaching()` unindexed scan | 🔴 |
-| [#1107](https://github.com/NesiciCoding/RubricMaker/issues/1107) | #4, #5 — per-student aggregators rescan full collections | 🔴 |
-| [#1108](https://github.com/NesiciCoding/RubricMaker/issues/1108) | #20 — batch DOCX/PDF export blocks main thread | 🔴 |
-| [#1109](https://github.com/NesiciCoding/RubricMaker/issues/1109) | #12 — no batched upsert/delete beyond `studentRubric` | 🔴 |
-| [#1110](https://github.com/NesiciCoding/RubricMaker/issues/1110) | #23, #24 — serial CI job + no `node_modules` cache | 🟡 |
-| [#1111](https://github.com/NesiciCoding/RubricMaker/issues/1111) | #17 — `rubric_in_coteaching()` jsonb containment, no GIN index | 🟡 |
-| [#1112](https://github.com/NesiciCoding/RubricMaker/issues/1112) | #21 — Tesseract OCR worker re-created per image | 🟡 |
-| [#1113](https://github.com/NesiciCoding/RubricMaker/issues/1113) | #7 — `globalSearch` re-normalizes full corpus per keystroke | 🟡 |
-| [#1114](https://github.com/NesiciCoding/RubricMaker/issues/1114) | #1, #2 — `cefrLevels.ts` size + vendor chunk splitting | 🟡 |
-| [#1115](https://github.com/NesiciCoding/RubricMaker/issues/1115) | #6, #8, #11, #22 — quick-wins bundle | 🟡/🟢 |
-| [#1116](https://github.com/NesiciCoding/RubricMaker/issues/1116) | #9, #10, #14, #15, #18, #25, #26, #27 — low-priority backlog, one checklist entry per item | 🟢 |
+| Issue                                                            | Finding(s)                                                                                 | Severity |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | -------- |
+| [#1105](https://github.com/NesiciCoding/RubricMaker/issues/1105) | #13 — attachments fetch unpaginated (data-loss risk)                                       | 🔴       |
+| [#1106](https://github.com/NesiciCoding/RubricMaker/issues/1106) | #16 — `test_in_coteaching()` unindexed scan                                                | 🔴       |
+| [#1107](https://github.com/NesiciCoding/RubricMaker/issues/1107) | #4, #5 — per-student aggregators rescan full collections                                   | 🔴       |
+| [#1108](https://github.com/NesiciCoding/RubricMaker/issues/1108) | #20 — batch DOCX/PDF export blocks main thread                                             | 🔴       |
+| [#1109](https://github.com/NesiciCoding/RubricMaker/issues/1109) | #12 — no batched upsert/delete beyond `studentRubric`                                      | 🔴       |
+| [#1110](https://github.com/NesiciCoding/RubricMaker/issues/1110) | #23, #24 — serial CI job + no `node_modules` cache                                         | 🟡       |
+| [#1111](https://github.com/NesiciCoding/RubricMaker/issues/1111) | #17 — `rubric_in_coteaching()` jsonb containment, no GIN index                             | 🟡       |
+| [#1112](https://github.com/NesiciCoding/RubricMaker/issues/1112) | #21 — Tesseract OCR worker re-created per image                                            | 🟡       |
+| [#1113](https://github.com/NesiciCoding/RubricMaker/issues/1113) | #7 — `globalSearch` re-normalizes full corpus per keystroke                                | 🟡       |
+| [#1114](https://github.com/NesiciCoding/RubricMaker/issues/1114) | #1, #2 — `cefrLevels.ts` size + vendor chunk splitting                                     | 🟡       |
+| [#1115](https://github.com/NesiciCoding/RubricMaker/issues/1115) | #6, #8, #11, #22 — quick-wins bundle                                                       | 🟡/🟢    |
+| [#1116](https://github.com/NesiciCoding/RubricMaker/issues/1116) | #9, #10, #14, #15, #18, #25, #26, #27 — low-priority backlog, one checklist entry per item | 🟢       |
 
 #3 and #19 are non-findings (already well-optimized, recorded so they aren't re-flagged later) and
 have no issue.

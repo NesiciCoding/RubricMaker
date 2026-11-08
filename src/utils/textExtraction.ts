@@ -152,14 +152,29 @@ async function loadTesseractWorker(langs: string): Promise<{ tesseract: Tesserac
     }
 }
 
+/** Tracks the dictionary last seeded onto a worker, keyed by its exact words+patterns content, so
+ *  a shared OcrSession doesn't pay reinitialize()'s cost again when consecutive calls seed the
+ *  same vocabulary (e.g. every block of the same exam reusing examAnswerVocabulary(test)). */
+interface DictState {
+    key: string;
+}
+
+/** The dictKey computed below for "no words, no patterns" — the state a freshly-created worker
+ *  is already in, so a DictState must start here, not at '', to avoid an unnecessary reinitialize
+ *  on the very first call when nothing was ever seeded. */
+const NO_DICT_KEY = '\u0000';
+
 /** Runs one recognition on an already-created worker — the shared core of recognizeImage() and
- *  OcrSession.recognize(), so a batch can reuse one worker without duplicating this logic. */
+ *  OcrSession.recognize(), so a batch can reuse one worker without duplicating this logic.
+ *  `dict` is omitted for the one-shot recognizeImage() path (a fresh worker has no prior seed to
+ *  compare against); OcrSession threads one shared DictState through every recognize() call. */
 async function recognizeWithWorker(
     worker: TesseractWorker,
     tesseract: TesseractModule,
     langs: string,
     dataUrl: string,
-    opts: Omit<RecognizeImageOptions, 'langs'>
+    opts: Omit<RecognizeImageOptions, 'langs'>,
+    dict: DictState = { key: NO_DICT_KEY }
 ): Promise<OcrResult> {
     const psm = opts.psm ?? tesseract.PSM[psmForCaptureHint(opts.captureHint)];
     // Dictionary seeding needs Tesseract's Init()-time config, so it can only take effect via
@@ -167,21 +182,29 @@ async function recognizeWithWorker(
     // user_words_suffix/user_patterns_suffix/load_*_dawg (they're init-only members).
     const userWordsText = buildUserWords(opts.userWords ?? []);
     const userPatternsText = buildUserPatterns(opts.userPatterns ?? []);
-    if (userWordsText || userPatternsText) {
-        const primaryLang = (Array.isArray(langs) ? langs[0] : langs).split('+')[0];
-        // Keep the standard dictionaries on: user words/patterns are meant to *supplement*
-        // recognition, not replace it — disabling load_system_dawg/load_freq_dawg is for
-        // code/identifier-heavy text and would hurt recognition of ordinary student prose.
-        const config: Record<string, string> = { load_system_dawg: '1', load_freq_dawg: '1' };
-        if (userWordsText) {
-            await worker.writeText(`${primaryLang}.user-words`, userWordsText);
-            config.user_words_suffix = 'user-words';
+    const dictKey = `${userWordsText}\u0000${userPatternsText}`;
+    if (dictKey !== dict.key) {
+        dict.key = dictKey;
+        if (userWordsText || userPatternsText) {
+            const primaryLang = (Array.isArray(langs) ? langs[0] : langs).split('+')[0];
+            // Keep the standard dictionaries on: user words/patterns are meant to *supplement*
+            // recognition, not replace it — disabling load_system_dawg/load_freq_dawg is for
+            // code/identifier-heavy text and would hurt recognition of ordinary student prose.
+            const config: Record<string, string> = { load_system_dawg: '1', load_freq_dawg: '1' };
+            if (userWordsText) {
+                await worker.writeText(`${primaryLang}.user-words`, userWordsText);
+                config.user_words_suffix = 'user-words';
+            }
+            if (userPatternsText) {
+                await worker.writeText(`${primaryLang}.user-patterns`, userPatternsText);
+                config.user_patterns_suffix = 'user-patterns';
+            }
+            await worker.reinitialize(langs, Oem.LSTM_ONLY, config);
+        } else {
+            // A later call on the same session dropped the words/patterns a previous call seeded —
+            // restore the plain, unseeded engine state rather than leaving the old dictionary active.
+            await worker.reinitialize(langs, Oem.LSTM_ONLY);
         }
-        if (userPatternsText) {
-            await worker.writeText(`${primaryLang}.user-patterns`, userPatternsText);
-            config.user_patterns_suffix = 'user-patterns';
-        }
-        await worker.reinitialize(langs, Oem.LSTM_ONLY, config);
     }
     await worker.setParameters({ tessedit_pageseg_mode: psm });
     const { data } = (await worker.recognize(dataUrl, {}, { blocks: true })) as unknown as { data: RecognizeData };
@@ -230,8 +253,9 @@ export interface OcrSession {
 export async function createOcrSession(langs?: RecognizeImageOptions['langs']): Promise<OcrSession> {
     const resolvedLangs = resolveOcrLanguages(langs);
     const { tesseract, worker } = await loadTesseractWorker(resolvedLangs);
+    const dict: DictState = { key: NO_DICT_KEY };
     return {
-        recognize: (dataUrl, opts = {}) => recognizeWithWorker(worker, tesseract, resolvedLangs, dataUrl, opts),
+        recognize: (dataUrl, opts = {}) => recognizeWithWorker(worker, tesseract, resolvedLangs, dataUrl, opts, dict),
         terminate: async () => {
             await worker.terminate();
         },

@@ -165,6 +165,43 @@ describe('createOcrSession (docs/PERFORMANCE_AUDIT_2026-11.md #1112)', () => {
         await session.terminate();
     });
 
+    it('does not re-seed the dictionary on a second call with the same words/patterns', async () => {
+        recognize.mockResolvedValue({ data: { text: '', words: [] } });
+        const session = await createOcrSession('en');
+
+        await session.recognize(imageUrl, { userWords: ['Rembrandt', 'Vermeer'] });
+        expect(reinitialize).toHaveBeenCalledTimes(1);
+
+        await session.recognize(imageUrl, { userWords: ['Rembrandt', 'Vermeer'] });
+        // Same vocabulary as last time — must not pay the reinitialize() round-trip again, or a
+        // batch where every block shares one vocabulary (e.g. examAnswerVocabulary(test)) would
+        // reinitialize the engine per block, undercutting the whole point of a shared session.
+        expect(reinitialize).toHaveBeenCalledTimes(1);
+
+        await session.terminate();
+    });
+
+    it('resets the dictionary when a later call drops the words/patterns an earlier one seeded', async () => {
+        recognize.mockResolvedValue({ data: { text: '', words: [] } });
+        const session = await createOcrSession('en');
+
+        await session.recognize(imageUrl, { userWords: ['Rembrandt'] });
+        expect(reinitialize).toHaveBeenCalledTimes(1);
+        expect(reinitialize).toHaveBeenNthCalledWith(1, 'eng', 1, {
+            load_system_dawg: '1',
+            load_freq_dawg: '1',
+            user_words_suffix: 'user-words',
+        });
+
+        await session.recognize(imageUrl);
+        // No words/patterns this time — the previous call's seeded dictionary must not stay
+        // active; reinitialize again, this time with the plain (unseeded) config.
+        expect(reinitialize).toHaveBeenCalledTimes(2);
+        expect(reinitialize).toHaveBeenNthCalledWith(2, 'eng', 1);
+
+        await session.terminate();
+    });
+
     it('wraps a failed engine start in OcrUnavailableError, same as recognizeImage', async () => {
         const cause = new Error('NetworkError: Failed to execute importScripts');
         createWorkerSpy.mockRejectedValueOnce(cause);
