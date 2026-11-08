@@ -42,6 +42,11 @@ services:
 
     # The grade, message and digest notifications are sent by edge functions over the same SMTP
     # account (supabase/functions/_deno/mail.ts). APP_URL is used for the links in those emails.
+    # The *_HEARTBEAT_URLs are dead-man's-switch monitors pinged on success only (see
+    # supabase/functions/_shared/heartbeat.ts — an unset/empty URL is skipped, so leaving
+    # them empty is fine). They must still be present in the container environment:
+    # stack-drift.py treats any Deno.env.get() key missing from `docker inspect` as drift
+    # and fails the deploy's drift check.
     functions:
         environment:
             SMTP_HOST: ${SMTP_HOST}
@@ -51,3 +56,6 @@ services:
             SMTP_ADMIN_EMAIL: ${SMTP_ADMIN_EMAIL}
             SMTP_SENDER_NAME: ${SMTP_SENDER_NAME}
             APP_URL: ${APP_URL:-}
+            CLEANUP_HEARTBEAT_URL: ${CLEANUP_HEARTBEAT_URL:-}
+            DIGEST_HEARTBEAT_URL: ${DIGEST_HEARTBEAT_URL:-}
+            NIGHTLY_BACKUP_HEARTBEAT_URL: ${NIGHTLY_BACKUP_HEARTBEAT_URL:-}
