@@ -734,9 +734,9 @@ jobs:
 
           echo "=== Pre-flight SFTP check (fails fast, 30s max) ==="
           printf 'pwd\n' | timeout 30 sftp -i "$key_file" \
-          -o BatchMode=yes -o ConnectTimeout=10 \
-          -o StrictHostKeyChecking=accept-new \
-          -b - "rubricmaker@${VPS_HOST}"
+            -o BatchMode=yes -o ConnectTimeout=10 \
+            -o StrictHostKeyChecking=accept-new \
+            -b - "rubricmaker@${VPS_HOST}"
 
           echo "=== Starting lftp mirror ==="
           timeout 300 lftp -u rubricmaker, "sftp://${VPS_HOST}" <<SFTP
@@ -753,7 +753,7 @@ jobs:
           mirror --reverse --delete --verbose dist/ /home/rubricmaker/web/${VPS_DOMAIN}/public_html/
           bye
           SFTP
-          echo "=== lftp mirror done (exit $?) ==="
+          echo "=== lftp mirror done ==="
 
       - name: Verify the live site serves RubricMaker
         if: steps.changes.outputs.changed == 'true'
