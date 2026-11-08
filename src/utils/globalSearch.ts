@@ -139,22 +139,159 @@ function parseQuery(query: string): {
     };
 }
 
-export function searchAll(query: string, data: SearchableData): SearchResult[] {
+export interface IndexedRubric {
+    item: Rubric;
+    normName: string;
+    normSubject: string;
+    normCefr: string;
+}
+
+interface IndexedTest {
+    item: Test;
+    normName: string;
+    normDesc: string;
+}
+
+interface IndexedStudent {
+    item: Student;
+    normName: string;
+    normNumber: string;
+    normYearLabel: string;
+    normTrackLabel: string;
+}
+
+interface IndexedClass {
+    item: Class;
+    normName: string;
+    normYears: string;
+    normTracks: string;
+}
+
+interface IndexedEssay {
+    item: EssayAssignment;
+    normTitle: string;
+    normPrompt: string;
+}
+
+interface IndexedDeck {
+    item: FlashcardDeck;
+    normName: string;
+    normDesc: string;
+}
+
+interface IndexedNews {
+    item: NewsFlash;
+    normTitle: string;
+    normSummary: string;
+    normPlain: string;
+    normTags: string[];
+}
+
+export interface SearchIndex {
+    rubrics: IndexedRubric[];
+    tests: IndexedTest[];
+    students: IndexedStudent[];
+    classes: IndexedClass[];
+    essays: IndexedEssay[];
+    decks: IndexedDeck[];
+    news: IndexedNews[];
+    classById: Map<string, Class>;
+    classNormNames: Map<string, string>;
+}
+
+const norm = (s: string | undefined): string => (s ? normalize(s) : '');
+
+/**
+ * Builds a normalized token index once per data-collection change.
+ * Memoize the result separately from the query string (see GlobalSearch) so
+ * per-keystroke searches query pre-normalized strings instead of calling
+ * `normalize()` on every field of every collection on every keystroke.
+ */
+export function buildSearchIndex(data: SearchableData): SearchIndex {
+    const classById = new Map(data.classes.map((c) => [c.id, c]));
+    const classNormNames = new Map(data.classes.map((c) => [c.id, normalize(c.name)]));
+
+    return {
+        classById,
+        classNormNames,
+        rubrics: data.rubrics.map((r) => ({
+            item: r,
+            normName: norm(r.name),
+            normSubject: norm(r.subject),
+            normCefr: norm(r.cefrTargetLevel),
+        })),
+        tests: data.tests.map((t) => ({
+            item: t,
+            normName: norm(t.name),
+            normDesc: norm(t.description),
+        })),
+        students: data.students.map((s) => {
+            const cls = classById.get(s.classId);
+            const effectiveTrack = getEffectiveVoTrack(s, cls);
+            const effectiveYear = getEffectiveSchoolYear(s, cls);
+            return {
+                item: s,
+                normName: norm(s.name),
+                normNumber: norm(s.studentNumber),
+                normYearLabel: effectiveYear ? norm(SCHOOL_YEAR_LABELS[effectiveYear]) : '',
+                normTrackLabel: effectiveTrack ? norm(VO_TRACK_LABELS[effectiveTrack]) : '',
+            };
+        }),
+        classes: data.classes.map((c) => ({
+            item: c,
+            normName: norm(c.name),
+            normYears: norm(formatClassYears(c)),
+            normTracks: norm(
+                getClassVoTracks(c)
+                    .map((tr) => VO_TRACK_LABELS[tr])
+                    .join(' ')
+            ),
+        })),
+        essays: data.essayAssignments.map((a) => ({
+            item: a,
+            normTitle: norm(a.title),
+            normPrompt: norm(a.prompt),
+        })),
+        decks: data.flashcardDecks.map((d) => ({
+            item: d,
+            normName: norm(d.name),
+            normDesc: norm(d.description),
+        })),
+        news: data.newsFlashes.map((f) => ({
+            item: f,
+            normTitle: norm(f.title),
+            normSummary: norm(f.summary),
+            normPlain: norm(getNewsFlashPlainText(f)),
+            normTags: (f.tags ?? []).map((t) => normalize(t)),
+        })),
+    };
+}
+
+/**
+ * Searches the teacher's corpus for a query string with optional `type:`/`class:`/
+ * `year:`/`track:`/`mode:`/`area:` filters (see `parseQuery`).
+ *
+ * Pass a `cachedIndex` from `buildSearchIndex(data)` to query pre-normalized
+ * strings instead of re-normalizing every field on every call — memoize the
+ * index separately from the query string and rebuild it only when the
+ * collections change. Without an index one is built inline for the call.
+ */
+export function searchAll(query: string, data: SearchableData, cachedIndex?: SearchIndex): SearchResult[] {
     const { typeFilter, classFilter, yearFilter, trackFilter, modeFilter, areaFilter, text } = parseQuery(query);
     if (!text && !classFilter && !typeFilter && !yearFilter && !trackFilter && !modeFilter && !areaFilter) return [];
 
-    const classById = new Map(data.classes.map((c) => [c.id, c]));
+    const idx = cachedIndex ?? buildSearchIndex(data);
+    const classById = idx.classById;
     const normalizedClassFilter = classFilter ? normalize(classFilter) : undefined;
     const normalizedYearFilter = yearFilter ? normalize(yearFilter) : undefined;
     const normalizedTrackFilter = trackFilter ? normalize(trackFilter) : undefined;
 
-    const matchesText = (...fields: (string | undefined)[]) =>
-        !text || fields.some((f) => f && normalize(f).includes(text));
+    const matchesText = (...fields: string[]) => !text || fields.some((f) => f.includes(text));
 
     const matchesClass = (classId: string | undefined) => {
         if (!normalizedClassFilter) return true;
-        const className = classId ? classById.get(classId)?.name : undefined;
-        return !!className && normalize(className).includes(normalizedClassFilter);
+        const normName = classId ? idx.classNormNames.get(classId) : undefined;
+        return !!normName && normName.includes(normalizedClassFilter);
     };
 
     const matchesYear = (classId: string | undefined, studentYear?: SchoolYear) => {
@@ -193,13 +330,12 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
         text &&
         (!typeFilter || typeFilter === 'grade' || typeFilter === 'student' || typeFilter === 'rubric')
     ) {
-        // Normalise each rubric name once, not once per student.
-        const normalizedRubrics = data.rubrics.map((r) => ({ r, normRubric: normalize(r.name) }));
-        for (const s of data.students) {
+        // Index already holds one normalized name per rubric/student — reuse it
+        // instead of re-normalizing the full corpus on every keystroke.
+        for (const { item: s, normName } of idx.students) {
             if (s.anonymizedAt) continue;
-            const normName = normalize(s.name);
             if (normName.length < 3 || !text.includes(normName)) continue;
-            for (const { r, normRubric } of normalizedRubrics) {
+            for (const { item: r, normName: normRubric } of idx.rubrics) {
                 if (normRubric.length < 3 || !text.includes(normRubric)) continue;
                 addResult({
                     type: 'grade',
@@ -221,8 +357,8 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
     }
 
     if (!modeFilter && !areaFilter && (!typeFilter || typeFilter === 'rubric')) {
-        for (const r of data.rubrics) {
-            if (matchesText(r.name, r.subject, r.cefrTargetLevel)) {
+        for (const { item: r, normName, normSubject, normCefr } of idx.rubrics) {
+            if (matchesText(normName, normSubject, normCefr)) {
                 addResult({
                     type: 'rubric',
                     id: r.id,
@@ -235,11 +371,11 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
     }
 
     if (!typeFilter || typeFilter === 'test') {
-        for (const t of data.tests) {
+        for (const { item: t, normName, normDesc } of idx.tests) {
             const effectiveMode = t.mode ?? 'assessment';
             if (modeFilter && modeFilter !== effectiveMode) continue;
             if (areaFilter && t.contentArea !== areaFilter) continue;
-            if (matchesText(t.name, t.description)) {
+            if (matchesText(normName, normDesc)) {
                 addResult({
                     type: 'test',
                     id: t.id,
@@ -253,18 +389,11 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
     }
 
     if (!modeFilter && !areaFilter && (!typeFilter || typeFilter === 'student')) {
-        for (const s of data.students) {
+        for (const { item: s, normName, normNumber, normYearLabel, normTrackLabel } of idx.students) {
             if (s.anonymizedAt) continue;
             const cls = classById.get(s.classId);
-            const effectiveTrack = getEffectiveVoTrack(s, cls);
-            const effectiveYear = getEffectiveSchoolYear(s, cls);
             if (
-                matchesText(
-                    s.name,
-                    s.studentNumber,
-                    effectiveYear ? SCHOOL_YEAR_LABELS[effectiveYear] : undefined,
-                    effectiveTrack ? VO_TRACK_LABELS[effectiveTrack] : undefined
-                ) &&
+                matchesText(normName, normNumber, normYearLabel, normTrackLabel) &&
                 matchesClass(s.classId) &&
                 matchesYear(s.classId, s.schoolYear) &&
                 matchesTrack(s.classId, s.voTrack)
@@ -281,15 +410,9 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
     }
 
     if (!modeFilter && !areaFilter && (!typeFilter || typeFilter === 'class')) {
-        for (const c of data.classes) {
+        for (const { item: c, normName, normYears, normTracks } of idx.classes) {
             if (
-                matchesText(
-                    c.name,
-                    formatClassYears(c),
-                    getClassVoTracks(c)
-                        .map((tr) => VO_TRACK_LABELS[tr])
-                        .join(' ')
-                ) &&
+                matchesText(normName, normYears, normTracks) &&
                 matchesClass(c.id) &&
                 matchesYear(c.id) &&
                 matchesTrack(c.id)
@@ -301,9 +424,9 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
 
     if (!modeFilter && !areaFilter && (!typeFilter || typeFilter === 'essay')) {
         const seenGroups = new Set<string>();
-        for (const a of data.essayAssignments) {
+        for (const { item: a, normTitle, normPrompt } of idx.essays) {
             if (seenGroups.has(a.teacherKey)) continue;
-            if (matchesText(a.title, a.prompt)) {
+            if (matchesText(normTitle, normPrompt)) {
                 seenGroups.add(a.teacherKey);
                 addResult({ type: 'essay', id: a.teacherKey, label: a.title, route: `/essays/${a.teacherKey}` });
             }
@@ -311,8 +434,8 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
     }
 
     if (!modeFilter && !areaFilter && (!typeFilter || typeFilter === 'flashcardDeck')) {
-        for (const d of data.flashcardDecks) {
-            if (matchesText(d.name, d.description)) {
+        for (const { item: d, normName, normDesc } of idx.decks) {
+            if (matchesText(normName, normDesc)) {
                 addResult({
                     type: 'flashcardDeck',
                     id: d.id,
@@ -325,8 +448,8 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
     }
 
     if (!modeFilter && !areaFilter && (!typeFilter || typeFilter === 'newsFlash')) {
-        for (const f of data.newsFlashes) {
-            if (matchesText(f.title, f.summary, getNewsFlashPlainText(f), ...f.tags)) {
+        for (const { item: f, normTitle, normSummary, normPlain, normTags } of idx.news) {
+            if (matchesText(normTitle, normSummary, normPlain, ...normTags)) {
                 addResult({ type: 'newsFlash', id: f.id, label: f.title, sublabel: f.summary, route: '/news-flashes' });
             }
         }
