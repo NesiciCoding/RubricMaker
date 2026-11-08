@@ -110,17 +110,23 @@ async function enabledCounts(admin: ReturnType<typeof createClient>, profile: Op
     return { moderation, overdueGrading, unreadMessages };
 }
 
-// Batch path: one RPC per category for the full opted-in owner list.
+/**
+ * Batch path: one RPC per category, each receiving only the owners who opted
+ * into that category (mirrors the per-owner path, which skips unopted-in
+ * categories). Counts default to 0, so an empty opt-in list skips its RPC
+ * entirely instead of querying for owners whose results would be discarded.
+ */
 async function fetchBatchCounts(
     admin: ReturnType<typeof createClient>,
     profiles: OptedInProfile[]
 ): Promise<Record<string, DigestCounts>> {
-    const ids = [...new Set(profiles.map((p) => p.id))];
-    if (ids.length === 0) return {};
+    const idsFor = (flag: keyof DigestFlags): string[] => [
+        ...new Set(profiles.filter((p) => p.flags[flag]).map((p) => p.id)),
+    ];
     const [moderationRows, overdueRows, unreadRows] = await Promise.all([
-        batchRpc(admin, 'get_pending_moderation_counts', ids),
-        batchRpc(admin, 'get_overdue_grading_counts', ids),
-        batchRpc(admin, 'get_unread_messages_counts', ids),
+        batchRpc(admin, 'get_pending_moderation_counts', idsFor('moderation')),
+        batchRpc(admin, 'get_overdue_grading_counts', idsFor('overdueGrading')),
+        batchRpc(admin, 'get_unread_messages_counts', idsFor('unreadMessages')),
     ]);
     const out: Record<string, DigestCounts> = {};
     for (const p of profiles) out[p.id] = { moderation: 0, overdueGrading: 0, unreadMessages: 0 };
@@ -133,26 +139,29 @@ async function fetchBatchCounts(
     for (const row of unreadRows) {
         if (out[row.owner_id]) out[row.owner_id].unreadMessages = row.count;
     }
-    for (const pr of profiles) {
-        if (!pr.flags.moderation) out[pr.id].moderation = 0;
-        if (!pr.flags.overdueGrading) out[pr.id].overdueGrading = 0;
-        if (!pr.flags.unreadMessages) out[pr.id].unreadMessages = 0;
-    }
     return out;
 }
 
+/**
+ * Calls a batch count RPC, chunking the owner list so no single response can
+ * hit the PostgREST row cap (missing rows would otherwise stay at zero
+ * without triggering the per-owner fallback). Empty input skips the RPC.
+ */
 async function batchRpc(
     admin: ReturnType<typeof createClient>,
     fn: 'get_pending_moderation_counts' | 'get_overdue_grading_counts' | 'get_unread_messages_counts',
     targetOwners: string[]
 ): Promise<Array<{ owner_id: string; count: number }>> {
-    const { data, error } = await admin.rpc(fn, { target_owners: targetOwners });
-    if (error) throw new Error(fn + ': ' + error.message);
-    if (!Array.isArray(data)) return [];
     const rows: Array<{ owner_id: string; count: number }> = [];
-    for (const r of data as Array<{ owner_id?: unknown; count?: unknown }>) {
-        if (typeof r?.owner_id !== 'string') continue;
-        rows.push({ owner_id: r.owner_id, count: typeof r.count === 'number' ? r.count : 0 });
+    const CHUNK = 500;
+    for (let i = 0; i < targetOwners.length; i += CHUNK) {
+        const { data, error } = await admin.rpc(fn, { target_owners: targetOwners.slice(i, i + CHUNK) });
+        if (error) throw new Error(fn + ': ' + error.message);
+        if (!Array.isArray(data)) continue;
+        for (const r of data as Array<{ owner_id?: unknown; count?: unknown }>) {
+            if (typeof r?.owner_id !== 'string') continue;
+            rows.push({ owner_id: r.owner_id, count: typeof r.count === 'number' ? r.count : 0 });
+        }
     }
     return rows;
 }
