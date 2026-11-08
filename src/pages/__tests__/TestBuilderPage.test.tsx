@@ -353,6 +353,20 @@ describe('TestBuilderPage', () => {
         );
     });
 
+    it('numbers issues the way the cards are shown when sections reorder questions', async () => {
+        const questions: RmTest['questions'] = [
+            { id: 'qs', prompt: '', type: 'short-answer', points: 1, sectionId: 's1' },
+            { id: 'qu', prompt: 'Loose', type: 'short-answer', points: 1, expectedAnswers: ['a'] },
+        ];
+        mockTests = [{ ...mockExistingTest, questions, sections: [{ id: 's1', title: 'Part A' }] }];
+        const { default: TestBuilderPage } = await import('../TestBuilderPage');
+        renderBuilder(TestBuilderPage, '/tests/t1');
+
+        fireEvent.click(screen.getByRole('button', { name: 'tests.issue_question:{"number":2}' }));
+        expect(document.activeElement?.id).toBe('question-card-qs');
+        expect(document.activeElement).toHaveTextContent('tests.question_number:{"number":2}');
+    });
+
     it('collapses all questions and jumps to an incomplete one from the issue list', async () => {
         const questions: RmTest['questions'] = [
             { id: 'qa', prompt: 'First', type: 'short-answer', points: 1, expectedAnswers: ['a'] },

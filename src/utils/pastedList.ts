@@ -29,15 +29,26 @@ export function spreadPastedLines<T extends { text: string }>(
     return next;
 }
 
-const PAIR_SEPARATORS = ['\t', ' – ', ' — ', ' - ', ' = ', ': '];
+const PAIR_SEPARATORS = [' – ', ' — ', ' - ', ' = ', ': '];
 
-/** "word – definition" (or a tab from a spreadsheet, " = ", ": ") → left and right; no separator → left only. */
+/**
+ * "word – definition" (or a tab from a spreadsheet, " = ", ": ") → left and right; no separator → left only.
+ * A tab always wins, since spreadsheet cells can contain dashes; otherwise the earliest separator splits,
+ * so "time: 3 - 4" keeps "3 - 4" together.
+ */
 export function splitPastedPair(line: string): { left: string; right: string } {
+    const split = (at: number, length: number) => ({
+        left: line.slice(0, at).trim(),
+        right: line.slice(at + length).trim(),
+    });
+    const tab = line.indexOf('\t');
+    if (tab > 0) return split(tab, 1);
+    let best: { at: number; length: number } | null = null;
     for (const separator of PAIR_SEPARATORS) {
         const at = line.indexOf(separator);
-        if (at > 0) return { left: line.slice(0, at).trim(), right: line.slice(at + separator.length).trim() };
+        if (at > 0 && (!best || at < best.at)) best = { at, length: separator.length };
     }
-    return { left: line.trim(), right: '' };
+    return best ? split(best.at, best.length) : { left: line.trim(), right: '' };
 }
 
 /** Like spreadPastedLines for matching pairs: blank pairs are filled first and a filled pair at `index` is kept. */

@@ -157,17 +157,6 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
     const [placementEngine, setPlacementEngine] = useState<NonNullable<Test['placementEngine']>>(
         existing?.placementEngine ?? 'mst'
     );
-    // Built from the unsaved draft so problems show before the first save; "no questions" only
-    // matters once the test exists, otherwise a blank builder would open with a warning.
-    const draftBlockers = React.useMemo(() => {
-        const blockers = testAssignBlockers({ questions, mode, placementEngine });
-        const noQuestions = blockers.noQuestions && !!existing;
-        return noQuestions || blockers.entries.length > 0 ? { noQuestions, entries: blockers.entries } : null;
-    }, [questions, mode, placementEngine, existing]);
-    const issuesByQuestion = React.useMemo(
-        () => new Map((draftBlockers?.entries ?? []).map((entry) => [entry.questionId, entry.issues])),
-        [draftBlockers]
-    );
     const [generatorMinLevel, setGeneratorMinLevel] = useState<CefrLevel>(
         existing?.generatorConfig?.minCefrLevel ?? 'A1'
     );
@@ -333,6 +322,18 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
     const displayOrderedQuestions = flattenGroups(
         questionsFor(null),
         Object.fromEntries(sections.map((s) => [s.id, questionsFor(s.id)]))
+    );
+    // Built from the unsaved draft so problems show before the first save; "no questions" only
+    // matters once the test exists, otherwise a blank builder would open with a warning. Numbered in
+    // display order (sections grouped), the same numbers the question cards show and saving uses.
+    const draftBlockers = React.useMemo(() => {
+        const blockers = testAssignBlockers({ questions: displayOrderedQuestions, mode, placementEngine });
+        const noQuestions = blockers.noQuestions && !!existing;
+        return noQuestions || blockers.entries.length > 0 ? { noQuestions, entries: blockers.entries } : null;
+    }, [displayOrderedQuestions, mode, placementEngine, existing]);
+    const issuesByQuestion = React.useMemo(
+        () => new Map((draftBlockers?.entries ?? []).map((entry) => [entry.questionId, entry.issues])),
+        [draftBlockers]
     );
 
     const previewTest: Test = {

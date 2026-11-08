@@ -56,6 +56,11 @@ describe('pasted matching pairs', () => {
         expect(splitPastedPair('run – to move fast')).toEqual({ left: 'run', right: 'to move fast' });
         expect(splitPastedPair('big = large')).toEqual({ left: 'big', right: 'large' });
         expect(splitPastedPair('time: 3:00')).toEqual({ left: 'time', right: '3:00' });
+        expect(splitPastedPair('time: 3 - 4')).toEqual({ left: 'time', right: '3 - 4' });
+        expect(splitPastedPair('ice-cream - a cold dessert: sweet')).toEqual({
+            left: 'ice-cream',
+            right: 'a cold dessert: sweet',
+        });
         expect(splitPastedPair('well-known')).toEqual({ left: 'well-known', right: '' });
     });
 
