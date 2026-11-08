@@ -99,6 +99,12 @@ function renderPage(assignment: TestAssignmentPayload & { test?: Test }) {
     return code;
 }
 
+// Submitting with unanswered questions first opens the review dialog.
+async function submitAnywayIfAsked() {
+    const button = screen.queryByText('tests.taking.review_submit_anyway');
+    if (button) await act(async () => fireEvent.click(button));
+}
+
 describe('StudentTestPage — decode and render', () => {
     beforeEach(() => {
         localStorage.clear();
@@ -618,6 +624,7 @@ describe('StudentTestPage — DB mode (TestAdapter, short-code link)', () => {
         await act(async () => {
             fireEvent.click(screen.getByText('tests.taking.submit_btn'));
         });
+        await submitAnywayIfAsked();
 
         expect(screen.getByText('tests.taking.submit_error_db')).toBeInTheDocument();
         // Falls back to the legacy code textarea so the student isn't stuck.

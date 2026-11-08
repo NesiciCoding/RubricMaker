@@ -63,8 +63,15 @@ async function submitSingle() {
     await act(async () => {
         fireEvent.click(screen.getByText('tests.taking.submit_btn'));
     });
+    await submitAnywayIfAsked();
     expect(screen.getByText('tests.taking.submitted_title')).toBeInTheDocument();
     return decodeTestSubmission((screen.getByDisplayValue(/.+/) as HTMLTextAreaElement).value);
+}
+
+// Submitting with unanswered questions first opens the review dialog.
+async function submitAnywayIfAsked() {
+    const button = screen.queryByText('tests.taking.review_submit_anyway');
+    if (button) await act(async () => fireEvent.click(button));
 }
 
 describe('StudentTestPage — answer types', () => {
@@ -579,6 +586,35 @@ describe('StudentTestPage — navigation, flagging, retake', () => {
         expect(screen.getByText('Second question')).toBeInTheDocument();
     });
 
+    it('reviews unanswered and flagged questions before submitting', async () => {
+        renderPage(twoQuestionTest());
+        // q1 answered but flagged, q2 left blank.
+        fireEvent.click(screen.getByRole('radio', { name: 'Option A' }));
+        fireEvent.click(screen.getByText('tests.taking.flag'));
+        fireEvent.click(screen.getByText('tests.taking.next'));
+        fireEvent.click(screen.getByText('tests.taking.submit_btn'));
+
+        expect(screen.getByText('tests.taking.review_unanswered {"count":1}')).toBeInTheDocument();
+        expect(screen.getByText('tests.taking.review_flagged {"count":1}')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'tests.taking.review_go_to {"number":1}' }));
+        expect(screen.queryByText('tests.taking.review_title')).toBeNull();
+        expect(screen.getByText('First question')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByText('tests.taking.flagged'));
+        fireEvent.click(screen.getByText('tests.taking.next'));
+        fireEvent.click(screen.getByText('tests.taking.submit_btn'));
+        expect(screen.queryByText('tests.taking.review_flagged {"count":1}')).toBeNull();
+        fireEvent.click(screen.getByText('tests.taking.review_keep_working'));
+        expect(screen.queryByText('tests.taking.review_title')).toBeNull();
+
+        fireEvent.click(screen.getByRole('radio', { name: 'Option B' }));
+        await act(async () => {
+            fireEvent.click(screen.getByText('tests.taking.submit_btn'));
+        });
+        expect(screen.queryByText('tests.taking.review_title')).toBeNull();
+        expect(screen.getByText('tests.taking.submitted_title')).toBeInTheDocument();
+    });
+
     it('shows the legend and section grouping in the timeline', () => {
         renderPage(
             twoQuestionTest({
@@ -618,6 +654,7 @@ describe('StudentTestPage — navigation, flagging, retake', () => {
         fireEvent.click(screen.getByText('tests.taking.next'));
         fireEvent.click(screen.getByText('tests.taking.submit_btn'));
         await act(async () => {});
+        await submitAnywayIfAsked();
         expect(screen.getByText('tests.taking.copy')).toBeInTheDocument();
         fireEvent.click(screen.getByText('tests.taking.copy'));
         expect(screen.getByText('tests.taking.copied')).toBeInTheDocument();
@@ -630,6 +667,7 @@ describe('StudentTestPage — navigation, flagging, retake', () => {
         await act(async () => {
             fireEvent.click(screen.getByText('tests.taking.submit_btn'));
         });
+        await submitAnywayIfAsked();
         expect(screen.getByText('tests.taking.retake')).toBeInTheDocument();
 
         fireEvent.click(screen.getByText('tests.taking.retake'));

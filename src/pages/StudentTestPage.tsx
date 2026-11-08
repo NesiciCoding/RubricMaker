@@ -45,6 +45,7 @@ import { autoScoreResponse } from '../utils/testCalc';
 import { fileToDataUrl } from '../utils/fileToDataUrl';
 import { enqueueSubmission, removeSubmission, pendingSubmissions, isAlreadySubmitted } from '../utils/testSubmitOutbox';
 import { questionTypeHelpKey } from '../utils/questionTypeKey';
+import SubmitReviewDialog from '../components/Tests/SubmitReviewDialog';
 import type {
     TestAnswer,
     TestAssignmentContent,
@@ -225,6 +226,7 @@ export default function StudentTestPage() {
     // Question ids the student flagged for review, and question indices they've viewed — both
     // drive the timeline palette (fixed-question tests only; adaptive runs have no palette).
     const [flagged, setFlagged] = useState<Set<string>>(new Set());
+    const [reviewOpen, setReviewOpen] = useState(false);
     const [seenIndices, setSeenIndices] = useState<Set<number>>(() => new Set([0]));
     const toggleFlag = useCallback((questionId: string) => {
         setFlagged((prev) => {
@@ -524,6 +526,8 @@ export default function StudentTestPage() {
         /* v8 ignore next -- the submit button/timer are the only callers and both gate on state */
         if (submitInFlightRef.current || submitted) return;
         submitInFlightRef.current = true;
+        // The timer can hand in while the review dialog is open; it must not survive into a retake.
+        setReviewOpen(false);
 
         /* v8 ignore next -- resolvedContent (when set) always carries a testId */
         const effectiveTestId = resolvedContent?.testId || assignment.testId;
@@ -691,6 +695,7 @@ export default function StudentTestPage() {
         setAnswers(new Map());
         setCurrentIndex(0);
         setFlagged(new Set());
+        setReviewOpen(false);
         setSeenIndices(new Set([0]));
         setSectionPath([]);
         setLevelPath([]);
@@ -804,6 +809,12 @@ export default function StudentTestPage() {
         : isGenerator
           ? (generatorResult?.questionsAsked ?? 0)
           : orderedQuestions.filter((q) => (answers.get(q.id) ?? '').trim().length > 0).length;
+    // Positions to review before handing in; an adaptive run has no fixed set to go back to.
+    const reviewable = !isStaircase && !isGenerator;
+    const unansweredIndices = reviewable
+        ? orderedQuestions.flatMap((q, i) => ((answers.get(q.id) ?? '').trim() ? [] : [i]))
+        : [];
+    const flaggedIndices = reviewable ? orderedQuestions.flatMap((q, i) => (flagged.has(q.id) ? [i] : [])) : [];
     // The run has converged (or exhausted its pool) — ready to submit instead of continuing.
     const staircaseTerminal = isStaircase && !staircaseQuestion;
     const generatorTerminal = isGenerator && generatorResult?.done === true;
@@ -1310,7 +1321,13 @@ export default function StudentTestPage() {
                                 ) : isLast ? (
                                     <button
                                         type="button"
-                                        onClick={handleSubmit}
+                                        onClick={() => {
+                                            if (unansweredIndices.length > 0 || flaggedIndices.length > 0) {
+                                                setReviewOpen(true);
+                                            } else {
+                                                void handleSubmit();
+                                            }
+                                        }}
                                         disabled={submitting || isRecordingAudio}
                                         style={{
                                             padding: '10px 32px',
@@ -1352,6 +1369,21 @@ export default function StudentTestPage() {
                     )}
                 </div>
 
+                {reviewOpen && !submitted && (
+                    <SubmitReviewDialog
+                        unanswered={unansweredIndices}
+                        flagged={flaggedIndices}
+                        onJump={(index) => {
+                            setReviewOpen(false);
+                            setCurrentIndex(index);
+                        }}
+                        onSubmit={() => {
+                            setReviewOpen(false);
+                            void handleSubmit();
+                        }}
+                        onClose={() => setReviewOpen(false)}
+                    />
+                )}
                 {/* Question timeline — sticky footer (not shown for an adaptive staircase/generator run, which has no fixed question set to jump between) */}
                 {!submitted && !isStaircase && !isGenerator && orderedQuestions.length > 0 && (
                     <QuestionTimeline

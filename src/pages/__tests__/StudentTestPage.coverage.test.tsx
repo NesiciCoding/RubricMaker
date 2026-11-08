@@ -780,6 +780,46 @@ describe('StudentTestPage — staircase placement tests', () => {
         expect(screen.getByText('tests.taking.staircase_not_configured')).toBeInTheDocument();
     });
 
+    it('does not bring back a review dialog the timer cut short on a retake', async () => {
+        vi.useFakeTimers();
+        try {
+            renderPage(
+                makeAssignment(
+                    { durationMinutes: 1 },
+                    makeTest({
+                        mode: 'practice',
+                        allowMultipleAttempts: true,
+                        questions: [
+                            {
+                                id: 'q1',
+                                prompt: 'Only question',
+                                type: 'multiple-choice',
+                                points: 1,
+                                options: [{ id: 'a', text: 'Yes', isCorrect: true }],
+                            },
+                        ],
+                    })
+                )
+            );
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(10);
+            });
+            fireEvent.click(screen.getByText('tests.taking.submit_btn'));
+            expect(screen.getByText('tests.taking.review_title')).toBeInTheDocument();
+
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(61_000);
+            });
+            expect(screen.getByText(/tests\.taking\.submitted_title\b/)).toBeInTheDocument();
+
+            fireEvent.click(screen.getByText('tests.taking.retake'));
+            expect(screen.getByText('Only question')).toBeInTheDocument();
+            expect(screen.queryByText('tests.taking.review_title')).toBeNull();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     it('submits pending staircase questions when continuing and when the timer expires', async () => {
         vi.useFakeTimers();
         try {
