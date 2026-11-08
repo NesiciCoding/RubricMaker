@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { cloneQuestionWithFreshIds, cloneBankItemIntoTest, newQuestion } from './testQuestionClone';
+import { cloneQuestionWithFreshIds, cloneBankItemIntoTest, duplicateQuestion, newQuestion } from './testQuestionClone';
 import type { TestQuestion, QuestionBankItem } from '../types';
 
 describe('newQuestion', () => {
@@ -106,6 +106,42 @@ describe('cloneQuestionWithFreshIds', () => {
         };
         const clone = cloneQuestionWithFreshIds(question);
         expect(clone.categorizeItems![0].categoryId).toBe('missing-cat');
+    });
+});
+
+describe('matrix ids and duplicateQuestion', () => {
+    const matrix: TestQuestion = {
+        id: 'q5',
+        prompt: 'Tick the tense',
+        type: 'matrix',
+        points: 2,
+        sectionId: 's1',
+        eloRating: 1350,
+        matrixColumns: [
+            { id: 'past', text: 'Past' },
+            { id: 'present', text: 'Present' },
+        ],
+        matrixRows: [
+            { id: 'r1', text: 'I went', correctColumnId: 'past' },
+            { id: 'r2', text: 'I go', correctColumnId: 'present' },
+        ],
+    };
+
+    it('re-ids matrix columns and remaps each row to its renamed column', () => {
+        const clone = cloneQuestionWithFreshIds(matrix);
+        const [past, present] = clone.matrixColumns!;
+        expect(past.id).not.toBe('past');
+        expect(clone.matrixRows!.map((r) => r.correctColumnId)).toEqual([past.id, present.id]);
+        expect(clone.matrixRows![0].id).not.toBe('r1');
+    });
+
+    it('keeps the section, drops the Elo calibration and leaves the original untouched', () => {
+        const copy = duplicateQuestion(matrix);
+        expect(copy.id).not.toBe(matrix.id);
+        expect(copy.sectionId).toBe('s1');
+        expect(copy.eloRating).toBeUndefined();
+        expect(copy.prompt).toBe(matrix.prompt);
+        expect(matrix.matrixRows![0].correctColumnId).toBe('past');
     });
 });
 

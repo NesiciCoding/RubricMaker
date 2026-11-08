@@ -308,6 +308,64 @@ describe('QuestionEditor extended', () => {
         });
     });
 
+    describe('pasting a list', () => {
+        const paste = (el: HTMLElement, text: string) =>
+            fireEvent.paste(el, { clipboardData: { getData: () => text } });
+
+        it('turns a pasted multi-line list into one option per line', () => {
+            const { onChange } = renderEditor(
+                makeQuestion({
+                    type: 'multiple-choice',
+                    options: [
+                        { id: 'o1', text: '', isCorrect: true },
+                        { id: 'o2', text: '', isCorrect: false },
+                    ],
+                })
+            );
+            paste(screen.getAllByLabelText('tests.option_text_label')[0], 'A. went\nB. goes\nC. has gone');
+            const { options } = onChange.mock.calls.at(-1)![0] as TestQuestion;
+            expect(options!.map((o) => [o.text, o.isCorrect])).toEqual([
+                ['went', true],
+                ['goes', false],
+                ['has gone', false],
+            ]);
+        });
+
+        it('leaves a single-line paste to the browser and spreads ordering items', () => {
+            const { onChange } = renderEditor(
+                makeQuestion({ type: 'ordering', orderItems: [{ id: 'i1', text: 'first' }] })
+            );
+            const [input] = screen.getAllByLabelText('tests.ordering_item_placeholder');
+            paste(input, 'just one line');
+            expect(onChange).not.toHaveBeenCalled();
+            paste(input, '1) second\n2) third');
+            expect((onChange.mock.calls.at(-1)![0] as TestQuestion).orderItems!.map((i) => i.text)).toEqual([
+                'first',
+                'second',
+                'third',
+            ]);
+        });
+
+        it('shows a duplicate button only when the builder offers one', () => {
+            const onDuplicate = vi.fn();
+            const { view } = renderEditor();
+            expect(screen.queryByRole('button', { name: 'tests.duplicate_question' })).toBeNull();
+            view.rerender(
+                <QuestionEditor
+                    question={makeQuestion()}
+                    index={0}
+                    total={1}
+                    sections={sections}
+                    onChange={vi.fn()}
+                    onRemove={vi.fn()}
+                    onDuplicate={onDuplicate}
+                />
+            );
+            fireEvent.click(screen.getByRole('button', { name: 'tests.duplicate_question' }));
+            expect(onDuplicate).toHaveBeenCalledTimes(1);
+        });
+    });
+
     describe('short-answer and numeric', () => {
         it('parses pipe-separated expected answers', () => {
             const { onChange } = renderEditor(makeQuestion({ type: 'short-answer' }));

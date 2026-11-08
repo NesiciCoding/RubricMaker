@@ -145,6 +145,15 @@ describe('TestBuilderPage — a colleague’s shared test', () => {
         expect(mockNavigate).toHaveBeenCalledWith('/tests/copy-t');
     });
 
+    it('ignores Ctrl+S on a view-only share', async () => {
+        sharedState.access = 'view';
+        await renderAt('/tests/shared-t');
+        fireEvent.change(screen.getByLabelText('tests.name_label'), { target: { value: '' } });
+        fireEvent.keyDown(window, { key: 's', ctrlKey: true });
+        expect(screen.queryByText('tests.name_required')).toBeNull();
+        expect(mockSave).not.toHaveBeenCalled();
+    });
+
     it('waits for shared tests to load before reporting not-found', async () => {
         sharedState.status = 'loading';
         sharedState.items = false;
