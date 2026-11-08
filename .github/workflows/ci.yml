@@ -304,7 +304,9 @@ jobs:
         run: echo "version=$(node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version")" >> "$GITHUB_OUTPUT"
 
   # E2E runs in parallel with `ci` (independent of typecheck/lint) and is split
-  # across two shards. Each shard emits a blob report; `e2e-merge-reports`
+  # across four shards (#1116-6: was 2 shards over 5 browser projects, up to 5x
+  # duplication split 2 ways with unbalanced wall-clock). Each shard emits a blob
+  # report; `e2e-merge-reports`
   # merges them into the final HTML + JUnit reports after the shards finish.
   # The container ships the browsers and their OS deps, so no apt-get runs:
   # `playwright install --with-deps` used to download ~115 MB from the Ubuntu
@@ -312,7 +314,7 @@ jobs:
   # --user 1001 matches the runner's workspace/$HOME owner (Firefox refuses to
   # run as root with a $HOME owned by another user).
   e2e:
-    name: E2E (${{ matrix.shard }}/2)
+    name: E2E (${{ matrix.shard }}/4)
     needs: playwright-version
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -322,7 +324,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2]
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -344,12 +346,12 @@ jobs:
         if: steps.nm-cache.outputs.cache-hit != 'true'
         run: npm ci
 
-      - name: Run E2E tests (shard ${{ matrix.shard }}/2)
+      - name: Run E2E tests (shard ${{ matrix.shard }}/4)
         run: |
           npx playwright test \
             --project=chromium --project=firefox --project=webkit \
             --project=chromium-fake-media --project=mobile-chrome \
-            --shard=${{ matrix.shard }}/2 --reporter=blob,list
+            --shard=${{ matrix.shard }}/4 --reporter=blob,list
         env:
           CI: true
 

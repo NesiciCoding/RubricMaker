@@ -7,6 +7,11 @@
  * (spreads + `.map()` pass through unrelated entries by reference), so a whole collection
  * can be skipped on `===`, and within a changed collection only items whose reference
  * actually moved need the expensive JSON.stringify compare.
+ *
+ * #1116-4: the stringify fallback stays on purpose. Trusting the reference alone
+ * would push every touched item (more Supabase writes); the compare is what keeps
+ * no-op dispatches from writing. It's bounded (one compare per changed reference,
+ * never O(n^2)) and only runs when the collection reference already moved.
  */
 export function diffCollection<T>(
     prevArr: T[],

@@ -155,6 +155,19 @@ export default defineConfig({
                     (asset.names?.[0] ?? '').endsWith('.mjs')
                         ? 'assets/[name]-[hash].js'
                         : 'assets/[name]-[hash][extname]',
+                // #1114 (finding #2): explicit vendor chunks so recharts/tiptap/pdfjs/
+                // tesseract/docx/mammoth/compromise aren't duplicated across lazy-route
+                // chunks and a react-router bump doesn't bust the recharts cache.
+                // Function form so every @tiptap/* extension lands in the same chunk.
+                manualChunks: (id) => {
+                    if (id.includes('node_modules/recharts')) return 'vendor-recharts';
+                    if (id.includes('node_modules/@tiptap/')) return 'vendor-tiptap';
+                    if (id.includes('node_modules/pdfjs-dist')) return 'vendor-pdf';
+                    if (id.includes('node_modules/tesseract.js')) return 'vendor-ocr';
+                    if (id.includes('node_modules/docx') || id.includes('node_modules/mammoth')) return 'vendor-docx';
+                    if (id.includes('node_modules/compromise')) return 'vendor-nlp';
+                    return undefined;
+                },
             },
         },
     },

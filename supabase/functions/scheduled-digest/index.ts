@@ -57,6 +57,18 @@ serve(async (req) => {
         return new Response(JSON.stringify({ error: 'SMTP is not configured' }), { status: 500 });
     }
 
+    // #1116-5: fetch all three categories in one RPC each (migration 098) instead
+    // of up to 3xN sequential per-owner calls. Falls back to the per-owner RPCs
+    // when the batch functions are not deployed yet, so the digest keeps working
+    // during the rollout.
+    let batch: Record<string, DigestCounts>;
+    try {
+        batch = await fetchBatchCounts(admin, profiles);
+    } catch (e) {
+        console.warn('[scheduled-digest] batch counts unavailable, falling back to per-owner RPCs', e);
+        batch = {};
+    }
+
     let sent = 0;
     let skipped = 0;
     const errors: Array<{ userId: string; error: string }> = [];
@@ -67,7 +79,7 @@ serve(async (req) => {
             continue;
         }
         try {
-            const counts = await enabledCounts(admin, profile);
+            const counts = batch[profile.id] ?? (await enabledCounts(admin, profile));
             if (!digestTotal(counts)) {
                 skipped++;
                 continue;
@@ -96,6 +108,62 @@ async function enabledCounts(admin: ReturnType<typeof createClient>, profile: Op
         profile.flags.unreadMessages ? rpcCount(admin, 'get_unread_messages_count', profile.id) : 0,
     ]);
     return { moderation, overdueGrading, unreadMessages };
+}
+
+/**
+ * Batch path: one RPC per category, each receiving only the owners who opted
+ * into that category (mirrors the per-owner path, which skips unopted-in
+ * categories). Counts default to 0, so an empty opt-in list skips its RPC
+ * entirely instead of querying for owners whose results would be discarded.
+ */
+async function fetchBatchCounts(
+    admin: ReturnType<typeof createClient>,
+    profiles: OptedInProfile[]
+): Promise<Record<string, DigestCounts>> {
+    const idsFor = (flag: keyof DigestFlags): string[] => [
+        ...new Set(profiles.filter((p) => p.flags[flag]).map((p) => p.id)),
+    ];
+    const [moderationRows, overdueRows, unreadRows] = await Promise.all([
+        batchRpc(admin, 'get_pending_moderation_counts', idsFor('moderation')),
+        batchRpc(admin, 'get_overdue_grading_counts', idsFor('overdueGrading')),
+        batchRpc(admin, 'get_unread_messages_counts', idsFor('unreadMessages')),
+    ]);
+    const out: Record<string, DigestCounts> = {};
+    for (const p of profiles) out[p.id] = { moderation: 0, overdueGrading: 0, unreadMessages: 0 };
+    for (const row of moderationRows) {
+        if (out[row.owner_id]) out[row.owner_id].moderation = row.count;
+    }
+    for (const row of overdueRows) {
+        if (out[row.owner_id]) out[row.owner_id].overdueGrading = row.count;
+    }
+    for (const row of unreadRows) {
+        if (out[row.owner_id]) out[row.owner_id].unreadMessages = row.count;
+    }
+    return out;
+}
+
+/**
+ * Calls a batch count RPC, chunking the owner list so no single response can
+ * hit the PostgREST row cap (missing rows would otherwise stay at zero
+ * without triggering the per-owner fallback). Empty input skips the RPC.
+ */
+async function batchRpc(
+    admin: ReturnType<typeof createClient>,
+    fn: 'get_pending_moderation_counts' | 'get_overdue_grading_counts' | 'get_unread_messages_counts',
+    targetOwners: string[]
+): Promise<Array<{ owner_id: string; count: number }>> {
+    const rows: Array<{ owner_id: string; count: number }> = [];
+    const CHUNK = 500;
+    for (let i = 0; i < targetOwners.length; i += CHUNK) {
+        const { data, error } = await admin.rpc(fn, { target_owners: targetOwners.slice(i, i + CHUNK) });
+        if (error) throw new Error(fn + ': ' + error.message);
+        if (!Array.isArray(data)) continue;
+        for (const r of data as Array<{ owner_id?: unknown; count?: unknown }>) {
+            if (typeof r?.owner_id !== 'string') continue;
+            rows.push({ owner_id: r.owner_id, count: typeof r.count === 'number' ? r.count : 0 });
+        }
+    }
+    return rows;
 }
 
 async function rpcCount(
