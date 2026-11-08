@@ -535,14 +535,39 @@ export function scoreErrorCorrection(question: ScorableQuestion, response: strin
 
 // ── Sentence builder ────────────────────────────────────────────────────────
 
-function sentenceWords(sentence: string): string[] {
-    return sentence.trim().split(/\s+/).filter(Boolean);
+const SENTENCE_CHUNK_PATTERN = /([^\s[\]]*)\[([^\]]*)\]([^\s[\]]*)|[^\s[\]]+/g;
+
+/**
+ * Splits a target sentence into its tiles: one per word, except that square brackets keep a word group
+ * on one tile — "She [has been] waiting." → She · has been · waiting. Punctuation touching the brackets
+ * stays on the group's tile.
+ */
+export function sentenceBuilderChunks(sentence: string): string[] {
+    const chunks: string[] = [];
+    for (const match of sentence.matchAll(SENTENCE_CHUNK_PATTERN)) {
+        if (match[2] === undefined) {
+            chunks.push(match[0]);
+            continue;
+        }
+        const group = `${match[1]}${match[2].trim().split(/\s+/).join(' ')}${match[3]}`.trim();
+        if (group) chunks.push(group);
+    }
+    return chunks;
 }
 
-/** The shuffled word tiles for a sentence-builder question, never in the target order (for 2+ different words). */
+/** The sentence as students read it once built: the group brackets removed. */
+export function sentenceBuilderText(sentence: string): string {
+    return sentenceBuilderChunks(sentence).join(' ');
+}
+
+function sentenceWords(sentence: string): string[] {
+    return sentenceBuilderChunks(sentence).flatMap((chunk) => chunk.split(' '));
+}
+
+/** The shuffled tiles for a sentence-builder question, never in the target order (for 2+ different tiles). */
 export function sentenceBuilderTiles(question: ScorableQuestion): string[] {
     if (question.sentenceTiles?.length) return question.sentenceTiles;
-    const words = sentenceWords(question.sentenceTargets?.[0] ?? '');
+    const words = sentenceBuilderChunks(question.sentenceTargets?.[0] ?? '');
     const shuffled = seededShuffle(words, question.prompt + words.join(' '));
     return shuffled.length > 1 && shuffled.every((w, i) => w === words[i])
         ? [...shuffled.slice(1), shuffled[0]]
@@ -575,8 +600,10 @@ export function scoreSentenceBuilder(question: ScorableQuestion, response: strin
         .map((t) => sentenceWords(t).map(normaliseWord))
         .filter((t) => t.length > 0);
     if (targets.length === 0) return 0;
+    // Scored per word, so a group tile counts for each of its words and alternatives may re-order freely.
     const placed = parseJsonArray(response)
         .filter((w): w is string => typeof w === 'string')
+        .flatMap((tile) => tile.trim().split(/\s+/))
         .map(normaliseWord);
     if (placed.length === 0) return 0;
     const fraction = Math.max(

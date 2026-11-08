@@ -45,4 +45,37 @@ describe('SentenceBuilderFields', () => {
         fireEvent.click(screen.getByRole('button', { name: /tests.builder_remove_alternative/ }));
         expect(update).toHaveBeenLastCalledWith({ sentenceTargets: ['I go home'] });
     });
+
+    it('joins neighbouring tiles into a group and splits it again', () => {
+        const update = vi.fn();
+        const { rerender } = render(
+            <SentenceBuilderFields
+                question={{ ...base, sentenceTargets: ['I went to school', 'To school I went'] }}
+                update={update}
+            />
+        );
+        fireEvent.click(screen.getByRole('button', { name: /tests.builder_join_tiles .*"left":"went"/ }));
+        expect(update).toHaveBeenLastCalledWith({ sentenceTargets: ['I [went to] school', 'To school I went'] });
+
+        rerender(
+            <SentenceBuilderFields
+                question={{ ...base, sentenceTargets: ['I [went to] school', 'To school I went'] }}
+                update={update}
+            />
+        );
+        expect(screen.getByLabelText('tests.builder_target_sentence')).toHaveValue('I [went to] school');
+        expect(screen.getByRole('alert')).toHaveTextContent('"lines":"2"');
+        fireEvent.click(screen.getByRole('button', { name: /tests.builder_split_tile .*"tile":"went to"/ }));
+        expect(update).toHaveBeenLastCalledWith({ sentenceTargets: ['I went to school', 'To school I went'] });
+    });
+
+    it('warns about a bracket without its partner', () => {
+        render(
+            <SentenceBuilderFields
+                question={{ ...base, sentenceTargets: ['She [has been waiting'] }}
+                update={vi.fn()}
+            />
+        );
+        expect(screen.getByRole('alert')).toHaveTextContent('tests.builder_unbalanced_brackets');
+    });
 });

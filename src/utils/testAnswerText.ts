@@ -3,7 +3,7 @@ import type { CefrLevel, Student, StudentTest, Test, TestAnswer, TestQuestion } 
 import { stripHtmlTags } from './exportDataPrep';
 import { renderClozeSegments, parseHotTextFragments, plainQuestionPromptText } from './clozeParse';
 import { parseErrorPicks, parsePlacedWords } from './answerResponseParsers';
-import { keyWordChunks, parseErrorPassage } from '../../supabase/functions/_shared/testScoring';
+import { keyWordChunks, parseErrorPassage, sentenceBuilderText } from '../../supabase/functions/_shared/testScoring';
 import { parseAudioResponse } from './audioResponseCode';
 import { autoScoreResponse, calcStudentTestRawPoints, calcTestMaxPoints, calcTestPercentage } from './testCalc';
 import { estimatePlacement, type PlacementPathStep } from './placementResult';
@@ -159,7 +159,7 @@ export function formatCorrectAnswer(question: TestQuestion): string {
                 )
                 .join('; ');
         case 'sentence-builder':
-            return (question.sentenceTargets ?? []).join(' / ');
+            return (question.sentenceTargets ?? []).map(sentenceBuilderText).join(' / ');
         case 'key-word-transformation':
             return (question.expectedAnswers ?? []).map((a) => keyWordChunks(a).join(' + ')).join(' / ');
         case 'matrix': {
