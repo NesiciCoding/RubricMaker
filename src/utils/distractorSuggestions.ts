@@ -53,6 +53,22 @@ const CONFUSABLE_GROUPS: string[][] = [
 const MAX_SUGGESTIONS = 8;
 const POOL_SCAN_LIMIT = 4000;
 
+// #1114: pre-group the 1.57 MB CEFR index by level once at module load so
+// sameLevelSamePos() doesn't rescan the full 60k-entry Map (and its cross-level
+// entries) on every distractor request. The per-level pools hold only plain
+// [a-z] words — the same set the loop below would otherwise filter for.
+const LEVEL_WORD_POOLS = (() => {
+    const pools: Record<string, string[]> = { A1: [], A2: [], B1: [], B2: [], C1: [], C2: [] };
+    for (const [candidate, candidateLevel] of CEFR_WORD_LEVELS) {
+        if (/^[a-z]+$/.test(candidate)) pools[candidateLevel]?.push(candidate);
+    }
+    return pools;
+})();
+
+// compromise POS tagging is the dominant cost inside the pool scan — cache it
+// so repeated suggestions for nearby words don't re-run nlp() per candidate.
+const posCache = new Map<string, ReturnType<typeof posOf>>();
+
 function posOf(word: string): 'Verb' | 'Noun' | 'Adjective' | 'Adverb' | null {
     const doc = nlp(word);
     for (const tag of ['Verb', 'Adjective', 'Adverb', 'Noun'] as const) {
@@ -77,16 +93,32 @@ export function morphological(word: string): string[] {
     return forms;
 }
 
+function cachedPos(word: string): ReturnType<typeof posOf> {
+    let pos = posCache.get(word);
+    if (pos === undefined) {
+        pos = posOf(word);
+        // Bound the cache: pools are ~10k words per level, but a session only
+        // ever tags a small neighborhood — evict oldest once large.
+        if (posCache.size > 2000) {
+            const oldest = posCache.keys().next().value;
+            if (oldest !== undefined) posCache.delete(oldest);
+        }
+        posCache.set(word, pos);
+    }
+    return pos;
+}
+
 function sameLevelSamePos(word: string, count: number): string[] {
     const level = CEFR_WORD_LEVELS.get(word);
-    const pos = level && posOf(word);
+    const pos = level && cachedPos(word);
     if (!level || !pos) return [];
+    const pool = LEVEL_WORD_POOLS[level] ?? [];
     const found: string[] = [];
     let scanned = 0;
-    for (const [candidate, candidateLevel] of CEFR_WORD_LEVELS) {
-        if (candidateLevel !== level || candidate === word || !/^[a-z]+$/.test(candidate)) continue;
+    for (const candidate of pool) {
+        if (candidate === word) continue;
         if (++scanned > POOL_SCAN_LIMIT) break;
-        if (posOf(candidate) === pos) found.push(candidate);
+        if (cachedPos(candidate) === pos) found.push(candidate);
         if (found.length >= count) break;
     }
     return found;

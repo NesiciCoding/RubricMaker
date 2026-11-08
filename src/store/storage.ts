@@ -1292,9 +1292,22 @@ function saveStudentRubricsCacheToLocalStorage(srs: StudentRubric[]): void {
     const live = stripAudioForOfflineCache(srs.filter((sr) => !sr.deletedAt));
     const stamp = (sr: StudentRubric) => sr.updatedAt ?? sr.gradedAt ?? sr.submittedAt ?? '';
     const newestFirst = [...live].sort((a, b) => stamp(b).localeCompare(stamp(a)));
+    // #1116-3: avoid re-stringifying the full collection on every binary-search
+    // probe. Serialize each prefix once and reuse the byte length: the first
+    // (failing) full write already tells us the total size, so seed the search
+    // with an average-bytes-per-record estimate instead of blind bisection.
+    const serializedCache = new Map<number, string>();
+    const serialize = (count: number): string => {
+        let json = serializedCache.get(count);
+        if (json === undefined) {
+            json = JSON.stringify(newestFirst.slice(0, count));
+            serializedCache.set(count, json);
+        }
+        return json;
+    };
     const tryWrite = (count: number): boolean => {
         try {
-            localStorage.setItem(KEYS.studentRubrics, JSON.stringify(newestFirst.slice(0, count)));
+            localStorage.setItem(KEYS.studentRubrics, serialize(count));
             return true;
         } catch (e) {
             if (!isQuotaExceededError(e)) throw e;
@@ -1302,9 +1315,23 @@ function saveStudentRubricsCacheToLocalStorage(srs: StudentRubric[]): void {
         }
     };
     if (tryWrite(newestFirst.length)) return;
+    // Estimate the fitting prefix from the measured full-collection byte size
+    // (localStorage quota is ~5MB; use 4.5MB as a safe target) so the binary
+    // search starts near the answer instead of at n/2.
+    const fullBytes = serializedCache.get(newestFirst.length)?.length ?? 0;
+    const QUOTA_TARGET = 4_500_000;
     let lo = 0;
     let hi = newestFirst.length - 1;
     let best = -1;
+    if (fullBytes > QUOTA_TARGET && newestFirst.length > 0) {
+        const avg = fullBytes / newestFirst.length;
+        const estimate = Math.max(0, Math.min(hi, Math.floor(QUOTA_TARGET / Math.max(1, avg))));
+        // Probe the estimate first to tighten one bound immediately.
+        if (tryWrite(estimate)) {
+            best = estimate;
+            lo = estimate + 1;
+        } else hi = estimate - 1;
+    }
     while (lo <= hi) {
         const mid = (lo + hi) >> 1;
         if (tryWrite(mid)) {

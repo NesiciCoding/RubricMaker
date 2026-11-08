@@ -26,6 +26,14 @@ export function createSelectorStore(getState: () => StoreData, dispatch: React.D
     return {
         getState,
         dispatch,
+        // #1116-1: notify() intentionally fires every subscriber on every dispatch.
+        // useSyncExternalStore + the shallow-equal cache in useStoreSelector stop the
+        // re-render, but NOT the selector recompute — so keep selectors cheap
+        // (project a small slice, do the heavy join/filter inside a useMemo on the
+        // selected slice, never on the whole store). A domain-tagged notify would
+        // require every action to declare its domain and every selector to declare
+        // its subscriptions; profiling hasn't shown the recompute matters yet, so
+        // the documented constraint wins over the structural fix for now.
         notify: () => {
             for (const listener of [...listeners]) listener();
         },
