@@ -168,11 +168,12 @@ describe('ExamScanBatchModal', () => {
         expect(detectScannedAnswers).toHaveBeenCalledTimes(2);
         expect((detectScannedAnswers.mock.calls[0] as unknown[])[2]).toBe(1);
         expect((detectScannedAnswers.mock.calls[1] as unknown[])[2]).toBe(1);
-        // One OCR session shared by both students' sheets, not one per student (perf audit #1112).
-        expect(createOcrSession).toHaveBeenCalledTimes(1);
-        expect((detectScannedAnswers.mock.calls[0] as unknown[])[3]).toBe(ocrRecognize);
-        expect((detectScannedAnswers.mock.calls[1] as unknown[])[3]).toBe(ocrRecognize);
-        expect(ocrTerminate).toHaveBeenCalledTimes(1);
+        // This fixture's test is choice-only (multiple-choice + true-false) — detectScannedAnswers
+        // never calls recognize() for those blocks, so the OCR engine must never load (perf audit
+        // #1112 follow-up: the session is created lazily on the first recognize() call, not up front,
+        // so a choice-only batch can't be made to depend on the OCR engine being available).
+        expect(createOcrSession).not.toHaveBeenCalled();
+        expect(ocrTerminate).not.toHaveBeenCalled();
 
         fireEvent.click(screen.getByText('tests.scan.batch_save_all'));
 
@@ -190,6 +191,37 @@ describe('ExamScanBatchModal', () => {
             { questionId: 'q1', response: '' },
             { questionId: 'q2', response: 'false' },
         ]);
+    });
+
+    it('creates one shared OCR session lazily when a block actually needs recognition', async () => {
+        decodeAnswerSheetQr
+            .mockReturnValueOnce({ testId: 't1', studentId: 's1', pages: 1 })
+            .mockReturnValueOnce({ testId: 't1', studentId: 's2', pages: 1 });
+        // Simulate an open-answer block by calling the recognize() function detectAll passed in —
+        // the real detectScannedAnswers does this for short/numeric/long-answer blocks.
+        detectScannedAnswers.mockImplementation(
+            async (
+                _img: unknown,
+                _test: unknown,
+                _pageNumber: unknown,
+                recognize: (dataUrl: string, opts?: unknown) => Promise<unknown>
+            ) => {
+                await recognize('data:image/png;base64,region', { captureHint: 'sparse' });
+                return [{ questionId: 'q1', number: 1, response: 'ocr text', source: 'ocr' as const }];
+            }
+        );
+        renderModal();
+
+        pickTwoPages();
+        await screen.findByLabelText('tests.scan.batch_page_student:1');
+        fireEvent.click(await screen.findByText('tests.scan.batch_detect_button'));
+
+        await screen.findByText('tests.scan.batch_save_all');
+        expect(detectScannedAnswers).toHaveBeenCalledTimes(2);
+        // One session shared across both students' sheets, created on the first recognize() call.
+        expect(createOcrSession).toHaveBeenCalledTimes(1);
+        expect(ocrRecognize).toHaveBeenCalledTimes(2);
+        expect(ocrTerminate).toHaveBeenCalledTimes(1);
     });
 
     it('waits for a manual assignment when no QR is readable', async () => {

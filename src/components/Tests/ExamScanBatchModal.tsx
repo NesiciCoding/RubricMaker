@@ -439,17 +439,14 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
 
         // One OCR session for the whole batch — every open-answer block of every page of every
         // student's sheet shares one Tesseract worker instead of re-initializing the engine per
-        // block (perf audit #1112). detectScannedAnswers only calls recognize() for short/
-        // numeric/long-answer blocks, so a choice-only test never actually creates one.
-        let session: Awaited<ReturnType<typeof createOcrSession>>;
-        try {
-            session = await createOcrSession(defaultLang);
-        } catch (err) {
-            setErrorMsg(err instanceof OcrUnavailableError ? t('scan.error_engine_unavailable') : String(err));
-            setBusy(null);
-            setPhase('intake');
-            return;
-        }
+        // block (perf audit #1112). Created lazily on the first recognize() call (not up front):
+        // detectScannedAnswers only calls recognize() for short/numeric/long-answer blocks, so a
+        // choice-only test must not depend on the OCR engine loading at all.
+        const sessionRef: { promise: ReturnType<typeof createOcrSession> | null } = { promise: null };
+        const recognize: Parameters<typeof detectScannedAnswers>[3] = async (dataUrl, opts) => {
+            sessionRef.promise ??= createOcrSession(defaultLang);
+            return (await sessionRef.promise).recognize(dataUrl, opts);
+        };
 
         const results: Record<string, ScannedAnswer[]> = {};
         try {
@@ -460,7 +457,7 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
                     try {
                         const corrected = await pageImage(page);
                         const prepared = preprocessScan(corrected, { deskew: false });
-                        pageResults.push(await detectScannedAnswers(prepared, test, i + 1, session.recognize));
+                        pageResults.push(await detectScannedAnswers(prepared, test, i + 1, recognize));
                         updatePage(page.id, { error: undefined });
                     } catch (err) {
                         const message =
@@ -480,7 +477,12 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
                 results[group.studentId] = mergeScannedAnswers(test, pageResults);
             }
         } finally {
-            await session.terminate();
+            // Only terminate a session that was actually created — a failed creation (caught per
+            // page above) must not be retried here, just swallowed.
+            if (sessionRef.promise) {
+                const session = await sessionRef.promise.catch(() => null);
+                await session?.terminate();
+            }
         }
 
         setDetectedByStudent(results);
