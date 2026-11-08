@@ -250,7 +250,7 @@ not the O(n²) the audit went in suspecting. Real findings:
 - #7 `globalSearch` persistent index
 - #25/#26/#27 — e2e sharding/worker strategy changes
 
-**Tracked but not urgent:** #9 (selector notify fan-out), #10 (virtualization), #14/#15 (storage edge cases), #18 (digest N+1), #19 is a non-finding.
+**Tracked but not urgent:** #9 (selector notify fan-out), #10 (virtualization), #14/#15 (storage edge cases), #18 (digest N+1) — all filed together in [#1116](https://github.com/NesiciCoding/RubricMaker/issues/1116). #19 is a non-finding.
 
 ## Tracking
 
@@ -267,8 +267,7 @@ not the O(n²) the audit went in suspecting. Real findings:
 | [#1113](https://github.com/NesiciCoding/RubricMaker/issues/1113) | #7 — `globalSearch` re-normalizes full corpus per keystroke | 🟡 |
 | [#1114](https://github.com/NesiciCoding/RubricMaker/issues/1114) | #1, #2 — `cefrLevels.ts` size + vendor chunk splitting | 🟡 |
 | [#1115](https://github.com/NesiciCoding/RubricMaker/issues/1115) | #6, #8, #11, #22 — quick-wins bundle | 🟡/🟢 |
+| [#1116](https://github.com/NesiciCoding/RubricMaker/issues/1116) | #9, #10, #14, #15, #18, #25, #26, #27 — low-priority backlog, one checklist entry per item | 🟢 |
 
-Not individually filed (low severity, tracked here only — fold into a related issue above if
-picked up, or file separately): #9 (selector notify fan-out), #10 (list virtualization), #14/#15
-(storage edge cases), #18 (digest N+1), #25/#26/#27 (e2e sharding/worker strategy). #3 and #19 are
-non-findings (already well-optimized, recorded so they aren't re-flagged later).
+#3 and #19 are non-findings (already well-optimized, recorded so they aren't re-flagged later) and
+have no issue.
