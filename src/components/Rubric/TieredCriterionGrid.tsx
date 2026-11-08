@@ -11,6 +11,15 @@ interface Props {
     onMoveSubItem: (cid: string, fromLid: string, sid: string, toLid: string) => void;
     onPickStandard: (target: CriterionStandardTarget) => void;
     onUnlinkStandard: (target: CriterionStandardTarget, stdIndex: number) => void;
+    onPickDescriptor: (target: Extract<CriterionStandardTarget, { type: 'subitem' }>) => void;
+    onUnlinkCefrDescriptor: (
+        target: Extract<CriterionStandardTarget, { type: 'subitem' }>,
+        descriptorId: string
+    ) => void;
+    onUnlinkFrameworkDescriptor: (
+        target: Extract<CriterionStandardTarget, { type: 'subitem' }>,
+        descriptorId: string
+    ) => void;
 }
 
 /**
@@ -24,6 +33,9 @@ export default function TieredCriterionGrid({
     onMoveSubItem,
     onPickStandard,
     onUnlinkStandard,
+    onPickDescriptor,
+    onUnlinkCefrDescriptor,
+    onUnlinkFrameworkDescriptor,
 }: Props) {
     const { t } = useTranslation();
     const rows = config.bands.flatMap((band) => {
@@ -126,6 +138,36 @@ export default function TieredCriterionGrid({
                                                     onUnlinkStandard(
                                                         { type: 'subitem', cid: criterion.id, lid: level.id, sid },
                                                         idx
+                                                    )
+                                                }
+                                                onLinkDescriptor={(sid) =>
+                                                    onPickDescriptor({
+                                                        type: 'subitem',
+                                                        cid: criterion.id,
+                                                        lid: level.id,
+                                                        sid,
+                                                    })
+                                                }
+                                                onUnlinkCefrDescriptor={(sid, dId) =>
+                                                    onUnlinkCefrDescriptor(
+                                                        {
+                                                            type: 'subitem',
+                                                            cid: criterion.id,
+                                                            lid: level.id,
+                                                            sid,
+                                                        },
+                                                        dId
+                                                    )
+                                                }
+                                                onUnlinkFrameworkDescriptor={(sid, dId) =>
+                                                    onUnlinkFrameworkDescriptor(
+                                                        {
+                                                            type: 'subitem',
+                                                            cid: criterion.id,
+                                                            lid: level.id,
+                                                            sid,
+                                                        },
+                                                        dId
                                                     )
                                                 }
                                                 moveTargets={moveTargets}

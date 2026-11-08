@@ -151,6 +151,13 @@ export interface SubItem {
     minPoints?: number;
     maxPoints?: number;
     linkedStandards?: LinkedStandard[];
+    /**
+     * Informational framework links (#1002): shown as chips and carried through
+     * import/export, but never aggregated into coverage, mastery or scores —
+     * the aggregators only walk criterion-level descriptors.
+     */
+    cefrDescriptors?: LinkedCefrDescriptor[];
+    frameworkDescriptors?: LinkedFrameworkDescriptor[];
     /** Tiered rubrics: the tier (column) this statement belongs to. Unset means it applies to every tier. */
     tierId?: string;
 }
