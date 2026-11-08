@@ -1446,6 +1446,20 @@ class StorageSyncService {
                 logEvent('sync', `pushMany:${entity}:upsert`, { count: payloads.length });
                 return true;
             }
+            if (entity === 'student') {
+                const res = await this.adapter.upsertStudents(payloads as Student[]);
+                if (!res.success) throw new Error(res.error);
+                this.pushOneFailCount = 0;
+                logEvent('sync', `pushMany:${entity}:upsert`, { count: payloads.length });
+                return true;
+            }
+            if (entity === 'class') {
+                const res = await this.adapter.upsertClasses(payloads as Class[]);
+                if (!res.success) throw new Error(res.error);
+                this.pushOneFailCount = 0;
+                logEvent('sync', `pushMany:${entity}:upsert`, { count: payloads.length });
+                return true;
+            }
         } catch (e) {
             console.warn(`[sync] batch upsert ${entity} failed, retrying per-row`, e);
         }
@@ -1456,6 +1470,20 @@ class StorageSyncService {
         try {
             if (entity === 'studentRubric') {
                 const res = await this.adapter.deleteStudentRubrics(ids);
+                if (!res.success) throw new Error(res.error);
+                this.pushOneFailCount = 0;
+                logEvent('sync', `pushMany:${entity}:delete`, { count: ids.length });
+                return true;
+            }
+            if (entity === 'student') {
+                const res = await this.adapter.deleteStudents(ids);
+                if (!res.success) throw new Error(res.error);
+                this.pushOneFailCount = 0;
+                logEvent('sync', `pushMany:${entity}:delete`, { count: ids.length });
+                return true;
+            }
+            if (entity === 'class') {
+                const res = await this.adapter.deleteClasses(ids);
                 if (!res.success) throw new Error(res.error);
                 this.pushOneFailCount = 0;
                 logEvent('sync', `pushMany:${entity}:delete`, { count: ids.length });
