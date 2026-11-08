@@ -881,9 +881,10 @@ export class SupabaseAdapter {
     // ── Attachments ───────────────────────────────────────────────────────────
 
     async fetchAttachments(): Promise<Array<Omit<Attachment, 'dataUrl'> & { storagePath?: string }>> {
-        const { data, error } = await this.db().from('attachments').select('data, storage_path');
-        if (error) throw error;
-        return (data ?? []).map((r) => ({ ...(r.data as Omit<Attachment, 'dataUrl'>), storagePath: r.storage_path }));
+        const rows = await this.fetchPaged<{ data: Omit<Attachment, 'dataUrl'>; storage_path: string | null }>(() =>
+            this.db().from('attachments').select('data, storage_path').order('id')
+        );
+        return rows.map((r) => ({ ...r.data, storagePath: r.storage_path ?? undefined }));
     }
 
     async upsertAttachment(a: Omit<Attachment, 'dataUrl'>, storagePath?: string): Promise<SyncResult> {
