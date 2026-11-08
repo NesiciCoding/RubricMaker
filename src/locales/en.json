@@ -1324,17 +1324,53 @@
                 "class_progress_aria": "{{answered}} of {{total}} students answered this question",
                 "class_reached": "Reached by class",
                 "class_reached_aria": "{{reached}} of {{total}} students reached {{level}}",
-                "class_finished_aria": "{{finished}} of {{total}} students finished"
+                "class_finished_aria": "{{finished}} of {{total}} students finished",
+                "milestone_halfway": "Halfway",
+                "milestone_final": "Last"
             },
             "draft": {
                 "word_count": "{{count}} words",
                 "last_activity": "Last activity {{time}}",
                 "toggle_preview": "Toggle draft preview",
-                "empty": "No draft text yet."
+                "empty": "No draft text yet.",
+                "wpm_one": "{{count}} word/min",
+                "wpm_other": "{{count}} words/min",
+                "last_typed_seconds_one": "Last typed {{count}} s ago",
+                "last_typed_seconds_other": "Last typed {{count}} s ago",
+                "last_typed_minutes_one": "Last typed {{count}} min ago",
+                "last_typed_minutes_other": "Last typed {{count}} min ago",
+                "trend": {
+                    "speeding_up": "Speeding up",
+                    "steady": "Steady",
+                    "slowing": "Slowing down",
+                    "stopped": "Stopped"
+                }
             },
             "advisory_note": "Presence, drafts, and proctoring flags are advisory signals reported by the student's browser — a determined student can spoof them. Use them to spot patterns, not as definitive proof.",
             "progress_toggle": "Student progress",
-            "class_progress_toggle": "Class progress"
+            "class_progress_toggle": "Class progress",
+            "pace_toggle": "Pace vs. class",
+            "status_summary_toggle": "Status summary",
+            "milestones_toggle": "Milestones",
+            "stall_toggle": "Flag stalled students",
+            "stall_threshold_label": "after",
+            "stall_threshold_unit": "min",
+            "writing_pace_toggle": "Writing pace",
+            "stalled_badge_one": "No progress for {{count}} min",
+            "stalled_badge_other": "No progress for {{count}} min",
+            "pace": {
+                "ahead": "Ahead of class",
+                "on_pace": "On pace",
+                "behind": "Behind class"
+            },
+            "summary": {
+                "handed_in": "Handed in",
+                "stalled_one": "Stalled {{count}} min",
+                "stalled_other": "Stalled {{count}} min",
+                "done": "{{percent}}% done",
+                "correct": "{{percent}}% correct",
+                "no_data": "No answers yet"
+            }
         },
         "sections_title": "Sections",
         "sections_none_hint": "No sections yet. Sections help you group questions into labelled parts (e.g. Reading, Listening).",
@@ -4129,6 +4165,7 @@
         "rb_live_monitor_item_presence": "Presence — a coloured dot shows whether each student is active, idle, or disconnected, based on how recently their browser checked in.",
         "rb_live_monitor_item_grid": "Response grid (tests) — a students-by-questions matrix of coloured bars, grouped by class with a per-question class average and a per-student total. Each row is a student, each column a question; click a question header to open a gallery of every answer to it.",
         "rb_live_monitor_item_draft": "Live draft preview (essays) — a card per student with a live word count, last-activity timestamp, and an expandable preview of what they are currently writing.",
+        "rb_live_monitor_item_writing_pace": "Writing pace (essays) — the \"Writing pace\" toggle adds words per minute over the last three minutes, whether the student is speeding up, steady, slowing down or has stopped, and how long ago the draft last changed.",
         "rb_live_monitor_item_hide_names": "Hide names — toggle to anonymise the view, useful when sharing your screen.",
         "rb_live_monitor_item_proctoring": "Proctoring flags — counts of tab switches, copy/paste/cut, battery level, and Safe Exam Browser status. These are advisory signals only: a determined student can spoof them, so use them to prompt a conversation, not as definitive proof.",
         "rb_live_monitor_item_nudge": "Nudge — sends a short check-in message to one student's screen via a live toast notification.",
@@ -4546,6 +4583,7 @@
         "rb_live_monitor_item_sort": "Sort & group columns — reorder the question columns by section, CEFR level, question type, linked grammar/standard, or cumulative class score, combining several rules at once.",
         "rb_live_monitor_item_placement": "Adaptive placement view — staircase and generator placement runs give every student different questions, so the grid aligns on CEFR level instead: a per-level accuracy bar per student, with their estimated level in a separate column before the level columns.",
         "rb_live_monitor_item_progress": "Progress toggles (tests) — \"Student progress\" adds an answered/total bar per student, separate from their score; \"Class progress\" adds a row above the grid showing how much of the class has answered each question (or, on adaptive placement tests, reached each CEFR level) and how many students have finished. Both are off by default and remembered in your settings.",
+        "rb_live_monitor_item_signals": "Pace, status and stall signals (tests) — \"Pace vs. class\" marks each student as ahead, on pace or behind compared with the class median of questions answered right now (shown from three students up); \"Status summary\" adds one line under each name such as \"65% done · 80% correct · On pace\"; \"Flag stalled students\" shows a badge when a connected student's answers have not changed for the number of minutes you choose (4 by default); \"Milestones\" marks the halfway and last question on the grid header. All are off by default and remembered in your settings.",
         "rb_tests_exam_export_label": "Exam booklet export:",
         "rb_tests_exam_export_body": "From the test list or the Export page, export a print-ready exam paper styled after a Dutch CITO exam: a question booklet, a separate answer sheet, an optional attachment document for reading passages, and a grading sheet with correct answers and scoring guidance — as PDF or Word, with your chosen font applied. Choose which students get a personalised answer sheet by clicking a class chip to select the whole class, or tick individual students. Question and option pictures, line breaks and text formatting carry over to the booklet; scan markers are only added to the PDF answer sheet, on every page of it. Listening questions get a \"listen to the recording\" note, and the margin point labels follow the interface language.",
         "gr_exam_scan_title": "Scan a paper exam's answer sheet",

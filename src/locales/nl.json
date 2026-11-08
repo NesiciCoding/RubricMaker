@@ -1324,17 +1324,53 @@
                 "class_progress_aria": "{{answered}} van {{total}} leerlingen hebben deze vraag beantwoord",
                 "class_reached": "Bereikt door klas",
                 "class_reached_aria": "{{reached}} van {{total}} leerlingen hebben {{level}} bereikt",
-                "class_finished_aria": "{{finished}} van {{total}} leerlingen zijn klaar"
+                "class_finished_aria": "{{finished}} van {{total}} leerlingen zijn klaar",
+                "milestone_halfway": "Halverwege",
+                "milestone_final": "Laatste"
             },
             "draft": {
                 "word_count": "{{count}} woorden",
                 "last_activity": "Laatste activiteit {{time}}",
                 "toggle_preview": "Conceptvoorbeeld tonen/verbergen",
-                "empty": "Nog geen concepttekst."
+                "empty": "Nog geen concepttekst.",
+                "wpm_one": "{{count}} woord/min",
+                "wpm_other": "{{count}} woorden/min",
+                "last_typed_seconds_one": "{{count}} s geleden getypt",
+                "last_typed_seconds_other": "{{count}} s geleden getypt",
+                "last_typed_minutes_one": "{{count}} min geleden getypt",
+                "last_typed_minutes_other": "{{count}} min geleden getypt",
+                "trend": {
+                    "speeding_up": "Versnelt",
+                    "steady": "Gelijkmatig",
+                    "slowing": "Vertraagt",
+                    "stopped": "Gestopt"
+                }
             },
             "advisory_note": "Aanwezigheid, concepten en proctoringsignalen zijn indicatieve signalen vanuit de browser van de leerling — een vastberaden leerling kan deze omzeilen. Gebruik ze om patronen te herkennen, niet als definitief bewijs.",
             "progress_toggle": "Voortgang leerling",
-            "class_progress_toggle": "Voortgang klas"
+            "class_progress_toggle": "Voortgang klas",
+            "pace_toggle": "Tempo t.o.v. klas",
+            "status_summary_toggle": "Statusoverzicht",
+            "milestones_toggle": "Mijlpalen",
+            "stall_toggle": "Markeer vastgelopen leerlingen",
+            "stall_threshold_label": "na",
+            "stall_threshold_unit": "min",
+            "writing_pace_toggle": "Schrijftempo",
+            "stalled_badge_one": "Geen voortgang in {{count}} min",
+            "stalled_badge_other": "Geen voortgang in {{count}} min",
+            "pace": {
+                "ahead": "Voor op de klas",
+                "on_pace": "Op tempo",
+                "behind": "Achter op de klas"
+            },
+            "summary": {
+                "handed_in": "Ingeleverd",
+                "stalled_one": "Vastgelopen {{count}} min",
+                "stalled_other": "Vastgelopen {{count}} min",
+                "done": "{{percent}}% klaar",
+                "correct": "{{percent}}% goed",
+                "no_data": "Nog geen antwoorden"
+            }
         },
         "sections_title": "Secties",
         "sections_none_hint": "Nog geen secties. Secties helpen je vragen te groeperen in gelabelde onderdelen (bijv. Lezen, Luisteren).",
@@ -4131,6 +4167,7 @@
         "rb_live_monitor_item_presence": "Aanwezigheid — een gekleurde stip toont of elke leerling actief, inactief of niet verbonden is, gebaseerd op hoe recent hun browser zich heeft gemeld.",
         "rb_live_monitor_item_grid": "Antwoordraster (toetsen) — een matrix van leerlingen tegen vragen met gekleurde balken, gegroepeerd per klas met een klasgemiddelde per vraag en een totaal per leerling. Elke rij is een leerling, elke kolom een vraag; klik op een vraagkop voor een galerij met alle antwoorden erop.",
         "rb_live_monitor_item_draft": "Live conceptvoorvertoning (essays) — een kaart per leerling met een live woordentelling, tijdstempel van laatste activiteit en een uitklapbare voorvertoning van wat ze momenteel schrijven.",
+        "rb_live_monitor_item_writing_pace": "Schrijftempo (essays) — de knop \"Schrijftempo\" toont woorden per minuut over de laatste drie minuten, of de leerling versnelt, gelijkmatig schrijft, vertraagt of gestopt is, en hoe lang geleden het concept voor het laatst veranderde.",
         "rb_live_monitor_item_hide_names": "Namen verbergen — schakel om de weergave te anonimiseren, handig bij het delen van je scherm.",
         "rb_live_monitor_item_proctoring": "Surveillancesignalen — aantallen tabwissels, kopiëren/plakken/knippen, batterijniveau en status Safe Exam Browser. Dit zijn alleen indicatieve signalen: een vastberaden leerling kan ze omzeilen, gebruik ze dus om een gesprek aan te gaan, niet als definitief bewijs.",
         "rb_live_monitor_item_nudge": "Stootje geven — stuurt een kort check-in-bericht naar het scherm van één leerling via een live meldingsbanner.",
@@ -4548,6 +4585,7 @@
         "rb_live_monitor_item_sort": "Kolommen sorteren en groeperen — orden de vraagkolommen op sectie, ERK-niveau, vraagtype, gekoppelde grammatica/standaard of cumulatieve klasscore, met meerdere regels tegelijk.",
         "rb_live_monitor_item_placement": "Adaptieve plaatsingsweergave — staircase- en generatortoetsen geven elke leerling andere vragen, dus het raster lijnt uit op ERK-niveau: een nauwkeurigheidsbalk per niveau per leerling, met hun geschatte niveau in een aparte kolom vóór de niveaukolommen.",
         "rb_live_monitor_item_progress": "Voortgangsknoppen (toetsen) — \"Voortgang leerling\" voegt per leerling een balk beantwoord/totaal toe, los van de score; \"Voortgang klas\" voegt boven het raster een rij toe die laat zien welk deel van de klas elke vraag heeft beantwoord (of, bij adaptieve plaatsingstoetsen, elk ERK-niveau heeft bereikt) en hoeveel leerlingen klaar zijn. Beide staan standaard uit en worden in je instellingen onthouden.",
+        "rb_live_monitor_item_signals": "Tempo-, status- en vastloopsignalen (toetsen) — \"Tempo t.o.v. klas\" toont per leerling of die voorloopt, op tempo is of achterloopt ten opzichte van de mediaan van de klas (vanaf drie leerlingen); \"Statusoverzicht\" voegt onder elke naam één regel toe, zoals \"65% klaar · 80% goed · Op tempo\"; \"Markeer vastgelopen leerlingen\" toont een badge als de antwoorden van een verbonden leerling het gekozen aantal minuten niet veranderen (standaard 4); \"Mijlpalen\" markeert de middelste en laatste vraag in de kop van het raster. Alles staat standaard uit en wordt in je instellingen onthouden.",
         "rb_tests_exam_export_label": "Examenboekje exporteren:",
         "rb_tests_exam_export_body": "Exporteer vanuit de toetsenlijst of de exportpagina een printklaar examen in CITO-stijl: een vragenboekje, een apart antwoordblad, een optionele bijlage met leesteksten en een correctievoorschrift met de juiste antwoorden en scoreregels — als PDF of Word, met je gekozen lettertype. Kies voor welke leerlingen een persoonlijk antwoordblad wordt gemaakt door op een klasknop te klikken (hele klas) of leerlingen afzonderlijk aan te vinken. Afbeeldingen bij vragen en antwoordopties, regeleinden en opmaak worden overgenomen in het boekje; scanmarkeringen komen alleen op het pdf-antwoordblad, op elke pagina ervan. Luistervragen krijgen de opmerking \"luister naar de opname\" en de puntlabels in de marge volgen de interfacetaal.",
         "gr_exam_scan_title": "Een antwoordblad van een papieren toets scannen",
