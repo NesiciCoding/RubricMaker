@@ -1,5 +1,5 @@
 // CEFR levels follow the CEFR-J Grammar Profile conventions (see cefrjGrammar.ts).
-// `detectShorthand` links an item to a rule in grammarChecker.ts for auto-detection.
+// `detectShorthand` links an item to a rule in grammarChecker.ts (or mechanicsChecker.ts) for auto-detection.
 import type { CefrLevel, GrammarCategory, GrammarItem, LinkedFrameworkDescriptor } from '../types';
 
 export const GRAMMAR_CATEGORIES: GrammarCategory[] = [
@@ -928,6 +928,80 @@ export const GRAMMAR_CATEGORIES: GrammarCategory[] = [
                 labelEn: 'Would (for repeated past actions)',
                 labelNl: 'Would (voor herhaalde handelingen in het verleden)',
                 examplesEn: ['Every summer we would go to the beach'],
+            },
+        ],
+    },
+    {
+        // Not part of the CEFR-J grammar profile: levels mark when these are usually taught. Detection
+        // reports uses and mistakes (src/utils/mechanicsChecker.ts) rather than uses alone.
+        id: 'mechanics',
+        labelEn: 'Punctuation & capital letters',
+        labelNl: 'Leestekens & hoofdletters',
+        color: '#0f766e',
+        items: [
+            {
+                id: 'gr-mech-capital-sentence',
+                level: 'A1',
+                labelEn: 'Capital letter at the start of a sentence',
+                labelNl: 'Hoofdletter aan het begin van een zin',
+                examplesEn: ['My name is Sam.', 'We went home. It was late.'],
+                detectShorthand: 'MECH.CAP.START',
+            },
+            {
+                id: 'gr-mech-capital-i',
+                level: 'A1',
+                labelEn: "Capital I for the pronoun (I, I'm, I've)",
+                labelNl: "Hoofdletter I voor het voornaamwoord (I, I'm, I've)",
+                examplesEn: ["I think I'm right.", 'My friend and I'],
+                detectShorthand: 'MECH.CAP.I',
+            },
+            {
+                id: 'gr-mech-capital-proper',
+                level: 'A1',
+                labelEn: 'Capital letters for days, months, languages, nationalities and countries',
+                labelNl: 'Hoofdletters voor dagen, maanden, talen, nationaliteiten en landen',
+                examplesEn: ['on Monday in January', 'She speaks Dutch and English.'],
+                detectShorthand: 'MECH.CAP.PROPER',
+            },
+            {
+                id: 'gr-mech-end-punctuation',
+                level: 'A1',
+                labelEn: 'End punctuation (full stop, question mark or exclamation mark)',
+                labelNl: 'Leesteken aan het eind van een zin (punt, vraagteken of uitroepteken)',
+                examplesEn: ['We went to the beach.', 'What a great day!'],
+                detectShorthand: 'MECH.END',
+            },
+            {
+                id: 'gr-mech-question-mark',
+                level: 'A1',
+                labelEn: 'Question mark after a question',
+                labelNl: 'Vraagteken na een vraag',
+                examplesEn: ['Where do you live?', 'Can you help me?'],
+                detectShorthand: 'MECH.QMARK',
+            },
+            {
+                id: 'gr-mech-spacing',
+                level: 'A1',
+                labelEn: 'Spacing around punctuation (no space before, one space after)',
+                labelNl: 'Spaties rond leestekens (geen spatie ervoor, één spatie erna)',
+                examplesEn: ['Hello, how are you?', 'It was late. We left.'],
+                detectShorthand: 'MECH.SPACE',
+            },
+            {
+                id: 'gr-mech-apostrophe-contractions',
+                level: 'A2',
+                labelEn: "Apostrophe in contractions (don't, isn't, I'm)",
+                labelNl: "Apostrof in samentrekkingen (don't, isn't, I'm)",
+                examplesEn: ["I don't know.", "It isn't easy."],
+                detectShorthand: 'MECH.APOS.CONTR',
+            },
+            {
+                id: 'gr-mech-comma-linkers',
+                level: 'B1',
+                labelEn: 'Comma after an opening linking word (However, Firstly, For example)',
+                labelNl: 'Komma na een verbindingswoord aan het begin van de zin (However, Firstly, For example)',
+                examplesEn: ['However, it was too late.', 'For example, we recycle paper.'],
+                detectShorthand: 'MECH.COMMA.LINKER',
             },
         ],
     },

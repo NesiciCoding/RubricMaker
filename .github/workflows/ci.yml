@@ -572,11 +572,85 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
 
-  deploy-hestiacp:
-    name: Deploy to HestiaCP VPS
+  # Applies pending Supabase migrations and redeploys changed edge functions on the official
+  # self-hosted stack, before the frontend goes live — so a frontend that needs a new RPC,
+  # table or column never reaches production ahead of the schema it depends on (#935's full
+  # fix; the interim drift-only check further below in deploy-hestiacp still runs too, as a
+  # cheap second confirmation, over the unrelated root key).
+  #
+  # Uses a narrowly scoped account (`rm-backend-deploy`) — never root, never docker-group
+  # membership: it stages only the *data* to deploy (supabase/migrations/,
+  # supabase/functions/) into that account's own home directory over a plain SSH file copy
+  # (no privilege needed for that part), then runs exactly one command through sudo — a
+  # fixed, no-argument wrapper script (scripts/ci-backend-deploy.sh, installed on the VPS at
+  # /usr/local/sbin/rm-backend-deploy.sh) that itself calls stack-drift.py apply and
+  # deploy-edge-functions.sh as root. Deliberately not shipped here: those two tool scripts
+  # themselves — they're root-installed on the VPS instead, so the CI-writable account can
+  # change what gets deployed, never the deploy logic that runs as root. See
+  # docs/SELF_HOSTING_OPS.md → "Migrations and edge functions on the official stack" →
+  # "Deploying from CI (#935)" for how that account, the tools and the sudo rule are
+  # provisioned. Both underlying scripts no-op cleanly when nothing is pending, so this runs
+  # on every deploy, not only ones that touched supabase/.
+  deploy-backend:
+    name: Deploy Supabase migrations & edge functions
     runs-on: ubuntu-latest
     needs: [ci, e2e, e2e-merge-reports, e2e-supabase, e2e-a11y, bundle]
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.ci.result == 'success' && needs.e2e.result == 'success' && needs['e2e-merge-reports'].result == 'success' && needs['e2e-supabase'].result == 'success' && needs['e2e-a11y'].result == 'success' && needs.bundle.result == 'success' }}
+    environment: production
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Apply migrations and redeploy edge functions
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_BACKEND_SSH_KEY: ${{ secrets.VPS_BACKEND_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          key_file=$(mktemp)
+          trap 'rm -f "$key_file"' EXIT
+          printf '%s\n' "$VPS_BACKEND_SSH_KEY" > "$key_file"
+          chmod 600 "$key_file"
+          ssh_opts=(-i "$key_file" -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 -o BatchMode=yes)
+          remote="rm-backend-deploy@${VPS_HOST}"
+
+          # Fresh snapshot every run, so a function removed from the repo since the last
+          # deploy doesn't linger and get miscounted as "still in the repo" by the diff
+          # deploy-edge-functions.sh computes (it never deletes a server-only directory
+          # either way, by design — this just keeps that diff accurate).
+          #
+          # Only data (migrations, function source) lands here — never the tool scripts
+          # that apply it. Those run as root from a separate, root-installed location on
+          # the VPS, specifically so this CI-writable account can't get root to run
+          # whatever it just staged (see ci-backend-deploy.sh's own comment).
+          ssh "${ssh_opts[@]}" "$remote" "rm -rf ~/incoming && mkdir -p ~/incoming/supabase/migrations"
+          scp "${ssh_opts[@]}" supabase/migrations/*.sql "$remote:incoming/supabase/migrations/"
+          scp -r "${ssh_opts[@]}" supabase/functions "$remote:incoming/supabase/"
+
+          # -n: fail immediately (rather than hang the job) if the sudo rule isn't set up
+          # as NOPASSWD, instead of waiting on a password prompt that will never come.
+          ssh "${ssh_opts[@]}" "$remote" "sudo -n /usr/local/sbin/rm-backend-deploy.sh"
+
+      - name: Smoke-test PostgREST
+        env:
+          SUPABASE_PUBLIC_URL: ${{ secrets.SUPABASE_PUBLIC_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "$SUPABASE_PUBLIC_URL" ]; then
+            echo "SUPABASE_PUBLIC_URL not set — skipping (no self-hosted Supabase configured for this deploy)"
+            exit 0
+          fi
+          curl -fsS --max-time 20 -H "apikey: ${VITE_SUPABASE_ANON_KEY}" "${SUPABASE_PUBLIC_URL%/}/rest/v1/" -o /dev/null
+          echo "PostgREST answered at ${SUPABASE_PUBLIC_URL%/}/rest/v1/"
+
+  deploy-hestiacp:
+    name: Deploy to HestiaCP VPS
+    runs-on: ubuntu-latest
+    needs: [ci, e2e, e2e-merge-reports, e2e-supabase, e2e-a11y, bundle, deploy-backend]
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.ci.result == 'success' && needs.e2e.result == 'success' && needs['e2e-merge-reports'].result == 'success' && needs['e2e-supabase'].result == 'success' && needs['e2e-a11y'].result == 'success' && needs.bundle.result == 'success' && needs['deploy-backend'].result == 'success' }}
     environment: production
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -628,38 +702,42 @@ jobs:
           # flag, not sensitive data).
           VITE_STRESS_TEST_LOGGING: ${{ vars.VITE_STRESS_TEST_LOGGING }}
 
-      - name: Deploy via rsync
+      # #404: the `rubricmaker` HestiaCP user is locked to SFTP at the server level — that
+      # overrides anything in authorized_keys (a forced rsync command never gets a chance to
+      # run), so rsync-over-SSH is not possible here at all. lftp's sftp:// backend speaks
+      # plain SFTP (list/put/delete), which this restricted account does allow; it shells out
+      # to the system ssh for the actual connection (sftp:connect-program), so the key and
+      # host-key handling below mirror the drift-check step further down.
+      # deploy/.htaccess is copied into dist/ first so one mirror pass carries both — it's
+      # not the same file Vite would otherwise copy from public/.htaccess (that one's stale;
+      # deploy/.htaccess has this deployment's real CSP and the asset-404 rewrite).
+      # mirror's default (no --delete-first) deletes extraneous remote files only *after*
+      # transferring new/changed ones, matching rsync's --delete-after: nobody loading the
+      # site mid-deploy gets an index.html pointing at assets that aren't there yet.
+      - name: Deploy via SFTP
         if: steps.changes.outputs.changed == 'true'
-        uses: burnett01/rsync-deployments@2cbb5ed94b73d111d07a40b071b1c7d3c0272435 # v9.0.2
-        with:
-          # --chown forces the web-domain user on the receiving side: rsync -a would
-          # otherwise preserve the runner's uid/gid 1001 (→ `hestiamail` on the box),
-          # and that wrong ownership can trigger HestiaCP's domain-repair, which
-          # re-drops the default skeleton index.html into the docroot. Mirrors
-          # deploy-hestiacp.yml.
-          # --delay-updates + --delete-after: new files land in place together at the end and
-          # old ones go only after that, so a visitor (or the service worker installing) mid-deploy
-          # never gets an index.html pointing at assets that aren't there yet. The protect filter
-          # keeps --delete from removing the server's .htaccess (uploaded by the next step) while
-          # still deploying one that is shipped inside dist/.
-          switches: -avz --delete-after --delay-updates --filter='P /.htaccess' --chown=rubricmaker:rubricmaker
-          path: dist/
-          # HestiaCP web root: /home/<user>/web/<domain>/public_html/
-          remote_path: /home/rubricmaker/web/${{ secrets.VPS_DOMAIN }}/public_html/
-          remote_host: ${{ secrets.VPS_HOST }}
-          remote_user: root
-          remote_key: ${{ secrets.VPS_SSH_KEY }}
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_DOMAIN: ${{ secrets.VPS_DOMAIN }}
+          VPS_DEPLOY_SSH_KEY: ${{ secrets.VPS_DEPLOY_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq lftp
+          cp deploy/.htaccess dist/.htaccess
 
-      - name: Upload .htaccess
-        if: steps.changes.outputs.changed == 'true'
-        uses: burnett01/rsync-deployments@2cbb5ed94b73d111d07a40b071b1c7d3c0272435 # v9.0.2
-        with:
-          switches: -avz --chown=rubricmaker:rubricmaker
-          path: deploy/.htaccess
-          remote_path: /home/rubricmaker/web/${{ secrets.VPS_DOMAIN }}/public_html/.htaccess
-          remote_host: ${{ secrets.VPS_HOST }}
-          remote_user: root
-          remote_key: ${{ secrets.VPS_SSH_KEY }}
+          key_file=$(mktemp)
+          trap 'rm -f "$key_file"' EXIT
+          printf '%s\n' "$VPS_DEPLOY_SSH_KEY" > "$key_file"
+          chmod 600 "$key_file"
+
+          lftp -u rubricmaker, "sftp://${VPS_HOST}" <<SFTP
+          set cmd:fail-exit true
+          set sftp:connect-program "ssh -a -x -i $key_file -o StrictHostKeyChecking=accept-new -o BatchMode=yes"
+          set mirror:parallel-transfer-count 4
+          mirror --reverse --delete --verbose dist/ /home/rubricmaker/web/${VPS_DOMAIN}/public_html/
+          bye
+          SFTP
 
       - name: Verify the live site serves RubricMaker
         if: steps.changes.outputs.changed == 'true'
@@ -681,3 +759,45 @@ jobs:
           done
           echo "::error::https://${VPS_DOMAIN}/ is not serving this build's index.html after deploy (HestiaCP default page or stale docroot?)"
           exit 1
+
+      # Interim fix for #935: the official Supabase stack on the VPS isn't deployed from CI yet (the
+      # full version needs the restricted account from #404 first), so a merged migration or
+      # edge-function change can sit undeployed indefinitely and teachers find out via sync errors.
+      # Runs unconditionally (not gated by `steps.changes`, unlike the frontend steps above) so it
+      # also catches a supabase/-only push that didn't touch dist/. stack-drift.py already knows how
+      # to detect this by inspecting the live database and volumes/functions/ directly — see
+      # docs/SELF_HOSTING_OPS.md "Migrations and edge functions on the official stack" — this just
+      # ships it to the VPS and runs it read-only after every deploy.
+      - name: Check Supabase migration & edge-function drift
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          key_file=$(mktemp)
+          remote_dir="/root/.rm-ci-stack-drift-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          cleanup() {
+            ssh -i "$key_file" -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 -o BatchMode=yes \
+                "root@${VPS_HOST}" "rm -rf '$remote_dir'" >/dev/null 2>&1 || true
+            rm -f "$key_file"
+          }
+          trap cleanup EXIT
+          printf '%s\n' "$VPS_SSH_KEY" > "$key_file"
+          chmod 600 "$key_file"
+          ssh_opts=(-i "$key_file" -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 -o BatchMode=yes)
+
+          ssh "${ssh_opts[@]}" "root@${VPS_HOST}" "mkdir -p '$remote_dir/scripts' '$remote_dir/supabase/migrations'"
+          scp "${ssh_opts[@]}" scripts/stack-drift.py "root@${VPS_HOST}:$remote_dir/scripts/stack-drift.py"
+          scp "${ssh_opts[@]}" supabase/migrations/*.sql "root@${VPS_HOST}:$remote_dir/supabase/migrations/"
+          scp -r "${ssh_opts[@]}" supabase/functions "root@${VPS_HOST}:$remote_dir/supabase/"
+
+          set +e
+          ssh "${ssh_opts[@]}" "root@${VPS_HOST}" "python3 '$remote_dir/scripts/stack-drift.py' check --repo-dir '$remote_dir'"
+          status=$?
+          set -e
+
+          if [ "$status" -ne 0 ]; then
+            echo "::error::Production's database and/or deployed edge functions have drifted from supabase/ in this repo (stack-drift.py exit $status — see output above). Apply pending migrations with 'stack-drift.py apply' and/or redeploy functions with 'scripts/deploy-edge-functions.sh' on the VPS, then re-run this job."
+            exit 1
+          fi
+          echo "Production's database and edge functions match this repository."

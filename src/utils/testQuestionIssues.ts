@@ -3,6 +3,7 @@ import {
     parseClozeGaps,
     parseHotTextFragments,
     parseErrorPassage,
+    sentenceBuilderChunks,
 } from '../../supabase/functions/_shared/testScoring.ts';
 import { stripHtmlTags } from './exportDataPrep';
 
@@ -94,7 +95,7 @@ export function testQuestionIssues(q: TestQuestion): TestQuestionIssue[] {
             break;
         }
         case 'sentence-builder':
-            if (!(q.sentenceTargets ?? []).some((s) => s.trim().split(/\s+/).length > 1))
+            if (!(q.sentenceTargets ?? []).some((s) => sentenceBuilderChunks(s).length > 1))
                 issues.push('no_target_sentence');
             break;
         case 'key-word-transformation':

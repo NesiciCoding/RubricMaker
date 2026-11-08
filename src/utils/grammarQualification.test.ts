@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { evaluateGrammar, buildGrammarComment } from './grammarQualification';
+import { evaluateGrammar, buildGrammarComment, mechanicsSummary } from './grammarQualification';
 import type { LinkedFrameworkDescriptor } from '../types';
 
 function grammarLink(descriptorId: string, descriptionEn: string): LinkedFrameworkDescriptor {
@@ -114,5 +114,53 @@ describe('evaluateGrammar with UD counts', () => {
         const result = evaluateGrammar(linked, 'She has finished the report.');
         expect(result.items[0]).toMatchObject({ found: true, detectedBy: 'compromise' });
         expect(result.engine).toBe('compromise');
+    });
+});
+
+describe('evaluateGrammar for punctuation and capitals', () => {
+    const t = ((key: string, opts?: Record<string, unknown>) =>
+        opts ? `${key}:${String(opts.uses)}/${String(opts.count)}` : key) as unknown as Parameters<
+        typeof buildGrammarComment
+    >[1];
+
+    it('reports uses and mistakes and only passes without mistakes', () => {
+        const linked = [
+            grammarLink('gr-mech-capital-sentence', 'Capital at sentence start'),
+            grammarLink('gr-mech-question-mark', 'Question mark'),
+        ];
+        const result = evaluateGrammar(linked, 'We went home. it was late. Where do you live?');
+        expect(result.items[0]).toMatchObject({
+            autoDetectable: true,
+            found: false,
+            occurrences: 2,
+            mistakes: 1,
+            detectedBy: 'mechanics',
+        });
+        expect(result.items[1]).toMatchObject({ found: true, occurrences: 1, mistakes: 0 });
+        expect(result.passed).toBe(false);
+        expect(mechanicsSummary(result.items[0], t)).toBe('analysis.mechanics_summary:2/1');
+    });
+
+    it('is not overridden by the UD parse', () => {
+        const linked = [grammarLink('gr-mech-capital-i', 'Capital I')];
+        const result = evaluateGrammar(linked, 'I think i am right.', { udCounts: { pres_simple: 3 } });
+        expect(result.items[0]).toMatchObject({ occurrences: 1, mistakes: 1, detectedBy: 'mechanics' });
+    });
+
+    it('treats an unused mark as not demonstrated', () => {
+        const linked = [grammarLink('gr-mech-comma-linkers', 'Comma after linkers')];
+        const result = evaluateGrammar(linked, 'We went home.');
+        expect(result.items[0]).toMatchObject({ found: false, occurrences: 0, mistakes: 0 });
+    });
+
+    it('puts the uses/mistakes summary in the comment', () => {
+        const linked = [
+            grammarLink('gr-mech-capital-i', 'Capital I'),
+            grammarLink('gr-mech-comma-linkers', 'Comma after linkers'),
+        ];
+        const html = buildGrammarComment(evaluateGrammar(linked, 'I am sure i know.'), t, 'en');
+        expect(html).toContain('✘ Past Simple — Capital I (analysis.mechanics_summary:1/1)');
+        expect(html).toContain('✘ Past Simple — Comma after linkers: analysis.not_found');
+        expect(mechanicsSummary({ ...evaluateGrammar(linked, '').items[0], mistakes: undefined }, t)).toBeUndefined();
     });
 });
