@@ -655,9 +655,13 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
     }
 
     // Ctrl/Cmd+S saves from anywhere in the builder, inputs included, as in the Rubric Builder.
-    const saveRef = useRef(handleSave);
+    // A view-only share has its Save button disabled, so the shortcut must not run validation or save either.
+    const saveFromShortcut = () => {
+        if (!readOnly) handleSave();
+    };
+    const saveRef = useRef(saveFromShortcut);
     useEffect(() => {
-        saveRef.current = handleSave;
+        saveRef.current = saveFromShortcut;
     });
     useEffect(() => {
         function handleKeyDown(e: KeyboardEvent) {
