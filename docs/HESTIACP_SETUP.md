@@ -260,9 +260,10 @@ Add these repository secrets in **GitHub → Settings → Secrets and variables 
 | `VPS_HOST`             | Your VPS IP address or hostname                                                                    |
 | `VPS_DOMAIN`           | Your domain, e.g. `rubricmaker.example.com`                                                        |
 | `VPS_DEPLOY_SSH_KEY`   | Private key of the dedicated `rubricmaker` deploy key (see §9.1) — used to SFTP `dist/` (with `.htaccess` copied in) into the web root |
+| `VPS_BACKEND_SSH_KEY`  | Private key of the dedicated `rm-backend-deploy` account (see `docs/SELF_HOSTING_OPS.md` → "Deploying from CI (#935)") — used by the `deploy-backend` job to apply migrations and redeploy edge functions |
 | `VPS_SSH_KEY`          | Private key for **root** access (see §9.1) — used only by the post-deploy migration/function drift check, which needs `docker exec` |
 
-The file-deploy steps connect as the `rubricmaker` web-domain user itself (over `VPS_DEPLOY_SSH_KEY`), not root (#404); only the drift-check step still uses root. There is no `VPS_USER` secret — the username is written into the workflows directly; see §9 for using a different HestiaCP user.
+The file-deploy steps connect as the `rubricmaker` web-domain user itself (over `VPS_DEPLOY_SSH_KEY`), not root (#404); `deploy-backend` connects as `rm-backend-deploy` (over `VPS_BACKEND_SSH_KEY`), also not root (#935); only the drift-check step still uses root. There is no `VPS_USER` secret — the username is written into the workflows directly; see §9 for using a different HestiaCP user.
 
 ---
 
@@ -335,19 +336,20 @@ Open `https://rubricmaker.example.com` in a browser. You should see the RubricMa
 
 ## 9. Automated CI/CD with GitHub Actions
 
-Two jobs deploy to the VPS:
+Three jobs, all in `.github/workflows/ci.yml`, deploy to the VPS:
 
 | Where                                               | When it runs                                                                                                                                                                                                                                         |
 | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `deploy-hestiacp` job in `.github/workflows/ci.yml` | Automatically on a push to `main`, but only after **every** CI job passed (type-check, lint, unit tests, all e2e shards, Supabase e2e, the accessibility gate, bundle analysis) **and** the push changed app files. Docs- or CI-only pushes skip it. |
-| `.github/workflows/deploy-hestiacp.yml`             | Manually only (**Actions → Deploy to HestiaCP VPS → Run workflow**), to deploy without waiting on CI.                                                                                                                                                |
+| `deploy-backend` job in `.github/workflows/ci.yml`  | Automatically on a push to `main`, after **every** CI job passed (type-check, lint, unit tests, all e2e shards, Supabase e2e, the accessibility gate, bundle analysis). Applies pending Supabase migrations and redeploys changed edge functions (#935) before the frontend deploy runs. |
+| `deploy-hestiacp` job in `.github/workflows/ci.yml` | Same gate as `deploy-backend`, plus `deploy-backend` itself succeeding, **and** the push changed app files. Docs- or CI-only pushes skip its file-transfer steps. |
+| `.github/workflows/deploy-hestiacp.yml`             | Manually only (**Actions → Deploy to HestiaCP VPS → Run workflow**), to deploy the frontend without waiting on CI. Does not run `deploy-backend`.                                                                                                    |
 
-Both run in the `production` GitHub environment (add required reviewers there under **Settings → Environments** if you want to approve each deploy) and do the same thing:
+All three run in the `production` GitHub environment (add required reviewers there under **Settings → Environments** if you want to approve each deploy). `deploy-backend` is covered in `docs/SELF_HOSTING_OPS.md` → "Migrations and edge functions on the official stack" → "Deploying from CI (#935)". The frontend deploy — `deploy-hestiacp` and its manual counterpart — works like this:
 
 1. `npm ci` and `npm run build` on Node 24, with the `VITE_SUPABASE_*`, `SUPABASE_PUBLIC_URL` secrets and the `VITE_STRESS_TEST_LOGGING` variable.
 2. Copy `deploy/.htaccess` into `dist/`, then mirror `dist/` to `/home/rubricmaker/web/<VPS_DOMAIN>/public_html/` over **SFTP** (`lftp`, `mirror --reverse --delete`), connecting as the **`rubricmaker`** HestiaCP user itself over a dedicated key (§9.1) — not root (#404). New/changed files upload first and extraneous remote files are removed only afterward (lftp's default — see §9.1), so nobody loading the site mid-deploy gets an `index.html` that points at assets that aren't there yet.
 3. Fetch `https://<VPS_DOMAIN>/` and fail the job unless it is this build's `index.html` — e.g. when HestiaCP's default "web server is ready" page or an old build is being served instead.
-4. Ship `scripts/stack-drift.py` and `supabase/migrations/` to the VPS over SSH and run a read-only check of the database and deployed edge functions against this repo, failing the job loudly if a merged migration or function change hasn't reached production yet. This step always runs, even on a push that only changed `supabase/`. See `docs/SELF_HOSTING_OPS.md` → "Migrations and edge functions on the official stack" for how to apply what it flags. **This step still connects as root** (`VPS_SSH_KEY`) because it needs `docker exec` into the Supabase stack — a broader privilege than serving static files, with its own narrower account tracked separately under #935's full fix, not this one.
+4. Ship `scripts/stack-drift.py`, `supabase/migrations/` and `supabase/functions/` to the VPS over SSH and run a read-only check of the database and deployed edge functions against this repo, failing the job loudly if anything still differs — a cheap second confirmation, since `deploy-backend` (above) already applied everything it found pending before this job even started. **This step connects as root** (`VPS_SSH_KEY`), not the `rm-backend-deploy` account `deploy-backend` uses: it predates that account, and it only ever runs read-only queries and `docker inspect`, never a write, so it hasn't been moved onto the narrower one.
 
 Step 2 connects directly as `rubricmaker`, so files already land owned by that user — no `--chown` or similar is needed (and a non-root SSH session couldn't perform one anyway, which is exactly the point of #404).
 
