@@ -572,6 +572,14 @@ export default function StatisticsPage() {
             .filter((d): d is { test: Test; avgPct: number; submittedCount: number } => d !== null);
     }, [viewMode, selectedClassId, tests, studentTests, students]);
 
+    // Chart-ready shape for the bar chart below — memoized so BarChart (which compares its
+    // `data` prop by reference) doesn't see a new array on every render of this already-memoized
+    // source.
+    const classTestAverageChartData = useMemo(
+        () => classTestAverages.map((d) => ({ name: d.test.name, avg: d.avgPct, n: d.submittedCount })),
+        [classTestAverages]
+    );
+
     // ── Custom Views (Statistics preset gallery) ──────────────────────────────
     const presetData = useMemo<Record<string, PresetChartPoint[]>>(
         () => ({
@@ -1257,11 +1265,7 @@ export default function StatisticsPage() {
                                 </h2>
                                 <ResponsiveContainer width="100%" height={180}>
                                     <BarChart
-                                        data={classTestAverages.map((d) => ({
-                                            name: d.test.name,
-                                            avg: d.avgPct,
-                                            n: d.submittedCount,
-                                        }))}
+                                        data={classTestAverageChartData}
                                         margin={{ top: 0, right: 8, left: 0, bottom: 0 }}
                                     >
                                         <XAxis dataKey="name" tick={{ fontSize: 11 }} />

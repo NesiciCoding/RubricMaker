@@ -277,14 +277,25 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
     // tier is the one on their grade for this rubric, else their class tier; a student with neither
     // gets a group of their own, so two students of unknown tier are never paired as if they matched.
     const pairing = rubric?.tiered ? (rubric.tiered.comparativePairing ?? 'tier') : 'all';
+    // Indexed once per (studentRubrics, rubric) change instead of re-scanning the full
+    // studentRubrics array inside tierKey on every call — tierKey runs up to twice per matchup
+    // inside countable()'s filter, so this was O(matchups x studentRubrics).
+    const gradedByStudentId = useMemo(() => {
+        const map = new Map<string, StudentRubric>();
+        if (!rubric) return map;
+        for (const r of studentRubrics) {
+            if (r.rubricId === rubric.id && !r.isPeerReview && !map.has(r.studentId)) map.set(r.studentId, r);
+        }
+        return map;
+    }, [studentRubrics, rubric]);
     const tierKey = useCallback(
         (s: Student) => {
             if (!rubric?.tiered) return '';
-            const sr = studentRubrics.find((r) => r.rubricId === rubric.id && r.studentId === s.id && !r.isPeerReview);
+            const sr = gradedByStudentId.get(s.id);
             const cls = classes.find((c) => c.id === s.classId);
             return gradeTier(rubric.tiered, sr ?? {}, s, cls)?.id ?? `\u0000${s.id}`;
         },
-        [rubric, studentRubrics, classes]
+        [rubric, gradedByStudentId, classes]
     );
     const groupOf = pairing === 'tier' ? tierKey : undefined;
     // Within tiers, only same-tier matchups count toward progress and each student's limit, so
@@ -437,11 +448,11 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
         if (!srA || !srB || !studentA || !studentB || !rubric) return;
         const tierA = tierOf(studentA, srA);
         const tierB = tierOf(studentB, srB);
-        const snap = JSON.parse(JSON.stringify(rubric));
+        const snap = structuredClone(rubric);
         const snapScaleId = rubric.gradeScaleId ?? settings.defaultGradeScaleId;
         const snapScale =
             snapScaleId === 'none' ? null : (gradeScales.find((g) => g.id === snapScaleId) ?? gradeScales[0]);
-        const gradeScaleSnapshot = snapScale ? JSON.parse(JSON.stringify(snapScale)) : undefined;
+        const gradeScaleSnapshot = snapScale ? structuredClone(snapScale) : undefined;
         const gradedAt = new Date().toISOString();
         const savedSrA = {
             ...srA,
