@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Search, FileText, ClipboardList, User, Users, BookOpen, GraduationCap, Layers, Newspaper } from 'lucide-react';
 import Modal from '../ui/Modal';
 import { useStoreSelector } from '../../context/useStore';
-import { searchAll, type SearchResult, type SearchResultType } from '../../utils/globalSearch';
+import { buildSearchIndex, searchAll, type SearchResult, type SearchResultType } from '../../utils/globalSearch';
 import { EmptyState } from '../ui/EmptyState';
 
 const TYPE_ICONS: Record<SearchResultType, React.ComponentType<{ size?: number }>> = {
@@ -52,18 +52,24 @@ export default function GlobalSearch({ onClose, growFrom }: Props) {
     // rapid keystrokes instead of re-scanning every rubric/test/student on each keypress.
     const deferredQuery = useDeferredValue(query);
 
+    // #1113: index normalized corpus once per data change, query it per keystroke.
+    const searchData = useMemo(
+        () => ({
+            rubrics,
+            tests,
+            students,
+            classes,
+            essayAssignments,
+            flashcardDecks,
+            newsFlashes,
+        }),
+        [rubrics, tests, students, classes, essayAssignments, flashcardDecks, newsFlashes]
+    );
+    const searchIndex = useMemo(() => buildSearchIndex(searchData), [searchData]);
+
     const results = useMemo(
-        () =>
-            searchAll(deferredQuery, {
-                rubrics,
-                tests,
-                students,
-                classes,
-                essayAssignments,
-                flashcardDecks,
-                newsFlashes,
-            }),
-        [deferredQuery, rubrics, tests, students, classes, essayAssignments, flashcardDecks, newsFlashes]
+        () => searchAll(deferredQuery, searchData, searchIndex),
+        [deferredQuery, searchData, searchIndex]
     );
 
     function go(result: SearchResult) {

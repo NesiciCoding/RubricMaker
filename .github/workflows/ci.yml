@@ -44,35 +44,95 @@ jobs:
           fail-on-severity: high
           comment-summary-in-pr: always
 
-  ci:
-    name: Type-check, Lint & Test
+  # #1110: split from the old serial `ci` job so wall-clock drops toward the
+  # slowest single step instead of the sum of all six. Runs in parallel with
+  # `ci` (coverage) and the other static jobs.
+  ci-static-typecheck:
+    name: Static — Type-check
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: read
-      pull-requests: write # required by vitest-coverage-report-action to post PR comments
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           cache: 'npm'
 
+      - name: Restore node_modules
+        id: nm-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-node-24-${{ hashFiles('package-lock.json') }}
+
       - name: Install dependencies
+        if: steps.nm-cache.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Type-check
         run: npm run typecheck
 
-      - name: Type-check shared edge-function modules (Deno)
-        run: npm run typecheck:edge-shared
+  ci-static-lint:
+    name: Static — Lint & Format
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: Restore node_modules
+        id: nm-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-node-24-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.nm-cache.outputs.cache-hit != 'true'
+        run: npm ci
 
       - name: Lint
         run: npm run lint
 
       - name: Format check
         run: npm run format:check
+
+  ci-static-edge:
+    name: Static — Deno, Nginx & Bootstrap
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: Restore node_modules
+        id: nm-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-node-24-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.nm-cache.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: Type-check shared edge-function modules (Deno)
+        run: npm run typecheck:edge-shared
 
       # nginx -t with the same image the Dockerfile ships, for the dev and prod (compose) configs.
       # The compose service names the prod config proxies to are mapped to localhost so they resolve.
@@ -95,6 +155,32 @@ jobs:
             echo "::error file=supabase/bootstrap.sql::bootstrap.sql is stale — run ./scripts/generate-bootstrap.sh and commit the result."
             exit 1
           }
+
+  ci:
+    name: Type-check, Lint & Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write # required by vitest-coverage-report-action to post PR comments
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: Restore node_modules
+        id: nm-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-node-24-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.nm-cache.outputs.cache-hit != 'true'
+        run: npm ci
 
       - name: Test with coverage
         run: npm run coverage
@@ -247,7 +333,15 @@ jobs:
           node-version: 24
           cache: 'npm'
 
+      - name: Restore node_modules
+        id: nm-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-node-24-${{ hashFiles('package-lock.json') }}
+
       - name: Install dependencies
+        if: steps.nm-cache.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Run E2E tests (shard ${{ matrix.shard }}/2)
@@ -283,7 +377,15 @@ jobs:
           node-version: 24
           cache: 'npm'
 
+      - name: Restore node_modules
+        id: nm-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-node-24-${{ hashFiles('package-lock.json') }}
+
       - name: Install dependencies
+        if: steps.nm-cache.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Download blob reports
@@ -332,7 +434,15 @@ jobs:
           node-version: 24
           cache: 'npm'
 
+      - name: Restore node_modules
+        id: nm-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-node-24-${{ hashFiles('package-lock.json') }}
+
       - name: Install dependencies
+        if: steps.nm-cache.outputs.cache-hit != 'true'
         run: npm ci
 
       # Not containerised: `supabase start` needs the host's Docker and ports.
@@ -440,7 +550,15 @@ jobs:
           node-version: 24
           cache: 'npm'
 
+      - name: Restore node_modules
+        id: nm-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-node-24-${{ hashFiles('package-lock.json') }}
+
       - name: Install dependencies
+        if: steps.nm-cache.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Run accessibility gate
@@ -476,7 +594,15 @@ jobs:
           node-version: 24
           cache: 'npm'
 
+      - name: Restore node_modules
+        id: nm-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-node-24-${{ hashFiles('package-lock.json') }}
+
       - name: Install dependencies
+        if: steps.nm-cache.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Build with bundle stats
@@ -507,8 +633,8 @@ jobs:
   deploy-pages:
     name: Deploy to GitHub Pages
     runs-on: ubuntu-latest
-    needs: [ci, e2e, e2e-merge-reports, e2e-supabase, e2e-a11y, bundle]
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.ci.result == 'success' && needs.e2e.result == 'success' && needs['e2e-merge-reports'].result == 'success' && needs['e2e-supabase'].result == 'success' && needs['e2e-a11y'].result == 'success' && needs.bundle.result == 'success' }}
+    needs: [ci, ci-static-typecheck, ci-static-lint, ci-static-edge, e2e, e2e-merge-reports, e2e-supabase, e2e-a11y, bundle]
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.ci.result == 'success' && needs['ci-static-typecheck'].result == 'success' && needs['ci-static-lint'].result == 'success' && needs['ci-static-edge'].result == 'success' && needs.e2e.result == 'success' && needs['e2e-merge-reports'].result == 'success' && needs['e2e-supabase'].result == 'success' && needs['e2e-a11y'].result == 'success' && needs.bundle.result == 'success' }}
     permissions:
       contents: read
       pages: write
@@ -594,8 +720,8 @@ jobs:
   deploy-backend:
     name: Deploy Supabase migrations & edge functions
     runs-on: ubuntu-latest
-    needs: [ci, e2e, e2e-merge-reports, e2e-supabase, e2e-a11y, bundle]
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.ci.result == 'success' && needs.e2e.result == 'success' && needs['e2e-merge-reports'].result == 'success' && needs['e2e-supabase'].result == 'success' && needs['e2e-a11y'].result == 'success' && needs.bundle.result == 'success' }}
+    needs: [ci, ci-static-typecheck, ci-static-lint, ci-static-edge, e2e, e2e-merge-reports, e2e-supabase, e2e-a11y, bundle]
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.ci.result == 'success' && needs['ci-static-typecheck'].result == 'success' && needs['ci-static-lint'].result == 'success' && needs['ci-static-edge'].result == 'success' && needs.e2e.result == 'success' && needs['e2e-merge-reports'].result == 'success' && needs['e2e-supabase'].result == 'success' && needs['e2e-a11y'].result == 'success' && needs.bundle.result == 'success' }}
     environment: production
     timeout-minutes: 20
     steps:
@@ -649,8 +775,8 @@ jobs:
   deploy-hestiacp:
     name: Deploy to HestiaCP VPS
     runs-on: ubuntu-latest
-    needs: [ci, e2e, e2e-merge-reports, e2e-supabase, e2e-a11y, bundle, deploy-backend]
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.ci.result == 'success' && needs.e2e.result == 'success' && needs['e2e-merge-reports'].result == 'success' && needs['e2e-supabase'].result == 'success' && needs['e2e-a11y'].result == 'success' && needs.bundle.result == 'success' && needs['deploy-backend'].result == 'success' }}
+    needs: [ci, ci-static-typecheck, ci-static-lint, ci-static-edge, e2e, e2e-merge-reports, e2e-supabase, e2e-a11y, bundle, deploy-backend]
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.ci.result == 'success' && needs['ci-static-typecheck'].result == 'success' && needs['ci-static-lint'].result == 'success' && needs['ci-static-edge'].result == 'success' && needs.e2e.result == 'success' && needs['e2e-merge-reports'].result == 'success' && needs['e2e-supabase'].result == 'success' && needs['e2e-a11y'].result == 'success' && needs.bundle.result == 'success' && needs['deploy-backend'].result == 'success' }}
     environment: production
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
