@@ -20,7 +20,12 @@ import { estimatePlacement } from '../utils/placementResult';
 import { isNumericNorm, normTierLabel, resolveTestGrade, resolveTestScale, testNorm } from '../utils/testGradingNorm';
 import { stripHtmlTags } from '../utils/exportDataPrep';
 import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse';
-import { alignDictation, answersMatch, parseErrorPassage } from '../../supabase/functions/_shared/testScoring';
+import {
+    alignDictation,
+    answersMatch,
+    parseErrorPassage,
+    sentenceBuilderText,
+} from '../../supabase/functions/_shared/testScoring';
 import { calcTestTimeOnTask } from '../utils/proctorAggregator';
 import { parseAudioResponse } from '../utils/audioResponseCode';
 import { parseErrorPicks, parsePlacedWords } from '../utils/answerResponseParsers';
@@ -335,7 +340,7 @@ function formatStudentResponse(
             <>
                 <div>{placed.join(' ')}</div>
                 <div className="text-muted" style={{ marginTop: 4 }}>
-                    {(question.sentenceTargets ?? []).join(' / ')}
+                    {(question.sentenceTargets ?? []).map(sentenceBuilderText).join(' / ')}
                 </div>
             </>
         );

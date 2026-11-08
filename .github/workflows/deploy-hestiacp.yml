@@ -45,39 +45,41 @@ jobs:
           # flag, not sensitive data).
           VITE_STRESS_TEST_LOGGING: ${{ vars.VITE_STRESS_TEST_LOGGING }}
 
-      - name: Deploy via rsync
-        uses: burnett01/rsync-deployments@2cbb5ed94b73d111d07a40b071b1c7d3c0272435 # v9.0.2
-        with:
-          # rsync -a preserves the source's numeric owner/group. The GitHub runner's
-          # files are uid/gid 1001, which maps to `hestiamail` on the HestiaCP box, so
-          # without --chown the deployed files end up owned by the wrong user (not the
-          # `rubricmaker` web-domain user). That mismatch can trip HestiaCP's
-          # domain-repair/rebuild, which re-drops the default skeleton index.html into
-          # the docroot. --chown forces the correct owner on the receiving side (rsync
-          # runs as root here, so it's allowed).
-          # --delay-updates + --delete-after: new files land in place together at the end and
-          # old ones go only after that, so a visitor (or the service worker installing) mid-deploy
-          # never gets an index.html pointing at assets that aren't there yet. The protect filter
-          # keeps --delete from removing the server's .htaccess (uploaded by the next step) while
-          # still deploying one that is shipped inside dist/.
-          switches: -avz --delete-after --delay-updates --filter='P /.htaccess' --chown=rubricmaker:rubricmaker
-          path: dist/
-          # HestiaCP web root: /home/<user>/web/<domain>/public_html/
-          remote_path: /home/rubricmaker/web/${{ secrets.VPS_DOMAIN }}/public_html/
-          remote_host: ${{ secrets.VPS_HOST }}
-          remote_user: root
-          remote_key: ${{ secrets.VPS_SSH_KEY }}
+      # #404: the `rubricmaker` HestiaCP user is locked to SFTP at the server level — that
+      # overrides anything in authorized_keys (a forced rsync command never gets a chance to
+      # run), so rsync-over-SSH is not possible here at all. lftp's sftp:// backend speaks
+      # plain SFTP (list/put/delete), which this restricted account does allow; it shells out
+      # to the system ssh for the actual connection (sftp:connect-program), so the key and
+      # host-key handling below mirror the drift-check step further down.
+      # deploy/.htaccess is copied into dist/ first so one mirror pass carries both — it's
+      # not the same file Vite would otherwise copy from public/.htaccess (that one's stale;
+      # deploy/.htaccess has this deployment's real CSP and the asset-404 rewrite).
+      # mirror's default (no --delete-first) deletes extraneous remote files only *after*
+      # transferring new/changed ones, matching rsync's --delete-after: nobody loading the
+      # site mid-deploy gets an index.html pointing at assets that aren't there yet.
+      - name: Deploy via SFTP
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_DOMAIN: ${{ secrets.VPS_DOMAIN }}
+          VPS_DEPLOY_SSH_KEY: ${{ secrets.VPS_DEPLOY_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq lftp
+          cp deploy/.htaccess dist/.htaccess
 
-      - name: Upload .htaccess
-        uses: burnett01/rsync-deployments@2cbb5ed94b73d111d07a40b071b1c7d3c0272435 # v9.0.2
-        with:
-          # Same ownership fix as the dist/ rsync above.
-          switches: -avz --chown=rubricmaker:rubricmaker
-          path: deploy/.htaccess
-          remote_path: /home/rubricmaker/web/${{ secrets.VPS_DOMAIN }}/public_html/.htaccess
-          remote_host: ${{ secrets.VPS_HOST }}
-          remote_user: root
-          remote_key: ${{ secrets.VPS_SSH_KEY }}
+          key_file=$(mktemp)
+          trap 'rm -f "$key_file"' EXIT
+          printf '%s\n' "$VPS_DEPLOY_SSH_KEY" > "$key_file"
+          chmod 600 "$key_file"
+
+          lftp -u rubricmaker, "sftp://${VPS_HOST}" <<SFTP
+          set cmd:fail-exit true
+          set sftp:connect-program "ssh -a -x -i $key_file -o StrictHostKeyChecking=accept-new -o BatchMode=yes"
+          set mirror:parallel-transfer-count 4
+          mirror --reverse --delete --verbose dist/ /home/rubricmaker/web/${VPS_DOMAIN}/public_html/
+          bye
+          SFTP
 
       - name: Verify the live site serves RubricMaker
         env:
@@ -98,3 +100,39 @@ jobs:
           done
           echo "::error::https://${VPS_DOMAIN}/ is not serving this build's index.html after deploy (HestiaCP default page or stale docroot?)"
           exit 1
+
+      # Mirrors the drift check in ci.yml's deploy-hestiacp job — see that job's comment and
+      # docs/SELF_HOSTING_OPS.md "Migrations and edge functions on the official stack" (#935).
+      - name: Check Supabase migration & edge-function drift
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          key_file=$(mktemp)
+          remote_dir="/root/.rm-ci-stack-drift-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          cleanup() {
+            ssh -i "$key_file" -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 -o BatchMode=yes \
+                "root@${VPS_HOST}" "rm -rf '$remote_dir'" >/dev/null 2>&1 || true
+            rm -f "$key_file"
+          }
+          trap cleanup EXIT
+          printf '%s\n' "$VPS_SSH_KEY" > "$key_file"
+          chmod 600 "$key_file"
+          ssh_opts=(-i "$key_file" -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 -o BatchMode=yes)
+
+          ssh "${ssh_opts[@]}" "root@${VPS_HOST}" "mkdir -p '$remote_dir/scripts' '$remote_dir/supabase/migrations'"
+          scp "${ssh_opts[@]}" scripts/stack-drift.py "root@${VPS_HOST}:$remote_dir/scripts/stack-drift.py"
+          scp "${ssh_opts[@]}" supabase/migrations/*.sql "root@${VPS_HOST}:$remote_dir/supabase/migrations/"
+          scp -r "${ssh_opts[@]}" supabase/functions "root@${VPS_HOST}:$remote_dir/supabase/"
+
+          set +e
+          ssh "${ssh_opts[@]}" "root@${VPS_HOST}" "python3 '$remote_dir/scripts/stack-drift.py' check --repo-dir '$remote_dir'"
+          status=$?
+          set -e
+
+          if [ "$status" -ne 0 ]; then
+            echo "::error::Production's database and/or deployed edge functions have drifted from supabase/ in this repo (stack-drift.py exit $status — see output above). Apply pending migrations with 'stack-drift.py apply' and/or redeploy functions with 'scripts/deploy-edge-functions.sh' on the VPS, then re-run this job."
+            exit 1
+          fi
+          echo "Production's database and edge functions match this repository."

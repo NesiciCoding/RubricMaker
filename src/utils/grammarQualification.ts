@@ -1,6 +1,7 @@
 import type { TFunction } from 'i18next';
 import type { LinkedFrameworkDescriptor } from '../types';
 import { detectGrammar } from './grammarChecker';
+import { detectMechanics, isMechanicsShorthand } from './mechanicsChecker';
 import { getGrammarItemById } from '../data/grammarStandards';
 import { constructionsForItem } from '../data/grammarLinkerMap';
 
@@ -14,9 +15,12 @@ export interface GrammarItemResult {
     categoryLabelNl: string;
     autoDetectable: boolean;
     found: boolean;
+    /** Correct uses of the structure or mark */
     occurrences: number;
+    /** Punctuation/capitals items only: how often the rule was broken. Such an item is found only when used without mistakes. */
+    mistakes?: number;
     /** Which detector produced the count; undefined for items that need a manual check */
-    detectedBy?: 'ud' | 'compromise';
+    detectedBy?: 'ud' | 'compromise' | 'mechanics';
 }
 
 export interface GrammarQualificationResult {
@@ -53,14 +57,23 @@ export function evaluateGrammar(
         .filter((d) => !udIds(d))
         .map((d) => itemFor(d)?.detectShorthand)
         .filter((s): s is string => !!s);
-    const counts = detectGrammar(text, shorthands);
+    const counts = detectGrammar(
+        text,
+        shorthands.filter((s) => !isMechanicsShorthand(s))
+    );
+    const mechanics = detectMechanics(text, shorthands);
 
     const items: GrammarItemResult[] = grammar.map((d) => {
         const shorthand = itemFor(d)?.detectShorthand;
         const ids = udIds(d);
         let occurrences = 0;
+        let mistakes: number | undefined;
         let detectedBy: GrammarItemResult['detectedBy'];
-        if (ids) {
+        if (shorthand && mechanics[shorthand]) {
+            occurrences = mechanics[shorthand].uses;
+            mistakes = mechanics[shorthand].mistakes;
+            detectedBy = 'mechanics';
+        } else if (ids) {
             occurrences = ids.reduce((n, id) => n + (udCounts?.[id] ?? 0), 0);
             detectedBy = 'ud';
         } else if (shorthand) {
@@ -75,8 +88,9 @@ export function evaluateGrammar(
             categoryLabelEn: d.categoryLabelEn,
             categoryLabelNl: d.categoryLabelNl,
             autoDetectable: !!detectedBy,
-            found: !!detectedBy && occurrences >= DEMONSTRATED_THRESHOLD,
+            found: !!detectedBy && occurrences >= DEMONSTRATED_THRESHOLD && !mistakes,
             occurrences,
+            ...(mistakes !== undefined && { mistakes }),
             detectedBy,
         };
     });
@@ -93,6 +107,12 @@ export function evaluateGrammar(
     };
 }
 
+/** "4× used, 2 mistakes" for punctuation/capitals items; undefined for items that only count uses. */
+export function mechanicsSummary(item: GrammarItemResult, t: TFunction): string | undefined {
+    if (item.mistakes === undefined) return undefined;
+    return t('analysis.mechanics_summary', { uses: item.occurrences, count: item.mistakes });
+}
+
 // Fixed labels come from i18n (localised for all UI languages); the grammar
 // descriptions only exist in en/nl, so descLang selects between those two.
 export function buildGrammarComment(result: GrammarQualificationResult, t: TFunction, descLang: DescLang): string {
@@ -105,6 +125,9 @@ export function buildGrammarComment(result: GrammarQualificationResult, t: TFunc
         const desc = descLang === 'nl' ? i.descriptionNl : i.descriptionEn;
         const label = `${cat} — ${desc}`;
         if (!i.autoDetectable) return `<li>⊘ ${label} (${manual})</li>`;
+        const summary = mechanicsSummary(i, t);
+        if (summary && (i.occurrences > 0 || (i.mistakes ?? 0) > 0))
+            return `<li>${i.found ? '✔' : '✘'} ${label} (${summary})</li>`;
         if (i.found) return `<li>✔ ${label} (${i.occurrences}×)</li>`;
         return `<li>✘ ${label}: ${notFound}</li>`;
     });

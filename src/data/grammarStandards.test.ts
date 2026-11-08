@@ -5,6 +5,7 @@ import {
     getGrammarItemById,
     grammarItemToFrameworkDescriptor,
 } from './grammarStandards';
+import { MECHANICS_RULES, isMechanicsShorthand } from '../utils/mechanicsChecker';
 
 describe('grammarStandards', () => {
     it('filters items by CEFR level', () => {
@@ -43,6 +44,19 @@ describe('grammarStandards', () => {
         const beLabels = GRAMMAR_CATEGORIES.find((c) => c.id === 'verb-be')!.items.map((i) => i.labelEn);
         expect(beLabels.some((label) => /there is/i.test(label))).toBe(false);
         expect(getGrammarItemById('gr-existential-there')).toBeDefined();
+    });
+
+    it('has an auto-detected punctuation & capitals category', () => {
+        const mechanics = GRAMMAR_CATEGORIES.find((c) => c.id === 'mechanics');
+        expect(mechanics).toBeDefined();
+        for (const item of mechanics!.items) {
+            expect(item.id).toMatch(/^gr-mech-/);
+            expect(item.labelNl).toBeTruthy();
+            expect(item.examplesEn?.length).toBeGreaterThan(0);
+            expect(isMechanicsShorthand(item.detectShorthand ?? ''), item.id).toBe(true);
+        }
+        const used = new Set(mechanics!.items.map((i) => i.detectShorthand));
+        expect(Object.keys(MECHANICS_RULES).every((sh) => used.has(sh))).toBe(true);
     });
 
     it('looks up an item by id', () => {
