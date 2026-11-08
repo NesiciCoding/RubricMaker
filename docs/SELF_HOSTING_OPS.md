@@ -274,31 +274,38 @@ ssh root@YOUR_VPS_IP "printf '%s\n' 'no-pty,no-port-forwarding,no-X11-forwarding
 
 Confirm it connects and has no `sudo` access yet: `ssh -i ~/.ssh/rm_backend_deploy rm-backend-deploy@YOUR_VPS_IP whoami` should print `rm-backend-deploy`; `... sudo -n true` should fail (`sudo: a password is required`) until the next step.
 
-**3. Install the wrapper script and the sudoers rule** (as root):
+**3. Install the wrapper script, the tools it runs, and the sudoers rule** (as root):
+
+`ci-backend-deploy.sh` deliberately does not execute `stack-drift.py` or `deploy-edge-functions.sh`
+from the CI-writable staging directory — if it did, the `rm-backend-deploy` account could replace
+either file and get root to run it, which would defeat the point of restricting that account to one
+script. So all three files are installed together here, the same way, as root:
 
 ```bash
-# From a checkout of this repository on the server (or scp the one file over):
+# From a checkout of this repository on the server (or scp the files over):
+install -d -m 755 -o root -g root /usr/local/lib/rm-backend-deploy
+install -m 644 -o root -g root scripts/stack-drift.py scripts/deploy-edge-functions.sh /usr/local/lib/rm-backend-deploy/
 install -m 755 -o root -g root scripts/ci-backend-deploy.sh /usr/local/sbin/rm-backend-deploy.sh
 
 cat > /etc/sudoers.d/rm-backend-deploy <<'EOF'
-rm-backend-deploy ALL=(root) NOPASSWD: /usr/local/sbin/rm-backend-deploy.sh
+rm-backend-deploy ALL=(root) NOPASSWD: /usr/local/sbin/rm-backend-deploy.sh ""
 EOF
 chmod 440 /etc/sudoers.d/rm-backend-deploy
 visudo -c   # validates every file under /etc/sudoers.d — fix before moving on if this reports an error
 ```
 
-The sudoers entry takes **no arguments** — `rm-backend-deploy.sh` always reads from the fixed path
-`/home/rm-backend-deploy/incoming` (overridable via `INCOMING` for manual testing), which CI populates
-with an SSH file copy before invoking `sudo`. That file copy needs no privilege of its own: it's just
-`rm-backend-deploy` writing into its own home directory.
+The trailing `""` on the sudoers line matters: a command entry with no argument list at all still lets
+the caller pass arbitrary arguments, so without it "no arguments" wouldn't actually be enforced.
+`rm-backend-deploy.sh` always reads *data* from the fixed path `/home/rm-backend-deploy/incoming`
+(overridable via `INCOMING` for manual testing) and the *tools* from `/usr/local/lib/rm-backend-deploy`
+(overridable via `TOOLS_DIR`) — CI populates only the former, over a plain SSH file copy that needs no
+privilege of its own (`rm-backend-deploy` writing into its own home directory).
 
-**4. Test the whole path by hand** before wiring up CI — stage a snapshot the same way CI will, as the
-restricted user (no root needed for this part):
+**4. Test the whole path by hand** before wiring up CI — stage a data snapshot the same way CI will,
+as the restricted user (no root needed for this part — it's never given the tool scripts):
 
 ```bash
-ssh -i ~/.ssh/rm_backend_deploy rm-backend-deploy@YOUR_VPS_IP "mkdir -p ~/incoming/scripts ~/incoming/supabase/migrations"
-scp -i ~/.ssh/rm_backend_deploy scripts/stack-drift.py scripts/deploy-edge-functions.sh \
-  rm-backend-deploy@YOUR_VPS_IP:incoming/scripts/
+ssh -i ~/.ssh/rm_backend_deploy rm-backend-deploy@YOUR_VPS_IP "mkdir -p ~/incoming/supabase/migrations"
 scp -i ~/.ssh/rm_backend_deploy supabase/migrations/*.sql \
   rm-backend-deploy@YOUR_VPS_IP:incoming/supabase/migrations/
 scp -i ~/.ssh/rm_backend_deploy -r supabase/functions rm-backend-deploy@YOUR_VPS_IP:incoming/supabase/
@@ -323,8 +330,9 @@ Secret name : VPS_BACKEND_SSH_KEY
 Secret value: (paste the entire contents of ~/.ssh/rm_backend_deploy, including the -----BEGIN----- lines)
 ```
 
-**Updating the wrapper script later:** re-run step 3's `install` line after pulling the new version — it
-overwrites the file in place; the sudoers rule doesn't change.
+**Updating the wrapper or tool scripts later:** re-run step 3's three `install` lines after pulling the
+new versions — they overwrite the files in place; the sudoers rule doesn't change unless the wrapper's
+path does.
 
 ---
 

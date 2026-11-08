@@ -579,15 +579,18 @@ jobs:
   # cheap second confirmation, over the unrelated root key).
   #
   # Uses a narrowly scoped account (`rm-backend-deploy`) — never root, never docker-group
-  # membership: it stages this snapshot of scripts/ and supabase/ into that account's own
-  # home directory over a plain SSH file copy (no privilege needed for that part), then runs
-  # exactly one command through sudo — a fixed, no-argument wrapper script
-  # (scripts/ci-backend-deploy.sh, installed on the VPS at
+  # membership: it stages only the *data* to deploy (supabase/migrations/,
+  # supabase/functions/) into that account's own home directory over a plain SSH file copy
+  # (no privilege needed for that part), then runs exactly one command through sudo — a
+  # fixed, no-argument wrapper script (scripts/ci-backend-deploy.sh, installed on the VPS at
   # /usr/local/sbin/rm-backend-deploy.sh) that itself calls stack-drift.py apply and
-  # deploy-edge-functions.sh as root. See docs/SELF_HOSTING_OPS.md → "Migrations and edge
-  # functions on the official stack" → "Deploying from CI (#935)" for how that account and
-  # sudo rule are provisioned. Both underlying scripts no-op cleanly when nothing is pending,
-  # so this runs on every deploy, not only ones that touched supabase/.
+  # deploy-edge-functions.sh as root. Deliberately not shipped here: those two tool scripts
+  # themselves — they're root-installed on the VPS instead, so the CI-writable account can
+  # change what gets deployed, never the deploy logic that runs as root. See
+  # docs/SELF_HOSTING_OPS.md → "Migrations and edge functions on the official stack" →
+  # "Deploying from CI (#935)" for how that account, the tools and the sudo rule are
+  # provisioned. Both underlying scripts no-op cleanly when nothing is pending, so this runs
+  # on every deploy, not only ones that touched supabase/.
   deploy-backend:
     name: Deploy Supabase migrations & edge functions
     runs-on: ubuntu-latest
@@ -617,8 +620,12 @@ jobs:
           # deploy doesn't linger and get miscounted as "still in the repo" by the diff
           # deploy-edge-functions.sh computes (it never deletes a server-only directory
           # either way, by design — this just keeps that diff accurate).
-          ssh "${ssh_opts[@]}" "$remote" "rm -rf ~/incoming && mkdir -p ~/incoming/scripts ~/incoming/supabase/migrations"
-          scp "${ssh_opts[@]}" scripts/stack-drift.py scripts/deploy-edge-functions.sh "$remote:incoming/scripts/"
+          #
+          # Only data (migrations, function source) lands here — never the tool scripts
+          # that apply it. Those run as root from a separate, root-installed location on
+          # the VPS, specifically so this CI-writable account can't get root to run
+          # whatever it just staged (see ci-backend-deploy.sh's own comment).
+          ssh "${ssh_opts[@]}" "$remote" "rm -rf ~/incoming && mkdir -p ~/incoming/supabase/migrations"
           scp "${ssh_opts[@]}" supabase/migrations/*.sql "$remote:incoming/supabase/migrations/"
           scp -r "${ssh_opts[@]}" supabase/functions "$remote:incoming/supabase/"
 
