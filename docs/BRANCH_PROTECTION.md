@@ -70,13 +70,17 @@ The `deploy-hestiacp` job (in `ci.yml`) runs in the
   for `main`. This blocks accidental manual deploys of feature branches.
 - **Deployment timeout** — leave the default (30 min) or lower it; deploys are
   quick file transfers.
-- **Environment secrets** — `VPS_HOST`, `VPS_DEPLOY_SSH_KEY`, `VPS_SSH_KEY`,
-  `VPS_DOMAIN`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`,
-  `SUPABASE_PUBLIC_URL` (HestiaCP only) live here and are only injected into
-  jobs that use this environment. `VPS_DEPLOY_SSH_KEY` is the dedicated
-  `rubricmaker` key the file deploy uses over SFTP (see `HESTIACP_SETUP.md`
-  §9.1, #404) — that account is locked to SFTP at the server level, with no
-  shell access at all; `VPS_SSH_KEY` (root) is read only by the
+- **Environment secrets** — `VPS_HOST`, `VPS_DEPLOY_SSH_KEY`,
+  `VPS_BACKEND_SSH_KEY`, `VPS_SSH_KEY`, `VPS_DOMAIN`, `VITE_SUPABASE_URL`,
+  `VITE_SUPABASE_ANON_KEY`, `SUPABASE_PUBLIC_URL` (HestiaCP only) live here
+  and are only injected into jobs that use this environment.
+  `VPS_DEPLOY_SSH_KEY` is the dedicated `rubricmaker` key the file deploy
+  uses over SFTP (see `HESTIACP_SETUP.md` §9.1, #404) — that account is
+  locked to SFTP at the server level, with no shell access at all.
+  `VPS_BACKEND_SSH_KEY` is the dedicated `rm-backend-deploy` key
+  `deploy-backend` uses (see `SELF_HOSTING_OPS.md` → "Deploying from CI
+  (#935)") — that account can run exactly one fixed, no-argument script as
+  root through sudo, nothing else. `VPS_SSH_KEY` (root) is read only by the
   migration/function drift-check step, which needs `docker exec`.
 
 ### How approval interacts with the pipeline
