@@ -124,7 +124,8 @@ export default function ExportPage() {
     const [bulkCommentText, setBulkCommentText] = useState('');
 
     // ── Period report state ────────────────────────────────────────────────────
-    const [reportClassId, setReportClassId] = useState('');
+    // F15: start on the globally selected class so Export agrees with the Topbar selector.
+    const [reportClassId, setReportClassId] = useState(settings.activeClassId ?? '');
     const [reportStudentIds, setReportStudentIds] = useState<Set<string>>(new Set());
     const [reportDateFrom, setReportDateFrom] = useState('');
     const [reportDateTo, setReportDateTo] = useState('');

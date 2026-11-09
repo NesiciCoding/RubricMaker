@@ -64,9 +64,10 @@ export default function Topbar({ title, actions, classSelector = false }: Topbar
                 <select
                     className="topbar-class-select"
                     aria-label={t('search.active_class_label')}
+                    title={classes.find((c) => c.id === settings.activeClassId)?.name ?? t('search.all_classes')}
                     value={settings.activeClassId ?? ''}
                     onChange={(e) => updateSettings({ activeClassId: e.target.value || undefined })}
-                    style={{ maxWidth: 160 }}
+                    style={{ maxWidth: 160, textOverflow: 'ellipsis', overflow: 'hidden' }}
                 >
                     <option value="">{t('search.all_classes')}</option>
                     {classes.map((c) => (

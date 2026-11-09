@@ -1,11 +1,13 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FileQuestion } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 
 export default function NotFoundPage() {
     const { t } = useTranslation();
+    const navigate = useNavigate();
+    const location = useLocation();
     return (
         <>
             <Topbar title={t('tooltips.page_not_found')} />
@@ -27,9 +29,19 @@ export default function NotFoundPage() {
                 <p style={{ color: 'var(--text-muted)', maxWidth: '360px', fontSize: '0.9rem' }}>
                     {t('notFound.body')}
                 </p>
-                <Link to="/" className="btn btn-primary" style={{ marginTop: '0.5rem' }}>
-                    {t('notFound.go_dashboard')}
-                </Link>
+                <p style={{ color: 'var(--text-dim)', maxWidth: '360px', fontSize: '0.8rem', fontFamily: 'monospace' }}>
+                    {location.pathname}
+                </p>
+                <div
+                    style={{ display: 'flex', gap: 8, marginTop: '0.5rem', flexWrap: 'wrap', justifyContent: 'center' }}
+                >
+                    <button className="btn btn-secondary" onClick={() => navigate(-1)}>
+                        {t('notFound.go_back', { defaultValue: 'Go back' })}
+                    </button>
+                    <Link to="/" className="btn btn-primary">
+                        {t('notFound.go_dashboard')}
+                    </Link>
+                </div>
             </div>
         </>
     );

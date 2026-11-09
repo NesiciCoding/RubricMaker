@@ -47,8 +47,10 @@ describe('PrivacyPage (#619)', () => {
         for (const link of external) {
             // jsdom 31 resolves var() in computed style; assert the declared inline style instead.
             expect(link.style.color).toBe('var(--text)');
-            // jsdom expands the shorthand into longhands when other decoration props are set.
-            expect(link.style.textDecorationLine).toBe('underline');
+            // jsdom 30 keeps text-decoration as an unexpanded shorthand while jsdom 31
+            // exposes textDecorationLine; accept either spelling of the same requirement.
+            const line = link.style.textDecorationLine || link.style.textDecoration;
+            expect(line).toMatch(/underline/);
         }
     });
 });

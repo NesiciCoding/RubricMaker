@@ -48,7 +48,7 @@ interface RouteNode {
 
 // ── Route tree ─────────────────────────────────────────────────────────────────
 
-function getRouteTree(t: TFunction): RouteNode[] {
+export function getRouteTree(t: TFunction): RouteNode[] {
     return [
         {
             path: '/',
@@ -138,6 +138,14 @@ function getRouteTree(t: TFunction): RouteNode[] {
                     path: '/tests/:testId/results/:studentTestId',
                     label: t('docs.route_test_results_label'),
                     description: t('docs.route_test_results_desc'),
+                    color: '#3b82f6',
+                },
+                {
+                    path: '/tests/:testId/grade',
+                    label: t('docs.route_test_queue_label', { defaultValue: 'Test grading queue' }),
+                    description: t('docs.route_test_queue_desc', {
+                        defaultValue: 'Grade open-ended test answers, then continue to the next student.',
+                    }),
                     color: '#3b82f6',
                 },
                 {
@@ -366,12 +374,20 @@ function getRouteTree(t: TFunction): RouteNode[] {
             color: '#94a3b8',
             badge: 'public',
         },
+        {
+            path: '/docs',
+            label: t('docs.route_docs_label', { defaultValue: 'Docs' }),
+            description: t('docs.route_docs_desc', {
+                defaultValue: 'This documentation — route map and guides for every page.',
+            }),
+            color: '#94a3b8',
+        },
     ];
 }
 
 // ── Docs sections ──────────────────────────────────────────────────────────────
 
-function getTabs(t: TFunction): { id: TabId; label: string; icon: React.ElementType }[] {
+export function getDocsTabs(t: TFunction): { id: TabId; label: string; icon: React.ElementType }[] {
     return [
         { id: 'route-map', label: t('docs.tab_route_map'), icon: Map },
         { id: 'getting-started', label: t('docs.tab_getting_started'), icon: CheckCircle },
@@ -2015,10 +2031,25 @@ const TAB_CONTENT: Record<TabId, React.ReactNode> = {
 
 // ── Main page ──────────────────────────────────────────────────────────────────
 
+export function getDocsRoutePaths(t: TFunction): string[] {
+    const out: string[] = [];
+    const walk = (nodes: RouteNode[]) => {
+        for (const n of nodes) {
+            out.push(n.path);
+            if (n.children) walk(n.children);
+        }
+    };
+    walk(getRouteTree(t));
+    return out;
+}
+
 export default function DocsPage() {
     const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState<TabId>('getting-started');
-    const tabs = getTabs(t);
+    const [filter, setFilter] = useState('');
+    const tabs = getDocsTabs(t);
+    const q = filter.trim().toLowerCase();
+    const visibleTabs = q ? tabs.filter((tab) => tab.label.toLowerCase().includes(q)) : tabs;
 
     return (
         <>
@@ -2057,7 +2088,31 @@ export default function DocsPage() {
                         >
                             {t('docs.section_title')}
                         </div>
-                        {tabs.map(({ id, label, icon: Icon }) => (
+                        <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)' }}>
+                            <input
+                                type="search"
+                                value={filter}
+                                onChange={(e) => setFilter(e.target.value)}
+                                placeholder={t('docs.filter_placeholder', { defaultValue: 'Filter sections…' })}
+                                aria-label={t('docs.filter_label', { defaultValue: 'Filter documentation sections' })}
+                                style={{
+                                    width: '100%',
+                                    boxSizing: 'border-box',
+                                    padding: '7px 10px',
+                                    borderRadius: 8,
+                                    border: '1px solid var(--border)',
+                                    background: 'var(--bg, transparent)',
+                                    color: 'var(--text)',
+                                    fontSize: '0.82rem',
+                                }}
+                            />
+                        </div>
+                        {visibleTabs.length === 0 && (
+                            <div style={{ padding: '12px 14px', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                                {t('docs.filter_empty', { defaultValue: 'No sections match.' })}
+                            </div>
+                        )}
+                        {visibleTabs.map(({ id, label, icon: Icon }) => (
                             <button
                                 key={id}
                                 onClick={() => setActiveTab(id)}

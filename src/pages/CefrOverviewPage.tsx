@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { BookOpen, Award, Users, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -63,7 +63,15 @@ export default function CefrOverviewPage() {
               ? t('cefrOverview.cell_developing')
               : t('cefrOverview.cell_not_started');
 
-    const [selectedClassId, setSelectedClassId] = useState<string>('all');
+    // F15: follow the global Topbar class selector so the CEFR overview opens on the
+    // same class the teacher picked elsewhere (Dashboard, Students, Statistics).
+    const [selectedClassId, setSelectedClassId] = useState<string>(() =>
+        settings.activeClassId && classes.some((c) => c.id === settings.activeClassId) ? settings.activeClassId : 'all'
+    );
+    useEffect(() => {
+        if (!settings.activeClassId) setSelectedClassId('all');
+        else if (classes.some((c) => c.id === settings.activeClassId)) setSelectedClassId(settings.activeClassId);
+    }, [settings.activeClassId, classes]);
     const [selectedStudentId, setSelectedStudentId] = useState<string>('');
     const [viewMode, setViewMode] = useState<'class' | 'student'>('class');
     const [tourRun, setTourRun] = useState(false);

@@ -45,7 +45,7 @@ export default function PrivacyPage({ studentPortalPath }: { studentPortalPath?:
                     <Shield size={22} style={{ color: 'var(--accent-text)' }} />
                 </div>
                 <div>
-                    <h2 style={{ margin: 0 }}>Privacy &amp; Gegevensbescherming</h2>
+                    <h2 style={{ margin: 0 }}>{t('privacy.heading', { defaultValue: 'Privacy & Data Protection' })}</h2>
                     <p className="text-muted text-sm" style={{ margin: '4px 0 0' }}>
                         This document explains how Rubric Maker handles personal data in accordance with the General
                         Data Protection Regulation (GDPR) and the Dutch implementation, the Algemene Verordening
@@ -54,9 +54,41 @@ export default function PrivacyPage({ studentPortalPath }: { studentPortalPath?:
                 </div>
             </div>
 
+            {/* F12: mini TOC */}
+            <nav
+                aria-label={t('privacy.toc_label', { defaultValue: 'On this page' })}
+                className="card"
+                style={{ marginBottom: 20, padding: '12px 16px' }}
+            >
+                <div style={{ fontSize: '0.78rem', fontWeight: 700, marginBottom: 8 }}>
+                    {t('privacy.toc_label', { defaultValue: 'On this page' })}
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, fontSize: '0.82rem' }}>
+                    {[
+                        ['privacy-controller', t('privacy.s1_title', { defaultValue: '1. Data Controller' })],
+                        ['privacy-data', t('privacy.s2_title', { defaultValue: '2. What personal data' })],
+                        ['privacy-storage', t('privacy.s3_title', { defaultValue: '3. Storage' })],
+                        ['privacy-legal', t('privacy.s4_title', { defaultValue: '4. Legal basis' })],
+                        ['privacy-retention', t('privacy.s5_title', { defaultValue: '5. Retention' })],
+                        ['privacy-erasure', t('privacy.s6_title', { defaultValue: '6. Erasure' })],
+                        ['privacy-portability', t('privacy.s7_title', { defaultValue: '7. Portability' })],
+                        ['privacy-audio', t('privacy.s8_title', { defaultValue: '8. Audio' })],
+                        ['privacy-authority', t('privacy.s9_title', { defaultValue: '9. Authority' })],
+                        ['privacy-contact', t('privacy.s10_title', { defaultValue: '10. Contact' })],
+                        ['privacy-oss', t('privacy.oss_title', { defaultValue: 'Attributions' })],
+                    ].map(([id, label]) => (
+                        <a key={id} href={`#${id}`} style={LINK_STYLE}>
+                            {label}
+                        </a>
+                    ))}
+                </div>
+            </nav>
+
             {/* 1. Controller */}
             <div className="card" style={{ marginBottom: 20 }}>
-                <h3 style={{ marginBottom: 12 }}>1. Verwerkingsverantwoordelijke / Data Controller</h3>
+                <h3 id="privacy-controller" style={{ marginBottom: 12 }}>
+                    {t('privacy.s1_title', { defaultValue: '1. Data Controller' })}
+                </h3>
                 <p className="text-sm" style={{ margin: 0 }}>
                     Rubric Maker is a tool-only application — it does not operate its own servers by default. The{' '}
                     <strong>teacher or educational institution</strong> that deploys and uses this application acts as
@@ -68,66 +100,85 @@ export default function PrivacyPage({ studentPortalPath }: { studentPortalPath?:
 
             {/* 2. Personal data */}
             <div className="card" style={{ marginBottom: 20 }}>
-                <h3 style={{ marginBottom: 12 }}>2. Welke persoonsgegevens worden verwerkt?</h3>
+                <h3 id="privacy-data" style={{ marginBottom: 12 }}>
+                    {t('privacy.s2_title', { defaultValue: '2. What personal data is processed?' })}
+                </h3>
                 <p className="text-sm text-muted" style={{ marginBottom: 12 }}>
                     The following categories of personal data may be stored:
                 </p>
-                <table style={{ width: '100%', fontSize: '0.85rem', borderCollapse: 'collapse' }}>
-                    <thead>
-                        <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                            <th style={{ textAlign: 'left', padding: '6px 8px', fontWeight: 600 }}>Category</th>
-                            <th style={{ textAlign: 'left', padding: '6px 8px', fontWeight: 600 }}>Data fields</th>
-                            <th style={{ textAlign: 'left', padding: '6px 8px', fontWeight: 600 }}>Sensitivity</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {[
-                            ['Student identity', 'Name (required), email address (optional)', 'Personal data'],
-                            ['Grades & feedback', 'Criterion scores, written comments, overall grade', 'Personal data'],
-                            ['Self-assessments', 'Student self-ratings, reflection text', 'Personal data'],
-                            [
-                                'Speaking sessions',
-                                'Criterion grades, pronunciation marks, criterion audio recordings',
-                                'Special (audio/biometric)',
-                            ],
-                            ['Peer reviews', 'Scores and comments submitted by peers', 'Personal data'],
-                            ['Uploaded work', 'Essay text, documents, images uploaded as evidence', 'Personal data'],
-                            [
-                                'Document analysis',
-                                'Extracted essay text, detected vocabulary, grammar errors',
-                                'Personal data',
-                            ],
-                            [
-                                'Teacher settings',
-                                'UI preferences, API keys for external services',
-                                'Non-personal (no student data)',
-                            ],
-                        ].map(([cat, fields, sens]) => (
-                            <tr key={cat} style={{ borderBottom: '1px solid var(--border)' }}>
-                                <td style={{ padding: '8px 8px', verticalAlign: 'top', fontWeight: 500 }}>{cat}</td>
-                                <td style={{ padding: '8px 8px', verticalAlign: 'top', color: 'var(--text-muted)' }}>
-                                    {fields}
-                                </td>
-                                <td style={{ padding: '8px 8px', verticalAlign: 'top' }}>
-                                    <span
-                                        className={`badge ${sens.startsWith('Special') ? 'badge-red' : 'badge-blue'}`}
-                                        style={{ fontSize: '0.75rem' }}
-                                    >
-                                        {sens}
-                                    </span>
-                                </td>
+                {/* F11: horizontal scroll on narrow screens + friendlier stacked reading */}
+                <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                    <table style={{ width: '100%', minWidth: 480, fontSize: '0.85rem', borderCollapse: 'collapse' }}>
+                        <thead>
+                            <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                                <th style={{ textAlign: 'left', padding: '6px 8px', fontWeight: 600 }}>Category</th>
+                                <th style={{ textAlign: 'left', padding: '6px 8px', fontWeight: 600 }}>Data fields</th>
+                                <th style={{ textAlign: 'left', padding: '6px 8px', fontWeight: 600 }}>Sensitivity</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {[
+                                ['Student identity', 'Name (required), email address (optional)', 'Personal data'],
+                                [
+                                    'Grades & feedback',
+                                    'Criterion scores, written comments, overall grade',
+                                    'Personal data',
+                                ],
+                                ['Self-assessments', 'Student self-ratings, reflection text', 'Personal data'],
+                                [
+                                    'Speaking sessions',
+                                    'Criterion grades, pronunciation marks, criterion audio recordings',
+                                    'Special (audio/biometric)',
+                                ],
+                                ['Peer reviews', 'Scores and comments submitted by peers', 'Personal data'],
+                                [
+                                    'Uploaded work',
+                                    'Essay text, documents, images uploaded as evidence',
+                                    'Personal data',
+                                ],
+                                [
+                                    'Document analysis',
+                                    'Extracted essay text, detected vocabulary, grammar errors',
+                                    'Personal data',
+                                ],
+                                [
+                                    'Teacher settings',
+                                    'UI preferences, API keys for external services',
+                                    'Non-personal (no student data)',
+                                ],
+                            ].map(([cat, fields, sens]) => (
+                                <tr key={cat} style={{ borderBottom: '1px solid var(--border)' }}>
+                                    <td style={{ padding: '8px 8px', verticalAlign: 'top', fontWeight: 500 }}>{cat}</td>
+                                    <td
+                                        style={{ padding: '8px 8px', verticalAlign: 'top', color: 'var(--text-muted)' }}
+                                    >
+                                        {fields}
+                                    </td>
+                                    <td style={{ padding: '8px 8px', verticalAlign: 'top' }}>
+                                        <span
+                                            className={`badge ${sens.startsWith('Special') ? 'badge-red' : 'badge-blue'}`}
+                                            style={{ fontSize: '0.75rem' }}
+                                        >
+                                            {sens}
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             {/* 3. Storage modes */}
             <div className="card" style={{ marginBottom: 20 }}>
-                <h3 style={{ marginBottom: 12 }}>3. Waar worden gegevens opgeslagen?</h3>
+                <h3 id="privacy-storage" style={{ marginBottom: 12 }}>
+                    {t('privacy.s3_title', { defaultValue: '3. Where is data stored?' })}
+                </h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     <div style={{ background: 'var(--bg-elevated)', borderRadius: 8, padding: '12px 16px' }}>
-                        <div style={{ fontWeight: 600, marginBottom: 4 }}>Lokale opslag (standaard)</div>
+                        <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                            {t('privacy.local_title', { defaultValue: 'Local storage (default)' })}
+                        </div>
                         <p className="text-sm text-muted" style={{ margin: 0 }}>
                             By default, all data is stored exclusively in the teacher's browser (localStorage) and is
                             not sent to any Rubric Maker server. Two optional features are the exception: document
@@ -137,7 +188,9 @@ export default function PrivacyPage({ studentPortalPath }: { studentPortalPath?:
                         </p>
                     </div>
                     <div style={{ background: 'var(--bg-elevated)', borderRadius: 8, padding: '12px 16px' }}>
-                        <div style={{ fontWeight: 600, marginBottom: 4 }}>Database (Supabase) — optioneel</div>
+                        <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                            {t('privacy.db_title', { defaultValue: 'Database (Supabase) — optional' })}
+                        </div>
                         <p className="text-sm text-muted" style={{ margin: 0 }}>
                             When a Supabase connection is configured (Admin &gt; Database), data is also stored in a
                             PostgreSQL database hosted by Supabase, Inc. For AVG compliance, schools should create their
@@ -160,7 +213,9 @@ export default function PrivacyPage({ studentPortalPath }: { studentPortalPath?:
 
             {/* 4. Legal basis */}
             <div className="card" style={{ marginBottom: 20 }}>
-                <h3 style={{ marginBottom: 12 }}>4. Rechtsgrondslag — AVG Art. 6</h3>
+                <h3 id="privacy-legal" style={{ marginBottom: 12 }}>
+                    {t('privacy.s4_title', { defaultValue: '4. Legal basis — GDPR Art. 6' })}
+                </h3>
                 <p className="text-sm" style={{ margin: 0 }}>
                     The processing of student data for assessment purposes is based on{' '}
                     <strong>gerechtvaardigd belang</strong> (legitimate interest, AVG Art. 6(1)(f)) — specifically, the
@@ -173,7 +228,9 @@ export default function PrivacyPage({ studentPortalPath }: { studentPortalPath?:
 
             {/* 5. Data retention */}
             <div className="card" style={{ marginBottom: 20 }}>
-                <h3 style={{ marginBottom: 12 }}>5. Bewaartermijn / Data Retention</h3>
+                <h3 id="privacy-retention" style={{ marginBottom: 12 }}>
+                    {t('privacy.s5_title', { defaultValue: '5. Data retention' })}
+                </h3>
                 <p className="text-sm" style={{ margin: 0 }}>
                     Rubric Maker does not impose automatic data expiry. Teachers are responsible for deleting student
                     records at the end of each academic year or when a student leaves. Deleting a student record from
@@ -184,7 +241,9 @@ export default function PrivacyPage({ studentPortalPath }: { studentPortalPath?:
 
             {/* 6. Right to erasure */}
             <div className="card" style={{ marginBottom: 20 }}>
-                <h3 style={{ marginBottom: 12 }}>6. Recht op verwijdering — AVG Art. 17</h3>
+                <h3 id="privacy-erasure" style={{ marginBottom: 12 }}>
+                    {t('privacy.s6_title', { defaultValue: '6. Right to erasure — GDPR Art. 17' })}
+                </h3>
                 <p className="text-sm" style={{ marginBottom: 8 }}>
                     Students (or their legal guardians) may request erasure of their data. To fulfil this request:
                 </p>
@@ -207,7 +266,9 @@ export default function PrivacyPage({ studentPortalPath }: { studentPortalPath?:
 
             {/* 7. Data portability */}
             <div className="card" style={{ marginBottom: 20 }}>
-                <h3 style={{ marginBottom: 12 }}>7. Recht op dataportabiliteit — AVG Art. 20</h3>
+                <h3 id="privacy-portability" style={{ marginBottom: 12 }}>
+                    {t('privacy.s7_title', { defaultValue: '7. Right to data portability — GDPR Art. 20' })}
+                </h3>
                 <p className="text-sm" style={{ margin: 0 }}>
                     Teachers can export a complete JSON backup of all data via{' '}
                     <strong>Settings &gt; Export backup</strong>. This backup can be used to migrate to another instance
@@ -218,7 +279,9 @@ export default function PrivacyPage({ studentPortalPath }: { studentPortalPath?:
 
             {/* 8. Audio data */}
             <div className="card" style={{ marginBottom: 20 }}>
-                <h3 style={{ marginBottom: 12 }}>8. Audiogegevens (spreekopdrachten)</h3>
+                <h3 id="privacy-audio" style={{ marginBottom: 12 }}>
+                    {t('privacy.s8_title', { defaultValue: '8. Audio data (speaking assignments)' })}
+                </h3>
                 <p className="text-sm" style={{ margin: 0 }}>
                     The speaking-session feature records short audio clips per criterion using the browser's built-in
                     recorder (MediaRecorder). These recordings are stored within Rubric Maker — locally, or in the
@@ -233,7 +296,9 @@ export default function PrivacyPage({ studentPortalPath }: { studentPortalPath?:
 
             {/* 9. Supervisory authority */}
             <div className="card" style={{ marginBottom: 20 }}>
-                <h3 style={{ marginBottom: 12 }}>9. Toezichthouder</h3>
+                <h3 id="privacy-authority" style={{ marginBottom: 12 }}>
+                    {t('privacy.s9_title', { defaultValue: '9. Supervisory authority' })}
+                </h3>
                 <p className="text-sm" style={{ margin: 0 }}>
                     In the Netherlands, the supervisory authority for data protection is the{' '}
                     <strong>Autoriteit Persoonsgegevens (AP)</strong>. You can file a complaint or find further guidance
@@ -252,7 +317,9 @@ export default function PrivacyPage({ studentPortalPath }: { studentPortalPath?:
 
             {/* 10. Contact */}
             <div className="card" style={{ marginBottom: 20, borderLeft: '4px solid var(--accent-soft, #3b82f640)' }}>
-                <h3 style={{ marginBottom: 8 }}>10. Contact &amp; Functionaris Gegevensbescherming (FG)</h3>
+                <h3 id="privacy-contact" style={{ marginBottom: 8 }}>
+                    {t('privacy.s10_title', { defaultValue: '10. Contact & Data Protection Officer' })}
+                </h3>
                 <p className="text-sm text-muted" style={{ margin: 0 }}>
                     For data-related questions, contact your school's Data Protection Officer (Functionaris
                     Gegevensbescherming). If your institution has not appointed an FG, contact the teacher or IT
@@ -261,7 +328,9 @@ export default function PrivacyPage({ studentPortalPath }: { studentPortalPath?:
             </div>
 
             <div className="card" style={{ marginBottom: 20 }}>
-                <h3 style={{ marginBottom: 12 }}>Open-source attributions</h3>
+                <h3 id="privacy-oss" style={{ marginBottom: 12 }}>
+                    {t('privacy.oss_title', { defaultValue: 'Open-source attributions' })}
+                </h3>
                 <p className="text-sm text-muted" style={{ marginBottom: 12 }}>
                     Rubric Maker uses the following third-party datasets and services for CEFR text profiling:
                 </p>

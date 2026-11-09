@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import PageTour from '../components/Tour/PageTour';
 import { usePageTourState } from '../hooks/usePageTourState';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +14,14 @@ import SegmentedToggle from '../components/ui/SegmentedToggle';
 import FlashcardOverviewPanel from '../components/Vocabulary/FlashcardOverviewPanel';
 import TextScreeningPanel from '../components/Vocabulary/TextScreeningPanel';
 import VocabCefrDistributionChart from '../components/Statistics/VocabCefrDistributionChart';
-import { useAssessment, useAuthoring, useClasses, useFlashcards, useStudents } from '../context/AppContext';
+import {
+    useAssessment,
+    useAuthoring,
+    useClasses,
+    useFlashcards,
+    useSettings,
+    useStudents,
+} from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
 import { getAllClassVocabProfiles, collectVocabExportRows, poolLevelCounts } from '../utils/vocabProfileAggregator';
@@ -35,8 +42,17 @@ export default function VocabularyDashboardPage() {
     const { showToast } = useToast();
     const navigate = useNavigate();
 
+    const { settings } = useSettings();
+
     const [view, setView] = useState<'reading' | 'flashcards' | 'screen'>('reading');
-    const [selectedClassId, setSelectedClassId] = useState<string>('all');
+    // F15: follow the global Topbar class selector like the other insight pages.
+    const [selectedClassId, setSelectedClassId] = useState<string>(() =>
+        settings.activeClassId && classes.some((c) => c.id === settings.activeClassId) ? settings.activeClassId : 'all'
+    );
+    useEffect(() => {
+        if (!settings.activeClassId) setSelectedClassId('all');
+        else if (classes.some((c) => c.id === settings.activeClassId)) setSelectedClassId(settings.activeClassId);
+    }, [settings.activeClassId, classes]);
     const [exportBand, setExportBand] = useState<'all' | CefrLevel>('all');
     const [targetLevel, setTargetLevel] = useState<CefrLevel>('B1');
 

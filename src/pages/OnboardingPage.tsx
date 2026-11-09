@@ -101,8 +101,8 @@ export default function OnboardingPage() {
     }
 
     const cardStyle: React.CSSProperties = {
-        background: '#f8fafc',
-        border: '2px solid #e2e8f0',
+        background: 'var(--bg-card, #f8fafc)',
+        border: '2px solid var(--border, #e2e8f0)',
         borderRadius: 12,
         padding: '20px 24px',
         cursor: 'pointer',
@@ -117,6 +117,14 @@ export default function OnboardingPage() {
         border: '2px solid var(--accent)',
     };
 
+    const STEPS: Step[] = ['role', 'school', 'done'];
+    const stepIndex = STEPS.indexOf(step);
+
+    function handleSkip() {
+        updateSettings({ needsOnboarding: false });
+        setStep('done');
+    }
+
     return (
         <div
             style={{
@@ -125,23 +133,62 @@ export default function OnboardingPage() {
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: 'linear-gradient(135deg, #f0f4ff 0%, #fafbff 60%, #f5f0ff 100%)',
+                background: 'var(--bg, #f8fafc)',
                 padding: '32px 16px',
             }}
         >
             <div style={{ width: '100%', maxWidth: 480 }}>
-                <div style={{ textAlign: 'center', marginBottom: 32 }}>
-                    <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#1e293b', letterSpacing: '-0.02em' }}>
+                <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                    <div
+                        style={{
+                            fontSize: '1.75rem',
+                            fontWeight: 800,
+                            color: 'var(--text, #1e293b)',
+                            letterSpacing: '-0.02em',
+                        }}
+                    >
                         RubricMaker
                     </div>
-                    <p style={{ margin: '8px 0 0', color: '#64748b', fontSize: '0.95rem' }}>
+                    <p style={{ margin: '8px 0 0', color: 'var(--text-muted, #64748b)', fontSize: '0.95rem' }}>
                         {t('onboarding.subtitle')}
                     </p>
+                    {/* F6: stepper */}
+                    <ol
+                        aria-label={t('onboarding.progress_label', { defaultValue: 'Setup progress' })}
+                        style={{
+                            listStyle: 'none',
+                            display: 'flex',
+                            gap: 8,
+                            justifyContent: 'center',
+                            padding: 0,
+                            margin: '16px 0 0',
+                        }}
+                    >
+                        {STEPS.map((s, i) => (
+                            <li
+                                key={s}
+                                aria-current={s === step ? 'step' : undefined}
+                                style={{
+                                    width: 32,
+                                    height: 6,
+                                    borderRadius: 3,
+                                    background:
+                                        i < stepIndex
+                                            ? 'var(--accent)'
+                                            : i === stepIndex
+                                              ? 'var(--accent)'
+                                              : 'var(--border, #e2e8f0)',
+                                    opacity: i < stepIndex ? 0.5 : 1,
+                                }}
+                            />
+                        ))}
+                    </ol>
                 </div>
 
                 <div
                     style={{
-                        background: 'white',
+                        background: 'var(--bg-card, white)',
+                        border: '1px solid var(--border, #e2e8f0)',
                         borderRadius: 16,
                         padding: 32,
                         boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
@@ -149,7 +196,14 @@ export default function OnboardingPage() {
                 >
                     {step === 'role' && (
                         <>
-                            <h2 style={{ margin: '0 0 20px', fontSize: '1.1rem', fontWeight: 700, color: '#1e293b' }}>
+                            <h2
+                                style={{
+                                    margin: '0 0 20px',
+                                    fontSize: '1.1rem',
+                                    fontWeight: 700,
+                                    color: 'var(--text, #1e293b)',
+                                }}
+                            >
                                 {t('onboarding.step_role')}
                             </h2>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -161,10 +215,16 @@ export default function OnboardingPage() {
                                             style={role === r ? selectedCardStyle : cardStyle}
                                             onClick={() => setRole(r)}
                                         >
-                                            <div style={{ fontWeight: 600, color: '#1e293b', marginBottom: 4 }}>
+                                            <div
+                                                style={{
+                                                    fontWeight: 600,
+                                                    color: 'var(--text, #1e293b)',
+                                                    marginBottom: 4,
+                                                }}
+                                            >
                                                 {t(`onboarding.role_${labelKey}`)}
                                             </div>
-                                            <div style={{ fontSize: '0.875rem', color: '#64748b' }}>
+                                            <div style={{ fontSize: '0.875rem', color: 'var(--text-muted, #64748b)' }}>
                                                 {t(`onboarding.role_${labelKey}_desc`)}
                                             </div>
                                         </button>
@@ -187,6 +247,14 @@ export default function OnboardingPage() {
                                 {busy && <Loader size={14} className="spin" />}
                                 {t('onboarding.btn_next')}
                             </button>
+                            <button
+                                className="btn btn-ghost btn-sm"
+                                style={{ marginTop: 8, width: '100%' }}
+                                onClick={handleSkip}
+                                disabled={busy}
+                            >
+                                {t('onboarding.btn_skip', { defaultValue: 'Skip for now' })}
+                            </button>
                             {error && (
                                 <p style={{ margin: '12px 0 0', color: '#dc2626', fontSize: '0.875rem' }}>{error}</p>
                             )}
@@ -195,7 +263,14 @@ export default function OnboardingPage() {
 
                     {step === 'school' && (
                         <>
-                            <h2 style={{ margin: '0 0 20px', fontSize: '1.1rem', fontWeight: 700, color: '#1e293b' }}>
+                            <h2
+                                style={{
+                                    margin: '0 0 20px',
+                                    fontSize: '1.1rem',
+                                    fontWeight: 700,
+                                    color: 'var(--text, #1e293b)',
+                                }}
+                            >
                                 {t('onboarding.step_school')}
                             </h2>
 
@@ -220,7 +295,7 @@ export default function OnboardingPage() {
                                             style={{
                                                 fontSize: '0.875rem',
                                                 fontWeight: 600,
-                                                color: '#374151',
+                                                color: 'var(--text, #374151)',
                                                 display: 'block',
                                                 marginBottom: 4,
                                             }}
@@ -240,7 +315,7 @@ export default function OnboardingPage() {
                                             style={{
                                                 fontSize: '0.875rem',
                                                 fontWeight: 600,
-                                                color: '#374151',
+                                                color: 'var(--text, #374151)',
                                                 display: 'block',
                                                 marginBottom: 4,
                                             }}
@@ -264,7 +339,7 @@ export default function OnboardingPage() {
                                         style={{
                                             fontSize: '0.875rem',
                                             fontWeight: 600,
-                                            color: '#374151',
+                                            color: 'var(--text, #374151)',
                                             display: 'block',
                                             marginBottom: 4,
                                         }}
@@ -290,7 +365,15 @@ export default function OnboardingPage() {
                                 <p style={{ margin: '12px 0 0', color: '#dc2626', fontSize: '0.875rem' }}>{error}</p>
                             )}
 
-                            <div style={{ display: 'flex', gap: 8, marginTop: 24 }}>
+                            <button
+                                className="btn btn-ghost btn-sm"
+                                style={{ marginTop: 12, width: '100%' }}
+                                onClick={handleSkip}
+                                disabled={busy}
+                            >
+                                {t('onboarding.btn_skip', { defaultValue: 'Skip for now' })}
+                            </button>
+                            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                                 <button
                                     className="btn btn-secondary"
                                     style={{ flex: 1 }}
@@ -327,7 +410,14 @@ export default function OnboardingPage() {
                     {step === 'done' && (
                         <div style={{ textAlign: 'center', padding: '16px 0' }}>
                             <CheckCircle2 size={48} style={{ color: '#22c55e', marginBottom: 16 }} />
-                            <h2 style={{ margin: '0 0 8px', fontSize: '1.2rem', fontWeight: 700, color: '#1e293b' }}>
+                            <h2
+                                style={{
+                                    margin: '0 0 8px',
+                                    fontSize: '1.2rem',
+                                    fontWeight: 700,
+                                    color: 'var(--text, #1e293b)',
+                                }}
+                            >
                                 {t('onboarding.student_linked_title')}
                             </h2>
                             <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>

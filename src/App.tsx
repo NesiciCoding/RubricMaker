@@ -93,7 +93,7 @@ export default function App() {
     const { students } = useStudents();
 
     const { settings, updateSettings } = useSettings();
-    const { showLanding, isCheckingSession, bootPhase, signOutFromDatabase } = usePlatform();
+    const { showLanding, isCheckingSession, bootPhase, signOutFromDatabase, showMigrationPrompt } = usePlatform();
 
     const { t } = useTranslation();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -256,12 +256,14 @@ export default function App() {
                     >
                         {t('a11y.skip_to_content')}
                     </a>
-                    {!settings.hasSeenTutorial && (
+                    {/* F17: never run the onboarding tour under the migration modal — the data-upload
+                        decision comes first; the tour starts once the prompt is dismissed. */}
+                    {!settings.hasSeenTutorial && !showMigrationPrompt && (
                         <ErrorBoundary fallback={null}>
                             <Suspense fallback={null}>
                                 <PageTour
                                     steps={steps}
-                                    run={!settings.hasSeenTutorial}
+                                    run={!settings.hasSeenTutorial && !showMigrationPrompt}
                                     onFinish={finishTutorial}
                                     autoPlacement={false}
                                 />
