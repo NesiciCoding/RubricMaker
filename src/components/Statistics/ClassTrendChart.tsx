@@ -2,15 +2,11 @@ import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useTranslation } from 'react-i18next';
 import { formatShortDate } from '../../utils/dateInput';
-import type { AssessmentKind } from '../../utils/assessmentTimeline';
+import type { AssessmentTrendPoint } from '../../utils/assessmentTimeline';
 
-export interface TrendPoint {
-    name: string;
-    kind?: AssessmentKind;
-    date: string;
-    avg: number;
-    median: number;
-}
+/** Trend points carry the assessment identity from the producer — the table rows
+ *  are keyed by kind+id so same-named assessments never collide. */
+export type TrendPoint = AssessmentTrendPoint;
 
 interface Props {
     data: TrendPoint[];
@@ -90,7 +86,7 @@ export default function ClassTrendChart({ data }: Props) {
                 </thead>
                 <tbody>
                     {labelled.map((p) => (
-                        <tr key={`${p.date}-${p.name}`}>
+                        <tr key={`${p.kind}-${p.id}`}>
                             <td>{p.label}</td>
                             <td>{formatShortDate(p.date, i18n.language)}</td>
                             <td>{p.avg}%</td>
