@@ -160,3 +160,76 @@ describe('GlobalSearch', () => {
         expect(screen.queryByText('search.practice_badge')).not.toBeInTheDocument();
     });
 });
+
+describe('GlobalSearch command palette (#890)', () => {
+    beforeEach(() => {
+        mockNavigate.mockClear();
+        localStorage.clear();
+    });
+
+    function typeQuery(value: string) {
+        const input = screen.getByLabelText('search.placeholder');
+        fireEvent.change(input, { target: { value } });
+        return input;
+    }
+
+    it('groups results by entity type with listbox/option semantics', () => {
+        renderSearch();
+        typeQuery('a');
+        expect(screen.getByRole('listbox', { name: 'search.results_list_label' })).toBeInTheDocument();
+        // Rubric and student matches land in their own labelled groups.
+        expect(screen.getByRole('group', { name: 'search.type_rubric' })).toBeInTheDocument();
+        expect(screen.getByRole('group', { name: 'search.type_student' })).toBeInTheDocument();
+        const options = screen.getAllByRole('option');
+        expect(options.length).toBeGreaterThan(1);
+        expect(options[0]).toHaveAttribute('aria-selected', 'true');
+    });
+
+    it('moves the active option with ArrowDown and selects with Enter', () => {
+        const onClose = vi.fn();
+        renderSearch(onClose);
+        const input = typeQuery('a');
+        const options = screen.getAllByRole('option');
+        expect(options.length).toBeGreaterThan(1);
+        fireEvent.keyDown(input, { key: 'ArrowDown' });
+        expect(input).toHaveAttribute('aria-activedescendant', 'gs-opt-1');
+        expect(options[1]).toHaveAttribute('aria-selected', 'true');
+        fireEvent.keyDown(input, { key: 'Enter' });
+        expect(mockNavigate).toHaveBeenCalledTimes(1);
+        expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('selects the first result with Enter without moving', () => {
+        const onClose = vi.fn();
+        renderSearch(onClose);
+        const input = typeQuery('Essay');
+        expect(input).toHaveAttribute('aria-activedescendant', 'gs-opt-0');
+        fireEvent.keyDown(input, { key: 'Enter' });
+        expect(mockNavigate).toHaveBeenCalledWith(expect.stringContaining('r1'));
+        expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('shows recently opened results on an empty query', () => {
+        const onClose = vi.fn();
+        const { unmount } = renderSearch(onClose);
+        typeQuery('Essay');
+        fireEvent.click(screen.getByText('Essay Rubric'));
+        expect(onClose).toHaveBeenCalledTimes(1);
+        unmount();
+
+        renderSearch();
+        expect(screen.getByText('search.recent_title')).toBeInTheDocument();
+        expect(screen.getByText('Essay Rubric')).toBeInTheDocument();
+        expect(screen.queryByText('search.hint')).not.toBeInTheDocument();
+    });
+
+    it('drops recents whose items no longer exist', () => {
+        localStorage.setItem(
+            'rm.recent-search-v1',
+            JSON.stringify([{ type: 'rubric', id: 'deleted', label: 'Ghost Rubric', route: '/rubrics/deleted' }])
+        );
+        renderSearch();
+        expect(screen.queryByText('search.recent_title')).not.toBeInTheDocument();
+        expect(screen.getByText('search.hint')).toBeInTheDocument();
+    });
+});

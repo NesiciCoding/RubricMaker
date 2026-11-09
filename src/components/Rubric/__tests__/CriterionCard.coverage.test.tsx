@@ -90,10 +90,13 @@ function makeCallbacks() {
         onToggleCollapse: vi.fn(),
         onPickStandard: vi.fn(),
         onPickCefr: vi.fn(),
+        onPickSubItemDescriptor: vi.fn(),
         onUnlinkStandard: vi.fn(),
         onUnlinkLegacyStandard: vi.fn(),
         onRemoveCefrDescriptor: vi.fn(),
         onRemoveFrameworkDescriptor: vi.fn(),
+        onRemoveSubItemCefrDescriptor: vi.fn(),
+        onRemoveSubItemFrameworkDescriptor: vi.fn(),
     };
 }
 
@@ -132,6 +135,9 @@ function renderCard(
                             onUnlinkLegacyStandard={cb.onUnlinkLegacyStandard}
                             onRemoveCefrDescriptor={cb.onRemoveCefrDescriptor}
                             onRemoveFrameworkDescriptor={cb.onRemoveFrameworkDescriptor}
+                            onPickSubItemDescriptor={cb.onPickSubItemDescriptor}
+                            onRemoveSubItemCefrDescriptor={cb.onRemoveSubItemCefrDescriptor}
+                            onRemoveSubItemFrameworkDescriptor={cb.onRemoveSubItemFrameworkDescriptor}
                             {...props}
                         />
                     </div>

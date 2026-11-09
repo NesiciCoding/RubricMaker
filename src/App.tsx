@@ -184,11 +184,20 @@ export default function App() {
             <ErrorBoundary>
                 <PageViewLogger />
                 {/* No Sidebar/<main> shell here (unlike the teacher dashboard below) — each route
-                    supplies its own `<main id="portal-main-content">` landmark so the skip link has
+                    supplies its own `<main id="portal-main-content" tabIndex={-1}>` landmark so the skip link has
                     one consistent target. PrivacyPage already renders its own when given
                     studentPortalPath, so it isn't wrapped again here (that would double up the
                     landmark instead of fixing its absence). */}
-                <a href="#portal-main-content" className="skip-nav">
+                <a
+                    href="#portal-main-content"
+                    className="skip-nav"
+                    onClick={(e) => {
+                        // HashRouter would treat a bare fragment as a route and land on the 404
+                        // page (F1). Stay on the route and move focus into the main landmark instead.
+                        e.preventDefault();
+                        document.getElementById('portal-main-content')?.focus();
+                    }}
+                >
                     {t('a11y.skip_to_content')}
                 </a>
                 <Suspense fallback={<RouteSkeleton />}>
@@ -197,7 +206,7 @@ export default function App() {
                             path="/portal/:studentId"
                             element={
                                 <OwnPortalGuard ownStudentId={linkedStudent.id}>
-                                    <main id="portal-main-content">
+                                    <main id="portal-main-content" tabIndex={-1}>
                                         <StudentPortalPage />
                                     </main>
                                 </OwnPortalGuard>
@@ -207,7 +216,7 @@ export default function App() {
                             path="/portal/:studentId/flashcards/:deckId"
                             element={
                                 <OwnPortalGuard ownStudentId={linkedStudent.id}>
-                                    <main id="portal-main-content">
+                                    <main id="portal-main-content" tabIndex={-1}>
                                         <StudentFlashcardStudyPage />
                                     </main>
                                 </OwnPortalGuard>
@@ -234,7 +243,16 @@ export default function App() {
             <TourProvider>
                 <MigrationPrompt />
                 <div className="app-layout">
-                    <a href="#main-content" className="skip-nav">
+                    <a
+                        href="#main-content"
+                        className="skip-nav"
+                        onClick={(e) => {
+                            // HashRouter would treat a bare fragment as a route and land on the 404
+                            // page (F1). Stay on the route and move focus into the main landmark instead.
+                            e.preventDefault();
+                            document.getElementById('main-content')?.focus();
+                        }}
+                    >
                         {t('a11y.skip_to_content')}
                     </a>
                     {!settings.hasSeenTutorial && (
@@ -252,7 +270,7 @@ export default function App() {
                     <RouteAnnouncer />
                     <PageViewLogger />
                     <Sidebar mobileOpen={mobileMenuOpen} onMobileClose={() => setMobileMenuOpen(false)} />
-                    <main className="main-area" id="main-content">
+                    <main className="main-area" id="main-content" tabIndex={-1}>
                         <ErrorBoundary>
                             <Suspense fallback={<RouteSkeleton />}>
                                 <Routes>

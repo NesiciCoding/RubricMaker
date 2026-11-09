@@ -55,6 +55,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
                     onClick={() => editor.chain().focus().toggleBold().run()}
                     className={`toolbar-btn ${editor.isActive('bold') ? 'active' : ''}`}
                     title={t('editor.bold')}
+                    aria-label={t('editor.bold')}
                     type="button"
                 >
                     <Bold size={14} />
@@ -63,6 +64,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
                     onClick={() => editor.chain().focus().toggleItalic().run()}
                     className={`toolbar-btn ${editor.isActive('italic') ? 'active' : ''}`}
                     title={t('editor.italic')}
+                    aria-label={t('editor.italic')}
                     type="button"
                 >
                     <Italic size={14} />
@@ -72,6 +74,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
                     onClick={() => editor.chain().focus().toggleBulletList().run()}
                     className={`toolbar-btn ${editor.isActive('bulletList') ? 'active' : ''}`}
                     title={t('editor.bullet_list')}
+                    aria-label={t('editor.bullet_list')}
                     type="button"
                 >
                     <List size={14} />
@@ -80,6 +83,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
                     onClick={() => editor.chain().focus().toggleOrderedList().run()}
                     className={`toolbar-btn ${editor.isActive('orderedList') ? 'active' : ''}`}
                     title={t('editor.ordered_list')}
+                    aria-label={t('editor.ordered_list')}
                     type="button"
                 >
                     <ListOrdered size={14} />

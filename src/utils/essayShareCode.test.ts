@@ -50,6 +50,17 @@ describe('decodeEssayAssignment', () => {
         expect(decoded!.timeLimitMinutes).toBe(45);
     });
 
+    it('round-trips contentLanguage so read-aloud keeps the teacher-set language (#956)', () => {
+        const original = makeAssignment({ contentLanguage: 'nl' });
+        const decoded = decodeEssayAssignment(encodeEssayAssignment(original));
+        expect(decoded!.contentLanguage).toBe('nl');
+    });
+
+    it('leaves contentLanguage undefined when unset (student page defaults to English)', () => {
+        const decoded = decodeEssayAssignment(encodeEssayAssignment(makeAssignment()));
+        expect(decoded!.contentLanguage).toBeUndefined();
+    });
+
     it('returns null for empty string', () => {
         expect(decodeEssayAssignment('')).toBeNull();
     });

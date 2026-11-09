@@ -179,6 +179,8 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
     const [contentArea, setContentArea] = useState<'listening' | 'reading' | 'grammar' | ''>(
         existing?.contentArea ?? ''
     );
+    // BCP-47 base code; '' means the default (English). Written through on save (#956).
+    const [contentLanguage, setContentLanguage] = useState<string>(existing?.contentLanguage ?? '');
     const [printText, setPrintText] = useState<PrintTextFields>({
         printHeader: existing?.printHeader,
         printIntro: existing?.printIntro,
@@ -230,6 +232,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         generatorMinQuestions,
         generatorMaxQuestions,
         generatorStarterBankItemId,
+        contentLanguage,
     ]);
     const { dialogProps: unsavedDialogProps } = useUnsavedChangesGuard(isDirty && !readOnly);
 
@@ -594,6 +597,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
             cefrTargetLevel: cefrTargetLevel || undefined,
             cefrSkill: cefrSkill || undefined,
             contentArea: mode === 'practice' ? contentArea || undefined : undefined,
+            contentLanguage: contentLanguage || undefined,
             printHeader: printText.printHeader,
             printIntro: printText.printIntro,
             printFooter: printText.printFooter,
@@ -914,6 +918,24 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                                     </select>
                                 </div>
                             )}
+                            <div className="form-group" style={{ marginBottom: 0, flex: '1 1 200px' }}>
+                                <label htmlFor="test-content-language">{t('tests.content_language_label')}</label>
+                                <select
+                                    id="test-content-language"
+                                    value={contentLanguage}
+                                    onChange={(e) => setContentLanguage(e.target.value)}
+                                >
+                                    <option value="">{t('tests.content_language_default')}</option>
+                                    <option value="en">{t('settings.language_en')}</option>
+                                    <option value="nl">{t('settings.language_nl')}</option>
+                                    <option value="fr">{t('settings.language_fr')}</option>
+                                    <option value="de">{t('settings.language_de')}</option>
+                                    <option value="es">{t('settings.language_es')}</option>
+                                </select>
+                                <p className="text-muted text-xs" style={{ marginTop: 4, marginBottom: 0 }}>
+                                    {t('tests.content_language_help')}
+                                </p>
+                            </div>
                             <div className="form-group" style={{ marginBottom: 0, flex: '1 1 160px' }}>
                                 <label htmlFor="test-duration">{t('tests.duration_label')}</label>
                                 <input
@@ -1336,6 +1358,29 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                                                         style={{ flex: 1, fontSize: '0.875rem' }}
                                                         aria-label={t('tests.section_name_label')}
                                                     />
+                                                    <select
+                                                        value={s.contentLanguage ?? ''}
+                                                        onChange={(e) =>
+                                                            updateSection(s.id, {
+                                                                contentLanguage: e.target.value || undefined,
+                                                            })
+                                                        }
+                                                        aria-label={t('tests.section_content_language_label')}
+                                                        title={t('tests.section_content_language_label')}
+                                                        style={{
+                                                            fontSize: '0.78rem',
+                                                            padding: '2px 4px',
+                                                            maxWidth: 150,
+                                                            flexShrink: 0,
+                                                        }}
+                                                    >
+                                                        <option value="">{t('tests.content_language_inherit')}</option>
+                                                        <option value="en">{t('settings.language_en')}</option>
+                                                        <option value="nl">{t('settings.language_nl')}</option>
+                                                        <option value="fr">{t('settings.language_fr')}</option>
+                                                        <option value="de">{t('settings.language_de')}</option>
+                                                        <option value="es">{t('settings.language_es')}</option>
+                                                    </select>
                                                     <button
                                                         type="button"
                                                         className="btn btn-ghost btn-icon btn-sm"

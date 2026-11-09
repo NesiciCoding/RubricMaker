@@ -7,6 +7,8 @@ interface Props {
     question: TestQuestion;
     value: string;
     onChange: (value: string) => void;
+    /** Effective content language of the question (BCP-47 base code). */
+    lang?: string;
 }
 
 const tileStyle = {
@@ -19,7 +21,7 @@ const tileStyle = {
 } as const;
 
 /** Click tiles to build the sentence in order; click a placed tile to take it back. */
-export default function SentenceBuilderAnswer({ question, value, onChange }: Props) {
+export default function SentenceBuilderAnswer({ question, value, onChange, lang }: Props) {
     const { t } = useTranslation();
     const tiles = useMemo(() => sentenceBuilderTiles(question), [question]);
     const placed: string[] = useMemo(() => {
@@ -63,6 +65,7 @@ export default function SentenceBuilderAnswer({ question, value, onChange }: Pro
                         key={`${word}-${i}`}
                         type="button"
                         style={tileStyle}
+                        lang={lang ?? 'en'}
                         aria-label={t('tests.taking.sentence_builder_remove', { word })}
                         onClick={() => set(placed.filter((_, k) => k !== i))}
                     >
@@ -80,6 +83,7 @@ export default function SentenceBuilderAnswer({ question, value, onChange }: Pro
                         key={`${word}-${i}`}
                         type="button"
                         disabled={tileUsed[i]}
+                        lang={lang ?? 'en'}
                         style={{ ...tileStyle, opacity: tileUsed[i] ? 0.35 : 1 }}
                         onClick={() => set([...placed, word])}
                     >

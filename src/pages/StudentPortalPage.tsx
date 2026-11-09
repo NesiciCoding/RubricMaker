@@ -91,7 +91,14 @@ import { EmptyState } from '../components/ui/EmptyState';
 const SECTION_SCROLL_MARGIN = 'calc(var(--portal-nav-h, 62px) + 8px)';
 
 function scrollToSection(id: string) {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // The global reduced-motion CSS only affects `auto` scrolling — an explicit
+    // 'smooth' would still animate, so mirror the media query here (F15).
+    // Guarded like usePageTour: matchMedia is absent in some render/test environments.
+    const reduceMotion =
+        typeof window !== 'undefined' &&
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.getElementById(id)?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
 }
 
 function criterionPct(

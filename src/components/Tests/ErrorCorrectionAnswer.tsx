@@ -7,10 +7,12 @@ interface Props {
     question: TestQuestion;
     value: string;
     onChange: (value: string) => void;
+    /** Effective content language of the question (BCP-47 base code). */
+    lang?: string;
 }
 
 /** Select the fragments you think are wrong, then type a correction for each. */
-export default function ErrorCorrectionAnswer({ question, value, onChange }: Props) {
+export default function ErrorCorrectionAnswer({ question, value, onChange, lang }: Props) {
     const { t } = useTranslation();
     const segments = useMemo(
         () => parseErrorPassage(stripErrorKey(question.errorPassage ?? '')),
@@ -39,7 +41,7 @@ export default function ErrorCorrectionAnswer({ question, value, onChange }: Pro
             <p className="text-muted text-sm" style={{ margin: '0 0 8px' }}>
                 {t('tests.taking.error_correction_instruction')}
             </p>
-            <p style={{ margin: 0, lineHeight: 2.4, color: 'var(--text)' }}>
+            <p lang={lang ?? 'en'} style={{ margin: 0, lineHeight: 2.4, color: 'var(--text)' }}>
                 {segments.map((segment, i) => {
                     if (segment.type === 'text') return <span key={i}>{segment.text}</span>;
                     const picked = segment.index in picks;
@@ -73,6 +75,7 @@ export default function ErrorCorrectionAnswer({ question, value, onChange }: Pro
                                     }
                                     aria-label={t('tests.taking.error_correction_input', { text: segment.text })}
                                     placeholder={t('tests.taking.error_correction_placeholder')}
+                                    lang={lang ?? 'en'}
                                     style={{ margin: '0 6px', width: 140, padding: '2px 6px' }}
                                 />
                             )}

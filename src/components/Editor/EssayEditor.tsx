@@ -294,6 +294,7 @@ export default function EssayEditor({
                         }}
                         style={selectStyle}
                         title={t('editor.paragraph_style')}
+                        aria-label={t('editor.paragraph_style')}
                     >
                         <option value="p">Paragraph</option>
                         <option value="h1">Heading 1</option>
@@ -311,6 +312,7 @@ export default function EssayEditor({
                         }}
                         style={{ ...selectStyle, maxWidth: 140 }}
                         title={t('editor.font_family')}
+                        aria-label={t('editor.font_family')}
                     >
                         {FONT_FAMILIES.map((f) => (
                             <option key={f.value} value={f.value}>
@@ -329,6 +331,7 @@ export default function EssayEditor({
                         }}
                         style={{ ...selectStyle, width: 60 }}
                         title={t('editor.font_size')}
+                        aria-label={t('editor.font_size')}
                     >
                         <option value="">Size</option>
                         {FONT_SIZES.filter((s) => s !== '').map((s) => (
@@ -483,6 +486,7 @@ export default function EssayEditor({
                             else editor.chain().focus().setLineHeight(v).run();
                         }}
                         style={{ ...selectStyle, width: 100 }}
+                        aria-label={t('editor.line_height')}
                         title={t('editor.line_height')}
                     >
                         {LINE_HEIGHTS.map((lh) => (

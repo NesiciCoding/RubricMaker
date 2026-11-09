@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowDown, ArrowUp, Link2, Plus, SlidersHorizontal, Trash2, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, BookOpen, Link2, Plus, SlidersHorizontal, Trash2, X } from 'lucide-react';
 import type { SubItem, SubItemMode } from '../../types';
+import { CEFR_LEVEL_COLORS } from '../../data/cefrDescriptors';
 import { createSubItem, splitIntoSubItemLabels, subItemRange } from '../../utils/subItems';
 
 interface Props {
@@ -12,6 +13,10 @@ interface Props {
     onChange: (items: SubItem[]) => void;
     onLinkStandard: (subItemId: string) => void;
     onUnlinkStandard: (subItemId: string, standardIndex: number) => void;
+    /** Opens the shared CEFR/framework picker for one sub-item (#1002). */
+    onLinkDescriptor: (subItemId: string) => void;
+    onUnlinkCefrDescriptor: (subItemId: string, descriptorId: string) => void;
+    onUnlinkFrameworkDescriptor: (subItemId: string, descriptorId: string) => void;
     /** Other levels of the same criterion a sub-item can be moved to. */
     moveTargets: { id: string; label: string }[];
     onMove: (subItemId: string, levelId: string) => void;
@@ -30,11 +35,15 @@ export default function SubItemListEditor({
     onChange,
     onLinkStandard,
     onUnlinkStandard,
+    onLinkDescriptor,
+    onUnlinkCefrDescriptor,
+    onUnlinkFrameworkDescriptor,
     moveTargets,
     onMove,
     compact = false,
 }: Props) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const nl = i18n.language.startsWith('nl');
     const inputs = useRef(new Map<string, HTMLTextAreaElement>());
     const pendingFocus = useRef<string | null>(null);
     const [rangeOpen, setRangeOpen] = useState<ReadonlySet<string>>(new Set());
@@ -291,6 +300,31 @@ export default function SubItemListEditor({
                                 <button
                                     type="button"
                                     className="btn btn-ghost btn-icon btn-sm"
+                                    onClick={() => onLinkDescriptor(si.id)}
+                                    title={t('framework.action_link_descriptor')}
+                                    aria-label={t('framework.action_link_descriptor')}
+                                    style={{ ...iconBtn, color: 'var(--accent-text)' }}
+                                >
+                                    <BookOpen size={11} />
+                                    {(si.cefrDescriptors || []).length + (si.frameworkDescriptors || []).length > 0 && (
+                                        <span
+                                            style={{
+                                                background: 'var(--accent)',
+                                                color: '#fff',
+                                                borderRadius: 8,
+                                                padding: '0px 5px',
+                                                fontSize: 9,
+                                                fontWeight: 700,
+                                                marginLeft: 2,
+                                            }}
+                                        >
+                                            {(si.cefrDescriptors || []).length + (si.frameworkDescriptors || []).length}
+                                        </span>
+                                    )}
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn btn-ghost btn-icon btn-sm"
                                     onClick={() => remove(index, false)}
                                     title={t('rubricBuilder.sub_item_delete_title')}
                                     aria-label={t('rubricBuilder.sub_item_delete_title')}
@@ -299,6 +333,121 @@ export default function SubItemListEditor({
                                     <Trash2 size={11} />
                                 </button>
                             </div>
+                            {(si.cefrDescriptors || []).length > 0 && (
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                    {si.cefrDescriptors!.map((d) => (
+                                        <div
+                                            key={d.descriptorId}
+                                            style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: 4,
+                                                background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
+                                                border: '1px solid color-mix(in srgb, var(--accent) 25%, transparent)',
+                                                borderRadius: 6,
+                                                padding: '2px 4px 2px 6px',
+                                                fontSize: '0.68rem',
+                                            }}
+                                        >
+                                            <span
+                                                style={{
+                                                    background: CEFR_LEVEL_COLORS[d.level],
+                                                    color: '#fff',
+                                                    borderRadius: 3,
+                                                    padding: '0px 4px',
+                                                    fontSize: 9,
+                                                    fontWeight: 700,
+                                                }}
+                                            >
+                                                {d.level}
+                                            </span>
+                                            <span
+                                                style={{
+                                                    color: 'var(--text)',
+                                                    maxWidth: 200,
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap',
+                                                }}
+                                            >
+                                                {nl ? d.descriptionNl : d.descriptionEn}
+                                            </span>
+                                            <button
+                                                type="button"
+                                                className="btn btn-ghost btn-icon"
+                                                aria-label={t('rubricBuilder.action_remove_descriptor')}
+                                                style={{
+                                                    padding: 0,
+                                                    height: 'auto',
+                                                    minHeight: 0,
+                                                    color: 'var(--text-muted)',
+                                                }}
+                                                onClick={() => onUnlinkCefrDescriptor(si.id, d.descriptorId)}
+                                            >
+                                                <X size={10} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            {(si.frameworkDescriptors || []).length > 0 && (
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                    {si.frameworkDescriptors!.map((d) => (
+                                        <div
+                                            key={d.descriptorId}
+                                            style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: 4,
+                                                background: `color-mix(in srgb, ${d.categoryColor} 8%, transparent)`,
+                                                border: `1px solid color-mix(in srgb, ${d.categoryColor} 25%, transparent)`,
+                                                borderRadius: 6,
+                                                padding: '2px 4px 2px 6px',
+                                                fontSize: '0.68rem',
+                                            }}
+                                        >
+                                            <span
+                                                style={{
+                                                    background: d.categoryColor,
+                                                    color: '#fff',
+                                                    borderRadius: 3,
+                                                    padding: '0px 4px',
+                                                    fontSize: 9,
+                                                    fontWeight: 700,
+                                                    whiteSpace: 'nowrap',
+                                                }}
+                                            >
+                                                {nl ? d.categoryLabelNl : d.categoryLabelEn}
+                                            </span>
+                                            <span
+                                                style={{
+                                                    color: 'var(--text)',
+                                                    maxWidth: 200,
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap',
+                                                }}
+                                            >
+                                                {nl ? d.descriptionNl : d.descriptionEn}
+                                            </span>
+                                            <button
+                                                type="button"
+                                                className="btn btn-ghost btn-icon"
+                                                aria-label={t('rubricBuilder.action_remove_descriptor')}
+                                                style={{
+                                                    padding: 0,
+                                                    height: 'auto',
+                                                    minHeight: 0,
+                                                    color: 'var(--text-muted)',
+                                                }}
+                                                onClick={() => onUnlinkFrameworkDescriptor(si.id, d.descriptorId)}
+                                            >
+                                                <X size={10} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                             {si.linkedStandards && si.linkedStandards.length > 0 && (
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                                     {si.linkedStandards.map((std, idx) => (

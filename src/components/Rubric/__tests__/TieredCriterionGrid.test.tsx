@@ -62,6 +62,9 @@ function setup() {
         onMoveSubItem: vi.fn(),
         onPickStandard: vi.fn(),
         onUnlinkStandard: vi.fn(),
+        onPickDescriptor: vi.fn(),
+        onUnlinkCefrDescriptor: vi.fn(),
+        onUnlinkFrameworkDescriptor: vi.fn(),
     };
     render(<TieredCriterionGrid criterion={criterion} config={config} {...cb} />);
     return cb;

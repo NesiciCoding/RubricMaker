@@ -640,6 +640,9 @@ function GettingStartedTab() {
                     <strong>&ldquo;{t('tutorial.rb_tour_button')}&rdquo;</strong>{' '}
                     {t('docs.guided_tour_page_tours_suffix')}
                 </InfoBox>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginTop: 12 }}>
+                    {t('docs.gs_palette_body')}
+                </p>
             </FeatureSection>
 
             <FeatureSection icon={LayoutDashboard} title={t('docs.gs_snapshot_title')} color="#0ea5e9">
@@ -829,6 +832,7 @@ function RubricsTab() {
                         t('docs.rb_standards_item_slo'),
                         t('docs.rb_standards_item_ccss'),
                         t('docs.rb_standards_item_grammar'),
+                        t('docs.rb_standards_item_subitem'),
                     ]}
                 />
 
@@ -2030,6 +2034,7 @@ export default function DocsPage() {
                 >
                     {/* ── Left nav ── */}
                     <nav
+                        aria-label={t('docs.sections_nav_label')}
                         style={{
                             position: 'sticky',
                             top: 16,

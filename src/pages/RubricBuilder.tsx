@@ -251,6 +251,12 @@ function RubricBuilderEditor({ shared }: { shared?: SharedEntry<Rubric> }) {
     const [cefrSkill, setCefrSkill] = useState<CefrSkill | ''>(existing?.cefrSkill ?? '');
     const [cefrAchieveThreshold, setCefrAchieveThreshold] = useState<number>(existing?.cefrAchieveThreshold ?? 70);
     const [pickingCefrFor, setPickingCefrFor] = useState<string | null>(null); // criterion id
+    // Sub-item descriptor picker target (#1002). Separate from pickingCefrFor so the
+    // criterion picker stays a plain criterion-id state.
+    const [pickingDescriptorForSubitem, setPickingDescriptorForSubitem] = useState<Extract<
+        StandardTarget,
+        { type: 'subitem' }
+    > | null>(null);
 
     // ── Rubric sync dialog state ─────────────────────────────────────────────
     const [syncDialogRubric, setSyncDialogRubric] = useState<Rubric | null>(null);
@@ -1026,6 +1032,65 @@ function RubricBuilderEditor({ shared }: { shared?: SharedEntry<Rubric> }) {
         );
     }, []);
 
+    // ── Sub-item descriptor operations (#1002: informational links, no aggregation) ──
+    function patchSubItem(target: Extract<StandardTarget, { type: 'subitem' }>, patch: (si: SubItem) => SubItem) {
+        setCriteria((c) =>
+            c.map((x) =>
+                x.id === target.cid
+                    ? {
+                          ...x,
+                          levels: x.levels.map((l) =>
+                              l.id === target.lid
+                                  ? {
+                                        ...l,
+                                        subItems: l.subItems.map((s) => (s.id === target.sid ? patch(s) : s)),
+                                    }
+                                  : l
+                          ),
+                      }
+                    : x
+            )
+        );
+    }
+    function addSubItemCefrDescriptor(
+        target: Extract<StandardTarget, { type: 'subitem' }>,
+        descriptor: LinkedCefrDescriptor
+    ) {
+        patchSubItem(target, (si) => ({
+            ...si,
+            cefrDescriptors: [...(si.cefrDescriptors || []), descriptor],
+        }));
+    }
+    function addSubItemFrameworkDescriptor(
+        target: Extract<StandardTarget, { type: 'subitem' }>,
+        descriptor: LinkedFrameworkDescriptor
+    ) {
+        patchSubItem(target, (si) => ({
+            ...si,
+            frameworkDescriptors: [...(si.frameworkDescriptors || []), descriptor],
+        }));
+    }
+    const removeSubItemCefrDescriptor = useCallback(
+        (target: Extract<StandardTarget, { type: 'subitem' }>, descriptorId: string) => {
+            patchSubItem(target, (si) => ({
+                ...si,
+                /* v8 ignore next -- the remove button only renders when cefrDescriptors is non-empty */
+                cefrDescriptors: (si.cefrDescriptors || []).filter((d) => d.descriptorId !== descriptorId),
+            }));
+        },
+        []
+    );
+    const removeSubItemFrameworkDescriptor = useCallback(
+        (target: Extract<StandardTarget, { type: 'subitem' }>, descriptorId: string) => {
+            patchSubItem(target, (si) => ({
+                ...si,
+                /* v8 ignore next -- the remove button only renders when frameworkDescriptors is non-empty */
+                frameworkDescriptors: (si.frameworkDescriptors || []).filter((d) => d.descriptorId !== descriptorId),
+            }));
+        },
+        []
+    );
+
     return (
         <>
             <PageTour
@@ -1783,6 +1848,9 @@ function RubricBuilderEditor({ shared }: { shared?: SharedEntry<Rubric> }) {
                                                 onToggleCollapse={toggleCollapseCriterion}
                                                 onPickStandard={setPickingStandardFor}
                                                 onPickCefr={setPickingCefrFor}
+                                                onPickSubItemDescriptor={setPickingDescriptorForSubitem}
+                                                onRemoveSubItemCefrDescriptor={removeSubItemCefrDescriptor}
+                                                onRemoveSubItemFrameworkDescriptor={removeSubItemFrameworkDescriptor}
                                                 onUnlinkStandard={unlinkStandard}
                                                 onUnlinkLegacyStandard={unlinkLegacyStandard}
                                                 onRemoveCefrDescriptor={removeCefrDescriptor}
@@ -2236,6 +2304,29 @@ function RubricBuilderEditor({ shared }: { shared?: SharedEntry<Rubric> }) {
                                 onAddFramework={(d) => addFrameworkDescriptor(pickingCefrFor, d)}
                                 onRemoveFramework={(dId) => removeFrameworkDescriptor(pickingCefrFor, dId)}
                                 onClose={() => setPickingCefrFor(null)}
+                            />
+                        );
+                    })()}
+
+                {/* Sub-item descriptor picker (#1002): same shared picker, bound to one sub-item */}
+                {pickingDescriptorForSubitem &&
+                    (() => {
+                        const target = pickingDescriptorForSubitem;
+                        const subItem = criteria
+                            .find((c) => c.id === target.cid)
+                            ?.levels.find((l) => l.id === target.lid)
+                            ?.subItems.find((s) => s.id === target.sid);
+                        /* v8 ignore next -- the picker is only opened with a live sub-item id */
+                        if (!subItem) return null;
+                        return (
+                            <CefrPickerModal
+                                linkedDescriptors={subItem.cefrDescriptors || []}
+                                onAdd={(d) => addSubItemCefrDescriptor(target, d)}
+                                onRemove={(dId) => removeSubItemCefrDescriptor(target, dId)}
+                                linkedFrameworkDescriptors={subItem.frameworkDescriptors || []}
+                                onAddFramework={(d) => addSubItemFrameworkDescriptor(target, d)}
+                                onRemoveFramework={(dId) => removeSubItemFrameworkDescriptor(target, dId)}
+                                onClose={() => setPickingDescriptorForSubitem(null)}
                             />
                         );
                     })()}
