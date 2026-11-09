@@ -2635,6 +2635,23 @@
         "update_available_report_issue": "Report an issue",
         "update_available_dismiss": "Dismiss"
     },
+    "privacy": {
+        "heading": "Privacy & Data Protection",
+        "toc_label": "On this page",
+        "s1_title": "1. Data Controller",
+        "s2_title": "2. What personal data is processed?",
+        "s3_title": "3. Where is data stored?",
+        "s4_title": "4. Legal basis — GDPR Art. 6",
+        "s5_title": "5. Data retention",
+        "s6_title": "6. Right to erasure — GDPR Art. 17",
+        "s7_title": "7. Right to data portability — GDPR Art. 20",
+        "s8_title": "8. Audio data (speaking assignments)",
+        "s9_title": "9. Supervisory authority",
+        "s10_title": "10. Contact & Data Protection Officer",
+        "oss_title": "Open-source attributions",
+        "local_title": "Local storage (default)",
+        "db_title": "Database (Supabase) — optional"
+    },
     "cefr": {
         "placement_recover": "Load placement results",
         "placement_recovered": "Recovered {{count}} placement result(s) that hadn't been handed in",
@@ -3598,7 +3615,9 @@
         "error_id_required": "Please enter a school ID.",
         "error_create": "Could not create school: {{error}}",
         "error_join": "Could not join school: {{error}}",
-        "error_last_admin": "You are the only administrator, so you can't switch to Student. Promote another user to administrator first, or continue as administrator."
+        "error_last_admin": "You are the only administrator, so you can't switch to Student. Promote another user to administrator first, or continue as administrator.",
+        "btn_skip": "Skip for now",
+        "progress_label": "Setup progress"
     },
     "admin": {
         "title": "Admin Dashboard",
@@ -3935,6 +3954,13 @@
     "docs": {
         "section_title": "Documentation",
         "sections_nav_label": "Documentation sections",
+        "filter_empty": "No sections match.",
+        "filter_label": "Filter documentation sections",
+        "filter_placeholder": "Filter sections…",
+        "route_docs_desc": "This documentation — route map and guides for every page.",
+        "route_docs_label": "Docs",
+        "route_test_queue_desc": "Grade open-ended test answers, then continue to the next student.",
+        "route_test_queue_label": "Test grading queue",
         "tab_route_map": "Route Map",
         "tab_getting_started": "Getting Started",
         "tab_rubrics": "Rubric Builder",
@@ -5190,7 +5216,8 @@
     "notFound": {
         "heading": "404 — Page not found",
         "body": "The page you're looking for doesn't exist or has been moved.",
-        "go_dashboard": "Go to Dashboard"
+        "go_dashboard": "Go to Dashboard",
+        "go_back": "Go back"
     },
     "errors": {
         "boundary_title": "Something went wrong",

@@ -2635,6 +2635,23 @@
         "update_available_report_issue": "Signaler un problème",
         "update_available_dismiss": "Fermer"
     },
+    "privacy": {
+        "heading": "Privacy & Data Protection",
+        "toc_label": "On this page",
+        "s1_title": "1. Data Controller",
+        "s2_title": "2. What personal data is processed?",
+        "s3_title": "3. Where is data stored?",
+        "s4_title": "4. Legal basis — GDPR Art. 6",
+        "s5_title": "5. Data retention",
+        "s6_title": "6. Right to erasure — GDPR Art. 17",
+        "s7_title": "7. Right to data portability — GDPR Art. 20",
+        "s8_title": "8. Audio data (speaking assignments)",
+        "s9_title": "9. Supervisory authority",
+        "s10_title": "10. Contact & Data Protection Officer",
+        "oss_title": "Open-source attributions",
+        "local_title": "Local storage (default)",
+        "db_title": "Database (Supabase) — optional"
+    },
     "cefr": {
         "placement_recover": "Charger les résultats de placement",
         "placement_recovered": "{{count}} résultat(s) de placement récupéré(s) qui n'avaient pas été rendus",
@@ -3685,7 +3702,9 @@
         "done_body": "Votre école est configurée. Vous pouvez maintenant créer des grilles et noter vos élèves.",
         "student_done_body": "Votre compte est configuré en tant qu'élève. Vous serez redirigé vers votre portail une fois que votre enseignant aura lié votre adresse e-mail scolaire à un profil d'élève.",
         "error_role_update": "Impossible de mettre à jour votre rôle. Veuillez réessayer.",
-        "error_last_admin": "Vous êtes le seul administrateur et ne pouvez donc pas passer en Élève. Nommez d'abord un autre utilisateur administrateur, ou continuez en tant qu'administrateur."
+        "error_last_admin": "Vous êtes le seul administrateur et ne pouvez donc pas passer en Élève. Nommez d'abord un autre utilisateur administrateur, ou continuez en tant qu'administrateur.",
+        "btn_skip": "Skip for now",
+        "progress_label": "Setup progress"
     },
     "admin": {
         "title": "Tableau de bord administrateur",
@@ -3935,6 +3954,13 @@
     "docs": {
         "section_title": "Documentation",
         "sections_nav_label": "Sections de la documentation",
+        "filter_empty": "No sections match.",
+        "filter_label": "Filter documentation sections",
+        "filter_placeholder": "Filter sections…",
+        "route_docs_desc": "This documentation — route map and guides for every page.",
+        "route_docs_label": "Docs",
+        "route_test_queue_desc": "Grade open-ended test answers, then continue to the next student.",
+        "route_test_queue_label": "Test grading queue",
         "tab_route_map": "Plan des routes",
         "tab_getting_started": "Démarrage",
         "tab_rubrics": "Créateur de rubriques",
@@ -5190,7 +5216,8 @@
     "notFound": {
         "heading": "404 — Page introuvable",
         "body": "La page que vous recherchez n'existe pas ou a été déplacée.",
-        "go_dashboard": "Aller au tableau de bord"
+        "go_dashboard": "Aller au tableau de bord",
+        "go_back": "Go back"
     },
     "errors": {
         "boundary_title": "Une erreur est survenue",

@@ -2635,6 +2635,23 @@
         "update_available_report_issue": "Problem melden",
         "update_available_dismiss": "Schließen"
     },
+    "privacy": {
+        "heading": "Privacy & Data Protection",
+        "toc_label": "On this page",
+        "s1_title": "1. Data Controller",
+        "s2_title": "2. What personal data is processed?",
+        "s3_title": "3. Where is data stored?",
+        "s4_title": "4. Legal basis — GDPR Art. 6",
+        "s5_title": "5. Data retention",
+        "s6_title": "6. Right to erasure — GDPR Art. 17",
+        "s7_title": "7. Right to data portability — GDPR Art. 20",
+        "s8_title": "8. Audio data (speaking assignments)",
+        "s9_title": "9. Supervisory authority",
+        "s10_title": "10. Contact & Data Protection Officer",
+        "oss_title": "Open-source attributions",
+        "local_title": "Local storage (default)",
+        "db_title": "Database (Supabase) — optional"
+    },
     "cefr": {
         "placement_recover": "Einstufungsergebnisse laden",
         "placement_recovered": "{{count}} nicht abgegebene(s) Einstufungsergebnis(se) wiederhergestellt",
@@ -3685,7 +3702,9 @@
         "done_body": "Ihre Schule ist eingerichtet. Sie können jetzt Rubriken erstellen und Schüler benoten.",
         "student_done_body": "Ihr Konto ist als Schüler eingerichtet. Sie werden zu Ihrem Portal weitergeleitet, sobald Ihr Lehrer Ihre Schul-E-Mail mit einem Schülerprofil verknüpft.",
         "error_role_update": "Rolle konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut.",
-        "error_last_admin": "Sie sind der einzige Administrator und können daher nicht zu Schüler wechseln. Machen Sie zuerst eine andere Person zum Administrator oder fahren Sie als Administrator fort."
+        "error_last_admin": "Sie sind der einzige Administrator und können daher nicht zu Schüler wechseln. Machen Sie zuerst eine andere Person zum Administrator oder fahren Sie als Administrator fort.",
+        "btn_skip": "Skip for now",
+        "progress_label": "Setup progress"
     },
     "admin": {
         "title": "Admin-Dashboard",
@@ -3935,6 +3954,13 @@
     "docs": {
         "section_title": "Dokumentation",
         "sections_nav_label": "Dokumentationsbereiche",
+        "filter_empty": "No sections match.",
+        "filter_label": "Filter documentation sections",
+        "filter_placeholder": "Filter sections…",
+        "route_docs_desc": "This documentation — route map and guides for every page.",
+        "route_docs_label": "Docs",
+        "route_test_queue_desc": "Grade open-ended test answers, then continue to the next student.",
+        "route_test_queue_label": "Test grading queue",
         "tab_route_map": "Routenübersicht",
         "tab_getting_started": "Erste Schritte",
         "tab_rubrics": "Rubriken-Editor",
@@ -5190,7 +5216,8 @@
     "notFound": {
         "heading": "404 — Seite nicht gefunden",
         "body": "Die gesuchte Seite existiert nicht oder wurde verschoben.",
-        "go_dashboard": "Zum Dashboard"
+        "go_dashboard": "Zum Dashboard",
+        "go_back": "Go back"
     },
     "errors": {
         "boundary_title": "Etwas ist schiefgelaufen",

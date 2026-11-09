@@ -2635,6 +2635,23 @@
         "update_available_report_issue": "Een probleem melden",
         "update_available_dismiss": "Sluiten"
     },
+    "privacy": {
+        "heading": "Privacy & Data Protection",
+        "toc_label": "On this page",
+        "s1_title": "1. Data Controller",
+        "s2_title": "2. What personal data is processed?",
+        "s3_title": "3. Where is data stored?",
+        "s4_title": "4. Legal basis — GDPR Art. 6",
+        "s5_title": "5. Data retention",
+        "s6_title": "6. Right to erasure — GDPR Art. 17",
+        "s7_title": "7. Right to data portability — GDPR Art. 20",
+        "s8_title": "8. Audio data (speaking assignments)",
+        "s9_title": "9. Supervisory authority",
+        "s10_title": "10. Contact & Data Protection Officer",
+        "oss_title": "Open-source attributions",
+        "local_title": "Local storage (default)",
+        "db_title": "Database (Supabase) — optional"
+    },
     "cefr": {
         "placement_recover": "Plaatsingsresultaten laden",
         "placement_recovered": "{{count}} plaatsingsresultaat/-resultaten hersteld die niet waren ingeleverd",
@@ -3598,7 +3615,9 @@
         "error_id_required": "Voer een school-ID in.",
         "error_create": "School aanmaken mislukt: {{error}}",
         "error_join": "Aansluiten bij school mislukt: {{error}}",
-        "error_last_admin": "Je bent de enige beheerder en kunt daarom niet naar Leerling wisselen. Maak eerst een andere gebruiker beheerder, of ga verder als beheerder."
+        "error_last_admin": "Je bent de enige beheerder en kunt daarom niet naar Leerling wisselen. Maak eerst een andere gebruiker beheerder, of ga verder als beheerder.",
+        "btn_skip": "Skip for now",
+        "progress_label": "Setup progress"
     },
     "admin": {
         "title": "Beheerdashboard",
@@ -3935,6 +3954,13 @@
     "docs": {
         "section_title": "Documentatie",
         "sections_nav_label": "Documentatieonderdelen",
+        "filter_empty": "No sections match.",
+        "filter_label": "Filter documentation sections",
+        "filter_placeholder": "Filter sections…",
+        "route_docs_desc": "This documentation — route map and guides for every page.",
+        "route_docs_label": "Docs",
+        "route_test_queue_desc": "Grade open-ended test answers, then continue to the next student.",
+        "route_test_queue_label": "Test grading queue",
         "tab_route_map": "Routekaart",
         "tab_getting_started": "Aan de slag",
         "tab_rubrics": "Rubrieksmaker",
@@ -5190,7 +5216,8 @@
     "notFound": {
         "heading": "404 — Pagina niet gevonden",
         "body": "De pagina die je zoekt bestaat niet of is verplaatst.",
-        "go_dashboard": "Naar dashboard"
+        "go_dashboard": "Naar dashboard",
+        "go_back": "Go back"
     },
     "errors": {
         "boundary_title": "Er ging iets mis",

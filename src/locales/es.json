@@ -2635,6 +2635,23 @@
         "update_available_report_issue": "Informar de un problema",
         "update_available_dismiss": "Cerrar"
     },
+    "privacy": {
+        "heading": "Privacy & Data Protection",
+        "toc_label": "On this page",
+        "s1_title": "1. Data Controller",
+        "s2_title": "2. What personal data is processed?",
+        "s3_title": "3. Where is data stored?",
+        "s4_title": "4. Legal basis — GDPR Art. 6",
+        "s5_title": "5. Data retention",
+        "s6_title": "6. Right to erasure — GDPR Art. 17",
+        "s7_title": "7. Right to data portability — GDPR Art. 20",
+        "s8_title": "8. Audio data (speaking assignments)",
+        "s9_title": "9. Supervisory authority",
+        "s10_title": "10. Contact & Data Protection Officer",
+        "oss_title": "Open-source attributions",
+        "local_title": "Local storage (default)",
+        "db_title": "Database (Supabase) — optional"
+    },
     "cefr": {
         "placement_recover": "Cargar resultados de nivelación",
         "placement_recovered": "Se recuperaron {{count}} resultado(s) de nivelación que no se habían entregado",
@@ -3598,7 +3615,9 @@
         "error_id_required": "Por favor, introduce el ID de la escuela.",
         "error_create": "No se pudo crear la escuela: {{error}}",
         "error_join": "No se pudo unir a la escuela: {{error}}",
-        "error_last_admin": "Eres el único administrador, así que no puedes cambiar a Alumno. Primero nombra administrador a otro usuario o continúa como administrador."
+        "error_last_admin": "Eres el único administrador, así que no puedes cambiar a Alumno. Primero nombra administrador a otro usuario o continúa como administrador.",
+        "btn_skip": "Skip for now",
+        "progress_label": "Setup progress"
     },
     "admin": {
         "title": "Panel de Administración",
@@ -3935,6 +3954,13 @@
     "docs": {
         "section_title": "Documentación",
         "sections_nav_label": "Secciones de la documentación",
+        "filter_empty": "No sections match.",
+        "filter_label": "Filter documentation sections",
+        "filter_placeholder": "Filter sections…",
+        "route_docs_desc": "This documentation — route map and guides for every page.",
+        "route_docs_label": "Docs",
+        "route_test_queue_desc": "Grade open-ended test answers, then continue to the next student.",
+        "route_test_queue_label": "Test grading queue",
         "tab_route_map": "Mapa de rutas",
         "tab_getting_started": "Primeros pasos",
         "tab_rubrics": "Constructor de rúbricas",
@@ -5190,7 +5216,8 @@
     "notFound": {
         "heading": "404 — Página no encontrada",
         "body": "La página que buscas no existe o se ha movido.",
-        "go_dashboard": "Ir al panel"
+        "go_dashboard": "Ir al panel",
+        "go_back": "Go back"
     },
     "errors": {
         "boundary_title": "Algo salió mal",
