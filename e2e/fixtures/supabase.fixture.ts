@@ -4,6 +4,12 @@
  * Provides `supabasePage` — a page that is signed in as a freshly-created test
  * user against a local Supabase stack.  The test user is deleted after the test.
  *
+ * Worker-safe (#1116-7): every test gets a unique user (timestamp + random
+ * email), its own school and settings, and RLS scopes all rows by owner — so
+ * parallel workers sharing one local stack can't see each other's data. The one
+ * global-state assertion (49's retention audit-log count) is window-scoped to
+ * the run instead of a cumulative total.
+ *
  * Sign-in uses the admin `generate_link` API to obtain a magic link URL
  * without sending any email.  Playwright navigates to that URL; Supabase
  * verifies the token and redirects to the app with auth tokens in the hash,
