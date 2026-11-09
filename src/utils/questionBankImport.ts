@@ -6,6 +6,7 @@
  */
 
 import { CEFR_LEVELS, CEFR_SKILLS, QUESTION_BANK_SKILLS } from '../data/cefrDescriptors';
+import { parseGrammarIdList } from './grammarLinks';
 import type {
     CefrLevel,
     CefrSkill,
@@ -279,7 +280,15 @@ function parseQuestion(q: unknown, label: string, warnings: ImportWarning[]): Te
     if (raw.imageUrl) question.imageUrl = raw.imageUrl;
     if (raw.audioUrl) question.audioUrl = raw.audioUrl;
     if (raw.hint) question.hint = raw.hint;
-    if (raw.linkedGrammarItemId) question.linkedGrammarItemId = raw.linkedGrammarItemId;
+    {
+        const multi = parseGrammarIdList(
+            (raw as Record<string, unknown>).linkedGrammarItemIds ?? raw.linkedGrammarItemId
+        );
+        if (multi.length > 0) {
+            question.linkedGrammarItemIds = multi;
+            question.linkedGrammarItemId = multi[0];
+        }
+    }
     if (raw.explanation) question.explanation = raw.explanation;
     if (typeof raw.maxRecordingSeconds === 'number') question.maxRecordingSeconds = raw.maxRecordingSeconds;
     Object.assign(question, listeningFields(raw));

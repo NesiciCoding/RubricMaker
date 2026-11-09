@@ -58,6 +58,7 @@ import { generateCloze, type ClozeStrategy } from '../../utils/clozeGenerators';
 import { CEFR_LEVELS } from '../../data/cefrDescriptors';
 import { cefrEloRange, LEVEL_TO_ELO } from '../../utils/placementStaircase';
 import { grammarItemToFrameworkDescriptor } from '../../data/grammarStandards';
+import { getQuestionGrammarIds, withGrammarIds } from '../../utils/grammarLinks';
 import { questionTypeHelpKey, questionTypeLabelKey } from '../../utils/questionTypeKey';
 import type {
     TestQuestion,
@@ -171,67 +172,78 @@ export default function QuestionEditor({
         update({ prompt });
     }
 
-    // A question can only carry one grammar tag at a time (mastery/learning-path aggregation reads
-    // this single field) — keep it derived from frameworkDescriptors so the "Link CEFR / Framework"
-    // grammar tab stays the single place to set it (see addFrameworkDescriptor/removeFrameworkDescriptor).
-    function deriveLinkedGrammarItemId(frameworkDescriptors: LinkedFrameworkDescriptor[]): string | undefined {
-        return frameworkDescriptors.find((d) => d.framework === 'grammar')?.descriptorId;
-    }
+    // A question can carry several grammar tags at once (e.g. end punctuation +
+    // question mark + spacing) — keep them derived from frameworkDescriptors so the
+    // "Link CEFR / Framework" grammar tab stays the single place to set them
+    // (see addFrameworkDescriptor/removeFrameworkDescriptor).
 
     // Migration for questions tagged via the old standalone grammar dropdown (removed in favor of
-    // the "Link CEFR / Framework" grammar tab): surfaces the existing tag as a linked chip. This is
-    // a pure derived value, not a persisting effect — writing it back on mere mount/view would flag
-    // the test builder's unsaved-changes guard on a load that made no real edit. It gets persisted
+    // the "Link CEFR / Framework" grammar tab) or the legacy single linkedGrammarItemId:
+    // surfaces existing tags as linked chips. This is a pure derived value, not a
+    // persisting effect — writing it back on mere mount/view would flag the test
+    // builder's unsaved-changes guard on a load that made no real edit. It gets persisted
     // the next time the user makes an actual change here (add/remove/type-switch), since those all
     // read from this value rather than the raw `question.frameworkDescriptors`.
     const effectiveFrameworkDescriptors = React.useMemo(() => {
         const frameworkDescriptors = question.frameworkDescriptors ?? [];
-        if (!question.linkedGrammarItemId) return frameworkDescriptors;
-        const alreadyLinked = frameworkDescriptors.some(
-            (d) => d.framework === 'grammar' && d.descriptorId === question.linkedGrammarItemId
+        const legacyIds = getQuestionGrammarIds({
+            linkedGrammarItemIds: question.linkedGrammarItemIds,
+            linkedGrammarItemId: question.linkedGrammarItemId,
+            frameworkDescriptors: undefined,
+        });
+        if (legacyIds.length === 0) return frameworkDescriptors;
+        const existing = new Set(
+            frameworkDescriptors.filter((d) => d.framework === 'grammar').map((d) => d.descriptorId)
         );
-        if (alreadyLinked) return frameworkDescriptors;
-        const descriptor = grammarItemToFrameworkDescriptor(question.linkedGrammarItemId);
-        return descriptor ? [...frameworkDescriptors, descriptor] : frameworkDescriptors;
-    }, [question.frameworkDescriptors, question.linkedGrammarItemId]);
+        const missing = legacyIds.filter((id) => !existing.has(id));
+        if (missing.length === 0) return frameworkDescriptors;
+        const restored = missing.flatMap((id) => {
+            const descriptor = grammarItemToFrameworkDescriptor(id);
+            return descriptor ? [descriptor] : [];
+        });
+        return [...frameworkDescriptors, ...restored];
+    }, [question.frameworkDescriptors, question.linkedGrammarItemIds, question.linkedGrammarItemId]);
 
     function addFrameworkDescriptor(descriptor: LinkedFrameworkDescriptor) {
-        // Only one grammar tag can be active at a time (see deriveLinkedGrammarItemId above) — drop
-        // any existing grammar descriptor before adding a new one so it doesn't linger as an unused
-        // second chip. IB/Bloom's descriptors have no such limit and simply accumulate.
-        const kept =
-            descriptor.framework === 'grammar'
-                ? effectiveFrameworkDescriptors.filter((d) => d.framework !== 'grammar')
-                : effectiveFrameworkDescriptors;
-        const frameworkDescriptors = [...kept, descriptor];
-        update({ frameworkDescriptors, linkedGrammarItemId: deriveLinkedGrammarItemId(frameworkDescriptors) });
+        // Grammar, IB, Bloom's and SLO descriptors all accumulate — a punctuation
+        // question can link end punctuation + question mark + spacing at once.
+        if (effectiveFrameworkDescriptors.some((d) => d.descriptorId === descriptor.descriptorId)) return;
+        update(withGrammarIds(question, [...effectiveFrameworkDescriptors, descriptor]));
     }
 
     function removeFrameworkDescriptor(descriptorId: string) {
         /* v8 ignore next -- remove buttons only render when effectiveFrameworkDescriptors is non-empty */
-        const frameworkDescriptors = effectiveFrameworkDescriptors.filter((d) => d.descriptorId !== descriptorId);
-        update({ frameworkDescriptors, linkedGrammarItemId: deriveLinkedGrammarItemId(frameworkDescriptors) });
+        update(
+            withGrammarIds(
+                question,
+                effectiveFrameworkDescriptors.filter((d) => d.descriptorId !== descriptorId)
+            )
+        );
     }
 
     const isClozeLike =
         question.type === 'cloze' || question.type === 'cloze-dropdown' || question.type === 'cloze-bank';
 
     function changeType(type: TestQuestionType) {
-        // Clear a stale grammar link (both the derived id and its frameworkDescriptors entry) when
-        // switching to a type the grammar tag doesn't apply to, since getGrammarRecommendations()-style
+        // Clear stale grammar links (both derived ids and frameworkDescriptors entries) when
+        // switching to a type the grammar tags don't apply to, since getGrammarRecommendations()-style
         // matching has no type check of its own.
         const keepsGrammarLink = (
             ['cloze', 'cloze-dropdown', 'cloze-bank', 'matrix', 'hot-text', 'matching'] as TestQuestionType[]
         ).includes(type);
-        const linkedGrammarItemId = keepsGrammarLink ? question.linkedGrammarItemId : undefined;
-        const frameworkDescriptors = keepsGrammarLink
-            ? effectiveFrameworkDescriptors
-            : effectiveFrameworkDescriptors.filter((d) => d.framework !== 'grammar');
+        const base = keepsGrammarLink
+            ? withGrammarIds(question, effectiveFrameworkDescriptors)
+            : withGrammarIds(
+                  question,
+                  effectiveFrameworkDescriptors.filter((d) => d.framework !== 'grammar')
+              );
+        const { linkedGrammarItemId, linkedGrammarItemIds, frameworkDescriptors } = base;
 
         if (type === 'multiple-choice' || type === 'multiple-response') {
             update({
                 type,
                 linkedGrammarItemId,
+                linkedGrammarItemIds,
                 frameworkDescriptors,
                 options: question.options && question.options.length > 0 ? question.options : defaultOptions(),
             });
@@ -240,6 +252,7 @@ export default function QuestionEditor({
                 type,
                 correctBoolean: question.correctBoolean ?? true,
                 linkedGrammarItemId,
+                linkedGrammarItemIds,
                 frameworkDescriptors,
             });
         } else if (type === 'matrix') {
@@ -250,6 +263,7 @@ export default function QuestionEditor({
             update({
                 type,
                 linkedGrammarItemId,
+                linkedGrammarItemIds,
                 frameworkDescriptors,
                 matrixColumns,
                 matrixRows:
@@ -261,6 +275,7 @@ export default function QuestionEditor({
             update({
                 type,
                 linkedGrammarItemId,
+                linkedGrammarItemIds,
                 frameworkDescriptors,
                 matchingPairs:
                     question.matchingPairs && question.matchingPairs.length > 0
@@ -271,6 +286,7 @@ export default function QuestionEditor({
             update({
                 type,
                 linkedGrammarItemId,
+                linkedGrammarItemIds,
                 frameworkDescriptors,
                 orderItems:
                     question.orderItems && question.orderItems.length > 0 ? question.orderItems : defaultOrderItems(),
@@ -281,6 +297,7 @@ export default function QuestionEditor({
             update({
                 type,
                 linkedGrammarItemId,
+                linkedGrammarItemIds,
                 frameworkDescriptors,
                 categories,
                 categorizeItems:
@@ -292,6 +309,7 @@ export default function QuestionEditor({
             update({
                 type,
                 linkedGrammarItemId,
+                linkedGrammarItemIds,
                 frameworkDescriptors,
                 hotTextPassage: question.hotTextPassage ?? '',
                 hotTextCorrectIndices: question.hotTextCorrectIndices ?? [],
@@ -300,11 +318,12 @@ export default function QuestionEditor({
             update({
                 type,
                 linkedGrammarItemId,
+                linkedGrammarItemIds,
                 frameworkDescriptors,
                 maxRecordingSeconds: question.maxRecordingSeconds ?? DEFAULT_MAX_RECORDING_SECONDS,
             });
         } else {
-            update({ type, linkedGrammarItemId, frameworkDescriptors });
+            update({ type, linkedGrammarItemId, linkedGrammarItemIds, frameworkDescriptors });
         }
     }
 

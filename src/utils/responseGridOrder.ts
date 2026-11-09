@@ -27,7 +27,12 @@ export function questionCefrLevel(test: Test, question: TestQuestion): CefrLevel
 }
 
 function grammarKeyOf(question: TestQuestion): string | undefined {
-    return question.linkedGrammarItemId ?? question.linkedStandards?.[0]?.statementNotation;
+    return (
+        question.linkedGrammarItemIds?.[0] ??
+        question.linkedGrammarItemId ??
+        question.frameworkDescriptors?.find((d) => d.framework === 'grammar')?.descriptorId ??
+        question.linkedStandards?.[0]?.statementNotation
+    );
 }
 
 export function buildColumnMeta(test: Test, avgById: Map<string, number | undefined> = new Map()): GridColumnMeta[] {

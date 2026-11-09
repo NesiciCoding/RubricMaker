@@ -15,12 +15,14 @@ interface Props {
     onClose: () => void;
 }
 
-/** A question carries one grammar tag; keep linkedGrammarItemId derived from its framework chips. */
+/** A question can carry several grammar tags; keep linked ids derived from its framework chips. */
 function withFramework(q: TestQuestion, frameworkDescriptors: LinkedFrameworkDescriptor[]): TestQuestion {
+    const ids = frameworkDescriptors.filter((d) => d.framework === 'grammar').map((d) => d.descriptorId);
     return {
         ...q,
         frameworkDescriptors,
-        linkedGrammarItemId: frameworkDescriptors.find((d) => d.framework === 'grammar')?.descriptorId,
+        linkedGrammarItemIds: ids.length > 0 ? ids : undefined,
+        linkedGrammarItemId: ids[0],
     };
 }
 

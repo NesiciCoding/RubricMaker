@@ -7,6 +7,7 @@ import { useToast } from '../../hooks/useToast';
 import { useConfirm } from '../../hooks/useConfirm';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { CEFR_LEVELS, QUESTION_BANK_SKILLS } from '../../data/cefrDescriptors';
+import { getQuestionGrammarIds } from '../../utils/grammarLinks';
 import { getGrammarItemById } from '../../data/grammarStandards';
 import { stripHtmlTags } from '../../utils/exportDataPrep';
 import { plainQuestionPromptText } from '../../utils/clozeParse';
@@ -47,9 +48,12 @@ function questionSearchText(q: Omit<TestQuestion, 'sectionId'>): string {
         (q.linkedStandards ?? []).map((s) => `${s.statementNotation ?? ''} ${s.description}`).join(' '),
         (q.linkedCefrDescriptors ?? []).map((d) => `${d.descriptionEn} ${d.descriptionNl}`).join(' '),
     ];
-    if (q.linkedGrammarItemId) {
-        const grammarItem = getGrammarItemById(q.linkedGrammarItemId);
+    for (const gid of getQuestionGrammarIds(q)) {
+        const grammarItem = getGrammarItemById(gid);
         if (grammarItem) parts.push(grammarItem.labelEn, grammarItem.labelNl);
+    }
+    for (const fd of q.frameworkDescriptors ?? []) {
+        parts.push(fd.descriptionEn, fd.descriptionNl);
     }
     return parts.join(' ');
 }

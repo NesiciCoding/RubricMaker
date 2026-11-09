@@ -11,6 +11,7 @@ import type {
 import { GRAMMAR_CATEGORIES } from '../data/grammarStandards';
 import { criterionMaxPoints, criterionPercentage } from './gradeCalc';
 import { autoScoreResponse } from './testCalc';
+import { getQuestionGrammarIds } from './grammarLinks';
 import { isMastered } from './flashcardScheduler';
 import { State } from 'ts-fsrs';
 
@@ -77,14 +78,17 @@ function testEvidenceByItem(
         const test = testsById.get(st.testId);
         if (!test) continue;
         for (const question of test.questions) {
-            if (!question.linkedGrammarItemId) continue;
+            const grammarIds = getQuestionGrammarIds(question);
+            if (grammarIds.length === 0) continue;
             const answer = st.answers.find((a) => a.questionId === question.id);
             if (!answer) continue;
             const earned = answer.pointsEarned ?? autoScoreResponse(question, answer.response);
-            const entry = result.get(question.linkedGrammarItemId) ?? { attempts: 0, correct: 0 };
-            entry.attempts += 1;
-            if (isFullyCorrect(earned, question)) entry.correct += 1;
-            result.set(question.linkedGrammarItemId, entry);
+            for (const grammarId of grammarIds) {
+                const entry = result.get(grammarId) ?? { attempts: 0, correct: 0 };
+                entry.attempts += 1;
+                if (isFullyCorrect(earned, question)) entry.correct += 1;
+                result.set(grammarId, entry);
+            }
         }
     }
 
