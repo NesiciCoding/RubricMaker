@@ -974,12 +974,32 @@ function save<T>(key: string, value: T): void {
     try {
         localStorage.setItem(key, JSON.stringify(value));
     } catch (e) {
-        console.error('[storage] write failed (quota exceeded?):', key, e);
-        if (isQuotaExceededError(e)) {
-            quotaExceededHandler?.();
+        if (!isQuotaExceededError(e)) throw e;
+        // Quota full: the studentRubrics collection already lives in IndexedDB
+        // (saveStudentRubricsCache removes its localStorage copy), but browsers that
+        // cached it before that migration still hold the legacy duplicate — the single
+        // largest rm_* key. Drop it once and retry before giving up on this write.
+        try {
+            localStorage.removeItem(KEYS.studentRubrics);
+            localStorage.setItem(key, JSON.stringify(value));
+            console.warn('[storage] write succeeded after dropping legacy rm_student_rubrics copy:', key);
             return;
+        } catch (retryError) {
+            if (!isQuotaExceededError(retryError)) throw retryError;
+            let valueChars = -1;
+            try {
+                valueChars = JSON.stringify(value)?.length ?? -1;
+            } catch {
+                // value isn't serializable — size is unknowable, report -1
+            }
+            console.error(
+                '[storage] write failed (quota exceeded?):',
+                key,
+                `valueChars=${valueChars} usedChars=${localStorageUsedChars()}`,
+                retryError
+            );
+            quotaExceededHandler?.();
         }
-        throw e;
     }
 }
 
