@@ -166,6 +166,24 @@ describe('ConfirmDialog', () => {
         fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
         expect(onCancel).toHaveBeenCalled();
     });
+
+    it('restores focus to the element focused when the dialog opened (not mount time)', async () => {
+        const opener = document.createElement('button');
+        opener.textContent = 'Open me';
+        document.body.appendChild(opener);
+        opener.focus();
+        // Mounted closed (e.g. always-rendered page dialog): mount-time focus is irrelevant.
+        const { rerender } = render(<ConfirmDialog {...baseProps} open={false} />);
+        // Open later — the opener at *this* moment must be captured.
+        opener.focus();
+        rerender(<ConfirmDialog {...baseProps} open />);
+        // Close: parent flips open back to false after cancel. Radix restores
+        // focus in a setTimeout on unmount, so await it rather than asserting sync.
+        fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
+        rerender(<ConfirmDialog {...baseProps} open={false} />);
+        await waitFor(() => expect(document.activeElement).toBe(opener));
+        opener.remove();
+    });
 });
 
 // ─── EmptyState ───────────────────────────────────────────────────────────────

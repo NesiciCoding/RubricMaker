@@ -339,6 +339,7 @@ export default function PrivacyPage({ studentPortalPath }: { studentPortalPath?:
                 </header>
                 <main
                     id="portal-main-content"
+                    tabIndex={-1}
                     style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}
                 >
                     {content}
