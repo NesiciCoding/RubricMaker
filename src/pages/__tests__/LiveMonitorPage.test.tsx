@@ -5,6 +5,7 @@ import { MemoryRouter, Routes, Route, createMemoryRouter, RouterProvider } from 
 import { createClient } from '@supabase/supabase-js';
 import type { Student, Test } from '../../types';
 import LiveMonitorPage from '../LiveMonitorPage';
+import { __resetMonitorClientForTests } from '../../utils/monitorClient';
 
 interface MockChannel {
     on: ReturnType<typeof vi.fn>;
@@ -154,6 +155,7 @@ describe('LiveMonitorPage', () => {
             setPlacementOverride: mockSetPlacementOverride,
         };
         channels.length = 0;
+        __resetMonitorClientForTests();
         mockSend.mockClear();
         mockShowToast.mockClear();
         mockSetPlacementOverride.mockClear();

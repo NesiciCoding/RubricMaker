@@ -1,7 +1,8 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { createClient } from '@supabase/supabase-js';
 import { useLiveSessionTelemetry } from '../useLiveSessionTelemetry';
+import { __resetMonitorClientForTests } from '../../utils/monitorClient';
 
 const mockChannel = {
     on: vi.fn().mockReturnThis(),
@@ -18,6 +19,10 @@ vi.mock('@supabase/supabase-js', () => ({
 }));
 
 describe('useLiveSessionTelemetry', () => {
+    beforeEach(() => {
+        __resetMonitorClientForTests();
+        vi.mocked(createClient).mockClear();
+    });
     afterEach(() => {
         vi.useRealTimers();
         vi.unstubAllGlobals();

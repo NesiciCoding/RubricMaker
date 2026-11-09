@@ -1348,7 +1348,8 @@
                 "class_reached_aria": "{{reached}} von {{total}} Schülern haben {{level}} erreicht",
                 "class_finished_aria": "{{finished}} von {{total}} Schülern sind fertig",
                 "milestone_halfway": "Hälfte",
-                "milestone_final": "Letzte"
+                "milestone_final": "Letzte",
+                "no_questions": "Dieser Test enthält noch keine Fragen — fügen Sie Fragen hinzu, um hier das Raster pro Frage zu sehen. Anwesenheit und Aufsichtssignale oben werden weiterhin live aktualisiert."
             },
             "draft": {
                 "word_count": "{{count}} Wörter",
