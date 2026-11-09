@@ -23,6 +23,9 @@ interface Props {
     growFrom?: { x: number; y: number };
 }
 
+/** Only the first page of matches is rendered; the status announcement says so when capped. */
+const MAX_RESULTS = 50;
+
 export default function GlobalSearch({ onClose, growFrom }: Props) {
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -113,16 +116,32 @@ export default function GlobalSearch({ onClose, growFrom }: Props) {
                 </div>
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0' }}>
-                {/* Screen-reader announcement of the live result count (F17). */}
+                {/* Screen-reader announcement of the live result count (F17). Only
+                    announce once the deferred search has caught up with the input,
+                    so the first keystroke can't announce the previous (empty)
+                    result set. The query is part of the text so a new result set
+                    with the same count still triggers an announcement, and the
+                    50-row display cap is announced when it applies. */}
                 <span role="status" aria-live="polite" aria-atomic="true" className="sr-only">
-                    {query.trim() === '' ? '' : t('search.results_count', { count: results.length })}
+                    {query.trim() === '' || deferredQuery !== query
+                        ? ''
+                        : results.length > MAX_RESULTS
+                          ? t('search.results_capped', {
+                                shown: MAX_RESULTS,
+                                count: results.length,
+                                query: deferredQuery.trim(),
+                            })
+                          : t('search.results_for_query', {
+                                count: results.length,
+                                query: deferredQuery.trim(),
+                            })}
                 </span>
                 {query.trim() === '' ? (
                     <EmptyState style={{ padding: 32 }} description={t('search.hint')} />
                 ) : results.length === 0 ? (
                     <EmptyState style={{ padding: 32 }} description={t('search.no_results')} />
                 ) : (
-                    results.slice(0, 50).map((result) => {
+                    results.slice(0, MAX_RESULTS).map((result) => {
                         const Icon = TYPE_ICONS[result.type];
                         return (
                             <button
