@@ -45,7 +45,10 @@ describe('PrivacyPage (#619)', () => {
         const external = screen.getAllByRole('link').filter((a) => a.getAttribute('target') === '_blank');
         expect(external.length).toBe(6);
         for (const link of external) {
-            expect(link).toHaveStyle({ color: 'var(--text)', textDecoration: 'underline' });
+            // jsdom 31 resolves var() in computed style; assert the declared inline style instead.
+            expect(link.style.color).toBe('var(--text)');
+            // jsdom expands the shorthand into longhands when other decoration props are set.
+            expect(link.style.textDecorationLine).toBe('underline');
         }
     });
 });

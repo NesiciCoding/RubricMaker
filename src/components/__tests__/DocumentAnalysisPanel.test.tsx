@@ -487,7 +487,8 @@ describe('DocumentAnalysisPanel', () => {
             />
         );
         const count = screen.getByText('0');
-        expect(count).toHaveStyle({ color: 'var(--text-muted)' });
+        // jsdom 31 resolves var() in computed style; assert the declared inline style instead.
+        expect(count.style.color).toBe('var(--text-muted)');
         expect(screen.queryByRole('button', { name: /apply all found/i })).not.toBeInTheDocument();
     });
 

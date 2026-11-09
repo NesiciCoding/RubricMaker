@@ -215,7 +215,8 @@ describe('periodReportExport', () => {
     });
 
     it('falls back to the colored-cell trend table when no canvas 2d context is available', async () => {
-        // jsdom returns null for getContext('2d'), so no spy needed — the fallback is native.
+        // jsdom 31 implements getContext('2d'); force the null case this fallback covers.
+        const getContextSpy = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
         const secondEntry = { sr: { ...mockSr, id: 'sr2' }, rubric: mockRubric, scale: mockScale };
         await exportPeriodReport({
             ...baseInput,
@@ -224,6 +225,7 @@ describe('periodReportExport', () => {
         expect(ImageRun).not.toHaveBeenCalled();
         const texts = vi.mocked(TextRun).mock.calls.map((call) => (call[0] as { text?: string }).text ?? '');
         expect(texts.some((t) => /^\d+%$/.test(t))).toBe(true); // percentage cells from the fallback row
+        getContextSpy.mockRestore();
     });
 
     it('falls back to the colored-cell trend table when the chart blob is empty', async () => {
