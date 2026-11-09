@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useLayoutEffect, useRef } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -29,8 +29,19 @@ export function ConfirmDialog({
     const resolvedCancelLabel = cancelLabel ?? t('common.cancel');
     // Radix only restores focus to a Dialog.Trigger, which no consumer renders, so
     // remember whatever opened the dialog and hand focus back to it on close — the
-    // same pattern as ui/Modal (F5.3).
-    const [opener] = useState(() => (document.activeElement instanceof HTMLElement ? document.activeElement : null));
+    // same pattern as ui/Modal (F5.3). Captured on the transition to open (not at
+    // mount: several pages render this dialog unconditionally, so a mount-time
+    // capture would be the page body). A layout effect runs before Radix's own
+    // autofocus (which lives in a passive effect), so the opener is read before
+    // focus moves into the dialog.
+    const openerRef = useRef<HTMLElement | null>(null);
+    const wasOpenRef = useRef(open);
+    useLayoutEffect(() => {
+        if (open && !wasOpenRef.current) {
+            openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        }
+        wasOpenRef.current = open;
+    }, [open]);
     return (
         <Dialog.Root open={open} onOpenChange={(v) => !v && onCancel()}>
             <Dialog.Portal>
@@ -41,6 +52,8 @@ export function ConfirmDialog({
                     aria-describedby="confirm-dialog-message"
                     onCloseAutoFocus={(event) => {
                         event.preventDefault();
+                        const opener = openerRef.current;
+                        openerRef.current = null;
                         if (opener?.isConnected) opener.focus();
                     }}
                 >
