@@ -48,8 +48,9 @@ describe('GradingActionsMenu coverage', () => {
 
         const items = screen.getAllByRole('menuitem');
         expect(items).toHaveLength(3);
-        expect(items[1]).toHaveStyle({ color: 'var(--red-text)' });
-        expect(items[2]).toHaveStyle({ color: 'var(--accent-text)' });
+        // jsdom 31 resolves var() in computed style; assert the declared inline style instead.
+        expect(items[1].style.color).toBe('var(--red-text)');
+        expect(items[2].style.color).toBe('var(--accent-text)');
         expect(screen.getByText('✓')).toBeInTheDocument();
 
         fireEvent.click(items[1]);

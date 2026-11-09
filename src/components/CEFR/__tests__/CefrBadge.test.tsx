@@ -33,7 +33,8 @@ describe('CefrBadge', () => {
         render(<CefrBadge level="B1" developing title="Working toward B1" />);
         const badge = screen.getByText('B1');
         expect(badge).toHaveAttribute('data-developing', 'true');
-        expect(badge.style.background).toBe('transparent');
+        // jsdom 31 normalizes the `background` shorthand to `none`; backgroundColor keeps `transparent`.
+        expect(badge.style.backgroundColor).toBe('transparent');
         expect(badge.style.border).toContain('dashed');
         expect(screen.getByTitle('Working toward B1')).toBeInTheDocument();
     });
