@@ -3,10 +3,6 @@ import {
     Laptop,
     LogIn,
     GraduationCap,
-    ChevronDown,
-    ChevronUp,
-    Database,
-    ExternalLink,
     BookOpen,
     Users,
     BarChart3,
@@ -45,126 +41,147 @@ import { useTranslation } from 'react-i18next';
 const TEACHER_FEATURES = [
     {
         icon: BookOpen,
+        key: 'rubric_builder',
         title: 'Rubric Builder',
         desc: 'Design rubrics with custom criteria, weighted scoring, tick-off checklists of what each level looks like, tiered rubrics with a column per school level, CEFR descriptors, grammar standards, and version history.',
         color: '#3b82f6',
     },
     {
         icon: Layers,
+        key: 'folders',
         title: 'Folders',
         desc: 'Sort rubrics, tests, essays and flashcard decks into nested folders.',
         color: '#0ea5e9',
     },
     {
         icon: Users,
+        key: 'smart_grading',
         title: 'Smart Grading',
         desc: 'Grade quickly with a comment bank, voice dictation, keyboard shortcuts, anchored inline comments on submissions, audio feedback, and a card or grid view — plus side-by-side and group grading.',
         color: '#8b5cf6',
     },
     {
         icon: ScanLine,
+        key: 'scan_handwritten_work',
         title: 'Scan handwritten work',
         desc: 'Photograph or import a handwritten answer while grading; the text is recognised on your device, you correct it, and it drops into your feedback — the image is used only for recognition and isn’t stored.',
         color: '#0ea5e9',
     },
     {
         icon: BarChart3,
+        key: 'analytics_export',
         title: 'Analytics & Export',
         desc: 'Your dashboard opens with a student snapshot — CEFR, grammar, and vocabulary mastery plus a needs-attention flag for every student, colour-coded and filterable by class — follow progress across rubrics and tests, ask your own statistics questions, then export grades (with ready-made gradebook presets), report cards, essays, and assignment deadlines in the format that works for you.',
         color: '#06b6d4',
     },
     {
         icon: Palette,
+        key: 'theme_bundles',
         title: 'Theme bundles',
         desc: 'Six named themes (Academy, Nature, Midnight…) set accent colour, font, and export style in one click.',
         color: '#8b5cf6',
     },
     {
         icon: Languages,
+        key: 'vocabulary_grammar',
         title: 'Vocabulary & Grammar',
         desc: 'See each class and student’s CEFR vocabulary range (A1–C2) and academic-word coverage from their analysed work, check whether a pasted or uploaded reading suits your class’s level, see flashcard progress across all your decks, spot criteria a student keeps losing points on across essays, auto-check linked grammar in scanned essays, and export or seed flashcard decks from word lists by level.',
         color: '#f59e0b',
     },
     {
         icon: Radio,
+        key: 'live_monitoring',
         title: 'Live Monitoring',
         desc: 'Watch tests and essays as students work — who’s online, their progress, and live drafts, updated in real time.',
         color: '#ef4444',
     },
     {
         icon: ClipboardCheck,
+        key: 'tests_quizzes',
         title: 'Tests & Quizzes',
         desc: 'Build multiple-choice, multiple-response, true/false, short-answer, open, fill-the-gap, matching, ordering, categorize, hot text, and audio-response tests with rich-text prompts, reading passages, and picture-choice options, preview the printed A4 page live while you build, assign them with a share link or Safe Exam Browser, then auto-grade, fine-tune the class average, and export a strong/weak point summary per student or class. Add an ungraded, retakeable Practice mode with audio questions for listening comprehension, or have students record a spoken answer for speaking practice. Save questions — or a whole reading/listening passage — to a reusable bank, then generate a new test automatically from bank criteria in one click. Auto-generate cloze gaps (fixed-ratio, C-test, grammar or vocabulary-targeted), check a passage against your class’s CEFR level with one-click pre-teaching decks, and turn a flashcard deck straight into test questions. Export a printable, CITO-style exam paper — question booklet, answer sheet, attachment, and grading sheet — as PDF or Word, then scan a student’s filled-in paper answer sheet back in for automatic marking.',
         color: '#3b82f6',
     },
     {
         icon: Table2,
+        key: 'paper_test_score_sheet',
         title: 'Paper-Test Score Sheet',
         desc: 'Type in the points per question for a paper test in a spreadsheet-style grid and get grades from a percentage, N-term, pass mark or per-year norm table, plus P-values and reliability.',
         color: '#2563eb',
     },
     {
         icon: Route,
+        key: 'placement_testing',
         title: 'Placement Testing',
         desc: 'Build a placement test with a branching-sections, staircase, or live generator engine that pulls questions from your bank on the fly — each student lands on the right difficulty and gets a provisional CEFR estimate, with a live level view and teacher adjustments while the test is in progress, ideal for sizing up new students at the start of the year.',
         color: '#10b981',
     },
     {
         icon: PenLine,
+        key: 'essays',
         title: 'Essays',
         desc: 'Write a prompt, link a rubric, and assign it to a class from a dedicated Essays page — then track submissions, share links, and watch live progress — and see word, sentence, transition, readability and grammar-range stats for each essay while you grade.',
         color: '#6366f1',
     },
     {
         icon: TrendingUp,
+        key: 'learning_paths',
         title: 'Learning Paths',
         desc: 'See which students need extra support, with rubric suggestions based on their CEFR progress compared to the class average, plus grammar practice suggestions for repeated low scores on grammar-linked criteria and questions.',
         color: '#10b981',
     },
     {
         icon: Store,
+        key: 'marketplace',
         title: 'Marketplace',
         desc: 'Share your best rubrics, tests, and flashcard decks with colleagues at your school, and clone theirs.',
         color: '#3b82f6',
     },
     {
         icon: UserCheck,
+        key: 'department_collaboration',
         title: 'Department Collaboration',
         desc: 'Share rubrics, tests and whole folders with your co-teachers or your whole school, send work for a second opinion, co-teach a class — grading it together with the same rubrics and tests — and assign ungraded work to colleagues.',
         color: '#f59e0b',
     },
     {
         icon: Download,
+        key: 'install_as_an_app',
         title: 'Install as an App',
         desc: 'Add RubricMaker to your home screen or desktop for a faster, app-like launch — great for shared classroom devices, and works fully offline.',
         color: '#0ea5e9',
     },
     {
         icon: Search,
+        key: 'quick_search',
         title: 'Quick Search',
         desc: "Press Ctrl/Cmd+K from anywhere to instantly find a rubric, test, student, class, or essay — filter by school year or VO track, or type a student's name with a rubric's name to jump straight to grading.",
         color: '#f59e0b',
     },
     {
         icon: Mail,
+        key: 'student_messaging',
         title: 'Student Messaging',
         desc: 'Answer student questions about a rubric, test, or essay right from your Messages inbox — or reach out to a student yourself.',
         color: '#f59e0b',
     },
     {
         icon: Bell,
+        key: 'notification_center',
         title: 'Notification Center',
         desc: 'One bell for overdue grading, unread messages, and pending moderation reviews, with a full filterable history and optional nightly email digests per category.',
         color: '#f59e0b',
     },
     {
         icon: Layers,
+        key: 'vocabulary_grammar_flashcards',
         title: 'Vocabulary & Grammar Flashcards',
         desc: 'Build vocabulary or grammar flashcard decks by hand or import them from CSV, Excel, or Word — add pronunciation and part of speech per word — assign them to a class, and see which items each student should focus on.',
         color: '#8b5cf6',
     },
     {
         icon: Newspaper,
+        key: 'news_flashes',
         title: 'News Flashes',
         desc: 'Curate an article, book, or video and share it with every student — with an optional link to a flashcard deck, test, or rubric.',
         color: '#8b5cf6',
@@ -174,98 +191,94 @@ const TEACHER_FEATURES = [
 const STUDENT_FEATURES = [
     {
         icon: Eye,
+        key: 'view_feedback',
         title: 'View Feedback',
         desc: 'See your grades, teacher comments, the checklist points your teacher ticked, and attached files via your personal portal link — organised into Home, Assignments, Feedback, and Progress tabs, no login needed.',
         color: '#10b981',
     },
     {
         icon: FileText,
+        key: 'submit_essays',
         title: 'Submit Essays',
         desc: 'Write in a distraction-free rich-text A4 editor with the prompt, word target, and a writing tip beside you — your draft autosaves and you submit with a code your teacher gives you. No account required.',
         color: '#f59e0b',
     },
     {
         icon: Star,
+        key: 'self_assessment',
         title: 'Self-Assessment',
         desc: 'Rate yourself against CEFR Can-Do statements and track your language proficiency over time.',
         color: '#6366f1',
     },
     {
         icon: MessageSquare,
+        key: 'peer_review',
         title: 'Peer Review',
         desc: "Leave structured feedback on a classmate's work using the same rubric your teacher uses.",
         color: '#8b5cf6',
     },
     {
         icon: ClipboardCheck,
+        key: 'take_a_test',
         title: 'Take a Test',
         desc: 'Open a test link from your teacher, answer the questions with a countdown timer, flag any to revisit, and jump between them from a colour-coded question map, then submit — your answers save automatically as you go. Practice tests can be retaken and never affect your graded results. If your teacher has enabled the read-aloud accommodation for you, passages, questions and answer options can be read aloud in any test, including graded ones.',
         color: '#3b82f6',
     },
     {
         icon: KeyRound,
+        key: 'student_portal_login',
         title: 'Student Portal Login',
         desc: 'If your school connects a database, you can sign in with your email and a password your teacher gives you — no confirmation email needed.',
         color: '#0ea5e9',
     },
     {
         icon: ListChecks,
+        key: 'my_work_progress',
         title: 'My Work & Progress',
         desc: 'See every assigned essay and test in one to-do list — overdue, planned, and completed — plus a radar chart of your own scores across rubrics. Search your own work, grades, and flashcards right from the portal.',
         color: '#14b8a6',
     },
     {
         icon: Mail,
+        key: 'ask_your_teacher',
         title: 'Ask Your Teacher',
         desc: 'Ask a question about a rubric grade, test, or essay right from your portal, and see the reply on your next visit.',
         color: '#f59e0b',
     },
     {
         icon: TrendingUp,
+        key: 'grade_review_recommendations',
         title: 'Grade Review & Recommendations',
         desc: 'See a note in your portal if a grade is currently being double-checked by a colleague of your teacher, plus personalised rubric and grammar-practice suggestions based on your own progress.',
         color: '#6366f1',
     },
     {
         icon: Layers,
+        key: 'study_flashcards',
         title: 'Study Flashcards',
         desc: 'Practice vocabulary decks from your teacher with smart spaced repetition — see the pronunciation on each card, track a progress bar, and watch hard words come back sooner. Make your own private decks too, and share one with your teacher in a tap.',
         color: '#8b5cf6',
     },
     {
         icon: Newspaper,
+        key: 'news_flashes_2',
         title: 'News Flashes',
         desc: 'See a chronological timeline of articles, books, and videos your teacher shares — with an unread badge that clears once you open one.',
         color: '#8b5cf6',
     },
 ];
 
+const TOP_TEACHER_KEYS = ['rubric_builder', 'smart_grading', 'tests_quizzes'];
+const TOP_STUDENT_KEYS = ['view_feedback', 'submit_essays', 'take_a_test'];
+
 export default function LandingPage() {
     const { t } = useTranslation();
-    const { enterLocalMode, connectForOAuth } = usePlatform();
+    const { enterLocalMode } = usePlatform();
 
     const savedConfig = loadSupabaseConfig();
-    const [supabaseReady, setSupabaseReady] = useState(!!savedConfig);
-    const [showAdvanced, setShowAdvanced] = useState(false);
-    const [dbUrl, setDbUrl] = useState(savedConfig?.supabaseUrl ?? '');
-    const [dbKey, setDbKey] = useState(savedConfig?.supabaseAnonKey ?? '');
-    const [configuring, setConfiguring] = useState(false);
-    const [configError, setConfigError] = useState('');
-
-    async function handleConfigure() {
-        if (!dbUrl.trim() || !dbKey.trim()) {
-            setConfigError('Both fields are required.');
-            return;
-        }
-        setConfiguring(true);
-        setConfigError('');
-        const ok = await connectForOAuth({ supabaseUrl: dbUrl.trim(), supabaseAnonKey: dbKey.trim() });
-        setConfiguring(false);
-        if (ok) {
-            setSupabaseReady(true);
-            setShowAdvanced(false);
-        } else setConfigError('Could not connect — check the URL and key.');
-    }
+    const [supabaseReady] = useState(!!savedConfig);
+    const [showCloudHint, setShowCloudHint] = useState(false);
+    const [showAllFeatures, setShowAllFeatures] = useState(false);
 
     return (
         <main
@@ -331,6 +344,7 @@ export default function LandingPage() {
                     Better assessment,{' '}
                     <span
                         style={{
+                            color: '#4f46e5',
                             background: 'linear-gradient(135deg, #6366f1, #3b82f6)',
                             WebkitBackgroundClip: 'text',
                             WebkitTextFillColor: 'transparent',
@@ -411,27 +425,23 @@ export default function LandingPage() {
                     </button>
                 </LoginCard>
 
-                {/* Teacher Login — highlighted */}
+                {/* Teacher Login — deliberately not highlighted: Continue first, login second. */}
                 <LoginCard
                     icon={<LogIn size={22} style={{ color: '#6366f1' }} />}
                     title={t('tooltips.landing_teacher_title')}
                     subtitle={t('tooltips.landing_teacher_sub')}
                     accentColor="#4f46e5"
                     accentBg="#eef2ff"
-                    highlighted
                 >
-                    <LoginButtons supabaseReady={supabaseReady} onNeedConfig={() => setShowAdvanced(true)} />
-                    <AdvancedConfig
-                        open={showAdvanced}
-                        onToggle={() => setShowAdvanced((o) => !o)}
-                        dbUrl={dbUrl}
-                        setDbUrl={setDbUrl}
-                        dbKey={dbKey}
-                        setDbKey={setDbKey}
-                        configuring={configuring}
-                        configError={configError}
-                        onConfigure={handleConfigure}
-                    />
+                    <LoginButtons supabaseReady={supabaseReady} onNeedConfig={() => setShowCloudHint(true)} />
+                    {showCloudHint && !supabaseReady && (
+                        <p style={{ margin: '8px 0 0', fontSize: '0.78rem', color: '#64748b', lineHeight: 1.5 }}>
+                            {t('landing.cloud_not_configured', {
+                                defaultValue:
+                                    'Cloud sync is not configured on this device. Continue offline, or connect it later in Settings → Database.',
+                            })}
+                        </p>
+                    )}
                 </LoginCard>
 
                 {/* Student */}
@@ -449,7 +459,7 @@ export default function LandingPage() {
                             Your teacher will give you the assignment link — you don't need an account to submit.
                         </span>
                     </p>
-                    <LoginButtons supabaseReady={supabaseReady} onNeedConfig={() => setShowAdvanced(true)} />
+                    <LoginButtons supabaseReady={supabaseReady} onNeedConfig={() => setShowCloudHint(true)} />
                 </LoginCard>
             </div>
 
@@ -468,11 +478,29 @@ export default function LandingPage() {
                     What's included
                 </h2>
 
-                {/* For teachers */}
-                <FeatureGroup label="For teachers" labelColor="#4f46e5" features={TEACHER_FEATURES} />
+                {/* For teachers — top 3 first, expand for all */}
+                <FeatureGroup
+                    label={t('landing.for_teachers', { defaultValue: 'For teachers' })}
+                    labelColor="#4f46e5"
+                    features={TEACHER_FEATURES}
+                    topKeys={TOP_TEACHER_KEYS}
+                    expanded={showAllFeatures}
+                    onToggle={() => setShowAllFeatures((v) => !v)}
+                    toggleLabel={t('landing.show_all_features', { defaultValue: 'Show all features' })}
+                    toggleCollapseLabel={t('landing.show_fewer_features', { defaultValue: 'Show fewer' })}
+                />
 
                 {/* For students */}
-                <FeatureGroup label="For students" labelColor="#0e7490" features={STUDENT_FEATURES} />
+                <FeatureGroup
+                    label={t('landing.for_students', { defaultValue: 'For students' })}
+                    labelColor="#0e7490"
+                    features={STUDENT_FEATURES}
+                    topKeys={TOP_STUDENT_KEYS}
+                    expanded={showAllFeatures}
+                    onToggle={() => setShowAllFeatures((v) => !v)}
+                    toggleLabel={t('landing.show_all_features', { defaultValue: 'Show all features' })}
+                    toggleCollapseLabel={t('landing.show_fewer_features', { defaultValue: 'Show fewer' })}
+                />
             </div>
 
             {/* ── Offline notice + privacy ── */}
@@ -509,12 +537,34 @@ export default function LandingPage() {
 
 interface FeatureItem {
     icon: React.ElementType;
+    key: string;
     title: string;
     desc: string;
     color: string;
 }
 
-function FeatureGroup({ label, labelColor, features }: { label: string; labelColor: string; features: FeatureItem[] }) {
+function FeatureGroup({
+    label,
+    labelColor,
+    features,
+    topKeys,
+    expanded,
+    onToggle,
+    toggleLabel,
+    toggleCollapseLabel,
+}: {
+    label: string;
+    labelColor: string;
+    features: FeatureItem[];
+    topKeys?: string[];
+    expanded?: boolean;
+    onToggle?: () => void;
+    toggleLabel?: string;
+    toggleCollapseLabel?: string;
+}) {
+    const { t } = useTranslation();
+    const visible = expanded || !topKeys ? features : features.filter((f) => topKeys.includes(f.key));
+    const hiddenCount = features.length - visible.length;
     return (
         <div style={{ marginBottom: 24 }}>
             <div
@@ -544,13 +594,13 @@ function FeatureGroup({ label, labelColor, features }: { label: string; labelCol
             <div
                 style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))',
                     gap: 10,
                 }}
             >
-                {features.map(({ icon: Icon, title, desc, color }) => (
+                {visible.map(({ icon: Icon, key, title, desc, color }) => (
                     <div
-                        key={title}
+                        key={key}
                         style={{
                             background: '#fff',
                             border: '1px solid #e2e8f0',
@@ -575,15 +625,42 @@ function FeatureGroup({ label, labelColor, features }: { label: string; labelCol
                         >
                             <Icon size={16} style={{ color }} />
                         </div>
-                        <div>
+                        <div style={{ minWidth: 0 }}>
                             <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#0f172a', marginBottom: 2 }}>
-                                {title}
+                                {t(`landing.features.${key}_title`, { defaultValue: title })}
                             </div>
-                            <div style={{ fontSize: '0.79rem', color: '#475569', lineHeight: 1.5 }}>{desc}</div>
+                            <div
+                                style={{
+                                    fontSize: '0.79rem',
+                                    color: '#475569',
+                                    lineHeight: 1.5,
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: expanded ? 'unset' : 4,
+                                    WebkitBoxOrient: 'vertical',
+                                    overflow: 'hidden',
+                                }}
+                            >
+                                {t(`landing.features.${key}_desc`, { defaultValue: desc })}
+                            </div>
                         </div>
                     </div>
                 ))}
             </div>
+            {onToggle && hiddenCount > 0 && (
+                <button
+                    onClick={onToggle}
+                    className="btn btn-ghost btn-sm"
+                    style={{ marginTop: 12 }}
+                    aria-expanded={!!expanded}
+                >
+                    {toggleLabel} ({hiddenCount})
+                </button>
+            )}
+            {onToggle && expanded && topKeys && (
+                <button onClick={onToggle} className="btn btn-ghost btn-sm" style={{ marginTop: 12 }}>
+                    {toggleCollapseLabel}
+                </button>
+            )}
         </div>
     );
 }
@@ -656,98 +733,4 @@ function LoginCard({ icon, title, subtitle, accentColor, accentBg, highlighted, 
     );
 }
 
-interface AdvancedConfigProps {
-    open: boolean;
-    onToggle: () => void;
-    dbUrl: string;
-    setDbUrl: (v: string) => void;
-    dbKey: string;
-    setDbKey: (v: string) => void;
-    configuring: boolean;
-    configError: string;
-    onConfigure: () => void;
-}
-
-function AdvancedConfig({
-    open,
-    onToggle,
-    dbUrl,
-    setDbUrl,
-    dbKey,
-    setDbKey,
-    configuring,
-    configError,
-    onConfigure,
-}: AdvancedConfigProps) {
-    return (
-        <div style={{ marginTop: 12 }}>
-            <button
-                onClick={onToggle}
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: '#64748b',
-                    fontSize: '0.78rem',
-                    padding: '4px 0',
-                }}
-            >
-                {open ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-                Self-hosted / advanced
-            </button>
-
-            {open && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
-                    <p style={{ margin: 0, fontSize: '0.78rem', color: '#64748b', lineHeight: 1.5 }}>
-                        Run your own Supabase instance or use a custom project.{' '}
-                        <a
-                            href="https://supabase.com"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{ color: '#64748b' }}
-                        >
-                            supabase.com <ExternalLink size={9} />
-                        </a>
-                    </p>
-                    <input
-                        type="text"
-                        value={dbUrl}
-                        onChange={(e) => setDbUrl(e.target.value)}
-                        placeholder="https://your-project.supabase.co"
-                        style={{
-                            padding: '8px 10px',
-                            borderRadius: 6,
-                            border: '1px solid #e2e8f0',
-                            fontSize: '0.82rem',
-                        }}
-                    />
-                    <input
-                        type="password"
-                        value={dbKey}
-                        onChange={(e) => setDbKey(e.target.value)}
-                        placeholder="anon key (eyJhbGci…)"
-                        autoComplete="off"
-                        style={{
-                            padding: '8px 10px',
-                            borderRadius: 6,
-                            border: '1px solid #e2e8f0',
-                            fontSize: '0.82rem',
-                        }}
-                    />
-                    {configError && <p style={{ margin: 0, color: '#ef4444', fontSize: '0.78rem' }}>{configError}</p>}
-                    <button
-                        className="btn btn-secondary btn-sm"
-                        disabled={configuring || !dbUrl || !dbKey}
-                        onClick={onConfigure}
-                    >
-                        <Database size={13} />
-                        {configuring ? 'Connecting…' : 'Use this Supabase instance'}
-                    </button>
-                </div>
-            )}
-        </div>
-    );
-}
+// F3: self-hosted Supabase config removed from landing — connect via Settings → Database.

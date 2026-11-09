@@ -193,29 +193,13 @@ describe('LandingPage', () => {
         expect(mockEnterLocalMode).toHaveBeenCalled();
     });
 
-    it('toggles the Self-hosted / advanced section', async () => {
+    // F3: self-hosted config removed from landing — connect via Settings → Database.
+    it('does not render a Self-hosted section on the landing page', async () => {
         const { default: LandingPage } = await import('../LandingPage');
         renderPage(<LandingPage />);
-        const toggleBtn = screen.getAllByText(/self-hosted/i)[0].closest('button') as HTMLButtonElement;
-        fireEvent.click(toggleBtn);
-        expect(screen.getByPlaceholderText(/your-project\.supabase\.co/i)).toBeInTheDocument();
-        fireEvent.click(toggleBtn);
+        expect(screen.queryByText(/self-hosted/i)).not.toBeInTheDocument();
         expect(screen.queryByPlaceholderText(/your-project\.supabase\.co/i)).not.toBeInTheDocument();
-    });
-
-    it('shows an error when configure is clicked with whitespace-only fields', async () => {
-        const { default: LandingPage } = await import('../LandingPage');
-        renderPage(<LandingPage />);
-        const toggleBtn = screen.getAllByText(/self-hosted/i)[0].closest('button') as HTMLButtonElement;
-        fireEvent.click(toggleBtn);
-        // Enter whitespace so the button is enabled (non-empty string) but trim() fails validation
-        const urlInput = screen.getByPlaceholderText(/your-project\.supabase\.co/i);
-        const keyInput = screen.getByPlaceholderText(/anon key/i);
-        fireEvent.change(urlInput, { target: { value: '   ' } });
-        fireEvent.change(keyInput, { target: { value: '   ' } });
-        const connectBtn = screen.getByRole('button', { name: /use this supabase instance/i });
-        fireEvent.click(connectBtn);
-        expect(screen.getByText(/both fields are required/i)).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /use this supabase instance/i })).not.toBeInTheDocument();
     });
 });
 

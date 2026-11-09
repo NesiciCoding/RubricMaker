@@ -53,66 +53,21 @@ describe('LandingPage coverage', () => {
         expect(mockEnterLocalMode).toHaveBeenCalled();
     });
 
-    it('configures a custom Supabase instance successfully', async () => {
+    // F3: self-hosted Supabase config was removed from the landing page — cloud
+    // sync is connected via Settings → Database. The login buttons' need-config
+    // callback now shows a hint instead of opening an inline config form.
+    it('shows a cloud hint instead of self-hosted config when login needs configuration', () => {
+        render(<PageComp />);
+        expect(screen.queryByText('Self-hosted / advanced')).not.toBeInTheDocument();
+        expect(screen.queryByPlaceholderText('https://your-project.supabase.co')).not.toBeInTheDocument();
+        fireEvent.click(screen.getAllByTestId('login-buttons')[0]);
+        expect(screen.getByText(/Cloud sync is not configured on this device/)).toBeInTheDocument();
+    });
+
+    it('does not show the cloud hint when cloud sync is already configured', () => {
         mockLoadSupabaseConfig.mockReturnValue({ supabaseUrl: 'https://x.supabase.co', supabaseAnonKey: 'key-1' });
         render(<PageComp />);
-        // Advanced config starts closed; open it.
-        fireEvent.click(screen.getByText('Self-hosted / advanced'));
-        expect(screen.getByPlaceholderText('https://your-project.supabase.co')).toHaveValue('https://x.supabase.co');
-        fireEvent.change(screen.getByPlaceholderText('https://your-project.supabase.co'), {
-            target: { value: ' https://y.supabase.co ' },
-        });
-        fireEvent.change(screen.getByPlaceholderText('anon key (eyJhbGci…)'), { target: { value: 'key-2' } });
-        fireEvent.click(screen.getByText('Use this Supabase instance'));
-        await waitFor(() =>
-            expect(mockConnectForOAuth).toHaveBeenCalledWith({
-                supabaseUrl: 'https://y.supabase.co',
-                supabaseAnonKey: 'key-2',
-            })
-        );
-    });
-
-    it('shows the connecting state while configuring and reports failures', async () => {
-        let resolveConnect: (v: boolean) => void = () => undefined;
-        mockConnectForOAuth.mockReturnValue(
-            new Promise<boolean>((res) => {
-                resolveConnect = res;
-            })
-        );
-        render(<PageComp />);
-        fireEvent.click(screen.getByText('Self-hosted / advanced'));
-        fireEvent.change(screen.getByPlaceholderText('https://your-project.supabase.co'), {
-            target: { value: 'https://y.supabase.co' },
-        });
-        fireEvent.change(screen.getByPlaceholderText('anon key (eyJhbGci…)'), { target: { value: 'key-2' } });
-        fireEvent.click(screen.getByText('Use this Supabase instance'));
-        // Pending → the connecting label shows and the button is disabled.
-        expect(screen.getByText('Connecting…')).toBeInTheDocument();
-        expect((screen.getByText('Connecting…').closest('button') as HTMLButtonElement).disabled).toBe(true);
-        await waitFor(() => resolveConnect(false));
-        expect(await screen.findByText('Could not connect — check the URL and key.')).toBeInTheDocument();
-    });
-
-    it('validates empty fields in the advanced config', () => {
-        render(<PageComp />);
-        fireEvent.click(screen.getByText('Self-hosted / advanced'));
-        // Whitespace-only values pass the disabled check but fail the trim validation.
-        fireEvent.change(screen.getByPlaceholderText('https://your-project.supabase.co'), {
-            target: { value: '   ' },
-        });
-        fireEvent.change(screen.getByPlaceholderText('anon key (eyJhbGci…)'), { target: { value: '  ' } });
-        fireEvent.click(screen.getByText('Use this Supabase instance'));
-        expect(screen.getByText('Both fields are required.')).toBeInTheDocument();
-        expect(mockConnectForOAuth).not.toHaveBeenCalled();
-    });
-
-    it('opens the advanced config from the login buttons need-config callback', () => {
-        render(<PageComp />);
-        expect(screen.queryByPlaceholderText('https://your-project.supabase.co')).not.toBeInTheDocument();
-        // Both the teacher and student login cards expose the need-config callback;
-        // the shared advanced-config state opens the single instance in the teacher card.
         fireEvent.click(screen.getAllByTestId('login-buttons')[0]);
-        fireEvent.click(screen.getAllByTestId('login-buttons')[1]);
-        expect(screen.getAllByPlaceholderText('https://your-project.supabase.co').length).toBe(1);
+        expect(screen.queryByText(/Cloud sync is not configured on this device/)).not.toBeInTheDocument();
     });
 });
