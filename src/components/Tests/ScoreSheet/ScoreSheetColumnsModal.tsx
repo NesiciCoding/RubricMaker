@@ -4,26 +4,16 @@ import { ArrowDown, ArrowUp, BookOpen, GraduationCap, Plus, Trash2, X } from 'lu
 import Modal from '../../ui/Modal';
 import StandardsPickerModal from '../../Standards/StandardsPickerModal';
 import CefrPickerModal from '../../CEFR/CefrPickerModal';
-import type { CefrLevel, CefrSkill, LinkedFrameworkDescriptor, Test, TestQuestion } from '../../../types';
+import type { CefrLevel, CefrSkill, Test, TestQuestion } from '../../../types';
 import { CEFR_LEVELS, CEFR_SKILLS, CEFR_SKILL_LABELS } from '../../../data/cefrDescriptors';
 import { newScoreOnlyQuestion, parsePoints } from '../../../utils/scoreSheet';
+import { withGrammarIds } from '../../../utils/grammarLinks';
 
 interface Props {
     test: Test;
     standardsApiKey?: string;
     onSave: (patch: Pick<Test, 'name' | 'questions' | 'cefrTargetLevel' | 'cefrSkill'>) => void;
     onClose: () => void;
-}
-
-/** A question can carry several grammar tags; keep linked ids derived from its framework chips. */
-function withFramework(q: TestQuestion, frameworkDescriptors: LinkedFrameworkDescriptor[]): TestQuestion {
-    const ids = frameworkDescriptors.filter((d) => d.framework === 'grammar').map((d) => d.descriptorId);
-    return {
-        ...q,
-        frameworkDescriptors,
-        linkedGrammarItemIds: ids.length > 0 ? ids : undefined,
-        linkedGrammarItemId: ids[0],
-    };
 }
 
 export default function ScoreSheetColumnsModal({ test, standardsApiKey, onSave, onClose }: Props) {
@@ -127,7 +117,7 @@ export default function ScoreSheetColumnsModal({ test, standardsApiKey, onSave, 
                                 label: lang === 'nl' ? d.descriptionNl : d.descriptionEn,
                                 remove: () =>
                                     patch(q.id, (cur) =>
-                                        withFramework(
+                                        withGrammarIds(
                                             cur,
                                             (cur.frameworkDescriptors ?? []).filter(
                                                 (x) => x.descriptorId !== d.descriptorId
@@ -325,16 +315,14 @@ export default function ScoreSheetColumnsModal({ test, standardsApiKey, onSave, 
                     linkedFrameworkDescriptors={linkingQuestion.frameworkDescriptors ?? []}
                     onAddFramework={(d) =>
                         patch(linkingQuestion.id, (cur) => {
-                            const kept =
-                                d.framework === 'grammar'
-                                    ? (cur.frameworkDescriptors ?? []).filter((x) => x.framework !== 'grammar')
-                                    : (cur.frameworkDescriptors ?? []);
-                            return withFramework(cur, [...kept, d]);
+                            const existing = cur.frameworkDescriptors ?? [];
+                            if (existing.some((x) => x.descriptorId === d.descriptorId)) return cur;
+                            return withGrammarIds(cur, [...existing, d]);
                         })
                     }
                     onRemoveFramework={(id) =>
                         patch(linkingQuestion.id, (cur) =>
-                            withFramework(
+                            withGrammarIds(
                                 cur,
                                 (cur.frameworkDescriptors ?? []).filter((x) => x.descriptorId !== id)
                             )

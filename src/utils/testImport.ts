@@ -97,6 +97,7 @@ interface RawQuestion {
     audioUrl?: unknown;
     hint?: unknown;
     linkedGrammarItemId?: unknown;
+    linkedGrammarItemIds?: unknown;
     explanation?: unknown;
     maxRecordingSeconds?: unknown;
     maxPlays?: unknown;
@@ -580,7 +581,7 @@ function normaliseQuestion(
     if (typeof q.audioUrl === 'string') question.audioUrl = q.audioUrl;
     if (typeof q.hint === 'string') question.hint = q.hint;
     {
-        const multi = parseGrammarIdList((q as Record<string, unknown>).linkedGrammarItemIds ?? q.linkedGrammarItemId);
+        const multi = parseGrammarIdList(q.linkedGrammarItemIds ?? q.linkedGrammarItemId);
         if (multi.length > 0) {
             question.linkedGrammarItemIds = multi;
             question.linkedGrammarItemId = multi[0];
