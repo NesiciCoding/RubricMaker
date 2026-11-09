@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { EmptyState } from '../components/ui/EmptyState';
+import Modal from '../components/ui/Modal';
 import SegmentedToggle from '../components/ui/SegmentedToggle';
 import CommentBankModal from '../components/Comments/CommentBankModal';
 import { useStoreActions, useStoreSelector } from '../context/useStore';
@@ -318,80 +319,25 @@ export default function TestGradingQueuePage() {
         setTimeout(() => setSavedCommentFor((cur) => (cur === step.key ? null : cur)), 2500);
     }
 
-    // Matrix popover: anchored to the clicked cell so large classes/question sets stay workable.
+    // Matrix detail opens in the shared Radix-backed Modal (focus trap, Escape,
+    // focus restoration and body portal) — see #533 / #1017. growFrom keeps the
+    // open animation anchored to the clicked cell.
     const [popoverOpen, setPopoverOpen] = useState(false);
-    const [popoverPos, setPopoverPos] = useState<{
-        top: number;
-        left: number;
-        width: number;
-        anchorX: number;
-        placement: 'above' | 'below';
-    } | null>(null);
-    const cellRefs = useRef(new Map<string, HTMLButtonElement>());
-    const popoverRef = useRef<HTMLDivElement>(null);
+    const [growFrom, setGrowFrom] = useState<{ x: number; y: number } | undefined>(undefined);
     const pointsInputRef = useRef<HTMLInputElement>(null);
-
-    const POPOVER_WIDTH = 400;
-    const POPOVER_EST_HEIGHT = 520;
-
-    function placeFromRect(r: DOMRect): {
-        top: number;
-        left: number;
-        width: number;
-        anchorX: number;
-        placement: 'above' | 'below';
-    } {
-        const width = Math.min(POPOVER_WIDTH, window.innerWidth - 16);
-        const left = Math.max(8, Math.min(r.left + r.width / 2 - width / 2, window.innerWidth - width - 8));
-        const anchorX = Math.max(16, Math.min(r.left + r.width / 2, window.innerWidth - 16));
-        const below = r.bottom + 12 + POPOVER_EST_HEIGHT <= window.innerHeight;
-        return {
-            top: below ? r.bottom + 12 : Math.max(8, r.top - 12 - POPOVER_EST_HEIGHT),
-            left,
-            width,
-            anchorX,
-            placement: below ? 'below' : 'above',
-        };
-    }
 
     function openCellPopover(idx: number, anchorEl: HTMLElement | null) {
         setSelectedIdx(idx);
+        if (anchorEl) {
+            const r = anchorEl.getBoundingClientRect();
+            setGrowFrom({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+        } else {
+            setGrowFrom(undefined);
+        }
         setPopoverOpen(true);
-        if (anchorEl) setPopoverPos(placeFromRect(anchorEl.getBoundingClientRect()));
     }
 
-    // Keep the popover glued to its cell while the matrix scrolls or resizes.
-    useEffect(() => {
-        if (!inMatrix || !popoverOpen) return;
-        const sync = () => {
-            const step = steps[matrixIdx];
-            const el = step ? cellRefs.current.get(step.key) : undefined;
-            if (el) setPopoverPos(placeFromRect(el.getBoundingClientRect()));
-        };
-        sync();
-        window.addEventListener('scroll', sync, true);
-        window.addEventListener('resize', sync);
-        return () => {
-            window.removeEventListener('scroll', sync, true);
-            window.removeEventListener('resize', sync);
-        };
-    }, [inMatrix, popoverOpen, matrixIdx, steps]);
-
-    // Click outside the popover (and outside its anchor cell) dismisses it.
-    useEffect(() => {
-        if (!inMatrix || !popoverOpen) return;
-        const onDown = (e: PointerEvent) => {
-            const t = e.target as Node;
-            if (popoverRef.current?.contains(t)) return;
-            const step = steps[matrixIdx];
-            if (step && cellRefs.current.get(step.key)?.contains(t)) return;
-            setPopoverOpen(false);
-        };
-        document.addEventListener('pointerdown', onDown);
-        return () => document.removeEventListener('pointerdown', onDown);
-    }, [inMatrix, popoverOpen, matrixIdx, steps]);
-
-    // Focus the points field whenever the popover (re)opens on an answer.
+    // Focus the points field whenever the dialog (re)opens on an answer.
     useEffect(() => {
         if (inMatrix && popoverOpen) pointsInputRef.current?.focus();
     }, [inMatrix, popoverOpen, matrixIdx]);
@@ -401,16 +347,10 @@ export default function TestGradingQueuePage() {
         setStepIndex(0);
         setSelectedIdx(0);
         setPopoverOpen(false);
-        setPopoverPos(null);
     }, [view, testId]);
 
     useEffect(() => {
         function onKey(e: KeyboardEvent) {
-            if (e.key === 'Escape' && inMatrix && popoverOpen) {
-                e.preventDefault();
-                setPopoverOpen(false);
-                return;
-            }
             const target = e.target as HTMLElement;
             if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
             if (!detailStep) return;
@@ -440,7 +380,7 @@ export default function TestGradingQueuePage() {
         }
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
-    }, [detailStep, detailNext, detailPrev, inMatrix, popoverOpen, readOnly]);
+    }, [detailStep, detailNext, detailPrev, inMatrix, readOnly]);
 
     if (!test && sharedLoading) {
         return (
@@ -535,11 +475,11 @@ export default function TestGradingQueuePage() {
         return (
             <article className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12, margin: 0 }}>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                    <strong>
+                    <h3 id="queue-grade-title" style={{ margin: 0, fontSize: '1rem' }}>
                         {view === 'student'
                             ? `Q${detailStep.questionIndex + 1} · ${detailStep.studentName}`
                             : `${detailStep.studentName} · Q${detailStep.questionIndex + 1}`}
-                    </strong>
+                    </h3>
                     {detailStep.savedPoints !== undefined ? (
                         <span className="badge badge-green">decided: {detailStep.savedPoints}</span>
                     ) : (
@@ -852,10 +792,6 @@ export default function TestGradingQueuePage() {
                                                         <td key={q.id} style={{ padding: 2 }}>
                                                             <button
                                                                 type="button"
-                                                                ref={(el) => {
-                                                                    if (el) cellRefs.current.set(step.key, el);
-                                                                    else cellRefs.current.delete(step.key);
-                                                                }}
                                                                 onClick={(e) =>
                                                                     openCellPopover(
                                                                         steps.indexOf(step),
@@ -967,47 +903,20 @@ export default function TestGradingQueuePage() {
                     ) : null}
                 </div>
 
-                {inMatrix && popoverOpen && detailStep && popoverPos && (
-                    <div
-                        ref={popoverRef}
-                        role="dialog"
-                        aria-label={`Grade ${detailStep.studentName}, question ${detailStep.questionIndex + 1}`}
-                        style={{
-                            position: 'fixed',
-                            top: popoverPos.top,
-                            left: popoverPos.left,
-                            width: popoverPos.width,
-                            maxHeight: '70vh',
-                            overflowY: 'auto',
-                            zIndex: 60,
-                            filter: 'drop-shadow(0 12px 32px rgba(0,0,0,0.25))',
-                        }}
+                {inMatrix && popoverOpen && detailStep && (
+                    <Modal
+                        titleId="queue-grade-title"
+                        onClose={() => setPopoverOpen(false)}
+                        maxWidth={560}
+                        growFrom={growFrom}
                     >
-                        <div
-                            aria-hidden="true"
-                            style={{
-                                position: 'absolute',
-                                left: Math.max(
-                                    16,
-                                    Math.min(popoverPos.anchorX - popoverPos.left, popoverPos.width - 16)
-                                ),
-                                ...(popoverPos.placement === 'below' ? { top: -6 } : { bottom: -6 }),
-                                width: 12,
-                                height: 12,
-                                transform: 'rotate(45deg)',
-                                background: 'var(--bg-elevated)',
-                                borderLeft: '1px solid var(--border)',
-                                borderTop: '1px solid var(--border)',
-                                zIndex: 1,
-                            }}
-                        />
                         {renderDetailCard(true)}
-                    </div>
+                    </Modal>
                 )}
 
                 <p className="text-muted text-xs" style={{ margin: 0, display: 'flex', gap: 6, alignItems: 'center' }}>
                     <Keyboard size={13} /> J/K or ↑/↓ moves between answers · digits set points (0–9 max questions) · S
-                    skips{inMatrix ? ' · click a matrix cell to grade it · Esc closes the popover' : ''}
+                    skips{inMatrix ? ' · click a matrix cell to grade it' : ''}
                 </p>
                 {commentBankFor && steps.some((s) => s.key === commentBankFor) && (
                     <CommentBankModal onClose={() => setCommentBankFor(null)} onSelect={handleInsertComment} />
