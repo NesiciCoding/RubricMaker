@@ -6,6 +6,7 @@
  */
 
 import { CEFR_LEVELS, CEFR_SKILLS } from '../data/cefrDescriptors';
+import { parseGrammarIdList } from './grammarLinks';
 import type {
     CefrLevel,
     CefrSkill,
@@ -96,6 +97,7 @@ interface RawQuestion {
     audioUrl?: unknown;
     hint?: unknown;
     linkedGrammarItemId?: unknown;
+    linkedGrammarItemIds?: unknown;
     explanation?: unknown;
     maxRecordingSeconds?: unknown;
     maxPlays?: unknown;
@@ -578,7 +580,13 @@ function normaliseQuestion(
     if (typeof q.imageUrl === 'string') question.imageUrl = q.imageUrl;
     if (typeof q.audioUrl === 'string') question.audioUrl = q.audioUrl;
     if (typeof q.hint === 'string') question.hint = q.hint;
-    if (typeof q.linkedGrammarItemId === 'string') question.linkedGrammarItemId = q.linkedGrammarItemId;
+    {
+        const multi = parseGrammarIdList(q.linkedGrammarItemIds ?? q.linkedGrammarItemId);
+        if (multi.length > 0) {
+            question.linkedGrammarItemIds = multi;
+            question.linkedGrammarItemId = multi[0];
+        }
+    }
     if (typeof q.explanation === 'string') question.explanation = q.explanation;
     if (typeof q.rubricId === 'string') question.rubricId = q.rubricId;
     const maxRecordingSeconds = asFiniteNumber(q.maxRecordingSeconds);

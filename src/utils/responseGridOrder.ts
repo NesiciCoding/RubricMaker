@@ -1,5 +1,6 @@
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
 import type { CefrLevel, Test, TestQuestion } from '../types';
+import { getQuestionGrammarIds } from './grammarLinks';
 
 export type ColumnSortKey = 'original' | 'section' | 'cefr' | 'type' | 'grammar' | 'score';
 export type SortDir = 'asc' | 'desc';
@@ -27,7 +28,7 @@ export function questionCefrLevel(test: Test, question: TestQuestion): CefrLevel
 }
 
 function grammarKeyOf(question: TestQuestion): string | undefined {
-    return question.linkedGrammarItemId ?? question.linkedStandards?.[0]?.statementNotation;
+    return getQuestionGrammarIds(question)[0] ?? question.linkedStandards?.[0]?.statementNotation;
 }
 
 export function buildColumnMeta(test: Test, avgById: Map<string, number | undefined> = new Map()): GridColumnMeta[] {

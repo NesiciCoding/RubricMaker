@@ -1487,6 +1487,8 @@ export interface TestQuestion {
     hint?: string;
     /** References GrammarItem.id (src/data/grammarStandards.ts) — tags which grammar point this question drills, for the grammar recommendation engine. */
     linkedGrammarItemId?: string;
+    /** Multiple grammar tags for questions drilling several points at once (e.g. punctuation + capitals). When present, takes precedence over linkedGrammarItemId; linkedGrammarItemId mirrors ids[0] for back-compat. */
+    linkedGrammarItemIds?: string[];
     /** Shown to the student after submission, only when the test's mode is 'practice' — keeps assessment-mode answer secrecy intact */
     explanation?: string;
     /** For 'audio-response' questions: recording cap in seconds (default 60 in the UI). */

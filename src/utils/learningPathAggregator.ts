@@ -14,6 +14,7 @@ import type {
 import type { CefrCellData } from './cefrStudentAggregator';
 import { calcGradeSummary, criterionMaxPoints, criterionPercentage } from './gradeCalc';
 import { autoScoreResponse } from './testCalc';
+import { getQuestionGrammarIds } from './grammarLinks';
 
 export const DEFAULT_LEARNING_PATH_CONFIG: LearningPathConfig = {
     consecutiveLowThreshold: 3,
@@ -278,15 +279,19 @@ export function getGrammarRecommendations(
         if (!test) continue;
 
         for (const q of test.questions) {
-            if (!q.linkedGrammarItemId || q.points <= 0) continue;
+            if (q.points <= 0) continue;
+            const grammarIds = getQuestionGrammarIds(q);
+            if (grammarIds.length === 0) continue;
             const answer = st.answers.find((a) => a.questionId === q.id);
             if (!answer) continue;
             const earned = answer.pointsEarned ?? autoScoreResponse(q, answer.response);
             const pct = (earned / q.points) * 100;
 
-            const list = scoresByGrammarItem.get(q.linkedGrammarItemId) ?? [];
-            list.push({ score: pct, gradedAt: st.submittedAt ?? st.startedAt });
-            scoresByGrammarItem.set(q.linkedGrammarItemId, list);
+            for (const gid of grammarIds) {
+                const list = scoresByGrammarItem.get(gid) ?? [];
+                list.push({ score: pct, gradedAt: st.submittedAt ?? st.startedAt });
+                scoresByGrammarItem.set(gid, list);
+            }
         }
     }
 
@@ -311,12 +316,13 @@ export function getGrammarRecommendations(
         if (t.mode !== 'practice' || t.contentArea !== 'grammar') continue;
         const seen = new Set<string>();
         for (const q of t.questions) {
-            const gid = q.linkedGrammarItemId;
-            if (!gid || seen.has(gid)) continue;
-            seen.add(gid);
-            const list = testIdsByGrammarItem.get(gid) ?? [];
-            list.push(t.id);
-            testIdsByGrammarItem.set(gid, list);
+            for (const gid of getQuestionGrammarIds(q)) {
+                if (seen.has(gid)) continue;
+                seen.add(gid);
+                const list = testIdsByGrammarItem.get(gid) ?? [];
+                list.push(t.id);
+                testIdsByGrammarItem.set(gid, list);
+            }
         }
     }
 
