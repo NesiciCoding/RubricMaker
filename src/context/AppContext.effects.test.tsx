@@ -1003,6 +1003,70 @@ describe('AppContext startup effects', () => {
         expect(storage.saveClasses).toHaveBeenCalled();
     });
 
+    it('queues realtime tables arriving during an in-flight refresh instead of dropping them', async () => {
+        const { storageSync } = (await import('../services/database')) as unknown as {
+            storageSync: {
+                isConnected: Mock;
+                getCurrentUserId: Mock;
+                configure: Mock;
+                setToastFn: Mock;
+                hydrate: Mock;
+                hydratePartial: Mock;
+                hasSession: Mock;
+                initAuth: Mock;
+                didWipeLocalData: Mock;
+                disconnect: Mock;
+                pushAll: Mock;
+                pushOne: Mock;
+                pushMany: Mock;
+                onAuthChange: Mock;
+                onNetworkReconnect: Mock;
+                onRealtimeChange: Mock;
+                adapter: { getClient: Mock };
+            };
+        };
+
+        renderProvider();
+        await act(async () => {});
+        vi.mocked(storageSync.isConnected).mockReturnValue(true);
+
+        let releaseFirst!: (v: { data: unknown; fullFallback: false }) => void;
+        const firstGate = new Promise<{ data: unknown; fullFallback: false }>((resolve) => {
+            releaseFirst = resolve;
+        });
+        vi.mocked(storageSync.hydratePartial)
+            .mockReturnValueOnce(firstGate)
+            .mockResolvedValue({ data: null, fullFallback: false });
+
+        // First tick starts a refresh and blocks inside hydratePartial; the second tick
+        // arrives while it is in flight and must be queued, not dropped.
+        let firstTick: Promise<void> | undefined;
+        await act(async () => {
+            realtimeHandlers.forEach((h) => {
+                firstTick = h(['students']) as unknown as Promise<void>;
+            });
+        });
+        await act(async () => {
+            realtimeHandlers.forEach((h) => {
+                h(['classes']);
+            });
+        });
+        releaseFirst({ data: { students: [] }, fullFallback: false });
+        await act(async () => {
+            await firstTick;
+        });
+        await waitFor(() => {
+            expect(vi.mocked(storageSync.hydratePartial).mock.calls.length).toBeGreaterThanOrEqual(2);
+        });
+        const seen = vi.mocked(storageSync.hydratePartial).mock.calls.map((c) =>
+            Array.from(c[0] as Set<string>)
+                .sort()
+                .join(',')
+        );
+        expect(seen).toContain('students');
+        expect(seen).toContain('classes');
+    });
+
     it('delta-syncs single changes with pushOne and bulk changes with pushMany', async () => {
         const { storageSync } = (await import('../services/database')) as unknown as {
             storageSync: {
