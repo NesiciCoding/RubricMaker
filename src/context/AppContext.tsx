@@ -421,26 +421,47 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 // Realtime: a remote row change refreshes only the affected collections
                 // (targeted partial hydrate) instead of re-pulling all ~30 tables, and rewrites
                 // only those localStorage keys. Unknown tables / settings degrade to a full
-                // hydrate (and full flush) so nothing is ever dropped. Offline ticks and
-                // overlapping ticks are skipped: a full hydrate issued while the network is
-                // down can only log "Failed to fetch" for every collection.
+                // hydrate (and full flush) so nothing is ever dropped. Offline ticks are
+                // skipped: a full hydrate issued while the network is down can only log
+                // "Failed to fetch" for every collection. Overlapping ticks are queued
+                // and drained in a follow-up refresh so remote changes arriving mid-refresh
+                // are not lost.
                 let realtimeRefreshInFlight = false;
-                unsubs.push(
-                    storageSync.onRealtimeChange(async (tables) => {
-                        if (!storageSync.isConnected() || !navigator.onLine || realtimeRefreshInFlight) return;
-                        realtimeRefreshInFlight = true;
-                        try {
-                            const { data, fullFallback } = await storageSync.hydratePartial(new Set(tables));
+                const pendingRealtimeTables = new Set<string>();
+                async function pumpRealtimeRefresh(initialTables: string[]): Promise<void> {
+                    // Preserve the existing connectivity guards: offline/disconnected ticks are
+                    // dropped (the reconnect handler covers them with a full hydrate); only
+                    // overlapping ticks are queued.
+                    if (!storageSync.isConnected() || !navigator.onLine) return;
+                    for (const t of initialTables) pendingRealtimeTables.add(t);
+                    if (realtimeRefreshInFlight) return;
+                    realtimeRefreshInFlight = true;
+                    try {
+                        while (pendingRealtimeTables.size > 0) {
+                            if (!storageSync.isConnected() || !navigator.onLine) break;
+                            const current = new Set(pendingRealtimeTables);
+                            pendingRealtimeTables.clear();
+                            const { data, fullFallback } = await storageSync.hydratePartial(current);
                             if (fullFallback) {
-                                if (!navigator.onLine) return;
+                                if (!navigator.onLine) break;
                                 const { data: full } = await storageSync.hydrate();
                                 if (full) await applyFresh(full);
                             } else if (data) {
                                 await applyFresh(data, new Set(Object.keys(data) as (keyof StoreData)[]));
                             }
-                        } finally {
-                            realtimeRefreshInFlight = false;
                         }
+                    } finally {
+                        realtimeRefreshInFlight = false;
+                        // A tick may have queued tables after the loop drained but before the
+                        // flag cleared; drain the remainder instead of dropping it.
+                        if (pendingRealtimeTables.size > 0 && storageSync.isConnected() && navigator.onLine) {
+                            void pumpRealtimeRefresh([]);
+                        }
+                    }
+                }
+                unsubs.push(
+                    storageSync.onRealtimeChange((tables) => {
+                        void pumpRealtimeRefresh(tables);
                     })
                 );
                 // A login/connect hydrate that outlived its timeout let the user into the app on

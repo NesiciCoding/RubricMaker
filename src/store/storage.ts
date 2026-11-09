@@ -970,6 +970,37 @@ export function localStorageUsedChars(): number | null {
     return used;
 }
 
+/**
+ * True only when the localStorage `rm_student_rubrics` copy is disposable: the cloud holds
+ * every record (post-hydrate) and no unsynced studentRubric edit is waiting in the pending
+ * queue. Offline-first sessions (never hydrated) and queued offline edits keep localStorage
+ * as their only copy, so the legacy-duplicate eviction must not run for them.
+ */
+function canSafelyEvictStudentRubricsCopy(): boolean {
+    try {
+        if (!isCloudHydrated()) return false;
+        return !loadPendingQueue().some((op) => op.entity === 'studentRubric');
+    } catch {
+        return false;
+    }
+}
+
+function reportQuotaFailure(key: string, value: unknown, cause: unknown): void {
+    let valueChars = -1;
+    try {
+        valueChars = JSON.stringify(value)?.length ?? -1;
+    } catch {
+        // value isn't serializable — size is unknowable, report -1
+    }
+    console.error(
+        '[storage] write failed (quota exceeded?):',
+        key,
+        `valueChars=${valueChars} usedChars=${localStorageUsedChars()}`,
+        cause
+    );
+    quotaExceededHandler?.();
+}
+
 function save<T>(key: string, value: T): void {
     try {
         localStorage.setItem(key, JSON.stringify(value));
@@ -979,26 +1010,40 @@ function save<T>(key: string, value: T): void {
         // (saveStudentRubricsCache removes its localStorage copy), but browsers that
         // cached it before that migration still hold the legacy duplicate — the single
         // largest rm_* key. Drop it once and retry before giving up on this write.
+        // Never evict while it may hold the only copy of offline edits: only when the
+        // cloud is hydrated and no studentRubric op is queued. Stash the raw copy so a
+        // failed retry can restore it best-effort instead of losing cached grades.
+        if (key === KEYS.studentRubrics || !canSafelyEvictStudentRubricsCopy()) {
+            reportQuotaFailure(key, value, e);
+            return;
+        }
+        let stashed: string | null = null;
         try {
+            try {
+                stashed = localStorage.getItem(KEYS.studentRubrics);
+            } catch {
+                stashed = null;
+            }
+            if (stashed === null) {
+                reportQuotaFailure(key, value, e);
+                return;
+            }
             localStorage.removeItem(KEYS.studentRubrics);
             localStorage.setItem(key, JSON.stringify(value));
             console.warn('[storage] write succeeded after dropping legacy rm_student_rubrics copy:', key);
             return;
         } catch (retryError) {
-            if (!isQuotaExceededError(retryError)) throw retryError;
-            let valueChars = -1;
-            try {
-                valueChars = JSON.stringify(value)?.length ?? -1;
-            } catch {
-                // value isn't serializable — size is unknowable, report -1
+            if (stashed !== null) {
+                try {
+                    if (localStorage.getItem(KEYS.studentRubrics) === null) {
+                        localStorage.setItem(KEYS.studentRubrics, stashed);
+                    }
+                } catch {
+                    // restore is best-effort; the quota failure below still surfaces
+                }
             }
-            console.error(
-                '[storage] write failed (quota exceeded?):',
-                key,
-                `valueChars=${valueChars} usedChars=${localStorageUsedChars()}`,
-                retryError
-            );
-            quotaExceededHandler?.();
+            if (!isQuotaExceededError(retryError)) throw retryError;
+            reportQuotaFailure(key, value, retryError);
         }
     }
 }

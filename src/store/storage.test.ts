@@ -59,6 +59,7 @@ import {
 } from './storage';
 import type { Rubric, Student, Class, AppSettings, RubricFormat, StudentRubric, RubricVersion } from '../types';
 import { DEFAULT_FORMAT } from '../types';
+import { markCloudHydrated, resetCloudHydratedForTests } from '../services/snapshotCache';
 
 const makeRubric = (id = 'r1'): Rubric => ({
     id,
@@ -85,6 +86,8 @@ const makeSettings = (): AppSettings => ({
 
 beforeEach(() => {
     localStorage.clear();
+    resetCloudHydratedForTests();
+    onStorageQuotaExceeded(() => {});
 });
 
 describe('DEFAULT_GRADE_SCALES', () => {
@@ -285,6 +288,8 @@ describe('save functions', () => {
     it('retries once after dropping the legacy rm_student_rubrics copy before notifying quota', () => {
         const handler = vi.fn();
         onStorageQuotaExceeded(handler);
+        // Legacy duplicate is only disposable once the cloud holds every record.
+        markCloudHydrated();
         localStorage.setItem('rm_student_rubrics', JSON.stringify([{ id: 'legacy' }]));
         const origSetItem = Storage.prototype.setItem;
         let calls = 0;
@@ -311,6 +316,69 @@ describe('save functions', () => {
         expect(handler).not.toHaveBeenCalled();
         expect(localStorage.getItem('rm_student_rubrics')).toBeNull();
         expect(JSON.parse(localStorage.getItem('rm_rubrics') ?? '[]')[0].id).toBe('r1');
+
+        setItemSpy.mockRestore();
+        onStorageQuotaExceeded(() => {});
+    });
+
+    it('preserves rm_student_rubrics when the cloud has never hydrated (offline-only copy)', () => {
+        const handler = vi.fn();
+        onStorageQuotaExceeded(handler);
+        // No markCloudHydrated(): localStorage may be the only copy.
+        const legacy = JSON.stringify([{ id: 'legacy-offline' }]);
+        localStorage.setItem('rm_student_rubrics', legacy);
+        const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+            throw new DOMException('quota exceeded', 'QuotaExceededError');
+        });
+
+        expect(() => saveRubrics([makeRubric('r1')])).not.toThrow();
+        expect(handler).toHaveBeenCalledTimes(1);
+        expect(localStorage.getItem('rm_student_rubrics')).toBe(legacy);
+
+        setItemSpy.mockRestore();
+        onStorageQuotaExceeded(() => {});
+    });
+
+    it('preserves rm_student_rubrics while a studentRubric edit is queued for sync', () => {
+        const handler = vi.fn();
+        onStorageQuotaExceeded(handler);
+        markCloudHydrated();
+        addToPendingQueue({ entity: 'studentRubric', action: 'upsert', payload: { id: 'sr-1' } });
+        const legacy = JSON.stringify([{ id: 'legacy-queued' }]);
+        localStorage.setItem('rm_student_rubrics', legacy);
+        const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+            throw new DOMException('quota exceeded', 'QuotaExceededError');
+        });
+
+        expect(() => saveRubrics([makeRubric('r1')])).not.toThrow();
+        expect(handler).toHaveBeenCalledTimes(1);
+        expect(localStorage.getItem('rm_student_rubrics')).toBe(legacy);
+
+        setItemSpy.mockRestore();
+        onStorageQuotaExceeded(() => {});
+    });
+
+    it('restores the stashed rm_student_rubrics copy when the retry still hits quota', () => {
+        const handler = vi.fn();
+        onStorageQuotaExceeded(handler);
+        markCloudHydrated();
+        const legacy = JSON.stringify([{ id: 'legacy-restore' }]);
+        localStorage.setItem('rm_student_rubrics', legacy);
+        const origSetItem = Storage.prototype.setItem;
+        // Only the retried collection still exceeds quota; restoring the smaller
+        // stashed copy succeeds, so it must survive instead of being lost.
+        const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (
+            this: Storage,
+            key: string,
+            value: string
+        ) {
+            if (key === 'rm_student_rubrics') return origSetItem.apply(this, [key, value]);
+            throw new DOMException('quota exceeded', 'QuotaExceededError');
+        });
+
+        expect(() => saveRubrics([makeRubric('r1')])).not.toThrow();
+        expect(handler).toHaveBeenCalledTimes(1);
+        expect(localStorage.getItem('rm_student_rubrics')).toBe(legacy);
 
         setItemSpy.mockRestore();
         onStorageQuotaExceeded(() => {});
