@@ -4,11 +4,15 @@
  * Provides `supabasePage` — a page that is signed in as a freshly-created test
  * user against a local Supabase stack.  The test user is deleted after the test.
  *
- * Worker-safe (#1116-7): every test gets a unique user (timestamp + random
- * email), its own school and settings, and RLS scopes all rows by owner — so
- * parallel workers sharing one local stack can't see each other's data. The one
- * global-state assertion (49's retention audit-log count) is window-scoped to
- * the run instead of a cumulative total.
+ * Serial by design (#1116-7): the suite runs with --workers=1. Per-test users
+ * (unique email), schools and RLS-by-owner would isolate parallel workers'
+ * data, but the shared local stack does not serve two workers cleanly —
+ * verified 2026-11-09, PR #1126: with --workers=2 the timing-sensitive specs
+ * 15-offline-startup (8 s hydration-timeout fallthrough) and 35-admin-dashboard
+ * (Schools tab render) both timed out, while suite wall time barely moved
+ * (7.6 min vs 8.2 min serial — stack start dominates). So the workers stay at 1.
+ * The one global-state assertion (49's retention audit-log count) is still
+ * window-scoped to the run instead of a cumulative total, as defense in depth.
  *
  * Sign-in uses the admin `generate_link` API to obtain a magic link URL
  * without sending any email.  Playwright navigates to that URL; Supabase
