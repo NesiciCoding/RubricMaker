@@ -421,16 +421,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 // Realtime: a remote row change refreshes only the affected collections
                 // (targeted partial hydrate) instead of re-pulling all ~30 tables, and rewrites
                 // only those localStorage keys. Unknown tables / settings degrade to a full
-                // hydrate (and full flush) so nothing is ever dropped.
+                // hydrate (and full flush) so nothing is ever dropped. Offline ticks and
+                // overlapping ticks are skipped: a full hydrate issued while the network is
+                // down can only log "Failed to fetch" for every collection.
+                let realtimeRefreshInFlight = false;
                 unsubs.push(
                     storageSync.onRealtimeChange(async (tables) => {
-                        if (!storageSync.isConnected()) return;
-                        const { data, fullFallback } = await storageSync.hydratePartial(new Set(tables));
-                        if (fullFallback) {
-                            const { data: full } = await storageSync.hydrate();
-                            if (full) await applyFresh(full);
-                        } else if (data) {
-                            await applyFresh(data, new Set(Object.keys(data) as (keyof StoreData)[]));
+                        if (!storageSync.isConnected() || !navigator.onLine || realtimeRefreshInFlight) return;
+                        realtimeRefreshInFlight = true;
+                        try {
+                            const { data, fullFallback } = await storageSync.hydratePartial(new Set(tables));
+                            if (fullFallback) {
+                                if (!navigator.onLine) return;
+                                const { data: full } = await storageSync.hydrate();
+                                if (full) await applyFresh(full);
+                            } else if (data) {
+                                await applyFresh(data, new Set(Object.keys(data) as (keyof StoreData)[]));
+                            }
+                        } finally {
+                            realtimeRefreshInFlight = false;
                         }
                     })
                 );
