@@ -1938,19 +1938,23 @@ function QuestionCard({
                 </div>
             )}
 
-            {isCloze && <ClozeAnswer question={question} value={value} onChange={onChange} code={code} />}
+            {isCloze && <ClozeAnswer question={question} value={value} onChange={onChange} code={code} lang={lang} />}
 
-            {question.type === 'matrix' && <MatrixAnswer question={question} value={value} onChange={onChange} />}
+            {question.type === 'matrix' && (
+                <MatrixAnswer question={question} value={value} onChange={onChange} lang={lang} />
+            )}
 
             {question.type === 'matching' && (
-                <MatchingAnswer question={question} value={value} onChange={onChange} code={code} />
+                <MatchingAnswer question={question} value={value} onChange={onChange} code={code} lang={lang} />
             )}
 
             {question.type === 'categorize' && (
-                <CategorizeAnswer question={question} value={value} onChange={onChange} code={code} />
+                <CategorizeAnswer question={question} value={value} onChange={onChange} code={code} lang={lang} />
             )}
 
-            {question.type === 'hot-text' && <HotTextAnswer question={question} value={value} onChange={onChange} />}
+            {question.type === 'hot-text' && (
+                <HotTextAnswer question={question} value={value} onChange={onChange} lang={lang} />
+            )}
 
             {question.type === 'dictation' && (
                 <textarea
@@ -1958,6 +1962,7 @@ function QuestionCard({
                     onChange={(e) => onChange(e.target.value)}
                     placeholder={t('tests.taking.dictation_placeholder')}
                     aria-label={t('tests.taking.dictation_placeholder')}
+                    lang={lang ?? 'en'}
                     rows={3}
                     style={{
                         width: '100%',
@@ -1973,15 +1978,15 @@ function QuestionCard({
             )}
 
             {question.type === 'error-correction' && (
-                <ErrorCorrectionAnswer question={question} value={value} onChange={onChange} />
+                <ErrorCorrectionAnswer question={question} value={value} onChange={onChange} lang={lang} />
             )}
 
             {question.type === 'sentence-builder' && (
-                <SentenceBuilderAnswer question={question} value={value} onChange={onChange} />
+                <SentenceBuilderAnswer question={question} value={value} onChange={onChange} lang={lang} />
             )}
 
             {question.type === 'key-word-transformation' && (
-                <KeyWordAnswer question={question} value={value} onChange={onChange} />
+                <KeyWordAnswer question={question} value={value} onChange={onChange} lang={lang} />
             )}
 
             {question.type === 'short-answer' && (
@@ -1990,6 +1995,7 @@ function QuestionCard({
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     placeholder={t('tests.taking.short_answer_placeholder')}
+                    lang={lang ?? 'en'}
                     style={{
                         width: '100%',
                         padding: '10px 14px',
@@ -2009,6 +2015,7 @@ function QuestionCard({
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     placeholder={t('tests.taking.numeric_placeholder')}
+                    lang={lang ?? 'en'}
                     style={{
                         width: '100%',
                         padding: '10px 14px',
@@ -2027,6 +2034,7 @@ function QuestionCard({
                         value={value}
                         onChange={(e) => onChange(e.target.value)}
                         placeholder={t('tests.taking.open_answer_placeholder')}
+                        lang={lang ?? 'en'}
                         rows={6}
                         style={{
                             width: '100%',
@@ -2056,12 +2064,13 @@ function QuestionCard({
             )}
 
             {question.type === 'ordering' && (
-                <OrderingAnswer question={question} value={value} onChange={onChange} code={code} />
+                <OrderingAnswer question={question} value={value} onChange={onChange} code={code} lang={lang} />
             )}
 
             {question.type === 'audio-response' && (
                 <AudioResponseAnswer
                     value={value}
+                    lang={lang}
                     onChange={onChange}
                     maxRecordingSeconds={question.maxRecordingSeconds ?? DEFAULT_MAX_RECORDING_SECONDS}
                     prepSeconds={question.prepSeconds}
@@ -2077,10 +2086,13 @@ function KeyWordAnswer({
     question,
     value,
     onChange,
+    lang,
 }: {
     question: TestQuestion;
     value: string;
     onChange: (value: string) => void;
+    /** Effective content language of the question (BCP-47 base code). */
+    lang?: string;
 }) {
     const { t } = useTranslation();
     const limit = question.answerWordLimit ?? KEY_WORD_DEFAULT_LIMIT;
@@ -2094,6 +2106,7 @@ function KeyWordAnswer({
             value={value}
             onChange={(e) => onChange(e.target.value)}
             aria-label={t('tests.taking.kwt_answer_label')}
+            lang={lang ?? 'en'}
             style={{
                 margin: '0 6px',
                 padding: '4px 8px',
@@ -2123,7 +2136,7 @@ function KeyWordAnswer({
                     {question.keyWord}
                 </div>
             )}
-            <p style={{ margin: 0, lineHeight: 2.2, color: 'var(--text)' }}>
+            <p lang={lang ?? 'en'} style={{ margin: 0, lineHeight: 2.2, color: 'var(--text)' }}>
                 {hasGap ? (
                     <>
                         {before}
@@ -2157,6 +2170,8 @@ interface AudioResponseAnswerProps {
     prepSeconds?: number;
     cueBullets?: string[];
     onRecordingChange?: (recording: boolean) => void;
+    /** Effective content language of the question (BCP-47 base code). */
+    lang?: string;
 }
 
 /** Recordings are always `data:audio/...` URIs produced locally by fileToDataUrl — reject anything else before it reaches an <audio src>. */
@@ -2171,6 +2186,7 @@ function AudioResponseAnswer({
     prepSeconds,
     cueBullets,
     onRecordingChange,
+    lang,
 }: AudioResponseAnswerProps) {
     const { t } = useTranslation();
     const { status, start, stop } = useMediaRecorder();
@@ -2274,7 +2290,7 @@ function AudioResponseAnswer({
                     }}
                 >
                     <strong style={{ fontSize: '0.85rem' }}>{t('tests.taking.cue_card_title')}</strong>
-                    <ul style={{ margin: '6px 0 0', paddingLeft: 20 }}>
+                    <ul lang={lang ?? 'en'} style={{ margin: '6px 0 0', paddingLeft: 20 }}>
                         {cueBullets.map((bullet, i) => (
                             <li key={i}>{bullet}</li>
                         ))}
@@ -2349,6 +2365,8 @@ interface ClozeAnswerProps {
     value: string;
     onChange: (value: string) => void;
     code: string;
+    /** Effective content language of the question (BCP-47 base code). */
+    lang?: string;
 }
 
 function clozeInstructionKey(type: TestQuestion['type']): string {
@@ -2357,13 +2375,13 @@ function clozeInstructionKey(type: TestQuestion['type']): string {
     return 'tests.taking.cloze_instruction';
 }
 
-function ClozeAnswer({ question, value, onChange, code }: ClozeAnswerProps) {
+function ClozeAnswer({ question, value, onChange, code, lang }: ClozeAnswerProps) {
     if (question.type === 'cloze-bank')
-        return <ClozeBankAnswer question={question} value={value} onChange={onChange} code={code} />;
-    return <ClozeInlineAnswer question={question} value={value} onChange={onChange} code={code} />;
+        return <ClozeBankAnswer question={question} value={value} onChange={onChange} code={code} lang={lang} />;
+    return <ClozeInlineAnswer question={question} value={value} onChange={onChange} code={code} lang={lang} />;
 }
 
-function ClozeBankAnswer({ question, value, onChange, code }: ClozeAnswerProps) {
+function ClozeBankAnswer({ question, value, onChange, code, lang }: ClozeAnswerProps) {
     const { t } = useTranslation();
     const segments = useMemo(() => renderClozeSegments(question.prompt), [question.prompt]);
     const tiles = useMemo(
@@ -2409,7 +2427,7 @@ function ClozeBankAnswer({ question, value, onChange, code }: ClozeAnswerProps) 
     }
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div lang={lang ?? 'en'} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div
                 role="group"
                 aria-label={t('tests.taking.cloze_bank_tiles_label')}
@@ -2491,9 +2509,11 @@ interface MatrixAnswerProps {
     question: TestQuestion;
     value: string;
     onChange: (value: string) => void;
+    /** Effective content language of the question (BCP-47 base code). */
+    lang?: string;
 }
 
-function MatrixAnswer({ question, value, onChange }: MatrixAnswerProps) {
+function MatrixAnswer({ question, value, onChange, lang }: MatrixAnswerProps) {
     const { t } = useTranslation();
     const answers: Record<string, string> = useMemo(() => {
         try {
@@ -2506,7 +2526,7 @@ function MatrixAnswer({ question, value, onChange }: MatrixAnswerProps) {
     const cell = { padding: '8px 10px', borderBottom: '1px solid var(--border)', textAlign: 'center' as const };
 
     return (
-        <div style={{ overflowX: 'auto' }}>
+        <div lang={lang ?? 'en'} style={{ overflowX: 'auto' }}>
             <table style={{ borderCollapse: 'collapse', width: '100%', color: 'var(--text)' }}>
                 <thead>
                     <tr>
@@ -2545,7 +2565,7 @@ function MatrixAnswer({ question, value, onChange }: MatrixAnswerProps) {
     );
 }
 
-function ClozeInlineAnswer({ question, value, onChange, code }: ClozeAnswerProps) {
+function ClozeInlineAnswer({ question, value, onChange, code, lang }: ClozeAnswerProps) {
     const { t } = useTranslation();
     const segments = useMemo(() => renderClozeSegments(question.prompt), [question.prompt]);
     const answers: Record<string, string> = useMemo(() => {
@@ -2561,7 +2581,7 @@ function ClozeInlineAnswer({ question, value, onChange, code }: ClozeAnswerProps
     }
 
     return (
-        <p style={{ margin: 0, fontSize: '1rem', lineHeight: 2.4, color: 'var(--text)' }}>
+        <p lang={lang ?? 'en'} style={{ margin: 0, fontSize: '1rem', lineHeight: 2.4, color: 'var(--text)' }}>
             {segments.map((segment, i) => {
                 if (segment.type === 'text') {
                     return <span key={i}>{segment.text}</span>;
@@ -2623,9 +2643,11 @@ interface MatchingAnswerProps {
     value: string;
     onChange: (value: string) => void;
     code: string;
+    /** Effective content language of the question (BCP-47 base code). */
+    lang?: string;
 }
 
-function MatchingAnswer({ question, value, onChange, code }: MatchingAnswerProps) {
+function MatchingAnswer({ question, value, onChange, code, lang }: MatchingAnswerProps) {
     const { t } = useTranslation();
     const pairs = question.matchingPairs ?? [];
     const shuffledPairs = useMemo(() => seededShuffle(pairs, `${code}-${question.id}`), [pairs, code, question.id]);
@@ -2642,7 +2664,7 @@ function MatchingAnswer({ question, value, onChange, code }: MatchingAnswerProps
     }
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div lang={lang ?? 'en'} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {pairs.map((pair) => (
                 <div key={pair.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <span style={{ flex: 1, color: 'var(--text)' }}>{pair.left}</span>
@@ -2677,9 +2699,11 @@ interface OrderingAnswerProps {
     value: string;
     onChange: (value: string) => void;
     code: string;
+    /** Effective content language of the question (BCP-47 base code). */
+    lang?: string;
 }
 
-function OrderingAnswer({ question, value, onChange, code }: OrderingAnswerProps) {
+function OrderingAnswer({ question, value, onChange, code, lang }: OrderingAnswerProps) {
     const { t } = useTranslation();
     const items = question.orderItems ?? [];
     const itemsById = useMemo(() => new Map(items.map((item) => [item.id, item])), [items]);
@@ -2725,7 +2749,9 @@ function OrderingAnswer({ question, value, onChange, code }: OrderingAnswerProps
                         background: 'var(--bg)',
                     }}
                 >
-                    <span style={{ flex: 1, color: 'var(--text)' }}>{itemsById.get(id)?.text}</span>
+                    <span lang={lang ?? 'en'} style={{ flex: 1, color: 'var(--text)' }}>
+                        {itemsById.get(id)?.text}
+                    </span>
                     <button
                         type="button"
                         className="btn btn-ghost btn-icon btn-sm"
@@ -2755,9 +2781,11 @@ interface CategorizeAnswerProps {
     value: string;
     onChange: (value: string) => void;
     code: string;
+    /** Effective content language of the question (BCP-47 base code). */
+    lang?: string;
 }
 
-function CategorizeAnswer({ question, value, onChange, code }: CategorizeAnswerProps) {
+function CategorizeAnswer({ question, value, onChange, code, lang }: CategorizeAnswerProps) {
     const { t } = useTranslation();
     const items = question.categorizeItems ?? [];
     const categories = question.categories ?? [];
@@ -2775,7 +2803,7 @@ function CategorizeAnswer({ question, value, onChange, code }: CategorizeAnswerP
     }
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div lang={lang ?? 'en'} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {shuffledItems.map((item) => (
                 <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <span style={{ flex: 1, color: 'var(--text)' }}>{item.text}</span>
@@ -2809,9 +2837,11 @@ interface HotTextAnswerProps {
     question: TestQuestion;
     value: string;
     onChange: (value: string) => void;
+    /** Effective content language of the question (BCP-47 base code). */
+    lang?: string;
 }
 
-function HotTextAnswer({ question, value, onChange }: HotTextAnswerProps) {
+function HotTextAnswer({ question, value, onChange, lang }: HotTextAnswerProps) {
     const { t } = useTranslation();
     const segments = useMemo(() => parseHotTextFragments(question.hotTextPassage ?? ''), [question.hotTextPassage]);
     const selected: number[] = useMemo(() => {
@@ -2832,7 +2862,7 @@ function HotTextAnswer({ question, value, onChange }: HotTextAnswerProps) {
             <p className="text-muted text-xs" style={{ margin: '0 0 8px' }}>
                 {t('tests.taking.hot_text_instruction')}
             </p>
-            <p style={{ margin: 0, fontSize: '1rem', lineHeight: 2, color: 'var(--text)' }}>
+            <p lang={lang ?? 'en'} style={{ margin: 0, fontSize: '1rem', lineHeight: 2, color: 'var(--text)' }}>
                 {segments.map((segment, i) => {
                     if (segment.type === 'text') {
                         return <span key={i}>{segment.text}</span>;
