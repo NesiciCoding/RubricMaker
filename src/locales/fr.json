@@ -3598,7 +3598,10 @@
         "download_seb": "Télécharger la config .seb",
         "save_template": "Enregistrer la configuration",
         "template_saved": "Configuration enregistrée !",
-        "save_template_title": "Enregistrer cette configuration pour une utilisation ultérieure"
+        "save_template_title": "Enregistrer cette configuration pour une utilisation ultérieure",
+        "content_language_label": "Langue du contenu",
+        "content_language_help": "Les voix de lecture et la prononciation suivent cette langue, pas la langue de l'interface.",
+        "content_language_default": "Défaut (anglais)"
     },
     "essays": {
         "list_title": "Essais",

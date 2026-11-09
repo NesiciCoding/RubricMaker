@@ -1169,6 +1169,8 @@ export interface EssayAssignmentContent {
     requireSEB: boolean;
     expiresAt: string | null;
     readOnlyAfterSubmit: boolean;
+    /** BCP-47 base code of the language the essay is written in — drives read-aloud voices and `lang` attributes (#956). Null when unset (English). */
+    contentLanguage: string | null;
 }
 
 export interface SpeakingSession {
@@ -1229,6 +1231,12 @@ export interface EssayAssignment {
      * essay patches the whole group rather than a single student's row.
      */
     folderId?: string;
+    /**
+     * BCP-47 base code of the language the essay is written in — drives read-aloud voices
+     * and `lang` attributes on the student page (#956). Unset means English, and must NOT
+     * fall back to the interface language (Dutch UI reading an English essay with a Dutch voice).
+     */
+    contentLanguage?: string;
 }
 
 /** Saved essay configuration not yet assigned to any student — used to prepare assignments in advance */
@@ -1244,6 +1252,8 @@ export interface EssayTemplate {
     readOnlyAfterSubmit: boolean;
     expiresAt?: string;
     createdAt: string;
+    /** BCP-47 base code of the language essays from this template are written in (#956). Unset means English. */
+    contentLanguage?: string;
 }
 
 /**

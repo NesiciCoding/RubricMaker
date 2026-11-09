@@ -3785,7 +3785,10 @@
         "download_seb": "Download .seb-configuratie",
         "save_template": "Configuratie opslaan",
         "template_saved": "Configuratie opgeslagen!",
-        "save_template_title": "Sla deze opdrachtinstellingen op voor later gebruik"
+        "save_template_title": "Sla deze opdrachtinstellingen op voor later gebruik",
+        "content_language_label": "Taal van de inhoud",
+        "content_language_help": "Voorleesstemmen en uitspraak volgen deze taal, niet de interfacetaal.",
+        "content_language_default": "Standaard (Engels)"
     },
     "essays": {
         "list_title": "Essays",

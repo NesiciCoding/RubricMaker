@@ -3785,7 +3785,10 @@
         "download_seb": "Descargar configuración .seb",
         "save_template": "Guardar configuración",
         "template_saved": "¡Configuración guardada!",
-        "save_template_title": "Guardar esta configuración de tarea para uso posterior"
+        "save_template_title": "Guardar esta configuración de tarea para uso posterior",
+        "content_language_label": "Idioma del contenido",
+        "content_language_help": "Las voces de lectura y la pronunciación siguen este idioma, no el de la interfaz.",
+        "content_language_default": "Predeterminado (inglés)"
     },
     "essays": {
         "list_title": "Ensayos",

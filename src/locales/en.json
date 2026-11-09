@@ -3785,7 +3785,10 @@
         "download_seb": "Download .seb config",
         "save_template": "Save configuration",
         "template_saved": "Configuration saved!",
-        "save_template_title": "Save this essay configuration for later use — pre-fills the form next time you open this rubric"
+        "save_template_title": "Save this essay configuration for later use — pre-fills the form next time you open this rubric",
+        "content_language_label": "Content language",
+        "content_language_help": "Read-aloud voices and pronunciation follow this language, not the interface language.",
+        "content_language_default": "Default (English)"
     },
     "essays": {
         "list_title": "Essays",

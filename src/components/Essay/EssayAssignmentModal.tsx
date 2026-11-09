@@ -34,6 +34,7 @@ interface Props {
             | 'requireSEB'
             | 'readOnlyAfterSubmit'
             | 'expiresAt'
+            | 'contentLanguage'
         >
     >;
     savedTemplate?: EssayTemplate;
@@ -81,6 +82,10 @@ export default function EssayAssignmentModal({
     );
     const originalExpiresAt = savedTemplate?.expiresAt ?? initialValues?.expiresAt;
     const [expiresAt, setExpiresAt] = useState(originalExpiresAt ? toLocalDatetimeInput(originalExpiresAt) : '');
+    // BCP-47 base code; '' means the default (English). Saved on the assignment (#956).
+    const [contentLanguage, setContentLanguage] = useState(
+        savedTemplate?.contentLanguage ?? initialValues?.contentLanguage ?? ''
+    );
     // On by default when connected — but only when this modal instance can actually save
     // the row (onSaveAssignment). Without that, embedding credentials just hands out a
     // "DB mode" link for a row that never gets persisted (see handleAssignToStudents).
@@ -109,6 +114,7 @@ export default function EssayAssignmentModal({
                 readOnlyAfterSubmit,
                 createdAt: new Date().toISOString(),
                 expiresAt: fromLocalDatetimeInput(expiresAt, originalExpiresAt),
+                contentLanguage: contentLanguage || undefined,
             };
             // Embed Supabase credentials so the student page can submit directly to the DB —
             // only when there's a way to actually persist this row (onSaveAssignment).
@@ -130,6 +136,7 @@ export default function EssayAssignmentModal({
             readOnlyAfterSubmit,
             expiresAt,
             originalExpiresAt,
+            contentLanguage,
             embedDb,
             dbStatus.isConnected,
             config,
@@ -217,6 +224,7 @@ export default function EssayAssignmentModal({
             readOnlyAfterSubmit,
             expiresAt: fromLocalDatetimeInput(expiresAt, originalExpiresAt),
             createdAt: savedTemplate?.createdAt ?? new Date().toISOString(),
+            contentLanguage: contentLanguage || undefined,
         };
         onSaveTemplate(template);
         setTemplateSaved(true);
@@ -234,6 +242,7 @@ export default function EssayAssignmentModal({
         readOnlyAfterSubmit,
         expiresAt,
         originalExpiresAt,
+        contentLanguage,
     ]);
 
     return (
@@ -389,6 +398,26 @@ export default function EssayAssignmentModal({
                             </div>
                         )}
                     </div>
+                </div>
+
+                {/* Content language — drives read-aloud voices and `lang` attributes (#956) */}
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label htmlFor="ea-content-language">{t('essay_assignment.content_language_label')}</label>
+                    <select
+                        id="ea-content-language"
+                        value={contentLanguage}
+                        onChange={(e) => setContentLanguage(e.target.value)}
+                    >
+                        <option value="">{t('essay_assignment.content_language_default')}</option>
+                        <option value="en">{t('settings.language_en')}</option>
+                        <option value="nl">{t('settings.language_nl')}</option>
+                        <option value="fr">{t('settings.language_fr')}</option>
+                        <option value="de">{t('settings.language_de')}</option>
+                        <option value="es">{t('settings.language_es')}</option>
+                    </select>
+                    <p className="text-muted text-xs" style={{ marginTop: 4, marginBottom: 0 }}>
+                        {t('essay_assignment.content_language_help')}
+                    </p>
                 </div>
 
                 {/* Toggles */}

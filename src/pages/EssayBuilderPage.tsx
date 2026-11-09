@@ -79,6 +79,8 @@ export default function EssayBuilderPage() {
     const [requireSEB, setRequireSEB] = useState(existing?.requireSEB ?? false);
     const [readOnlyAfterSubmit, setReadOnlyAfterSubmit] = useState(existing?.readOnlyAfterSubmit ?? true);
     const [expiresAt, setExpiresAt] = useState(existing?.expiresAt ? toLocalDatetimeInput(existing.expiresAt) : '');
+    // BCP-47 base code; '' means the default (English). Written through on save (#956).
+    const [contentLanguage, setContentLanguage] = useState<string>(existing?.contentLanguage ?? '');
 
     const teacherKeyRef = useMemo(() => teacherKeyParam ?? nanoid(), [teacherKeyParam]);
 
@@ -93,6 +95,7 @@ export default function EssayBuilderPage() {
         requireSEB,
         readOnlyAfterSubmit,
         expiresAt,
+        contentLanguage,
     ]);
     const [savedSnapshot, setSavedSnapshot] = useState(formSnapshot);
     const { dialogProps: unsavedDialogProps, allowNavigation } = useUnsavedChangesGuard(formSnapshot !== savedSnapshot);
@@ -124,6 +127,7 @@ export default function EssayBuilderPage() {
             requireSEB,
             readOnlyAfterSubmit,
             expiresAt: fromLocalDatetimeInput(expiresAt, existing?.expiresAt),
+            contentLanguage: contentLanguage || undefined,
         };
     }
 
@@ -150,6 +154,7 @@ export default function EssayBuilderPage() {
         requireSEB,
         readOnlyAfterSubmit,
         expiresAt,
+        contentLanguage,
         configInvalid,
         formSnapshot,
         t,
@@ -388,6 +393,27 @@ export default function EssayBuilderPage() {
                                 value={expiresAt}
                                 onChange={(e) => setExpiresAt(e.target.value)}
                             />
+                        </div>
+                        <div className="form-group" style={{ flex: '1 1 200px' }}>
+                            <label className="form-label" htmlFor="eb-content-language">
+                                {t('essay_assignment.content_language_label')}
+                            </label>
+                            <select
+                                id="eb-content-language"
+                                className="form-input"
+                                value={contentLanguage}
+                                onChange={(e) => setContentLanguage(e.target.value)}
+                            >
+                                <option value="">{t('essay_assignment.content_language_default')}</option>
+                                <option value="en">{t('settings.language_en')}</option>
+                                <option value="nl">{t('settings.language_nl')}</option>
+                                <option value="fr">{t('settings.language_fr')}</option>
+                                <option value="de">{t('settings.language_de')}</option>
+                                <option value="es">{t('settings.language_es')}</option>
+                            </select>
+                            <p className="text-muted text-xs" style={{ marginTop: 4, marginBottom: 0 }}>
+                                {t('essay_assignment.content_language_help')}
+                            </p>
                         </div>
                     </div>
                     <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>

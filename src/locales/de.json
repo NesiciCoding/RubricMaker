@@ -3598,7 +3598,10 @@
         "download_seb": ".seb-Konfiguration herunterladen",
         "save_template": "Konfiguration speichern",
         "template_saved": "Konfiguration gespeichert!",
-        "save_template_title": "Diese Aufgabenkonfiguration für die spätere Verwendung speichern"
+        "save_template_title": "Diese Aufgabenkonfiguration für die spätere Verwendung speichern",
+        "content_language_label": "Inhaltssprache",
+        "content_language_help": "Vorlesestimmen und Aussprache folgen dieser Sprache, nicht der Oberflächensprache.",
+        "content_language_default": "Standard (Englisch)"
     },
     "essays": {
         "list_title": "Aufsätze",

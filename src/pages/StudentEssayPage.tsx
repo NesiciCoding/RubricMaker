@@ -24,7 +24,8 @@ const MemoizedEssayEditor = React.memo(EssayEditor);
 
 // Essays are English unless a teacher setting says otherwise (#956), whatever the interface language: the read-aloud
 // voice, spellcheck and screen readers must not treat an English essay as Dutch because the student picked Dutch.
-const ESSAY_CONTENT_LANG = 'en';
+// Resolved per assignment below (resolvedContent -> legacy URL payload -> DB assignment); never the UI language.
+const DEFAULT_ESSAY_CONTENT_LANG = 'en';
 import { decodeEssayAssignment } from '../utils/shareCode';
 import { encodeEssaySubmission } from '../utils/shareCode';
 import { downloadSebConfig } from '../utils/sebConfig';
@@ -291,10 +292,15 @@ export default function StudentEssayPage() {
                   requireSEB: legacyAssignment.requireSEB ?? false,
                   expiresAt: legacyAssignment.expiresAt ?? null,
                   readOnlyAfterSubmit: legacyAssignment.readOnlyAfterSubmit,
+                  contentLanguage: legacyAssignment.contentLanguage ?? null,
               }
             : undefined
     );
     const contentReady = resolvedContent !== undefined;
+    // Effective content language: edge-function content first, then the URL payload's
+    // assignment (legacy links and short-code placeholder), defaulting to English (#956).
+    const essayContentLang =
+        resolvedContent?.contentLanguage || assignment?.contentLanguage || DEFAULT_ESSAY_CONTENT_LANG;
     // Short codes are shared by a class, so the deadline is kept per student; it is only created once
     // the content (and with it the student) has resolved, because the time limit comes from there too.
     const timerKey =
@@ -868,7 +874,7 @@ export default function StudentEssayPage() {
                         <EssayTTSControls
                             promptText={resolvedContent?.prompt ?? assignment.prompt}
                             contentHtml={html}
-                            lang={ESSAY_CONTENT_LANG}
+                            lang={essayContentLang}
                         />
                     )}
                 </div>
@@ -1008,7 +1014,7 @@ export default function StudentEssayPage() {
                         placeholder={t('essay.editor_placeholder')}
                         showDragHandle
                         showTableOfContents
-                        lang={ESSAY_CONTENT_LANG}
+                        lang={essayContentLang}
                     />
 
                     {/* Submit row */}
@@ -1111,7 +1117,7 @@ export default function StudentEssayPage() {
                                 >
                                     {t('essay.prompt_label')}
                                 </div>
-                                <span lang={ESSAY_CONTENT_LANG}>{resolvedContent?.prompt ?? assignment.prompt}</span>
+                                <span lang={essayContentLang}>{resolvedContent?.prompt ?? assignment.prompt}</span>
                             </div>
                         )}
 
