@@ -78,7 +78,9 @@ test.describe('migration 078 retention anonymization', () => {
     });
 
     test('anonymizes only students whose latest grade is past retention, and logs the run', async () => {
-        const before = Number(querySql("SELECT count(*) FROM public.audit_logs WHERE action = 'retention_anonymize'"));
+        // Window-scoped (#1116-7): count only rows written by this run so a
+        // concurrent worker's retention run can't shift the assertion.
+        const runStart = querySql('SELECT now()');
         // Throws (non-zero psql exit) if the function errors, which is what 018 did on every run.
         querySql('SELECT public.anonymize_overdue_students()');
 
@@ -95,7 +97,11 @@ test.describe('migration 078 retention anonymization', () => {
         expect(byId[recent].anonymizedAt).toBeUndefined();
         expect(byId[recent].name).toBe(`Pupil ${recent}`);
 
-        const after = Number(querySql("SELECT count(*) FROM public.audit_logs WHERE action = 'retention_anonymize'"));
-        expect(after).toBe(before + 1);
+        const newRows = Number(
+            querySql(
+                `SELECT count(*) FROM public.audit_logs WHERE action = 'retention_anonymize' AND created_at >= '${runStart}'`
+            )
+        );
+        expect(newRows).toBe(1);
     });
 });
