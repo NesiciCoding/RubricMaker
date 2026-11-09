@@ -189,9 +189,15 @@ export default function TestGradingQueuePage() {
         return out;
     }, [test, attempts, students, view, skipped]);
 
-    // Groups: per question in question-mode, per student in student-mode.
+    // Groups: per question in question-mode, per student in student-mode. Question view is
+    // seeded with every question so the nav (one button per test.questions) indexes into
+    // groups 1:1 — otherwise a question with no answers shifts every later button, and an
+    // out-of-range groupIndex falls back to an unrelated answer instead of the empty state.
     const groups = useMemo(() => {
         const map = new Map<string, { label: string; steps: number[] }>();
+        if (view === 'question' && test) {
+            test.questions.forEach((q, qi) => map.set(q.id, { label: shortPrompt(q, qi), steps: [] }));
+        }
         steps.forEach((s, i) => {
             const gkey = view === 'question' ? s.questionId : s.studentTestId;
             const label = view === 'question' ? shortPrompt(s.question, s.questionIndex) : s.studentName;
@@ -200,11 +206,11 @@ export default function TestGradingQueuePage() {
             map.set(gkey, g);
         });
         return [...map.values()];
-    }, [steps, view]);
+    }, [steps, view, test]);
 
     const visibleSteps = groups[groupIndex]?.steps ?? [];
-    const currentGlobal = visibleSteps[Math.min(stepIndex, Math.max(visibleSteps.length - 1, 0))] ?? 0;
-    const current = steps[currentGlobal];
+    const currentGlobal = visibleSteps[Math.min(stepIndex, Math.max(visibleSteps.length - 1, 0))];
+    const current = currentGlobal === undefined ? undefined : steps[currentGlobal];
 
     // Matrix view shares the same step set (student-major order, same as the By student
     // branch) — selection is a plain index into `steps`, so drafts/skips carry across views.
@@ -283,12 +289,23 @@ export default function TestGradingQueuePage() {
             ...st,
             ...(dbStatus.isConnected && dbStatus.userId ? { lastEditedBy: dbStatus.userId } : {}),
             answers: nextAnswers,
-            rawTotalPoints: scoreStudentTest(test, { ...st, answers: nextAnswers }).rawPoints,
+            rawTotalPoints: scoreStudentTest(test, { ...st, rawTotalPoints: undefined, answers: nextAnswers })
+                .rawPoints,
             status: st.status === 'submitted' ? 'graded' : st.status,
             gradedAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
         };
         saveStudentTest(updated);
+        // Drop the saved key from the draft maps so the "unsaved" badge clears, the matrix
+        // cell reflects the saved (clamped) value, and the draft can't override later saves.
+        setDraftPoints((prev) => {
+            const { [step.key]: _omit, ...rest } = prev;
+            return rest;
+        });
+        setFeedbackDrafts((prev) => {
+            const { [step.key]: _omit, ...rest } = prev;
+            return rest;
+        });
         setSkipped((prev) => {
             if (!prev.has(step.key)) return prev;
             const next = new Set(prev);
@@ -351,6 +368,10 @@ export default function TestGradingQueuePage() {
 
     useEffect(() => {
         function onKey(e: KeyboardEvent) {
+            // Modified keys are browser/app shortcuts (Ctrl+S save, Cmd+K search, tab-switch
+            // digits) — never queue shortcuts. While the comment bank is open, J/K/S/digits
+            // must edit the modal, not the underlying queue. (Escape is handled by Radix.)
+            if (e.ctrlKey || e.metaKey || e.altKey || commentBankFor) return;
             const target = e.target as HTMLElement;
             if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
             if (!detailStep) return;
@@ -380,7 +401,7 @@ export default function TestGradingQueuePage() {
         }
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
-    }, [detailStep, detailNext, detailPrev, inMatrix, readOnly]);
+    }, [detailStep, detailNext, detailPrev, inMatrix, readOnly, commentBankFor]);
 
     if (!test && sharedLoading) {
         return (

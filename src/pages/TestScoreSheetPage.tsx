@@ -326,7 +326,7 @@ function ScoreSheetBody({
                             className="btn btn-secondary btn-sm"
                             onClick={() => navigate(`/tests/${test.id}/grade`)}
                         >
-                            Grade queue
+                            {t('tests.scoreSheet.grade_queue_action')}
                         </button>
                     </>
                 }

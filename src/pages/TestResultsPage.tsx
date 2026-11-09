@@ -707,7 +707,7 @@ export default function TestResultsPage() {
                             className="btn btn-secondary btn-sm"
                             onClick={() => navigate(`/tests/${testId}/grade?view=student`)}
                         >
-                            Grade queue
+                            {t('tests.scoreSheet.grade_queue_action')}
                         </button>
                         <button className="btn btn-secondary btn-sm" onClick={() => navigate('/tests')}>
                             <ArrowLeft size={14} /> {t('tests.back_to_list')}
