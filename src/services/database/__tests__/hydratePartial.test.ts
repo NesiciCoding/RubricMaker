@@ -85,4 +85,33 @@ describe('StorageSync.hydratePartial', () => {
         expect(data).toBeNull();
         expect(fullFallback).toBeFalsy();
     });
+
+    it('skips the full-hydrate fallback when the browser is offline', async () => {
+        vi.spyOn(adapter, 'isConnected').mockReturnValue(true);
+        vi.spyOn(adapter, 'fetchTests').mockRejectedValue(new TypeError('Failed to fetch'));
+        const onlineDescriptor = Object.getOwnPropertyDescriptor(navigator, 'onLine');
+        Object.defineProperty(navigator, 'onLine', { value: false, configurable: true });
+        try {
+            const { data, fullFallback } = await storageSync.hydratePartial(new Set(['tests']));
+            expect(data).toBeNull();
+            expect(fullFallback).toBeFalsy();
+        } finally {
+            if (onlineDescriptor) Object.defineProperty(navigator, 'onLine', onlineDescriptor);
+        }
+    });
+
+    it('still returns partial data when the last-sync stamp hits a full localStorage', async () => {
+        vi.spyOn(adapter, 'isConnected').mockReturnValue(true);
+        stub('fetchTests', [{ id: 't1' }]);
+        const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation((key) => {
+            if (key === 'rm_last_sync_at') throw new DOMException('quota exceeded', 'QuotaExceededError');
+        });
+        try {
+            const { data, fullFallback } = await storageSync.hydratePartial(new Set(['tests']));
+            expect(fullFallback).toBeFalsy();
+            expect(data).toEqual({ tests: [{ id: 't1' }] });
+        } finally {
+            setItemSpy.mockRestore();
+        }
+    });
 });

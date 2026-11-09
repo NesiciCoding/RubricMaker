@@ -282,6 +282,40 @@ describe('save functions', () => {
         onStorageQuotaExceeded(() => {});
     });
 
+    it('retries once after dropping the legacy rm_student_rubrics copy before notifying quota', () => {
+        const handler = vi.fn();
+        onStorageQuotaExceeded(handler);
+        localStorage.setItem('rm_student_rubrics', JSON.stringify([{ id: 'legacy' }]));
+        const origSetItem = Storage.prototype.setItem;
+        let calls = 0;
+        const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (
+            this: Storage,
+            ...args: [string, string]
+        ) {
+            calls++;
+            if (calls === 1) throw new DOMException('quota exceeded', 'QuotaExceededError');
+            return origSetItem.apply(this, args);
+        });
+
+        expect(() =>
+            saveRubrics([
+                {
+                    id: 'r1',
+                    name: 'Retry rubric',
+                    criteria: [],
+                    createdAt: '2026-01-01',
+                    updatedAt: '2026-01-01',
+                } as unknown as Rubric,
+            ])
+        ).not.toThrow();
+        expect(handler).not.toHaveBeenCalled();
+        expect(localStorage.getItem('rm_student_rubrics')).toBeNull();
+        expect(JSON.parse(localStorage.getItem('rm_rubrics') ?? '[]')[0].id).toBe('r1');
+
+        setItemSpy.mockRestore();
+        onStorageQuotaExceeded(() => {});
+    });
+
     it('saveAttachments persists', () => {
         saveAttachments([
             {
