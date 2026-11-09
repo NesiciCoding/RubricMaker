@@ -1766,6 +1766,7 @@
             "new_test_name": "Prueba en papel",
             "action_open": "Hoja de puntos",
             "action_full_analysis": "Hoja de puntos y análisis completo",
+            "grade_queue_action": "Cola de corrección",
             "edit_columns": "Preguntas y vínculos",
             "export_csv": "Exportar CSV",
             "class_label": "Clase",

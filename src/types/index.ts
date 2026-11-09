@@ -1001,6 +1001,8 @@ export interface AppSettings {
     comparativeMatchupLimit?: number;
     /** Whether "Save & Next" in the grading view stays within the current class or spans all rubric-linked classes */
     gradeNavigationScope?: 'current-class' | 'rubric-classes';
+    /** The teacher's preferred grading-queue direction (By question / By student / Matrix); undefined means Matrix */
+    gradeQueueView?: 'question' | 'student' | 'matrix';
     /** Whether the user has seen the guided UI tutorial */
     hasSeenTutorial?: boolean;
     /** Chart type for the per-criterion statistics panel (on-screen toggle) */

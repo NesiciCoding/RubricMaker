@@ -1766,6 +1766,7 @@
             "new_test_name": "Papiertest",
             "action_open": "Punkteblatt",
             "action_full_analysis": "Punkteblatt & vollständige Analyse",
+            "grade_queue_action": "Bewertungswarteschlange",
             "edit_columns": "Fragen & Verknüpfungen",
             "export_csv": "CSV exportieren",
             "class_label": "Klasse",

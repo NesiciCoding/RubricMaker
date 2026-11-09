@@ -1766,6 +1766,7 @@
             "new_test_name": "Paper test",
             "action_open": "Score sheet",
             "action_full_analysis": "Score sheet & full analysis",
+            "grade_queue_action": "Grade queue",
             "edit_columns": "Questions & links",
             "export_csv": "Export CSV",
             "class_label": "Class",
