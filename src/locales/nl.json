@@ -1766,6 +1766,7 @@
             "new_test_name": "Papieren toets",
             "action_open": "Scoreblad",
             "action_full_analysis": "Scoreblad & volledige analyse",
+            "grade_queue_action": "Nakijkwachtrij",
             "edit_columns": "Vragen & koppelingen",
             "export_csv": "CSV exporteren",
             "class_label": "Klas",

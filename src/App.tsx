@@ -53,6 +53,7 @@ const EssayListPage = lazy(() => import('./pages/EssayListPage'));
 const EssayBuilderPage = lazy(() => import('./pages/EssayBuilderPage'));
 const TestResultsPage = lazy(() => import('./pages/TestResultsPage'));
 const TestScoreSheetPage = lazy(() => import('./pages/TestScoreSheetPage'));
+const TestGradingQueuePage = lazy(() => import('./pages/TestGradingQueuePage'));
 const LiveMonitorPage = lazy(() => import('./pages/LiveMonitorPage'));
 const StudentPortalPage = lazy(() => import('./pages/StudentPortalPage'));
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
@@ -317,6 +318,7 @@ export default function App() {
                                         }
                                     />
                                     <Route path="/tests/:testId/results/:studentTestId" element={<TestResultsPage />} />
+                                    <Route path="/tests/:testId/grade" element={<TestGradingQueuePage />} />
                                     <Route path="/tests/:testId/monitor" element={<LiveMonitorPage kind="test" />} />
                                     <Route path="/tests/:id/scores" element={<TestScoreSheetPage />} />
                                     <Route path="/essays" element={<EssayListPage />} />

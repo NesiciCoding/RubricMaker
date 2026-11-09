@@ -322,6 +322,12 @@ function ScoreSheetBody({
                         <button className="btn btn-secondary btn-sm" onClick={exportCsv} disabled={rows.length === 0}>
                             <Download size={15} /> {t('tests.scoreSheet.export_csv')}
                         </button>
+                        <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => navigate(`/tests/${test.id}/grade`)}
+                        >
+                            Grade queue
+                        </button>
                     </>
                 }
             />

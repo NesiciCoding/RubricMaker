@@ -17,6 +17,7 @@ import {
     LayoutGrid,
     List,
     ScanLine,
+    ListChecks,
     Table2,
     Share2,
     FileJson,
@@ -1130,6 +1131,16 @@ export default function TestListPage() {
                                                                         >
                                                                             <Table2 size={14} />{' '}
                                                                             {t('tests.scoreSheet.action_full_analysis')}
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            className="btn btn-secondary btn-sm"
+                                                                            onClick={() =>
+                                                                                navigate(`/tests/${test.id}/grade`)
+                                                                            }
+                                                                        >
+                                                                            <ListChecks size={14} />{' '}
+                                                                            {t('tests.scoreSheet.grade_queue_action')}
                                                                         </button>
                                                                     </>
                                                                 )}

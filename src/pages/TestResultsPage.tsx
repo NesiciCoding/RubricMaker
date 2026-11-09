@@ -703,6 +703,12 @@ export default function TestResultsPage() {
                         <button className="btn btn-ghost btn-sm" onClick={tour.start}>
                             {t('tutorial.page_tour_button')}
                         </button>
+                        <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => navigate(`/tests/${testId}/grade?view=student`)}
+                        >
+                            Grade queue
+                        </button>
                         <button className="btn btn-secondary btn-sm" onClick={() => navigate('/tests')}>
                             <ArrowLeft size={14} /> {t('tests.back_to_list')}
                         </button>
