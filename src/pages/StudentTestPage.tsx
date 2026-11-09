@@ -1131,6 +1131,14 @@ export default function StudentTestPage() {
                                                         !!section &&
                                                         orderedQuestions.find((oq) => oq.sectionId === section.id)
                                                             ?.id === q.id;
+                                                    // A section transcript belongs to the section, not to the first
+                                                    // question that happens to render it — read it in the section
+                                                    // language, keeping qLang for the question's own transcript.
+                                                    const sectionLang = resolveContentLanguage(
+                                                        section?.contentLanguage,
+                                                        test?.contentLanguage
+                                                    );
+                                                    const hasOwnTranscript = !!q.transcript;
                                                     const transcript =
                                                         q.transcript || (firstOfSection ? section?.transcript : '');
                                                     return transcript ? (
@@ -1139,7 +1147,7 @@ export default function StudentTestPage() {
                                                                 {t('tests.taking.transcript_title')}
                                                             </summary>
                                                             <p
-                                                                lang={qLang}
+                                                                lang={hasOwnTranscript ? qLang : sectionLang}
                                                                 className="text-muted text-sm"
                                                                 style={{ whiteSpace: 'pre-wrap', margin: '6px 0 0' }}
                                                             >

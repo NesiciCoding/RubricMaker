@@ -232,6 +232,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         generatorMinQuestions,
         generatorMaxQuestions,
         generatorStarterBankItemId,
+        contentLanguage,
     ]);
     const { dialogProps: unsavedDialogProps } = useUnsavedChangesGuard(isDirty && !readOnly);
 
