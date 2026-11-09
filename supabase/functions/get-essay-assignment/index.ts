@@ -38,15 +38,13 @@ serve(async (req) => {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) return json({ error: 'Unauthorized' }, 401);
 
-    const admin = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-    );
+    const admin = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '');
 
     // Verify the JWT — accepts both anonymous and email-authenticated sessions.
-    const { data: { user }, error: authErr } = await admin.auth.getUser(
-        authHeader.replace('Bearer ', ''),
-    );
+    const {
+        data: { user },
+        error: authErr,
+    } = await admin.auth.getUser(authHeader.replace('Bearer ', ''));
     if (authErr || !user) return json({ error: 'Invalid or expired token' }, 401);
 
     let body: { assignmentId?: string };
@@ -63,7 +61,9 @@ serve(async (req) => {
 
     const { data: assignment, error: assignErr } = await admin
         .from('essay_assignments')
-        .select('rubric_id, student_id, title, prompt, min_words, max_words, time_limit_minutes, require_seb, expires_at, read_only_after_submit')
+        .select(
+            'rubric_id, student_id, title, prompt, min_words, max_words, time_limit_minutes, require_seb, expires_at, read_only_after_submit, content_language'
+        )
         .eq('id', assignmentId)
         .single();
 
@@ -84,5 +84,6 @@ serve(async (req) => {
         requireSEB: assignment.require_seb,
         expiresAt: assignment.expires_at ?? null,
         readOnlyAfterSubmit: assignment.read_only_after_submit,
+        contentLanguage: assignment.content_language ?? null,
     });
 });

@@ -1,7 +1,16 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi } from 'vitest';
 import EssayAssignmentModal from '../EssayAssignmentModal';
+
+// The post-save live-monitor link needs router context.
+const renderModal = (props: React.ComponentProps<typeof EssayAssignmentModal>) =>
+    render(
+        <MemoryRouter>
+            <EssayAssignmentModal {...props} />
+        </MemoryRouter>
+    );
 
 let mockDbConnected = false;
 vi.mock('../../../hooks/useDbStatus', () => ({
@@ -100,6 +109,35 @@ describe('EssayAssignmentModal word limits (#676)', () => {
         expect(screen.getByRole('button', { name: 'essays.assign_to_students' })).toBeDisabled();
         expect(screen.getByRole('button', { name: /essay_assignment.copy_link/ })).toBeDisabled();
         expect(screen.getByLabelText('essay_assignment.essay_link_label')).toHaveValue('');
+    });
+
+    it('re-saves the DB row when the content language changes after the auto-save', async () => {
+        mockDbConnected = true;
+        try {
+            const onSaveAssignment = vi.fn().mockResolvedValue({ success: true });
+            renderModal({
+                rubricId: 'rubric1',
+                rubricName: 'Writing Test',
+                studentId: 'student1',
+                studentName: 'Jane',
+                onClose: () => {},
+                onOpenSlipSheet: () => {},
+                onSaveAssignment,
+                classStudents: [{ id: 'student1', name: 'Jane' }],
+                initialValues: { title: 'Essay' },
+            });
+            await waitFor(() => expect(onSaveAssignment).toHaveBeenCalledTimes(1));
+            expect(onSaveAssignment.mock.calls[0][0].contentLanguage).toBeUndefined();
+            // A post-save edit must persist: the short-code link resolves the DB
+            // row, so serving the old row would read aloud the wrong language.
+            fireEvent.change(screen.getByLabelText('essay_assignment.content_language_label'), {
+                target: { value: 'nl' },
+            });
+            await waitFor(() => expect(onSaveAssignment).toHaveBeenCalledTimes(2));
+            expect(onSaveAssignment.mock.calls[1][0]).toMatchObject({ contentLanguage: 'nl' });
+        } finally {
+            mockDbConnected = false;
+        }
     });
 
     it('saves the DB-mode assignment once invalid limits are corrected', async () => {

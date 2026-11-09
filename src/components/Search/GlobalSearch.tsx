@@ -121,7 +121,10 @@ export default function GlobalSearch({ onClose, growFrom }: Props) {
     // ── Recents (#890): last-opened results, validated against the live corpus ──
     const [recents, setRecents] = useState<RecentEntry[]>(loadRecents);
     const validIds = useMemo(() => {
-        const studentIds = new Set(students.map((s) => s.id));
+        // Mirror searchAll (globalSearch.ts): anonymized students never surface,
+        // so their stored recents must not validate either — otherwise the empty
+        // query would keep showing the pre-anonymization name.
+        const studentIds = new Set(students.filter((s) => !s.anonymizedAt).map((s) => s.id));
         const rubricIds = new Set(rubrics.map((r) => r.id));
         const ids: Record<SearchResultType, Set<string> | null> = {
             rubric: rubricIds,
@@ -158,18 +161,19 @@ export default function GlobalSearch({ onClose, growFrom }: Props) {
             route: result.route,
             testMode: result.testMode,
         };
-        setRecents((prev) => {
-            const next = [entry, ...prev.filter((e) => !(e.type === entry.type && e.id === entry.id))].slice(
-                0,
-                MAX_RECENTS
-            );
-            try {
-                localStorage.setItem(RECENT_KEY, JSON.stringify(next));
-            } catch {
-                // Private-mode quota or disabled storage: recents stay in memory only.
-            }
-            return next;
-        });
+        // Compute the next list outside the updater: updaters must stay pure
+        // (React may run them twice), and the write must not be lost if `go`
+        // unmounts us via onClose before the updater runs.
+        const next = [entry, ...recents.filter((e) => !(e.type === entry.type && e.id === entry.id))].slice(
+            0,
+            MAX_RECENTS
+        );
+        setRecents(next);
+        try {
+            localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+        } catch {
+            // Private-mode quota or disabled storage: recents stay in memory only.
+        }
     }
 
     function go(result: SearchResult) {
@@ -221,6 +225,8 @@ export default function GlobalSearch({ onClose, growFrom }: Props) {
     }, [activeIndex]);
 
     function handleInputKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+        // IME confirmation (e.g. Japanese/Chinese Enter) must not navigate or select.
+        if (e.nativeEvent.isComposing) return;
         if (e.key === 'ArrowDown') {
             e.preventDefault();
             setActiveIndex((i) => Math.min(i + 1, Math.max(flat.length - 1, 0)));
@@ -358,9 +364,25 @@ export default function GlobalSearch({ onClose, growFrom }: Props) {
                 </div>
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0' }}>
-                {/* Screen-reader announcement of the live result count (F17). */}
+                {/* Screen-reader announcement of the live result count (F17). Only
+                    announce once the deferred search has caught up with the input,
+                    so the first keystroke can't announce the previous (empty)
+                    result set. The query is part of the text so a new result set
+                    with the same count still triggers an announcement, and the
+                    50-row display cap is announced when it applies. */}
                 <span role="status" aria-live="polite" aria-atomic="true" className="sr-only">
-                    {query.trim() === '' ? '' : t('search.results_count', { count: results.length })}
+                    {query.trim() === '' || deferredQuery !== query
+                        ? ''
+                        : results.length > MAX_RESULTS
+                          ? t('search.results_capped', {
+                                shown: MAX_RESULTS,
+                                count: results.length,
+                                query: deferredQuery.trim(),
+                            })
+                          : t('search.results_for_query', {
+                                count: results.length,
+                                query: deferredQuery.trim(),
+                            })}
                 </span>
                 {query.trim() === '' ? (
                     validRecents.length === 0 ? (

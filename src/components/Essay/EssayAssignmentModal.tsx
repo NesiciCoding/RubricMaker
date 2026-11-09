@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { X, Copy, Download, Check, FileText, Database, AlertCircle, Radio, Save } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -34,6 +34,7 @@ interface Props {
             | 'requireSEB'
             | 'readOnlyAfterSubmit'
             | 'expiresAt'
+            | 'contentLanguage'
         >
     >;
     savedTemplate?: EssayTemplate;
@@ -81,18 +82,30 @@ export default function EssayAssignmentModal({
     );
     const originalExpiresAt = savedTemplate?.expiresAt ?? initialValues?.expiresAt;
     const [expiresAt, setExpiresAt] = useState(originalExpiresAt ? toLocalDatetimeInput(originalExpiresAt) : '');
+    // BCP-47 base code; '' means the default (English). Saved on the assignment (#956).
+    const [contentLanguage, setContentLanguage] = useState(
+        savedTemplate?.contentLanguage ?? initialValues?.contentLanguage ?? ''
+    );
     // On by default when connected — but only when this modal instance can actually save
     // the row (onSaveAssignment). Without that, embedding credentials just hands out a
     // "DB mode" link for a row that never gets persisted (see handleAssignToStudents).
     const [embedDb, setEmbedDb] = useState(dbStatus.isConnected && !!onSaveAssignment);
     const [copied, setCopied] = useState(false);
-    const [saved, setSaved] = useState(false);
+    // Fingerprint of the last successfully persisted row. `saved` is derived: any
+    // edit after a save (e.g. picking a content language) flips it back to false,
+    // re-enabling the manual button and re-triggering the auto-save below — so the
+    // short-code link can never serve a stale database row.
+    const [savedFingerprint, setSavedFingerprint] = useState<string | null>(null);
     const [saveError, setSaveError] = useState('');
     const [saving, setSaving] = useState(false);
     const [templateSaved, setTemplateSaved] = useState(false);
 
     const generatedTeacherKey = React.useMemo(() => nanoid(), []);
     const teacherKey = teacherKeyProp ?? generatedTeacherKey;
+    // Stable across renders: the row is upserted by teacherKey, and the share link
+    // embeds this timestamp — regenerating it per keystroke would change the link
+    // (and the stored created_at) on every edit.
+    const createdAt = React.useMemo(() => new Date().toISOString(), []);
 
     const buildAssignment = useCallback(
         (sid: string): EssayAssignment => {
@@ -107,8 +120,9 @@ export default function EssayAssignmentModal({
                 timeLimitMinutes: timeLimitMinutes ? parseInt(timeLimitMinutes, 10) : undefined,
                 requireSEB,
                 readOnlyAfterSubmit,
-                createdAt: new Date().toISOString(),
+                createdAt,
                 expiresAt: fromLocalDatetimeInput(expiresAt, originalExpiresAt),
+                contentLanguage: contentLanguage || undefined,
             };
             // Embed Supabase credentials so the student page can submit directly to the DB —
             // only when there's a way to actually persist this row (onSaveAssignment).
@@ -128,14 +142,38 @@ export default function EssayAssignmentModal({
             timeLimitMinutes,
             requireSEB,
             readOnlyAfterSubmit,
+            createdAt,
             expiresAt,
             originalExpiresAt,
+            contentLanguage,
             embedDb,
             dbStatus.isConnected,
             config,
             onSaveAssignment,
         ]
     );
+
+    // Stable-field fingerprint of the row persisted above (excludes credentials and
+    // createdAt, which never change for this modal instance). Compared against the
+    // last saved fingerprint to detect post-save edits.
+    const assignmentFingerprint = useMemo(() => {
+        const a = buildAssignment(studentId);
+        return JSON.stringify({
+            rubricId: a.rubricId,
+            studentId: a.studentId,
+            teacherKey: a.teacherKey,
+            title: a.title,
+            prompt: a.prompt,
+            minWords: a.minWords,
+            maxWords: a.maxWords,
+            timeLimitMinutes: a.timeLimitMinutes,
+            requireSEB: a.requireSEB,
+            readOnlyAfterSubmit: a.readOnlyAfterSubmit,
+            expiresAt: a.expiresAt,
+            contentLanguage: a.contentLanguage,
+        });
+    }, [buildAssignment, studentId]);
+    const saved = savedFingerprint !== null && savedFingerprint === assignmentFingerprint;
 
     const limitErrors = validateEssayConfig({ minWords, maxWords, timeLimitMinutes });
     const limitsInvalid = Object.keys(limitErrors).length > 0;
@@ -157,7 +195,7 @@ export default function EssayAssignmentModal({
             const assignment = buildAssignment(studentId);
             const result = await onSaveAssignment(assignment);
             if (result.success) {
-                setSaved(true);
+                setSavedFingerprint(assignmentFingerprint);
             } else {
                 setSaveError(result.error ?? t('essay_assignment.save_error_fallback'));
             }
@@ -166,19 +204,23 @@ export default function EssayAssignmentModal({
         } finally {
             setSaving(false);
         }
-    }, [onSaveAssignment, buildAssignment, studentId, t]);
+    }, [onSaveAssignment, buildAssignment, studentId, assignmentFingerprint, t]);
 
-    // Auto-save as soon as a DB-mode link becomes shareable. The link/SEB config/slip
-    // sheet are all generated eagerly from `essayUrl` above (and the raw link is also
-    // shown in a copyable input), so gating the save behind a specific "share" button
-    // click left a window where a teacher could hand out a link before the row existed
-    // — the student would then hit "Assignment not found" on submit.
+    // Auto-save as soon as a DB-mode link becomes shareable, and re-save whenever
+    // the teacher edits anything afterwards (the upsert is keyed by teacherKey, so
+    // this updates the same row the short-code link resolves). The link/SEB
+    // config/slip sheet are all generated eagerly from `essayUrl` above (and the
+    // raw link is also shown in a copyable input), so without this a post-save
+    // edit — e.g. picking a content language — would leave the student facing a
+    // stale database row. Only the fingerprint re-arms the save: `saving` and
+    // the handler are intentionally excluded (both change identity around each
+    // save, which would refire the effect into a save loop on persistent errors).
     useEffect(() => {
         if (embedDb && onSaveAssignment && !saved && !saving && !limitsInvalid) {
             void handleSaveToDb();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [embedDb, limitsInvalid]);
+    }, [embedDb, limitsInvalid, assignmentFingerprint]);
 
     const handleDownloadSEB = useCallback(() => {
         downloadSebConfig(essayUrl, `essay-${studentName}`);
@@ -217,6 +259,7 @@ export default function EssayAssignmentModal({
             readOnlyAfterSubmit,
             expiresAt: fromLocalDatetimeInput(expiresAt, originalExpiresAt),
             createdAt: savedTemplate?.createdAt ?? new Date().toISOString(),
+            contentLanguage: contentLanguage || undefined,
         };
         onSaveTemplate(template);
         setTemplateSaved(true);
@@ -234,6 +277,7 @@ export default function EssayAssignmentModal({
         readOnlyAfterSubmit,
         expiresAt,
         originalExpiresAt,
+        contentLanguage,
     ]);
 
     return (
@@ -389,6 +433,26 @@ export default function EssayAssignmentModal({
                             </div>
                         )}
                     </div>
+                </div>
+
+                {/* Content language — drives read-aloud voices and `lang` attributes (#956) */}
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label htmlFor="ea-content-language">{t('essay_assignment.content_language_label')}</label>
+                    <select
+                        id="ea-content-language"
+                        value={contentLanguage}
+                        onChange={(e) => setContentLanguage(e.target.value)}
+                    >
+                        <option value="">{t('essay_assignment.content_language_default')}</option>
+                        <option value="en">{t('settings.language_en')}</option>
+                        <option value="nl">{t('settings.language_nl')}</option>
+                        <option value="fr">{t('settings.language_fr')}</option>
+                        <option value="de">{t('settings.language_de')}</option>
+                        <option value="es">{t('settings.language_es')}</option>
+                    </select>
+                    <p className="text-muted text-xs" style={{ marginTop: 4, marginBottom: 0 }}>
+                        {t('essay_assignment.content_language_help')}
+                    </p>
                 </div>
 
                 {/* Toggles */}

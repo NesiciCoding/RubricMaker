@@ -2187,6 +2187,7 @@ export class SupabaseAdapter {
                     read_only_after_submit: a.readOnlyAfterSubmit,
                     created_at: a.createdAt,
                     expires_at: a.expiresAt ?? null,
+                    content_language: a.contentLanguage ?? null,
                 },
                 { onConflict: 'id' }
             );
@@ -2321,7 +2322,7 @@ export class SupabaseAdapter {
         const { data, error } = await this.db()
             .from('essay_assignments')
             .select(
-                'id, rubric_id, student_id, title, prompt, min_words, max_words, time_limit_minutes, require_seb, read_only_after_submit, created_at, expires_at, essay_submissions(submitted_at, word_count)'
+                'id, rubric_id, student_id, title, prompt, min_words, max_words, time_limit_minutes, require_seb, read_only_after_submit, created_at, expires_at, content_language, essay_submissions(submitted_at, word_count)'
             )
             .order('created_at', { ascending: false });
         if (error || !data) return [];
@@ -2341,6 +2342,7 @@ export class SupabaseAdapter {
                 readOnlyAfterSubmit: r.read_only_after_submit,
                 createdAt: r.created_at,
                 expiresAt: r.expires_at ?? null,
+                contentLanguage: (r as { content_language?: string | null }).content_language ?? undefined,
                 submission: latest ? { submittedAt: latest.submitted_at, wordCount: latest.word_count } : null,
             };
         });

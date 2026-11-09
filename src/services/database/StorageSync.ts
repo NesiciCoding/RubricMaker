@@ -724,6 +724,17 @@ class StorageSyncService {
         return { data: null };
     }
 
+    /** Quota-safe last-sync bookkeeping: a full localStorage must never throw into a hydrate. */
+    private stampLastSync(): void {
+        const now = new Date().toISOString();
+        this.lastSyncAt = now;
+        try {
+            localStorage.setItem(LAST_SYNC_KEY, now);
+        } catch {
+            // Quota full or storage blocked — last-sync is advisory, the data is already merged.
+        }
+    }
+
     private trackHydrate<T extends readonly unknown[] | []>(
         gen: number,
         fetches: T
@@ -964,9 +975,7 @@ class StorageSyncService {
                 this.setStatus('error');
                 return { data: result, error: `${fetchErrors.length} collection(s) failed to load` };
             }
-            const now = new Date().toISOString();
-            this.lastSyncAt = now;
-            localStorage.setItem(LAST_SYNC_KEY, now);
+            this.stampLastSync();
             this.hydrateProgress = null;
             this.setStatus('idle');
 
@@ -1120,13 +1129,20 @@ class StorageSyncService {
             }
             await Promise.all(jobs);
             // Mirror _hydrateImpl's bookkeeping so "last synced" reflects the partial refresh too.
-            const now = new Date().toISOString();
-            this.lastSyncAt = now;
-            localStorage.setItem(LAST_SYNC_KEY, now);
+            // Quota-safe: a full localStorage must not turn a successful partial refresh into a
+            // full-hydrate fallback (the setItem throw used to land in the catch below).
+            this.stampLastSync();
             this.notifyListeners();
             return { data: result };
         } catch (e) {
-            console.warn('[sync] hydratePartial failed, falling back to full hydrate', e);
+            // Offline (or a dropped network): a full hydrate would fail the same way, so skip
+            // the fallback and let the next reconnect/realtime tick retry instead of spamming
+            // a full 35-fetch hydrate that can only log "Failed to fetch" again.
+            if (typeof navigator !== 'undefined' && !navigator.onLine) return { data: null };
+            console.warn('[sync] hydratePartial failed, falling back to full hydrate', {
+                tables: Array.from(tables),
+                error: e,
+            });
             return { data: null, fullFallback: true };
         }
     }
@@ -1199,9 +1215,7 @@ class StorageSyncService {
                 return { success: false, error: prereqFailure.error };
             }
 
-            const now = new Date().toISOString();
-            this.lastSyncAt = now;
-            localStorage.setItem(LAST_SYNC_KEY, now);
+            this.stampLastSync();
             this.setStatus('idle');
             return { success: true };
         } catch (e: unknown) {
