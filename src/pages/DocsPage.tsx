@@ -829,6 +829,7 @@ function RubricsTab() {
                         t('docs.rb_standards_item_slo'),
                         t('docs.rb_standards_item_ccss'),
                         t('docs.rb_standards_item_grammar'),
+                        t('docs.rb_standards_item_subitem'),
                     ]}
                 />
 

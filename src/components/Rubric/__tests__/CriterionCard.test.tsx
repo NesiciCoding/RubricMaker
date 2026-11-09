@@ -58,10 +58,13 @@ function cardProps(
         onToggleCollapse: noop,
         onPickStandard: noop,
         onPickCefr: noop,
+        onPickSubItemDescriptor: noop,
         onUnlinkStandard: noop,
         onUnlinkLegacyStandard: noop,
         onRemoveCefrDescriptor: noop,
         onRemoveFrameworkDescriptor: noop,
+        onRemoveSubItemCefrDescriptor: noop,
+        onRemoveSubItemFrameworkDescriptor: noop,
     };
 }
 

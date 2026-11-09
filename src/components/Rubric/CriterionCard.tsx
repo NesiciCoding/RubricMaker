@@ -53,7 +53,17 @@ interface CriterionCardProps {
     onToggleCollapse: (cid: string) => void;
     onPickStandard: (target: CriterionStandardTarget) => void;
     onPickCefr: (cid: string) => void;
+    /** Opens the shared descriptor picker for one sub-item (#1002). Always a subitem target. */
+    onPickSubItemDescriptor: (target: Extract<CriterionStandardTarget, { type: 'subitem' }>) => void;
     onUnlinkStandard: (target: CriterionStandardTarget, stdIndex: number) => void;
+    onRemoveSubItemCefrDescriptor: (
+        target: Extract<CriterionStandardTarget, { type: 'subitem' }>,
+        descriptorId: string
+    ) => void;
+    onRemoveSubItemFrameworkDescriptor: (
+        target: Extract<CriterionStandardTarget, { type: 'subitem' }>,
+        descriptorId: string
+    ) => void;
     onUnlinkLegacyStandard: (cid: string) => void;
     onRemoveCefrDescriptor: (cid: string, descriptorId: string) => void;
     onRemoveFrameworkDescriptor: (cid: string, descriptorId: string) => void;
@@ -82,10 +92,13 @@ export default memo(function CriterionCard({
     onToggleCollapse,
     onPickStandard,
     onPickCefr,
+    onPickSubItemDescriptor,
     onUnlinkStandard,
     onUnlinkLegacyStandard,
     onRemoveCefrDescriptor,
     onRemoveFrameworkDescriptor,
+    onRemoveSubItemCefrDescriptor,
+    onRemoveSubItemFrameworkDescriptor,
     tiered,
 }: CriterionCardProps) {
     const { t, i18n } = useTranslation();
@@ -736,6 +749,9 @@ export default memo(function CriterionCard({
                             onMoveSubItem={onMoveSubItem}
                             onPickStandard={onPickStandard}
                             onUnlinkStandard={onUnlinkStandard}
+                            onPickDescriptor={onPickSubItemDescriptor}
+                            onUnlinkCefrDescriptor={onRemoveSubItemCefrDescriptor}
+                            onUnlinkFrameworkDescriptor={onRemoveSubItemFrameworkDescriptor}
                         />
                     )}
 
@@ -1108,6 +1124,36 @@ export default memo(function CriterionCard({
                                                                                     sid,
                                                                                 },
                                                                                 idx
+                                                                            )
+                                                                        }
+                                                                        onLinkDescriptor={(sid) =>
+                                                                            onPickSubItemDescriptor({
+                                                                                type: 'subitem',
+                                                                                cid: criterion.id,
+                                                                                lid: level.id,
+                                                                                sid,
+                                                                            })
+                                                                        }
+                                                                        onUnlinkCefrDescriptor={(sid, dId) =>
+                                                                            onRemoveSubItemCefrDescriptor(
+                                                                                {
+                                                                                    type: 'subitem',
+                                                                                    cid: criterion.id,
+                                                                                    lid: level.id,
+                                                                                    sid,
+                                                                                },
+                                                                                dId
+                                                                            )
+                                                                        }
+                                                                        onUnlinkFrameworkDescriptor={(sid, dId) =>
+                                                                            onRemoveSubItemFrameworkDescriptor(
+                                                                                {
+                                                                                    type: 'subitem',
+                                                                                    cid: criterion.id,
+                                                                                    lid: level.id,
+                                                                                    sid,
+                                                                                },
+                                                                                dId
                                                                             )
                                                                         }
                                                                         moveTargets={criterion.levels
