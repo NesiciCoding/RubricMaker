@@ -1348,7 +1348,8 @@
                 "class_reached_aria": "{{reached}} de {{total}} alumnos han alcanzado {{level}}",
                 "class_finished_aria": "{{finished}} de {{total}} alumnos han terminado",
                 "milestone_halfway": "Mitad",
-                "milestone_final": "Última"
+                "milestone_final": "Última",
+                "no_questions": "Esta prueba aún no tiene preguntas: añade preguntas para ver la cuadrícula por pregunta aquí. La presencia y las señales de supervisión de arriba siguen actualizándose en vivo."
             },
             "draft": {
                 "word_count": "{{count}} palabras",

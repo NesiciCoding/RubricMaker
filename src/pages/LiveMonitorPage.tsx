@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import PageTour from '../components/Tour/PageTour';
 import { usePageTourState } from '../hooks/usePageTourState';
 import { useParams } from 'react-router-dom';
-import { createClient, type RealtimeChannel, type SupabaseClient } from '@supabase/supabase-js';
+import type { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
+import { getMonitorClient } from '../utils/monitorClient';
 import {
     Eye,
     EyeOff,
@@ -371,9 +372,10 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     const channelsRef = useRef<Map<string, RealtimeChannel>>(new Map());
     useEffect(() => {
         if (!hasDb || monitorStudents.length === 0) return;
-        const client = createClient(config!.supabaseUrl, config!.supabaseAnonKey, {
-            auth: { persistSession: false, autoRefreshToken: false, storageKey: 'rm_monitor_ephemeral' },
-        });
+        // Shared singleton: re-creating a GoTrueClient per roster change logs
+        // "Multiple GoTrueClient instances detected ... rm_monitor_ephemeral"
+        // and churns sockets. Reuse one client; only channels come and go.
+        const client = getMonitorClient(config!.supabaseUrl, config!.supabaseAnonKey);
         clientRef.current = client;
         const channelMap = new Map<string, RealtimeChannel>();
         const channels: RealtimeChannel[] = monitorStudents.map((row) => {
@@ -1010,7 +1012,12 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                         </div>
 
                         {/* Kind-specific live view */}
-                        {kind === 'test' && test && !isLevelGrid && (
+                        {kind === 'test' && test && !isLevelGrid && test.questions.length === 0 && (
+                            <p className="text-muted" data-testid="monitor-no-questions">
+                                {t('tests.monitor.grid.no_questions')}
+                            </p>
+                        )}
+                        {kind === 'test' && test && !isLevelGrid && test.questions.length > 0 && (
                             <ResponsesGrid
                                 test={test}
                                 sortRules={columnSortRules}

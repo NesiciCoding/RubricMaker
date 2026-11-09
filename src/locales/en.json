@@ -1348,7 +1348,8 @@
                 "class_reached_aria": "{{reached}} of {{total}} students reached {{level}}",
                 "class_finished_aria": "{{finished}} of {{total}} students finished",
                 "milestone_halfway": "Halfway",
-                "milestone_final": "Last"
+                "milestone_final": "Last",
+                "no_questions": "This test has no questions yet — add questions to see the per-question grid here. Presence and proctoring signals above still update live."
             },
             "draft": {
                 "word_count": "{{count}} words",

@@ -1348,7 +1348,8 @@
                 "class_reached_aria": "{{reached}} van {{total}} leerlingen hebben {{level}} bereikt",
                 "class_finished_aria": "{{finished}} van {{total}} leerlingen zijn klaar",
                 "milestone_halfway": "Halverwege",
-                "milestone_final": "Laatste"
+                "milestone_final": "Laatste",
+                "no_questions": "Deze toets heeft nog geen vragen — voeg vragen toe om hier het raster per vraag te zien. Aanwezigheid en toezichtsignalen hierboven worden nog live bijgewerkt."
             },
             "draft": {
                 "word_count": "{{count}} woorden",

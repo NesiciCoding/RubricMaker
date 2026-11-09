@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { getMonitorClient } from '../utils/monitorClient';
 import type { ProctorEvent, CefrLevel } from '../types';
 
 const HEARTBEAT_INTERVAL_MS = 20_000;
@@ -166,9 +167,7 @@ export function useLiveSessionTelemetry({
             setIsBroadcasting(false);
             return;
         }
-        const client = createClient(supabaseUrl!, supabaseAnonKey!, {
-            auth: { persistSession: false, autoRefreshToken: false, storageKey: 'rm_monitor_ephemeral' },
-        });
+        const client = getMonitorClient(supabaseUrl!, supabaseAnonKey!);
         // ack:true makes send() resolve only after the server confirms receipt —
         // important for the 'submitted' broadcast, which is fire-and-forget today
         // but must not be silently dropped right before the channel tears down.
