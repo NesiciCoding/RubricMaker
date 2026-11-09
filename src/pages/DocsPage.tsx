@@ -2030,6 +2030,7 @@ export default function DocsPage() {
                 >
                     {/* ── Left nav ── */}
                     <nav
+                        aria-label={t('docs.sections_nav_label')}
                         style={{
                             position: 'sticky',
                             top: 16,

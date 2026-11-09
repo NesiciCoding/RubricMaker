@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -27,6 +27,10 @@ export function ConfirmDialog({
     const { t } = useTranslation();
     const resolvedConfirmLabel = confirmLabel ?? t('common.confirm');
     const resolvedCancelLabel = cancelLabel ?? t('common.cancel');
+    // Radix only restores focus to a Dialog.Trigger, which no consumer renders, so
+    // remember whatever opened the dialog and hand focus back to it on close — the
+    // same pattern as ui/Modal (F5.3).
+    const [opener] = useState(() => (document.activeElement instanceof HTMLElement ? document.activeElement : null));
     return (
         <Dialog.Root open={open} onOpenChange={(v) => !v && onCancel()}>
             <Dialog.Portal>
@@ -35,6 +39,10 @@ export function ConfirmDialog({
                     className="modal"
                     style={{ maxWidth: '420px' }}
                     aria-describedby="confirm-dialog-message"
+                    onCloseAutoFocus={(event) => {
+                        event.preventDefault();
+                        if (opener?.isConnected) opener.focus();
+                    }}
                 >
                     <div className="modal-header">
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
