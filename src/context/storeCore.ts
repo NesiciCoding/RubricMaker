@@ -117,6 +117,8 @@ export type Action =
     | { type: 'ADD_RUBRIC'; payload: Rubric }
     | { type: 'UPDATE_RUBRIC'; payload: Rubric }
     | { type: 'DELETE_RUBRIC'; id: string }
+    | { type: 'ARCHIVE_RUBRIC'; id: string }
+    | { type: 'RESTORE_RUBRIC'; id: string }
     | { type: 'ADD_FOLDER'; payload: Folder }
     | { type: 'UPDATE_FOLDER'; payload: Folder }
     | { type: 'DELETE_FOLDER'; id: string; kind: FolderKind }
@@ -164,11 +166,15 @@ export type Action =
     | { type: 'ADD_TEST'; payload: Test }
     | { type: 'UPDATE_TEST'; payload: Test }
     | { type: 'DELETE_TEST'; id: string }
+    | { type: 'ARCHIVE_TEST'; id: string }
+    | { type: 'RESTORE_TEST'; id: string }
     | { type: 'SAVE_STUDENT_TEST'; payload: StudentTest }
     | { type: 'DELETE_STUDENT_TEST'; id: string }
     | { type: 'ADD_ESSAY_ASSIGNMENTS'; payload: EssayAssignment[] }
     | { type: 'UPDATE_ESSAY_GROUP'; teacherKey: string; patch: Partial<EssayAssignment> }
     | { type: 'DELETE_ESSAY_GROUP'; teacherKey: string }
+    | { type: 'ARCHIVE_ESSAY_GROUP'; teacherKey: string }
+    | { type: 'RESTORE_ESSAY_GROUP'; teacherKey: string }
     | { type: 'ADD_ESSAY_SUBMISSION'; payload: EssaySubmission }
     | { type: 'SAVE_ESSAY_TEMPLATE'; payload: EssayTemplate }
     | { type: 'DELETE_ESSAY_TEMPLATE'; id: string }
@@ -326,6 +332,20 @@ export function reducer(state: StoreData, action: Action): StoreData {
             }
             deleteRubricVersions(action.id);
             return { ...state, rubrics: next, studentRubrics, peerReviews };
+        }
+        case 'ARCHIVE_RUBRIC': {
+            const now = new Date().toISOString();
+            const next = state.rubrics.map((r) => (r.id === action.id ? { ...r, archivedAt: now, updatedAt: now } : r));
+            if (isOffline()) saveRubrics(next);
+            return { ...state, rubrics: next };
+        }
+        case 'RESTORE_RUBRIC': {
+            const now = new Date().toISOString();
+            const next = state.rubrics.map((r) =>
+                r.id === action.id ? { ...r, archivedAt: undefined, updatedAt: now } : r
+            );
+            if (isOffline()) saveRubrics(next);
+            return { ...state, rubrics: next };
         }
         case 'ADD_STUDENT': {
             const next = [...state.students, { ...action.payload, updatedAt: new Date().toISOString() }];
@@ -712,6 +732,20 @@ export function reducer(state: StoreData, action: Action): StoreData {
             if (isOffline()) saveStudentTests(nextStudentTests);
             return { ...state, tests: next, studentTests: nextStudentTests };
         }
+        case 'ARCHIVE_TEST': {
+            const now = new Date().toISOString();
+            const next = state.tests.map((t) => (t.id === action.id ? { ...t, archivedAt: now, updatedAt: now } : t));
+            if (isOffline()) saveTests(next);
+            return { ...state, tests: next };
+        }
+        case 'RESTORE_TEST': {
+            const now = new Date().toISOString();
+            const next = state.tests.map((t) =>
+                t.id === action.id ? { ...t, archivedAt: undefined, updatedAt: now } : t
+            );
+            if (isOffline()) saveTests(next);
+            return { ...state, tests: next };
+        }
         case 'SAVE_STUDENT_TEST': {
             const payload = { ...action.payload, updatedAt: new Date().toISOString() };
             const exists = state.studentTests.findIndex((st) => st.id === payload.id);
@@ -747,6 +781,21 @@ export function reducer(state: StoreData, action: Action): StoreData {
                 saveEssaySubmissions(nextSubmissions);
             }
             return { ...state, essayAssignments: nextAssignments, essaySubmissions: nextSubmissions };
+        }
+        case 'ARCHIVE_ESSAY_GROUP': {
+            const now = new Date().toISOString();
+            const next = state.essayAssignments.map((a) =>
+                a.teacherKey === action.teacherKey ? { ...a, archivedAt: now } : a
+            );
+            if (isOffline()) saveEssayAssignments(next);
+            return { ...state, essayAssignments: next };
+        }
+        case 'RESTORE_ESSAY_GROUP': {
+            const next = state.essayAssignments.map((a) =>
+                a.teacherKey === action.teacherKey ? { ...a, archivedAt: undefined } : a
+            );
+            if (isOffline()) saveEssayAssignments(next);
+            return { ...state, essayAssignments: next };
         }
         case 'ADD_ESSAY_SUBMISSION': {
             const exists = state.essaySubmissions.findIndex(
@@ -1020,6 +1069,18 @@ export interface AppContextValue extends StoreData {
     deleteStudent: (id: string) => void;
     restoreStudent: (id: string) => void;
     archivedStudents: Student[];
+    archiveRubric: (id: string) => void;
+    restoreRubric: (id: string) => void;
+    /** Archived rubrics, kept out of day-to-day lists but still readable by existing grades. */
+    archivedRubrics: Rubric[];
+    archiveTest: (id: string) => void;
+    restoreTest: (id: string) => void;
+    /** Archived tests, kept out of lists and portals while their results stay intact. */
+    archivedTests: Test[];
+    archiveEssayGroup: (teacherKey: string) => void;
+    restoreEssayGroup: (teacherKey: string) => void;
+    /** Every row of every archived essay group. */
+    archivedEssayAssignments: EssayAssignment[];
     addClass: (c: Omit<Class, 'id'>) => Class;
     updateClass: (c: Class) => void;
     deleteClass: (id: string, deleteStudents?: boolean) => void;

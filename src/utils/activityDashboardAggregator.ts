@@ -13,18 +13,21 @@ import type {
 import { sortByDisplayOrder } from './displayOrder';
 
 export function getActivityRows(rubrics: Rubric[], tests: Test[], essayAssignments: EssayAssignment[]): ActivityRow[] {
-    const rubricRows: ActivityRow[] = sortByDisplayOrder(rubrics).map((r) => ({
+    const rubricRows: ActivityRow[] = sortByDisplayOrder(rubrics.filter((r) => !r.archivedAt)).map((r) => ({
         kind: 'rubric',
         id: r.id,
         name: r.name,
     }));
-    const testRows: ActivityRow[] = sortByDisplayOrder(tests).map((t) => ({ kind: 'test', id: t.id, name: t.name }));
+    const testRows: ActivityRow[] = sortByDisplayOrder(tests.filter((t) => !t.archivedAt)).map((t) => ({
+        kind: 'test',
+        id: t.id,
+        name: t.name,
+    }));
 
     const essayGroups = new Map<string, EssayAssignment>();
     for (const a of essayAssignments) {
-        if (!essayGroups.has(a.teacherKey)) {
-            essayGroups.set(a.teacherKey, a);
-        }
+        if (a.archivedAt || essayGroups.has(a.teacherKey)) continue;
+        essayGroups.set(a.teacherKey, a);
     }
     const essayRows: ActivityRow[] = sortByDisplayOrder(Array.from(essayGroups.values())).map((a) => ({
         kind: 'essay' as ActivityKind,

@@ -54,7 +54,7 @@ function ClassPicker({ rubricId }: { rubricId: string }) {
     const { item: rubric } = useOwnOrSharedItem(
         'rubric',
         rubricId,
-        rubrics.find((r) => r.id === rubricId)
+        rubrics.find((r) => r.id === rubricId && !r.archivedAt)
     );
 
     const linkedClasses = classes.filter((c) => c.rubricIds?.includes(rubricId));
@@ -232,7 +232,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
     const [searchParams] = useSearchParams();
     const startStudentId = searchParams.get('start');
 
-    const ownRubric = rubrics.find((r) => r.id === rubricId);
+    const ownRubric = rubrics.find((r) => r.id === rubricId && !r.archivedAt);
     // A co-teacher can run comparative grading with the class owner's rubric too (shared, or used
     // in a co-taught class). Session settings (pairing, per-student limit) only persist back to
     // the rubric itself — see setPairing/commitMatchupLimit — when it's the teacher's own.

@@ -21,7 +21,9 @@ vi.mock('../../context/AppContext', () => {
         useStudents: () => studentsValue,
         useClasses: () => ({ classes: [{ id: 'c1', name: 'Class A' }] }),
         useGrading: () => ({ deletedStudentRubrics: [], restoreStudentRubric: vi.fn() }),
-        useAuthoring: () => ({ rubrics: [] }),
+        useAuthoring: () => ({ rubrics: [], archivedRubrics: [], restoreRubric: vi.fn() }),
+        useAssessment: () => ({ archivedTests: [], restoreTest: vi.fn() }),
+        useEssays: () => ({ archivedEssayAssignments: [], restoreEssayGroup: vi.fn() }),
         usePlatform: () => ({}),
         useSettings: () => ({}),
     };
