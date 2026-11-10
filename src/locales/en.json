@@ -264,7 +264,14 @@
         "enter_email_and_password": "Enter your email and password.",
         "sign_in": "Sign in",
         "signing_in": "Signing in…",
-        "signed_in_loading": "Signed in — loading your data…"
+        "signed_in_loading": "Signed in — loading your data…",
+        "errors": {
+            "anonymous_disabled": "Student access is switched off on the server, so this link can't be opened yet. Please let your teacher know.",
+            "invalid_credentials": "That email address or password is incorrect. Check both and try again, or ask your teacher to reset your password.",
+            "email_not_confirmed": "This email address hasn't been confirmed yet. Ask your teacher for help.",
+            "user_banned": "This account has been blocked. Ask your teacher for help.",
+            "rate_limited": "Too many attempts. Please wait a few minutes and try again."
+        }
     },
     "slip_sheet": {
         "class_slips_one": "Class slips — {{count}} student",

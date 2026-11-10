@@ -264,7 +264,14 @@
         "enter_email_and_password": "Saisissez votre e-mail et votre mot de passe.",
         "sign_in": "Se connecter",
         "signing_in": "Connexion…",
-        "signed_in_loading": "Connecté — chargement de vos données…"
+        "signed_in_loading": "Connecté — chargement de vos données…",
+        "errors": {
+            "anonymous_disabled": "L'accès élève est désactivé sur le serveur, ce lien ne peut donc pas encore être ouvert. Préviens ton professeur.",
+            "invalid_credentials": "Cette adresse e-mail ou ce mot de passe est incorrect. Vérifie les deux et réessaie, ou demande à ton professeur de réinitialiser ton mot de passe.",
+            "email_not_confirmed": "Cette adresse e-mail n'a pas encore été confirmée. Demande de l'aide à ton professeur.",
+            "user_banned": "Ce compte a été bloqué. Demande de l'aide à ton professeur.",
+            "rate_limited": "Trop de tentatives. Attends quelques minutes et réessaie."
+        }
     },
     "slip_sheet": {
         "class_slips_one": "Fiches de classe — {{count}} élève",

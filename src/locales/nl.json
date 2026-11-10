@@ -264,7 +264,14 @@
         "enter_email_and_password": "Vul je e-mailadres en wachtwoord in.",
         "sign_in": "Inloggen",
         "signing_in": "Bezig met inloggen…",
-        "signed_in_loading": "Ingelogd — je gegevens worden geladen…"
+        "signed_in_loading": "Ingelogd — je gegevens worden geladen…",
+        "errors": {
+            "anonymous_disabled": "Leerlingtoegang staat uit op de server, dus deze link kan nog niet worden geopend. Laat het je docent weten.",
+            "invalid_credentials": "Dat e-mailadres of wachtwoord klopt niet. Controleer beide en probeer het opnieuw, of vraag je docent je wachtwoord te resetten.",
+            "email_not_confirmed": "Dit e-mailadres is nog niet bevestigd. Vraag je docent om hulp.",
+            "user_banned": "Dit account is geblokkeerd. Vraag je docent om hulp.",
+            "rate_limited": "Te veel pogingen. Wacht een paar minuten en probeer het opnieuw."
+        }
     },
     "slip_sheet": {
         "class_slips_one": "Klasstroken — {{count}} leerling",

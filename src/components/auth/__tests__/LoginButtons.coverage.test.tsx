@@ -123,6 +123,24 @@ describe('LoginButtons coverage', () => {
         expect(storageSync.adapter.signInWithPassword).toHaveBeenCalledWith('s@school.com', 'wrong');
     });
 
+    it('shows a translated message for wrong student credentials', async () => {
+        const storageSync = makeStorageSync({
+            adapter: {
+                signInWithPassword: vi.fn(() =>
+                    Promise.resolve({ error: 'Invalid login credentials', code: 'invalid_credentials' })
+                ),
+            },
+        });
+        mockLoadDb.mockResolvedValue({ storageSync });
+        render(<LoginButtons supabaseReady />);
+        fireEvent.click(screen.getByRole('button', { name: 'auth.student_login_password' }));
+        fireEvent.change(screen.getByPlaceholderText('auth.email_placeholder'), { target: { value: 's@school.com' } });
+        fireEvent.change(screen.getByPlaceholderText('common.password'), { target: { value: 'wrong' } });
+        fireEvent.click(screen.getByRole('button', { name: 'auth.sign_in' }));
+        expect(await screen.findByText('auth.errors.invalid_credentials')).toBeInTheDocument();
+        expect(screen.queryByText('Invalid login credentials')).not.toBeInTheDocument();
+    });
+
     it('signs in a student via password successfully and calls onEmailSuccess', async () => {
         const storageSync = makeStorageSync();
         mockLoadDb.mockResolvedValue({ storageSync });

@@ -199,10 +199,10 @@ export class SupabaseAdapter {
     }
 
     /** Password login — the alternative students use when OTP email delivery is unreliable. */
-    async signInWithPassword(email: string, password: string): Promise<{ error?: string }> {
+    async signInWithPassword(email: string, password: string): Promise<{ error?: string; code?: string }> {
         if (!this.client) return { error: 'Not connected' };
         const { error } = await this.client.auth.signInWithPassword({ email, password });
-        return error ? { error: error.message } : {};
+        return error ? { error: error.message, code: error.code } : {};
     }
 
     /**

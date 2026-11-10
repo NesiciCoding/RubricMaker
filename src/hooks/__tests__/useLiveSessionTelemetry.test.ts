@@ -360,6 +360,42 @@ describe('useLiveSessionTelemetry', () => {
         });
     });
 
+    it('waits for a still-leaving channel on the same topic before joining again', async () => {
+        // The monitor client is shared, so client.channel(topic) would hand back a channel a
+        // previous mount is still removing — subscribing to that one is a silent no-op.
+        let releaseStale!: () => void;
+        const staleRemoved = new Promise<string>((resolve) => {
+            releaseStale = () => resolve('ok');
+        });
+        const stale = { topic: 'realtime:monitor:test:key1' };
+        const clientWithStale = {
+            ...mockClient,
+            getChannels: vi.fn(() => [stale]),
+            removeChannel: vi.fn(() => staleRemoved),
+        };
+        vi.mocked(createClient).mockReturnValueOnce(clientWithStale as never);
+        mockClient.channel.mockClear();
+
+        renderHook(() =>
+            useLiveSessionTelemetry({
+                kind: 'test',
+                assignmentKey: 'key1',
+                enabled: true,
+                supabaseUrl: 'https://example.supabase.co',
+                supabaseAnonKey: 'anon-key',
+            })
+        );
+
+        expect(clientWithStale.removeChannel).toHaveBeenCalledWith(stale);
+        expect(clientWithStale.channel).not.toHaveBeenCalled();
+
+        await act(async () => {
+            releaseStale();
+            await staleRemoved;
+        });
+        expect(clientWithStale.channel).toHaveBeenCalledWith('monitor:test:key1', expect.anything());
+    });
+
     it('does nothing when disabled', () => {
         const { result } = renderHook(() =>
             useLiveSessionTelemetry({ kind: 'test', assignmentKey: 'key1', enabled: false })

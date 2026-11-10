@@ -172,9 +172,10 @@ export class EssayAdapter {
      * The student-provided email is not verified — it is stored in the submission row only.
      * Requires "Allow anonymous sign-ins" to be enabled in the Supabase project settings.
      */
-    async signInAnonymously(email: string): Promise<{ userId: string | null; error?: string }> {
+    async signInAnonymously(email: string): Promise<{ userId: string | null; error?: string; code?: string }> {
         const { data, error } = await this.client.auth.signInAnonymously();
-        if (error || !data.session) return { userId: null, error: error?.message ?? 'Anonymous sign-in failed' };
+        if (error || !data.session)
+            return { userId: null, error: error?.message ?? 'Anonymous sign-in failed', code: error?.code };
         localStorage.setItem(this.studentEmailKey, email);
         return { userId: data.session.user.id };
     }

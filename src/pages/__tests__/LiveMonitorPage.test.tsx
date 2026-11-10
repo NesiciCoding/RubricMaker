@@ -209,6 +209,34 @@ describe('LiveMonitorPage', () => {
             });
         });
 
+        it('spreads a large roster over several sockets so no socket exceeds the channel cap', async () => {
+            const roster: Student[] = Array.from({ length: 120 }, (_, i) => ({
+                ...mockStudent,
+                id: `student-${i}`,
+                name: `Student ${i}`,
+            }));
+            mockUseApp = {
+                ...mockUseApp,
+                students: roster,
+                studentTests: [],
+                fetchTestAssignmentTeacherKeys: vi
+                    .fn()
+                    .mockResolvedValue(Object.fromEntries(roster.map((st, i) => [st.id, `key-${i}`]))),
+            };
+
+            renderPage(['/tests/test-1/monitor']);
+            await settleTeacherKeys();
+
+            const storageKeys = vi
+                .mocked(createClient)
+                .mock.calls.map((call) => (call[2] as { auth: { storageKey: string } }).auth.storageKey);
+            expect(new Set(storageKeys)).toEqual(
+                new Set(['rm_monitor_ephemeral', 'rm_monitor_ephemeral_1', 'rm_monitor_ephemeral_2'])
+            );
+            expect(mockClient.channel).toHaveBeenCalledWith('monitor:test:key-0');
+            expect(mockClient.channel).toHaveBeenCalledWith('monitor:test:key-119');
+        });
+
         it('toggles hide-names so the student row shows an anonymised label', async () => {
             renderPage(['/tests/test-1/monitor']);
             await settleTeacherKeys();

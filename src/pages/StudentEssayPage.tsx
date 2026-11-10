@@ -37,6 +37,7 @@ import { EssayAdapter } from '../services/database/EssayAdapter';
 import { isAllowedSupabaseUrl } from '../services/database/trustedSupabaseUrl';
 import { initClientLogger, logEvent } from '../services/logging/clientLogger';
 import { isAlreadySubmitted } from '../utils/testSubmitOutbox';
+import { authErrorKey } from '../utils/authErrors';
 import { useDeadlineCountdown } from '../hooks/useDeadlineCountdown';
 import { StudentTaskSkeleton } from '../components/ui/Skeleton';
 import { completeTimedAttempt, loadTimedAttemptReceipt } from '../store/storage';
@@ -110,12 +111,13 @@ function EmailGate({ adapter, onAuthenticated }: EmailGateProps) {
         }
         setBusy(true);
         setError('');
-        const { userId, error: e } = await adapter.signInAnonymously(trimmed);
+        const { userId, error: e, code } = await adapter.signInAnonymously(trimmed);
         setBusy(false);
         if (userId) {
             onAuthenticated(userId, trimmed);
         } else {
-            setError(e ?? t('essay.session_error'));
+            const key = authErrorKey(code);
+            setError(key ? t(key) : (e ?? t('essay.session_error')));
         }
     };
 
