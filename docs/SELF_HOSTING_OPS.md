@@ -566,17 +566,22 @@ Docker daemon logs are rotated via `/etc/docker/daemon.json`:
 
 ### Realtime limits
 
-The Live Monitor listens on one Realtime channel per student, and every student page joins one. Realtime enforces per-tenant limits stored in `_realtime.tenants` (the self-hosted tenant is `realtime-dev`): `max_channels_per_client` (channels on one socket, default 100), `max_concurrent_users` (default 200), `max_events_per_second` (default 100) and `max_joins_per_second` (default 100). The app spreads the monitor's channels over several sockets of at most 50 each, so `max_channels_per_client` is only hit by older app builds. For classes of many students, or several monitored tests at once, raise the tenant limits:
+The Live Monitor listens on one Realtime channel per student, and every student page joins one. Realtime enforces per-tenant limits stored in `_realtime.tenants` (the self-hosted tenant is `realtime-dev`): `max_channels_per_client` (channels on one socket, default 100), `max_concurrent_users` (default 200), `max_events_per_second` (default 100) and `max_joins_per_second` (default 100). The app spreads the monitor's channels over several sockets of at most 50 each, so `max_channels_per_client` is only hit by older app builds. Classes of many students, or several monitored tests at once, need more than the defaults.
 
-```sql
--- run as postgres against the stack's database
-update _realtime.tenants
-set max_concurrent_users = 1000, max_events_per_second = 1000, max_joins_per_second = 500,
-    max_channels_per_client = 200
-where external_id = 'realtime-dev';
+Don't edit `_realtime.tenants` by hand: Realtime deletes and recreates the tenant every time it starts, so an `update` is lost on the next restart. The tenant takes its limits from Realtime's `TENANT_MAX_*` environment variables when it is created. `deploy/supabase/docker-compose.override.yml` sets them (1000 concurrent users, 1000 events/s, 500 joins/s, 200 channels per socket); edit the numbers there to change them. Apply with:
+
+```bash
+docker compose up -d --force-recreate realtime
 ```
 
-Then restart Realtime so it reloads the tenant: `docker compose restart realtime`.
+Recreating Realtime drops live connections for a few seconds (clients reconnect on their own), so do it outside a test. Then check the tenant (`docker compose exec -e PGHOST=127.0.0.1 db psql -U supabase_admin -d postgres`):
+
+```sql
+select external_id, max_concurrent_users, max_events_per_second, max_joins_per_second, max_channels_per_client
+from _realtime.tenants;
+```
+
+If it still shows 200 / 100 / 100 / 100, the Realtime image predates these variables; upgrade Realtime (see Upgrade Path).
 
 ---
 

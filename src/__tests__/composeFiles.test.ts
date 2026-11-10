@@ -25,7 +25,7 @@ describe('compose files', () => {
             string,
             { environment?: Record<string, string> }
         >;
-        expect(Object.keys(services).sort()).toEqual(['auth', 'functions', 'mail-templates']);
+        expect(Object.keys(services).sort()).toEqual(['auth', 'functions', 'mail-templates', 'realtime']);
         expect(services.auth.environment?.GOTRUE_MAILER_TEMPLATES_MAGIC_LINK).toBe(
             'http://mail-templates/magic-link.html'
         );
@@ -40,5 +40,20 @@ describe('compose files', () => {
         ]) {
             expect(services.functions.environment, name).toHaveProperty(name);
         }
+    });
+
+    it('the official-stack override raises the Realtime tenant limits that survive a restart', () => {
+        const services = load('deploy/supabase/docker-compose.override.yml').value.services as Record<
+            string,
+            { environment?: Record<string, string> }
+        >;
+        // Realtime recreates its self-hosted tenant on every start from these variables, so they
+        // are the only place the limits persist.
+        expect(services.realtime.environment).toEqual({
+            TENANT_MAX_CONCURRENT_USERS: '1000',
+            TENANT_MAX_EVENTS_PER_SECOND: '1000',
+            TENANT_MAX_JOINS_PER_SECOND: '500',
+            TENANT_MAX_CHANNELS_PER_CLIENT: '200',
+        });
     });
 });
