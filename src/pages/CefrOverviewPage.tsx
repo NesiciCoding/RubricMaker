@@ -417,20 +417,21 @@ export default function CefrOverviewPage() {
                                                                             }}
                                                                         >
                                                                             {sc.name}
-                                                                            {sc.voTrack && (
+                                                                            {rowTrack && (
                                                                                 <span
                                                                                     style={{
                                                                                         marginLeft: 4,
                                                                                         padding: '0 4px',
                                                                                         borderRadius: 3,
-                                                                                        background:
-                                                                                            getTrackBadgeColor(sc),
+                                                                                        background: getTrackBadgeColor({
+                                                                                            voTrack: rowTrack,
+                                                                                        }),
                                                                                         color: '#fff',
                                                                                         fontSize: '0.65rem',
                                                                                         fontWeight: 700,
                                                                                     }}
                                                                                 >
-                                                                                    {VO_TRACK_LABELS[sc.voTrack]}
+                                                                                    {VO_TRACK_LABELS[rowTrack]}
                                                                                 </span>
                                                                             )}
                                                                         </div>
