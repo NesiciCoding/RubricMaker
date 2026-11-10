@@ -275,6 +275,7 @@ export default function AttachmentsPage() {
                                                     className="btn btn-ghost btn-icon btn-sm"
                                                     onClick={() => downloadAttachment(att)}
                                                     title={t('common.download')}
+                                                    aria-label={t('common.download')}
                                                 >
                                                     <Download size={14} />
                                                 </button>
@@ -285,6 +286,7 @@ export default function AttachmentsPage() {
                                                         rel="noopener noreferrer"
                                                         className="btn btn-ghost btn-icon btn-sm"
                                                         title={t('common.preview')}
+                                                        aria-label={t('common.preview')}
                                                     >
                                                         👁
                                                     </a>

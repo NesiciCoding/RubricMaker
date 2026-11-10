@@ -710,6 +710,7 @@ export default function ExportPage() {
                         {t('exportPage.rubric_section_title')}
                     </h2>
                     <ChevronDown
+                        aria-hidden="true"
                         size={16}
                         style={{
                             color: 'var(--text-muted)',
@@ -953,6 +954,7 @@ export default function ExportPage() {
                             {t('exportPage.rubric_students_section_title')}
                         </h2>
                         <ChevronDown
+                            aria-hidden="true"
                             size={16}
                             style={{
                                 color: 'var(--text-muted)',
@@ -1316,6 +1318,7 @@ export default function ExportPage() {
                             {t('tests.export.exam.section_title')}
                         </h2>
                         <ChevronDown
+                            aria-hidden="true"
                             size={16}
                             style={{
                                 color: 'var(--text-muted)',
@@ -1383,6 +1386,7 @@ export default function ExportPage() {
                             {t('exportPage.essays_title')}
                         </h2>
                         <ChevronDown
+                            aria-hidden="true"
                             size={16}
                             style={{
                                 color: 'var(--text-muted)',
@@ -1555,6 +1559,7 @@ export default function ExportPage() {
                             {t('exportPage.period_report_title')}
                         </h2>
                         <ChevronDown
+                            aria-hidden="true"
                             size={16}
                             style={{
                                 color: 'var(--text-muted)',
@@ -1712,6 +1717,7 @@ export default function ExportPage() {
                             {t('reportCard.title')}
                         </h2>
                         <ChevronDown
+                            aria-hidden="true"
                             size={16}
                             style={{
                                 color: 'var(--text-muted)',
