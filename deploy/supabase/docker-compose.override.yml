@@ -40,6 +40,18 @@ services:
             GOTRUE_MAILER_SUBJECTS_EMAIL_CHANGE: 'Bevestig je nieuwe e-mailadres / Confirm your new email address'
             GOTRUE_MAILER_SUBJECTS_REAUTHENTICATION: 'Je RubricMaker-bevestigingscode / Your RubricMaker confirmation code'
 
+    # Realtime deletes and recreates its self-hosted tenant (realtime-dev) on every start, so limits
+    # edited in _realtime.tenants are lost on restart. A newly created tenant takes its limits from
+    # these variables (Realtime's defaults are 200 / 100 / 100 / 100). The Live Monitor joins one
+    # channel per student and every student page broadcasts a heartbeat and a snapshot every few
+    # seconds, so whole classes need more than the defaults. Override any value from the stack's .env.
+    realtime:
+        environment:
+            TENANT_MAX_CONCURRENT_USERS: ${REALTIME_MAX_CONCURRENT_USERS:-1000}
+            TENANT_MAX_EVENTS_PER_SECOND: ${REALTIME_MAX_EVENTS_PER_SECOND:-1000}
+            TENANT_MAX_JOINS_PER_SECOND: ${REALTIME_MAX_JOINS_PER_SECOND:-500}
+            TENANT_MAX_CHANNELS_PER_CLIENT: ${REALTIME_MAX_CHANNELS_PER_CLIENT:-200}
+
     # The grade, message and digest notifications are sent by edge functions over the same SMTP
     # account (supabase/functions/_deno/mail.ts). APP_URL is used for the links in those emails.
     # The *_HEARTBEAT_URLs are dead-man's-switch monitors pinged on success only (see
