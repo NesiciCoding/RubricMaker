@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 /** Card surface for the public share-link pages (/feedback, /preview); follows the app theme. */
 export const sharedCardStyle: React.CSSProperties = {
@@ -45,6 +46,7 @@ export function SharedPageShell({ children, footer, fontFamily, maxWidth }: Shel
 }
 
 export function SharedPageInvalid({ title, body }: { title: string; body: string }) {
+    const { t } = useTranslation();
     return (
         <main
             style={{
@@ -62,7 +64,11 @@ export function SharedPageInvalid({ title, body }: { title: string; body: string
                     ⚠️
                 </div>
                 <h1 style={{ marginBottom: 8, fontSize: '1.4rem' }}>{title}</h1>
-                <p style={{ color: 'var(--text-muted)' }}>{body}</p>
+                <p style={{ color: 'var(--text-muted)', marginBottom: 20 }}>{body}</p>
+                {/* F31: dead-end recovery — a bare message strands share-link openers */}
+                <a className="btn btn-secondary" href="#/">
+                    {t('notFound.go_dashboard')}
+                </a>
             </div>
         </main>
     );

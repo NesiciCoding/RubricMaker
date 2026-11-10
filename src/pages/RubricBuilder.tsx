@@ -1118,6 +1118,17 @@ function RubricBuilderEditor({ shared }: { shared?: SharedEntry<Rubric> }) {
                             <Save size={15} />{' '}
                             {saved ? t('rubricBuilder.action_saved') : t('rubricBuilder.action_save')}
                         </button>
+                        {/* F34: persistent dirty state — the Saved label flashes for 2s, then the
+                            toolbar looks identical whether edits are saved or not. */}
+                        {isDirty && !saved && !readOnly && (
+                            <span
+                                role="status"
+                                className="text-muted"
+                                style={{ fontSize: '0.78rem', whiteSpace: 'nowrap' }}
+                            >
+                                • {t('rubricBuilder.unsaved_badge')}
+                            </span>
+                        )}
                         {!tiered && (
                             <div
                                 style={{
