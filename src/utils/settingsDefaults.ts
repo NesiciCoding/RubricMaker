@@ -7,6 +7,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     language: 'en',
     accentColor: '',
     defaultFormat: DEFAULT_FORMAT,
+    activityDashboardCompact: false,
 };
 
 // Settings from an older backup or a cloud row can predate fields added since (defaultFormat,
