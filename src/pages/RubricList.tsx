@@ -8,6 +8,7 @@ import {
     Search,
     Edit2,
     Trash2,
+    Archive,
     Copy,
     BookOpen,
     Users,
@@ -349,21 +350,34 @@ export default function RubricList() {
         [confirm, t, showToast, settlePendingDelete]
     );
 
+    const { archiveRubric, restoreRubric } = useAuthoring();
+    const handleArchive = useCallback(
+        (r: Rubric) => {
+            archiveRubric(r.id);
+            showToast(t('rubricList.archived_toast', { name: r.name }), 'info', {
+                action: { label: t('common.undo'), onClick: () => restoreRubric(r.id) },
+            });
+        },
+        [archiveRubric, restoreRubric, showToast, t]
+    );
+
     const uniqueSubjects = Array.from(new Set(rubrics.map((r) => r.subject).filter(Boolean))).sort();
 
     const cohortStudentIds = getCohortStudentIds(students, classes, cohortFilter);
     const rubricFolders = foldersForKind(folders, 'rubric');
-    const filtered = filterByFolder(sortByDisplayOrder(rubrics), activeFolder).filter((r) => {
-        if (pendingDeleteIds.has(r.id)) return false;
-        const matchesSearch =
-            r.name.toLowerCase().includes(search.toLowerCase()) ||
-            r.subject.toLowerCase().includes(search.toLowerCase());
-        const matchesSubject = subjectFilter === 'all' || r.subject === subjectFilter;
-        const matchesCohort =
-            isAllCohorts(cohortFilter) ||
-            studentRubrics.some((sr) => sr.rubricId === r.id && cohortStudentIds.has(sr.studentId));
-        return matchesSearch && matchesSubject && matchesCohort;
-    });
+    const filtered = filterByFolder(sortByDisplayOrder(rubrics.filter((r) => !r.archivedAt)), activeFolder).filter(
+        (r) => {
+            if (pendingDeleteIds.has(r.id)) return false;
+            const matchesSearch =
+                r.name.toLowerCase().includes(search.toLowerCase()) ||
+                r.subject.toLowerCase().includes(search.toLowerCase());
+            const matchesSubject = subjectFilter === 'all' || r.subject === subjectFilter;
+            const matchesCohort =
+                isAllCohorts(cohortFilter) ||
+                studentRubrics.some((sr) => sr.rubricId === r.id && cohortStudentIds.has(sr.studentId));
+            return matchesSearch && matchesSubject && matchesCohort;
+        }
+    );
     const { dropFolderId, startFolderDrop, endFolderDrop } = useFolderDropTarget();
     // ponytail: reordering only writes back when the list is unfiltered (and nothing is hidden pending
     // deletion), so dragged positions map 1:1 onto displayOrder
@@ -550,6 +564,7 @@ export default function RubricList() {
             onEdit: goToRubric,
             onDuplicate: handleDuplicate,
             onDelete: requestDelete,
+            onArchive: handleArchive,
             onDifferentiate: openDifferentiate,
             onCopyShareCode: handleCopyShareCode,
             onSharePreview: handleSharePreview,
@@ -563,6 +578,7 @@ export default function RubricList() {
             goToRubric,
             handleDuplicate,
             requestDelete,
+            handleArchive,
             openDifferentiate,
             handleCopyShareCode,
             handleSharePreview,
@@ -673,7 +689,7 @@ export default function RubricList() {
                         folders={folders}
                         kind="rubric"
                         activeFolderId={activeFolder}
-                        items={rubrics}
+                        items={rubrics.filter((r) => !r.archivedAt)}
                         onSelect={setActiveFolder}
                         onCreate={(parentId) => setFolderModal({ parentId })}
                         onRename={(f) => setFolderModal({ folder: f })}
@@ -775,6 +791,14 @@ export default function RubricList() {
                                                             onClick={() => handleDuplicate(r.id)}
                                                         >
                                                             <Copy size={14} />
+                                                        </button>
+                                                        <button
+                                                            className="btn btn-ghost btn-icon btn-sm"
+                                                            title={t('rubricList.archive')}
+                                                            aria-label={t('rubricList.archive')}
+                                                            onClick={() => handleArchive(r)}
+                                                        >
+                                                            <Archive size={14} />
                                                         </button>
                                                         <button
                                                             className="btn btn-ghost btn-icon btn-sm"

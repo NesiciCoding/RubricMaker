@@ -2005,6 +2005,7 @@ function DataTab() {
                         t('docs.da_admin_item_retention'),
                         t('docs.da_admin_item_audit'),
                         t('docs.da_admin_item_archive'),
+                        t('docs.da_archive_materials'),
                     ]}
                 />
             </FeatureSection>
@@ -2013,6 +2014,7 @@ function DataTab() {
                 <FeatureList
                     items={[
                         t('docs.da_settings_item_theme'),
+                        t('docs.da_settings_item_portal_scope'),
                         t('docs.da_settings_item_scales'),
                         t('docs.da_settings_item_lang'),
                         t('docs.da_settings_item_tour'),

@@ -2,7 +2,7 @@ import React from 'react';
 import PageTour from '../components/Tour/PageTour';
 import { usePageTourState } from '../hooks/usePageTourState';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Edit2, Trash2, FileText, Radio } from 'lucide-react';
+import { Plus, Edit2, Trash2, Archive, FileText, Radio } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
@@ -39,7 +39,14 @@ export default function EssayListPage() {
         updateFolder,
         deleteFolder,
     } = useAuthoring();
-    const { essayAssignments, essaySubmissions, deleteEssayGroup, updateEssayGroup } = useEssays();
+    const {
+        essayAssignments,
+        essaySubmissions,
+        deleteEssayGroup,
+        archiveEssayGroup,
+        restoreEssayGroup,
+        updateEssayGroup,
+    } = useEssays();
     const onlineEssaySubmissions = useOnlineEssaySubmissions();
 
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
@@ -52,6 +59,17 @@ export default function EssayListPage() {
         () => getCohortStudentIds(students, classes, cohortFilter),
         [students, classes, cohortFilter]
     );
+    // Essays linked to a class stay visible under that cohort filter even before any row exists
+    // for its current students (a student who joined later, or a fresh assignment).
+    const linkedEssayKeys = React.useMemo(() => {
+        const cohortClassIds = new Set(students.filter((s) => cohortStudentIds.has(s.id)).map((s) => s.classId));
+        const keys = new Set<string>();
+        for (const cls of classes) {
+            if (!cohortClassIds.has(cls.id)) continue;
+            for (const key of cls.essayKeys ?? []) keys.add(key);
+        }
+        return keys;
+    }, [classes, students, cohortStudentIds]);
     // Reordering writes displayOrder back by index, so it only runs while the list is
     // unfiltered — under a cohort or folder filter the index would not be the list's position.
     const reorderable = isAllCohorts(cohortFilter) && activeFolder === ALL_FOLDERS;
@@ -59,6 +77,7 @@ export default function EssayListPage() {
     const groups = React.useMemo(() => {
         const byKey = new Map<string, typeof essayAssignments>();
         for (const a of essayAssignments) {
+            if (a.archivedAt) continue;
             const existing = byKey.get(a.teacherKey);
             if (existing) existing.push(a);
             else byKey.set(a.teacherKey, [a]);
@@ -72,9 +91,12 @@ export default function EssayListPage() {
             createdAt: rows[0]?.createdAt ?? '',
         }));
         return sortByDisplayOrder(unsorted).filter(
-            (g) => isAllCohorts(cohortFilter) || g.rows.some((r) => cohortStudentIds.has(r.studentId))
+            (g) =>
+                isAllCohorts(cohortFilter) ||
+                linkedEssayKeys.has(g.teacherKey) ||
+                g.rows.some((r) => cohortStudentIds.has(r.studentId))
         );
-    }, [essayAssignments, cohortFilter, cohortStudentIds]);
+    }, [essayAssignments, cohortFilter, cohortStudentIds, linkedEssayKeys]);
 
     const essayFolders = foldersForKind(folders, 'essay');
     const visibleGroups = filterByFolder(groups, activeFolder);
@@ -155,6 +177,13 @@ export default function EssayListPage() {
             ...essaySubmissions.filter((s) => s.teacherKey === teacherKey).map((s) => s.assignmentStudentId),
             ...(onlineEssaySubmissions.get(teacherKey) ?? []),
         ]).size;
+
+    function handleArchive(teacherKey: string, title: string) {
+        archiveEssayGroup(teacherKey);
+        showToast(t('essays.archived_toast', { name: title }), 'info', {
+            action: { label: t('common.undo'), onClick: () => restoreEssayGroup(teacherKey) },
+        });
+    }
 
     async function handleDelete(teacherKey: string, title: string) {
         const ok = await confirm({
@@ -285,6 +314,17 @@ export default function EssayListPage() {
                                                                         }
                                                                     >
                                                                         <Edit2 size={14} />
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        className="btn btn-ghost btn-icon btn-sm"
+                                                                        title={t('essays.archive')}
+                                                                        aria-label={t('essays.archive')}
+                                                                        onClick={() =>
+                                                                            handleArchive(teacherKey, first.title)
+                                                                        }
+                                                                    >
+                                                                        <Archive size={14} />
                                                                     </button>
                                                                     <button
                                                                         type="button"

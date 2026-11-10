@@ -18,6 +18,9 @@ import { loadDb } from '../../services/database/lazyDb';
 export type EssaysValue = Pick<
     AppContextValue,
     | 'essayAssignments'
+    | 'archivedEssayAssignments'
+    | 'archiveEssayGroup'
+    | 'restoreEssayGroup'
     | 'essaySubmissions'
     | 'essayTemplates'
     | 'messages'
@@ -27,6 +30,8 @@ export type EssaysValue = Pick<
     | 'addEssayAssignments'
     | 'updateEssayGroup'
     | 'deleteEssayGroup'
+    | 'archiveEssayGroup'
+    | 'restoreEssayGroup'
     | 'addEssaySubmission'
     | 'saveEssayTemplate'
     | 'deleteEssayTemplate'
@@ -62,6 +67,8 @@ export type EssaysActions = Pick<
     | 'addEssayAssignments'
     | 'updateEssayGroup'
     | 'deleteEssayGroup'
+    | 'archiveEssayGroup'
+    | 'restoreEssayGroup'
     | 'addEssaySubmission'
     | 'saveEssayTemplate'
     | 'deleteEssayTemplate'
@@ -107,6 +114,8 @@ export function createEssaysActions(ctx: StoreActionsCtx): EssaysActions {
         dispatch({ type: 'UPDATE_ESSAY_GROUP', teacherKey, patch });
     };
     const deleteEssayGroup = (teacherKey: string) => dispatch({ type: 'DELETE_ESSAY_GROUP', teacherKey });
+    const archiveEssayGroup = (teacherKey: string) => dispatch({ type: 'ARCHIVE_ESSAY_GROUP', teacherKey });
+    const restoreEssayGroup = (teacherKey: string) => dispatch({ type: 'RESTORE_ESSAY_GROUP', teacherKey });
     const addEssaySubmission = (submission: EssaySubmission) => {
         dispatch({ type: 'ADD_ESSAY_SUBMISSION', payload: submission });
     };
@@ -178,6 +187,8 @@ export function createEssaysActions(ctx: StoreActionsCtx): EssaysActions {
         addEssayAssignments,
         updateEssayGroup,
         deleteEssayGroup,
+        archiveEssayGroup,
+        restoreEssayGroup,
         addEssaySubmission,
         saveEssayTemplate,
         deleteEssayTemplate,
@@ -209,6 +220,7 @@ export function useEssaysValue(state: StoreData, actions: EssaysActions): Essays
     return useMemo(
         () => ({
             essayAssignments: state.essayAssignments,
+            archivedEssayAssignments: (state.essayAssignments ?? []).filter((a) => !!a.archivedAt),
             essaySubmissions: state.essaySubmissions,
             essayTemplates: state.essayTemplates,
             messages: state.messages,

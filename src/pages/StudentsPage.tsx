@@ -16,6 +16,7 @@ import {
     Link,
     GraduationCap,
     ClipboardCopy,
+    ClipboardCheck,
     FileText,
     KeyRound,
     ArrowUp,
@@ -287,6 +288,97 @@ function computeStudentDerived(
  */
 const derivedByStudentCache = new Map<string, { key: StudentDerivedKey; value: StudentDerivedValue }>();
 
+function LinkMaterialsModal({
+    titleId,
+    title,
+    intro,
+    emptyLabel,
+    items,
+    linkedIds,
+    onToggle,
+    onClear,
+    onClose,
+    returnFocusTo,
+}: {
+    titleId: string;
+    title: string;
+    intro: string;
+    emptyLabel: string;
+    items: { id: string; name: string; subtitle?: string }[];
+    linkedIds: string[];
+    onToggle: (id: string) => void;
+    onClear: () => void;
+    onClose: () => void;
+    returnFocusTo?: HTMLElement | null;
+}) {
+    const { t } = useTranslation();
+    return (
+        <Modal titleId={titleId} onClose={onClose} returnFocusTo={returnFocusTo}>
+            <div className="modal-header">
+                <h3 id={titleId}>{title}</h3>
+                <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label={t('common.close')}>
+                    ✕
+                </button>
+            </div>
+            <div className="modal-body">
+                <p style={{ marginBottom: 16, color: 'var(--text-muted)', fontSize: '0.9rem' }}>{intro}</p>
+                {items.length === 0 ? (
+                    <EmptyState icon={BookOpen} iconSize={28} description={emptyLabel} />
+                ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {items.map((item) => {
+                            const linked = linkedIds.includes(item.id);
+                            return (
+                                <label
+                                    key={item.id}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 10,
+                                        padding: '10px 12px',
+                                        borderRadius: 8,
+                                        cursor: 'pointer',
+                                        background: linked ? 'var(--accent-soft)' : 'var(--bg-2)',
+                                        border: `1px solid ${linked ? 'var(--accent)' : 'var(--border)'}`,
+                                    }}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={linked}
+                                        onChange={() => onToggle(item.id)}
+                                        style={{
+                                            width: 16,
+                                            height: 16,
+                                            accentColor: 'var(--accent)',
+                                            flexShrink: 0,
+                                        }}
+                                    />
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ fontWeight: 500, fontSize: '0.92rem' }}>{item.name}</div>
+                                        {item.subtitle && (
+                                            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                                                {item.subtitle}
+                                            </div>
+                                        )}
+                                    </div>
+                                </label>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+            <div className="modal-footer">
+                <button className="btn btn-secondary" onClick={onClear}>
+                    {t('studentsPage.link_materials_clear')}
+                </button>
+                <button className="btn btn-primary" onClick={onClose}>
+                    {t('common.close')}
+                </button>
+            </div>
+        </Modal>
+    );
+}
+
 export default function StudentsPage() {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
@@ -300,6 +392,7 @@ export default function StudentsPage() {
         analysisResults,
         tests,
         studentTests,
+        essayAssignments,
         settings,
     } = useStoreSelector((s) => ({
         students: s.students,
@@ -311,6 +404,7 @@ export default function StudentsPage() {
         analysisResults: s.analysisResults,
         tests: s.tests,
         studentTests: s.studentTests,
+        essayAssignments: s.essayAssignments,
         settings: s.settings,
     }));
     // The roster domain hooks filtered soft-deleted rows; keep that behavior here.
@@ -447,6 +541,7 @@ export default function StudentsPage() {
     const [studentSearch, setStudentSearch] = useState('');
     const [confirmDeleteStudent, setConfirmDeleteStudent] = useState<string | null>(null);
     const [showLinkRubrics, setShowLinkRubrics] = useState(false);
+    const [showLinkMaterials, setShowLinkMaterials] = useState<'test' | 'essay' | null>(null);
 
     // Sorting
     const [sortKey, setSortKey] = useState<'name' | 'email' | 'grades'>('name');
@@ -474,12 +569,55 @@ export default function StudentsPage() {
     const [linkRubricsClassId, setLinkRubricsClassId] = useState<string | null>(null);
     const linkClass = classes.find((c) => c.id === linkRubricsClassId);
 
+    const linkTests = useMemo(
+        () =>
+            (tests ?? [])
+                .filter((test) => !test.archivedAt)
+                .map((test) => ({
+                    id: test.id,
+                    name: test.name,
+                    subtitle: new Date(test.createdAt).toLocaleDateString(),
+                })),
+        [tests]
+    );
+    // Essay rows are one per assigned student; the class links the whole teacherKey group.
+    const linkEssays = useMemo(() => {
+        const byKey = new Map<string, { id: string; name: string; subtitle?: string }>();
+        for (const a of essayAssignments ?? []) {
+            if (a.archivedAt || byKey.has(a.teacherKey)) continue;
+            byKey.set(a.teacherKey, {
+                id: a.teacherKey,
+                name: a.title,
+                subtitle: new Date(a.createdAt).toLocaleDateString(),
+            });
+        }
+        return [...byKey.values()];
+    }, [essayAssignments]);
+
     function toggleClassRubric(rubricId: string) {
         /* v8 ignore next -- the link modal only renders when linkClass is set */
         if (!linkClass) return;
         const current = linkClass.rubricIds ?? [];
         const next = current.includes(rubricId) ? current.filter((id) => id !== rubricId) : [...current, rubricId];
         updateClass({ ...linkClass, rubricIds: next });
+    }
+
+    function toggleClassTest(testId: string) {
+        /* v8 ignore next -- the link modal only renders when linkClass is set */
+        if (!linkClass) return;
+        const current = linkClass.testIds ?? [];
+        const next = current.includes(testId) ? current.filter((id) => id !== testId) : [...current, testId];
+        updateClass({ ...linkClass, testIds: next });
+    }
+
+    function toggleClassEssay(teacherKey: string) {
+        /* v8 ignore next -- the link modal only renders when linkClass is set */
+        if (!linkClass) return;
+        const current = linkClass.essayKeys ?? [];
+        const next = current.includes(teacherKey)
+            ? current.filter((key) => key !== teacherKey)
+            : [...current, teacherKey];
+        updateClass({ ...linkClass, essayKeys: next });
     }
 
     const chipStyle = (active: boolean): React.CSSProperties => ({
@@ -2168,6 +2306,36 @@ export default function StudentsPage() {
                     </Modal>
                 )}
 
+                {showLinkMaterials === 'test' && linkClass && (
+                    <LinkMaterialsModal
+                        titleId="students-link-tests-title"
+                        title={t('studentsPage.link_tests_title', { className: linkClass.name })}
+                        intro={t('studentsPage.link_tests_intro')}
+                        emptyLabel={t('studentsPage.link_tests_empty')}
+                        items={linkTests}
+                        linkedIds={linkClass.testIds ?? []}
+                        onToggle={toggleClassTest}
+                        onClear={() => updateClass({ ...linkClass, testIds: [] })}
+                        onClose={() => setShowLinkMaterials(null)}
+                        returnFocusTo={classMenuTrigger}
+                    />
+                )}
+
+                {showLinkMaterials === 'essay' && linkClass && (
+                    <LinkMaterialsModal
+                        titleId="students-link-essays-title"
+                        title={t('studentsPage.link_essays_title', { className: linkClass.name })}
+                        intro={t('studentsPage.link_essays_intro')}
+                        emptyLabel={t('studentsPage.link_essays_empty')}
+                        items={linkEssays}
+                        linkedIds={linkClass.essayKeys ?? []}
+                        onToggle={toggleClassEssay}
+                        onClear={() => updateClass({ ...linkClass, essayKeys: [] })}
+                        onClose={() => setShowLinkMaterials(null)}
+                        returnFocusTo={classMenuTrigger}
+                    />
+                )}
+
                 {/* Class options menu — portaled to the body and positioned against the trigger, so
                     the cohort bar's horizontal overflow can never clip or scroll it. */}
                 {classMenu &&
@@ -2215,6 +2383,32 @@ export default function StudentsPage() {
                                 }}
                             >
                                 <Link size={13} style={{ marginRight: 4 }} /> {t('studentsPage.link_rubrics')}
+                            </button>
+                            <button
+                                type="button"
+                                role="menuitem"
+                                className="btn btn-ghost btn-sm"
+                                style={{ width: '100%', justifyContent: 'flex-start' }}
+                                onClick={() => {
+                                    setLinkRubricsClassId(classMenuTarget.id);
+                                    setShowLinkMaterials('test');
+                                    setClassMenu(null);
+                                }}
+                            >
+                                <ClipboardCheck size={13} style={{ marginRight: 4 }} /> {t('studentsPage.link_tests')}
+                            </button>
+                            <button
+                                type="button"
+                                role="menuitem"
+                                className="btn btn-ghost btn-sm"
+                                style={{ width: '100%', justifyContent: 'flex-start' }}
+                                onClick={() => {
+                                    setLinkRubricsClassId(classMenuTarget.id);
+                                    setShowLinkMaterials('essay');
+                                    setClassMenu(null);
+                                }}
+                            >
+                                <FileText size={13} style={{ marginRight: 4 }} /> {t('studentsPage.link_essays')}
                             </button>
                             <button
                                 type="button"

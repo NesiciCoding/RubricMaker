@@ -162,6 +162,7 @@ export default function StudentPortalPage() {
         analysisResults,
         tests,
         studentTests,
+        essayAssignments,
         newsFlashes,
         newsFlashReads,
         flashcardAssignments,
@@ -179,6 +180,7 @@ export default function StudentPortalPage() {
         analysisResults: s.analysisResults,
         tests: s.tests,
         studentTests: s.studentTests,
+        essayAssignments: s.essayAssignments,
         newsFlashes: s.newsFlashes,
         newsFlashReads: s.newsFlashReads,
         flashcardAssignments: s.flashcardAssignments,
@@ -195,6 +197,15 @@ export default function StudentPortalPage() {
     );
     // Feedback-only grades stay readable as feedback but must not leak into any score-derived view.
     const scoredStudentRubrics = useMemo(() => studentRubrics.filter((sr) => !sr.feedbackOnly), [studentRubrics]);
+    // Archived materials keep their results but leave the portal's to-do list.
+    const archivedTestIds = useMemo(
+        () => new Set(tests.filter((test) => !!test.archivedAt).map((test) => test.id)),
+        [tests]
+    );
+    const archivedEssayKeys = useMemo(
+        () => new Set((essayAssignments ?? []).filter((a) => !!a.archivedAt).map((a) => a.teacherKey)),
+        [essayAssignments]
+    );
     const {
         saveRubricSelfAssessment,
         fetchMyTestAssignments,
@@ -325,6 +336,21 @@ export default function StudentPortalPage() {
 
     const student = students.find((s) => s.id === studentId);
     const cls = classes.find((c) => c.id === student?.classId);
+
+    // Settings → Student portal: when a test or essay is linked to other classes and not to this
+    // student's own class, it is out of scope for their portal. Material no class claims stays visible.
+    const portalScopeOn = settings.portalScopeAssignmentsToClass !== false;
+    const scopeExcludedTestIds = new Set<string>();
+    const scopeExcludedEssayKeys = new Set<string>();
+    if (portalScopeOn && student) {
+        const ownTestIds = new Set(cls?.testIds ?? []);
+        const ownEssayKeys = new Set(cls?.essayKeys ?? []);
+        for (const c of classes) {
+            if (c.id === student.classId) continue;
+            for (const id of c.testIds ?? []) if (!ownTestIds.has(id)) scopeExcludedTestIds.add(id);
+            for (const key of c.essayKeys ?? []) if (!ownEssayKeys.has(key)) scopeExcludedEssayKeys.add(key);
+        }
+    }
 
     // A bare letter means little to a student; name the band it stands for on its scale.
     function letterGradeExplanation(letter: string, scale: GradeScale | undefined): string {
@@ -609,13 +635,29 @@ export default function StudentPortalPage() {
     // get_my_student_ids() — which can return more than one student id if two Student
     // records share a login email (siblings, a roster data-entry mistake). Filter to this
     // portal's own student id so that case can't show one student's work on another's page.
+    // One card per test: re-sharing a test mints a new assignment row for the same student, so the
+    // portal keeps only the newest deadline instead of listing the same test several times.
+    const testRowsForStudent = (() => {
+        const latest = new Map<string, StudentTestAssignmentSummary>();
+        for (const row of testRows) {
+            if (row.studentId !== student.id || archivedTestIds.has(row.testId) || scopeExcludedTestIds.has(row.testId))
+                continue;
+            const prev = latest.get(row.testId);
+            if (!prev || prev.createdAt < row.createdAt) latest.set(row.testId, row);
+        }
+        return [...latest.values()];
+    })();
+
     const allWork: WorkEntry[] = [
         ...essayRows
-            .filter((row) => row.studentId === student.id)
+            .filter(
+                (row) =>
+                    row.studentId === student.id &&
+                    !archivedEssayKeys.has(row.teacherKey) &&
+                    !scopeExcludedEssayKeys.has(row.teacherKey)
+            )
             .map((row) => ({ kind: 'essay' as const, key: `essay-${row.teacherKey}`, row })),
-        ...testRows
-            .filter((row) => row.studentId === student.id)
-            .map((row) => ({ kind: 'test' as const, key: `test-${row.teacherKey}`, row })),
+        ...testRowsForStudent.map((row) => ({ kind: 'test' as const, key: `test-${row.teacherKey}`, row })),
     ];
 
     const now = new Date();

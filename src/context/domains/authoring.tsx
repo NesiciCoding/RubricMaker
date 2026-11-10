@@ -25,6 +25,9 @@ import { logAuditEvent } from '../../services/database/AuditLogger';
 export type AuthoringValue = Pick<
     AppContextValue,
     | 'rubrics'
+    | 'archivedRubrics'
+    | 'archiveRubric'
+    | 'restoreRubric'
     | 'folders'
     | 'gradeScales'
     | 'favoriteStandards'
@@ -35,6 +38,8 @@ export type AuthoringValue = Pick<
     | 'addRubric'
     | 'updateRubric'
     | 'deleteRubric'
+    | 'archiveRubric'
+    | 'restoreRubric'
     | 'addFolder'
     | 'updateFolder'
     | 'deleteFolder'
@@ -77,6 +82,8 @@ export type AuthoringActions = Pick<
     | 'addRubric'
     | 'updateRubric'
     | 'deleteRubric'
+    | 'archiveRubric'
+    | 'restoreRubric'
     | 'addFolder'
     | 'updateFolder'
     | 'deleteFolder'
@@ -127,6 +134,8 @@ export function createAuthoringActions(ctx: StoreActionsCtx): AuthoringActions {
         logAuditEvent('grade', 'rubric_edit', 'rubric', r.id);
     };
     const deleteRubric = (id: string) => dispatch({ type: 'DELETE_RUBRIC', id });
+    const archiveRubric = (id: string) => dispatch({ type: 'ARCHIVE_RUBRIC', id });
+    const restoreRubric = (id: string) => dispatch({ type: 'RESTORE_RUBRIC', id });
     const addFolder = (f: Omit<Folder, 'id' | 'createdAt' | 'updatedAt'>): Folder => {
         const now = new Date().toISOString();
         const folder: Folder = { ...f, id: nanoid(), createdAt: now, updatedAt: now };
@@ -320,6 +329,8 @@ export function createAuthoringActions(ctx: StoreActionsCtx): AuthoringActions {
         addRubric,
         updateRubric,
         deleteRubric,
+        archiveRubric,
+        restoreRubric,
         addFolder,
         updateFolder,
         deleteFolder,
@@ -360,6 +371,7 @@ export function useAuthoringValue(state: StoreData, actions: AuthoringActions): 
     return useMemo(
         () => ({
             rubrics: state.rubrics,
+            archivedRubrics: (state.rubrics ?? []).filter((r) => !!r.archivedAt),
             folders: state.folders,
             gradeScales: state.gradeScales,
             favoriteStandards: state.favoriteStandards,

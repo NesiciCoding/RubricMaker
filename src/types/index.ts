@@ -722,6 +722,8 @@ export interface Rubric {
     sharing?: MaterialSharing;
     /** Comparative grading: max matchups per student for this rubric (0/undefined = unlimited) */
     comparativeMatchupLimit?: number;
+    /** ISO timestamp set when the rubric was archived; presence hides it from day-to-day lists while grades keep pointing at it. */
+    archivedAt?: string;
     /** Present when this is a tiered rubric: one column per tier, the same bands (levels) in each. */
     tiered?: TieredConfig;
 }
@@ -839,6 +841,10 @@ export interface Class {
     years?: SchoolYear[];
     /** IDs of rubrics linked to this class. If undefined/empty, all rubrics are shown. */
     rubricIds?: string[];
+    /** IDs of tests linked to this class. If undefined/empty, no tests are linked (all can still be assigned). */
+    testIds?: string[];
+    /** teacherKeys of essay assignment groups linked to this class. */
+    essayKeys?: string[];
     /** Primary Dutch VO track — the first of `voTracks`. Kept in sync for single-track classes and older records. */
     voTrack?: VoTrack;
     /** Every Dutch VO track in this class; set for heterogeneous classes that mix tracks (VMBO-BB/KB/TL, HAVO, VWO). */
@@ -1037,6 +1043,11 @@ export interface AppSettings {
     monitorShowWritingPace?: boolean;
     /** Whether the progress trend charts include graded test results next to rubric grades (default true) */
     statisticsTrendIncludeTests?: boolean;
+    /**
+     * Student portal: hide a test or essay that is linked to other classes when it is not linked to
+     * the student's own class. Undefined means scoped (on); false shows every assignment.
+     */
+    portalScopeAssignmentsToClass?: boolean;
     /** Advanced statistics queries the teacher saved for reuse */
     statisticsSavedQueries?: SavedStatsQuery[];
     /**
@@ -1235,6 +1246,8 @@ export interface EssayAssignment {
      * essay patches the whole group rather than a single student's row.
      */
     folderId?: string;
+    /** ISO timestamp set when the essay group was archived; stored on every row of the group. */
+    archivedAt?: string;
     /**
      * BCP-47 base code of the language the essay is written in — drives read-aloud voices
      * and `lang` attributes on the student page (#956). Unset means English, and must NOT
@@ -1560,6 +1573,8 @@ export interface Test {
     displayOrder?: number;
     /** Folder this test is filed under in TestListPage; undefined means it sits in the full list */
     folderId?: string;
+    /** ISO timestamp set when the test was archived; presence hides it from lists and portals while results are kept. */
+    archivedAt?: string;
     /** Own sharing setting; undefined inherits from the folder chain and the owner's default */
     sharing?: MaterialSharing;
     /** 'assessment' (default when unset, for back-compat with existing tests) is graded/due-dated as today; 'practice' is ungraded, retakeable, and feeds a separate practice-progress view instead of the graded CEFR chart; 'placement' presents sections sequentially via routing rules and produces a provisional CEFR estimate instead of a graded score (roadmap Phase 25) */

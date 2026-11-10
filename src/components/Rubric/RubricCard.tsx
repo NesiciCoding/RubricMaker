@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import {
     Edit2,
     Trash2,
+    Archive,
     Copy,
     Users,
     GitCompare,
@@ -28,6 +29,7 @@ export interface RubricCardActions {
     onEdit: (id: string) => void;
     onDuplicate: (id: string) => void;
     onDelete: (rubric: Rubric) => void;
+    onArchive: (rubric: Rubric) => void;
     onDifferentiate: (id: string) => void;
     onCopyShareCode: (id: string) => void;
     onSharePreview: (id: string) => void;
@@ -282,6 +284,17 @@ function RubricCard({
                                 }}
                             >
                                 <Edit2 size={14} />
+                            </button>
+                            <button
+                                className="btn btn-ghost btn-icon btn-sm"
+                                title={t('rubricList.archive')}
+                                aria-label={t('rubricList.archive')}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    actions.onArchive(rubric);
+                                }}
+                            >
+                                <Archive size={14} />
                             </button>
                             <button
                                 className="btn btn-ghost btn-icon btn-sm"

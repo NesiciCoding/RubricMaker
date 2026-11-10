@@ -222,6 +222,27 @@ describe('AppContext reducer — rubrics, students, classes', () => {
         expect(vi.mocked(deleteRubricVersions)).toHaveBeenCalledWith('r1');
     });
 
+    it('archives a rubric without touching its grades, and restores it', () => {
+        const grade = {
+            id: 'g1',
+            rubricId: 'r1',
+            studentId: 's1',
+            entries: [],
+            overallComment: '',
+            isPeerReview: false,
+        } as never;
+        let state = makeState({ studentRubrics: [grade] });
+
+        state = run(state, { type: 'ARCHIVE_RUBRIC', id: 'r1' });
+        expect(state.rubrics[0].archivedAt).toBeDefined();
+        expect(state.studentRubrics).toHaveLength(1);
+        expect(vi.mocked(deleteRubricVersions)).not.toHaveBeenCalled();
+
+        state = run(state, { type: 'RESTORE_RUBRIC', id: 'r1' });
+        expect(state.rubrics[0].archivedAt).toBeUndefined();
+        expect(state.studentRubrics).toHaveLength(1);
+    });
+
     it('moves a deleted folder\u2019s subfolders up to where it sat, and unfiles its rubrics', () => {
         const rubricInFolder = { ...rubric, folderId: 'child' };
         let state = makeState({
@@ -679,6 +700,19 @@ describe('AppContext reducer — tests, essays', () => {
         expect(state.studentTests).toHaveLength(0);
     });
 
+    it('archives a test while keeping its results, and restores it', () => {
+        let state = run(makeState(), { type: 'ADD_TEST', payload: test1 });
+        state = run(state, { type: 'SAVE_STUDENT_TEST', payload: st1 });
+
+        state = run(state, { type: 'ARCHIVE_TEST', id: 't1' });
+        expect(state.tests[0].archivedAt).toBeDefined();
+        expect(state.studentTests).toHaveLength(1);
+
+        state = run(state, { type: 'RESTORE_TEST', id: 't1' });
+        expect(state.tests[0].archivedAt).toBeUndefined();
+        expect(state.studentTests).toHaveLength(1);
+    });
+
     it('updates and deletes student tests', () => {
         let state = run(makeState(), { type: 'SAVE_STUDENT_TEST', payload: st1 });
         state = run(state, { type: 'SAVE_STUDENT_TEST', payload: { ...st1, status: 'submitted' } });
@@ -722,6 +756,36 @@ describe('AppContext reducer — tests, essays', () => {
         state = run(state, { type: 'DELETE_ESSAY_GROUP', teacherKey: 'tk1' });
         expect(state.essayAssignments).toHaveLength(0);
         expect(state.essaySubmissions).toHaveLength(0);
+    });
+
+    it('archives every row of an essay group and keeps its submissions', () => {
+        const rows: EssayAssignment[] = ['s1', 's2'].map((studentId) => ({
+            rubricId: 'r1',
+            studentId,
+            teacherKey: 'tk1',
+            title: 'Essay',
+            readOnlyAfterSubmit: true,
+            createdAt: now,
+        }));
+        const sub: EssaySubmission = {
+            id: 'es1',
+            assignmentRubricId: 'r1',
+            assignmentStudentId: 's1',
+            teacherKey: 'tk1',
+            contentHtml: '<p>x</p>',
+            wordCount: 10,
+            submittedAt: now,
+        };
+        let state = run(makeState(), { type: 'ADD_ESSAY_ASSIGNMENTS', payload: rows });
+        state = run(state, { type: 'ADD_ESSAY_SUBMISSION', payload: sub });
+
+        state = run(state, { type: 'ARCHIVE_ESSAY_GROUP', teacherKey: 'tk1' });
+        expect(state.essayAssignments.every((a) => !!a.archivedAt)).toBe(true);
+        expect(state.essaySubmissions).toHaveLength(1);
+
+        state = run(state, { type: 'RESTORE_ESSAY_GROUP', teacherKey: 'tk1' });
+        expect(state.essayAssignments.every((a) => !a.archivedAt)).toBe(true);
+        expect(state.essaySubmissions).toHaveLength(1);
     });
 
     it('saves, updates, and deletes essay templates', () => {

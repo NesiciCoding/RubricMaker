@@ -20,6 +20,9 @@ import { unrecoveredSessions, buildRecoveredStudentTest } from '../../utils/plac
 export type AssessmentValue = Pick<
     AppContextValue,
     | 'tests'
+    | 'archivedTests'
+    | 'archiveTest'
+    | 'restoreTest'
     | 'studentTests'
     | 'peerReviews'
     | 'selfAssessments'
@@ -38,6 +41,8 @@ export type AssessmentValue = Pick<
     | 'addTest'
     | 'updateTest'
     | 'deleteTest'
+    | 'archiveTest'
+    | 'restoreTest'
     | 'saveStudentTest'
     | 'deleteStudentTest'
     | 'addDocumentComment'
@@ -72,6 +77,8 @@ export type AssessmentActions = Pick<
     | 'addTest'
     | 'updateTest'
     | 'deleteTest'
+    | 'archiveTest'
+    | 'restoreTest'
     | 'saveStudentTest'
     | 'deleteStudentTest'
     | 'addGradingTasks'
@@ -128,6 +135,8 @@ export function createAssessmentActions(ctx: StoreActionsCtx): AssessmentActions
         dispatch({ type: 'UPDATE_TEST', payload: t });
     };
     const deleteTest = (id: string) => dispatch({ type: 'DELETE_TEST', id });
+    const archiveTest = (id: string) => dispatch({ type: 'ARCHIVE_TEST', id });
+    const restoreTest = (id: string) => dispatch({ type: 'RESTORE_TEST', id });
     const saveStudentTest = (st: StudentTest) => {
         dispatch({ type: 'SAVE_STUDENT_TEST', payload: st });
     };
@@ -178,6 +187,8 @@ export function createAssessmentActions(ctx: StoreActionsCtx): AssessmentActions
         addTest,
         updateTest,
         deleteTest,
+        archiveTest,
+        restoreTest,
         saveStudentTest,
         deleteStudentTest,
         addGradingTasks,
@@ -196,6 +207,7 @@ export function useAssessmentValue(state: StoreData, actions: AssessmentActions)
     return useMemo(
         () => ({
             tests: state.tests,
+            archivedTests: (state.tests ?? []).filter((t) => !!t.archivedAt),
             studentTests: state.studentTests,
             peerReviews: state.peerReviews,
             selfAssessments: state.selfAssessments,

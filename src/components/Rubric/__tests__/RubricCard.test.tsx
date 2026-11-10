@@ -46,6 +46,7 @@ const noopActions: RubricCardActions = {
     onEdit: noop,
     onDuplicate: noop,
     onDelete: noop,
+    onArchive: noop,
     onDifferentiate: noop,
     onCopyShareCode: noop,
     onSharePreview: noop,

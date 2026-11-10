@@ -3,6 +3,7 @@ import PageTour from '../components/Tour/PageTour';
 import { usePageTourState } from '../hooks/usePageTourState';
 import { useNavigate } from 'react-router-dom';
 import {
+    Archive,
     Plus,
     Edit2,
     Trash2,
@@ -103,8 +104,17 @@ export default function TestListPage() {
     // The roster domain hooks filtered soft-deleted rows; archived students must not
     // appear in cohort filters or per-student statistics.
     const students = React.useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
-    const { addTest, updateTest, deleteTest, saveStudentTest, addFolder, updateFolder, deleteFolder } =
-        useStoreActions();
+    const {
+        addTest,
+        updateTest,
+        deleteTest,
+        archiveTest,
+        restoreTest,
+        saveStudentTest,
+        addFolder,
+        updateFolder,
+        deleteFolder,
+    } = useStoreActions();
 
     const activeStyleTemplate = exportTemplates.find((t) => t.kind === 'style' && t.id === settings.styleTemplateId);
     const [cohortFilter, setCohortFilter] = useState<CohortFilterValue>(ALL_COHORTS);
@@ -121,13 +131,20 @@ export default function TestListPage() {
     );
     const testFolders = foldersForKind(folders, 'test');
     const visibleTests = React.useMemo(() => {
-        const sorted = filterByFolder(sortByDisplayOrder(tests), activeFolder);
+        const sorted = filterByFolder(sortByDisplayOrder(tests.filter((test) => !test.archivedAt)), activeFolder);
         if (allCohorts) return sorted;
         const cohortTestIds = new Set(
             studentTests.filter((st) => cohortStudentIds.has(st.studentId)).map((st) => st.testId)
         );
+        // A class also owns the tests linked to it, whether or not anyone has taken them yet —
+        // that link is what makes "what still needs grading for this class" filterable.
+        const cohortClassIds = new Set(students.filter((s) => cohortStudentIds.has(s.id)).map((s) => s.classId));
+        for (const cls of classes) {
+            if (!cohortClassIds.has(cls.id)) continue;
+            for (const testId of cls.testIds ?? []) cohortTestIds.add(testId);
+        }
         return sorted.filter((test) => cohortTestIds.has(test.id));
-    }, [tests, studentTests, cohortStudentIds, allCohorts, activeFolder]);
+    }, [tests, studentTests, cohortStudentIds, allCohorts, activeFolder, classes, students]);
     const reorderable = allCohorts && activeFolder === ALL_FOLDERS;
     const { dropFolderId, startFolderDrop, endFolderDrop } = useFolderDropTarget();
 
@@ -457,6 +474,13 @@ export default function TestListPage() {
         else onReady();
     }
 
+    function handleArchive(test: Test) {
+        archiveTest(test.id);
+        showToast(t('tests.archived_toast', { name: test.name }), 'info', {
+            action: { label: t('common.undo'), onClick: () => restoreTest(test.id) },
+        });
+    }
+
     async function handleDelete(testId: string, testName: string) {
         const ok = await confirm({
             title: t('tests.delete_test_title'),
@@ -527,7 +551,7 @@ export default function TestListPage() {
                         folders={folders}
                         kind="test"
                         activeFolderId={activeFolder}
-                        items={tests}
+                        items={tests.filter((test) => !test.archivedAt)}
                         onSelect={setActiveFolder}
                         onCreate={(parentId) => setFolderModal({ parentId })}
                         onRename={(f) => setFolderModal({ folder: f })}
@@ -660,6 +684,15 @@ export default function TestListPage() {
                                                             onClick={() => handleDuplicate(test.id)}
                                                         >
                                                             <Copy size={14} />
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            className="btn btn-ghost btn-icon btn-sm"
+                                                            title={t('tests.archive')}
+                                                            aria-label={t('tests.archive')}
+                                                            onClick={() => handleArchive(test)}
+                                                        >
+                                                            <Archive size={14} />
                                                         </button>
                                                         <button
                                                             type="button"
@@ -803,6 +836,18 @@ export default function TestListPage() {
                                                                     }}
                                                                 >
                                                                     <Edit2 size={14} />
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                                    title={t('tests.archive')}
+                                                                    aria-label={t('tests.archive')}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleArchive(test);
+                                                                    }}
+                                                                >
+                                                                    <Archive size={14} />
                                                                 </button>
                                                                 <button
                                                                     type="button"

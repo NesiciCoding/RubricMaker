@@ -42,7 +42,16 @@ import {
 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import HelpPopover from '../components/ui/HelpPopover';
-import { useAuthoring, useClasses, useGrading, usePlatform, useSettings, useStudents } from '../context/AppContext';
+import {
+    useAssessment,
+    useAuthoring,
+    useClasses,
+    useEssays,
+    useGrading,
+    usePlatform,
+    useSettings,
+    useStudents,
+} from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { loadSupabaseConfig, storageSync } from '../services/database';
@@ -52,7 +61,14 @@ import { useConfirm } from '../hooks/useConfirm';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { InlineSkeleton, TableSkeleton } from '../components/ui/Skeleton';
 import type { DbUser } from '../services/database/types';
-import type { School as SchoolType, RubricShare, ClassMember, AuditCategory, AuditRow } from '../types';
+import type {
+    School as SchoolType,
+    RubricShare,
+    ClassMember,
+    AuditCategory,
+    AuditRow,
+    EssayAssignment,
+} from '../types';
 
 type Tab = 'users' | 'schools' | 'database' | 'integrations' | 'data' | 'retention' | 'audit' | 'archive';
 
@@ -1843,7 +1859,16 @@ export function ArchiveTab() {
     const { classes } = useClasses();
     const { deletedStudentRubrics, restoreStudentRubric } = useGrading();
 
-    const { rubrics } = useAuthoring();
+    const { rubrics, archivedRubrics, restoreRubric } = useAuthoring();
+    const { archivedTests, restoreTest } = useAssessment();
+    const { archivedEssayAssignments, restoreEssayGroup } = useEssays();
+
+    // Essay rows are one per assigned student; the archive lists and restores the whole group at once.
+    const archivedEssayGroups = new Map<string, EssayAssignment>();
+    for (const a of archivedEssayAssignments) {
+        if (!archivedEssayGroups.has(a.teacherKey)) archivedEssayGroups.set(a.teacherKey, a);
+    }
+    const hasArchivedMaterials = archivedRubrics.length > 0 || archivedTests.length > 0 || archivedEssayGroups.size > 0;
 
     const classMap = new Map(classes.map((c) => [c.id, c.name]));
     const studentMap = new Map([...students, ...archivedStudents].map((s) => [s.id, s.name]));
@@ -1885,7 +1910,7 @@ export function ArchiveTab() {
         }
     }
 
-    if (archivedStudents.length === 0 && deletedStudentRubrics.length === 0) {
+    if (archivedStudents.length === 0 && deletedStudentRubrics.length === 0 && !hasArchivedMaterials) {
         return (
             <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
                 {t('admin.archive_empty')}
@@ -1895,6 +1920,98 @@ export function ArchiveTab() {
 
     return (
         <div>
+            {hasArchivedMaterials && (
+                <div style={{ marginBottom: 32 }}>
+                    <h3 style={{ fontSize: '1rem', marginBottom: 4 }}>{t('admin.archived_materials_title')}</h3>
+                    <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: 16 }}>
+                        {t('admin.archived_materials_desc')}
+                    </p>
+                    <table className="data-table">
+                        <thead>
+                            <tr>
+                                <th>{t('admin.audit_col_time')}</th>
+                                <th>{t('admin.col_name')}</th>
+                                <th>{t('admin.archived_col_kind')}</th>
+                                <th className="sr-only">{t('common.actions')}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {archivedRubrics.map((r) => (
+                                <tr key={`rubric-${r.id}`}>
+                                    <td
+                                        style={{
+                                            color: 'var(--text-muted)',
+                                            fontSize: '0.8rem',
+                                            whiteSpace: 'nowrap',
+                                        }}
+                                    >
+                                        {r.archivedAt ? new Date(r.archivedAt).toLocaleDateString() : '—'}
+                                    </td>
+                                    <td>{r.name}</td>
+                                    <td style={{ color: 'var(--text-muted)' }}>{t('admin.archived_kind_rubric')}</td>
+                                    <td style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            onClick={() => restoreRubric(r.id)}
+                                            title={t('admin.btn_restore')}
+                                        >
+                                            <RotateCcw size={14} /> {t('admin.btn_restore')}
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                            {archivedTests.map((test) => (
+                                <tr key={`test-${test.id}`}>
+                                    <td
+                                        style={{
+                                            color: 'var(--text-muted)',
+                                            fontSize: '0.8rem',
+                                            whiteSpace: 'nowrap',
+                                        }}
+                                    >
+                                        {test.archivedAt ? new Date(test.archivedAt).toLocaleDateString() : '—'}
+                                    </td>
+                                    <td>{test.name}</td>
+                                    <td style={{ color: 'var(--text-muted)' }}>{t('admin.archived_kind_test')}</td>
+                                    <td style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            onClick={() => restoreTest(test.id)}
+                                            title={t('admin.btn_restore')}
+                                        >
+                                            <RotateCcw size={14} /> {t('admin.btn_restore')}
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                            {[...archivedEssayGroups.values()].map((group) => (
+                                <tr key={`essay-${group.teacherKey}`}>
+                                    <td
+                                        style={{
+                                            color: 'var(--text-muted)',
+                                            fontSize: '0.8rem',
+                                            whiteSpace: 'nowrap',
+                                        }}
+                                    >
+                                        {group.archivedAt ? new Date(group.archivedAt).toLocaleDateString() : '—'}
+                                    </td>
+                                    <td>{group.title}</td>
+                                    <td style={{ color: 'var(--text-muted)' }}>{t('admin.archived_kind_essay')}</td>
+                                    <td style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            onClick={() => restoreEssayGroup(group.teacherKey)}
+                                            title={t('admin.btn_restore')}
+                                        >
+                                            <RotateCcw size={14} /> {t('admin.btn_restore')}
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
             {deletedStudentRubrics.length > 0 && (
                 <div style={{ marginBottom: 32 }}>
                     <h3 style={{ fontSize: '1rem', marginBottom: 4 }}>{t('admin.deleted_grades_title')}</h3>

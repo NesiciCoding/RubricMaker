@@ -1070,6 +1070,37 @@ export default function SettingsPage() {
                             </label>
                         </div>
 
+                        {/* Student portal scoping */}
+                        <div className="card" style={{ marginBottom: 24 }}>
+                            <h2 className="card-heading" style={{ marginBottom: 16 }}>
+                                {t('settings.portal_scope_section_title')}
+                            </h2>
+                            <label
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 10,
+                                    cursor: 'pointer',
+                                    userSelect: 'none',
+                                }}
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={settings.portalScopeAssignmentsToClass !== false}
+                                    onChange={(e) =>
+                                        updateSettings({ portalScopeAssignmentsToClass: e.target.checked })
+                                    }
+                                    style={{ accentColor: 'var(--accent)' }}
+                                />
+                                <div>
+                                    <div style={{ fontWeight: 500 }}>{t('settings.portal_scope_label')}</div>
+                                    <div className="text-xs text-muted" style={{ marginTop: 2 }}>
+                                        {t('settings.portal_scope_help')}
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+
                         {/* Guided tour */}
                         <div data-tour="set-tutorial" className="card">
                             <h2 className="card-heading" style={{ marginBottom: 16 }}>
