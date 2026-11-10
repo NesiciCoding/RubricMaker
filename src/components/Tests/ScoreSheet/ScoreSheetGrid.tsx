@@ -35,6 +35,12 @@ interface Props {
 const cellBorder = '1px solid var(--border)';
 const stickyHead: React.CSSProperties = { position: 'sticky', top: 0, background: 'var(--bg-elevated)', zIndex: 2 };
 const stickyName: React.CSSProperties = { position: 'sticky', left: 0, background: 'var(--bg-elevated)', zIndex: 1 };
+// Crosshair highlight for the focused cell — darkens the selected row +
+// column so it is visible at a glance which student/question is being
+// graded. Theme-safe via color-mix on --accent.
+const selectedHeadBg = 'color-mix(in srgb, var(--accent) 24%, var(--bg-elevated))';
+const bandCellBg = 'color-mix(in srgb, var(--accent) 10%, transparent)';
+const focusedCellBg = 'color-mix(in srgb, var(--accent) 22%, transparent)';
 
 function latestAnswer(st: StudentTest | undefined, questionId: string): TestAnswer | undefined {
     if (!st) return undefined;
@@ -55,6 +61,7 @@ export default function ScoreSheetGrid({
     const { t, i18n } = useTranslation();
     const tableRef = useRef<HTMLTableElement>(null);
     const [drafts, setDrafts] = useState<Record<string, string>>({});
+    const [focus, setFocus] = useState<{ row: number; col: number } | null>(null);
     const questions = test.questions;
     const classById = new Map(classes.map((c) => [c.id, c]));
     const allLabel = t('tests.norm.tier_all');
@@ -169,11 +176,12 @@ export default function ScoreSheetGrid({
                         >
                             {t('tests.scoreSheet.col_student')}
                         </th>
-                        {questions.map((q) => {
+                        {questions.map((q, qi) => {
                             const linkCount =
                                 (q.linkedStandards?.length ?? 0) +
                                 (q.linkedCefrDescriptors?.length ?? 0) +
                                 (q.frameworkDescriptors?.length ?? 0);
+                            const colSelected = focus?.col === qi;
                             return (
                                 <th
                                     key={q.id}
@@ -185,6 +193,7 @@ export default function ScoreSheetGrid({
                                         borderBottom: cellBorder,
                                         minWidth: 56,
                                         textAlign: 'center',
+                                        background: colSelected ? selectedHeadBg : stickyHead.background,
                                     }}
                                 >
                                     <div style={{ fontWeight: 700 }}>
@@ -252,7 +261,8 @@ export default function ScoreSheetGrid({
                                         textAlign: 'left',
                                         padding: '4px 10px',
                                         borderBottom: cellBorder,
-                                        fontWeight: 500,
+                                        fontWeight: focus?.row === row ? 700 : 500,
+                                        background: focus?.row === row ? selectedHeadBg : stickyName.background,
                                     }}
                                 >
                                     {student.name}
@@ -262,8 +272,17 @@ export default function ScoreSheetGrid({
                                     const value = drafts[k] ?? shown(st, col);
                                     const validity = drafts[k] === undefined ? 'ok' : validateCell(drafts[k], q.points);
                                     const bad = validity === 'invalid' || validity === 'over_max';
+                                    const isFocused = focus?.row === row && focus?.col === col;
+                                    const inBand = !isFocused && (focus?.row === row || focus?.col === col);
                                     return (
-                                        <td key={q.id} style={{ borderBottom: cellBorder, padding: 2 }}>
+                                        <td
+                                            key={q.id}
+                                            style={{
+                                                borderBottom: cellBorder,
+                                                padding: 2,
+                                                background: isFocused ? focusedCellBg : inBand ? bandCellBg : undefined,
+                                            }}
+                                        >
                                             <input
                                                 data-cell={`${row}-${col}`}
                                                 inputMode="decimal"
@@ -284,8 +303,14 @@ export default function ScoreSheetGrid({
                                                 }
                                                 value={value}
                                                 onChange={(e) => setDrafts((d) => ({ ...d, [k]: e.target.value }))}
-                                                onFocus={(e) => e.target.select()}
-                                                onBlur={() => handleBlur(row, col)}
+                                                onFocus={(e) => {
+                                                    setFocus({ row, col });
+                                                    e.target.select();
+                                                }}
+                                                onBlur={() => {
+                                                    setFocus(null);
+                                                    handleBlur(row, col);
+                                                }}
                                                 onKeyDown={(e) => handleKeyDown(e, row, col)}
                                                 onPaste={(e) => handlePaste(e, row, col)}
                                                 style={{
@@ -293,6 +318,8 @@ export default function ScoreSheetGrid({
                                                     textAlign: 'center',
                                                     padding: '4px 2px',
                                                     border: bad ? '2px solid var(--red)' : '1px solid transparent',
+                                                    outline: isFocused && !bad ? '2px solid var(--accent)' : undefined,
+                                                    outlineOffset: -2,
                                                     background: bad
                                                         ? 'color-mix(in srgb, var(--red) 10%, transparent)'
                                                         : 'transparent',
