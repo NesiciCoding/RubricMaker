@@ -2059,14 +2059,14 @@ export default function StudentsPage() {
                         </div>
                         <div className="modal-footer">
                             <button className="btn btn-secondary" onClick={() => setSummaryStudentId(null)}>
-                                Close
+                                {t('common.close')}
                             </button>
                             <button
                                 className={`btn ${copied ? 'btn-secondary' : 'btn-primary'}`}
                                 onClick={() => navigator.clipboard.writeText(summaryText).then(() => setCopied(true))}
                             >
                                 <ClipboardCopy size={14} />
-                                {copied ? 'Copied!' : 'Copy to clipboard'}
+                                {copied ? t('studentsPage.summary_copied') : t('studentsPage.summary_copy')}
                             </button>
                         </div>
                     </Modal>
@@ -2096,14 +2096,13 @@ export default function StudentsPage() {
                         </div>
                         <div className="modal-body">
                             <p style={{ marginBottom: 16, color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                                Select which rubrics are available for students in this class. If none are selected, all
-                                rubrics will be shown.
+                                {t('studentsPage.link_rubrics_intro')}
                             </p>
                             {rubrics.length === 0 ? (
                                 <EmptyState
                                     icon={BookOpen}
                                     iconSize={28}
-                                    description="No rubrics yet. Create a rubric first."
+                                    description={t('studentsPage.link_rubrics_empty')}
                                 />
                             ) : (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

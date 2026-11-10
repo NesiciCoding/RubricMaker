@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { FileText, BookOpen, Video, ExternalLink, Layers, ListChecks, ChevronDown, ChevronUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import DOMPurify from 'dompurify';
+import PassageReadAloud from '../Tests/PassageReadAloud';
 import type { NewsFlash, NewsFlashKind } from '../../types';
 import { normalizeLinkUrl } from '../../utils/safeUrl';
 
@@ -194,14 +195,18 @@ export default function NewsFlashTimeline({ studentId, flashes, readFlashIds, on
                         {/* v8 ignore next -- expanded is only ever set for flashes that have content */}
                         {expanded && flash.content && (
                             <div
-                                className="tiptap-editor-content"
                                 style={{
                                     marginTop: 12,
                                     paddingTop: 12,
                                     borderTop: '1px solid var(--border)',
                                 }}
-                                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(flash.content) }}
-                            />
+                            >
+                                <PassageReadAloud contentHtml={flash.content} lang={i18n.language} />
+                                <div
+                                    className="tiptap-editor-content"
+                                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(flash.content) }}
+                                />
+                            </div>
                         )}
                     </div>
                 );

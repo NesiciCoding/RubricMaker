@@ -539,9 +539,9 @@ describe('StudentsPage extended', () => {
         expect(value).toContain('Rubric: Checklist');
         expect(value).toContain('Rubric: Legacy');
         fireEvent.click(textarea);
-        fireEvent.click(screen.getByText('Copy to clipboard'));
-        await waitFor(() => expect(screen.getByText('Copied!')).toBeInTheDocument());
-        fireEvent.click(screen.getByText('Close'));
+        fireEvent.click(screen.getByText('studentsPage.summary_copy'));
+        await waitFor(() => expect(screen.getByText('studentsPage.summary_copied')).toBeInTheDocument());
+        fireEvent.click(screen.getByText('common.close'));
         expect(document.querySelector('textarea')).not.toBeInTheDocument();
     });
 
@@ -1121,7 +1121,7 @@ describe('StudentsPage extended', () => {
         renderPage();
         fireEvent.click(screen.getAllByLabelText('studentsPage.action_class_menu')[1]);
         fireEvent.click(screen.getByText('studentsPage.link_rubrics'));
-        expect(screen.getByText(/No rubrics yet/)).toBeInTheDocument();
+        expect(screen.getByText('studentsPage.link_rubrics_empty')).toBeInTheDocument();
     });
 
     it('shows the empty state with hint and add button when there are no students', () => {
