@@ -1,13 +1,19 @@
 import React from 'react';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { CefrLevel } from '../../types';
+import EstimateConfidenceBadge from './EstimateConfidenceBadge';
+import { placementConfidence } from '../../utils/placementConfidence';
+import type { CefrLevel, StaircaseStep } from '../../types';
 
 export interface PlacementLevelPanelProps {
     /** Undefined while no snapshot has arrived yet (student hasn't answered a question, or isn't connected). */
     level?: CefrLevel;
     eloAnchor?: number;
     questionsAsked?: number;
+    /** The run's trace so far, so the level can be shown with how settled the estimate is. */
+    levelPath?: StaircaseStep[];
+    /** Opt-in read of how settled the estimate is. */
+    showConfidence?: boolean;
     /** Persists a one-shot next-question nudge (roadmap 27.2); disabled once the run has finished. */
     onNudge?: (direction: 'up' | 'down') => void;
     disabled?: boolean;
@@ -18,10 +24,13 @@ export default function PlacementLevelPanel({
     level,
     eloAnchor,
     questionsAsked,
+    levelPath,
+    showConfidence,
     onNudge,
     disabled,
 }: PlacementLevelPanelProps) {
     const { t } = useTranslation();
+    const confidence = showConfidence && levelPath ? placementConfidence(levelPath) : null;
 
     return (
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: '0.8rem' }}>
@@ -35,6 +44,7 @@ export default function PlacementLevelPanel({
             ) : (
                 <span className="text-muted">{t('tests.monitor.generator_level_pending')}</span>
             )}
+            {level && confidence && <EstimateConfidenceBadge confidence={confidence} />}
             {typeof questionsAsked === 'number' && (
                 <span className="text-muted">
                     {t('tests.monitor.generator_questions_asked_label', { count: questionsAsked })}

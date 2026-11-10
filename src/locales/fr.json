@@ -1272,6 +1272,13 @@
             "nudge_button": "Relancer",
             "nudge_message": "Votre enseignant souhaite prendre de vos nouvelles — continuez ou demandez de l'aide.",
             "nudge_sent": "Relance envoyée à {{name}}. Ils la verront comme notification.",
+            "confidence_toggle": "Fiabilité de l'estimation",
+            "confidence_low": "provisoire",
+            "confidence_medium": "en convergence",
+            "confidence_high": "stable",
+            "confidence_low_help": "Le test progresse encore dans une seule direction : considérez ce niveau comme provisoire.",
+            "confidence_medium_help": "Le niveau a changé de sens une fois ; l'estimation encadre le niveau de l'élève.",
+            "confidence_high_help": "Le test a convergé : l'estimation de niveau ne bouge plus.",
             "nudge_sent_anonymous": "Relance envoyée à {{name}}. Ils la verront comme notification.",
             "generator_level_label": "Niveau {{level}}",
             "generator_elo_label": "Elo ~{{elo}}",
@@ -3238,6 +3245,17 @@
             "kind_test": "Tests",
             "no_subject": "Sans matière",
             "no_class": "Sans classe"
+        },
+        "rubric_quality": {
+            "title": "Qualité du barème",
+            "help": "Chaque critère compte comme un item. Les critères sont peu nombreux, ordinaux et souvent corrélés : lisez α comme la cohérence interne du barème.",
+            "no_data": "Aucune copie entièrement notée pour l'instant — chaque critère doit être évalué pour qu'une copie compte.",
+            "tier_label": "Niveau",
+            "small_sample": "Moins de 5 copies complètes : les corrélations et α ne sont pas fiables.",
+            "grouped_note": "Les travaux de groupe comptent une fois par groupe.",
+            "criterion": "Critère",
+            "items_title": "Qualité par critère",
+            "items_help": "Valeur P : part des points obtenus (faible = difficile, élevée = facile). Rit : corrélation du critère avec le score total. Rir : corrélation avec les autres critères. Discrimination : écart entre les meilleurs et les plus faibles."
         }
     },
     "activityDashboard": {
@@ -4817,6 +4835,9 @@
         "rb_material_sharing_coteaching": "Co-enseignement : toute personne ajoutée à une classe (Élèves → menu de la classe → Partager) peut voir les notes et résultats de cette classe et ouvrir ses grilles et tests, même ceux que vous gardez privés. Les co-enseignants « Peut consulter et noter » peuvent modifier toute note ou résultat de test de la classe — y compris les vôtres — et lui assigner vos tests ; le résultat reste le vôtre et indique qui l’a modifié en dernier. Les co-enseignants « Peut consulter » voient notes et résultats sans pouvoir les modifier. La page de notation et chaque résultat de test indiquent qui les a modifiés en dernier. La liste des élèves reste celle du propriétaire : les co-enseignants voient les élèves d’une classe partagée en lecture seule et ne peuvent pas modifier leur nom, classe, filière ou année scolaire.",
         "an_stats_item_query": "Requête avancée — posez vos propres questions sur toutes les notes de grilles et tous les tests notés : filtrez par classe, évaluation, matière, dates et score, regroupez par élève, classe, évaluation, matière, mois ou type, et mesurez la moyenne, la médiane, le minimum/maximum, le taux de réussite, la dispersion ou l’évolution du premier au dernier résultat. Ajoutez une condition comme « moyenne inférieure à 55 », partez d’exemples, enregistrez vos requêtes et exportez le résultat en CSV.",
         "an_stats_item_customize": "Personnaliser — choisissez les cartes affichées dans chaque vue et si les tendances de progression incluent les tests notés ; votre choix est enregistré dans vos paramètres.",
+        "rb_live_monitor_item_confidence": "Sur les tests adaptatifs et de positionnement, un badge facultatif à côté de l'estimation CEFR de chaque élève indique si elle est encore provisoire, en convergence ou stable.",
+        "an_rubric_quality_title": "Qualité du barème",
+        "an_rubric_quality_body": "Dans Statistiques → Par barème, chaque critère est analysé comme une question de test : valeur P, Rit/Rir, α de Cronbach, SEM et discrimination, par niveau et une fois par travail de groupe.",
         "an_stats_tests_info": "Seuls les tests d’évaluation notés comptent pour la progression. Les tests d’entraînement, de positionnement, les élèves absents et les tentatives inachevées sont exclus."
     },
     "studentProfile": {

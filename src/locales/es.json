@@ -1272,6 +1272,13 @@
             "nudge_button": "Avisar",
             "nudge_message": "Tu profesor quiere saber cómo vas — continúa o pide ayuda.",
             "nudge_sent": "Aviso enviado a {{name}}. Lo verán como notificación.",
+            "confidence_toggle": "Fiabilidad de la estimación",
+            "confidence_low": "provisional",
+            "confidence_medium": "convergiendo",
+            "confidence_high": "estable",
+            "confidence_low_help": "La prueba sigue avanzando en una sola dirección; considera este nivel provisional.",
+            "confidence_medium_help": "El nivel ha cambiado de sentido una vez; la estimación acota el nivel del alumno.",
+            "confidence_high_help": "La prueba ha convergido; la estimación del nivel ya no se mueve.",
             "nudge_sent_anonymous": "Aviso enviado a {{name}}. Lo verán como notificación.",
             "generator_level_label": "Nivel {{level}}",
             "generator_elo_label": "Elo ~{{elo}}",
@@ -3238,6 +3245,17 @@
             "kind_test": "Pruebas",
             "no_subject": "Sin asignatura",
             "no_class": "Sin clase"
+        },
+        "rubric_quality": {
+            "title": "Calidad de la rúbrica",
+            "help": "Cada criterio cuenta como un ítem. Las rúbricas tienen pocos criterios, ordinales y a menudo correlacionados; lee α como la consistencia interna de la rúbrica.",
+            "no_data": "Aún no hay entregas calificadas por completo: cada criterio debe estar puntuado para que una entrega cuente.",
+            "tier_label": "Nivel",
+            "small_sample": "Menos de 5 entregas completas: las correlaciones y α no son fiables.",
+            "grouped_note": "Las entregas en grupo cuentan una vez por grupo.",
+            "criterion": "Criterio",
+            "items_title": "Calidad por criterio",
+            "items_help": "Valor P: proporción de puntos obtenidos (bajo = difícil, alto = fácil). Rit: correlación del criterio con la puntuación total. Rir: correlación con los demás criterios. Discriminación: cuánto mejor rinden los alumnos con más puntuación frente a los de menos."
         }
     },
     "activityDashboard": {
@@ -4817,6 +4835,9 @@
         "rb_material_sharing_coteaching": "Docencia compartida: cualquier persona que añadas a una clase (Alumnos → menú de la clase → Compartir) puede ver las notas y resultados de esa clase y abrir sus rúbricas y pruebas, aunque las mantengas privadas. Los coprofesores con «Puede ver y calificar» pueden cambiar cualquier nota o resultado de prueba de esa clase —también los tuyos— y asignarle tus pruebas; el resultado sigue siendo tuyo y registra quién lo cambió por última vez. Los coprofesores de «Puede ver» pueden ver notas y resultados, pero no cambiarlos. La página de calificación y cada resultado de prueba muestran quién los cambió por última vez. La lista de alumnos sigue siendo del propietario: los coprofesores ven los alumnos de una clase compartida en solo lectura y no pueden cambiar su nombre, clase, itinerario o curso escolar.",
         "an_stats_item_query": "Consulta avanzada — haz tus propias preguntas sobre todas las notas de rúbricas y pruebas calificadas: filtra por clase, evaluación, asignatura, fechas y nota, agrupa por alumno, clase, evaluación, asignatura, mes o tipo, y mide la media, la mediana, el mínimo/máximo, la tasa de aprobados, la dispersión o el cambio del primer al último resultado. Añade una condición como «media inferior a 55», empieza con preguntas de ejemplo, guarda tus consultas y exporta el resultado en CSV.",
         "an_stats_item_customize": "Personalizar — elige qué tarjetas muestra cada vista y si las tendencias de progreso incluyen pruebas calificadas; tu elección se guarda en tu configuración.",
+        "rb_live_monitor_item_confidence": "En las pruebas adaptativas y de nivel, una insignia opcional junto a la estimación CEFR de cada alumno indica si aún es provisional, está convergiendo o es estable.",
+        "an_rubric_quality_title": "Calidad de la rúbrica",
+        "an_rubric_quality_body": "En Estadísticas → Por rúbrica, cada criterio se analiza como una pregunta de examen: valor P, Rit/Rir, α de Cronbach, SEM y discriminación, por nivel y una vez por entrega en grupo.",
         "an_stats_tests_info": "Solo cuentan para el progreso las pruebas de evaluación calificadas. Se excluyen las pruebas de práctica, las de nivel, los alumnos ausentes y los intentos sin terminar."
     },
     "studentProfile": {

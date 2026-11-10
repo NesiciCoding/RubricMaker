@@ -71,6 +71,7 @@ import { ChartSkeleton } from '../components/ui/Skeleton';
 import { STATS_PRESETS, type PresetChartPoint } from '../utils/statsChartPresets';
 import { liveStudentRubrics, rubricGradesInScope } from '../utils/liveStudentRubrics';
 import { EmptyState } from '../components/ui/EmptyState';
+import RubricQualityCard from '../components/Statistics/RubricQualityCard';
 
 const STUDENT_COLORS = ['var(--purple)', 'var(--green)', 'var(--yellow)', 'var(--red)'];
 const NO_STUDENT_TESTS: StudentTest[] = [];
@@ -1576,6 +1577,17 @@ export default function StatisticsPage() {
                                         </div>
                                     )}
                                 </div>
+
+                                {/* Criterion quality — each criterion analysed as an item */}
+                                {rubric && (
+                                    <RubricQualityCard
+                                        rubric={rubric}
+                                        studentRubrics={studentRubrics}
+                                        students={students}
+                                        classes={classes}
+                                        classId={selectedClassId === 'all' ? undefined : selectedClassId}
+                                    />
+                                )}
 
                                 {/* Bloom's taxonomy pyramid */}
                                 {show('frameworks') && bloomsData && summaries.length > 0 && (

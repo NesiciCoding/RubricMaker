@@ -1011,6 +1011,7 @@ function RubricsTab() {
                         t('docs.rb_live_monitor_item_grid'),
                         t('docs.rb_live_monitor_item_sort'),
                         t('docs.rb_live_monitor_item_placement'),
+                        t('docs.rb_live_monitor_item_confidence'),
                         t('docs.rb_live_monitor_item_progress'),
                         t('docs.rb_live_monitor_item_signals'),
                         t('docs.rb_live_monitor_item_draft'),
@@ -1813,6 +1814,12 @@ function AnalyticsTab() {
             <FeatureSection icon={BarChart2} title={t('docs.an_test_quality_title')} color="#8b5cf6">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     {t('docs.an_test_quality_body')}
+                </p>
+            </FeatureSection>
+
+            <FeatureSection icon={BarChart2} title={t('docs.an_rubric_quality_title')} color="#8b5cf6">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    {t('docs.an_rubric_quality_body')}
                 </p>
             </FeatureSection>
 

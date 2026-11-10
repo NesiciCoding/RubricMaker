@@ -3,6 +3,8 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { CEFR_LEVELS } from '../../data/cefrDescriptors';
 import CompletionBar from './CompletionBar';
+import EstimateConfidenceBadge from './EstimateConfidenceBadge';
+import { placementConfidence } from '../../utils/placementConfidence';
 import type { CefrLevel, StaircaseStep } from '../../types';
 
 export interface LevelResponsesGridStudentRow {
@@ -28,6 +30,8 @@ export interface LevelResponsesGridProps {
     maxQuestions?: number;
     showProgress?: boolean;
     showClassProgress?: boolean;
+    /** Opt-in read of how settled each TOTALS estimate is. */
+    showConfidence?: boolean;
 }
 
 function levelStats(steps: StaircaseStep[], level: CefrLevel): { correct: number; attempted: number } {
@@ -52,6 +56,7 @@ export default function LevelResponsesGrid({
     maxQuestions,
     showProgress = false,
     showClassProgress = false,
+    showConfidence = false,
 }: LevelResponsesGridProps) {
     const { t } = useTranslation();
     const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
@@ -234,7 +239,22 @@ export default function LevelResponsesGrid({
                                             </td>
                                             <td style={{ padding: '4px 8px', textAlign: 'center' }}>
                                                 {row.estimatedLevel ? (
-                                                    <span className="badge badge-blue">{row.estimatedLevel}</span>
+                                                    <span
+                                                        style={{
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: 4,
+                                                        }}
+                                                    >
+                                                        <span className="badge badge-blue">{row.estimatedLevel}</span>
+                                                        {showConfidence &&
+                                                            (() => {
+                                                                const confidence = placementConfidence(row.levelPath);
+                                                                return confidence ? (
+                                                                    <EstimateConfidenceBadge confidence={confidence} />
+                                                                ) : null;
+                                                            })()}
+                                                    </span>
                                                 ) : (
                                                     <span className="text-muted">—</span>
                                                 )}

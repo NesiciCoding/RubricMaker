@@ -130,6 +130,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     const showPace = settings.monitorShowPace ?? false;
     const showStatusSummary = settings.monitorShowStatusSummary ?? false;
     const showMilestones = settings.monitorShowMilestones ?? false;
+    const showEstimateConfidence = settings.monitorShowEstimateConfidence ?? false;
     const showWritingPace = settings.monitorShowWritingPace ?? false;
 
     const { showToast } = useToast();
@@ -875,6 +876,20 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                     {t('tests.monitor.milestones_toggle')}
                                 </button>
                             )}
+                            {(isLevelGrid || test?.placementEngine === 'generator') && (
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary btn-sm"
+                                    aria-pressed={showEstimateConfidence}
+                                    onClick={() =>
+                                        updateSettings({
+                                            monitorShowEstimateConfidence: !showEstimateConfidence,
+                                        })
+                                    }
+                                >
+                                    {t('tests.monitor.confidence_toggle')}
+                                </button>
+                            )}
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                                 <button
                                     type="button"
@@ -1024,6 +1039,8 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                                     level={row.placementLevel}
                                                     eloAnchor={row.live.snapshot?.generatorEloAnchor}
                                                     questionsAsked={row.live.snapshot?.questionsAsked}
+                                                    levelPath={row.levelPath}
+                                                    showConfidence={showEstimateConfidence}
                                                     disabled={
                                                         overridingStudentIds.has(row.studentId) ||
                                                         row.status === 'submitted' ||
@@ -1123,6 +1140,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                             <LevelResponsesGrid
                                 showProgress={showProgress}
                                 showClassProgress={showClassProgress}
+                                showConfidence={showEstimateConfidence}
                                 maxQuestions={levelMaxQuestions}
                                 rows={visibleRows.map((row, index) => {
                                     const finished = row.status === 'submitted' || row.status === 'late';
