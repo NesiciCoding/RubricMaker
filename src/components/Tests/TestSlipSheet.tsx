@@ -49,6 +49,7 @@ function SlipItem({
                 )}
                 <div
                     title={url}
+                    className="slip-test-url"
                     style={{
                         marginTop: 6,
                         fontSize: '0.65rem',
@@ -57,10 +58,10 @@ function SlipItem({
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
                         fontFamily: 'monospace',
+                        wordBreak: 'break-all',
                     }}
                 >
-                    {url.slice(0, 60)}
-                    {url.length > 60 ? '…' : ''}
+                    {url}
                 </div>
             </div>
             <canvas ref={canvasRef} style={{ flexShrink: 0 }} />

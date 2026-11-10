@@ -36,6 +36,19 @@ export function humaniseTag(tag: string): string {
     return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
+/**
+ * Display label for a raw tag. When two raw tags collide on the same humanised
+ * label (e.g. `positive` and `Positive` both render as `Positive`), disambiguate
+ * by appending the raw value so each filter option stays distinguishable.
+ * Without a collision the humanised label is used unchanged (display-only).
+ */
+export function displayTag(tag: string, allTags: string[] = []): string {
+    const label = humaniseTag(tag);
+    if (allTags.length === 0) return label;
+    const collides = allTags.some((other) => other !== tag && humaniseTag(other) === label);
+    return collides ? `${label} (${tag})` : label;
+}
+
 export default function CommentBankManager({ onSelect, suggestedTags, fullPage }: CommentBankManagerProps) {
     const { t } = useTranslation();
     const { commentBank, addCommentBankItem, updateCommentBankItem, deleteCommentBankItem, restoreCommentBankItem } =
@@ -101,6 +114,21 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
     // no "All" button), so it stops filtering instead of hiding everything.
     const activeTags = useMemo(() => [...selectedTags].filter((tag) => tagCounts.has(tag)), [selectedTags, tagCounts]);
 
+    // Tags sharing a humanised label (e.g. `positive`/`Positive`) form one filter group:
+    // an item matches the group when it carries ANY of the group's raw tags (OR),
+    // while different labels still narrow together (AND). Selecting both colliding
+    // variants therefore shows items with either, instead of hiding everything.
+    const activeTagGroups = useMemo(() => {
+        const groups = new Map<string, string[]>();
+        for (const tag of activeTags) {
+            const label = humaniseTag(tag);
+            const list = groups.get(label);
+            if (list) list.push(tag);
+            else groups.set(label, [tag]);
+        }
+        return [...groups.values()];
+    }, [activeTags]);
+
     const filteredItems = useMemo(() => {
         const needle = searchTerm.toLowerCase();
         return combinedItems
@@ -112,8 +140,9 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
                     item.tags.some(
                         (tag) => tag.toLowerCase().includes(needle) || humaniseTag(tag).toLowerCase().includes(needle)
                     );
-                // Each selected tag narrows the list further (B1 + Grammar = B1 grammar comments).
-                const matchesTags = activeTags.every((tag) => item.tags.includes(tag));
+                // Each label group narrows the list further (B1 + Grammar = B1 grammar comments),
+                // while colliding raw tags in one group match with OR semantics.
+                const matchesTags = activeTagGroups.every((group) => group.some((tag) => item.tags.includes(tag)));
                 return matchesSearch && matchesTags;
             })
             .sort((a, b) =>
@@ -121,7 +150,7 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
                     ? (b.usageCount ?? 0) - (a.usageCount ?? 0)
                     : b.createdAt.localeCompare(a.createdAt)
             );
-    }, [combinedItems, searchTerm, activeTags, sortMode]);
+    }, [combinedItems, searchTerm, activeTagGroups, sortMode]);
 
     // Additive surfacing, not filtering — matches items don't get hidden from the regular
     // list below, they're just echoed at the top when this criterion has a real signal.
@@ -294,8 +323,9 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
                                 borderRadius: 4,
                                 color: 'var(--text-dim)',
                             }}
+                            title={tag}
                         >
-                            {humaniseTag(tag)}
+                            {displayTag(tag, allTags)}
                         </span>
                     ))}
                 </div>
@@ -435,8 +465,9 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
                     }}
+                    title={tag}
                 >
-                    {humaniseTag(tag)}
+                    {displayTag(tag, allTags)}
                 </span>
             </span>
             <span className="text-xs text-muted" aria-hidden="true">
@@ -561,9 +592,11 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
                                 className={`btn btn-xs ${selectedTags.has(tag) ? 'btn-primary' : 'btn-secondary'}`}
                                 onClick={() => toggleTagFilter(tag)}
                                 aria-pressed={selectedTags.has(tag)}
+                                aria-label={tag}
+                                title={tag}
                                 style={{ borderRadius: 12, fontSize: '0.75rem', padding: '2px 8px' }}
                             >
-                                {humaniseTag(tag)}
+                                {displayTag(tag, allTags)}
                             </button>
                         ))}
                     </div>

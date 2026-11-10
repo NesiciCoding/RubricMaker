@@ -139,6 +139,12 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     const [hideNames, setHideNames] = useState(false);
     const [sortMode, setSortMode] = useState<SortMode>('active');
     const [classFilter, setClassFilter] = useState<string>('all');
+    // A class selected for one test may not exist in the next: reset so the new
+    // test never opens with every student filtered out and no way to recover.
+    const monitoredKey = kind === 'test' ? (params.testId ?? '') : (params.assignmentId ?? '');
+    useEffect(() => {
+        setClassFilter('all');
+    }, [monitoredKey]);
     const [startedOnly, setStartedOnly] = useState(false);
     const [columnSortRules, setColumnSortRules] = useState<ColumnSortRule[]>([{ key: 'original', dir: 'asc' }]);
     const [sortModalOpen, setSortModalOpen] = useState(false);
@@ -454,8 +460,18 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
             event: 'nudge',
             payload: { message: t('tests.monitor.nudge_message') },
         });
-        const name = monitorStudents.find((r) => r.studentId === studentId)?.name ?? '';
-        showToast(t('tests.monitor.nudge_sent', { name }), 'success');
+        if (hideNames) {
+            // Sharing the anonymized monitor must never leak a real name in the toast.
+            const index = monitorStudents.findIndex((r) => r.studentId === studentId);
+            const label =
+                index >= 0
+                    ? t('tests.monitor.anonymous_student', { index: index + 1 })
+                    : t('tests.monitor.nudge_sent_anonymous');
+            showToast(t('tests.monitor.nudge_sent_anonymous', { name: label }), 'success');
+        } else {
+            const name = monitorStudents.find((r) => r.studentId === studentId)?.name ?? '';
+            showToast(t('tests.monitor.nudge_sent', { name }), 'success');
+        }
     }
 
     // ── Live level override (roadmap 27.2) — persists via the owner-scoped
@@ -749,7 +765,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                             <option value="ungraded">{t('tests.monitor.sort.ungraded')}</option>
                         </select>
                     </label>
-                    {kind === 'test' && filterClasses.length > 1 && (
+                    {kind === 'test' && (filterClasses.length > 1 || classFilter !== 'all') && (
                         <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem' }}>
                             {t('tests.monitor.class_filter_label')}
                             <select

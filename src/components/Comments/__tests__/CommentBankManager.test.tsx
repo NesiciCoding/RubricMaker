@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import CommentBankManager, { humaniseTag } from '../CommentBankManager';
+import CommentBankManager, { humaniseTag, displayTag } from '../CommentBankManager';
 import type { CommentBankItem } from '../../../types';
 
 const commentBank: CommentBankItem[] = [
@@ -161,5 +161,18 @@ describe('humaniseTag', () => {
     it('capitalises all-lowercase single words to match the Title Case chips (F38)', () => {
         expect(humaniseTag('reading')).toBe('Reading');
         expect(humaniseTag('positive')).toBe('Positive');
+    });
+});
+
+describe('displayTag', () => {
+    it('uses the humanised label when there is no collision', () => {
+        expect(displayTag('positive', ['positive', 'Grammar'])).toBe('Positive');
+        expect(displayTag('connected_speech', ['connected_speech'])).toBe('Connected speech');
+    });
+
+    it('disambiguates colliding raw tags so each filter stays distinguishable', () => {
+        const all = ['positive', 'Positive'];
+        expect(displayTag('positive', all)).toBe('Positive (positive)');
+        expect(displayTag('Positive', all)).toBe('Positive (Positive)');
     });
 });

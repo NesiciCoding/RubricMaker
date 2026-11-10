@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { X, Printer } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -20,11 +20,45 @@ interface Props {
 export default function SlipSheet({ title, columns, onColumnsChange, onClose, children, qrToggleLabel }: Props) {
     const { t } = useTranslation();
     const [showQR, setShowQR] = useState(true);
+    const overlayRef = useRef<HTMLDivElement>(null);
+    const openerRef = useRef<HTMLElement | null>(null);
 
-    // Escape-to-close, matching the shared Modal/DropdownMenu behaviour (Batch 8).
+    // Capture the opener so focus can be restored when the sheet closes.
+    useEffect(() => {
+        openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        return () => {
+            const opener = openerRef.current;
+            openerRef.current = null;
+            if (opener?.isConnected) opener.focus();
+        };
+    }, []);
+
+    // Escape-to-close + modal focus containment (Tab/Shift+Tab wrap), matching
+    // the shared Modal behaviour. Initial focus stays on the Close button via autoFocus.
     useEffect(() => {
         function handleKey(e: KeyboardEvent) {
-            if (e.key === 'Escape') onClose();
+            if (e.key === 'Escape') {
+                onClose();
+                return;
+            }
+            if (e.key !== 'Tab') return;
+            const root = overlayRef.current;
+            if (!root) return;
+            const focusables = Array.from(
+                root.querySelectorAll<HTMLElement>(
+                    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+                )
+            ).filter((el) => el.offsetParent !== null || el === document.activeElement);
+            if (focusables.length === 0) return;
+            const first = focusables[0];
+            const last = focusables[focusables.length - 1];
+            if (e.shiftKey && document.activeElement === first) {
+                e.preventDefault();
+                last.focus();
+            } else if (!e.shiftKey && document.activeElement === last) {
+                e.preventDefault();
+                first.focus();
+            }
         }
         document.addEventListener('keydown', handleKey);
         return () => document.removeEventListener('keydown', handleKey);
@@ -42,6 +76,21 @@ export default function SlipSheet({ title, columns, onColumnsChange, onClose, ch
                     .slip-item { break-inside: avoid; }
                 }
                 .slip-sheet-grid.hide-qr canvas { display: none; }
+                /* Keep the test URL usable when QR codes are hidden: the compact
+                   ellipsis would otherwise remove the path from print (no tooltip
+                   on paper). */
+                .slip-sheet-grid.hide-qr .slip-test-url {
+                    white-space: normal !important;
+                    overflow: visible !important;
+                    text-overflow: clip !important;
+                    overflow-wrap: anywhere !important;
+                }
+                @media print {
+                    .slip-sheet-grid.hide-qr .slip-test-url {
+                        white-space: normal !important;
+                        overflow: visible !important;
+                    }
+                }
                 .slip-item {
                     display: flex;
                     align-items: center;
@@ -54,6 +103,7 @@ export default function SlipSheet({ title, columns, onColumnsChange, onClose, ch
             `}</style>
 
             <div
+                ref={overlayRef}
                 className="slip-sheet-overlay"
                 role="dialog"
                 aria-modal="true"

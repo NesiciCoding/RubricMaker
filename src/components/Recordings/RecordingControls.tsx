@@ -30,10 +30,13 @@ export default function RecordingControls({ recordings, onChange, syncConfigured
     const { showToast } = useToast();
     const { status, start, stop, error: recorderError } = useMediaRecorder();
     const [micHelpDismissed, setMicHelpDismissed] = useState(false);
+    const [pendingVideo, setPendingVideo] = useState(false);
     useEffect(() => {
         setMicHelpDismissed(false);
     }, [recorderError]);
     // F33: surface mic failures inline — a toast alone strands the teacher.
+    // A video attempt requests camera + mic, so NotAllowed/NotFound may mean the
+    // camera is blocked or missing even when the mic works.
     const micKind =
         status === 'error' && recorderError && !micHelpDismissed
             ? recorderError.name === 'NotAllowedError' || recorderError.name === 'SecurityError'
@@ -42,7 +45,7 @@ export default function RecordingControls({ recordings, onChange, syncConfigured
                   ? ('notfound' as const)
                   : null
             : null;
-    const [pendingVideo, setPendingVideo] = useState(false);
+    const showCameraHint = pendingVideo;
     const [startedAt, setStartedAt] = useState<number | null>(null);
     const [pendingRecording, setPendingRecording] = useState<PendingRecording | null>(null);
 
@@ -160,6 +163,12 @@ export default function RecordingControls({ recordings, onChange, syncConfigured
                         <strong>{t(`recordings.mic_${micKind}_title`)}</strong>
                         <br />
                         {t(`recordings.mic_${micKind}_body`)}
+                        {showCameraHint && (
+                            <>
+                                <br />
+                                {t('recordings.mic_video_hint')}
+                            </>
+                        )}
                     </span>
                     <button
                         type="button"

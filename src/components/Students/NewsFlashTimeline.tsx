@@ -21,6 +21,24 @@ interface Props {
     onScrollToSection: (id: string) => void;
 }
 
+function NewsFlashExpandedBody({ content, lang }: { content: string; lang: string }) {
+    // One sanitized value for sight and speech so PassageReadAloud never speaks
+    // markup (e.g. <script>) that the visible article strips.
+    const sanitized = React.useMemo(() => DOMPurify.sanitize(content), [content]);
+    return (
+        <div
+            style={{
+                marginTop: 12,
+                paddingTop: 12,
+                borderTop: '1px solid var(--border)',
+            }}
+        >
+            <PassageReadAloud contentHtml={sanitized} lang={lang} />
+            <div className="tiptap-editor-content" dangerouslySetInnerHTML={{ __html: sanitized }} />
+        </div>
+    );
+}
+
 export default function NewsFlashTimeline({ studentId, flashes, readFlashIds, onOpen, onScrollToSection }: Props) {
     const { t, i18n } = useTranslation();
     const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -194,19 +212,7 @@ export default function NewsFlashTimeline({ studentId, flashes, readFlashIds, on
                         </div>
                         {/* v8 ignore next -- expanded is only ever set for flashes that have content */}
                         {expanded && flash.content && (
-                            <div
-                                style={{
-                                    marginTop: 12,
-                                    paddingTop: 12,
-                                    borderTop: '1px solid var(--border)',
-                                }}
-                            >
-                                <PassageReadAloud contentHtml={flash.content} lang={i18n.language} />
-                                <div
-                                    className="tiptap-editor-content"
-                                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(flash.content) }}
-                                />
-                            </div>
+                            <NewsFlashExpandedBody content={flash.content} lang={i18n.language} />
                         )}
                     </div>
                 );

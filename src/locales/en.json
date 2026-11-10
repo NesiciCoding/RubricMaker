@@ -1404,7 +1404,8 @@
             },
             "class_filter_label": "Class:",
             "all_classes": "All classes",
-            "started_only": "Started only"
+            "started_only": "Started only",
+            "nudge_sent_anonymous": "Nudge sent to {{name}}. They'll see it as a toast."
         },
         "queue": {
             "title": "Grading queue",
@@ -2491,7 +2492,8 @@
         "unsaved_round_switch_message": "Unsaved changes will be lost. Continue?",
         "title_self": "Self-review: {{name}}",
         "title_peer": "Peer review: {{reviewer}} reviewing {{reviewed}}",
-        "anonymity_note": "Peer reviews are not anonymous: your name is shown next to your feedback."
+        "anonymity_note": "Peer reviews are not anonymous: your name is shown next to your feedback.",
+        "not_found_title": "Peer review not found"
     },
     "coGrading": {
         "action_co_grade": "Co-grade",
@@ -3482,7 +3484,8 @@
         "download": "Download",
         "duration_seconds": "{{count}}s",
         "student_disclosure": "Audio/video recorded here may be saved with this session and visible to your teacher.",
-        "unavailable": "Recording unavailable on this device."
+        "unavailable": "Recording unavailable on this device.",
+        "mic_video_hint": "Video was requested, so this can also mean the camera is blocked or missing."
     },
     "cefrOverview": {
         "page_title": "CEFR Overview",

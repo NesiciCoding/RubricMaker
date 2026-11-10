@@ -81,15 +81,19 @@ export default function PeerReviewView() {
         }
     }, [rubricId, studentId, rubric, student, peerReviews, activeRound, reviewerId, isDirty]);
 
-    // F37: app-chrome dead end (was a bare h3 with no Topbar). The message lives
-    // in the Topbar title only, so it stays unique for AT/test queries.
+    // F37: app-chrome dead end (was a bare h3 with no Topbar). The Topbar keeps a
+    // concise title so it never truncates at high zoom; the full message lives in
+    // the EmptyState description where it can wrap.
     if (!rubric || !student || !entry) {
+        const missingMessage = t('gradeStudent.error_not_found');
         return (
             <>
-                <Topbar title={t('gradeStudent.error_not_found')} />
+                <Topbar title={t('peerReview.not_found_title')} />
                 <div className="page-content">
                     <EmptyState
                         icon={AlertCircle}
+                        title={t('peerReview.not_found_title')}
+                        description={missingMessage}
                         action={{
                             label: t('gradeStudent.action_back'),
                             onClick: () => navigate(-1),
