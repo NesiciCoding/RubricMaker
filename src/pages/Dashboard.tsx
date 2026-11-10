@@ -661,7 +661,11 @@ export default function Dashboard() {
                                     {recentPct.toFixed(0)}%
                                 </span>
                                 {feedbackAge.has(student.id) && feedbackAge.get(student.id)! >= 7 && (
-                                    <span title={`Last feedback ${feedbackAge.get(student.id)} days ago`}>
+                                    <span
+                                        title={`Last feedback ${feedbackAge.get(student.id)} days ago`}
+                                        role="img"
+                                        aria-label={`Last feedback ${feedbackAge.get(student.id)} days ago`}
+                                    >
                                         <Clock
                                             size={11}
                                             style={{
@@ -911,13 +915,21 @@ export default function Dashboard() {
                                                 if (days === undefined) return null;
                                                 if (days >= 10)
                                                     return (
-                                                        <span title={`${days}d ago — feedback may be stale`}>
+                                                        <span
+                                                            title={`${days}d ago — feedback may be stale`}
+                                                            role="img"
+                                                            aria-label={`${days}d ago — feedback may be stale`}
+                                                        >
                                                             <Clock size={11} style={{ color: 'var(--red-text)' }} />
                                                         </span>
                                                     );
                                                 if (days >= 7)
                                                     return (
-                                                        <span title={`${days}d ago`}>
+                                                        <span
+                                                            title={`${days}d ago`}
+                                                            role="img"
+                                                            aria-label={`${days}d ago`}
+                                                        >
                                                             <Clock
                                                                 size={11}
                                                                 style={{ color: 'var(--yellow, #f59e0b)' }}
