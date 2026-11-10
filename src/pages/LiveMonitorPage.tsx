@@ -3,7 +3,7 @@ import PageTour from '../components/Tour/PageTour';
 import { usePageTourState } from '../hooks/usePageTourState';
 import { useParams } from 'react-router-dom';
 import type { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
-import { getMonitorClient, releaseStaleChannels } from '../utils/monitorClient';
+import { getMonitorClient, MONITOR_CHANNELS_PER_CLIENT, releaseStaleChannels } from '../utils/monitorClient';
 import {
     Eye,
     EyeOff,
@@ -368,25 +368,18 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         }, 300);
     }
 
-    const clientRef = useRef<SupabaseClient | null>(null);
     const channelsRef = useRef<Map<string, RealtimeChannel>>(new Map());
     useEffect(() => {
         if (!hasDb || monitorStudents.length === 0) return;
         // Shared singleton: re-creating a GoTrueClient per roster change logs
         // "Multiple GoTrueClient instances detected ... rm_monitor_ephemeral"
-        // and churns sockets. Reuse one client; only channels come and go.
-        const client = getMonitorClient(config!.supabaseUrl, config!.supabaseAnonKey);
-        clientRef.current = client;
+        // and churns sockets. Reuse cached clients; only channels come and go. A socket can only
+        // join so many channels, so large rosters are spread over several clients.
         const topicFor = (studentId: string) => `monitor:${kind}:${assignmentKeyFor(studentId)}`;
         const channelMap = new Map<string, RealtimeChannel>();
-        const channels: RealtimeChannel[] = [];
+        const opened: { client: SupabaseClient; channel: RealtimeChannel }[] = [];
         let cancelled = false;
-        const open = () => {
-            if (cancelled) return;
-            for (const row of monitorStudents) channels.push(openStudentChannel(row));
-            channelsRef.current = channelMap;
-        };
-        const openStudentChannel = (row: MonitorStudent): RealtimeChannel => {
+        const openStudentChannel = (client: SupabaseClient, row: MonitorStudent): RealtimeChannel => {
             const channel = client.channel(topicFor(row.studentId));
             channelMap.set(row.studentId, channel);
             channel
@@ -432,18 +425,30 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                 .subscribe();
             return channel;
         };
-        const pendingRelease = releaseStaleChannels(
-            client,
-            monitorStudents.map((row) => topicFor(row.studentId))
-        );
-        if (pendingRelease) void pendingRelease.then(open);
-        else open();
+        for (let start = 0; start < monitorStudents.length; start += MONITOR_CHANNELS_PER_CLIENT) {
+            const rows = monitorStudents.slice(start, start + MONITOR_CHANNELS_PER_CLIENT);
+            const client = getMonitorClient(
+                config!.supabaseUrl,
+                config!.supabaseAnonKey,
+                start / MONITOR_CHANNELS_PER_CLIENT
+            );
+            const open = () => {
+                if (cancelled) return;
+                for (const row of rows) opened.push({ client, channel: openStudentChannel(client, row) });
+            };
+            const pendingRelease = releaseStaleChannels(
+                client,
+                rows.map((row) => topicFor(row.studentId))
+            );
+            if (pendingRelease) void pendingRelease.then(open);
+            else open();
+        }
+        channelsRef.current = channelMap;
 
         return () => {
             cancelled = true;
-            channels.forEach((c) => void client.removeChannel(c));
+            opened.forEach(({ client, channel }) => void client.removeChannel(channel));
             channelsRef.current = new Map();
-            clientRef.current = null;
             // Flush rather than discard: this cleanup also runs when the student list or
             // teacher keys change (still the same assessment) — a queued broadcast (a
             // one-off proctoring event, a 'submitted') must land before channels rebuild,

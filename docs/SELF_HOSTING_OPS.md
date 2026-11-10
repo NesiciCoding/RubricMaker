@@ -296,8 +296,8 @@ visudo -c   # validates every file under /etc/sudoers.d — fix before moving on
 
 The trailing `""` on the sudoers line matters: a command entry with no argument list at all still lets
 the caller pass arbitrary arguments, so without it "no arguments" wouldn't actually be enforced.
-`rm-backend-deploy.sh` always reads *data* from the fixed path `/home/rm-backend-deploy/incoming`
-(overridable via `INCOMING` for manual testing) and the *tools* from `/usr/local/lib/rm-backend-deploy`
+`rm-backend-deploy.sh` always reads _data_ from the fixed path `/home/rm-backend-deploy/incoming`
+(overridable via `INCOMING` for manual testing) and the _tools_ from `/usr/local/lib/rm-backend-deploy`
 (overridable via `TOOLS_DIR`) — CI populates only the former, over a plain SSH file copy that needs no
 privilege of its own (`rm-backend-deploy` writing into its own home directory).
 
@@ -552,15 +552,31 @@ Docker daemon logs are rotated via `/etc/docker/daemon.json`:
 
 ## Troubleshooting
 
-| Symptom                       | First steps                                                                                              |
-| ----------------------------- | -------------------------------------------------------------------------------------------------------- |
-| SMTP / OTP email not arriving | Check `docker compose logs auth` for SMTP errors; verify `SMTP_HOST/PORT/USER/PASS` in `.env`; see Email |
-| Cannot log in after restore   | Run `docker compose up -d db_migrate` to ensure migrations are applied; check `auth` logs                |
-| Storage uploads fail          | Check `docker compose logs storage`; verify S3/local storage bucket config in `.env`                     |
-| pg_cron jobs not running      | See "Enabling pg_cron" above; confirm with `SELECT * FROM cron.job`                                      |
-| High memory usage             | Check `docker stats`; add connection pooling if `db` has many idle connections                           |
-| RLS errors in app             | Run `npm run db:reset` locally to reproduce; check for missing policies in latest migrations             |
-| No admin can sign in          | See "Admin recovery" below                                                                               |
+| Symptom                                                                           | First steps                                                                                                                                 |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| SMTP / OTP email not arriving                                                     | Check `docker compose logs auth` for SMTP errors; verify `SMTP_HOST/PORT/USER/PASS` in `.env`; see Email                                    |
+| Cannot log in after restore                                                       | Run `docker compose up -d db_migrate` to ensure migrations are applied; check `auth` logs                                                   |
+| Storage uploads fail                                                              | Check `docker compose logs storage`; verify S3/local storage bucket config in `.env`                                                        |
+| pg_cron jobs not running                                                          | See "Enabling pg_cron" above; confirm with `SELECT * FROM cron.job`                                                                         |
+| High memory usage                                                                 | Check `docker stats`; add connection pooling if `db` has many idle connections                                                              |
+| RLS errors in app                                                                 | Run `npm run db:reset` locally to reproduce; check for missing policies in latest migrations                                                |
+| No admin can sign in                                                              | See "Admin recovery" below                                                                                                                  |
+| Live Monitor: `ChannelRateLimitReached: Too many channels` in the `realtime` logs | See "Realtime limits" below                                                                                                                 |
+| Student test/essay links fail to load                                             | Check **Allow anonymous sign-ins**: `GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED=true` on `auth` (Studio: Authentication → Sign In / Providers) |
+
+### Realtime limits
+
+The Live Monitor listens on one Realtime channel per student, and every student page joins one. Realtime enforces per-tenant limits stored in `_realtime.tenants` (the self-hosted tenant is `realtime-dev`): `max_channels_per_client` (channels on one socket, default 100), `max_concurrent_users` (default 200), `max_events_per_second` (default 100) and `max_joins_per_second` (default 100). The app spreads the monitor's channels over several sockets of at most 50 each, so `max_channels_per_client` is only hit by older app builds. For classes of many students, or several monitored tests at once, raise the tenant limits:
+
+```sql
+-- run as postgres against the stack's database
+update _realtime.tenants
+set max_concurrent_users = 1000, max_events_per_second = 1000, max_joins_per_second = 500,
+    max_channels_per_client = 200
+where external_id = 'realtime-dev';
+```
+
+Then restart Realtime so it reloads the tenant: `docker compose restart realtime`.
 
 ---
 
