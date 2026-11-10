@@ -206,7 +206,7 @@ export default function ExamBookletExportPanel({ test, students, fontFamily, sty
                                             borderRadius: 999,
                                             border: `1px ${selectedCount > 0 && !all ? 'dashed' : 'solid'} ${selectedCount > 0 ? 'var(--accent)' : 'var(--border)'}`,
                                             background: all ? 'var(--accent)' : 'transparent',
-                                            color: all ? '#fff' : 'var(--text)',
+                                            color: all ? 'var(--accent-fg)' : 'var(--text)',
                                         }}
                                     >
                                         {cls.name} ({selectedCount}/{ids.length})
@@ -259,7 +259,7 @@ export default function ExamBookletExportPanel({ test, students, fontFamily, sty
                         alignItems: 'center',
                         gap: 6,
                         marginBottom: 8,
-                        color: '#b45309',
+                        color: 'var(--yellow-text)',
                         fontSize: '0.85rem',
                     }}
                 >

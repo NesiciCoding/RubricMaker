@@ -319,7 +319,7 @@ describe('essayExport', () => {
             await exportEssaysBatch(entries, 'markdown', 'separate');
             expect(mockSaveAs).toHaveBeenCalledTimes(1);
             const [blob, name] = mockSaveAs.mock.calls[0] as [Blob, string];
-            expect(name).toBe('essays.zip');
+            expect(name).toBe('My_Essay.zip');
             await expect(zipMembers(blob)).resolves.toEqual(['Alice_Smith_My_Essay.md', 'Bob_Jones_Second.md']);
         });
 
@@ -344,7 +344,7 @@ describe('essayExport', () => {
         it('combines markdown essays into a single file separated by rules', async () => {
             await exportEssaysBatch(entries, 'markdown', 'combined');
             expect(mockSaveAs).toHaveBeenCalledTimes(1);
-            expect(mockSaveAs.mock.calls[0][1]).toBe('essays_batch.md');
+            expect(mockSaveAs.mock.calls[0][1]).toBe('My_Essay_batch.md');
             const text = await mockSaveAs.mock.calls[0][0].text();
             expect(text).toContain('---');
             expect(text).toContain('# My Essay');
@@ -354,7 +354,7 @@ describe('essayExport', () => {
         it('combines docx essays with page breaks between them', async () => {
             await exportEssaysBatch(entries, 'docx', 'combined');
             expect(mockToBlob).toHaveBeenCalledTimes(1);
-            expect(mockSaveAs).toHaveBeenCalledWith(expect.any(Blob), 'essays_batch.docx');
+            expect(mockSaveAs).toHaveBeenCalledWith(expect.any(Blob), 'My_Essay_batch.docx');
         });
 
         it('combines pdf essays into a single printHtml call', async () => {

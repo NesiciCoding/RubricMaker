@@ -48,7 +48,7 @@ describe('StudentPasswordSlipSheet', () => {
         expect(mockToCanvas).toHaveBeenCalledWith(
             expect.any(HTMLCanvasElement),
             window.location.origin,
-            expect.objectContaining({ width: 80 })
+            expect.objectContaining({ width: 96 })
         );
     });
 

@@ -270,6 +270,7 @@
         "class_slips_one": "Klasstroken — {{count}} leerling",
         "class_slips_other": "Klasstroken — {{count}} leerlingen",
         "columns": "kolommen",
+        "show_qr": "QR-codes",
         "words": "Woorden",
         "minutes": "{{count}} min"
     },

@@ -23,6 +23,7 @@ import {
     ExternalLink,
     CalendarDays,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import ClassFilterChips from '../components/ui/ClassFilterChips';
@@ -49,6 +50,68 @@ import { useRubricPool, useTestPool } from '../hooks/useMaterialPool';
 /** `Class A_period_reports.zip` for a named class, otherwise undefined so the export module names the zip. */
 function classZipName(className: string | undefined, kind: string): string | undefined {
     return className ? `${sanitizeFilename(className)}_${kind}.zip` : undefined;
+}
+
+/**
+ * One accordion header for the export sections: icon + title + item count + chevron.
+ * The count is a sighted-user shortcut (the same numbers appear inside the section), so it is
+ * aria-hidden rather than a bare number with no accessible name.
+ */
+function ExportSectionHeader({
+    icon: Icon,
+    title,
+    count,
+    collapsed,
+    section,
+    onToggle,
+    expandedMargin = 16,
+    collapsedMargin = 0,
+}: {
+    icon: LucideIcon;
+    title: string;
+    count: number;
+    collapsed: boolean;
+    section: string;
+    onToggle: () => void;
+    expandedMargin?: number;
+    collapsedMargin?: number;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onToggle}
+            aria-expanded={!collapsed}
+            aria-controls={`export-section-${section}`}
+            className="export-section-toggle"
+            style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                marginBottom: collapsed ? collapsedMargin : expandedMargin,
+                width: '100%',
+                textAlign: 'left',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: 0,
+            }}
+        >
+            <Icon size={16} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
+            <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, flex: 1 }}>{title}</h2>
+            <span className="export-section-count" aria-hidden="true">
+                {count}
+            </span>
+            <ChevronDown
+                aria-hidden="true"
+                size={16}
+                style={{
+                    color: 'var(--text-muted)',
+                    transform: collapsed ? 'none' : 'rotate(180deg)',
+                    transition: 'transform 0.2s',
+                }}
+            />
+        </button>
+    );
 }
 
 export default function ExportPage() {
@@ -691,7 +754,7 @@ export default function ExportPage() {
             <div className="page-content fade-in">
                 <button
                     type="button"
-                    className="card"
+                    className="card export-section-toggle"
                     onClick={() => toggleSection('rubric')}
                     aria-expanded={!collapsedSections.has('rubric')}
                     aria-controls="export-section-rubric"
@@ -709,6 +772,9 @@ export default function ExportPage() {
                     <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, flex: 1 }}>
                         {t('exportPage.rubric_section_title')}
                     </h2>
+                    <span className="export-section-count" aria-hidden="true">
+                        {rubrics.length}
+                    </span>
                     <ChevronDown
                         aria-hidden="true"
                         size={16}
@@ -931,38 +997,14 @@ export default function ExportPage() {
                 </div>
 
                 <div className="card" style={{ marginTop: 20 }} data-tour="export-rubric-students">
-                    <button
-                        type="button"
-                        onClick={() => toggleSection('rubricStudents')}
-                        aria-expanded={!collapsedSections.has('rubricStudents')}
-                        aria-controls="export-section-rubricStudents"
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 8,
-                            marginBottom: collapsedSections.has('rubricStudents') ? 0 : 16,
-                            width: '100%',
-                            textAlign: 'left',
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            padding: 0,
-                        }}
-                    >
-                        <Users size={16} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
-                        <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, flex: 1 }}>
-                            {t('exportPage.rubric_students_section_title')}
-                        </h2>
-                        <ChevronDown
-                            aria-hidden="true"
-                            size={16}
-                            style={{
-                                color: 'var(--text-muted)',
-                                transform: collapsedSections.has('rubricStudents') ? 'none' : 'rotate(180deg)',
-                                transition: 'transform 0.2s',
-                            }}
-                        />
-                    </button>
+                    <ExportSectionHeader
+                        icon={Users}
+                        title={t('exportPage.rubric_students_section_title')}
+                        count={selectedStudentIds.size}
+                        collapsed={collapsedSections.has('rubricStudents')}
+                        section="rubricStudents"
+                        onToggle={() => toggleSection('rubricStudents')}
+                    />
                     <div
                         id="export-section-rubricStudents"
                         style={{ display: collapsedSections.has('rubricStudents') ? 'none' : undefined }}
@@ -1295,38 +1337,14 @@ export default function ExportPage() {
                 </div>
 
                 <div className="card" style={{ marginTop: 24 }} data-tour="export-exam-booklet">
-                    <button
-                        type="button"
-                        onClick={() => toggleSection('examBooklet')}
-                        aria-expanded={!collapsedSections.has('examBooklet')}
-                        aria-controls="export-section-examBooklet"
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 8,
-                            marginBottom: collapsedSections.has('examBooklet') ? 0 : 16,
-                            width: '100%',
-                            textAlign: 'left',
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            padding: 0,
-                        }}
-                    >
-                        <ClipboardList size={16} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
-                        <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, flex: 1 }}>
-                            {t('tests.export.exam.section_title')}
-                        </h2>
-                        <ChevronDown
-                            aria-hidden="true"
-                            size={16}
-                            style={{
-                                color: 'var(--text-muted)',
-                                transform: collapsedSections.has('examBooklet') ? 'none' : 'rotate(180deg)',
-                                transition: 'transform 0.2s',
-                            }}
-                        />
-                    </button>
+                    <ExportSectionHeader
+                        icon={ClipboardList}
+                        title={t('tests.export.exam.section_title')}
+                        count={tests.length}
+                        collapsed={collapsedSections.has('examBooklet')}
+                        section="examBooklet"
+                        onToggle={() => toggleSection('examBooklet')}
+                    />
                     <div
                         id="export-section-examBooklet"
                         style={{ display: collapsedSections.has('examBooklet') ? 'none' : undefined }}
@@ -1363,38 +1381,14 @@ export default function ExportPage() {
                 </div>
 
                 <div className="card" style={{ marginTop: 24 }} data-tour="export-essays">
-                    <button
-                        type="button"
-                        onClick={() => toggleSection('essays')}
-                        aria-expanded={!collapsedSections.has('essays')}
-                        aria-controls="export-section-essays"
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 8,
-                            marginBottom: collapsedSections.has('essays') ? 0 : 16,
-                            width: '100%',
-                            textAlign: 'left',
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            padding: 0,
-                        }}
-                    >
-                        <FileText size={16} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
-                        <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, flex: 1 }}>
-                            {t('exportPage.essays_title')}
-                        </h2>
-                        <ChevronDown
-                            aria-hidden="true"
-                            size={16}
-                            style={{
-                                color: 'var(--text-muted)',
-                                transform: collapsedSections.has('essays') ? 'none' : 'rotate(180deg)',
-                                transition: 'transform 0.2s',
-                            }}
-                        />
-                    </button>
+                    <ExportSectionHeader
+                        icon={FileText}
+                        title={t('exportPage.essays_title')}
+                        count={essayAssignments.length}
+                        collapsed={collapsedSections.has('essays')}
+                        section="essays"
+                        onToggle={() => toggleSection('essays')}
+                    />
 
                     {!collapsedSections.has('essays') && (
                         <button
@@ -1536,38 +1530,14 @@ export default function ExportPage() {
                 </div>
 
                 <div className="card" style={{ marginTop: 24 }}>
-                    <button
-                        type="button"
-                        onClick={() => toggleSection('period')}
-                        aria-expanded={!collapsedSections.has('period')}
-                        aria-controls="export-section-period"
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 8,
-                            marginBottom: collapsedSections.has('period') ? 0 : 16,
-                            width: '100%',
-                            textAlign: 'left',
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            padding: 0,
-                        }}
-                    >
-                        <ClipboardList size={16} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
-                        <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, flex: 1 }}>
-                            {t('exportPage.period_report_title')}
-                        </h2>
-                        <ChevronDown
-                            aria-hidden="true"
-                            size={16}
-                            style={{
-                                color: 'var(--text-muted)',
-                                transform: collapsedSections.has('period') ? 'none' : 'rotate(180deg)',
-                                transition: 'transform 0.2s',
-                            }}
-                        />
-                    </button>
+                    <ExportSectionHeader
+                        icon={ClipboardList}
+                        title={t('exportPage.period_report_title')}
+                        count={reportStudentIds.size}
+                        collapsed={collapsedSections.has('period')}
+                        section="period"
+                        onToggle={() => toggleSection('period')}
+                    />
                     <div
                         id="export-section-period"
                         style={{ display: collapsedSections.has('period') ? 'none' : undefined }}
@@ -1694,38 +1664,14 @@ export default function ExportPage() {
                 </div>
 
                 <div className="card" style={{ marginTop: 24 }}>
-                    <button
-                        type="button"
-                        onClick={() => toggleSection('reportCard')}
-                        aria-expanded={!collapsedSections.has('reportCard')}
-                        aria-controls="export-section-reportCard"
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 8,
-                            marginBottom: collapsedSections.has('reportCard') ? 0 : 16,
-                            width: '100%',
-                            textAlign: 'left',
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            padding: 0,
-                        }}
-                    >
-                        <ClipboardList size={16} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
-                        <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, flex: 1 }}>
-                            {t('reportCard.title')}
-                        </h2>
-                        <ChevronDown
-                            aria-hidden="true"
-                            size={16}
-                            style={{
-                                color: 'var(--text-muted)',
-                                transform: collapsedSections.has('reportCard') ? 'none' : 'rotate(180deg)',
-                                transition: 'transform 0.2s',
-                            }}
-                        />
-                    </button>
+                    <ExportSectionHeader
+                        icon={ClipboardList}
+                        title={t('reportCard.title')}
+                        count={reportStudentIds.size}
+                        collapsed={collapsedSections.has('reportCard')}
+                        section="reportCard"
+                        onToggle={() => toggleSection('reportCard')}
+                    />
                     <div
                         id="export-section-reportCard"
                         style={{ display: collapsedSections.has('reportCard') ? 'none' : undefined }}

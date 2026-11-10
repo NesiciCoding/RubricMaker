@@ -270,6 +270,7 @@
         "class_slips_one": "Klassenzettel — {{count}} Schüler",
         "class_slips_other": "Klassenzettel — {{count}} Schüler",
         "columns": "Spalten",
+        "show_qr": "QR-Codes",
         "words": "Wörter",
         "minutes": "{{count}} Min."
     },

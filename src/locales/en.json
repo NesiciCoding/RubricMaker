@@ -270,6 +270,7 @@
         "class_slips_one": "Class slips — {{count}} student",
         "class_slips_other": "Class slips — {{count}} students",
         "columns": "columns",
+        "show_qr": "QR codes",
         "words": "Words",
         "minutes": "{{count}} min"
     },

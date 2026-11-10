@@ -270,6 +270,7 @@
         "class_slips_one": "Fiches de classe — {{count}} élève",
         "class_slips_other": "Fiches de classe — {{count}} élèves",
         "columns": "colonnes",
+        "show_qr": "Codes QR",
         "words": "Mots",
         "minutes": "{{count}} min"
     },

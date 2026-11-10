@@ -43,7 +43,7 @@ describe('TestSlipSheet', () => {
         expect(mockToCanvas).toHaveBeenCalledWith(
             expect.any(HTMLCanvasElement),
             'https://app/#/test/s1',
-            expect.objectContaining({ width: 80 })
+            expect.objectContaining({ width: 96 })
         );
     });
 
@@ -57,5 +57,15 @@ describe('TestSlipSheet', () => {
 
         fireEvent.click(screen.getByRole('button', { name: 'common.close' }));
         expect(onClose).toHaveBeenCalled();
+    });
+
+    it('toggles QR canvases off via the shared SlipSheet control', () => {
+        render(<TestSlipSheet students={students} testName="T" buildUrl={(id) => id} onClose={vi.fn()} />);
+        const grid = document.querySelector('.slip-sheet-grid') as HTMLElement;
+        const toggle = screen.getByRole('checkbox', { name: 'slip_sheet.show_qr' });
+        expect(toggle).toBeChecked();
+        expect(grid.classList.contains('hide-qr')).toBe(false);
+        fireEvent.click(toggle);
+        expect(grid.classList.contains('hide-qr')).toBe(true);
     });
 });
