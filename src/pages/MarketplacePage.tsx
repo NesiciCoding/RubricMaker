@@ -4,6 +4,7 @@ import { usePageTourState } from '../hooks/usePageTourState';
 import { useTranslation } from 'react-i18next';
 import { Store, ThumbsUp, Copy, Upload, Check } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
+import { EmptyState } from '../components/ui/EmptyState';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import { Skeleton, SkeletonText } from '../components/ui/Skeleton';
 import { useStoreActions, useStoreSelector } from '../context/useStore';
@@ -395,9 +396,7 @@ export default function MarketplacePage() {
                 {loading ? (
                     <ListingGridSkeleton label={t('marketplace.loading')} />
                 ) : listings.length === 0 ? (
-                    <div className="card" style={{ textAlign: 'center', padding: 32 }}>
-                        <p style={{ color: 'var(--text-muted)' }}>{t('marketplace.empty_state')}</p>
-                    </div>
+                    <EmptyState icon={Store} title={t('marketplace.empty_state')} />
                 ) : (
                     <div style={LISTING_GRID}>
                         {visibleListings.map((listing) => (
