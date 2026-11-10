@@ -335,56 +335,56 @@ The deep operational detail is in the [self-hosting docs](docs/SELF_HOSTING_OPS.
 
 ### Routes
 
-| Path                                        | Page                                                                                                                                                                  |
-| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/`                                         | Dashboard                                                                                                                                                             |
-| `/rubrics`                                  | Rubric list                                                                                                                                                           |
-| `/rubrics/new`                              | New rubric                                                                                                                                                            |
-| `/rubrics/:id`                              | Rubric builder                                                                                                                                                        |
-| `/rubrics/:rubricId/grade/:studentId`       | Grade a student                                                                                                                                                       |
-| `/rubrics/:rubricId/peer-review/:studentId` | Peer review view                                                                                                                                                      |
-| `/peer-analytics/:rubricId`                 | Peer review analytics (consistency, feedback heatmap, reviewer trends)                                                                                                |
-| `/rubrics/:rubricId/self-assess/:studentId` | Student self-assessment                                                                                                                                               |
-| `/essays`                                   | Essay list                                                                                                                                                            |
-| `/essays/new`                               | New essay                                                                                                                                                             |
-| `/essays/:teacherKey`                       | Essay builder (prompt, rubric link, assign students, import submissions)                                                                                              |
-| `/essays/:assignmentId/monitor`             | Live essay monitor (presence, live word counts, optional writing pace, draft preview)                                                                                 |
-| `/speaking/:rubricId/:studentId`            | Speaking session                                                                                                                                                      |
-| `/grade-comparative/:classId/:rubricId`     | Comparative grading                                                                                                                                                   |
-| `/marketplace`                              | School marketplace for rubrics, tests, flashcard decks, and question bank items (browse, publish, clone, upvote)                                                      |
-| `/tests`                                    | Test list                                                                                                                                                             |
-| `/tests/new`                                | New test                                                                                                                                                              |
-| `/tests/:id`                                | Test builder                                                                                                                                                          |
-| `/tests/:testId/results/:studentTestId`     | Test results, manual grading, and class-average adjustment                                                                                                            |
-| `/tests/:testId/monitor`                    | Live test monitor (presence, response grid, optional progress bars, pace/stall/status signals and milestones, proctoring flags)                                       |
-| `/tests/:id/scores`                         | Score sheet: type in points per question per student, per-test grading norm, and test quality analysis (P-value, Rit/Rir, Cronbach's α)                               |
-| `/students`                                 | Students list                                                                                                                                                         |
-| `/students/:id`                             | Student profile                                                                                                                                                       |
-| `/students/:id/cefr-overview`               | Per-student CEFR overview                                                                                                                                             |
-| `/students/:id/learning-path`               | Per-student learning path — rule-based rubric recommendations and intervention flags                                                                                  |
-| `/cefr-overview`                            | Whole-class CEFR overview                                                                                                                                             |
-| `/vocabulary`                               | Vocabulary Insights hub (CEFR vocabulary distribution per class/student, cross-deck flashcard progress, pasted/uploaded text screening, CSV export)                   |
-| `/flashcards`                               | Flashcard deck list                                                                                                                                                   |
-| `/flashcards/:id`                           | Flashcard deck editor — cards, CSV/XLSX/DOCX import, class assignment, per-student insights                                                                           |
-| `/news-flashes`                             | News flashes — curate articles/books/videos to share with students                                                                                                    |
-| `/portal/:studentId`                        | Student portal (public) — grades, to-do list, self-assessment, pending co-grading moderation notices, learning-path/grammar recommendations                           |
-| `/portal/:studentId/flashcards/:deckId`     | Student flashcard study session (spaced repetition)                                                                                                                   |
-| `/feedback/:code`                           | Student feedback view (public, no login — decodes a shared grade-summary link)                                                                                        |
-| `/preview/:code`                            | Rubric preview (public, no login — decodes a shared rubric link, no student data)                                                                                     |
-| `/essay/:code`                              | Essay writing session (public, no login — decodes a shared essay-assignment link)                                                                                     |
-| `/test/:code`                               | Take a test (public, no login — answer questions, optional timer, submit)                                                                                             |
-| `/attachments`                              | Attachment manager                                                                                                                                                    |
-| `/comments`                                 | Comment bank                                                                                                                                                          |
-| `/question-bank`                            | Question bank — reusable test questions, insertable into any test                                                                                                     |
-| `/statistics`                               | Statistics dashboard (by-rubric, by-student, multi-class compare with insights, advanced query builder)                                                               |
+| Path                                        | Page                                                                                                                                                |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`                                         | Dashboard                                                                                                                                           |
+| `/rubrics`                                  | Rubric list                                                                                                                                         |
+| `/rubrics/new`                              | New rubric                                                                                                                                          |
+| `/rubrics/:id`                              | Rubric builder                                                                                                                                      |
+| `/rubrics/:rubricId/grade/:studentId`       | Grade a student                                                                                                                                     |
+| `/rubrics/:rubricId/peer-review/:studentId` | Peer review view                                                                                                                                    |
+| `/peer-analytics/:rubricId`                 | Peer review analytics (consistency, feedback heatmap, reviewer trends)                                                                              |
+| `/rubrics/:rubricId/self-assess/:studentId` | Student self-assessment                                                                                                                             |
+| `/essays`                                   | Essay list                                                                                                                                          |
+| `/essays/new`                               | New essay                                                                                                                                           |
+| `/essays/:teacherKey`                       | Essay builder (prompt, rubric link, assign students, import submissions)                                                                            |
+| `/essays/:assignmentId/monitor`             | Live essay monitor (presence, live word counts, optional writing pace, draft preview)                                                               |
+| `/speaking/:rubricId/:studentId`            | Speaking session                                                                                                                                    |
+| `/grade-comparative/:classId/:rubricId`     | Comparative grading                                                                                                                                 |
+| `/marketplace`                              | School marketplace for rubrics, tests, flashcard decks, and question bank items (browse, publish, clone, upvote)                                    |
+| `/tests`                                    | Test list                                                                                                                                           |
+| `/tests/new`                                | New test                                                                                                                                            |
+| `/tests/:id`                                | Test builder                                                                                                                                        |
+| `/tests/:testId/results/:studentTestId`     | Test results, manual grading, and class-average adjustment                                                                                          |
+| `/tests/:testId/monitor`                    | Live test monitor (presence, response grid, optional progress bars, pace/stall/status signals and milestones, proctoring flags)                     |
+| `/tests/:id/scores`                         | Score sheet: type in points per question per student, per-test grading norm, and test quality analysis (P-value, Rit/Rir, Cronbach's α)             |
+| `/students`                                 | Students list                                                                                                                                       |
+| `/students/:id`                             | Student profile                                                                                                                                     |
+| `/students/:id/cefr-overview`               | Per-student CEFR overview                                                                                                                           |
+| `/students/:id/learning-path`               | Per-student learning path — rule-based rubric recommendations and intervention flags                                                                |
+| `/cefr-overview`                            | Whole-class CEFR overview                                                                                                                           |
+| `/vocabulary`                               | Vocabulary Insights hub (CEFR vocabulary distribution per class/student, cross-deck flashcard progress, pasted/uploaded text screening, CSV export) |
+| `/flashcards`                               | Flashcard deck list                                                                                                                                 |
+| `/flashcards/:id`                           | Flashcard deck editor — cards, CSV/XLSX/DOCX import, class assignment, per-student insights                                                         |
+| `/news-flashes`                             | News flashes — curate articles/books/videos to share with students                                                                                  |
+| `/portal/:studentId`                        | Student portal (public) — grades, to-do list, self-assessment, pending co-grading moderation notices, learning-path/grammar recommendations         |
+| `/portal/:studentId/flashcards/:deckId`     | Student flashcard study session (spaced repetition)                                                                                                 |
+| `/feedback/:code`                           | Student feedback view (public, no login — decodes a shared grade-summary link)                                                                      |
+| `/preview/:code`                            | Rubric preview (public, no login — decodes a shared rubric link, no student data)                                                                   |
+| `/essay/:code`                              | Essay writing session (public, no login — decodes a shared essay-assignment link)                                                                   |
+| `/test/:code`                               | Take a test (public, no login — answer questions, optional timer, submit)                                                                           |
+| `/attachments`                              | Attachment manager                                                                                                                                  |
+| `/comments`                                 | Comment bank                                                                                                                                        |
+| `/question-bank`                            | Question bank — reusable test questions, insertable into any test                                                                                   |
+| `/statistics`                               | Statistics dashboard (by-rubric, by-student, multi-class compare with insights, advanced query builder)                                             |
 | `/activity-dashboard`                       | Activity Dashboard — rubric/test/essay × class grid with graded progress, average score, CEFR (most common / set), link/assign/reorder and a collapsible year summary |
-| `/moderation`                               | Moderation queue — disputed co-graded submissions, per-criterion delta, keep/accept resolution                                                                        |
-| `/messages`                                 | Messages inbox — reply to or start a thread with a portal-authenticated student                                                                                       |
-| `/notifications`                            | Notification Center — full, filterable history of overdue grading, unread messages, and pending moderation reviews, with cross-device dismissals                      |
-| `/export`                                   | Export page                                                                                                                                                           |
-| `/settings`                                 | Settings                                                                                                                                                              |
-| `/admin`                                    | Admin panel (admin role only)                                                                                                                                         |
-| `/privacy`                                  | Privacy statement                                                                                                                                                     |
+| `/moderation`                               | Moderation queue — disputed co-graded submissions, per-criterion delta, keep/accept resolution                                                      |
+| `/messages`                                 | Messages inbox — reply to or start a thread with a portal-authenticated student                                                                     |
+| `/notifications`                            | Notification Center — full, filterable history of overdue grading, unread messages, and pending moderation reviews, with cross-device dismissals    |
+| `/export`                                   | Export page                                                                                                                                         |
+| `/settings`                                 | Settings                                                                                                                                            |
+| `/admin`                                    | Admin panel (admin role only)                                                                                                                       |
+| `/privacy`                                  | Privacy statement                                                                                                                                   |
 
 ### Key utility modules
 
