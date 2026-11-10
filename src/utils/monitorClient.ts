@@ -22,6 +22,23 @@ export function getMonitorClient(supabaseUrl: string, supabaseAnonKey: string): 
     return client;
 }
 
+/**
+ * Because the client is shared, `client.channel(topic)` returns any channel already
+ * registered under that topic — including one a previous effect run is still removing
+ * (`removeChannel` is async). Subscribing to that leaving channel is a silent no-op, and
+ * once its leave completes it is dropped, so the new subscriber hears nothing. Callers
+ * must wait for every stale channel on their topics to be released before creating new
+ * ones. Returns null when nothing is stale, so the caller can subscribe synchronously.
+ */
+export function releaseStaleChannels(client: SupabaseClient, topics: string[]): Promise<void> | null {
+    const wanted = new Set(topics.map((topic) => `realtime:${topic}`));
+    const stale = (client.getChannels?.() ?? []).filter((channel) => wanted.has(channel.topic));
+    if (stale.length === 0) return null;
+    return Promise.all(stale.map((channel) => client.removeChannel(channel).catch(() => undefined))).then(
+        () => undefined
+    );
+}
+
 /** Test-only: drop the cached client so `createClient` mocks re-run per test. */
 export function __resetMonitorClientForTests(): void {
     cached = null;

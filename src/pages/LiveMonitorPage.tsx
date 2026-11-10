@@ -3,7 +3,7 @@ import PageTour from '../components/Tour/PageTour';
 import { usePageTourState } from '../hooks/usePageTourState';
 import { useParams } from 'react-router-dom';
 import type { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
-import { getMonitorClient } from '../utils/monitorClient';
+import { getMonitorClient, releaseStaleChannels } from '../utils/monitorClient';
 import {
     Eye,
     EyeOff,
@@ -377,9 +377,17 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         // and churns sockets. Reuse one client; only channels come and go.
         const client = getMonitorClient(config!.supabaseUrl, config!.supabaseAnonKey);
         clientRef.current = client;
+        const topicFor = (studentId: string) => `monitor:${kind}:${assignmentKeyFor(studentId)}`;
         const channelMap = new Map<string, RealtimeChannel>();
-        const channels: RealtimeChannel[] = monitorStudents.map((row) => {
-            const channel = client.channel(`monitor:${kind}:${assignmentKeyFor(row.studentId)}`);
+        const channels: RealtimeChannel[] = [];
+        let cancelled = false;
+        const open = () => {
+            if (cancelled) return;
+            for (const row of monitorStudents) channels.push(openStudentChannel(row));
+            channelsRef.current = channelMap;
+        };
+        const openStudentChannel = (row: MonitorStudent): RealtimeChannel => {
+            const channel = client.channel(topicFor(row.studentId));
             channelMap.set(row.studentId, channel);
             channel
                 .on('broadcast', { event: 'event' }, ({ payload }) => {
@@ -423,10 +431,16 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                 })
                 .subscribe();
             return channel;
-        });
-        channelsRef.current = channelMap;
+        };
+        const pendingRelease = releaseStaleChannels(
+            client,
+            monitorStudents.map((row) => topicFor(row.studentId))
+        );
+        if (pendingRelease) void pendingRelease.then(open);
+        else open();
 
         return () => {
+            cancelled = true;
             channels.forEach((c) => void client.removeChannel(c));
             channelsRef.current = new Map();
             clientRef.current = null;

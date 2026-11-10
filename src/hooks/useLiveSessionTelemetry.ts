@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { getMonitorClient } from '../utils/monitorClient';
+import { getMonitorClient, releaseStaleChannels } from '../utils/monitorClient';
 import type { ProctorEvent, CefrLevel } from '../types';
 
 const HEARTBEAT_INTERVAL_MS = 20_000;
@@ -168,55 +168,69 @@ export function useLiveSessionTelemetry({
             return;
         }
         const client = getMonitorClient(supabaseUrl!, supabaseAnonKey!);
-        // ack:true makes send() resolve only after the server confirms receipt —
-        // important for the 'submitted' broadcast, which is fire-and-forget today
-        // but must not be silently dropped right before the channel tears down.
-        const channel = client.channel(`monitor:${kind}:${assignmentKey}`, {
-            config: { broadcast: { ack: true, self: false } },
-        });
-        channel.on('broadcast', { event: 'nudge' }, ({ payload }) => {
-            onNudgeRef.current?.((payload as { message: string }).message);
-        });
-        channel.subscribe((status) => {
-            setIsBroadcasting(status === 'SUBSCRIBED');
-            if (status !== 'SUBSCRIBED') return;
-            // Flush any broadcasts buffered before the channel joined (e.g. the once-at-mount
-            // seb_status, or a tab switch during the join window) — now that it's joined they go
-            // over the socket with no REST fallback.
-            const buffered = pendingBroadcastsRef.current;
-            pendingBroadcastsRef.current = [];
-            for (const b of buffered) {
-                channel.send({ type: 'broadcast', event: b.event, payload: b.payload });
-            }
-            // Announce the join immediately — and a few times over the next seconds:
-            // the regular heartbeat only fires every ~20s, so without this the
-            // teacher's monitor would keep showing the student as disconnected for
-            // that whole window after they connect. The retries cover the teacher's
-            // monitor channel joining a moment later (its row renders before the
-            // channel finishes subscribing) — a one-shot broadcast at join would
-            // otherwise be silently missed and presence would lie until the first
-            // real heartbeat.
-            const announce = (delayMs: number) => {
-                setTimeout(() => {
-                    if (channelRef.current !== channel) return; // channel already torn down
-                    channel.send({
-                        type: 'broadcast',
-                        event: 'event',
-                        payload: { type: 'heartbeat', at: new Date().toISOString(), value: 'active' },
-                    });
-                }, delayMs);
-            };
-            announce(0);
-            announce(750);
-            announce(1500);
-            announce(3000);
-            announce(5000);
-        });
-        channelRef.current = channel;
+        const topic = `monitor:${kind}:${assignmentKey}`;
+        let cancelled = false;
+        let channel: ReturnType<SupabaseClient['channel']> | null = null;
+        const open = () => {
+            if (cancelled) return;
+            channel = joinChannel();
+            channelRef.current = channel;
+        };
+        const joinChannel = () => {
+            // ack:true makes send() resolve only after the server confirms receipt —
+            // important for the 'submitted' broadcast, which is fire-and-forget today
+            // but must not be silently dropped right before the channel tears down.
+            const channel = client.channel(topic, {
+                config: { broadcast: { ack: true, self: false } },
+            });
+            channel.on('broadcast', { event: 'nudge' }, ({ payload }) => {
+                onNudgeRef.current?.((payload as { message: string }).message);
+            });
+            channel.subscribe((status) => {
+                setIsBroadcasting(status === 'SUBSCRIBED');
+                if (status !== 'SUBSCRIBED') return;
+                // Flush any broadcasts buffered before the channel joined (e.g. the once-at-mount
+                // seb_status, or a tab switch during the join window) — now that it's joined they go
+                // over the socket with no REST fallback.
+                const buffered = pendingBroadcastsRef.current;
+                pendingBroadcastsRef.current = [];
+                for (const b of buffered) {
+                    channel.send({ type: 'broadcast', event: b.event, payload: b.payload });
+                }
+                // Announce the join immediately — and a few times over the next seconds:
+                // the regular heartbeat only fires every ~20s, so without this the
+                // teacher's monitor would keep showing the student as disconnected for
+                // that whole window after they connect. The retries cover the teacher's
+                // monitor channel joining a moment later (its row renders before the
+                // channel finishes subscribing) — a one-shot broadcast at join would
+                // otherwise be silently missed and presence would lie until the first
+                // real heartbeat.
+                const announce = (delayMs: number) => {
+                    setTimeout(() => {
+                        if (channelRef.current !== channel) return; // channel already torn down
+                        channel.send({
+                            type: 'broadcast',
+                            event: 'event',
+                            payload: { type: 'heartbeat', at: new Date().toISOString(), value: 'active' },
+                        });
+                    }, delayMs);
+                };
+                announce(0);
+                announce(750);
+                announce(1500);
+                announce(3000);
+                announce(5000);
+            });
+            return channel;
+        };
+        const pendingRelease = releaseStaleChannels(client, [topic]);
+        if (pendingRelease) void pendingRelease.then(open);
+        else open();
         return () => {
+            cancelled = true;
             channelRef.current = null;
             pendingBroadcastsRef.current = [];
-            void client.removeChannel(channel);
+            if (channel) void client.removeChannel(channel);
             setIsBroadcasting(false);
         };
     }, [enabled, hasDb, kind, assignmentKey, supabaseUrl, supabaseAnonKey]);
