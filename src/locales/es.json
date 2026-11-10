@@ -264,7 +264,14 @@
         "enter_email_and_password": "Introduce tu correo y contraseña.",
         "sign_in": "Iniciar sesión",
         "signing_in": "Iniciando sesión…",
-        "signed_in_loading": "Sesión iniciada — cargando tus datos…"
+        "signed_in_loading": "Sesión iniciada — cargando tus datos…",
+        "errors": {
+            "anonymous_disabled": "El acceso de alumnos está desactivado en el servidor, así que este enlace todavía no se puede abrir. Avisa a tu profesor.",
+            "invalid_credentials": "Ese correo electrónico o contraseña no es correcto. Revisa ambos e inténtalo de nuevo, o pide a tu profesor que restablezca tu contraseña.",
+            "email_not_confirmed": "Este correo electrónico aún no se ha confirmado. Pide ayuda a tu profesor.",
+            "user_banned": "Esta cuenta ha sido bloqueada. Pide ayuda a tu profesor.",
+            "rate_limited": "Demasiados intentos. Espera unos minutos e inténtalo de nuevo."
+        }
     },
     "slip_sheet": {
         "class_slips_one": "Fichas de clase — {{count}} estudiante",

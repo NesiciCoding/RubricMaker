@@ -39,6 +39,7 @@ import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse'
 import { resolveContentLanguage, resolveQuestionContentLanguage } from '../utils/contentLanguage';
 import { initClientLogger, logEvent } from '../services/logging/clientLogger';
 import { TestAdapter } from '../services/database/TestAdapter';
+import { authErrorKey } from '../utils/authErrors';
 import { isAllowedSupabaseUrl } from '../services/database/trustedSupabaseUrl';
 import { useMediaRecorder } from '../hooks/useMediaRecorder';
 import { encodeAudioResponse, parseAudioResponse } from '../utils/audioResponseCode';
@@ -291,8 +292,13 @@ export default function StudentTestPage() {
                 // Mark contentReady so this effect doesn't keep retrying ensureSession()
                 // on every unrelated re-render.
                 setResolvedContent(null);
-                setLoadError(t('tests.taking.load_error'));
-                logEvent('error', 'test_load_error', { testId: assignment.testId }, 'error');
+                setLoadError(t(authErrorKey(session.code) ?? 'tests.taking.load_error'));
+                logEvent(
+                    'error',
+                    'test_load_error',
+                    { testId: assignment.testId, authErrorCode: session.code ?? null },
+                    'error'
+                );
                 setLoading(false);
                 return;
             }

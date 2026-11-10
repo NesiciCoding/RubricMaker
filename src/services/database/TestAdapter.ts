@@ -97,13 +97,14 @@ export class TestAdapter {
     }
 
     /** Reuses an existing session if present; otherwise signs in anonymously. */
-    async ensureSession(): Promise<{ ok: boolean; error?: string }> {
+    async ensureSession(): Promise<{ ok: boolean; error?: string; code?: string }> {
         const {
             data: { session },
         } = await this.client.auth.getSession();
         if (session) return { ok: true };
         const { error } = await this.client.auth.signInAnonymously();
-        return error ? { ok: false, error: error.message } : { ok: true };
+        if (!error) return { ok: true };
+        return error.code ? { ok: false, error: error.message, code: error.code } : { ok: false, error: error.message };
     }
 
     /** Fetch full test content from the get-test-assignment edge function. */

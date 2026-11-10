@@ -921,6 +921,26 @@ describe('StudentTestPage — generator-engine (DB mode)', () => {
         await waitFor(() => expect(screen.getByText('Sample Test')).toBeInTheDocument());
     });
 
+    it('explains that student access is off when anonymous sign-ins are disabled', async () => {
+        mockEnsureSession.mockResolvedValue({
+            ok: false,
+            error: 'Anonymous sign-ins are disabled',
+            code: 'anonymous_provider_disabled',
+        });
+
+        renderDbPage(makeTest({ questions: [mc('q1', 'What is 2 + 2?')] }));
+        await waitFor(() => expect(screen.getByText('tests.taking.load_error_title')).toBeInTheDocument());
+        expect(screen.getByText('auth.errors.anonymous_disabled')).toBeInTheDocument();
+        expect(mockFetchAssignmentContent).not.toHaveBeenCalled();
+    });
+
+    it('falls back to the generic load error for an unrecognised sign-in failure', async () => {
+        mockEnsureSession.mockResolvedValue({ ok: false, error: 'boom' });
+
+        renderDbPage(makeTest({ questions: [mc('q1', 'What is 2 + 2?')] }));
+        await waitFor(() => expect(screen.getByText('tests.taking.load_error')).toBeInTheDocument());
+    });
+
     it('shows the generator error guard when the first question cannot be loaded', async () => {
         mockEnsureSession.mockResolvedValue({ ok: true });
         mockFetchAssignmentContent.mockResolvedValue({ ok: true, data: dbContent(generatorTest()) });

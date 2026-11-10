@@ -62,6 +62,23 @@ describe('TestAdapter', () => {
 
             expect(result).toEqual({ ok: false, error: 'Anonymous sign-ins are disabled' });
         });
+
+        it('passes the Supabase error code through so the page can explain it', async () => {
+            mockAuth.getSession.mockResolvedValue({ data: { session: null } });
+            mockAuth.signInAnonymously.mockResolvedValue({
+                data: { session: null },
+                error: { message: 'Anonymous sign-ins are disabled', code: 'anonymous_provider_disabled' },
+            });
+
+            const adapter = new TestAdapter('https://x.supabase.co', 'anon-key');
+            const result = await adapter.ensureSession();
+
+            expect(result).toEqual({
+                ok: false,
+                error: 'Anonymous sign-ins are disabled',
+                code: 'anonymous_provider_disabled',
+            });
+        });
     });
 
     describe('fetchAssignmentContent', () => {

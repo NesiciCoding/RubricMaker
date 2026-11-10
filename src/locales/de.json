@@ -264,7 +264,14 @@
         "enter_email_and_password": "Gib deine E-Mail-Adresse und dein Passwort ein.",
         "sign_in": "Anmelden",
         "signing_in": "Anmeldung läuft…",
-        "signed_in_loading": "Angemeldet — deine Daten werden geladen…"
+        "signed_in_loading": "Angemeldet — deine Daten werden geladen…",
+        "errors": {
+            "anonymous_disabled": "Der Schülerzugang ist auf dem Server ausgeschaltet, daher kann dieser Link noch nicht geöffnet werden. Bitte sag deiner Lehrkraft Bescheid.",
+            "invalid_credentials": "Diese E-Mail-Adresse oder dieses Passwort ist falsch. Prüfe beides und versuche es erneut, oder bitte deine Lehrkraft, dein Passwort zurückzusetzen.",
+            "email_not_confirmed": "Diese E-Mail-Adresse wurde noch nicht bestätigt. Bitte deine Lehrkraft um Hilfe.",
+            "user_banned": "Dieses Konto wurde gesperrt. Bitte deine Lehrkraft um Hilfe.",
+            "rate_limited": "Zu viele Versuche. Bitte warte ein paar Minuten und versuche es erneut."
+        }
     },
     "slip_sheet": {
         "class_slips_one": "Klassenzettel — {{count}} Schüler",

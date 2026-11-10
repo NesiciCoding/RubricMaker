@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Mail, KeyRound, ChevronDown, ChevronUp, Loader2, Check } from 'lucide-react';
 import { loadDb } from '../../services/database/lazyDb';
+import { authErrorKey } from '../../utils/authErrors';
 
 interface LoginButtonsProps {
     /** Called after email OTP is successfully verified (not needed for OAuth — those redirect). */
@@ -128,8 +129,10 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
         try {
             const { storageSync } = await loadDb();
             const result = await storageSync.adapter.signInWithPassword(studentEmail.trim(), studentPassword);
-            if (result.error) setError(result.error);
-            else {
+            if (result.error) {
+                const key = authErrorKey(result.code);
+                setError(key ? t(key) : result.error);
+            } else {
                 setDone(true);
                 onEmailSuccess?.();
             }
