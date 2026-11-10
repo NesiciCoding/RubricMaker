@@ -27,9 +27,12 @@ type SortMode = 'newest' | 'mostUsed';
  */
 export function humaniseTag(tag: string): string {
     const spaced = tag.replace(/[_-]+/g, ' ').trim();
-    // Tags without a separator are left byte-identical: 'EFL', 'B1' and 'positive' were typed
-    // that way on purpose, so only slug-shaped tags get tidied up.
-    if (spaced === tag) return tag;
+    // Single all-lowercase words ('reading') read as typos next to Title Case chips;
+    // anything with capitals or digits ('EFL', 'B1', 'Positive') is left byte-identical.
+    if (spaced === tag) {
+        if (/^[a-z]+$/.test(tag)) return tag.charAt(0).toUpperCase() + tag.slice(1);
+        return tag;
+    }
     return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 

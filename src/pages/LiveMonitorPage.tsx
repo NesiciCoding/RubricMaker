@@ -138,6 +138,8 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
 
     const [hideNames, setHideNames] = useState(false);
     const [sortMode, setSortMode] = useState<SortMode>('active');
+    const [classFilter, setClassFilter] = useState<string>('all');
+    const [startedOnly, setStartedOnly] = useState(false);
     const [columnSortRules, setColumnSortRules] = useState<ColumnSortRule[]>([{ key: 'original', dir: 'asc' }]);
     const [sortModalOpen, setSortModalOpen] = useState(false);
     const [liveStates, setLiveStates] = useState<Record<string, StudentLiveState>>({});
@@ -452,6 +454,8 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
             event: 'nudge',
             payload: { message: t('tests.monitor.nudge_message') },
         });
+        const name = monitorStudents.find((r) => r.studentId === studentId)?.name ?? '';
+        showToast(t('tests.monitor.nudge_sent', { name }), 'success');
     }
 
     // ── Live level override (roadmap 27.2) — persists via the owner-scoped
@@ -612,6 +616,21 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         }
     }, [rows, sortMode]);
 
+    const filterClasses = useMemo(
+        () => classes.filter((c) => monitorStudents.some((s) => s.classId === c.id)),
+        [classes, monitorStudents]
+    );
+
+    const visibleRows = useMemo(() => {
+        const hasStarted = (row: (typeof rows)[number]) =>
+            row.finished || row.status !== undefined || row.mergedAnswers.length > 0 || row.live.snapshot !== null;
+        return sortedRows.filter((row) => {
+            if (classFilter !== 'all' && row.classId !== classFilter) return false;
+            if (startedOnly && !hasStarted(row)) return false;
+            return true;
+        });
+    }, [sortedRows, classFilter, startedOnly]);
+
     const statusSummary = (row: (typeof rows)[number], stalled: number | null, pace: PaceTrend | undefined) => {
         const parts: string[] = [];
         if (row.finished) parts.push(t('tests.monitor.summary.handed_in'));
@@ -730,6 +749,33 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                             <option value="ungraded">{t('tests.monitor.sort.ungraded')}</option>
                         </select>
                     </label>
+                    {kind === 'test' && filterClasses.length > 1 && (
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem' }}>
+                            {t('tests.monitor.class_filter_label')}
+                            <select
+                                value={classFilter}
+                                onChange={(e) => setClassFilter(e.target.value)}
+                                aria-label={t('tests.monitor.class_filter_label')}
+                            >
+                                <option value="all">{t('tests.monitor.all_classes')}</option>
+                                {filterClasses.map((c) => (
+                                    <option key={c.id} value={c.id}>
+                                        {c.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                    )}
+                    {kind === 'test' && (
+                        <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            aria-pressed={startedOnly}
+                            onClick={() => setStartedOnly((v) => !v)}
+                        >
+                            {t('tests.monitor.started_only')}
+                        </button>
+                    )}
                     <button className="btn btn-secondary btn-sm" onClick={() => setHideNames((h) => !h)}>
                         {hideNames ? <Eye size={14} /> : <EyeOff size={14} />}
                         {hideNames ? t('tests.monitor.show_names') : t('tests.monitor.hideNames')}
@@ -862,13 +908,13 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                     // instead of rendering the persisted rows on their own, which would show
                     // an incomplete roster until the in-progress students arrive.
                     <InlineMonitorSkeleton />
-                ) : sortedRows.length === 0 ? (
+                ) : visibleRows.length === 0 ? (
                     <p className="text-muted">{t('tests.monitor.no_students')}</p>
                 ) : (
                     <>
                         {/* Presence + proctoring summary */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                            {sortedRows.map((row, index) => {
+                            {visibleRows.map((row, index) => {
                                 const stalled = stalledFor(row);
                                 const pace = paceByStudent.get(row.studentId);
                                 return (
@@ -1024,7 +1070,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                 showProgress={showProgress}
                                 showClassProgress={showClassProgress}
                                 showMilestones={showMilestones}
-                                rows={sortedRows.map((row, index) => ({
+                                rows={visibleRows.map((row, index) => ({
                                     pace: paceByStudent.get(row.studentId),
                                     studentId: row.studentId,
                                     displayName: displayName(row, index),
@@ -1043,7 +1089,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                 showProgress={showProgress}
                                 showClassProgress={showClassProgress}
                                 maxQuestions={levelMaxQuestions}
-                                rows={sortedRows.map((row, index) => {
+                                rows={visibleRows.map((row, index) => {
                                     const finished = row.status === 'submitted' || row.status === 'late';
                                     return {
                                         studentId: row.studentId,
@@ -1068,7 +1114,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                         )}
 
                         {kind === 'essay' &&
-                            sortedRows.map((row, index) => (
+                            visibleRows.map((row, index) => (
                                 <LiveDraftPanel
                                     key={row.studentId}
                                     displayName={displayName(row, index)}

@@ -688,10 +688,11 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
             <>
                 <Topbar title={t('tests.edit_test_title')} />
                 <div className="page-content fade-in">
-                    <p className="text-muted">{t('tests.not_found')}</p>
-                    <button className="btn btn-secondary btn-sm" onClick={() => navigate('/tests')}>
-                        <ArrowLeft size={15} /> {t('tests.back_to_list')}
-                    </button>
+                    <EmptyState icon={FileText} title={t('tests.not_found')}>
+                        <button className="btn btn-secondary" onClick={() => navigate('/tests')}>
+                            <ArrowLeft size={15} /> {t('tests.back_to_list')}
+                        </button>
+                    </EmptyState>
                 </div>
             </>
         );

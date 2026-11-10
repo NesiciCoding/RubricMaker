@@ -152,11 +152,14 @@ describe('humaniseTag', () => {
         expect(humaniseTag('word-stress')).toBe('Word stress');
     });
 
-    it('leaves separator-free tags exactly as the teacher typed them', () => {
+    it('leaves cased separator-free tags exactly as the teacher typed them', () => {
         expect(humaniseTag('B1')).toBe('B1');
         expect(humaniseTag('EFL')).toBe('EFL');
         expect(humaniseTag('Grammar')).toBe('Grammar');
-        // Casing is the teacher's choice for a plain word, too.
-        expect(humaniseTag('positive')).toBe('positive');
+    });
+
+    it('capitalises all-lowercase single words to match the Title Case chips (F38)', () => {
+        expect(humaniseTag('reading')).toBe('Reading');
+        expect(humaniseTag('positive')).toBe('Positive');
     });
 });
