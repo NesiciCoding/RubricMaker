@@ -142,19 +142,20 @@ export default function SelfAssessPage() {
         setTimeout(() => setSaved(false), 2500);
     }
 
+    // F36: neutral chrome on a dead end — the feature title implies content exists.
+    // The message lives in the Topbar title only, so it stays unique for AT/test queries.
     if (!rubric || !student) {
         return (
             <>
-                <Topbar
-                    title={t('selfAssess.title')}
-                    actions={
-                        <button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)}>
-                            <ArrowLeft size={14} /> {t('gradeStudent.action_back')}
-                        </button>
-                    }
-                />
+                <Topbar title={t('gradeStudent.error_not_found')} />
                 <div className="page-content">
-                    <EmptyState icon={AlertCircle} description={t('gradeStudent.error_not_found')} />
+                    <EmptyState
+                        icon={AlertCircle}
+                        action={{
+                            label: t('gradeStudent.action_back'),
+                            onClick: () => navigate(-1),
+                        }}
+                    />
                 </div>
             </>
         );

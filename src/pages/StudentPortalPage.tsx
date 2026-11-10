@@ -977,20 +977,16 @@ export default function StudentPortalPage() {
                 }}
             >
                 {!tabHasContent[activeTab] && (
-                    <div
-                        style={{
-                            textAlign: 'center',
-                            padding: '40px 16px',
-                            color: 'var(--text-muted)',
-                            fontSize: '0.9rem',
-                        }}
-                    >
-                        {/* v8 ignore start -- tabHasContent.assignments is hardcoded true, so the assignments arm never renders */}
-                        {isTab('assignments')
-                            ? t('studentPortal.tab_empty_assignments')
-                            : t('studentPortal.tab_empty_progress')}
-                        {/* v8 ignore stop */}
-                    </div>
+                    <EmptyState
+                        icon={TrendingUp}
+                        description={
+                            /* v8 ignore start -- tabHasContent.assignments is hardcoded true, so the assignments arm never renders */
+                            isTab('assignments')
+                                ? t('studentPortal.tab_empty_assignments')
+                                : t('studentPortal.tab_empty_progress')
+                            /* v8 ignore stop */
+                        }
+                    />
                 )}
                 {/* Summary stats (Home tab) */}
                 {isTab('home') && (

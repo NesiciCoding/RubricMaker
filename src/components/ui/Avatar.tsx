@@ -10,6 +10,9 @@ interface AvatarProps {
 export default function Avatar({ name, size, fontSize, style }: AvatarProps) {
     return (
         <div
+            // Decorative initial — every caller renders the full name beside it,
+            // so announcing the lone letter would only add noise (Batch 8).
+            aria-hidden="true"
             style={{
                 width: size,
                 height: size,

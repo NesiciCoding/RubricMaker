@@ -29,10 +29,8 @@ import { scoreTestAnswer } from '../utils/testCalc';
 import { scoreStudentTest } from '../utils/studentTestScore';
 import { clamp } from '../utils/clamp';
 import { stripHtmlTags } from '../utils/exportDataPrep';
+import { useTranslation } from 'react-i18next';
 import type { CommentBankItem, StudentTest, TestAnswer, TestQuestion } from '../types';
-
-// TODO(i18n): move strings to locales once the design is approved —
-// hardcoded English keeps this page out of the locale-parity tests.
 type ViewMode = 'question' | 'student' | 'matrix';
 
 const MATRIX_GREY_BG = 'color-mix(in srgb, var(--text-muted) 18%, transparent)';
@@ -83,6 +81,7 @@ function shortPrompt(q: TestQuestion, index: number): string {
 
 export default function TestGradingQueuePage() {
     const { testId } = useParams<{ testId: string }>();
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const {
@@ -406,7 +405,7 @@ export default function TestGradingQueuePage() {
     if (!test && sharedLoading) {
         return (
             <>
-                <Topbar title="Grading queue" />
+                <Topbar title={t('tests.queue.title')} />
                 <div className="page-content fade-in" aria-busy="true">
                     <SkeletonRow />
                     <SkeletonRow />
@@ -417,14 +416,18 @@ export default function TestGradingQueuePage() {
     if (!test) {
         return (
             <>
-                <Topbar title="Grading queue" />
+                <Topbar title={t('tests.queue.title')} />
                 <div className="page-content">
                     <EmptyState
                         icon={ListChecks}
-                        title="Test not found"
+                        title={t('tests.queue.not_found')}
                         titleLevel={2}
                         description=""
-                        action={{ label: 'Back to tests', icon: ArrowLeft, onClick: () => navigate('/tests') }}
+                        action={{
+                            label: t('tests.queue.back_to_tests'),
+                            icon: ArrowLeft,
+                            onClick: () => navigate('/tests'),
+                        }}
                     />
                 </div>
             </>
@@ -434,21 +437,21 @@ export default function TestGradingQueuePage() {
         return (
             <>
                 <Topbar
-                    title={`Grading queue — ${test.name}`}
+                    title={t('tests.queue.title_with_name', { name: test.name })}
                     actions={
                         <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/tests/${test.id}/scores`)}>
-                            <ArrowLeft size={15} /> Back to scores
+                            <ArrowLeft size={15} /> {t('tests.queue.back_to_scores')}
                         </button>
                     }
                 />
                 <div className="page-content">
                     <EmptyState
                         icon={Users}
-                        title="No submissions to grade yet"
+                        title={t('tests.queue.empty_title')}
                         titleLevel={2}
-                        description="Handed-in attempts will appear here as an [answer] → [points] queue."
+                        description={t('tests.queue.empty_desc')}
                         action={{
-                            label: 'Back to scores',
+                            label: t('tests.queue.back_to_scores'),
                             icon: ArrowLeft,
                             onClick: () => navigate(`/tests/${test.id}/scores`),
                         }}
@@ -476,13 +479,13 @@ export default function TestGradingQueuePage() {
             return {
                 bg: MATRIX_YELLOW_BG,
                 label: earned !== undefined ? `${earned}/${max}` : `–/${max}`,
-                sub: 'skipped',
+                sub: t('tests.queue.sub_skipped'),
             };
         if (!decidedCell) {
             return {
                 bg: MATRIX_GREY_BG,
                 label: earned !== undefined && earned !== null ? `${earned}/${max}` : `–/${max}`,
-                sub: 'auto',
+                sub: t('tests.queue.sub_auto'),
             };
         }
         const e = earned ?? 0;
@@ -502,17 +505,23 @@ export default function TestGradingQueuePage() {
                             : `${detailStep.studentName} · Q${detailStep.questionIndex + 1}`}
                     </h3>
                     {detailStep.savedPoints !== undefined ? (
-                        <span className="badge badge-green">decided: {detailStep.savedPoints}</span>
+                        <span className="badge badge-green">
+                            {t('tests.queue.badge_decided', { points: detailStep.savedPoints })}
+                        </span>
                     ) : (
-                        <span className="badge">auto: {detailStep.autoScore ?? '—'}</span>
+                        <span className="badge">
+                            {t('tests.queue.badge_auto', { value: detailStep.autoScore ?? '—' })}
+                        </span>
                     )}
-                    {skipped.has(detailStep.key) && <span className="badge badge-yellow">skipped</span>}
+                    {skipped.has(detailStep.key) && (
+                        <span className="badge badge-yellow">{t('tests.queue.badge_skipped')}</span>
+                    )}
                     <span style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
                         <button
                             className="btn btn-ghost btn-sm"
                             disabled={!detailCanPrev}
                             onClick={detailPrev}
-                            aria-label="Previous answer"
+                            aria-label={t('tests.queue.prev_answer')}
                         >
                             <ChevronLeft size={14} />
                         </button>
@@ -520,7 +529,7 @@ export default function TestGradingQueuePage() {
                             className="btn btn-ghost btn-sm"
                             disabled={!detailCanNext}
                             onClick={detailNext}
-                            aria-label="Next answer"
+                            aria-label={t('tests.queue.next_answer')}
                         >
                             <ChevronRight size={14} />
                         </button>
@@ -528,7 +537,7 @@ export default function TestGradingQueuePage() {
                             <button
                                 className="btn btn-ghost btn-sm"
                                 onClick={() => setPopoverOpen(false)}
-                                aria-label="Close grading popover"
+                                aria-label={t('tests.queue.close_popover')}
                             >
                                 <X size={14} />
                             </button>
@@ -537,17 +546,19 @@ export default function TestGradingQueuePage() {
                 </div>
 
                 <div>
-                    <div className="text-muted text-xs">QUESTION</div>
+                    <div className="text-muted text-xs">{t('tests.queue.question_label')}</div>
                     <p style={{ margin: '4px 0' }}>{stripHtmlTags(detailStep.question.prompt)}</p>
                     {expectedAnswerText(detailStep.question) && (
                         <p className="text-muted text-sm" style={{ margin: 0 }}>
-                            Expected: {expectedAnswerText(detailStep.question)}
+                            {t('tests.queue.expected_prefix', {
+                                text: expectedAnswerText(detailStep.question),
+                            })}
                         </p>
                     )}
                 </div>
 
                 <div>
-                    <div className="text-muted text-xs">STUDENT ANSWER</div>
+                    <div className="text-muted text-xs">{t('tests.queue.student_answer_label')}</div>
                     <p style={{ margin: '4px 0', whiteSpace: 'pre-wrap' }}>
                         {stripHtmlTags(answerDisplayText(detailStep.question, detailStep.response))}
                     </p>
@@ -555,7 +566,9 @@ export default function TestGradingQueuePage() {
 
                 <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
                     <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        <span className="text-muted text-xs">Points (max {detailStep.question.points})</span>
+                        <span className="text-muted text-xs">
+                            {t('tests.queue.points_label', { max: detailStep.question.points })}
+                        </span>
                         <input
                             ref={pointsInputRef}
                             type="number"
@@ -565,22 +578,25 @@ export default function TestGradingQueuePage() {
                             disabled={readOnly}
                             onChange={(e) => setDraftPoints((prev) => ({ ...prev, [detailStep.key]: e.target.value }))}
                             style={{ width: 120 }}
-                            aria-label={`Points for ${detailStep.studentName}, question ${detailStep.questionIndex + 1}`}
+                            aria-label={t('tests.queue.points_aria', {
+                                name: detailStep.studentName,
+                                number: detailStep.questionIndex + 1,
+                            })}
                         />
                     </label>
                     <button
                         className="btn btn-primary btn-sm"
                         disabled={readOnly}
-                        title={readOnly ? 'This class is shared with you as view-only.' : undefined}
+                        title={readOnly ? t('tests.queue.view_only_short') : undefined}
                         onClick={handleSaveCurrent}
                     >
-                        <Check size={13} /> Save score
+                        <Check size={13} /> {t('tests.queue.save_score')}
                     </button>
                     <button
                         className="btn btn-ghost btn-sm"
                         onClick={() => setSkipped((prev) => new Set(prev).add(detailStep.key))}
                     >
-                        Skip (S)
+                        {t('tests.queue.skip')}
                     </button>
                 </div>
 
@@ -590,7 +606,7 @@ export default function TestGradingQueuePage() {
                         className="text-muted text-xs"
                         style={{ display: 'block', marginBottom: 4 }}
                     >
-                        Feedback
+                        {t('tests.queue.feedback_label')}
                     </label>
                     <textarea
                         id={`queue-feedback-${detailStep.key}`}
@@ -601,7 +617,7 @@ export default function TestGradingQueuePage() {
                             setFeedbackDrafts((prev) => ({ ...prev, [detailStep.key]: e.target.value }));
                             setSavedCommentFor((cur) => (cur === detailStep.key ? null : cur));
                         }}
-                        placeholder="Feedback for the student…"
+                        placeholder={t('tests.queue.feedback_placeholder')}
                         style={{ width: '100%' }}
                     />
                     <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
@@ -611,7 +627,7 @@ export default function TestGradingQueuePage() {
                             disabled={readOnly}
                             onClick={() => setCommentBankFor(detailStep.key)}
                         >
-                            <BookOpen size={13} /> Insert comment
+                            <BookOpen size={13} /> {t('tests.queue.insert_comment')}
                         </button>
                         <button
                             type="button"
@@ -621,21 +637,21 @@ export default function TestGradingQueuePage() {
                         >
                             {savedCommentFor === detailStep.key ? (
                                 <>
-                                    <Check size={13} /> Comment saved
+                                    <Check size={13} /> {t('tests.queue.comment_saved')}
                                 </>
                             ) : (
-                                'Save as comment'
+                                t('tests.queue.save_as_comment')
                             )}
                         </button>
                     </div>
                 </div>
                 {readOnly ? (
                     <p className="text-muted text-xs" style={{ margin: 0 }}>
-                        This class is shared with you as view-only — scores can't be changed.
+                        {t('tests.queue.view_only')}
                     </p>
                 ) : (
                     <p className="text-muted text-xs" style={{ margin: 0 }}>
-                        Save writes points + feedback to the attempt and marks it graded.
+                        {t('tests.queue.save_hint')}
                     </p>
                 )}
             </article>
@@ -645,16 +661,16 @@ export default function TestGradingQueuePage() {
     return (
         <>
             <Topbar
-                title={`Grading queue — ${test.name}`}
+                title={t('tests.queue.title_with_name', { name: test.name })}
                 actions={
                     <>
                         {unsavedCount > 0 && (
-                            <span className="badge badge-yellow" title="Draft points/feedback not saved yet.">
-                                {unsavedCount} unsaved
+                            <span className="badge badge-yellow" title={t('tests.queue.unsaved_title')}>
+                                {t('tests.queue.unsaved_badge', { count: unsavedCount })}
                             </span>
                         )}
                         <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/tests/${test.id}/scores`)}>
-                            <ArrowLeft size={15} /> Back to scores
+                            <ArrowLeft size={15} /> {t('tests.queue.back_to_scores')}
                         </button>
                     </>
                 }
@@ -662,18 +678,18 @@ export default function TestGradingQueuePage() {
             <div className="page-content fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
                     <SegmentedToggle
-                        ariaLabel="Queue direction"
+                        ariaLabel={t('tests.queue.direction_label')}
                         value={view}
                         onChange={(v) => handleViewChange(v as ViewMode)}
                         options={[
-                            { value: 'question', label: 'By question', icon: <ListChecks size={14} /> },
-                            { value: 'student', label: 'By student', icon: <User size={14} /> },
-                            { value: 'matrix', label: 'Matrix', icon: <LayoutGrid size={14} /> },
+                            { value: 'question', label: t('tests.queue.by_question'), icon: <ListChecks size={14} /> },
+                            { value: 'student', label: t('tests.queue.by_student'), icon: <User size={14} /> },
+                            { value: 'matrix', label: t('tests.queue.matrix'), icon: <LayoutGrid size={14} /> },
                         ]}
                     />
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginLeft: 'auto' }}>
                         <span className="text-muted text-sm" aria-live="polite">
-                            {decided} of {steps.length} decided
+                            {t('tests.queue.decided', { decided, total: steps.length })}
                         </span>
                         <div style={{ width: 140, height: 8, borderRadius: 4, background: 'var(--border)' }}>
                             <div
@@ -697,7 +713,7 @@ export default function TestGradingQueuePage() {
                     }}
                 >
                     {!inMatrix && (
-                        <nav aria-label="Queue groups" className="card" style={{ padding: 8 }}>
+                        <nav aria-label={t('tests.queue.groups_label')} className="card" style={{ padding: 8 }}>
                             {(view === 'question'
                                 ? test.questions.map((q, i) => shortPrompt(q, i))
                                 : groups.map((g) => g.label)
@@ -739,7 +755,7 @@ export default function TestGradingQueuePage() {
                                     fontSize: '0.85rem',
                                     minWidth: '100%',
                                 }}
-                                aria-label="Grading matrix"
+                                aria-label={t('tests.queue.matrix_label')}
                             >
                                 <thead>
                                     <tr>
@@ -754,7 +770,7 @@ export default function TestGradingQueuePage() {
                                                 whiteSpace: 'nowrap',
                                             }}
                                         >
-                                            Student
+                                            {t('tests.queue.student_col')}
                                         </th>
                                         {test.questions.map((q, qi) => (
                                             <th
@@ -797,7 +813,10 @@ export default function TestGradingQueuePage() {
                                                         return (
                                                             <td key={q.id} style={{ padding: 2 }}>
                                                                 <div
-                                                                    title={`${name} · Q${qi + 1}: no answer`}
+                                                                    title={t('tests.queue.no_answer_title', {
+                                                                        name,
+                                                                        number: qi + 1,
+                                                                    })}
                                                                     style={{
                                                                         height: 40,
                                                                         borderRadius: 6,
@@ -819,8 +838,18 @@ export default function TestGradingQueuePage() {
                                                                         e.currentTarget
                                                                     )
                                                                 }
-                                                                title={`${name} · Q${qi + 1}: ${v.label}${v.sub ? ` (${v.sub})` : ''} — open to grade`}
-                                                                aria-label={`${name}, question ${qi + 1}: ${v.label}${v.sub ? `, ${v.sub}` : ''}`}
+                                                                title={t('tests.queue.cell_open_title', {
+                                                                    name,
+                                                                    number: qi + 1,
+                                                                    label: v.label,
+                                                                    suffix: v.sub ? ` (${v.sub})` : '',
+                                                                })}
+                                                                aria-label={t('tests.queue.cell_open_aria', {
+                                                                    name,
+                                                                    number: qi + 1,
+                                                                    label: v.label,
+                                                                    suffix: v.sub ? `, ${v.sub}` : '',
+                                                                })}
                                                                 style={{
                                                                     width: '100%',
                                                                     minWidth: 72,
@@ -867,7 +896,7 @@ export default function TestGradingQueuePage() {
                                             border: '1px solid var(--green)',
                                         }}
                                     />{' '}
-                                    full points
+                                    {t('tests.queue.legend_full')}
                                 </span>
                                 <span>
                                     <span
@@ -880,7 +909,7 @@ export default function TestGradingQueuePage() {
                                             border: '1px solid var(--yellow)',
                                         }}
                                     />{' '}
-                                    partial / skipped
+                                    {t('tests.queue.legend_partial')}
                                 </span>
                                 <span>
                                     <span
@@ -893,7 +922,7 @@ export default function TestGradingQueuePage() {
                                             border: '1px solid var(--red)',
                                         }}
                                     />{' '}
-                                    zero
+                                    {t('tests.queue.legend_zero')}
                                 </span>
                                 <span>
                                     <span
@@ -906,7 +935,7 @@ export default function TestGradingQueuePage() {
                                             border: '1px solid var(--border)',
                                         }}
                                     />{' '}
-                                    needs grading (auto shown)
+                                    {t('tests.queue.legend_needs')}
                                 </span>
                             </div>
                         </div>
@@ -917,9 +946,9 @@ export default function TestGradingQueuePage() {
                     ) : !inMatrix ? (
                         <EmptyState
                             icon={ListChecks}
-                            title="Nothing in this group"
+                            title={t('tests.queue.nothing_in_group')}
                             titleLevel={2}
-                            description="Answers with empty responses are skipped here."
+                            description={t('tests.queue.nothing_in_group_desc')}
                         />
                     ) : null}
                 </div>
@@ -936,8 +965,8 @@ export default function TestGradingQueuePage() {
                 )}
 
                 <p className="text-muted text-xs" style={{ margin: 0, display: 'flex', gap: 6, alignItems: 'center' }}>
-                    <Keyboard size={13} /> J/K or ↑/↓ moves between answers · digits set points (0–9 max questions) · S
-                    skips{inMatrix ? ' · click a matrix cell to grade it' : ''}
+                    <Keyboard size={13} /> {t('tests.queue.keyboard_hint')}
+                    {inMatrix ? t('tests.queue.keyboard_hint_matrix') : ''}
                 </p>
                 {commentBankFor && steps.some((s) => s.key === commentBankFor) && (
                     <CommentBankModal onClose={() => setCommentBankFor(null)} onSelect={handleInsertComment} />

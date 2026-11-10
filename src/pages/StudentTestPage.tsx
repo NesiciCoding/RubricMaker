@@ -2355,7 +2355,7 @@ function AudioResponseAnswer({
                 </div>
             )}
             {micError && (
-                <p style={{ color: 'var(--red-text)', fontSize: '0.85rem', margin: 0 }}>
+                <p role="alert" style={{ color: 'var(--red-text)', fontSize: '0.85rem', margin: 0 }}>
                     {t('tests.taking.microphone_error')}
                 </p>
             )}

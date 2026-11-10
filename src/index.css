@@ -652,6 +652,29 @@ h3 {
     margin-bottom: 16px;
 }
 
+/* Export page accordion headers: full-width toggle buttons that read as interactive on hover. */
+.export-section-toggle {
+    border-radius: var(--radius);
+    transition: background var(--transition);
+}
+.export-section-toggle:hover {
+    background: var(--bg-raised);
+}
+.export-section-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    padding: 0 0.4rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.5;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+}
+
 /* Stretched-link: lets a single inner control (a link or button) cover its
    positioned ancestor's whole hit area without nesting one interactive element
    inside another (which axe flags as `nested-interactive`). The ancestor needs

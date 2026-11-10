@@ -662,9 +662,13 @@ export default function Dashboard() {
                                 </span>
                                 {feedbackAge.has(student.id) && feedbackAge.get(student.id)! >= 7 && (
                                     <span
-                                        title={`Last feedback ${feedbackAge.get(student.id)} days ago`}
+                                        title={t('dashboard.feedback_age', {
+                                            count: feedbackAge.get(student.id)!,
+                                        })}
                                         role="img"
-                                        aria-label={`Last feedback ${feedbackAge.get(student.id)} days ago`}
+                                        aria-label={t('dashboard.feedback_age', {
+                                            count: feedbackAge.get(student.id)!,
+                                        })}
                                     >
                                         <Clock
                                             size={11}
@@ -916,9 +920,11 @@ export default function Dashboard() {
                                                 if (days >= 10)
                                                     return (
                                                         <span
-                                                            title={`${days}d ago — feedback may be stale`}
+                                                            title={t('dashboard.feedback_age_stale', { count: days })}
                                                             role="img"
-                                                            aria-label={`${days}d ago — feedback may be stale`}
+                                                            aria-label={t('dashboard.feedback_age_stale', {
+                                                                count: days,
+                                                            })}
                                                         >
                                                             <Clock size={11} style={{ color: 'var(--red-text)' }} />
                                                         </span>
@@ -926,9 +932,11 @@ export default function Dashboard() {
                                                 if (days >= 7)
                                                     return (
                                                         <span
-                                                            title={`${days}d ago`}
+                                                            title={t('dashboard.feedback_age_short', { count: days })}
                                                             role="img"
-                                                            aria-label={`${days}d ago`}
+                                                            aria-label={t('dashboard.feedback_age_short', {
+                                                                count: days,
+                                                            })}
                                                         >
                                                             <Clock
                                                                 size={11}

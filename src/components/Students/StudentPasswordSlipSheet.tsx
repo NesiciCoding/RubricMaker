@@ -22,7 +22,7 @@ function SlipItem({ slip }: { slip: PasswordSlip }) {
 
     useEffect(() => {
         if (!canvasRef.current || !slip.password) return;
-        QRCode.toCanvas(canvasRef.current, window.location.origin, { width: 80, margin: 0 }).catch((e) => {
+        QRCode.toCanvas(canvasRef.current, window.location.origin, { width: 96, margin: 0 }).catch((e) => {
             console.error('[qr] canvas generation failed', e);
         });
     }, [slip.password]);
@@ -72,6 +72,7 @@ export default function StudentPasswordSlipSheet({ slips, onClose }: Props) {
             columns={columns}
             onColumnsChange={setColumns}
             onClose={onClose}
+            qrToggleLabel={t('slip_sheet.show_qr')}
         >
             {slips.map((slip) => (
                 <SlipItem key={slip.id} slip={slip} />

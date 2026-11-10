@@ -39,7 +39,7 @@ describe('exportEssaysBatch separate files (#692)', () => {
             'separate'
         );
         // Still separate files, but one download: the members live inside the zip (#701).
-        expect(vi.mocked(saveAs).mock.calls.map(([, name]) => name)).toEqual(['essays.zip']);
+        expect(vi.mocked(saveAs).mock.calls.map(([, name]) => name)).toEqual(['Mijn_opstel.zip']);
         const [blob] = vi.mocked(saveAs).mock.calls[0] as [Blob, string];
         await expect(zipMembers(blob)).resolves.toEqual([
             'Zoë_Müller_Mijn_opstel.md',

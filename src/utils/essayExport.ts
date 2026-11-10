@@ -636,8 +636,12 @@ export async function exportEssaysBatch(
     format: 'markdown' | 'docx' | 'pdf',
     mode: 'separate' | 'combined',
     styleTemplate?: ExportTemplate,
-    zipName = 'essays.zip'
+    zipName?: string
 ) {
+    // Scope batch downloads to the assignment (like the with-rubric batch already does) so two
+    // class exports don't both land in Downloads as an identical `essays.zip`.
+    const scope = entries[0] ? sanitizeFilename(entries[0].assignment.title) : 'essays';
+    const zip = zipName ?? `${scope}.zip`;
     if (mode === 'separate') {
         // "Separate" only means separate files, not separate downloads: N saveAs() calls make the
         // browser prompt for (or block) everything after the first (#701). PDFs stay one dialog each —
@@ -656,7 +660,7 @@ export async function exportEssaysBatch(
                     : await buildEssayDocx(assignment, student, submission, styleTemplate)
             );
         }
-        await saveZippedFiles(files, zipName);
+        await saveZippedFiles(files, zip);
         return;
     }
 
@@ -667,7 +671,7 @@ export async function exportEssaysBatch(
                     `# ${assignment.title}\n\n_${essayHeaderLine(assignment, student, submission)}_\n\n${htmlToMarkdown(submission.contentHtml)}`
             )
             .join('\n\n---\n\n');
-        saveAs(new Blob([md], { type: 'text/markdown' }), 'essays_batch.md');
+        saveAs(new Blob([md], { type: 'text/markdown' }), `${scope}_batch.md`);
         return;
     }
 
@@ -679,7 +683,7 @@ export async function exportEssaysBatch(
         ]);
         const doc = new Document({ styles: buildDocxStyles(undefined, styleTemplate), sections: [{ children }] });
         const blob = await Packer.toBlob(doc);
-        saveAs(blob, 'essays_batch.docx');
+        saveAs(blob, `${scope}_batch.docx`);
         return;
     }
 

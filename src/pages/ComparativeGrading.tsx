@@ -638,7 +638,27 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
 
     const perStudentDone = useMemo(() => countPartnersPerStudent(countedMatchups), [countedMatchups]);
 
-    if (!rubric) return <div className="page-content">{t('comparativeGrading.rubric_not_found')}</div>;
+    // F32: dead-end recovery — a bare message strands deep-link openers.
+    if (!rubric)
+        return (
+            <>
+                <Topbar title={t('comparativeGrading.page_title')} />
+                <div
+                    className="page-content fade-in"
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300 }}
+                >
+                    <div className="card" style={{ textAlign: 'center', padding: '40px 32px', maxWidth: 380 }}>
+                        <h2 style={{ marginBottom: 8 }}>{t('comparativeGrading.rubric_not_found')}</h2>
+                        <p className="text-muted text-sm" style={{ marginBottom: 24 }}>
+                            {t('comparativeGrading.select_class_description')}
+                        </p>
+                        <button className="btn btn-primary btn-sm" onClick={() => navigate('/rubrics')}>
+                            {t('comparativeGrading.go_to_rubrics')}
+                        </button>
+                    </div>
+                </div>
+            </>
+        );
     if (error)
         return (
             <>
@@ -1617,8 +1637,29 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
 export default function ComparativeGrading() {
     const { classId, rubricId } = useParams();
     const { t } = useTranslation();
+    const navigate = useNavigate();
 
-    if (!rubricId) return <div className="page-content">{t('comparativeGrading.rubric_not_found')}</div>;
+    // F32: dead-end recovery — a bare message strands deep-link openers.
+    if (!rubricId)
+        return (
+            <>
+                <Topbar title={t('comparativeGrading.page_title')} />
+                <div
+                    className="page-content fade-in"
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300 }}
+                >
+                    <div className="card" style={{ textAlign: 'center', padding: '40px 32px', maxWidth: 380 }}>
+                        <h2 style={{ marginBottom: 8 }}>{t('comparativeGrading.rubric_not_found')}</h2>
+                        <p className="text-muted text-sm" style={{ marginBottom: 24 }}>
+                            {t('comparativeGrading.select_class_description')}
+                        </p>
+                        <button className="btn btn-primary btn-sm" onClick={() => navigate('/rubrics')}>
+                            {t('comparativeGrading.go_to_rubrics')}
+                        </button>
+                    </div>
+                </div>
+            </>
+        );
 
     if (!classId || classId === 'all') {
         return <ClassPicker rubricId={rubricId} />;

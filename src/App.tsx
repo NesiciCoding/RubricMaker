@@ -366,10 +366,14 @@ export default function App() {
                                     <Route
                                         path="/admin"
                                         element={
+                                            // A non-admin opening /admin directly gets the standard
+                                            // not-found page (stays on the URL, explains + offers
+                                            // Back/Dashboard recovery) instead of a silent redirect
+                                            // that lands on / with no explanation.
                                             canOpenAdmin(settings.userRole, isLocalMode()) ? (
                                                 <AdminPage />
                                             ) : (
-                                                <Navigate to="/" replace />
+                                                <NotFoundPage />
                                             )
                                         }
                                     />

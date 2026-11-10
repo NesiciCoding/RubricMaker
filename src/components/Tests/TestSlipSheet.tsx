@@ -30,7 +30,7 @@ function SlipItem({
 
     useEffect(() => {
         if (!canvasRef.current) return;
-        QRCode.toCanvas(canvasRef.current, url, { width: 80, margin: 0 }).catch((e) => {
+        QRCode.toCanvas(canvasRef.current, url, { width: 96, margin: 0 }).catch((e) => {
             console.error('[qr] canvas generation failed', e);
         });
     }, [url]);
@@ -48,16 +48,20 @@ function SlipItem({
                     </div>
                 )}
                 <div
+                    title={url}
+                    className="slip-test-url"
                     style={{
                         marginTop: 6,
                         fontSize: '0.65rem',
                         color: '#94a3b8',
-                        wordBreak: 'break-all',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
                         fontFamily: 'monospace',
+                        wordBreak: 'break-all',
                     }}
                 >
-                    {url.slice(0, 60)}
-                    {url.length > 60 ? '…' : ''}
+                    {url}
                 </div>
             </div>
             <canvas ref={canvasRef} style={{ flexShrink: 0 }} />
@@ -71,6 +75,7 @@ export default function TestSlipSheet({ students, testName, durationMinutes, bui
 
     return (
         <SlipSheet
+            qrToggleLabel={t('slip_sheet.show_qr')}
             title={t('slip_sheet.class_slips', { count: students.length })}
             columns={columns}
             onColumnsChange={setColumns}

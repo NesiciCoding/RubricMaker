@@ -4,6 +4,7 @@ import { usePageTourState } from '../hooks/usePageTourState';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AlertCircle, FileText, Users } from 'lucide-react';
+import { EmptyState } from '../components/ui/EmptyState';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAssessment, useAuthoring, useGrading, useStudents } from '../context/AppContext';
 import Topbar from '../components/Layout/Topbar';
@@ -50,17 +51,22 @@ export default function PeerReviewAnalyticsPage() {
         return aggregatePeerReviews(rubric, filtered, studentRubrics);
     }, [rubric, peerReviews, studentRubrics, analytics, selectedRound]);
 
+    // F37: app-chrome dead end (was a bare h3 with no Topbar). The message lives
+    // in the Topbar title only, so it stays unique for AT/test queries.
     if (!rubric) {
         return (
-            <div className="page-content center">
-                <div className="text-center">
-                    <AlertCircle size={48} className="text-muted" style={{ marginBottom: 16 }} />
-                    <h3>{t('peerAnalytics.rubric_not_found')}</h3>
-                    <button className="btn btn-secondary" style={{ marginTop: 16 }} onClick={() => navigate(-1)}>
-                        {t('gradeStudent.action_back')}
-                    </button>
+            <>
+                <Topbar title={t('peerAnalytics.rubric_not_found')} />
+                <div className="page-content">
+                    <EmptyState
+                        icon={AlertCircle}
+                        action={{
+                            label: t('gradeStudent.action_back'),
+                            onClick: () => navigate(-1),
+                        }}
+                    />
                 </div>
-            </div>
+            </>
         );
     }
 

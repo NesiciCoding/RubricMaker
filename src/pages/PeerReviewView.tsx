@@ -3,7 +3,8 @@ import PageTour from '../components/Tour/PageTour';
 import { usePageTourState } from '../hooks/usePageTourState';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Save, AlertCircle, FileText, BarChart3 } from 'lucide-react';
+import { Save, FileText, BarChart3, AlertCircle } from 'lucide-react';
+import { EmptyState } from '../components/ui/EmptyState';
 import { useAssessment, useAuthoring, useStudents } from '../context/AppContext';
 import { nanoid } from '../utils/nanoid';
 import type { StudentRubric, ScoreEntry } from '../types';
@@ -80,17 +81,26 @@ export default function PeerReviewView() {
         }
     }, [rubricId, studentId, rubric, student, peerReviews, activeRound, reviewerId, isDirty]);
 
+    // F37: app-chrome dead end (was a bare h3 with no Topbar). The Topbar keeps a
+    // concise title so it never truncates at high zoom; the full message lives in
+    // the EmptyState description where it can wrap.
     if (!rubric || !student || !entry) {
+        const missingMessage = t('gradeStudent.error_not_found');
         return (
-            <div className="page-content center">
-                <div className="text-center">
-                    <AlertCircle size={48} className="text-muted" style={{ marginBottom: 16 }} />
-                    <h3>{t('gradeStudent.error_not_found')}</h3>
-                    <button className="btn btn-secondary" style={{ marginTop: 16 }} onClick={() => navigate(-1)}>
-                        {t('gradeStudent.action_back')}
-                    </button>
+            <>
+                <Topbar title={t('peerReview.not_found_title')} />
+                <div className="page-content">
+                    <EmptyState
+                        icon={AlertCircle}
+                        title={t('peerReview.not_found_title')}
+                        description={missingMessage}
+                        action={{
+                            label: t('gradeStudent.action_back'),
+                            onClick: () => navigate(-1),
+                        }}
+                    />
                 </div>
-            </div>
+            </>
         );
     }
 
@@ -180,6 +190,9 @@ export default function PeerReviewView() {
                         <h2 style={{ margin: 0 }}>{rubric.name}</h2>
                     </div>
                     <p className="text-muted text-sm">{rubric.description}</p>
+                    <p className="text-muted text-sm" style={{ marginTop: 8 }}>
+                        {t('peerReview.anonymity_note')}
+                    </p>
                     {/* Round selector */}
                     <div
                         data-tour="pr-rounds"

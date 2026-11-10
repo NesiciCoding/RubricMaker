@@ -28,8 +28,24 @@ interface Props {
 export default function RecordingControls({ recordings, onChange, syncConfigured }: Props) {
     const { t } = useTranslation();
     const { showToast } = useToast();
-    const { status, start, stop } = useMediaRecorder();
+    const { status, start, stop, error: recorderError } = useMediaRecorder();
+    const [micHelpDismissed, setMicHelpDismissed] = useState(false);
     const [pendingVideo, setPendingVideo] = useState(false);
+    useEffect(() => {
+        setMicHelpDismissed(false);
+    }, [recorderError]);
+    // F33: surface mic failures inline — a toast alone strands the teacher.
+    // A video attempt requests camera + mic, so NotAllowed/NotFound may mean the
+    // camera is blocked or missing even when the mic works.
+    const micKind =
+        status === 'error' && recorderError && !micHelpDismissed
+            ? recorderError.name === 'NotAllowedError' || recorderError.name === 'SecurityError'
+                ? ('permission' as const)
+                : recorderError.name === 'NotFoundError' || recorderError.name === 'OverconstrainedError'
+                  ? ('notfound' as const)
+                  : null
+            : null;
+    const showCameraHint = pendingVideo;
     const [startedAt, setStartedAt] = useState<number | null>(null);
     const [pendingRecording, setPendingRecording] = useState<PendingRecording | null>(null);
 
@@ -123,6 +139,45 @@ export default function RecordingControls({ recordings, onChange, syncConfigured
                 >
                     <AlertTriangle size={14} style={{ flexShrink: 0, marginTop: 1, color: 'var(--orange, #f59e0b)' }} />
                     <span>{t('recordings.local_only_warning')}</span>
+                </div>
+            )}
+
+            {micKind && (
+                <div
+                    role="alert"
+                    style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: 8,
+                        padding: '8px 12px',
+                        borderRadius: 8,
+                        background: 'var(--bg-elevated)',
+                        border: '1px solid var(--border)',
+                        color: 'var(--text)',
+                        fontSize: '0.8rem',
+                        marginBottom: 10,
+                    }}
+                >
+                    <AlertTriangle size={14} style={{ flexShrink: 0, marginTop: 1, color: 'var(--orange, #f59e0b)' }} />
+                    <span style={{ flex: 1 }}>
+                        <strong>{t(`recordings.mic_${micKind}_title`)}</strong>
+                        <br />
+                        {t(`recordings.mic_${micKind}_body`)}
+                        {showCameraHint && (
+                            <>
+                                <br />
+                                {t('recordings.mic_video_hint')}
+                            </>
+                        )}
+                    </span>
+                    <button
+                        type="button"
+                        className="btn btn-ghost btn-icon btn-sm"
+                        aria-label={t('common.close')}
+                        onClick={() => setMicHelpDismissed(true)}
+                    >
+                        ✕
+                    </button>
                 </div>
             )}
 

@@ -1116,8 +1116,19 @@ function RubricBuilderEditor({ shared }: { shared?: SharedEntry<Rubric> }) {
                             title={readOnly ? t('sharing.view_only') : undefined}
                         >
                             <Save size={15} />{' '}
-                            {saved ? t('rubricBuilder.action_saved') : t('rubricBuilder.action_save')}
+                            {saved && !isDirty ? t('rubricBuilder.action_saved') : t('rubricBuilder.action_save')}
                         </button>
+                        {/* F34: persistent dirty state — isDirty wins over the 2s Saved flash so a
+                            new edit never reads as saved. */}
+                        {isDirty && !readOnly && (
+                            <span
+                                role="status"
+                                className="text-muted"
+                                style={{ fontSize: '0.78rem', whiteSpace: 'nowrap' }}
+                            >
+                                • {t('rubricBuilder.unsaved_badge')}
+                            </span>
+                        )}
                         {!tiered && (
                             <div
                                 style={{
