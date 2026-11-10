@@ -1113,6 +1113,7 @@
                 "scan_markers_label": "Include scan markers on answer sheets",
                 "scan_markers_hint": "Adds corner registration marks and a QR code that let the scanner identify each sheet automatically. The page layout is identical either way, so sheets without markers scan fine; off by default to match the plain CITO look.",
                 "scan_markers_pdf_only": "Scan markers are only added to the PDF answer sheet; the Word answer sheet is exported without them.",
+                "unconfigured_subitems": "Questions {{numbers}} have no parts configured — the answer sheet shows a single line for each. Add parts in the test builder.",
                 "students_label": "Students",
                 "select_all": "Select all",
                 "true": "True",

@@ -1113,6 +1113,7 @@
                 "scan_markers_label": "Scanmarkeringen toevoegen aan antwoordbladen",
                 "scan_markers_hint": "Voegt hoekregistratiemarkeringen en een QR-code toe waarmee de scanner elk blad automatisch herkent. De paginalay-out is in beide gevallen gelijk, dus bladen zonder markeringen zijn ook scanbaar; standaard uit voor de originele CITO-look.",
                 "scan_markers_pdf_only": "Scanmarkeringen worden alleen aan het pdf-antwoordblad toegevoegd; het Word-antwoordblad wordt zonder markeringen geëxporteerd.",
+                "unconfigured_subitems": "Vragen {{numbers}} hebben geen onderdelen — het antwoordblad toont hiervoor één regel. Voeg onderdelen toe in de toetsbouwer.",
                 "students_label": "Leerlingen",
                 "select_all": "Alles selecteren",
                 "true": "Waar",

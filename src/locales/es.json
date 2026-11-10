@@ -1113,6 +1113,7 @@
                 "scan_markers_label": "Incluir marcas de escaneo en las hojas de respuestas",
                 "scan_markers_hint": "Añade marcas de registro en las esquinas y un código QR que permiten al escáner identificar cada hoja automáticamente. La maquetación de página es idéntica en ambos casos, así que las hojas sin marcas también se escanean; desactivado por defecto para mantener el aspecto original de CITO.",
                 "scan_markers_pdf_only": "Las marcas de escaneo solo se añaden a la hoja de respuestas en PDF; la hoja de Word se exporta sin ellas.",
+                "unconfigured_subitems": "Las preguntas {{numbers}} no tienen partes configuradas — la hoja de respuestas muestra una sola línea para cada una. Añada partes en el editor de la prueba.",
                 "students_label": "Alumnos",
                 "select_all": "Seleccionar todos",
                 "true": "Verdadero",

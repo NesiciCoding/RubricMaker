@@ -1113,6 +1113,7 @@
                 "scan_markers_label": "Scanmarkierungen auf Antwortblättern einfügen",
                 "scan_markers_hint": "Fügt Eckregistrierungsmarken und einen QR-Code hinzu, mit denen der Scanner jedes Blatt automatisch erkennt. Das Seitenlayout ist in beiden Fällen identisch, daher lassen sich auch Blätter ohne Markierungen scannen; standardmäßig aus, um dem ursprünglichen CITO-Look zu entsprechen.",
                 "scan_markers_pdf_only": "Scan-Markierungen werden nur dem PDF-Antwortblatt hinzugefügt; das Word-Antwortblatt wird ohne Markierungen exportiert.",
+                "unconfigured_subitems": "Die Fragen {{numbers}} haben keine konfigurierten Teile — das Antwortblatt zeigt jeweils nur eine Zeile. Fügen Sie im Test-Editor Teile hinzu.",
                 "students_label": "Schüler",
                 "select_all": "Alle auswählen",
                 "true": "Wahr",

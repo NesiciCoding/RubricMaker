@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import type { Test, TestQuestion } from '../types';
+import type { Test, TestQuestion, TestQuestionType } from '../types';
+import type { AnswerSpaceKind } from './testExamContent';
 import {
     ANSWER_SHEET_FIRST_BLOCK_MM,
     ANSWER_SHEET_FOOTER_MM,
@@ -247,6 +248,130 @@ describe('answerSpaceFor', () => {
             })
         );
         expect(matching).toMatchObject({ kind: 'subitems', subItemCount: 2 });
+    });
+
+    // Compile-time exhaustiveness: adding a TestQuestionType without extending this map (and
+    // answerSpaceFor) fails typecheck, so no question type can silently inherit the default.
+    const EXPECTED_KIND: Record<TestQuestionType, AnswerSpaceKind> = {
+        'multiple-choice': 'choice',
+        'multiple-response': 'choice',
+        'true-false': 'choice',
+        'short-answer': 'short',
+        'key-word-transformation': 'short',
+        'sentence-builder': 'short',
+        open: 'long',
+        dictation: 'long',
+        numeric: 'numeric',
+        cloze: 'subitems',
+        'cloze-dropdown': 'subitems',
+        'cloze-bank': 'subitems',
+        matrix: 'subitems',
+        'error-correction': 'subitems',
+        matching: 'subitems',
+        ordering: 'subitems',
+        categorize: 'subitems',
+        'hot-text': 'subitems',
+        'audio-response': 'none',
+    };
+
+    it('maps every question type explicitly (no silent default)', () => {
+        const twoPairs = [
+            { id: '1', left: 'a', right: 'b' },
+            { id: '2', left: 'c', right: 'd' },
+        ];
+        const fixtures: Record<TestQuestionType, TestQuestion> = {
+            'multiple-choice': q({ id: 't-mc', type: 'multiple-choice', points: 1, prompt: 'p', options: [] }),
+            'multiple-response': q({ id: 't-mr', type: 'multiple-response', points: 1, prompt: 'p', options: [] }),
+            'true-false': q({ id: 't-tf', type: 'true-false', points: 1, prompt: 'p' }),
+            'short-answer': q({ id: 't-sa', type: 'short-answer', points: 1, prompt: 'p' }),
+            'key-word-transformation': q({
+                id: 't-kw',
+                type: 'key-word-transformation',
+                points: 1,
+                prompt: 'p',
+            }),
+            'sentence-builder': q({
+                id: 't-sb',
+                type: 'sentence-builder',
+                points: 1,
+                prompt: '',
+                sentenceTargets: ['I go to school'],
+            }),
+            open: q({ id: 't-op', type: 'open', points: 1, prompt: 'p' }),
+            dictation: q({ id: 't-di', type: 'dictation', points: 1, prompt: '', dictationText: 'Hello.' }),
+            numeric: q({ id: 't-nu', type: 'numeric', points: 1, prompt: 'p', expectedNumericValue: 4 }),
+            cloze: q({ id: 't-cz', type: 'cloze', points: 2, prompt: 'The {{cat}} and the {{dog}}.' }),
+            'cloze-dropdown': q({
+                id: 't-cd',
+                type: 'cloze-dropdown',
+                points: 2,
+                prompt: 'The {{cat}} and the {{dog}}.',
+            }),
+            'cloze-bank': q({
+                id: 't-cb',
+                type: 'cloze-bank',
+                points: 2,
+                prompt: 'The {{cat}} and the {{dog}}.',
+            }),
+            matrix: q({
+                id: 't-ma',
+                type: 'matrix',
+                points: 2,
+                prompt: '',
+                matrixColumns: [
+                    { id: 'c1', text: 'Right' },
+                    { id: 'c2', text: 'Wrong' },
+                ],
+                matrixRows: [
+                    { id: 'r1', text: 'One', correctColumnId: 'c2' },
+                    { id: 'r2', text: 'Two', correctColumnId: 'c1' },
+                ],
+            }),
+            'error-correction': q({
+                id: 't-ec',
+                type: 'error-correction',
+                points: 4,
+                prompt: '',
+                errorPassage: 'He [[go|goes]] to school [[every]] day.',
+            }),
+            matching: q({ id: 't-mt', type: 'matching', points: 2, prompt: 'p', matchingPairs: twoPairs }),
+            ordering: q({
+                id: 't-or',
+                type: 'ordering',
+                points: 2,
+                prompt: 'p',
+                orderItems: [
+                    { id: '1', text: 'First' },
+                    { id: '2', text: 'Second' },
+                ],
+            }),
+            categorize: q({
+                id: 't-ca',
+                type: 'categorize',
+                points: 2,
+                prompt: 'p',
+                categories: [
+                    { id: 'c1', label: 'A' },
+                    { id: 'c2', label: 'B' },
+                ],
+                categorizeItems: [
+                    { id: '1', text: 'x', categoryId: 'c1' },
+                    { id: '2', text: 'y', categoryId: 'c2' },
+                ],
+            }),
+            'hot-text': q({
+                id: 't-ht',
+                type: 'hot-text',
+                points: 1,
+                prompt: 'select',
+                hotTextPassage: 'The [[quick brown fox]] jumps over the [[lazy dog]].',
+                hotTextCorrectIndices: [1],
+            }),
+            'audio-response': q({ id: 't-ar', type: 'audio-response', points: 1, prompt: 'p' }),
+        };
+        for (const [type, question] of Object.entries(fixtures) as [TestQuestionType, TestQuestion][]) {
+            expect(answerSpaceFor(question).kind, type).toBe(EXPECTED_KIND[type]);
+        }
     });
 });
 
