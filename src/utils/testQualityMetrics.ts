@@ -4,11 +4,34 @@ import { calcTestItemAnalysis } from './testSummaryAggregator';
 
 /** Below this many complete score rows, correlations and α are too noisy to show. */
 export const MIN_STUDENTS_FOR_CORRELATION = 5;
+/** Below this many complete rows the upper/lower-27% split is too small to read. */
+export const MIN_STUDENTS_FOR_DISCRIMINATION = 8;
+const DISCRIMINATION_GROUP_RATIO = 0.27;
 
 export type ItemQualityFlag = 'too_hard' | 'too_easy' | 'weak_rir' | 'negative_rir' | 'alpha_rises';
 
+/**
+ * The engine is generic over "items": a test's questions, or a rubric's criteria. Each adapter
+ * builds the same students × items matrix, so the maths lives in exactly one place.
+ */
+export interface ItemMatrixItem {
+    id: string;
+    maxPoints: number;
+}
+
+export interface ItemMatrixRow {
+    studentId: string;
+    /** `null` for a cell that was not scored; a row with any `null` is left out of the correlations. */
+    scores: (number | null)[];
+}
+
+export interface ItemMatrix {
+    items: ItemMatrixItem[];
+    rows: ItemMatrixRow[];
+}
+
 export interface ItemQuality {
-    questionId: string;
+    itemId: string;
     maxPoints: number;
     sampleSize: number;
     mean: number | null;
@@ -17,14 +40,14 @@ export interface ItemQuality {
     rit: number | null;
     /** Correlation of the item score with the total of the other items (corrected item-total). */
     rir: number | null;
-    /** Upper/lower-27% discrimination index from calcTestItemAnalysis. */
+    /** Upper/lower-27% discrimination: how much better the top scorers did on this item. */
     discrimination: number | null;
-    /** Cronbach's α of the test without this item. */
+    /** Cronbach's α of the set without this item. */
     alphaIfDeleted: number | null;
     flags: ItemQualityFlag[];
 }
 
-export interface TestQualitySummary {
+export interface ItemQualitySummary {
     n: number;
     maxPoints: number;
     mean: number | null;
@@ -38,8 +61,8 @@ export interface TestQualitySummary {
     sem: number | null;
 }
 
-export interface TestQualityReport {
-    summary: TestQualitySummary;
+export interface ItemQualityReport {
+    summary: ItemQualitySummary;
     items: ItemQuality[];
     /** Per-student total points of the complete rows the metrics were computed from. */
     totals: { studentId: string; points: number }[];
@@ -94,6 +117,137 @@ export function cronbachAlpha(matrix: number[][]): number | null {
     return (k / (k - 1)) * (1 - itemVarSum / totalVar);
 }
 
+/** Rows scored on every item; anything else would read as zeroes and drag the correlations down. */
+function completeRows(matrix: ItemMatrix): { studentId: string; scores: number[] }[] {
+    const complete: { studentId: string; scores: number[] }[] = [];
+    for (const row of matrix.rows) {
+        if (row.scores.length !== matrix.items.length) continue;
+        const scores: number[] = [];
+        let isComplete = true;
+        for (const value of row.scores) {
+            if (value === null) {
+                isComplete = false;
+                break;
+            }
+            scores.push(value);
+        }
+        if (isComplete) complete.push({ studentId: row.studentId, scores });
+    }
+    return complete;
+}
+
+/**
+ * Upper/lower-27% discrimination per item, computed from the matrix alone. Ranked by total score,
+ * and null below `MIN_STUDENTS_FOR_DISCRIMINATION` — a smaller split is noise.
+ */
+export function discriminationByItem(matrix: ItemMatrix): (itemId: string) => number | null {
+    const complete = completeRows(matrix);
+    const totals = complete.map((row) => row.scores.reduce((s, v) => s + v, 0));
+    const ranked = complete
+        .map((row, i) => ({ studentId: row.studentId, total: totals[i] }))
+        .sort((a, b) => b.total - a.total);
+    const groupSize = Math.max(1, Math.round(ranked.length * DISCRIMINATION_GROUP_RATIO));
+    const upper = new Set(ranked.slice(0, groupSize).map((r) => r.studentId));
+    const lower = new Set(ranked.slice(-groupSize).map((r) => r.studentId));
+    const enough = ranked.length >= MIN_STUDENTS_FOR_DISCRIMINATION;
+
+    const columns = new Map<string, { studentId: string; fraction: number }[]>();
+    matrix.items.forEach((item, j) => {
+        columns.set(
+            item.id,
+            complete.map((row) => ({
+                studentId: row.studentId,
+                fraction: item.maxPoints > 0 ? row.scores[j] / item.maxPoints : 0,
+            }))
+        );
+    });
+
+    const groupMean = (column: { studentId: string; fraction: number }[], ids: Set<string>) => {
+        const values = column.filter((c) => ids.has(c.studentId)).map((c) => c.fraction);
+        return values.length > 0 ? values.reduce((s, v) => s + v, 0) / values.length : null;
+    };
+
+    return (itemId) => {
+        if (!enough) return null;
+        const column = columns.get(itemId);
+        if (!column) return null;
+        const top = groupMean(column, upper);
+        const bottom = groupMean(column, lower);
+        return top === null || bottom === null ? null : top - bottom;
+    };
+}
+
+/**
+ * Classical item-quality report over any students × items matrix: difficulty (P), item-total and
+ * item-rest correlations, Cronbach's α (and α if an item is dropped), SEM and discrimination.
+ * `discriminationOf` lets an adapter supply a richer source (the test adapter reuses its
+ * distractor analysis pass); without it the 27% split is computed from the matrix.
+ */
+export function calcItemQuality(
+    matrix: ItemMatrix,
+    opts: { discriminationOf?: (itemId: string) => number | null } = {}
+): ItemQualityReport {
+    const complete = completeRows(matrix);
+    const totals = complete.map((row) => row.scores.reduce((s, v) => s + v, 0));
+    const enough = complete.length >= MIN_STUDENTS_FOR_CORRELATION;
+    const matrixValues = complete.map((row) => row.scores);
+
+    const totalVar = variance(totals);
+    const sd = totalVar === null ? null : Math.sqrt(totalVar);
+    const alpha = enough ? cronbachAlpha(matrixValues) : null;
+    const discriminationOf = opts.discriminationOf ?? discriminationByItem(matrix);
+
+    const items: ItemQuality[] = matrix.items.map((item, j) => {
+        const answered = matrix.rows.map((row) => row.scores[j]).filter((v): v is number => v !== null);
+        const itemMean = mean(answered);
+        const pValue = itemMean === null || item.maxPoints <= 0 ? null : itemMean / item.maxPoints;
+        const column = complete.map((row) => row.scores[j]);
+        const rest = complete.map((row, i) => totals[i] - row.scores[j]);
+        const rit = enough ? pearson(column, totals) : null;
+        const rir = enough ? pearson(column, rest) : null;
+        const alphaIfDeleted =
+            enough && matrix.items.length > 2
+                ? cronbachAlpha(complete.map((row) => row.scores.filter((_, k) => k !== j)))
+                : null;
+
+        const flags: ItemQualityFlag[] = [];
+        if (pValue !== null && pValue < 0.3) flags.push('too_hard');
+        if (pValue !== null && pValue > 0.9) flags.push('too_easy');
+        if (rir !== null && rir < 0) flags.push('negative_rir');
+        else if (rir !== null && rir < 0.2) flags.push('weak_rir');
+        if (alpha !== null && alphaIfDeleted !== null && alphaIfDeleted > alpha + 0.01) flags.push('alpha_rises');
+
+        return {
+            itemId: item.id,
+            maxPoints: item.maxPoints,
+            sampleSize: answered.length,
+            mean: itemMean,
+            pValue,
+            rit,
+            rir,
+            discrimination: discriminationOf(item.id),
+            alphaIfDeleted,
+            flags,
+        };
+    });
+
+    return {
+        summary: {
+            n: complete.length,
+            maxPoints: matrix.items.reduce((s, item) => s + item.maxPoints, 0),
+            mean: mean(totals),
+            sd,
+            median: median(totals),
+            min: totals.length ? Math.min(...totals) : null,
+            max: totals.length ? Math.max(...totals) : null,
+            alpha,
+            sem: alpha !== null && sd !== null ? sd * Math.sqrt(Math.max(0, 1 - alpha)) : null,
+        },
+        items,
+        totals: complete.map((row, i) => ({ studentId: row.studentId, points: totals[i] })),
+    };
+}
+
 function latestAnswers(st: StudentTest): Map<string, TestAnswer> {
     const byQuestion = new Map<string, TestAnswer>();
     for (const answer of st.answers) byQuestion.set(answer.questionId, answer);
@@ -117,82 +271,26 @@ function scoredSubmissions(test: Test, studentTests: StudentTest[]): StudentTest
  * Only students with a score on every question count toward the correlations and α, as
  * missing cells would otherwise read as zeroes.
  */
-export function calcTestQuality(test: Test, studentTests: StudentTest[]): TestQualityReport {
+export function calcTestQuality(test: Test, studentTests: StudentTest[]): ItemQualityReport {
     const questions = test.questions;
-    const maxPoints = questions.reduce((s, q) => s + q.points, 0);
     const submissions = scoredSubmissions(test, studentTests);
-
-    const rows = submissions.map((st) => {
-        const answers = latestAnswers(st);
-        return {
-            studentId: st.studentId,
-            scores: questions.map((q) => {
-                const a = answers.get(q.id);
-                return a ? scoreTestAnswer(q, a) : null;
-            }),
-        };
-    });
-    const complete = rows.filter((r) => r.scores.every((v) => v !== null)) as {
-        studentId: string;
-        scores: number[];
-    }[];
-    const matrix = complete.map((r) => r.scores);
-    const totals = matrix.map((row) => row.reduce((s, v) => s + v, 0));
-    const enough = complete.length >= MIN_STUDENTS_FOR_CORRELATION;
-
-    const alpha = enough ? cronbachAlpha(matrix) : null;
-    const totalVar = variance(totals);
-    const sd = totalVar === null ? null : Math.sqrt(totalVar);
-
-    const itemAnalysis = new Map(calcTestItemAnalysis(submissions, test).map((r) => [r.questionId, r]));
-
-    const items: ItemQuality[] = questions.map((q, j) => {
-        const answered = rows.map((r) => r.scores[j]).filter((v): v is number => v !== null);
-        const itemMean = mean(answered);
-        const pValue = itemMean === null || q.points <= 0 ? null : itemMean / q.points;
-        const column = matrix.map((row) => row[j]);
-        const rest = matrix.map((row, i) => totals[i] - row[j]);
-        const rit = enough ? pearson(column, totals) : null;
-        const rir = enough ? pearson(column, rest) : null;
-        const alphaIfDeleted =
-            enough && questions.length > 2 ? cronbachAlpha(matrix.map((row) => row.filter((_, k) => k !== j))) : null;
-
-        const flags: ItemQualityFlag[] = [];
-        if (pValue !== null && pValue < 0.3) flags.push('too_hard');
-        if (pValue !== null && pValue > 0.9) flags.push('too_easy');
-        if (rir !== null && rir < 0) flags.push('negative_rir');
-        else if (rir !== null && rir < 0.2) flags.push('weak_rir');
-        if (alpha !== null && alphaIfDeleted !== null && alphaIfDeleted > alpha + 0.01) flags.push('alpha_rises');
-
-        return {
-            questionId: q.id,
-            maxPoints: q.points,
-            sampleSize: answered.length,
-            mean: itemMean,
-            pValue,
-            rit,
-            rir,
-            discrimination: itemAnalysis.get(q.id)?.discrimination ?? null,
-            alphaIfDeleted,
-            flags,
-        };
-    });
-
-    return {
-        summary: {
-            n: complete.length,
-            maxPoints,
-            mean: mean(totals),
-            sd,
-            median: median(totals),
-            min: totals.length ? Math.min(...totals) : null,
-            max: totals.length ? Math.max(...totals) : null,
-            alpha,
-            sem: alpha !== null && sd !== null ? sd * Math.sqrt(Math.max(0, 1 - alpha)) : null,
-        },
-        items,
-        totals: complete.map((r, i) => ({ studentId: r.studentId, points: totals[i] })),
+    const matrix: ItemMatrix = {
+        items: questions.map((q) => ({ id: q.id, maxPoints: q.points })),
+        rows: submissions.map((st) => {
+            const answers = latestAnswers(st);
+            return {
+                studentId: st.studentId,
+                scores: questions.map((q) => {
+                    const a = answers.get(q.id);
+                    return a ? scoreTestAnswer(q, a) : null;
+                }),
+            };
+        }),
     };
+    const discrimination = new Map(
+        calcTestItemAnalysis(submissions, test).map((row) => [row.questionId, row.discrimination])
+    );
+    return calcItemQuality(matrix, { discriminationOf: (itemId) => discrimination.get(itemId) ?? null });
 }
 
 /** Rule-of-thumb reading of α for teacher-made tests. */

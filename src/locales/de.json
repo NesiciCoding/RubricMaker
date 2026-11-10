@@ -1272,6 +1272,14 @@
             "nudge_button": "Anstupsen",
             "nudge_message": "Deine Lehrkraft möchte kurz nachfragen — mach weiter oder bitte um Hilfe.",
             "nudge_sent": "Nudge an {{name}} gesendet. Sie sehen ihn als Hinweis.",
+            "confidence_toggle": "Sicherheit der Schätzung",
+            "confidence_toggle_help": "Abzeichen erscheinen erst nach der Abgabe: Der Monitor erhält den Verlauf Frage für Frage nur von einem abgegebenen Versuch.",
+            "confidence_low": "vorläufig",
+            "confidence_medium": "konvergierend",
+            "confidence_high": "stabil",
+            "confidence_low_help": "Der Durchlauf bewegt sich noch in eine Richtung; betrachte dieses Niveau als vorläufig.",
+            "confidence_medium_help": "Das Niveau hat einmal die Richtung gewechselt; die Schätzung grenzt das Niveau ein.",
+            "confidence_high_help": "Der Durchlauf ist konvergiert; die Niveauschätzung bewegt sich nicht mehr.",
             "nudge_sent_anonymous": "Nudge an {{name}} gesendet. Sie sehen ihn als Hinweis.",
             "generator_level_label": "Niveau {{level}}",
             "generator_elo_label": "Elo ~{{elo}}",
@@ -3238,6 +3246,17 @@
             "kind_test": "Tests",
             "no_subject": "Kein Fach",
             "no_class": "Keine Klasse"
+        },
+        "rubric_quality": {
+            "title": "Qualität des Rasters",
+            "help": "Jedes Kriterium zählt als Item. Raster haben wenige, ordinale und oft korrelierte Kriterien; lies α als interne Konsistenz des Rasters.",
+            "no_data": "Noch keine vollständig bewerteten Abgaben — jedes Kriterium muss bewertet sein, damit eine Abgabe zählt.",
+            "tier_label": "Niveau",
+            "small_sample": "Weniger als 5 vollständige Bewertungen: Korrelationen und α sind unzuverlässig.",
+            "grouped_note": "Gruppenabgaben zählen einmal pro Gruppe.",
+            "criterion": "Kriterium",
+            "items_title": "Qualität je Kriterium",
+            "items_help": "P-Wert: Anteil der erreichten Punkte (niedrig = schwer, hoch = leicht). Rit: Zusammenhang des Kriteriums mit der Gesamtpunktzahl. Rir: Zusammenhang mit den übrigen Kriterien. Trennschärfe: wie viel besser die besten als die schwächsten Bewertungen abschneiden."
         }
     },
     "activityDashboard": {
@@ -4817,6 +4836,9 @@
         "rb_material_sharing_coteaching": "Gemeinsam unterrichten: Wer zu einer Klasse hinzugefügt wird (Schüler:innen → Klassenmenü → Teilen), kann die Noten und Testergebnisse dieser Klasse sehen und ihre Raster und Tests öffnen, auch wenn du sie privat hältst. Co-Lehrkräfte mit „Kann ansehen und bewerten“ können jede Note und jedes Testergebnis der Klasse ändern – auch deine – und ihr deine Tests zuweisen; das Ergebnis bleibt deins und hält fest, wer es zuletzt geändert hat. Co-Lehrkräfte mit „Kann ansehen“ sehen Noten und Ergebnisse, können sie aber nicht ändern. Auf der Bewertungsseite und bei jedem Testergebnis siehst du, wer es zuletzt geändert hat. Die Schülerliste bleibt bei der Eigentümerin bzw. dem Eigentümer: Co-Lehrkräfte sehen die Schüler:innen einer geteilten Klasse schreibgeschützt und können Name, Klasse, Bildungsgang oder Schuljahr nicht ändern.",
         "an_stats_item_query": "Erweiterte Abfrage — stellen Sie eigene Fragen über alle Rubrikbewertungen und bewerteten Tests: filtern Sie nach Klasse, Leistungsnachweis, Fach, Datum und Ergebnis, gruppieren Sie nach Schüler, Klasse, Leistungsnachweis, Fach, Monat oder Art und messen Sie Durchschnitt, Median, Minimum/Maximum, Bestehensquote, Streuung oder Veränderung vom ersten zum letzten Ergebnis. Fügen Sie eine Bedingung wie „Durchschnitt unter 55“ hinzu, beginnen Sie mit Beispielfragen, speichern Sie Abfragen und exportieren Sie das Ergebnis als CSV.",
         "an_stats_item_customize": "Anpassen — wählen Sie, welche Karten jede Ansicht zeigt und ob Fortschrittstrends bewertete Tests einbeziehen; Ihre Auswahl wird in Ihren Einstellungen gespeichert.",
+        "rb_live_monitor_item_confidence": "Bei adaptiven und Einstufungstests zeigt ein optionales Abzeichen neben der CEFR-Schätzung jeder Schülerin oder jedes Schülers, ob sie noch vorläufig, konvergierend oder stabil ist. Ein Abzeichen erscheint erst mit der Abgabe, denn nur ein abgegebener Versuch enthält den Verlauf Frage für Frage, aus dem es abgeleitet wird.",
+        "an_rubric_quality_title": "Qualität des Rasters",
+        "an_rubric_quality_body": "Unter Statistik → Nach Raster wird jedes Kriterium wie eine Testfrage analysiert: P-Wert, Rit/Rir, Cronbachs α, SEM und Trennschärfe — pro Niveau und einmal pro Gruppenabgabe.",
         "an_stats_tests_info": "Nur bewertete Leistungstests zählen für den Fortschritt. Übungstests, Einstufungstests, abwesende Schüler und unvollständige Versuche werden nicht berücksichtigt."
     },
     "studentProfile": {

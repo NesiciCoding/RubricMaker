@@ -1413,6 +1413,14 @@
             "class_filter_label": "Class:",
             "all_classes": "All classes",
             "started_only": "Started only",
+            "confidence_toggle": "Estimate confidence",
+            "confidence_toggle_help": "Badges appear once an attempt is handed in: the monitor only has the per-question trace of a submitted run.",
+            "confidence_low": "provisional",
+            "confidence_medium": "converging",
+            "confidence_high": "stable",
+            "confidence_low_help": "The run is still moving in one direction, so treat this level as provisional.",
+            "confidence_medium_help": "The level has turned around once; the estimate brackets the student's level.",
+            "confidence_high_help": "The run has converged, so the level estimate has stopped moving.",
             "nudge_sent_anonymous": "Nudge sent to {{name}}. They'll see it as a toast."
         },
         "queue": {
@@ -3238,6 +3246,17 @@
             "kind_test": "Tests",
             "no_subject": "No subject",
             "no_class": "No class"
+        },
+        "rubric_quality": {
+            "title": "Rubric quality",
+            "help": "Each criterion is treated as an item. Criteria are few, ordinal and often correlated, so read α as the rubric's internal consistency rather than a test statistic.",
+            "no_data": "No fully graded submissions yet — every criterion of a grade must be scored before it counts.",
+            "tier_label": "Tier",
+            "small_sample": "Fewer than 5 complete grades: correlations and α are unreliable.",
+            "grouped_note": "Group submissions count once per group.",
+            "criterion": "Criterion",
+            "items_title": "Criterion quality",
+            "items_help": "P-value: share of the points earned (low = hard, high = easy). Rit: correlation of the criterion with the total score. Rir: correlation with the other criteria. Discrimination: how much better the top scorers did than the bottom ones."
         }
     },
     "activityDashboard": {
@@ -4817,6 +4836,9 @@
         "rb_material_sharing_coteaching": "Co-teaching a class: anyone you add to a class (Students page → class menu → Share) can see its grades and test results, and open the class’s rubrics and tests, even ones you keep private. Co-teachers set to “Can view & grade” can change any grade or test result in that class — including yours — and can assign your tests to it; the result stays yours and records who changed it last. “Can view” co-teachers can read grades and results but not change them. The grading page and each student’s test result show who last changed them. The student list itself stays the owner’s: co-teachers see a shared class’s students read-only and can’t change their name, class, track or school year.",
         "an_stats_item_query": "Advanced query — ask your own questions across every rubric grade and graded test: filter by class, assessment, subject, dates and score, group by student, class, assessment, subject, month or type, and measure the average, median, lowest/highest, pass rate, spread or change from first to latest. Add a condition such as \"average below 55\", start from example questions, save your queries and export the result as CSV.",
         "an_stats_item_customize": "Customise — choose which cards each view shows and whether progress trends include graded tests; your choice is saved with your settings.",
+        "rb_live_monitor_item_confidence": "On adaptive and placement tests, an optional badge next to each student's CEFR estimate shows whether it is still provisional, converging, or stable. A badge appears once the attempt is handed in, because only a submitted run carries the per-question trace it is read from.",
+        "an_rubric_quality_title": "Rubric quality",
+        "an_rubric_quality_body": "In Statistics → By rubric, each criterion is analysed like a test question: P-value, Rit/Rir, Cronbach's α, SEM and discrimination, per tier and once per group submission.",
         "an_stats_tests_info": "Only graded assessment tests count towards progress. Practice tests, placement tests, absent students and unfinished attempts are left out."
     },
     "studentProfile": {

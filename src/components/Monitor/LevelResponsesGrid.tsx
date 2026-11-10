@@ -3,6 +3,9 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { CEFR_LEVELS } from '../../data/cefrDescriptors';
 import CompletionBar from './CompletionBar';
+import EstimateConfidenceBadge from './EstimateConfidenceBadge';
+import { placementConfidence } from '../../utils/placementConfidence';
+import type { StaircaseRunConfig } from '../../utils/placementStaircase';
 import type { CefrLevel, StaircaseStep } from '../../types';
 
 export interface LevelResponsesGridStudentRow {
@@ -16,6 +19,8 @@ export interface LevelResponsesGridStudentRow {
     levelPath: StaircaseStep[];
     /** Provisional CEFR estimate for the TOTALS column. */
     estimatedLevel?: CefrLevel;
+    /** Range and start level the trace must be replayed with; omitted for a classic staircase run. */
+    levelPathConfig?: StaircaseRunConfig;
     /** Questions answered so far; falls back to the trace length. Live runs report it before hand-in. */
     questionsAnswered?: number;
     /** A finished run is complete however few questions it took to converge. */
@@ -28,6 +33,8 @@ export interface LevelResponsesGridProps {
     maxQuestions?: number;
     showProgress?: boolean;
     showClassProgress?: boolean;
+    /** Opt-in read of how settled each TOTALS estimate is. */
+    showConfidence?: boolean;
 }
 
 function levelStats(steps: StaircaseStep[], level: CefrLevel): { correct: number; attempted: number } {
@@ -52,6 +59,7 @@ export default function LevelResponsesGrid({
     maxQuestions,
     showProgress = false,
     showClassProgress = false,
+    showConfidence = false,
 }: LevelResponsesGridProps) {
     const { t } = useTranslation();
     const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
@@ -118,6 +126,17 @@ export default function LevelResponsesGrid({
                     </>
                 )}
             </td>
+        );
+    }
+
+    function renderEstimatedLevel(row: LevelResponsesGridStudentRow) {
+        if (!row.estimatedLevel) return <span className="text-muted">—</span>;
+        const confidence = showConfidence ? placementConfidence(row.levelPath, row.levelPathConfig) : null;
+        return (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <span className="badge badge-blue">{row.estimatedLevel}</span>
+                {confidence && <EstimateConfidenceBadge confidence={confidence} />}
+            </span>
         );
     }
 
@@ -233,11 +252,7 @@ export default function LevelResponsesGrid({
                                                 {row.displayName}
                                             </td>
                                             <td style={{ padding: '4px 8px', textAlign: 'center' }}>
-                                                {row.estimatedLevel ? (
-                                                    <span className="badge badge-blue">{row.estimatedLevel}</span>
-                                                ) : (
-                                                    <span className="text-muted">—</span>
-                                                )}
+                                                {renderEstimatedLevel(row)}
                                             </td>
                                             {showProgress &&
                                                 (() => {

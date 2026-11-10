@@ -397,7 +397,7 @@ export default function ScoreSheetGrid({
                         </th>
                         {items.map((it) => (
                             <td
-                                key={it.questionId}
+                                key={it.itemId}
                                 style={{
                                     textAlign: 'center',
                                     padding: '6px 2px',

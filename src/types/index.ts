@@ -1031,6 +1031,8 @@ export interface AppSettings {
     monitorShowStatusSummary?: boolean;
     /** Live Monitor: halfway and final-question markers on the response grid header (default off) */
     monitorShowMilestones?: boolean;
+    /** Live Monitor: how settled an adaptive/placement CEFR estimate is, next to the level (default off) */
+    monitorShowEstimateConfidence?: boolean;
     /** Live Monitor (essays): words-per-minute trend and time since the draft last changed (default off) */
     monitorShowWritingPace?: boolean;
     /** Whether the progress trend charts include graded test results next to rubric grades (default true) */
