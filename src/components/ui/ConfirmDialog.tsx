@@ -80,14 +80,10 @@ export function ConfirmDialog({
                         className="modal-footer"
                         style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}
                     >
-                        <button className="btn btn-secondary" onClick={onCancel}>
+                        <button className="btn btn-secondary" onClick={onCancel} autoFocus>
                             {resolvedCancelLabel}
                         </button>
-                        <button
-                            className={`btn ${danger ? 'btn-danger' : 'btn-primary'}`}
-                            onClick={onConfirm}
-                            autoFocus
-                        >
+                        <button className={`btn ${danger ? 'btn-danger' : 'btn-primary'}`} onClick={onConfirm}>
                             {resolvedConfirmLabel}
                         </button>
                     </div>

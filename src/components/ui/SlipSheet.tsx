@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { X, Printer } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -13,6 +13,15 @@ interface Props {
 
 export default function SlipSheet({ title, columns, onColumnsChange, onClose, children }: Props) {
     const { t } = useTranslation();
+
+    // Escape-to-close, matching the shared Modal/DropdownMenu behaviour (Batch 8).
+    useEffect(() => {
+        function handleKey(e: KeyboardEvent) {
+            if (e.key === 'Escape') onClose();
+        }
+        document.addEventListener('keydown', handleKey);
+        return () => document.removeEventListener('keydown', handleKey);
+    }, [onClose]);
 
     const content = (
         <>
@@ -38,6 +47,12 @@ export default function SlipSheet({ title, columns, onColumnsChange, onClose, ch
 
             <div
                 className="slip-sheet-overlay"
+                role="dialog"
+                aria-modal="true"
+                aria-label={title}
+                onMouseDown={(e) => {
+                    if (e.target === e.currentTarget) onClose();
+                }}
                 style={{
                     position: 'fixed',
                     inset: 0,
@@ -99,6 +114,7 @@ export default function SlipSheet({ title, columns, onColumnsChange, onClose, ch
                                 className="btn btn-ghost btn-icon btn-sm"
                                 aria-label={t('common.close')}
                                 onClick={onClose}
+                                autoFocus
                             >
                                 <X size={16} />
                             </button>
