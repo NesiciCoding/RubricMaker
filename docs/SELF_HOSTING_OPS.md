@@ -568,7 +568,7 @@ Docker daemon logs are rotated via `/etc/docker/daemon.json`:
 
 The Live Monitor listens on one Realtime channel per student, and every student page joins one. Realtime enforces per-tenant limits stored in `_realtime.tenants` (the self-hosted tenant is `realtime-dev`): `max_channels_per_client` (channels on one socket, default 100), `max_concurrent_users` (default 200), `max_events_per_second` (default 100) and `max_joins_per_second` (default 100). The app spreads the monitor's channels over several sockets of at most 50 each, so `max_channels_per_client` is only hit by older app builds. Classes of many students, or several monitored tests at once, need more than the defaults.
 
-Don't edit `_realtime.tenants` by hand: Realtime deletes and recreates the tenant every time it starts, so an `update` is lost on the next restart. The tenant takes its limits from Realtime's `TENANT_MAX_*` environment variables when it is created. `deploy/supabase/docker-compose.override.yml` sets them (1000 concurrent users, 1000 events/s, 500 joins/s, 200 channels per socket); change any of them with `REALTIME_MAX_CONCURRENT_USERS`, `REALTIME_MAX_EVENTS_PER_SECOND`, `REALTIME_MAX_JOINS_PER_SECOND` or `REALTIME_MAX_CHANNELS_PER_CLIENT` in the stack's `.env`. Apply with:
+Don't edit `_realtime.tenants` by hand: Realtime deletes and recreates the tenant every time it starts, so an `update` is lost on the next restart. The tenant takes its limits from Realtime's `TENANT_MAX_*` environment variables when it is created. `deploy/supabase/docker-compose.override.yml` sets them (1000 concurrent users, 1000 events/s, 500 joins/s, 200 channels per socket); edit the numbers there to change them. Apply with:
 
 ```bash
 docker compose up -d --force-recreate realtime

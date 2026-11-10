@@ -50,10 +50,10 @@ describe('compose files', () => {
         // Realtime recreates its self-hosted tenant on every start from these variables, so they
         // are the only place the limits persist.
         expect(services.realtime.environment).toEqual({
-            TENANT_MAX_CONCURRENT_USERS: '${REALTIME_MAX_CONCURRENT_USERS:-1000}',
-            TENANT_MAX_EVENTS_PER_SECOND: '${REALTIME_MAX_EVENTS_PER_SECOND:-1000}',
-            TENANT_MAX_JOINS_PER_SECOND: '${REALTIME_MAX_JOINS_PER_SECOND:-500}',
-            TENANT_MAX_CHANNELS_PER_CLIENT: '${REALTIME_MAX_CHANNELS_PER_CLIENT:-200}',
+            TENANT_MAX_CONCURRENT_USERS: '1000',
+            TENANT_MAX_EVENTS_PER_SECOND: '1000',
+            TENANT_MAX_JOINS_PER_SECOND: '500',
+            TENANT_MAX_CHANNELS_PER_CLIENT: '200',
         });
     });
 });
