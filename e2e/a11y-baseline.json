@@ -191,6 +191,36 @@
       ]
     },
     {
+      "route": "/join",
+      "theme": "dark",
+      "violations": []
+    },
+    {
+      "route": "/join",
+      "theme": "light",
+      "violations": []
+    },
+    {
+      "route": "/live",
+      "theme": "dark",
+      "violations": []
+    },
+    {
+      "route": "/live",
+      "theme": "light",
+      "violations": []
+    },
+    {
+      "route": "/live/new",
+      "theme": "dark",
+      "violations": []
+    },
+    {
+      "route": "/live/new",
+      "theme": "light",
+      "violations": []
+    },
+    {
       "route": "/marketplace",
       "theme": "dark",
       "violations": []

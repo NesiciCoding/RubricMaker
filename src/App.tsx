@@ -51,6 +51,8 @@ const TestListPage = lazy(() => import('./pages/TestListPage'));
 const TestBuilderPage = lazy(() => import('./pages/TestBuilderPage'));
 const EssayListPage = lazy(() => import('./pages/EssayListPage'));
 const EssayBuilderPage = lazy(() => import('./pages/EssayBuilderPage'));
+const LiveWritingListPage = lazy(() => import('./pages/LiveWritingListPage'));
+const LiveWritingSessionPage = lazy(() => import('./pages/LiveWritingSessionPage'));
 const TestResultsPage = lazy(() => import('./pages/TestResultsPage'));
 const TestScoreSheetPage = lazy(() => import('./pages/TestScoreSheetPage'));
 const TestGradingQueuePage = lazy(() => import('./pages/TestGradingQueuePage'));
@@ -344,6 +346,9 @@ export default function App() {
                                         path="/essays/:assignmentId/monitor"
                                         element={<LiveMonitorPage kind="essay" />}
                                     />
+                                    <Route path="/live" element={<LiveWritingListPage />} />
+                                    <Route path="/live/new" element={<LiveWritingSessionPage />} />
+                                    <Route path="/live/:sessionId" element={<LiveWritingSessionPage />} />
                                     <Route path="/flashcards" element={<FlashcardsPage />} />
                                     <Route path="/flashcards/:id" element={<FlashcardDeckPage />} />
                                     <Route path="/news-flashes" element={<NewsFlashesPage />} />

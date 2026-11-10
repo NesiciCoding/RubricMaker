@@ -191,6 +191,27 @@ export function getRouteTree(t: TFunction): RouteNode[] {
             ],
         },
         {
+            path: '/live',
+            label: t('docs.route_live_label'),
+            description: t('docs.route_live_desc'),
+            color: '#ec4899',
+            children: [
+                {
+                    path: '/live/:sessionId',
+                    label: t('docs.route_live_session_label'),
+                    description: t('docs.route_live_session_desc'),
+                    color: '#ec4899',
+                },
+                {
+                    path: '/join/:code',
+                    label: t('docs.route_join_label'),
+                    description: t('docs.route_join_desc'),
+                    color: '#ec4899',
+                    badge: 'student',
+                },
+            ],
+        },
+        {
             path: '/students',
             label: t('docs.route_students_label'),
             description: t('docs.route_students_desc'),
@@ -1695,6 +1716,12 @@ function EssaysTab() {
     const { t } = useTranslation();
     return (
         <div>
+            <FeatureSection icon={FileText} title={t('docs.es_live_title')} color="#ec4899">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    {t('docs.es_live_body')}
+                </p>
+            </FeatureSection>
+
             <FeatureSection icon={FileText} title={t('docs.es_stats_title')} color="#6366f1">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     {t('docs.es_stats_body')}

@@ -186,6 +186,13 @@ const TEACHER_FEATURES = [
         desc: 'Curate an article, book, or video and share it with every student — with an optional link to a flashcard deck, test, or rubric.',
         color: '#8b5cf6',
     },
+    {
+        icon: Radio,
+        key: 'live_writing',
+        title: 'Live Writing',
+        desc: 'Run a timed in-class writing session: students join with a short code, pick their name, and write — no accounts and no AI.',
+        color: '#ec4899',
+    },
 ];
 
 const STUDENT_FEATURES = [

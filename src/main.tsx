@@ -124,6 +124,7 @@ const StudentFeedbackPage = lazy(() => import('./pages/StudentFeedbackPage'));
 const RubricPreviewPage = lazy(() => import('./pages/RubricPreviewPage'));
 const StudentEssayPage = lazy(() => import('./pages/StudentEssayPage'));
 const StudentTestPage = lazy(() => import('./pages/StudentTestPage'));
+const StudentLiveWritePage = lazy(() => import('./pages/StudentLiveWritePage'));
 
 function handleUnhandledRejection(event: PromiseRejectionEvent) {
     console.error('[unhandled rejection]', event.reason);
@@ -134,7 +135,7 @@ window.addEventListener('unhandledrejection', handleUnhandledRejection);
 
 const root = ReactDOM.createRoot(document.getElementById('root')!);
 
-const STUDENT_ROUTES = ['/feedback/', '/preview/', '/essay/', '/test/'];
+const STUDENT_ROUTES = ['/feedback/', '/preview/', '/essay/', '/test/', '/join'];
 const TAB_LOCK = 'rubricmaker-active-tab';
 
 function isStudentRoute() {
@@ -182,6 +183,22 @@ const router = createHashRouter([
                     <StudentTestPage />
                 </Suspense>
             </ToastProvider>
+        ),
+    },
+    {
+        path: '/join',
+        element: (
+            <Suspense fallback={<StudentTaskSkeleton />}>
+                <StudentLiveWritePage />
+            </Suspense>
+        ),
+    },
+    {
+        path: '/join/:code',
+        element: (
+            <Suspense fallback={<StudentTaskSkeleton />}>
+                <StudentLiveWritePage />
+            </Suspense>
         ),
     },
     {

@@ -1982,6 +1982,70 @@ export interface EssaySubmission {
     events?: ProctorEvent[];
 }
 
+// ─── Live writing sessions (Phase 43) ────────────────────────────────────────
+
+/**
+ * A teacher-run, in-class writing session. Transient by design: it holds the prompt, who joined,
+ * the text written per round and the peer votes. "Send to grading" later turns the roster's
+ * student_id into ordinary essay submissions, which is the only link to the grading pipeline.
+ */
+export type LiveWritingSessionStatus = 'draft' | 'lobby' | 'writing' | 'voting' | 'finals' | 'closed';
+
+export interface LiveWritingSession {
+    id: string;
+    classId: string;
+    title: string;
+    prompt: string;
+    imagePath?: string;
+    status: LiveWritingSessionStatus;
+    joinCode: string;
+    joinCodeExpiresAt?: string;
+    roundCount: number;
+    currentRound: number;
+    minutesPerRound: number;
+    minWords: number;
+    maxWords?: number;
+    /** Teacher-authored hints only; never generated. */
+    scaffoldEnabled: boolean;
+    scaffoldPrompts: string[];
+    /** Progress framing only: words written and hand-ins, never quality. */
+    liveLeaderboard: boolean;
+    lockAfterStart: boolean;
+    votesOpen: boolean;
+    createdAt: string;
+    updatedAt: string;
+    startedAt?: string;
+    endedAt?: string;
+}
+
+export interface LiveWritingParticipant {
+    id: string;
+    sessionId: string;
+    studentId: string;
+    displayName: string;
+    joinedAt: string;
+    lastSeenAt: string;
+}
+
+export interface LiveWritingRosterEntry {
+    studentId: string;
+    name: string;
+}
+
+/** What the join RPC hands a student: a participant id plus the secret token for save/vote RPCs. */
+export interface LiveWritingJoin {
+    participantId: string;
+    joinToken: string;
+    title: string;
+    status: LiveWritingSessionStatus;
+    currentRound: number;
+    roundCount: number;
+    minutesPerRound: number;
+    minWords: number;
+    maxWords?: number;
+    scaffoldEnabled: boolean;
+}
+
 // ─── Audit log ───────────────────────────────────────────────────────────────
 
 export type AuditCategory = 'admin' | 'grade' | 'export' | 'auth';
