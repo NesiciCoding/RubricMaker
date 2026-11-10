@@ -263,7 +263,7 @@ describe('CommentBankPage', () => {
             ],
         });
         renderPage(<CommentBankPage />);
-        fireEvent.click(screen.getByRole('button', { name: 'positive' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Positive' })); // F38 Title-Cases chips (display-only)
         expect(screen.getByText('Well done!')).toBeInTheDocument();
         expect(screen.queryByText('Needs improvement')).not.toBeInTheDocument();
     });

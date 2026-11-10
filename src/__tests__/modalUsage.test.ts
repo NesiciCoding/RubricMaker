@@ -3,16 +3,24 @@ import { join, relative, resolve, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
- * Dialogs have one owner: `components/ui/Modal.tsx` (Radix) and its sibling `ConfirmDialog.tsx`.
+ * Dialogs have one owner: `components/ui/Modal.tsx` (Radix) and its sibling `ConfirmDialog.tsx`,
+ * plus the print-oriented `components/ui/SlipSheet.tsx` sheet (F52).
  *
  * Hand-rolled `role="dialog"` overlays repeatedly shipped without a focus trap, Escape-to-close or
  * focus restoration (#533). The migration is complete — every page renders the shared primitive —
- * so this guard has no allowlist left: a raw overlay anywhere else fails the build.
+ * so this guard allows no other raw overlays: a raw dialog anywhere else fails the build.
+ * SlipSheet is exempt because it is a full-page print sheet with its own overlay,
+ * Escape-to-close, overlay-click-to-close and autofocus — not a generic modal.
  */
 const srcRoot = resolve(__dirname, '..');
 
-/** The two Radix-backed primitives — they are where `.modal-overlay` is supposed to appear. */
-const PRIMITIVES = new Set(['components/ui/Modal.tsx', 'components/ui/ConfirmDialog.tsx']);
+/** The allowed dialog primitives — Modal/ConfirmDialog own `.modal-overlay`; SlipSheet owns its print sheet. */
+const PRIMITIVES = new Set([
+    'components/ui/Modal.tsx',
+    'components/ui/ConfirmDialog.tsx',
+    // F52: print sheet with dialog semantics + Escape/overlay-click/autofocus.
+    'components/ui/SlipSheet.tsx',
+]);
 
 function sourceFiles(dir: string): string[] {
     return readdirSync(dir).flatMap((entry) => {
