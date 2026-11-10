@@ -61,6 +61,40 @@ describe('ExamBookletExportPanel class selection', () => {
     });
 });
 
+describe('ExamBookletExportPanel unconfigured subitems', () => {
+    it('warns with printed question numbers when a multi-part question has no parts', () => {
+        const withBlank = {
+            ...test,
+            questions: [
+                { id: 'q1', type: 'short-answer', points: 1, prompt: 'p' },
+                { id: 'q2', type: 'matching', points: 2, prompt: 'p', matchingPairs: [] },
+            ],
+        } as unknown as Test;
+        render(<ExamBookletExportPanel test={withBlank} students={students} />);
+        expect(screen.getByRole('note')).toHaveTextContent('tests.export.exam.unconfigured_subitems');
+    });
+
+    it('stays quiet when every multi-part question is configured', () => {
+        const configured = {
+            ...test,
+            questions: [
+                {
+                    id: 'q2',
+                    type: 'matching',
+                    points: 2,
+                    prompt: 'p',
+                    matchingPairs: [
+                        { id: '1', left: 'a', right: 'b' },
+                        { id: '2', left: 'c', right: 'd' },
+                    ],
+                },
+            ],
+        } as unknown as Test;
+        render(<ExamBookletExportPanel test={configured} students={students} />);
+        expect(screen.queryByRole('note')).not.toBeInTheDocument();
+    });
+});
+
 describe('ExamBookletExportPanel scan markers', () => {
     it('warns that scan markers only apply to the PDF answer sheet once enabled', () => {
         render(<ExamBookletExportPanel test={test} students={students} />);

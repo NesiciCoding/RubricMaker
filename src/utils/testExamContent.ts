@@ -346,7 +346,11 @@ export function answerSpaceFor(question: TestQuestion): AnswerSpaceSpec {
         case 'audio-response':
             return { kind: 'none' };
         default:
-            return { kind: 'short' };
+            // Unknown future type: fail generous, not silent. A half-page box wastes a little paper;
+            // two ruled lines silently truncates a handwritten answer. The exhaustiveness test below
+            // (Record<TestQuestionType, ...>) forces an explicit mapping when a type is added, so
+            // this branch is a backstop, never a policy.
+            return { kind: 'long' };
     }
 }
 

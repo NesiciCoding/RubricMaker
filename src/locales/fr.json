@@ -1106,6 +1106,7 @@
                 "scan_markers_label": "Ajouter des repères de numérisation sur les feuilles de réponses",
                 "scan_markers_hint": "Ajoute des repères d'angle et un code QR qui permettent au scanner d'identifier automatiquement chaque feuille. La mise en page est identique dans les deux cas, donc les feuilles sans repères se numérisent aussi ; désactivé par défaut pour conserver l'apparence CITO d'origine.",
                 "scan_markers_pdf_only": "Les repères de numérisation ne sont ajoutés qu’à la feuille de réponses PDF ; la feuille Word est exportée sans repères.",
+                "unconfigured_subitems": "Les questions {{numbers}} n’ont aucune partie configurée — la feuille de réponses affiche une seule ligne pour chacune. Ajoutez des parties dans l’éditeur de test.",
                 "students_label": "Élèves",
                 "select_all": "Tout sélectionner",
                 "true": "Vrai",

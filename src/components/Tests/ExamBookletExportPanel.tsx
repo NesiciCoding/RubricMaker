@@ -6,6 +6,7 @@ import { useStoreSelector } from '../../context/useStore';
 import { logAuditEvent } from '../../services/database/AuditLogger';
 import type { Student, Test } from '../../types';
 import type { DocxStyleTemplateOverrides } from '../../utils/docxExport';
+import { answerSpaceFor, groupQuestionsBySection, subItemCount } from '../../utils/testExamContent';
 import type { TestExamExportOptions } from '../../utils/testExamContent';
 
 interface Props {
@@ -28,6 +29,24 @@ export default function ExamBookletExportPanel({ test, students, fontFamily, sty
 
     const hasHotText = test.questions.some((q) => q.type === 'hot-text');
     const hasAttachment = (test.sections ?? []).some((s) => s.content);
+
+    // Multi-part questions with nothing configured (no pairs, gaps, rows...) collapse to a single
+    // answer line at export time. Assignment blockers normally prevent handing such a test out,
+    // but export works on drafts too — surface the printed question numbers before the teacher
+    // prints a stack of sheets with nowhere to write. Numbered like the sheet itself
+    // (ungrouped first, then per section), so the numbers match what the export produces.
+    const unconfiguredSubitemNumbers = useMemo(
+        () =>
+            groupQuestionsBySection(test).flatMap(({ questions }) =>
+                questions
+                    .filter(
+                        ({ question }) =>
+                            answerSpaceFor(question).kind === 'subitems' && subItemCount(question) === null
+                    )
+                    .map(({ number }) => number)
+            ),
+        [test]
+    );
 
     function toggleAll() {
         setSelectedStudentIds((prev) =>
@@ -163,6 +182,13 @@ export default function ExamBookletExportPanel({ test, students, fontFamily, sty
             {scanMarkers && (
                 <p className="text-muted text-sm" role="note" style={{ margin: '-8px 0 14px 24px' }}>
                     {t('tests.export.exam.scan_markers_pdf_only')}
+                </p>
+            )}
+            {unconfiguredSubitemNumbers.length > 0 && (
+                <p role="note" style={{ margin: '0 0 14px', fontSize: '0.85rem', color: 'var(--yellow-text)' }}>
+                    {t('tests.export.exam.unconfigured_subitems', {
+                        numbers: unconfiguredSubitemNumbers.join(', '),
+                    })}
                 </p>
             )}
 
