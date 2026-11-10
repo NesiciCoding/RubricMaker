@@ -571,9 +571,9 @@ describe('Dashboard page', () => {
         expect(screen.getByText('dashboard.at_risk_title')).toBeInTheDocument();
         expect(screen.getByText('40%')).toBeInTheDocument();
         // Feedback age is 10 days for the newest grade → red clock icon is shown.
-        expect(screen.getByTitle('Last feedback 10 days ago')).toBeInTheDocument();
+        expect(screen.getByTitle('dashboard.feedback_age:{"count":10}')).toBeInTheDocument();
         // Bob's grades are 7 days old → yellow clock.
-        expect(screen.getByTitle('Last feedback 7 days ago')).toBeInTheDocument();
+        expect(screen.getByTitle('dashboard.feedback_age:{"count":7}')).toBeInTheDocument();
     });
 
     it('navigates to grading from the at-risk student button', async () => {
