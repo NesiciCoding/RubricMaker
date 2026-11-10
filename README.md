@@ -353,6 +353,7 @@ The deep operational detail is in the [self-hosting docs](docs/SELF_HOSTING_OPS.
 | `/live`                                     | Live writing session list                                                                                                                           |
 | `/live/new`                                 | New live writing session                                                                                                                            |
 | `/live/:sessionId`                          | Live writing console (prompt, class, timing, rounds, join code, joined roster)                                                                      |
+| `/live/:sessionId/project`                  | Classroom projector (join QR, server-timed countdown, word-only progress board, teacher controls)                                                   |
 | `/join`                                     | Public code entry for a live writing session                                                                                                        |
 | `/join/:code`                               | Public roster name picker and waiting room                                                                                                          |
 | `/speaking/:rubricId/:studentId`            | Speaking session                                                                                                                                    |

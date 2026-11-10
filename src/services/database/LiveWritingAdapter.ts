@@ -2,12 +2,24 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { storageSync } from './StorageSync';
 import { isAllowedSupabaseUrl } from './trustedSupabaseUrl';
 import type {
+    CefrLevel,
     LiveWritingJoin,
     LiveWritingParticipant,
     LiveWritingRosterEntry,
     LiveWritingSession,
     LiveWritingSessionStatus,
+    LiveWritingTimerSnapshot,
+    LiveWritingTimerState,
 } from '../../types';
+
+export interface LiveWritingProgressRow {
+    participantId: string;
+    displayName: string;
+    wordCount: number;
+    /** Early vocabulary estimate only; never a grade and never aggregated. */
+    cefrEstimate?: CefrLevel;
+    handedInAt?: string;
+}
 
 export interface LiveWritingSessionInput {
     title: string;
@@ -80,10 +92,28 @@ function mapSession(row: Row): LiveWritingSession {
         liveLeaderboard: bool(row.live_leaderboard, true),
         lockAfterStart: bool(row.lock_after_start),
         votesOpen: bool(row.votes_open),
+        timerState: text(row.timer_state, 'idle') as LiveWritingTimerState,
+        timerEndsAt: optionalText(row.timer_ends_at),
+        timerRemainingMs: number(row.timer_remaining_ms),
+        showProgressBoard: bool(row.show_progress_board, true),
         createdAt: text(row.created_at),
         updatedAt: text(row.updated_at),
         startedAt: optionalText(row.started_at),
         endedAt: optionalText(row.ended_at),
+    };
+}
+
+function mapTimer(row: Row): LiveWritingTimerSnapshot {
+    return {
+        status: text(row.status, 'lobby') as LiveWritingSessionStatus,
+        timerState: text(row.timer_state, 'idle') as LiveWritingTimerState,
+        endsAt: optionalText(row.timer_ends_at),
+        remainingMs: number(row.timer_remaining_ms),
+        serverNow: text(row.server_now),
+        currentRound: number(row.current_round, 1),
+        roundCount: number(row.round_count, 1),
+        minutesPerRound: number(row.minutes_per_round, 10),
+        showProgressBoard: bool(row.show_progress_board, true),
     };
 }
 
@@ -298,5 +328,112 @@ export class LiveWritingAdapter {
             p_open: open,
         });
         throwIfError(error);
+    }
+
+    async startWriting(sessionId: string): Promise<LiveWritingTimerSnapshot> {
+        const { data, error } = await this.client.rpc('start_live_writing_session', {
+            p_session_id: sessionId,
+        });
+        throwIfError(error);
+        return mapTimer(firstRow(data));
+    }
+
+    async controlTimer(
+        sessionId: string,
+        action: 'pause' | 'resume' | 'extend' | 'end_writing' | 'end_session'
+    ): Promise<LiveWritingTimerSnapshot> {
+        const { data, error } = await this.client.rpc('control_live_writing_timer', {
+            p_session_id: sessionId,
+            p_action: action,
+        });
+        throwIfError(error);
+        return mapTimer(firstRow(data));
+    }
+
+    async getTimer(sessionId: string): Promise<LiveWritingTimerSnapshot> {
+        const { data, error } = await this.client.rpc('get_live_writing_timer', {
+            p_session_id: sessionId,
+        });
+        throwIfError(error);
+        return mapTimer(firstRow(data));
+    }
+
+    async setProgressBoard(sessionId: string, show: boolean): Promise<boolean> {
+        const { data, error } = await this.client.rpc('set_live_writing_progress_board', {
+            p_session_id: sessionId,
+            p_show: show,
+        });
+        throwIfError(error);
+        return data === true;
+    }
+
+    /**
+     * Word counts only. `content_html` is deliberately never selected: the projector must not be
+     * able to show participant text before the finals view is built.
+     */
+    async fetchProgress(sessionId: string, roundIndex: number): Promise<LiveWritingProgressRow[]> {
+        const [participantsResult, responsesResult] = await Promise.all([
+            this.client
+                .from('live_writing_participants')
+                .select('id, display_name')
+                .eq('session_id', sessionId)
+                .order('joined_at', { ascending: true }),
+            this.client
+                .from('live_writing_responses')
+                .select('participant_id, word_count, cefr_estimate, handed_in_at')
+                .eq('session_id', sessionId)
+                .eq('round_index', roundIndex),
+        ]);
+        throwIfError(participantsResult.error);
+        throwIfError(responsesResult.error);
+
+        const responses = new Map(asRows(responsesResult.data).map((row) => [text(row.participant_id), row] as const));
+        return asRows(participantsResult.data)
+            .map((row) => {
+                const response = responses.get(text(row.id));
+                return {
+                    participantId: text(row.id),
+                    displayName: text(row.display_name, 'Student'),
+                    wordCount: number(response?.word_count),
+                    cefrEstimate: optionalText(response?.cefr_estimate) as CefrLevel | undefined,
+                    handedInAt: optionalText(response?.handed_in_at),
+                };
+            })
+            .sort((a, b) => b.wordCount - a.wordCount || a.displayName.localeCompare(b.displayName));
+    }
+
+    /** Fire-and-forget hint for other screens; polling remains the correctness path. */
+    async broadcastSessionEvent(sessionId: string, kind: 'timer' | 'progress' | 'roster'): Promise<void> {
+        const channel = this.client.channel(`live-writing:${sessionId}`);
+        try {
+            await new Promise<void>((resolve) => {
+                const timeout = setTimeout(resolve, 1200);
+                channel.subscribe((status) => {
+                    if (status === 'SUBSCRIBED') {
+                        clearTimeout(timeout);
+                        resolve();
+                    }
+                });
+            });
+            await channel.send({
+                type: 'broadcast',
+                event: 'session',
+                payload: { kind, at: new Date().toISOString() },
+            });
+        } catch {
+            // Realtime is a hint only; the database write and polling remain authoritative.
+        } finally {
+            void this.client.removeChannel(channel);
+        }
+    }
+
+    subscribeToSession(sessionId: string, onChange: () => void): () => void {
+        const channel = this.client
+            .channel(`live-writing:${sessionId}`)
+            .on('broadcast', { event: 'session' }, () => onChange())
+            .subscribe();
+        return () => {
+            void this.client.removeChannel(channel);
+        };
     }
 }

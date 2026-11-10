@@ -1990,6 +1990,7 @@ export interface EssaySubmission {
  * student_id into ordinary essay submissions, which is the only link to the grading pipeline.
  */
 export type LiveWritingSessionStatus = 'draft' | 'lobby' | 'writing' | 'voting' | 'finals' | 'closed';
+export type LiveWritingTimerState = 'idle' | 'running' | 'paused' | 'ended';
 
 export interface LiveWritingSession {
     id: string;
@@ -2012,6 +2013,12 @@ export interface LiveWritingSession {
     liveLeaderboard: boolean;
     lockAfterStart: boolean;
     votesOpen: boolean;
+    /** Server-authoritative countdown for the projector and, later, student clients. */
+    timerState: LiveWritingTimerState;
+    timerEndsAt?: string;
+    /** Frozen remainder while paused, in milliseconds. */
+    timerRemainingMs: number;
+    showProgressBoard: boolean;
     createdAt: string;
     updatedAt: string;
     startedAt?: string;
@@ -2025,6 +2032,18 @@ export interface LiveWritingParticipant {
     displayName: string;
     joinedAt: string;
     lastSeenAt: string;
+}
+
+export interface LiveWritingTimerSnapshot {
+    status: LiveWritingSessionStatus;
+    timerState: LiveWritingTimerState;
+    endsAt?: string;
+    remainingMs: number;
+    serverNow: string;
+    currentRound: number;
+    roundCount: number;
+    minutesPerRound: number;
+    showProgressBoard: boolean;
 }
 
 export interface LiveWritingRosterEntry {

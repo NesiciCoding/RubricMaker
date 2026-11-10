@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Copy, RefreshCw, Users } from 'lucide-react';
+import { ArrowLeft, Copy, MonitorPlay, RefreshCw, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import { useClasses } from '../context/AppContext';
@@ -193,9 +193,25 @@ export default function LiveWritingSessionPage() {
             <Topbar
                 title={session ? session.title : t('liveWriting.new_session')}
                 actions={
-                    <Link to="/live" className="btn btn-ghost btn-sm">
-                        <ArrowLeft size={15} /> {t('liveWriting.back_to_list')}
-                    </Link>
+                    session ? (
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                            <Link
+                                to={`/live/${session.id}/project`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="btn btn-ghost btn-sm"
+                            >
+                                <MonitorPlay size={15} /> {t('liveWriting.open_projector')}
+                            </Link>
+                            <Link to="/live" className="btn btn-ghost btn-sm">
+                                <ArrowLeft size={15} /> {t('liveWriting.back_to_list')}
+                            </Link>
+                        </div>
+                    ) : (
+                        <Link to="/live" className="btn btn-ghost btn-sm">
+                            <ArrowLeft size={15} /> {t('liveWriting.back_to_list')}
+                        </Link>
+                    )
                 }
             />
             <div className="page-content fade-in" style={{ maxWidth: 1100 }}>

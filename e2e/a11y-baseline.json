@@ -211,6 +211,16 @@
       "violations": []
     },
     {
+      "route": "/live/live-session-a11y-1/project",
+      "theme": "dark",
+      "violations": []
+    },
+    {
+      "route": "/live/live-session-a11y-1/project",
+      "theme": "light",
+      "violations": []
+    },
+    {
       "route": "/live/new",
       "theme": "dark",
       "violations": []
