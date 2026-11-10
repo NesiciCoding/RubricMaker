@@ -38,7 +38,7 @@ import ColumnSortModal from '../components/Monitor/ColumnSortModal';
 import LiveDraftPanel from '../components/Monitor/LiveDraftPanel';
 import PlacementLevelPanel from '../components/Monitor/PlacementLevelPanel';
 import { derivePresence, summarizeProctorFlags, mergeProctorEvents } from '../utils/proctorAggregator';
-import { estimatePlacement } from '../utils/placementResult';
+import { estimatePlacement, levelPathRunConfig } from '../utils/placementResult';
 import { MAX_QUESTIONS as STAIRCASE_MAX_QUESTIONS } from '../utils/placementStaircase';
 import { stripCommentHtml } from '../utils/exportDataPrep';
 import { studentCompletion, type StudentCompletion } from '../utils/responseCells';
@@ -583,6 +583,10 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
             // per-question ladder. Live-in-progress runs have no full client-side trace, so their
             // bars stay empty until hand-in while the estimated-level column still tracks them.
             const levelPath: StaircaseStep[] = kind === 'test' ? (row.studentTest?.levelPath ?? []) : [];
+            // A generator run's trace must be replayed inside the range it actually ran under, or a
+            // narrow range would be read against the classic A1–C2 bounds and report the wrong confidence.
+            const levelPathConfig =
+                kind === 'test' && test && row.studentTest ? levelPathRunConfig(test, row.studentTest) : undefined;
             const sectionPath = kind === 'test' ? row.studentTest?.sectionPath : undefined;
             const finished = row.status === 'submitted' || row.status === 'late' || !!live.submitted;
             let completion: StudentCompletion | undefined;
@@ -605,6 +609,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                 mergedAnswers,
                 placementLevel,
                 levelPath,
+                levelPathConfig,
                 sectionPath,
                 finished,
                 completion,
@@ -881,6 +886,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                     type="button"
                                     className="btn btn-secondary btn-sm"
                                     aria-pressed={showEstimateConfidence}
+                                    title={t('tests.monitor.confidence_toggle_help')}
                                     onClick={() =>
                                         updateSettings({
                                             monitorShowEstimateConfidence: !showEstimateConfidence,
@@ -1040,6 +1046,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                                     eloAnchor={row.live.snapshot?.generatorEloAnchor}
                                                     questionsAsked={row.live.snapshot?.questionsAsked}
                                                     levelPath={row.levelPath}
+                                                    levelPathConfig={row.levelPathConfig}
                                                     showConfidence={showEstimateConfidence}
                                                     disabled={
                                                         overridingStudentIds.has(row.studentId) ||
@@ -1150,6 +1157,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                         classId: row.classId,
                                         className: row.className,
                                         levelPath: row.levelPath,
+                                        levelPathConfig: row.levelPathConfig,
                                         estimatedLevel: row.placementLevel,
                                         finished,
                                         // A live 'submitted' broadcast can land before the persisted trace does.

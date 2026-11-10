@@ -68,7 +68,8 @@ export function calcRubricQuality(
         for (const id of tierById.values()) counts.set(id, (counts.get(id) ?? 0) + 1);
         tiers.push(...[...counts.entries()].sort((a, b) => b[1] - a[1]).map(([id, count]) => ({ id, count })));
     }
-    const tierId = rubric.tiered ? (opts.tierId ?? tiers[0]?.id) : undefined;
+    const requestedTier = tiers.some((tier) => tier.id === opts.tierId) ? opts.tierId : undefined;
+    const tierId = rubric.tiered ? (requestedTier ?? tiers[0]?.id) : undefined;
     const inTier = tierId ? scoped.filter((sr) => tierById.get(sr.id) === tierId) : scoped;
 
     // One row per group submission: its members carry copies of the same shared scores, and

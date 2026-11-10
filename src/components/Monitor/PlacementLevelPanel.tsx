@@ -3,6 +3,7 @@ import { ChevronUp, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import EstimateConfidenceBadge from './EstimateConfidenceBadge';
 import { placementConfidence } from '../../utils/placementConfidence';
+import type { StaircaseRunConfig } from '../../utils/placementStaircase';
 import type { CefrLevel, StaircaseStep } from '../../types';
 
 export interface PlacementLevelPanelProps {
@@ -12,6 +13,8 @@ export interface PlacementLevelPanelProps {
     questionsAsked?: number;
     /** The run's trace so far, so the level can be shown with how settled the estimate is. */
     levelPath?: StaircaseStep[];
+    /** Range and start level the trace must be replayed with; omitted for a classic staircase run. */
+    levelPathConfig?: StaircaseRunConfig;
     /** Opt-in read of how settled the estimate is. */
     showConfidence?: boolean;
     /** Persists a one-shot next-question nudge (roadmap 27.2); disabled once the run has finished. */
@@ -25,12 +28,13 @@ export default function PlacementLevelPanel({
     eloAnchor,
     questionsAsked,
     levelPath,
+    levelPathConfig,
     showConfidence,
     onNudge,
     disabled,
 }: PlacementLevelPanelProps) {
     const { t } = useTranslation();
-    const confidence = showConfidence && levelPath ? placementConfidence(levelPath) : null;
+    const confidence = showConfidence && levelPath ? placementConfidence(levelPath, levelPathConfig) : null;
 
     return (
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: '0.8rem' }}>

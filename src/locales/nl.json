@@ -1273,6 +1273,7 @@
             "nudge_message": "Je docent wil even checken hoe het gaat — ga verder of vraag om hulp.",
             "nudge_sent": "Nudge verstuurd naar {{name}}. Zij zien het als melding.",
             "confidence_toggle": "Betrouwbaarheid inschatting",
+            "confidence_toggle_help": "Badges verschijnen zodra een afname is ingeleverd: de monitor heeft alleen de vraag-voor-vraag-trace van een ingeleverde afname.",
             "confidence_low": "voorlopig",
             "confidence_medium": "convergerend",
             "confidence_high": "stabiel",
@@ -4835,7 +4836,7 @@
         "rb_material_sharing_coteaching": "Samen lesgeven: iedereen die je aan een klas toevoegt (Leerlingen → klasmenu → Delen) kan de cijfers en toetsresultaten van die klas zien en de rubrics en toetsen van de klas openen, ook als je ze privé houdt. Medeleraren met ‘Kan bekijken en beoordelen’ kunnen elk cijfer of toetsresultaat in die klas wijzigen — ook dat van jou — en je toetsen aan de klas toewijzen; het resultaat blijft van jou en legt vast wie het laatst wijzigde. Medeleraren met ‘Kan bekijken’ kunnen cijfers en resultaten zien, maar niet wijzigen. Op de beoordelingspagina en bij elk toetsresultaat zie je wie het laatst iets heeft gewijzigd. De leerlingenlijst blijft van de eigenaar: medeleraren zien de leerlingen van een gedeelde klas alleen-lezen en kunnen naam, klas, leerweg of leerjaar niet wijzigen.",
         "an_stats_item_query": "Geavanceerde zoekvraag — stel je eigen vragen over alle rubriccijfers en nagekeken toetsen: filter op klas, beoordeling, vak, datum en score, groepeer op leerling, klas, beoordeling, vak, maand of soort, en meet gemiddelde, mediaan, laagste/hoogste, slagingspercentage, spreiding of verandering van eerste naar laatste. Voeg een voorwaarde toe zoals \"gemiddelde lager dan 55\", begin met voorbeeldvragen, bewaar je zoekvragen en exporteer het resultaat als CSV.",
         "an_stats_item_customize": "Aanpassen — kies welke kaarten elke weergave toont en of voortgangstrends nagekeken toetsen meenemen; je keuze wordt bij je instellingen bewaard.",
-        "rb_live_monitor_item_confidence": "Bij adaptieve en plaatsingstoetsen toont een optionele badge naast de CEFR-inschatting van elke leerling of die nog voorlopig, convergerend of stabiel is.",
+        "rb_live_monitor_item_confidence": "Bij adaptieve en plaatsingstoetsen toont een optionele badge naast de CEFR-inschatting van elke leerling of die nog voorlopig, convergerend of stabiel is. Een badge verschijnt pas als de afname is ingeleverd, want alleen een ingeleverde afname bevat de vraag-voor-vraag-trace waarop hij is gebaseerd.",
         "an_rubric_quality_title": "Kwaliteit van het rubric",
         "an_rubric_quality_body": "In Statistieken → Per rubric wordt elk criterium als toetsvraag geanalyseerd: P-waarde, Rit/Rir, Cronbachs α, SEM en discriminatie, per niveau en één keer per groepsinzending.",
         "an_stats_tests_info": "Alleen nagekeken beoordelingstoetsen tellen mee voor de voortgang. Oefentoetsen, plaatsingstoetsen, afwezige leerlingen en onafgemaakte pogingen tellen niet mee."

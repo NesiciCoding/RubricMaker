@@ -1579,7 +1579,7 @@ export default function StatisticsPage() {
                                 </div>
 
                                 {/* Criterion quality — each criterion analysed as an item */}
-                                {rubric && (
+                                {show('rubricQuality') && rubric && (
                                     <RubricQualityCard
                                         rubric={rubric}
                                         studentRubrics={studentRubrics}

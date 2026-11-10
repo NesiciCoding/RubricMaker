@@ -16,6 +16,7 @@ export const STATS_SECTIONS: StatsSection[] = [
     { id: 'summaryCards', view: 'rubric', titleKey: 'statistics.sections.summary_cards' },
     { id: 'gradeDistribution', view: 'rubric', titleKey: 'statistics.grade_distribution' },
     { id: 'criterionChart', view: 'rubric', titleKey: 'statistics.criterion_avg' },
+    { id: 'rubricQuality', view: 'rubric', titleKey: 'statistics.rubric_quality.title' },
     { id: 'frameworks', view: 'rubric', titleKey: 'statistics.sections.frameworks' },
     { id: 'customViews', view: 'rubric', titleKey: 'statistics.custom_views_title' },
     { id: 'heatmap', view: 'rubric', titleKey: 'statistics.heatmap' },

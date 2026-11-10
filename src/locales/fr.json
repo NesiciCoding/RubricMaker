@@ -1273,6 +1273,7 @@
             "nudge_message": "Votre enseignant souhaite prendre de vos nouvelles — continuez ou demandez de l'aide.",
             "nudge_sent": "Relance envoyée à {{name}}. Ils la verront comme notification.",
             "confidence_toggle": "Fiabilité de l'estimation",
+            "confidence_toggle_help": "Les badges apparaissent une fois la tentative remise : le monitor ne dispose du parcours question par question que pour un essai remis.",
             "confidence_low": "provisoire",
             "confidence_medium": "en convergence",
             "confidence_high": "stable",
@@ -4835,7 +4836,7 @@
         "rb_material_sharing_coteaching": "Co-enseignement : toute personne ajoutée à une classe (Élèves → menu de la classe → Partager) peut voir les notes et résultats de cette classe et ouvrir ses grilles et tests, même ceux que vous gardez privés. Les co-enseignants « Peut consulter et noter » peuvent modifier toute note ou résultat de test de la classe — y compris les vôtres — et lui assigner vos tests ; le résultat reste le vôtre et indique qui l’a modifié en dernier. Les co-enseignants « Peut consulter » voient notes et résultats sans pouvoir les modifier. La page de notation et chaque résultat de test indiquent qui les a modifiés en dernier. La liste des élèves reste celle du propriétaire : les co-enseignants voient les élèves d’une classe partagée en lecture seule et ne peuvent pas modifier leur nom, classe, filière ou année scolaire.",
         "an_stats_item_query": "Requête avancée — posez vos propres questions sur toutes les notes de grilles et tous les tests notés : filtrez par classe, évaluation, matière, dates et score, regroupez par élève, classe, évaluation, matière, mois ou type, et mesurez la moyenne, la médiane, le minimum/maximum, le taux de réussite, la dispersion ou l’évolution du premier au dernier résultat. Ajoutez une condition comme « moyenne inférieure à 55 », partez d’exemples, enregistrez vos requêtes et exportez le résultat en CSV.",
         "an_stats_item_customize": "Personnaliser — choisissez les cartes affichées dans chaque vue et si les tendances de progression incluent les tests notés ; votre choix est enregistré dans vos paramètres.",
-        "rb_live_monitor_item_confidence": "Sur les tests adaptatifs et de positionnement, un badge facultatif à côté de l'estimation CEFR de chaque élève indique si elle est encore provisoire, en convergence ou stable.",
+        "rb_live_monitor_item_confidence": "Sur les tests adaptatifs et de positionnement, un badge facultatif à côté de l'estimation CEFR de chaque élève indique si elle est encore provisoire, en convergence ou stable. Un badge apparaît une fois la tentative remise, car seul un essai remis contient le parcours question par question sur lequel il s'appuie.",
         "an_rubric_quality_title": "Qualité du barème",
         "an_rubric_quality_body": "Dans Statistiques → Par barème, chaque critère est analysé comme une question de test : valeur P, Rit/Rir, α de Cronbach, SEM et discrimination, par niveau et une fois par travail de groupe.",
         "an_stats_tests_info": "Seuls les tests d’évaluation notés comptent pour la progression. Les tests d’entraînement, de positionnement, les élèves absents et les tentatives inachevées sont exclus."

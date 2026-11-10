@@ -1273,6 +1273,7 @@
             "nudge_message": "Tu profesor quiere saber cómo vas — continúa o pide ayuda.",
             "nudge_sent": "Aviso enviado a {{name}}. Lo verán como notificación.",
             "confidence_toggle": "Fiabilidad de la estimación",
+            "confidence_toggle_help": "Las insignias aparecen cuando se entrega el intento: el monitor solo dispone del recorrido pregunta a pregunta de un intento entregado.",
             "confidence_low": "provisional",
             "confidence_medium": "convergiendo",
             "confidence_high": "estable",
@@ -4835,7 +4836,7 @@
         "rb_material_sharing_coteaching": "Docencia compartida: cualquier persona que añadas a una clase (Alumnos → menú de la clase → Compartir) puede ver las notas y resultados de esa clase y abrir sus rúbricas y pruebas, aunque las mantengas privadas. Los coprofesores con «Puede ver y calificar» pueden cambiar cualquier nota o resultado de prueba de esa clase —también los tuyos— y asignarle tus pruebas; el resultado sigue siendo tuyo y registra quién lo cambió por última vez. Los coprofesores de «Puede ver» pueden ver notas y resultados, pero no cambiarlos. La página de calificación y cada resultado de prueba muestran quién los cambió por última vez. La lista de alumnos sigue siendo del propietario: los coprofesores ven los alumnos de una clase compartida en solo lectura y no pueden cambiar su nombre, clase, itinerario o curso escolar.",
         "an_stats_item_query": "Consulta avanzada — haz tus propias preguntas sobre todas las notas de rúbricas y pruebas calificadas: filtra por clase, evaluación, asignatura, fechas y nota, agrupa por alumno, clase, evaluación, asignatura, mes o tipo, y mide la media, la mediana, el mínimo/máximo, la tasa de aprobados, la dispersión o el cambio del primer al último resultado. Añade una condición como «media inferior a 55», empieza con preguntas de ejemplo, guarda tus consultas y exporta el resultado en CSV.",
         "an_stats_item_customize": "Personalizar — elige qué tarjetas muestra cada vista y si las tendencias de progreso incluyen pruebas calificadas; tu elección se guarda en tu configuración.",
-        "rb_live_monitor_item_confidence": "En las pruebas adaptativas y de nivel, una insignia opcional junto a la estimación CEFR de cada alumno indica si aún es provisional, está convergiendo o es estable.",
+        "rb_live_monitor_item_confidence": "En las pruebas adaptativas y de nivel, una insignia opcional junto a la estimación CEFR de cada alumno indica si aún es provisional, está convergiendo o es estable. La insignia aparece al entregar el intento, porque solo un intento entregado contiene el recorrido pregunta a pregunta del que se obtiene.",
         "an_rubric_quality_title": "Calidad de la rúbrica",
         "an_rubric_quality_body": "En Estadísticas → Por rúbrica, cada criterio se analiza como una pregunta de examen: valor P, Rit/Rir, α de Cronbach, SEM y discriminación, por nivel y una vez por entrega en grupo.",
         "an_stats_tests_info": "Solo cuentan para el progreso las pruebas de evaluación calificadas. Se excluyen las pruebas de práctica, las de nivel, los alumnos ausentes y los intentos sin terminar."

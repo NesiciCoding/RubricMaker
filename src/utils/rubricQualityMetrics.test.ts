@@ -40,6 +40,20 @@ const classes = [
     { id: 'class-b', name: 'B' },
 ] as Class[];
 
+const tiered = {
+    ...rubric,
+    tiered: {
+        tiers: [
+            { id: 't1', year: 'jaar-1' },
+            { id: 't2', year: 'jaar-2' },
+        ],
+        bands: [
+            { id: 'b1', code: 'IO', label: '', points: 0 },
+            { id: 'b2', code: 'B', label: '', points: 1 },
+        ],
+    },
+} as Rubric;
+
 const grades = [
     grade('s1', [4, 4, 4]),
     grade('s2', [3, 3, 3]),
@@ -98,19 +112,6 @@ describe('calcRubricQuality', () => {
     });
 
     it('never mixes tiers of a tiered rubric', () => {
-        const tiered = {
-            ...rubric,
-            tiered: {
-                tiers: [
-                    { id: 't1', year: 'jaar-1' },
-                    { id: 't2', year: 'jaar-2' },
-                ],
-                bands: [
-                    { id: 'b1', code: 'IO', label: '', points: 0 },
-                    { id: 'b2', code: 'B', label: '', points: 1 },
-                ],
-            },
-        } as Rubric;
         const mixed = [
             grade('s1', [4, 4, 4], { tierId: 't1' }),
             grade('s2', [3, 3, 3], { tierId: 't1' }),
@@ -122,5 +123,16 @@ describe('calcRubricQuality', () => {
         expect(report.summary.n).toBe(2);
         expect(report.tiers.map((t) => t.id)).toEqual(expect.arrayContaining(['t1', 't2']));
         expect(calcRubricQuality(tiered, mixed, students, classes).tierId).toBe('t1');
+    });
+
+    it('falls back to the largest tier when the selected tier has no grades', () => {
+        const mixed = [
+            grade('s1', [4, 4, 4], { tierId: 't1' }),
+            grade('s2', [3, 3, 3], { tierId: 't1' }),
+            grade('s3', [1, 1, 1], { tierId: 't2' }),
+        ];
+        const report = calcRubricQuality(tiered, mixed, students, classes, { tierId: 'gone' });
+        expect(report.tierId).toBe('t1');
+        expect(report.summary.n).toBe(2);
     });
 });
