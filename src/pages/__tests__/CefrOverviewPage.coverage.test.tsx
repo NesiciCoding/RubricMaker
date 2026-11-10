@@ -237,6 +237,27 @@ describe('CefrOverviewPage coverage', () => {
         expect(mockNavigate).toHaveBeenCalledWith('/students/s1/cefr-overview');
     });
 
+    it("shows each student's own VO-track in the class table, not the class lowest track", () => {
+        mockState.classes = [
+            {
+                id: 'c1',
+                name: 'Class A',
+                year: 'jaar-3',
+                voTrack: 'vmbo-bb',
+                voTracks: ['vmbo-bb', 'havo', 'vwo'],
+            },
+        ];
+        mockState.students = [
+            { id: 's1', name: 'Alice', classId: 'c1', voTrack: 'vwo' },
+            { id: 's2', name: 'Bob', classId: 'c1', voTrack: 'havo' },
+        ];
+        loadPage();
+        expect(screen.getByText('VWO')).toBeInTheDocument();
+        expect(screen.getByText('HAVO')).toBeInTheDocument();
+        // The legacy class-level track (lowest) must not leak into any student row.
+        expect(screen.queryByText('VMBO-BB')).not.toBeInTheDocument();
+    });
+
     it('filters the class view by class, handles nameless students, and shows the no-students state', () => {
         // A nameless student (undefined name) exercises the name ?? '' fallbacks in the sort.
         mockState.students = [
