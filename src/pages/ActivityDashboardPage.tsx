@@ -18,6 +18,7 @@ import type { ActivityRow, SchoolYear, VoTrack } from '../types';
 import { nanoid } from '../utils/nanoid';
 import { EmptyState } from '../components/ui/EmptyState';
 
+/** Activity Dashboard route: filters, matrix, year summary and class actions. */
 export default function ActivityDashboardPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -220,6 +221,7 @@ export default function ActivityDashboardPage() {
         }
     }
 
+    /** Open the editor for a rubric/test or the essay workspace for an essay group. */
     function openActivity(activity: ActivityRow) {
         if (activity.kind === 'rubric') navigate(`/rubrics/${activity.id}`);
         else if (activity.kind === 'test') navigate(`/tests/${activity.id}`);

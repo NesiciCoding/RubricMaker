@@ -26,6 +26,7 @@ interface Props {
     onDragEnd: (result: DropResult) => void;
 }
 
+/** Map a score to its dashboard colour band; an unscored cell stays neutral. */
 function scoreClass(score: number | undefined): string {
     if (score === undefined) return '';
     if (score >= 80) return 'is-high';
@@ -33,6 +34,7 @@ function scoreClass(score: number | undefined): string {
     return '';
 }
 
+/** Class-by-activity matrix with density controls, link/assign actions and drag ordering. */
 export default function ActivityDashboardGrid({
     activities,
     visibleClasses,

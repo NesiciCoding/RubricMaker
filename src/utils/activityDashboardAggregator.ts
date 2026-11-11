@@ -75,10 +75,12 @@ export function mostCommonCefrLevel(counts: Partial<Record<CefrLevel, number>>):
     return winner;
 }
 
+/** A full CEFR tally so callers can add counts without undefined checks. */
 function emptyLevelCounts(): Record<CefrLevel, number> {
     return { A1: 0, A2: 0, B1: 0, B2: 0, C1: 0, C2: 0 };
 }
 
+/** Average of the available scores; undefined keeps "not scored" distinct from zero. */
 function mean(values: number[]): number | undefined {
     if (values.length === 0) return undefined;
     return values.reduce((sum, value) => sum + value, 0) / values.length;
@@ -103,6 +105,7 @@ function latestGradedByStudent<T extends { studentId: string; gradedAt?: string;
     return Array.from(latest.values());
 }
 
+/** Count achieved levels from the rubric version the grade was recorded against. */
 function rubricLevelCounts(sr: StudentRubric, rubric: Rubric | undefined): Partial<Record<CefrLevel, number>> {
     const source = rubric ?? sr.rubricSnapshot;
     if (!source) return {};
@@ -116,6 +119,7 @@ function rubricLevelCounts(sr: StudentRubric, rubric: Rubric | undefined): Parti
     return counts;
 }
 
+/** Count graded CEFR evidence; placement uses its routed estimate and regular tests only scored answers. */
 function testLevelCounts(
     st: StudentTest,
     test: Test,
@@ -144,6 +148,7 @@ function testLevelCounts(
     return counts;
 }
 
+/** Merge one record's CEFR evidence into a class tally. */
 function addLevelCounts(target: Partial<Record<CefrLevel, number>>, source: Partial<Record<CefrLevel, number>>): void {
     for (const level of CEFR_LEVELS) {
         const count = source[level] ?? 0;
@@ -151,6 +156,7 @@ function addLevelCounts(target: Partial<Record<CefrLevel, number>>, source: Part
     }
 }
 
+/** Build the class-by-activity cells from records scoped to each class. */
 export function buildDashboardMatrix(
     activities: ActivityRow[],
     classes: Class[],
@@ -204,6 +210,7 @@ export function buildDashboardMatrix(
         return counts;
     };
 
+    /** Resolve the scale stored on the rubric, falling back to the account default. */
     const gradeScaleFor = (rubric: Rubric | undefined): GradeScale | null => {
         if (!rubric) return null;
         return gradeScales.find((scale) => scale.id === (rubric.gradeScaleId || defaultGradeScaleId)) ?? null;

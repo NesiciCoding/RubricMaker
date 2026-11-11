@@ -9,10 +9,12 @@ interface Props {
     classNames: Record<string, string>;
 }
 
+/** Format an optional percentage; an em dash keeps "not scored" distinct from zero. */
 function rounded(value: number | undefined): string {
     return value === undefined ? '—' : `${Math.round(value)}%`;
 }
 
+/** Collapsible year summary over the cells currently visible in the dashboard. */
 export default function ActivityDashboardSummary({ summary, classNames }: Props) {
     const { t } = useTranslation();
     const gradedPct = summary.expected > 0 ? (summary.graded / summary.expected) * 100 : 0;
