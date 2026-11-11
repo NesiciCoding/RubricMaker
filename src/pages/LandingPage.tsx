@@ -190,7 +190,7 @@ const TEACHER_FEATURES = [
         icon: Radio,
         key: 'live_writing',
         title: 'Live Writing',
-        desc: 'Run a timed writing session with teacher hints, a three-way self-check, and an anonymous peer vote — no accounts and no AI.',
+        desc: 'Run a timed writing session with teacher hints, a three-way self-check and an anonymous peer vote, then reveal, moderate or spotlight the finals. Send every finished text into the ordinary essay rubric with one idempotent action — no accounts and no AI.',
         color: '#ec4899',
     },
 ];
