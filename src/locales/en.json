@@ -270,7 +270,11 @@
             "invalid_credentials": "That email address or password is incorrect. Check both and try again, or ask your teacher to reset your password.",
             "email_not_confirmed": "This email address hasn't been confirmed yet. Ask your teacher for help.",
             "user_banned": "This account has been blocked. Ask your teacher for help.",
-            "rate_limited": "Too many attempts. Please wait a few minutes and try again."
+            "rate_limited": "Too many attempts. Please wait a few minutes and try again.",
+            "weak_password": "That password is too weak. Use a longer password, or mix letters, numbers and symbols.",
+            "same_password": "That's already your password. Choose a different one.",
+            "reauthentication_needed": "For security, sign out and sign in again with an email code, then set your password straight away.",
+            "session_expired": "Your session has expired. Sign in again and try once more."
         }
     },
     "slip_sheet": {
@@ -583,7 +587,16 @@
         "calibration_spread_tooltip": "Root mean squared disagreement with the other two streams. Lower means the stream agrees with the rest of the evidence, so it earns more weight.",
         "calibration_cefr_shifted": "{{count}} of {{total}} skills shifted",
         "calibration_cefr_shift_entry": "{{skill}}: {{from}} → {{to}}",
-        "calibration_cefr_tooltip": "Expectations move at most one sub-level, and only when at least {{min}} students are assessed for the skill and {{share}}% of them sit on the same side of the curriculum band."
+        "calibration_cefr_tooltip": "Expectations move at most one sub-level, and only when at least {{min}} students are assessed for the skill and {{share}}% of them sit on the same side of the curriculum band.",
+        "account_password_heading": "Account password",
+        "account_password_description": "Set a password for your account so you can use \"Sign in with password\" instead of waiting for an email code. You can change it here at any time.",
+        "account_password_new": "New password",
+        "account_password_confirm": "Confirm new password",
+        "account_password_save": "Save password",
+        "account_password_saved": "Password saved. Next time you can sign in with your email and this password.",
+        "account_password_mismatch": "The passwords don't match.",
+        "account_password_too_short_one": "Use at least {{count}} character.",
+        "account_password_too_short_other": "Use at least {{count}} characters."
     },
     "navigation": {
         "dashboard": "Dashboard",
@@ -4686,7 +4699,7 @@
         "da_sync_item_source": "While connected, Supabase is the main store. Edits made offline are kept in the browser and sent as soon as the connection is back.",
         "da_sync_item_collab": "Multi-teacher collaboration: share rubrics between accounts in the same Supabase project.",
         "da_sync_item_otp": "Email OTP login — optional; requires SMTP configuration in Docker.",
-        "da_sync_item_student_password": "Student password login — from the Students page, generate a password for a student with an email on file, then share it with them directly. They sign in at the student portal with their email and that password, bypassing OTP email entirely (useful when school email filters block or delay Supabase's OTP messages). Teachers can use the same \"Sign in with password\" option once an administrator has set a password for their account in Supabase.",
+        "da_sync_item_student_password": "Student password login — from the Students page, generate a password for a student with an email on file, then share it with them directly. They sign in at the student portal with their email and that password, bypassing OTP email entirely (useful when school email filters block or delay Supabase's OTP messages). Teachers can use the same \"Sign in with password\" option once an administrator has set a password for their account in Supabase. Any signed-in user can also set or change their own password under Settings → General → Account password.",
         "da_sync_item_conflict": "Conflict resolution: when local and cloud data differ, the newest change wins. Edits made while offline are protected and never overwritten by older cloud data until they have synced.",
         "da_sync_item_loading": "Loading indicator: after signing in, a bar at the top of the screen shows the progress of loading your data from the cloud. On a new device or a large account this can take a while — your rubrics, grades and tests appear as soon as it finishes.",
         "da_stress_title": "Stress-test logging",

@@ -270,7 +270,11 @@
             "invalid_credentials": "Ese correo electrónico o contraseña no es correcto. Revisa ambos e inténtalo de nuevo, o pide a tu profesor que restablezca tu contraseña.",
             "email_not_confirmed": "Este correo electrónico aún no se ha confirmado. Pide ayuda a tu profesor.",
             "user_banned": "Esta cuenta ha sido bloqueada. Pide ayuda a tu profesor.",
-            "rate_limited": "Demasiados intentos. Espera unos minutos e inténtalo de nuevo."
+            "rate_limited": "Demasiados intentos. Espera unos minutos e inténtalo de nuevo.",
+            "weak_password": "Esa contraseña es demasiado débil. Usa una más larga o combina letras, números y símbolos.",
+            "same_password": "Esa ya es tu contraseña. Elige otra.",
+            "reauthentication_needed": "Por seguridad, cierra sesión y vuelve a entrar con un código por correo; después establece tu contraseña enseguida.",
+            "session_expired": "Tu sesión ha caducado. Vuelve a iniciar sesión e inténtalo de nuevo."
         }
     },
     "slip_sheet": {
@@ -583,7 +587,16 @@
         "calibration_spread_tooltip": "Desviación cuadrática media frente a las otras dos fuentes. Más baja significa que la fuente concuerda con el resto de la evidencia y gana peso.",
         "calibration_cefr_shifted": "{{count}} de {{total}} destrezas desplazadas",
         "calibration_cefr_shift_entry": "{{skill}}: {{from}} → {{to}}",
-        "calibration_cefr_tooltip": "Las expectativas se mueven como máximo un subnivel, y solo si al menos {{min}} alumnos están evaluados en la destreza y el {{share}}% de ellos queda del mismo lado de la banda curricular."
+        "calibration_cefr_tooltip": "Las expectativas se mueven como máximo un subnivel, y solo si al menos {{min}} alumnos están evaluados en la destreza y el {{share}}% de ellos queda del mismo lado de la banda curricular.",
+        "account_password_heading": "Contraseña de la cuenta",
+        "account_password_description": "Establece una contraseña para tu cuenta y así podrás usar «Iniciar sesión con contraseña» en lugar de esperar un código por correo. Puedes cambiarla aquí cuando quieras.",
+        "account_password_new": "Nueva contraseña",
+        "account_password_confirm": "Confirmar nueva contraseña",
+        "account_password_save": "Guardar contraseña",
+        "account_password_saved": "Contraseña guardada. La próxima vez puedes iniciar sesión con tu correo y esta contraseña.",
+        "account_password_mismatch": "Las contraseñas no coinciden.",
+        "account_password_too_short_one": "Usa al menos {{count}} carácter.",
+        "account_password_too_short_other": "Usa al menos {{count}} caracteres."
     },
     "navigation": {
         "dashboard": "Panel",
@@ -4688,7 +4701,7 @@
         "da_sync_item_source": "Mientras hay conexión, Supabase es el almacén principal. Los cambios hechos sin conexión se guardan en el navegador y se envían en cuanto vuelve la conexión.",
         "da_sync_item_collab": "Colaboración entre varios profesores: comparte rúbricas entre cuentas en el mismo proyecto Supabase.",
         "da_sync_item_otp": "Inicio de sesión por OTP por correo electrónico — opcional; requiere configuración SMTP en Docker.",
-        "da_sync_item_student_password": "Inicio de sesión con contraseña para estudiantes — desde la página de Estudiantes, genera una contraseña para un estudiante con correo registrado y compártela con él directamente. El estudiante inicia sesión en el portal con su correo y esa contraseña, sin pasar por el OTP por correo (útil cuando los filtros de la escuela bloquean o retrasan los mensajes OTP de Supabase). Los docentes pueden usar la misma opción «Iniciar sesión con contraseña» una vez que un administrador haya establecido una contraseña para su cuenta en Supabase.",
+        "da_sync_item_student_password": "Inicio de sesión con contraseña para estudiantes — desde la página de Estudiantes, genera una contraseña para un estudiante con correo registrado y compártela con él directamente. El estudiante inicia sesión en el portal con su correo y esa contraseña, sin pasar por el OTP por correo (útil cuando los filtros de la escuela bloquean o retrasan los mensajes OTP de Supabase). Los docentes pueden usar la misma opción «Iniciar sesión con contraseña» una vez que un administrador haya establecido una contraseña para su cuenta en Supabase. Cualquier usuario con sesión iniciada también puede establecer o cambiar su propia contraseña en Ajustes → General → Contraseña de la cuenta.",
         "da_sync_item_conflict": "Resolución de conflictos: cuando los datos locales y en la nube difieren, gana el cambio más reciente. Las ediciones realizadas sin conexión están protegidas y nunca se sobrescriben con datos en la nube más antiguos hasta que se hayan sincronizado.",
         "da_sync_item_loading": "Indicador de carga: tras iniciar sesión, una barra en la parte superior de la pantalla muestra el progreso de la carga de tus datos desde la nube. En un dispositivo nuevo o con una cuenta grande puede tardar un poco — tus rúbricas, notas y pruebas aparecen en cuanto termina.",
         "da_stress_title": "Registro de pruebas de estrés",

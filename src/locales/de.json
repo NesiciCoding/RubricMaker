@@ -270,7 +270,11 @@
             "invalid_credentials": "Diese E-Mail-Adresse oder dieses Passwort ist falsch. Prüfe beides und versuche es erneut, oder bitte deine Lehrkraft, dein Passwort zurückzusetzen.",
             "email_not_confirmed": "Diese E-Mail-Adresse wurde noch nicht bestätigt. Bitte deine Lehrkraft um Hilfe.",
             "user_banned": "Dieses Konto wurde gesperrt. Bitte deine Lehrkraft um Hilfe.",
-            "rate_limited": "Zu viele Versuche. Bitte warte ein paar Minuten und versuche es erneut."
+            "rate_limited": "Zu viele Versuche. Bitte warte ein paar Minuten und versuche es erneut.",
+            "weak_password": "Dieses Passwort ist zu schwach. Wähle ein längeres oder kombiniere Buchstaben, Zahlen und Symbole.",
+            "same_password": "Das ist bereits dein Passwort. Wähle ein anderes.",
+            "reauthentication_needed": "Melde dich aus Sicherheitsgründen ab und mit einem E-Mail-Code wieder an und lege dann sofort dein Passwort fest.",
+            "session_expired": "Deine Sitzung ist abgelaufen. Melde dich erneut an und versuche es noch einmal."
         }
     },
     "slip_sheet": {
@@ -583,7 +587,16 @@
         "calibration_spread_tooltip": "Mittlere quadratische Abweichung zu den beiden anderen Quellen. Niedriger bedeutet, dass die Quelle mit der übrigen Evidenz übereinstimmt und daher mehr Gewicht erhält.",
         "calibration_cefr_shifted": "{{count}} von {{total}} Fertigkeiten verschoben",
         "calibration_cefr_shift_entry": "{{skill}}: {{from}} → {{to}}",
-        "calibration_cefr_tooltip": "Erwartungen verschieben sich höchstens um ein Teilniveau, und nur wenn mindestens {{min}} Schüler für die Fertigkeit bewertet sind und {{share}}% von ihnen auf derselben Seite des Lehrplanbands liegen."
+        "calibration_cefr_tooltip": "Erwartungen verschieben sich höchstens um ein Teilniveau, und nur wenn mindestens {{min}} Schüler für die Fertigkeit bewertet sind und {{share}}% von ihnen auf derselben Seite des Lehrplanbands liegen.",
+        "account_password_heading": "Kontopasswort",
+        "account_password_description": "Lege ein Passwort für dein Konto fest, damit du „Mit Passwort anmelden“ nutzen kannst, statt auf einen E-Mail-Code zu warten. Du kannst es hier jederzeit ändern.",
+        "account_password_new": "Neues Passwort",
+        "account_password_confirm": "Neues Passwort bestätigen",
+        "account_password_save": "Passwort speichern",
+        "account_password_saved": "Passwort gespeichert. Beim nächsten Mal kannst du dich mit deiner E-Mail-Adresse und diesem Passwort anmelden.",
+        "account_password_mismatch": "Die Passwörter stimmen nicht überein.",
+        "account_password_too_short_one": "Verwende mindestens {{count}} Zeichen.",
+        "account_password_too_short_other": "Verwende mindestens {{count}} Zeichen."
     },
     "navigation": {
         "dashboard": "Dashboard",
@@ -4688,7 +4701,7 @@
         "da_sync_item_source": "Solange eine Verbindung besteht, ist Supabase der Hauptspeicher. Offline gemachte Änderungen werden im Browser aufbewahrt und gesendet, sobald die Verbindung wieder da ist.",
         "da_sync_item_collab": "Zusammenarbeit mehrerer Lehrer: teile Rubriken zwischen Konten im selben Supabase-Projekt.",
         "da_sync_item_otp": "E-Mail-OTP-Login — optional; erfordert SMTP-Konfiguration in Docker.",
-        "da_sync_item_student_password": "Passwort-Login für Schüler — auf der Schüler-Seite ein Passwort für einen Schüler mit hinterlegter E-Mail generieren und direkt an ihn weitergeben. Anmeldung im Schülerportal erfolgt mit E-Mail und diesem Passwort, ganz ohne OTP-E-Mail (nützlich, wenn Schulfilter Supabase-OTP-Nachrichten blockieren oder verzögern). Lehrkräfte können dieselbe Option „Mit Passwort anmelden“ nutzen, sobald ein Administrator in Supabase ein Passwort für ihr Konto festgelegt hat.",
+        "da_sync_item_student_password": "Passwort-Login für Schüler — auf der Schüler-Seite ein Passwort für einen Schüler mit hinterlegter E-Mail generieren und direkt an ihn weitergeben. Anmeldung im Schülerportal erfolgt mit E-Mail und diesem Passwort, ganz ohne OTP-E-Mail (nützlich, wenn Schulfilter Supabase-OTP-Nachrichten blockieren oder verzögern). Lehrkräfte können dieselbe Option „Mit Passwort anmelden“ nutzen, sobald ein Administrator in Supabase ein Passwort für ihr Konto festgelegt hat. Jede angemeldete Person kann ihr Passwort auch selbst unter Einstellungen → Allgemein → Kontopasswort festlegen oder ändern.",
         "da_sync_item_conflict": "Konfliktlösung: Wenn lokale und Cloud-Daten abweichen, gewinnt die neueste Änderung. Offline vorgenommene Änderungen sind geschützt und werden nie von älteren Cloud-Daten überschrieben, bis sie synchronisiert wurden.",
         "da_sync_item_loading": "Ladeanzeige: Nach der Anmeldung zeigt ein Balken oben auf dem Bildschirm den Fortschritt beim Laden deiner Daten aus der Cloud. Auf einem neuen Gerät oder bei einem großen Konto kann das etwas dauern — deine Bewertungsraster, Noten und Tests erscheinen, sobald es abgeschlossen ist.",
         "da_stress_title": "Stresstest-Protokollierung",
