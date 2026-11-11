@@ -377,7 +377,7 @@ The deep operational detail is in the [self-hosting docs](docs/SELF_HOSTING_OPS.
 | `/comments`                                 | Comment bank                                                                                                                                        |
 | `/question-bank`                            | Question bank — reusable test questions, insertable into any test                                                                                   |
 | `/statistics`                               | Statistics dashboard (by-rubric, by-student, multi-class compare with insights, advanced query builder)                                             |
-| `/activity-dashboard`                       | Activity Dashboard — rubric/test/essay × class grid with link/assign/reorder actions, pending grading-task list                                     |
+| `/activity-dashboard`                       | Activity Dashboard — rubric/test/essay × class grid with graded progress, average score, CEFR (most common / set), link/assign/reorder and a collapsible year summary |
 | `/moderation`                               | Moderation queue — disputed co-graded submissions, per-criterion delta, keep/accept resolution                                                      |
 | `/messages`                                 | Messages inbox — reply to or start a thread with a portal-authenticated student                                                                     |
 | `/notifications`                            | Notification Center — full, filterable history of overdue grading, unread messages, and pending moderation reviews, with cross-device dismissals    |

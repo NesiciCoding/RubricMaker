@@ -77,6 +77,7 @@ const mockAppValue: Record<string, unknown> = {
     studentRubrics: [],
     studentTests: [],
     settings: mockSettings,
+    gradeScales: [],
     gradingTasks: [pendingTask],
     updateClass: mockUpdateClass,
     addEssayAssignments: mockAddEssayAssignments,
@@ -128,10 +129,6 @@ vi.mock('react-joyride', () => ({
     STATUS: { FINISHED: 'finished', SKIPPED: 'skipped' },
 }));
 
-vi.mock('../../components/Standards/ClassCoverageGapPanel', () => ({
-    default: () => null,
-}));
-
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
         t: (key: string, opts?: string | Record<string, unknown>) => {
@@ -181,6 +178,7 @@ describe('ActivityDashboardPage extended', () => {
     });
 
     it('assigns grading tasks through the modal', () => {
+        mockClass.rubricIds = ['r1'];
         renderPage();
         const assignBtn = screen.getByTitle('gradingTasks.assign_title');
         fireEvent.click(assignBtn);
@@ -218,7 +216,7 @@ describe('ActivityDashboardPage extended', () => {
 
         mockClass.rubricIds = ['r1'];
         renderPage();
-        const unlinkBtn = screen.getByText('activityDashboard.unlink');
+        const unlinkBtn = screen.getByLabelText('activityDashboard.unlink');
         fireEvent.click(unlinkBtn);
         expect(mockUpdateClass).toHaveBeenCalledWith({ ...mockClass, rubricIds: [] });
     });
@@ -244,6 +242,7 @@ describe('ActivityDashboardPage extended', () => {
                 subject: 'English',
                 createdAt: '2024-01-03T00:00:00Z',
                 updatedAt: '2024-01-03T00:00:00Z',
+                questions: [],
                 questionIds: [],
                 sections: [],
             } as never,
@@ -298,30 +297,19 @@ describe('ActivityDashboardPage extended', () => {
         // Filter dropdowns render (no htmlFor/id association → query by role).
         const combos = screen.getAllByRole('combobox');
         // No topbar class selector here: the page doesn't scope by settings.activeClassId (#661).
-        expect(combos.length).toBeGreaterThanOrEqual(3); // year, track, coverage
+        expect(combos.length).toBeGreaterThanOrEqual(2); // year, track
         const yearSelect = combos[0];
         const trackSelect = combos[1];
 
         fireEvent.change(yearSelect, { target: { value: 'jaar-2' } });
-        // Class A is filtered out → no matrix column, no coverage section.
+        // Class A is filtered out → no matrix column.
         expect(document.querySelector('[data-tour="ad-cell"]')).toBeNull();
-        expect(screen.queryByText('activityDashboard.coverage_title')).not.toBeInTheDocument();
 
         fireEvent.change(yearSelect, { target: { value: 'all' } });
         expect(document.querySelector('[data-tour="ad-cell"]')).not.toBeNull();
 
         fireEvent.change(trackSelect, { target: { value: 'vwo' } });
         expect(document.querySelector('[data-tour="ad-cell"]')).toBeNull();
-    });
-
-    it('changes the coverage class selector', () => {
-        const mockClass2: Class = { id: 'c2', name: 'Class B' };
-        mockAppValue.classes = [mockClass, mockClass2];
-        renderPage();
-        const coverageSelect = screen.getByLabelText('activityDashboard.coverage_title');
-        expect((coverageSelect as HTMLSelectElement).value).toBe('c1');
-        fireEvent.change(coverageSelect, { target: { value: 'c2' } });
-        expect((coverageSelect as HTMLSelectElement).value).toBe('c2');
     });
 
     it('starts the tour from the toolbar button', () => {

@@ -1027,6 +1027,8 @@ export interface AppSettings {
     monitorShowStudentProgress?: boolean;
     /** Live Monitor: class-wide completion row above the response grid (default off) */
     monitorShowClassProgress?: boolean;
+    /** Activity Dashboard: use the denser matrix rows (default off, remembered per user) */
+    activityDashboardCompact?: boolean;
     /** Live Monitor: flag connected students whose answers have not changed for monitorStallMinutes (default off) */
     monitorFlagStalled?: boolean;
     /** Live Monitor: minutes without progress before a student is flagged as stalled (default 4) */
@@ -2009,8 +2011,18 @@ export interface ActivityRow {
 
 export interface CellData {
     submittedCount: number;
+    /** Graded pieces of work in this activity × class cell. */
+    gradedCount: number;
     totalStudents: number;
     isLinked: boolean;
+    /** Average percentage across graded work; absent when nothing has been graded. */
+    averageScore?: number;
+    /** Most common achieved CEFR level in this cell. */
+    mostCommonCefrLevel?: CefrLevel;
+    /** Achieved-level distribution used by the year summary. */
+    cefrLevelCounts?: Partial<Record<CefrLevel, number>>;
+    /** The level set on the activity itself, shown beside the achieved level. */
+    setCefrLevel?: CefrLevel;
 }
 
 // ─── Essay text statistics (deterministic, no AI) ─────────────────────────────

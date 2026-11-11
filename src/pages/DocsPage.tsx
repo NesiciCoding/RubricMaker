@@ -1884,7 +1884,8 @@ function AnalyticsTab() {
                         t('docs.an_activity_item_essays'),
                         t('docs.an_activity_item_tests'),
                         t('docs.an_activity_item_filter'),
-                        t('docs.an_activity_item_coverage'),
+                        t('docs.an_activity_item_cefr'),
+                        t('docs.an_activity_item_summary'),
                         t('docs.an_activity_item_reorder'),
                     ]}
                 />
