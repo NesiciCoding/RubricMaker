@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { LiveWritingFinalText, LiveWritingSessionStatus, Rubric } from '../../types';
 import { computeEssayStats } from '../../utils/essayTextStats';
+import Modal from '../ui/Modal';
 import { liveWritingSelfRatingKey } from '../../utils/liveWriting';
 
 interface Props {
@@ -502,28 +503,21 @@ export default function LiveWritingFinalsPanel({
             )}
 
             {replaceTarget && (
-                <div
-                    role="dialog"
-                    aria-modal="true"
-                    aria-labelledby="live-finals-replace-title"
-                    style={{
-                        position: 'fixed',
-                        inset: 0,
-                        zIndex: 50,
-                        background: 'rgba(15, 23, 42, 0.72)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: 20,
-                    }}
-                    onClick={(event) => {
-                        if (event.target === event.currentTarget) setReplaceTarget(null);
-                    }}
-                >
-                    <div className="card" style={{ width: 'min(680px, 100%)', padding: 24 }}>
+                <Modal titleId="live-finals-replace-title" onClose={() => setReplaceTarget(null)} maxWidth={680}>
+                    <div className="modal-header">
                         <h3 id="live-finals-replace-title" className="item-heading" style={{ margin: 0 }}>
                             {t('liveWriting.finals_replace_title', { text: labelFor(replaceTarget) })}
                         </h3>
+                        <button
+                            type="button"
+                            className="btn btn-ghost btn-icon"
+                            aria-label={t('common.close')}
+                            onClick={() => setReplaceTarget(null)}
+                        >
+                            <X size={18} />
+                        </button>
+                    </div>
+                    <div className="modal-body">
                         <p className="text-muted text-xs" style={{ margin: '6px 0 12px' }}>
                             {t('liveWriting.finals_replace_help')}
                         </p>
@@ -535,78 +529,63 @@ export default function LiveWritingFinalsPanel({
                             aria-label={t('liveWriting.finals_replace_label')}
                             style={{ resize: 'vertical' }}
                         />
-                        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 14 }}>
-                            <button type="button" className="btn btn-ghost" onClick={() => setReplaceTarget(null)}>
-                                {t('liveWriting.finals_replace_cancel')}
-                            </button>
-                            <button
-                                type="button"
-                                className="btn btn-primary"
-                                disabled={replaceDraft.trim() === ''}
-                                onClick={saveReplacement}
-                            >
-                                {t('liveWriting.finals_replace_save')}
-                            </button>
-                        </div>
                     </div>
-                </div>
+                    <div className="modal-footer">
+                        <button type="button" className="btn btn-ghost" onClick={() => setReplaceTarget(null)}>
+                            {t('liveWriting.finals_replace_cancel')}
+                        </button>
+                        <button
+                            type="button"
+                            className="btn btn-primary"
+                            disabled={replaceDraft.trim() === ''}
+                            onClick={saveReplacement}
+                        >
+                            {t('liveWriting.finals_replace_save')}
+                        </button>
+                    </div>
+                </Modal>
             )}
 
             {spotlight && spotlightStats && (
-                <div
-                    role="dialog"
-                    aria-modal="true"
-                    aria-labelledby="live-finals-spotlight-title"
-                    style={{
-                        position: 'fixed',
-                        inset: 0,
-                        zIndex: 50,
-                        background: 'rgba(15, 23, 42, 0.72)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: 20,
-                    }}
-                    onClick={(event) => {
-                        if (event.target === event.currentTarget) setSpotlight(null);
-                    }}
+                <Modal
+                    titleId="live-finals-spotlight-title"
+                    onClose={() => setSpotlight(null)}
+                    maxWidth={760}
+                    style={{ maxHeight: '88vh' }}
                 >
-                    <div
-                        className="card"
-                        style={{ width: 'min(760px, 100%)', maxHeight: '88vh', overflowY: 'auto', padding: 24 }}
-                    >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                            <div>
-                                <h3 id="live-finals-spotlight-title" className="item-heading" style={{ margin: 0 }}>
-                                    {labelFor(spotlight)}
-                                </h3>
-                                <p className="text-muted text-xs" style={{ margin: '5px 0 0' }}>
-                                    {t('liveWriting.finals_spotlight_stats', {
-                                        words: spotlightStats.wordCount,
-                                        sentences: spotlightStats.sentenceCount,
-                                        avg: spotlightStats.avgWordsPerSentence,
-                                        votes: spotlight.votesReceived,
-                                    })}
-                                </p>
-                            </div>
-                            <button
-                                type="button"
-                                className="btn btn-ghost btn-icon btn-sm"
-                                aria-label={t('liveWriting.finals_close_spotlight')}
-                                onClick={() => setSpotlight(null)}
-                            >
-                                <X size={16} />
-                            </button>
+                    <div className="modal-header">
+                        <div>
+                            <h3 id="live-finals-spotlight-title" className="item-heading" style={{ margin: 0 }}>
+                                {labelFor(spotlight)}
+                            </h3>
+                            <p className="text-muted text-xs" style={{ margin: '5px 0 0' }}>
+                                {t('liveWriting.finals_spotlight_stats', {
+                                    words: spotlightStats.wordCount,
+                                    sentences: spotlightStats.sentenceCount,
+                                    avg: spotlightStats.avgWordsPerSentence,
+                                    votes: spotlight.votesReceived,
+                                })}
+                            </p>
                         </div>
+                        <button
+                            type="button"
+                            className="btn btn-ghost btn-icon btn-sm"
+                            aria-label={t('liveWriting.finals_close_spotlight')}
+                            onClick={() => setSpotlight(null)}
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
+                    <div className="modal-body" style={{ overflowY: 'auto' }}>
                         <div
-                            style={{ marginTop: 18, lineHeight: 1.7, fontSize: '1.02rem' }}
+                            style={{ marginTop: 6, lineHeight: 1.7, fontSize: '1.02rem' }}
                             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(spotlight.contentHtml) }}
                         />
                         <p className="text-muted text-xs" style={{ margin: '18px 0 0' }}>
                             {t('liveWriting.finals_cefr_disclaimer')}
                         </p>
                     </div>
-                </div>
+                </Modal>
             )}
         </section>
     );
