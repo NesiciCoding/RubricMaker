@@ -1,4 +1,4 @@
-import type { CefrLevel, LiveWritingSessionStatus } from '../types';
+import type { CefrLevel, LiveWritingSelfRating, LiveWritingSessionStatus } from '../types';
 import { profileText } from './cefrVocabularyProfiler';
 import { countWords, htmlToPlainText } from './essayUtils';
 
@@ -9,6 +9,13 @@ export const LIVE_WRITING_CEFR_MIN_WORDS = 25;
 export function liveWritingCefrEstimate(html: string, wordCount = countWords(html)): CefrLevel | null {
     if (wordCount < LIVE_WRITING_CEFR_MIN_WORDS) return null;
     return profileText(htmlToPlainText(html)).estimatedLevel;
+}
+
+export const LIVE_WRITING_SELF_RATINGS: LiveWritingSelfRating[] = ['happy', 'neutral', 'unhappy'];
+
+/** Translation key for the student's three-option self-check. */
+export function liveWritingSelfRatingKey(rating: LiveWritingSelfRating): string {
+    return `liveWriting.student_selfcheck_${rating}`;
 }
 
 export const LIVE_WRITING_STATUSES: LiveWritingSessionStatus[] = [

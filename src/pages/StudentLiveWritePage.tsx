@@ -4,8 +4,16 @@ import { useTranslation } from 'react-i18next';
 import { CheckCircle, Clock, Lightbulb, Loader2 } from 'lucide-react';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import EssayEditor from '../components/Editor/EssayEditor';
+import LiveWritingFinishedPanel from '../components/LiveWriting/LiveWritingFinishedPanel';
 import { LiveWritingAdapter } from '../services/database/LiveWritingAdapter';
-import type { CefrLevel, LiveWritingRosterEntry, LiveWritingStudentState } from '../types';
+import type {
+    CefrLevel,
+    LiveWritingRosterEntry,
+    LiveWritingSelfRating,
+    LiveWritingStudentState,
+    LiveWritingVoteChoice,
+    LiveWritingVoteState,
+} from '../types';
 import { countWords } from '../utils/essayUtils';
 import {
     isCompleteJoinCode,
@@ -101,6 +109,13 @@ export default function StudentLiveWritePage() {
     const [offset, setOffset] = useState(0);
     const [clock, setClock] = useState(() => Date.now());
     const [timerAnnouncement, setTimerAnnouncement] = useState('');
+    const [voteState, setVoteState] = useState<LiveWritingVoteState | null>(null);
+    const [selfChoice, setSelfChoice] = useState<LiveWritingSelfRating | null>(null);
+    const [selfNote, setSelfNote] = useState('');
+    const [selfSaving, setSelfSaving] = useState(false);
+    const [selfFailed, setSelfFailed] = useState(false);
+    const [voteSaving, setVoteSaving] = useState(false);
+    const [voteFailed, setVoteFailed] = useState(false);
 
     const htmlRef = useRef('');
     const savingRef = useRef(false);
@@ -179,6 +194,16 @@ export default function StudentLiveWritePage() {
                 if (Number.isFinite(serverNow)) setOffset(serverNow - Date.now());
                 setState(next);
                 setReconnecting(false);
+                if (next.status === 'voting') {
+                    try {
+                        const nextVote = await adapter.getVoteState(join.participantId, join.joinToken);
+                        if (!cancelled) setVoteState(nextVote);
+                    } catch {
+                        // The vote panel keeps its last successful pair while the next poll retries.
+                    }
+                } else if (!cancelled) {
+                    setVoteState(null);
+                }
             } catch (err) {
                 if (cancelled) return;
                 const message = err instanceof Error ? err.message : '';
@@ -234,6 +259,13 @@ export default function StudentLiveWritePage() {
         setSaveError(false);
         setHandInError(false);
         setRevealedHints(0);
+        setVoteState(null);
+        setSelfChoice(state.selfRating ?? null);
+        setSelfNote(state.selfNote ?? '');
+        setSelfSaving(false);
+        setSelfFailed(false);
+        setVoteSaving(false);
+        setVoteFailed(false);
     }, [state]);
 
     const saveNow = useCallback(
@@ -320,6 +352,52 @@ export default function StudentLiveWritePage() {
         }
     }, [adapter, join, currentRound, handedInAt]);
 
+    const submitSelfCheck = useCallback(async () => {
+        if (!adapter || !join || !currentRound || !handedInAt || !selfChoice || selfSaving) return;
+        setSelfSaving(true);
+        setSelfFailed(false);
+        try {
+            const saved = await adapter.selfCheck(
+                join.participantId,
+                join.joinToken,
+                currentRound,
+                selfChoice,
+                selfNote.trim()
+            );
+            setState((current) =>
+                current && current.currentRound === currentRound
+                    ? { ...current, selfRating: saved.rating, selfNote: saved.note }
+                    : current
+            );
+        } catch {
+            setSelfFailed(true);
+        } finally {
+            setSelfSaving(false);
+        }
+    }, [adapter, join, currentRound, handedInAt, selfChoice, selfNote, selfSaving]);
+
+    const submitVote = useCallback(
+        async (choice: LiveWritingVoteChoice) => {
+            if (!adapter || !join || !currentRound || voteSaving) return;
+            setVoteSaving(true);
+            setVoteFailed(false);
+            try {
+                await adapter.vote(join.participantId, join.joinToken, currentRound, choice);
+                setVoteState((current) => (current ? { ...current, voted: true } : current));
+            } catch (err) {
+                const message = err instanceof Error ? err.message : '';
+                if (message.includes('already_voted')) {
+                    setVoteState((current) => (current ? { ...current, voted: true } : current));
+                } else {
+                    setVoteFailed(true);
+                }
+            } finally {
+                setVoteSaving(false);
+            }
+        },
+        [adapter, join, currentRound, voteSaving]
+    );
+
     const deadline = state?.endsAt ? Date.parse(state.endsAt) : Number.NaN;
     const remainingMs = state
         ? timerState === 'running' && Number.isFinite(deadline)
@@ -368,7 +446,7 @@ export default function StudentLiveWritePage() {
         state?.imageUrl ?? (state?.imagePath && /^https?:\/\//i.test(state.imagePath) ? state.imagePath : undefined);
     const hints = state?.scaffoldPrompts ?? [];
     const visibleHints = hints.slice(0, revealedHints);
-    const finished = Boolean(handedInAt) || sessionStatus === 'finals';
+    const finished = Boolean(handedInAt) || sessionStatus === 'voting' || sessionStatus === 'finals';
 
     async function pick(studentId: string) {
         if (!adapter) return;
@@ -575,6 +653,10 @@ export default function StudentLiveWritePage() {
                 .live-student-header { position: sticky; top: 0; z-index: 20; background: var(--bg); border-bottom: 1px solid var(--border); }
                 .live-student-layout { max-width: 1180px; margin: 0 auto; padding: 20px; display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
                 .live-student-roster { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+                .live-vote-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+                .live-vote-text { margin-top: 12px; max-height: 360px; overflow: auto; line-height: 1.55; font-size: 0.95rem; }
+                .live-vote-text p:first-child { margin-top: 0; }
+                @media (max-width: 760px) { .live-vote-grid { grid-template-columns: minmax(0, 1fr); } }
                 @media (max-width: 860px) {
                     .live-student-layout { grid-template-columns: minmax(0, 1fr); padding: 14px; }
                     .live-student-sidebar { order: -1; }
@@ -683,21 +765,24 @@ export default function StudentLiveWritePage() {
                     )}
 
                     {finished ? (
-                        <div className="card" role="status" style={{ padding: 20 }}>
-                            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                                {handedInAt ? <CheckCircle size={20} /> : <Clock size={20} />}
-                                <strong>
-                                    {handedInAt
-                                        ? t('liveWriting.student_handed_in_title')
-                                        : t('liveWriting.student_time_up')}
-                                </strong>
-                            </div>
-                            <p className="text-muted" style={{ margin: '8px 0 0' }}>
-                                {state.status === 'finals'
-                                    ? t('liveWriting.student_finals_waiting')
-                                    : t('liveWriting.student_waiting_after_handin')}
-                            </p>
-                        </div>
+                        <LiveWritingFinishedPanel
+                            state={state}
+                            voteState={voteState}
+                            selfRating={state.selfRating}
+                            selfChoice={selfChoice ?? undefined}
+                            selfNote={selfNote}
+                            selfSaving={selfSaving}
+                            selfFailed={selfFailed}
+                            voteSaving={voteSaving}
+                            voteFailed={voteFailed}
+                            onSelfRatingChange={(rating) => {
+                                setSelfChoice(rating);
+                                setSelfFailed(false);
+                            }}
+                            onSelfNoteChange={setSelfNote}
+                            onSelfSubmit={() => void submitSelfCheck()}
+                            onVote={(choice) => void submitVote(choice)}
+                        />
                     ) : (
                         <>
                             <div

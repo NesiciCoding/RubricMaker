@@ -6,10 +6,15 @@ import type {
     LiveWritingJoin,
     LiveWritingParticipant,
     LiveWritingRosterEntry,
+    LiveWritingRoundLogEntry,
+    LiveWritingSelfRating,
     LiveWritingSession,
     LiveWritingSessionStatus,
     LiveWritingTimerSnapshot,
     LiveWritingTimerState,
+    LiveWritingVoteChoice,
+    LiveWritingVoteResult,
+    LiveWritingVoteState,
 } from '../../types';
 
 export interface LiveWritingProgressRow {
@@ -43,12 +48,15 @@ export interface LiveWritingStudentState {
     scaffoldEnabled: boolean;
     /** Teacher-authored hints only, and only while the session switch is on. */
     scaffoldPrompts: string[];
+    peerVoting: boolean;
     responseRound?: number;
     contentHtml: string;
     wordCount: number;
     /** Early vocabulary estimate; never a grade and never aggregated. */
     cefrEstimate?: CefrLevel;
     handedInAt?: string;
+    selfRating?: LiveWritingSelfRating;
+    selfNote?: string;
 }
 
 export interface LiveWritingSessionInput {
@@ -60,9 +68,10 @@ export interface LiveWritingSessionInput {
     minWords: number;
     maxWords: number | null;
     scaffoldEnabled: boolean;
-    scaffoldPrompts?: string[];
+    scaffoldPrompts: string[];
     liveLeaderboard: boolean;
     lockAfterStart: boolean;
+    peerVoting: boolean;
 }
 
 export type LiveWritingSessionPatch = Partial<LiveWritingSessionInput> & {
@@ -122,6 +131,7 @@ function mapSession(row: Row): LiveWritingSession {
             : [],
         liveLeaderboard: bool(row.live_leaderboard, true),
         lockAfterStart: bool(row.lock_after_start),
+        peerVoting: bool(row.peer_voting, true),
         votesOpen: bool(row.votes_open),
         timerState: text(row.timer_state, 'idle') as LiveWritingTimerState,
         timerEndsAt: optionalText(row.timer_ends_at),
@@ -181,11 +191,55 @@ function mapStudentState(row: Row): LiveWritingStudentState {
         scaffoldPrompts: Array.isArray(row.scaffold_prompts)
             ? row.scaffold_prompts.filter((p): p is string => typeof p === 'string' && p.trim() !== '')
             : [],
+        peerVoting: bool(row.peer_voting, true),
         responseRound: optionalNumber(row.response_round_index),
         contentHtml: text(row.content_html),
         wordCount: number(row.word_count),
         cefrEstimate: optionalText(row.cefr_estimate) as CefrLevel | undefined,
         handedInAt: optionalText(row.handed_in_at),
+        selfRating: optionalText(row.self_rating) as LiveWritingSelfRating | undefined,
+        selfNote: optionalText(row.self_note),
+    };
+}
+
+function mapVoteState(row: Row): LiveWritingVoteState {
+    return {
+        status: text(row.session_status, 'lobby') as LiveWritingSessionStatus,
+        currentRound: number(row.current_round, 1),
+        roundCount: number(row.round_count, 1),
+        peerVoting: bool(row.peer_voting, false),
+        votesOpen: bool(row.votes_open),
+        selfRating: optionalText(row.self_rating) as LiveWritingSelfRating | undefined,
+        selfNote: optionalText(row.self_note),
+        hasPair: bool(row.has_pair),
+        voted: bool(row.voted),
+        optionAHtml: optionalText(row.option_a_html),
+        optionBHtml: optionalText(row.option_b_html),
+        optionAWordCount: number(row.option_a_word_count),
+        optionBWordCount: number(row.option_b_word_count),
+    };
+}
+
+function mapVoteResult(row: Row): LiveWritingVoteResult {
+    return {
+        participantId: text(row.participant_id),
+        displayName: text(row.display_name, 'Student'),
+        selfRating: optionalText(row.self_rating) as LiveWritingSelfRating | undefined,
+        selfNote: optionalText(row.self_note),
+        votedForParticipantId: optionalText(row.voted_for_participant_id),
+        votedForName: optionalText(row.voted_for_name),
+        votesReceived: number(row.votes_received),
+        hasPair: bool(row.has_pair),
+    };
+}
+
+function mapRoundLog(row: Row): LiveWritingRoundLogEntry {
+    return {
+        id: text(row.log_id),
+        roundIndex: number(row.round_index, 1),
+        action: text(row.action) as LiveWritingRoundLogEntry['action'],
+        detail: row.detail && typeof row.detail === 'object' ? (row.detail as Record<string, unknown>) : {},
+        createdAt: text(row.created_at),
     };
 }
 
@@ -253,9 +307,10 @@ export class LiveWritingAdapter {
                 min_words: input.minWords,
                 max_words: input.maxWords,
                 scaffold_enabled: input.scaffoldEnabled,
-                scaffold_prompts: (input.scaffoldPrompts ?? []).slice(0, 3),
+                scaffold_prompts: input.scaffoldPrompts.slice(0, 3),
                 live_leaderboard: input.liveLeaderboard,
                 lock_after_start: input.lockAfterStart,
+                peer_voting: input.peerVoting,
             })
             .select('*')
             .single();
@@ -276,6 +331,7 @@ export class LiveWritingAdapter {
         if (patch.scaffoldPrompts !== undefined) row.scaffold_prompts = patch.scaffoldPrompts.slice(0, 3);
         if (patch.liveLeaderboard !== undefined) row.live_leaderboard = patch.liveLeaderboard;
         if (patch.lockAfterStart !== undefined) row.lock_after_start = patch.lockAfterStart;
+        if (patch.peerVoting !== undefined) row.peer_voting = patch.peerVoting;
         if (patch.status !== undefined) row.status = patch.status;
         if (patch.currentRound !== undefined) row.current_round = patch.currentRound;
         if (patch.votesOpen !== undefined) row.votes_open = patch.votesOpen;
@@ -380,6 +436,74 @@ export class LiveWritingAdapter {
         });
         throwIfError(error);
         return text(firstRow(data).handed_in_at);
+    }
+
+    async selfCheck(
+        participantId: string,
+        token: string,
+        roundIndex: number,
+        rating: LiveWritingSelfRating,
+        note: string
+    ): Promise<{ rating: LiveWritingSelfRating; note?: string }> {
+        const { data, error } = await this.client.rpc('self_check_live_writing', {
+            p_participant_id: participantId,
+            p_token: token,
+            p_round_index: roundIndex,
+            p_rating: rating,
+            p_note: note,
+        });
+        throwIfError(error);
+        const row = firstRow(data);
+        return {
+            rating: text(row.self_rating, rating) as LiveWritingSelfRating,
+            note: optionalText(row.self_note),
+        };
+    }
+
+    async getVoteState(participantId: string, token: string): Promise<LiveWritingVoteState> {
+        const { data, error } = await this.client.rpc('get_live_writing_vote_state', {
+            p_participant_id: participantId,
+            p_token: token,
+        });
+        throwIfError(error);
+        return mapVoteState(firstRow(data));
+    }
+
+    async vote(participantId: string, token: string, roundIndex: number, choice: LiveWritingVoteChoice): Promise<void> {
+        const { error } = await this.client.rpc('submit_live_writing_vote', {
+            p_participant_id: participantId,
+            p_token: token,
+            p_round_index: roundIndex,
+            p_choice: choice,
+        });
+        throwIfError(error);
+    }
+
+    async getVoteResults(sessionId: string, roundIndex: number): Promise<LiveWritingVoteResult[]> {
+        const { data, error } = await this.client.rpc('get_live_writing_vote_results', {
+            p_session_id: sessionId,
+            p_round_index: roundIndex,
+        });
+        throwIfError(error);
+        return asRows(data).map(mapVoteResult);
+    }
+
+    async getRoundLog(sessionId: string, roundIndex: number): Promise<LiveWritingRoundLogEntry[]> {
+        const { data, error } = await this.client.rpc('get_live_writing_round_log', {
+            p_session_id: sessionId,
+            p_round_index: roundIndex,
+        });
+        throwIfError(error);
+        return asRows(data).map(mapRoundLog);
+    }
+
+    async setVoting(sessionId: string, roundIndex: number, open: boolean): Promise<void> {
+        const { error } = await this.client.rpc('set_live_writing_voting', {
+            p_session_id: sessionId,
+            p_round_index: roundIndex,
+            p_open: open,
+        });
+        throwIfError(error);
     }
 
     async startWriting(sessionId: string): Promise<LiveWritingTimerSnapshot> {

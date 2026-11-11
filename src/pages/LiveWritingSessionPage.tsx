@@ -3,10 +3,17 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Copy, MonitorPlay, RefreshCw, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
+import LiveWritingVotingPanel from '../components/LiveWriting/LiveWritingVotingPanel';
 import { useClasses } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { LiveWritingAdapter, type LiveWritingSessionInput } from '../services/database/LiveWritingAdapter';
-import type { LiveWritingParticipant, LiveWritingSession, LiveWritingSessionStatus } from '../types';
+import type {
+    LiveWritingParticipant,
+    LiveWritingRoundLogEntry,
+    LiveWritingSession,
+    LiveWritingSessionStatus,
+    LiveWritingVoteResult,
+} from '../types';
 import { liveWritingJoinLink, liveWritingStatusKey } from '../utils/liveWriting';
 
 interface DraftState {
@@ -18,8 +25,10 @@ interface DraftState {
     minWords: number;
     maxWords: string;
     scaffoldEnabled: boolean;
+    scaffoldPrompts: string[];
     liveLeaderboard: boolean;
     lockAfterStart: boolean;
+    peerVoting: boolean;
 }
 
 function emptyDraft(): DraftState {
@@ -32,8 +41,10 @@ function emptyDraft(): DraftState {
         minWords: 0,
         maxWords: '',
         scaffoldEnabled: true,
+        scaffoldPrompts: ['', '', ''],
         liveLeaderboard: true,
         lockAfterStart: false,
+        peerVoting: true,
     };
 }
 
@@ -47,8 +58,10 @@ function draftFromSession(session: LiveWritingSession): DraftState {
         minWords: session.minWords,
         maxWords: session.maxWords === undefined ? '' : String(session.maxWords),
         scaffoldEnabled: session.scaffoldEnabled,
+        scaffoldPrompts: [0, 1, 2].map((index) => session.scaffoldPrompts[index] ?? ''),
         liveLeaderboard: session.liveLeaderboard,
         lockAfterStart: session.lockAfterStart,
+        peerVoting: session.peerVoting,
     };
 }
 
@@ -63,8 +76,13 @@ function toInput(draft: DraftState): LiveWritingSessionInput {
         minWords: Math.max(0, Math.floor(draft.minWords) || 0),
         maxWords: maxWords === null ? null : Math.max(0, maxWords),
         scaffoldEnabled: draft.scaffoldEnabled,
+        scaffoldPrompts: draft.scaffoldPrompts
+            .slice(0, 3)
+            .map((hint) => hint.trim())
+            .filter((hint) => hint !== ''),
         liveLeaderboard: draft.liveLeaderboard,
         lockAfterStart: draft.lockAfterStart,
+        peerVoting: draft.peerVoting,
     };
 }
 
@@ -83,6 +101,10 @@ export default function LiveWritingSessionPage() {
     const [loading, setLoading] = useState(!isNew);
     const [saving, setSaving] = useState(false);
     const [loadFailed, setLoadFailed] = useState(false);
+    const [voteResults, setVoteResults] = useState<LiveWritingVoteResult[]>([]);
+    const [roundLog, setRoundLog] = useState<LiveWritingRoundLogEntry[]>([]);
+    const [voteBusy, setVoteBusy] = useState(false);
+    const [voteFailed, setVoteFailed] = useState(false);
 
     useEffect(() => {
         if (!isNew) return;
@@ -125,11 +147,62 @@ export default function LiveWritingSessionPage() {
     }, [adapter, session]);
 
     useEffect(() => {
-        if (!session || (session.status !== 'lobby' && session.status !== 'writing')) return;
+        if (
+            !session ||
+            (session.status !== 'lobby' &&
+                session.status !== 'writing' &&
+                session.status !== 'voting' &&
+                session.status !== 'finals')
+        ) {
+            return;
+        }
         void refreshParticipants();
         const timer = setInterval(() => void refreshParticipants(), 6000);
         return () => clearInterval(timer);
     }, [session, refreshParticipants]);
+
+    const refreshVoting = useCallback(async () => {
+        if (!adapter || !session) return;
+        try {
+            const [results, log] = await Promise.all([
+                adapter.getVoteResults(session.id, session.currentRound),
+                adapter.getRoundLog(session.id, session.currentRound),
+            ]);
+            setVoteResults(results);
+            setRoundLog(log);
+            setVoteFailed(false);
+        } catch {
+            setVoteFailed(true);
+        }
+    }, [adapter, session]);
+
+    useEffect(() => {
+        if (!session || (session.status !== 'voting' && session.status !== 'finals')) {
+            setVoteResults([]);
+            setRoundLog([]);
+            return;
+        }
+        void refreshVoting();
+        const timer = setInterval(() => void refreshVoting(), 5000);
+        return () => clearInterval(timer);
+    }, [session, refreshVoting]);
+
+    async function setVoting(open: boolean) {
+        if (!adapter || !session) return;
+        setVoteBusy(true);
+        try {
+            await adapter.setVoting(session.id, session.currentRound, open);
+            const updated = await adapter.getSession(session.id);
+            setSession(updated);
+            setDraft(draftFromSession(updated));
+            await refreshVoting();
+            showToast(t(open ? 'liveWriting.voting_reopened_toast' : 'liveWriting.voting_closed_toast'), 'success');
+        } catch {
+            showToast(t('liveWriting.projector_action_failed'), 'error');
+        } finally {
+            setVoteBusy(false);
+        }
+    }
 
     const editable = !session || session.status === 'draft';
 
@@ -392,6 +465,53 @@ export default function LiveWritingSessionPage() {
                                         </span>
                                     </span>
                                 </label>
+                                {draft.scaffoldEnabled && (
+                                    <div
+                                        style={{
+                                            marginLeft: 26,
+                                            display: 'grid',
+                                            gap: 10,
+                                            padding: '14px 0 4px',
+                                            borderTop: '1px solid var(--border)',
+                                        }}
+                                    >
+                                        <div>
+                                            <strong>{t('liveWriting.hints')}</strong>
+                                            <p className="text-muted text-xs" style={{ margin: '4px 0 0' }}>
+                                                {t('liveWriting.hints_hint')}
+                                            </p>
+                                        </div>
+                                        {[0, 1, 2].map((index) => (
+                                            <div key={index}>
+                                                <label
+                                                    htmlFor={`live-hint-${index + 1}`}
+                                                    style={{ display: 'block', marginBottom: 4 }}
+                                                >
+                                                    {t('liveWriting.hint_number', { number: index + 1 })}
+                                                </label>
+                                                <textarea
+                                                    id={`live-hint-${index + 1}`}
+                                                    className="input"
+                                                    rows={2}
+                                                    maxLength={500}
+                                                    value={draft.scaffoldPrompts[index] ?? ''}
+                                                    disabled={!editable}
+                                                    placeholder={t('liveWriting.hint_placeholder')}
+                                                    onChange={(event) =>
+                                                        patchDraft({
+                                                            scaffoldPrompts: [0, 1, 2].map((slot) =>
+                                                                slot === index
+                                                                    ? event.target.value
+                                                                    : (draft.scaffoldPrompts[slot] ?? '')
+                                                            ),
+                                                        })
+                                                    }
+                                                    style={{ resize: 'vertical' }}
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                                 <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                                     <input
                                         type="checkbox"
@@ -404,6 +524,21 @@ export default function LiveWritingSessionPage() {
                                         {t('liveWriting.leaderboard_toggle')}
                                         <span className="text-muted text-xs" style={{ display: 'block' }}>
                                             {t('liveWriting.leaderboard_hint')}
+                                        </span>
+                                    </span>
+                                </label>
+                                <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={draft.peerVoting}
+                                        disabled={!editable}
+                                        onChange={(e) => patchDraft({ peerVoting: e.target.checked })}
+                                        style={{ marginTop: 3 }}
+                                    />
+                                    <span>
+                                        {t('liveWriting.peer_voting_toggle')}
+                                        <span className="text-muted text-xs" style={{ display: 'block' }}>
+                                            {t('liveWriting.peer_voting_hint')}
                                         </span>
                                     </span>
                                 </label>
@@ -512,6 +647,20 @@ export default function LiveWritingSessionPage() {
                                 )}
                             </aside>
                         )}
+                    </div>
+                )}
+                {session && session.peerVoting && (session.status === 'voting' || session.status === 'finals') && (
+                    <div style={{ marginTop: 20 }}>
+                        <LiveWritingVotingPanel
+                            roundIndex={session.currentRound}
+                            votesOpen={session.votesOpen}
+                            results={voteResults}
+                            log={roundLog}
+                            busy={voteBusy}
+                            failed={voteFailed}
+                            onCloseVoting={() => void setVoting(false)}
+                            onReopenVoting={() => void setVoting(true)}
+                        />
                     </div>
                 )}
             </div>

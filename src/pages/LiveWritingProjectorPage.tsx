@@ -447,7 +447,7 @@ export default function LiveWritingProjectorPage() {
                     <p className="text-muted" style={{ fontSize: 17 }}>
                         {t('liveWriting.participants_count', { count: participants.length })}
                     </p>
-                    {status === 'finals' && timer.currentRound < timer.roundCount && (
+                    {(status === 'voting' || status === 'finals') && timer.currentRound < timer.roundCount && (
                         <button
                             type="button"
                             className="btn btn-primary"

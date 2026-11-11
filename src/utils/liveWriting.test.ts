@@ -3,6 +3,7 @@ import {
     isCompleteJoinCode,
     LIVE_WRITING_CEFR_MIN_WORDS,
     liveWritingCefrEstimate,
+    liveWritingSelfRatingKey,
     normalizeJoinCode,
 } from './liveWriting';
 
@@ -22,6 +23,14 @@ describe('live writing join codes', () => {
         expect(isCompleteJoinCode('ABC123')).toBe(true);
         expect(isCompleteJoinCode('RM-ABC12')).toBe(false);
         expect(isCompleteJoinCode('RM-ABC1234')).toBe(false);
+    });
+});
+
+describe('live writing self-check labels', () => {
+    it('maps each three-option rating to its translation key', () => {
+        expect(liveWritingSelfRatingKey('happy')).toBe('liveWriting.student_selfcheck_happy');
+        expect(liveWritingSelfRatingKey('neutral')).toBe('liveWriting.student_selfcheck_neutral');
+        expect(liveWritingSelfRatingKey('unhappy')).toBe('liveWriting.student_selfcheck_unhappy');
     });
 });
 

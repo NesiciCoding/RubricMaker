@@ -1991,6 +1991,8 @@ export interface EssaySubmission {
  */
 export type LiveWritingSessionStatus = 'draft' | 'lobby' | 'writing' | 'voting' | 'finals' | 'closed';
 export type LiveWritingTimerState = 'idle' | 'running' | 'paused' | 'ended';
+export type LiveWritingSelfRating = 'happy' | 'neutral' | 'unhappy';
+export type LiveWritingVoteChoice = 'a' | 'b';
 
 export interface LiveWritingSession {
     id: string;
@@ -2012,6 +2014,8 @@ export interface LiveWritingSession {
     /** Progress framing only: words written and hand-ins, never quality. */
     liveLeaderboard: boolean;
     lockAfterStart: boolean;
+    /** When false, ending writing skips voting and goes straight to finals. */
+    peerVoting: boolean;
     votesOpen: boolean;
     /** Server-authoritative countdown for the projector and, later, student clients. */
     timerState: LiveWritingTimerState;
@@ -2086,11 +2090,53 @@ export interface LiveWritingStudentState {
     imageUrl?: string;
     scaffoldEnabled: boolean;
     scaffoldPrompts: string[];
+    peerVoting: boolean;
     responseRound?: number;
     contentHtml: string;
     wordCount: number;
     cefrEstimate?: CefrLevel;
     handedInAt?: string;
+    selfRating?: LiveWritingSelfRating;
+    selfNote?: string;
+}
+
+/** The two anonymous texts a participant may compare, plus their own self-check state. */
+export interface LiveWritingVoteState {
+    status: LiveWritingSessionStatus;
+    currentRound: number;
+    roundCount: number;
+    peerVoting: boolean;
+    votesOpen: boolean;
+    selfRating?: LiveWritingSelfRating;
+    selfNote?: string;
+    hasPair: boolean;
+    voted: boolean;
+    optionAHtml?: string;
+    optionBHtml?: string;
+    optionAWordCount: number;
+    optionBWordCount: number;
+}
+
+/** Teacher-only vote roll-up. Students never receive voter or count data. */
+export interface LiveWritingVoteResult {
+    participantId: string;
+    displayName: string;
+    selfRating?: LiveWritingSelfRating;
+    selfNote?: string;
+    votedForParticipantId?: string;
+    votedForName?: string;
+    votesReceived: number;
+    hasPair: boolean;
+}
+
+export type LiveWritingRoundLogAction = 'voting_opened' | 'voting_closed' | 'voting_reopened';
+
+export interface LiveWritingRoundLogEntry {
+    id: string;
+    roundIndex: number;
+    action: LiveWritingRoundLogAction;
+    detail: Record<string, unknown>;
+    createdAt: string;
 }
 
 // ─── Audit log ───────────────────────────────────────────────────────────────
