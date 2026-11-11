@@ -80,7 +80,7 @@ describe('LoginButtons coverage', () => {
         const storageSync = makeStorageSync();
         mockLoadDb.mockResolvedValue({ storageSync });
         render(<LoginButtons supabaseReady />);
-        fireEvent.click(screen.getByRole('button', { name: 'auth.student_login_password' }));
+        fireEvent.click(screen.getByRole('button', { name: 'auth.sign_in_with_password' }));
         const passwordInput = screen.getByPlaceholderText('common.password');
         const emailInput = screen.getByPlaceholderText('auth.email_placeholder');
 
@@ -102,7 +102,7 @@ describe('LoginButtons coverage', () => {
     it('routes to config when student login is attempted while supabase is not ready', async () => {
         const onNeedConfig = vi.fn();
         render(<LoginButtons supabaseReady={false} onNeedConfig={onNeedConfig} />);
-        fireEvent.click(screen.getByRole('button', { name: 'auth.student_login_password' }));
+        fireEvent.click(screen.getByRole('button', { name: 'auth.sign_in_with_password' }));
         fireEvent.change(screen.getByPlaceholderText('auth.email_placeholder'), { target: { value: 's@school.com' } });
         fireEvent.change(screen.getByPlaceholderText('common.password'), { target: { value: 'secret' } });
         fireEvent.click(screen.getByRole('button', { name: 'auth.sign_in' }));
@@ -115,7 +115,7 @@ describe('LoginButtons coverage', () => {
         });
         mockLoadDb.mockResolvedValue({ storageSync });
         render(<LoginButtons supabaseReady />);
-        fireEvent.click(screen.getByRole('button', { name: 'auth.student_login_password' }));
+        fireEvent.click(screen.getByRole('button', { name: 'auth.sign_in_with_password' }));
         fireEvent.change(screen.getByPlaceholderText('auth.email_placeholder'), { target: { value: 's@school.com' } });
         fireEvent.change(screen.getByPlaceholderText('common.password'), { target: { value: 'wrong' } });
         fireEvent.click(screen.getByRole('button', { name: 'auth.sign_in' }));
@@ -133,7 +133,7 @@ describe('LoginButtons coverage', () => {
         });
         mockLoadDb.mockResolvedValue({ storageSync });
         render(<LoginButtons supabaseReady />);
-        fireEvent.click(screen.getByRole('button', { name: 'auth.student_login_password' }));
+        fireEvent.click(screen.getByRole('button', { name: 'auth.sign_in_with_password' }));
         fireEvent.change(screen.getByPlaceholderText('auth.email_placeholder'), { target: { value: 's@school.com' } });
         fireEvent.change(screen.getByPlaceholderText('common.password'), { target: { value: 'wrong' } });
         fireEvent.click(screen.getByRole('button', { name: 'auth.sign_in' }));
@@ -146,7 +146,7 @@ describe('LoginButtons coverage', () => {
         mockLoadDb.mockResolvedValue({ storageSync });
         const onEmailSuccess = vi.fn();
         render(<LoginButtons supabaseReady onEmailSuccess={onEmailSuccess} />);
-        fireEvent.click(screen.getByRole('button', { name: 'auth.student_login_password' }));
+        fireEvent.click(screen.getByRole('button', { name: 'auth.sign_in_with_password' }));
         fireEvent.change(screen.getByPlaceholderText('auth.email_placeholder'), { target: { value: 's@school.com' } });
         fireEvent.change(screen.getByPlaceholderText('common.password'), { target: { value: 'secret' } });
         fireEvent.keyDown(screen.getByPlaceholderText('common.password'), { key: 'Enter' });
@@ -157,7 +157,7 @@ describe('LoginButtons coverage', () => {
     it('shows the module-load error when the student password login throws', async () => {
         mockLoadDb.mockRejectedValue(new Error('module failed'));
         render(<LoginButtons supabaseReady />);
-        fireEvent.click(screen.getByRole('button', { name: 'auth.student_login_password' }));
+        fireEvent.click(screen.getByRole('button', { name: 'auth.sign_in_with_password' }));
         fireEvent.change(screen.getByPlaceholderText('auth.email_placeholder'), { target: { value: 's@school.com' } });
         fireEvent.change(screen.getByPlaceholderText('common.password'), { target: { value: 'secret' } });
         fireEvent.click(screen.getByRole('button', { name: 'auth.sign_in' }));
@@ -168,7 +168,7 @@ describe('LoginButtons coverage', () => {
         const storageSync = makeStorageSync();
         mockLoadDb.mockResolvedValue({ storageSync });
         render(<LoginButtons supabaseReady />);
-        const toggle = screen.getByRole('button', { name: 'auth.student_login_password' });
+        const toggle = screen.getByRole('button', { name: 'auth.sign_in_with_password' });
         fireEvent.click(toggle);
         expect(screen.getByPlaceholderText('common.password')).toBeInTheDocument();
         fireEvent.click(toggle);
