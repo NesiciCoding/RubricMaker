@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Eye, EyeOff, Pause, Play, Plus, Square, Users } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, Pause, Play, Plus, SkipForward, Square, Users } from 'lucide-react';
 import QRCode from 'qrcode';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import { useClasses } from '../context/AppContext';
@@ -142,6 +142,20 @@ export default function LiveWritingProjectorPage() {
         setBusy(true);
         try {
             applyTimer(await adapter.controlTimer(sessionId, action));
+            await adapter.broadcastSessionEvent(sessionId, 'timer');
+            await refresh();
+        } catch {
+            showToast(t('liveWriting.projector_action_failed'), 'error');
+        } finally {
+            setBusy(false);
+        }
+    }
+
+    async function startNextRound() {
+        if (!adapter || !sessionId || !timer) return;
+        setBusy(true);
+        try {
+            applyTimer(await adapter.startRound(sessionId, timer.currentRound + 1));
             await adapter.broadcastSessionEvent(sessionId, 'timer');
             await refresh();
         } catch {
@@ -433,13 +447,27 @@ export default function LiveWritingProjectorPage() {
                     <p className="text-muted" style={{ fontSize: 17 }}>
                         {t('liveWriting.participants_count', { count: participants.length })}
                     </p>
+                    {status === 'finals' && timer.currentRound < timer.roundCount && (
+                        <button
+                            type="button"
+                            className="btn btn-primary"
+                            disabled={busy}
+                            onClick={() => void startNextRound()}
+                            style={{ ...controlButton, marginTop: 16 }}
+                        >
+                            <SkipForward size={20} />{' '}
+                            {t('liveWriting.projector_start_next_round', {
+                                round: timer.currentRound + 1,
+                            })}
+                        </button>
+                    )}
                     {status !== 'closed' && (
                         <button
                             type="button"
                             className="btn btn-ghost"
                             disabled={busy}
                             onClick={() => void control('end_session')}
-                            style={{ ...controlButton, marginTop: 16 }}
+                            style={{ ...controlButton, marginTop: 16, marginLeft: 8 }}
                         >
                             {t('liveWriting.projector_end_session')}
                         </button>

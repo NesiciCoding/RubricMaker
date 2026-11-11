@@ -2065,6 +2065,34 @@ export interface LiveWritingJoin {
     scaffoldEnabled: boolean;
 }
 
+/** The student's own view of a live session; response text is only ever this participant's. */
+export interface LiveWritingStudentState {
+    sessionId: string;
+    participantId: string;
+    displayName: string;
+    sessionTitle: string;
+    status: LiveWritingSessionStatus;
+    timerState: LiveWritingTimerState;
+    endsAt?: string;
+    remainingMs: number;
+    serverNow: string;
+    currentRound: number;
+    roundCount: number;
+    minutesPerRound: number;
+    minWords: number;
+    maxWords?: number;
+    prompt: string;
+    imagePath?: string;
+    imageUrl?: string;
+    scaffoldEnabled: boolean;
+    scaffoldPrompts: string[];
+    responseRound?: number;
+    contentHtml: string;
+    wordCount: number;
+    cefrEstimate?: CefrLevel;
+    handedInAt?: string;
+}
+
 // ─── Audit log ───────────────────────────────────────────────────────────────
 
 export type AuditCategory = 'admin' | 'grade' | 'export' | 'auth';

@@ -1,4 +1,15 @@
-import type { LiveWritingSessionStatus } from '../types';
+import type { CefrLevel, LiveWritingSessionStatus } from '../types';
+import { profileText } from './cefrVocabularyProfiler';
+import { countWords, htmlToPlainText } from './essayUtils';
+
+/** Below this word count the vocabulary estimate is hidden rather than labelling a fragment. */
+export const LIVE_WRITING_CEFR_MIN_WORDS = 25;
+
+/** Deterministic, early vocabulary estimate; null until the text is long enough to say anything. */
+export function liveWritingCefrEstimate(html: string, wordCount = countWords(html)): CefrLevel | null {
+    if (wordCount < LIVE_WRITING_CEFR_MIN_WORDS) return null;
+    return profileText(htmlToPlainText(html)).estimatedLevel;
+}
 
 export const LIVE_WRITING_STATUSES: LiveWritingSessionStatus[] = [
     'draft',

@@ -21,6 +21,36 @@ export interface LiveWritingProgressRow {
     handedInAt?: string;
 }
 
+export interface LiveWritingStudentState {
+    sessionId: string;
+    participantId: string;
+    displayName: string;
+    sessionTitle: string;
+    status: LiveWritingSessionStatus;
+    timerState: LiveWritingTimerState;
+    endsAt?: string;
+    remainingMs: number;
+    serverNow: string;
+    currentRound: number;
+    roundCount: number;
+    minutesPerRound: number;
+    minWords: number;
+    maxWords?: number;
+    prompt: string;
+    imagePath?: string;
+    /** Resolved public bucket URL, when the teacher attached an image. */
+    imageUrl?: string;
+    scaffoldEnabled: boolean;
+    /** Teacher-authored hints only, and only while the session switch is on. */
+    scaffoldPrompts: string[];
+    responseRound?: number;
+    contentHtml: string;
+    wordCount: number;
+    /** Early vocabulary estimate; never a grade and never aggregated. */
+    cefrEstimate?: CefrLevel;
+    handedInAt?: string;
+}
+
 export interface LiveWritingSessionInput {
     title: string;
     prompt: string;
@@ -30,6 +60,7 @@ export interface LiveWritingSessionInput {
     minWords: number;
     maxWords: number | null;
     scaffoldEnabled: boolean;
+    scaffoldPrompts?: string[];
     liveLeaderboard: boolean;
     lockAfterStart: boolean;
 }
@@ -128,6 +159,36 @@ function mapParticipant(row: Row): LiveWritingParticipant {
     };
 }
 
+function mapStudentState(row: Row): LiveWritingStudentState {
+    return {
+        sessionId: text(row.session_id),
+        participantId: text(row.participant_id),
+        displayName: text(row.display_name, 'Student'),
+        sessionTitle: text(row.session_title),
+        status: text(row.session_status, 'lobby') as LiveWritingSessionStatus,
+        timerState: text(row.timer_state, 'idle') as LiveWritingTimerState,
+        endsAt: optionalText(row.timer_ends_at),
+        remainingMs: number(row.timer_remaining_ms),
+        serverNow: text(row.server_now),
+        currentRound: number(row.current_round, 1),
+        roundCount: number(row.round_count, 1),
+        minutesPerRound: number(row.minutes_per_round, 10),
+        minWords: number(row.min_words),
+        maxWords: optionalNumber(row.max_words),
+        prompt: text(row.prompt),
+        imagePath: optionalText(row.image_path),
+        scaffoldEnabled: bool(row.scaffold_enabled, false),
+        scaffoldPrompts: Array.isArray(row.scaffold_prompts)
+            ? row.scaffold_prompts.filter((p): p is string => typeof p === 'string' && p.trim() !== '')
+            : [],
+        responseRound: optionalNumber(row.response_round_index),
+        contentHtml: text(row.content_html),
+        wordCount: number(row.word_count),
+        cefrEstimate: optionalText(row.cefr_estimate) as CefrLevel | undefined,
+        handedInAt: optionalText(row.handed_in_at),
+    };
+}
+
 function throwIfError(error: { message: string } | null): void {
     if (error) throw new Error(error.message);
 }
@@ -192,6 +253,7 @@ export class LiveWritingAdapter {
                 min_words: input.minWords,
                 max_words: input.maxWords,
                 scaffold_enabled: input.scaffoldEnabled,
+                scaffold_prompts: (input.scaffoldPrompts ?? []).slice(0, 3),
                 live_leaderboard: input.liveLeaderboard,
                 lock_after_start: input.lockAfterStart,
             })
@@ -211,6 +273,7 @@ export class LiveWritingAdapter {
         if (patch.minWords !== undefined) row.min_words = patch.minWords;
         if (patch.maxWords !== undefined) row.max_words = patch.maxWords;
         if (patch.scaffoldEnabled !== undefined) row.scaffold_enabled = patch.scaffoldEnabled;
+        if (patch.scaffoldPrompts !== undefined) row.scaffold_prompts = patch.scaffoldPrompts.slice(0, 3);
         if (patch.liveLeaderboard !== undefined) row.live_leaderboard = patch.liveLeaderboard;
         if (patch.lockAfterStart !== undefined) row.lock_after_start = patch.lockAfterStart;
         if (patch.status !== undefined) row.status = patch.status;
@@ -267,72 +330,70 @@ export class LiveWritingAdapter {
         };
     }
 
+    async getStudentState(participantId: string, token: string): Promise<LiveWritingStudentState> {
+        const { data, error } = await this.client.rpc('get_live_writing_student_state', {
+            p_participant_id: participantId,
+            p_token: token,
+        });
+        throwIfError(error);
+        const state = mapStudentState(firstRow(data));
+        if (state.imagePath) {
+            state.imageUrl = /^https?:\/\//i.test(state.imagePath)
+                ? state.imagePath
+                : this.client.storage.from('live-writing').getPublicUrl(state.imagePath).data.publicUrl;
+        }
+        return state;
+    }
+
     async saveText(
         participantId: string,
         token: string,
         roundIndex: number,
-        contentHtml: string
+        contentHtml: string,
+        cefrEstimate: CefrLevel | null = null
     ): Promise<{ wordCount: number; savedAt: string }> {
         const { data, error } = await this.client.rpc('save_live_writing_text', {
             p_participant_id: participantId,
             p_token: token,
             p_round_index: roundIndex,
             p_content_html: contentHtml,
+            p_cefr_estimate: cefrEstimate,
         });
         throwIfError(error);
         const row = firstRow(data);
         return { wordCount: number(row.word_count), savedAt: text(row.saved_at) };
     }
 
-    async handIn(participantId: string, token: string, roundIndex: number): Promise<string> {
+    async handIn(
+        participantId: string,
+        token: string,
+        roundIndex: number,
+        contentHtml: string | null = null,
+        cefrEstimate: CefrLevel | null = null
+    ): Promise<string> {
         const { data, error } = await this.client.rpc('hand_in_live_writing', {
             p_participant_id: participantId,
             p_token: token,
             p_round_index: roundIndex,
+            p_content_html: contentHtml,
+            p_cefr_estimate: cefrEstimate,
         });
         throwIfError(error);
         return text(firstRow(data).handed_in_at);
     }
 
-    async selfCheck(
-        participantId: string,
-        token: string,
-        roundIndex: number,
-        rating: number,
-        note: string
-    ): Promise<void> {
-        const { error } = await this.client.rpc('self_check_live_writing', {
-            p_participant_id: participantId,
-            p_token: token,
-            p_round_index: roundIndex,
-            p_rating: rating,
-            p_note: note,
-        });
-        throwIfError(error);
-    }
-
-    async vote(participantId: string, token: string, roundIndex: number, chosenParticipantId: string): Promise<void> {
-        const { error } = await this.client.rpc('submit_live_writing_vote', {
-            p_participant_id: participantId,
-            p_token: token,
-            p_round_index: roundIndex,
-            p_chosen_participant_id: chosenParticipantId,
-        });
-        throwIfError(error);
-    }
-
-    async setVoting(sessionId: string, roundIndex: number, open: boolean): Promise<void> {
-        const { error } = await this.client.rpc('set_live_writing_voting', {
-            p_session_id: sessionId,
-            p_round_index: roundIndex,
-            p_open: open,
-        });
-        throwIfError(error);
-    }
-
     async startWriting(sessionId: string): Promise<LiveWritingTimerSnapshot> {
         const { data, error } = await this.client.rpc('start_live_writing_session', {
             p_session_id: sessionId,
+        });
+        throwIfError(error);
+        return mapTimer(firstRow(data));
+    }
+
+    async startRound(sessionId: string, roundIndex: number): Promise<LiveWritingTimerSnapshot> {
+        const { data, error } = await this.client.rpc('start_live_writing_round', {
+            p_session_id: sessionId,
+            p_round_index: roundIndex,
         });
         throwIfError(error);
         return mapTimer(firstRow(data));
