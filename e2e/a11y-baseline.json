@@ -597,6 +597,26 @@
       "route": "/vocabulary",
       "theme": "light",
       "violations": []
+    },
+    {
+      "route": "/join/RM-ABC123",
+      "theme": "dark",
+      "violations": []
+    },
+    {
+      "route": "/join/RM-ABC123",
+      "theme": "light",
+      "violations": []
+    },
+    {
+      "route": "/live/live-session-a11y-1",
+      "theme": "dark",
+      "violations": []
+    },
+    {
+      "route": "/live/live-session-a11y-1",
+      "theme": "light",
+      "violations": []
     }
   ]
 }

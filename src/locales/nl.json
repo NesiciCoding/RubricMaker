@@ -4876,7 +4876,40 @@
         "route_join_label": "Deelnemen aan live schrijven",
         "route_join_desc": "Openbaar schrijfscherm: voer de code in, kies je naam, schrijf met de klassentimer en hints, en doe daarna een zelfcheck en stem op twee anonieme teksten.",
         "es_live_title": "Liveschrijfsessies",
-        "es_live_body": "Start een optionele getimede sessie in de klas: stel een opdracht, klas, timing en 1–3 rondes in en projecteer de deelnamecode. Leerlingen kiezen hun naam uit de klasselijst — zonder account. Concepten, inleveringen, zelfchecks en één peervote per ronde blijven in de sessie; reacties kunnen later naar de essaysbeoordeling. Er is geen AI-generatie: hints schrijf je zelf en de voortgangsranglijst toont alleen woorden en inleveringen."
+        "es_live_body": "Start een optionele getimede sessie in de klas: stel een opdracht, klas, timing en 1–3 rondes in en projecteer de deelnamecode. Leerlingen kiezen hun naam uit de klasselijst — zonder account. Concepten, inleveringen, zelfchecks en één peervote per ronde blijven in de sessie; reacties kunnen later naar de essaysbeoordeling. Er is geen AI-generatie: hints schrijf je zelf en de voortgangsranglijst toont alleen woorden en inleveringen.",
+        "tab_live_writing": "Live schrijven",
+        "lw_intro_title": "Live schrijfsessies",
+        "lw_intro_body": "Start een korte, synchrone schrijfsprint in de klas. Leerlingen komen binnen met een code en een naam uit de klasselijst — zonder account, e-mail of installatie. De sessie gebruikt de bestaande timer, zelfcheck, peervoting en het beoordelingsproces; er wordt nooit tekst, hint, feedback, cijfer of winnaar gegenereerd.",
+        "lw_teacher_title": "Instellen en uitvoeren",
+        "lw_teacher_body": "De docentconsole houdt opdracht, klas, timer en rondes bij elkaar. De projector opent in een tweede venster, zodat de laptop bij de bediening blijft.",
+        "lw_teacher_item_setup": "Kies een klas, opdracht, 1–3 rondes en maximaal drie door de docent geschreven hints.",
+        "lw_teacher_item_projector": "Toon de joinlink/qr, de servertimer en een voortgangsbord met alleen woorden en inleveringen.",
+        "lw_teacher_item_timer": "Pauzeer, hervat, voeg een minuut toe, beëindig het schrijven of de sessie; elk apparaat volgt de serverdeadline.",
+        "lw_teacher_item_progress": "Het voortgangsbord is optioneel en nooit een kwaliteitsranglijst. CEFR verschijnt pas als vroege woordenschatindicatie na 25 woorden.",
+        "lw_teacher_item_reconnect": "Ververs of wissel veilig tussen projector en console; polling en de servertijd herstellen de huidige fase.",
+        "lw_student_title": "Wat leerlingen doen",
+        "lw_student_body": "Leerlingen doorlopen dezelfde lus in elke browser; daarna kijkt de klas naar de finales.",
+        "lw_student_item_join": "Voer de code in en kies een naam uit de klasselijst; portal-leerlingen slaan de keuze over als de docent portaljoin aanzet.",
+        "lw_student_item_editor": "Schrijf in de focus-editor met opdracht, timer, live woordenteller, automatisch opslaan en hints één voor één.",
+        "lw_student_item_selfcheck": "Lever vroeg of bij tijd in, kies daarna blij/neutraal/niet blij en voeg eventueel een notitie toe.",
+        "lw_student_item_vote": "Lees twee anonieme teksten en kies de sterkere; één stem per paar per ronde, en klasgenoten zien nooit aantallen of namen.",
+        "lw_finals_title": "Finales en overdracht naar beoordeling",
+        "lw_finals_body": "De docent bepaalt het publiek: teksten zijn standaard anoniem en worden pas herleidbaar als namen expliciet worden onthuld.",
+        "lw_finals_item_anonymous": "De finalegalij toont ingeleverde teksten anoniem; sorteren kan op stemmen, lengte of inlevertijd.",
+        "lw_finals_item_spotlight": "Uitlichten geeft een grote leesweergave met deterministische woord-, zin-, overgangs- en leesbaarheidsstatistieken.",
+        "lw_finals_item_moderate": "Verberg een tekst of vervang de inhoud; verborgen teksten verlaten de galij, hun stem en alle huidige en toekomstige paren.",
+        "lw_finals_item_grading": "Kies een rubriek en stuur één tekst of de hele ronde naar het gewone essayproces; opnieuw sturen werkt dezelfde inzending bij in plaats van te dupliceren.",
+        "lw_finals_item_insights": "De sessiesamenvatting, leerlingentabel en CSV tonen deelnemers, woorden, CEFR-inschatting, zelfcheck, stemmen en inlever-/beoordelingsstatus.",
+        "lw_finals_info": "De CEFR-inschatting is alleen een vroege woordenschatindicatie. Ze wordt nooit in een CEFR-profiel, plaatsingsresultaat of cijfer geschreven.",
+        "lw_privacy_title": "Privacy en cloudgrens",
+        "lw_privacy_item_roster": "Deelname koppelt aan een student_id uit de klasselijst, zodat een afgeronde tekst herleidbaar is voor beoordeling.",
+        "lw_privacy_item_broadcast": "De projector ontvangt alleen namen, woordentellers en fasehints — nooit tekst van deelnemers via het broadcastkanaal.",
+        "lw_privacy_item_cloud": "Live sessies vereisen de Supabase-backend. Zonder die verbinding legt /live uit dat een cloudverbinding nodig is, in plaats van lokaal te doen alsof.",
+        "lw_privacy_item_no_ai": "Er is nergens AI-generatie in de sessie: hints zijn door de docent geschreven, statistieken zijn deterministisch en de docent leidt het gesprek.",
+        "route_join_entry_label": "Deelnemen aan een livesessie",
+        "route_join_entry_desc": "Voer een live schrijfcode in zonder account.",
+        "route_live_new_label": "Nieuwe liveschrijfsessie",
+        "route_live_new_desc": "Maak een concept-livesessie."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",
@@ -5844,7 +5877,9 @@
             "peer_review_title": "Peer Review",
             "peer_review_desc": "Leave structured feedback on a classmate's work using the same rubric your teacher uses.",
             "live_writing_title": "Live schrijven",
-            "live_writing_desc": "Start een getimede schrijfsessie in de klas: leerlingen nemen deel met een korte code, kiezen hun naam en schrijven — zonder account en zonder AI."
+            "live_writing_desc": "Start een getimede schrijfsessie in de klas: leerlingen nemen deel met een korte code, kiezen hun naam en schrijven — zonder account en zonder AI.",
+            "live_writing_student_title": "Live schrijven",
+            "live_writing_student_desc": "Doe mee met een schrijfsprint van de klas via een code, kies je naam, schrijf met de klassentimer en docenthints, en doe daarna een zelfcheck en stem op twee anonieme teksten. Geen account nodig."
         }
     },
     "liveWriting": {
@@ -6099,6 +6134,8 @@
         "finals_replace_label": "Vervangende tekst",
         "finals_replace_cancel": "Annuleren",
         "finals_replace_save": "Vervanging opslaan",
-        "finals_replaced_toast": "Tekst vervangen."
+        "finals_replaced_toast": "Tekst vervangen.",
+        "projector_time_remaining": "Resterende tijd: {{time}}",
+        "projector_progress_row": "{{name}}: {{count}} woorden"
     }
 }

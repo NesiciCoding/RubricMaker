@@ -267,6 +267,13 @@ const STUDENT_FEATURES = [
         color: '#8b5cf6',
     },
     {
+        icon: Radio,
+        key: 'live_writing_student',
+        title: 'Live Writing',
+        desc: 'Join a class writing sprint with a code, pick your name, write with the class timer and teacher hints, then self-check and vote on two anonymous texts. No account needed.',
+        color: '#ec4899',
+    },
+    {
         icon: Newspaper,
         key: 'news_flashes_2',
         title: 'News Flashes',

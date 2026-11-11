@@ -4876,7 +4876,40 @@
         "route_join_label": "Rejoindre une écriture en direct",
         "route_join_desc": "Écran public d’écriture : saisis le code, choisis ton nom, écris avec le minuteur et les indices, puis auto-évalue-toi et vote pour deux textes anonymes.",
         "es_live_title": "Sessions d'écriture en direct",
-        "es_live_body": "Lancez une session chronométrée facultative en classe : définissez un sujet, une classe, un minutage et 1 à 3 manches, puis projetez le code. Les élèves choisissent leur nom dans la liste — sans compte. Brouillons, remises, auto-évaluations et un vote par manche restent dans la session ; les textes pourront ensuite rejoindre la correction des essais. Aucune génération par IA : les aides sont écrites par l'enseignant et le classement de progression n'affiche que les mots et les remises."
+        "es_live_body": "Lancez une session chronométrée facultative en classe : définissez un sujet, une classe, un minutage et 1 à 3 manches, puis projetez le code. Les élèves choisissent leur nom dans la liste — sans compte. Brouillons, remises, auto-évaluations et un vote par manche restent dans la session ; les textes pourront ensuite rejoindre la correction des essais. Aucune génération par IA : les aides sont écrites par l'enseignant et le classement de progression n'affiche que les mots et les remises.",
+        "tab_live_writing": "Écriture en direct",
+        "lw_intro_title": "Sessions d’écriture en direct",
+        "lw_intro_body": "Lancez un sprint d’écriture court et synchrone en classe. Les élèves rejoignent avec un code et un nom de la liste de classe — sans compte, e-mail ni installation. La session orchestre le minuteur, l’auto-évaluation, le vote entre pairs et la correction existants ; elle ne génère jamais de texte, d’indice, de retour, de note ni de gagnant.",
+        "lw_teacher_title": "Configurer et animer",
+        "lw_teacher_body": "La console enseignant réunit le sujet, la classe, le minuteur et les manches. Le projecteur s’ouvre dans une seconde fenêtre pour garder les commandes sur l’ordinateur.",
+        "lw_teacher_item_setup": "Choisissez une classe, un sujet, 1 à 3 manches et jusqu’à trois indices rédigés par l’enseignant.",
+        "lw_teacher_item_projector": "Projetez le lien/QR, le compte à rebours serveur et un tableau de progression limité aux mots et aux remises.",
+        "lw_teacher_item_timer": "Mettez en pause, reprenez, ajoutez une minute, terminez l’écriture ou la session ; chaque appareil suit l’échéance du serveur.",
+        "lw_teacher_item_progress": "Le tableau de progression est facultatif et n’est jamais un classement de qualité. Le CECRL n’apparaît qu’après 25 mots, comme estimation lexicale précoce.",
+        "lw_teacher_item_reconnect": "Actualisez ou passez sans risque du projecteur à la console ; le polling et l’heure serveur retrouvent la phase en cours.",
+        "lw_student_title": "Ce que font les élèves",
+        "lw_student_body": "Les élèves suivent la même boucle dans n’importe quel navigateur, puis la classe découvre les finales.",
+        "lw_student_item_join": "Saisissez le code et choisissez un nom dans la liste ; les élèves du portail sautent le choix si l’enseignant active la connexion portail.",
+        "lw_student_item_editor": "Écrivez dans l’éditeur focus avec le sujet, le minuteur, le compteur en direct, l’enregistrement automatique et les indices un par un.",
+        "lw_student_item_selfcheck": "Remettez tôt ou à la fin, puis choisissez satisfait/neutre/pas satisfait et ajoutez une note facultative.",
+        "lw_student_item_vote": "Lisez deux textes anonymes et choisissez le plus fort ; un vote par paire et par manche, sans jamais montrer les comptes ni les noms aux élèves.",
+        "lw_finals_title": "Finales et transmission à la correction",
+        "lw_finals_body": "L’enseignant contrôle le public : les textes sont anonymes par défaut et ne deviennent attribuables que lorsque les noms sont explicitement révélés.",
+        "lw_finals_item_anonymous": "La galerie des finales affiche les textes remis anonymement ; le tri se fait par votes, longueur ou heure de remise.",
+        "lw_finals_item_spotlight": "La mise en avant offre une grande lecture avec des statistiques déterministes de mots, phrases, transitions et lisibilité.",
+        "lw_finals_item_moderate": "Masquez un texte ou remplacez son contenu ; un texte masqué quitte la galerie, son vote et toutes les paires actuelles ou futures.",
+        "lw_finals_item_grading": "Choisissez une grille et envoyez un texte ou toute la manche dans le circuit d’essai habituel ; un nouvel envoi met à jour la même remise au lieu de la dupliquer.",
+        "lw_finals_item_insights": "Le résumé, le tableau par élève et le CSV indiquent participants, mots, estimation CECRL, auto-évaluation, votes et statut de remise/correction.",
+        "lw_finals_info": "L’estimation CECRL est seulement un indicateur lexical précoce. Elle n’est jamais écrite dans un profil CECRL, un résultat de positionnement ou une note.",
+        "lw_privacy_title": "Confidentialité et frontière cloud",
+        "lw_privacy_item_roster": "La connexion renvoie à un student_id de la liste de classe, ce qui rend un texte terminé attribuable pour la correction.",
+        "lw_privacy_item_broadcast": "Le projecteur ne reçoit que les noms, compteurs de mots et indications de phase — jamais le texte des participants sur le canal de diffusion.",
+        "lw_privacy_item_cloud": "Les sessions en direct nécessitent le backend Supabase. Sans lui, /live explique qu’une connexion cloud est requise au lieu de simuler un mode local.",
+        "lw_privacy_item_no_ai": "Aucune génération IA n’intervient dans la session : les indices sont écrits par l’enseignant, les statistiques sont déterministes et l’enseignant mène la discussion.",
+        "route_join_entry_label": "Rejoindre une session en direct",
+        "route_join_entry_desc": "Saisissez un code d’écriture en direct sans compte.",
+        "route_live_new_label": "Nouvelle session d’écriture en direct",
+        "route_live_new_desc": "Créer une session en direct brouillon."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",
@@ -5844,7 +5877,9 @@
             "peer_review_title": "Peer Review",
             "peer_review_desc": "Leave structured feedback on a classmate's work using the same rubric your teacher uses.",
             "live_writing_title": "Écriture en direct",
-            "live_writing_desc": "Lancez une session d'écriture chronométrée en classe : les élèves rejoignent avec un code court, choisissent leur nom et écrivent — sans compte et sans IA."
+            "live_writing_desc": "Lancez une session d'écriture chronométrée en classe : les élèves rejoignent avec un code court, choisissent leur nom et écrivent — sans compte et sans IA.",
+            "live_writing_student_title": "Écriture en direct",
+            "live_writing_student_desc": "Rejoignez un sprint d’écriture de classe avec un code, choisissez votre nom, écrivez avec le minuteur et les indices de l’enseignant, puis auto-évaluez-vous et votez pour deux textes anonymes. Aucun compte requis."
         }
     },
     "liveWriting": {
@@ -6099,6 +6134,8 @@
         "finals_replace_label": "Texte de remplacement",
         "finals_replace_cancel": "Annuler",
         "finals_replace_save": "Enregistrer",
-        "finals_replaced_toast": "Texte remplacé."
+        "finals_replaced_toast": "Texte remplacé.",
+        "projector_time_remaining": "Temps restant : {{time}}",
+        "projector_progress_row": "{{name}} : {{count}} mots"
     }
 }

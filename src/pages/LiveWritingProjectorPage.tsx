@@ -220,7 +220,7 @@ export default function LiveWritingProjectorPage() {
     const joinLink = liveWritingJoinLink(session.joinCode);
 
     return (
-        <div style={fullScreen}>
+        <div className="live-writing-projector" style={fullScreen}>
             <header
                 style={{
                     display: 'flex',
@@ -310,7 +310,13 @@ export default function LiveWritingProjectorPage() {
                             )}
                         </div>
                         <div style={{ ...panel, textAlign: 'center' }}>
-                            <div className="text-muted" style={{ fontSize: 15, letterSpacing: 0.6 }}>
+                            <div
+                                className="text-muted"
+                                role="status"
+                                aria-live="polite"
+                                aria-atomic="true"
+                                style={{ fontSize: 15, letterSpacing: 0.6 }}
+                            >
                                 {timer.timerState === 'paused'
                                     ? t('liveWriting.projector_paused')
                                     : remainingMs <= 0
@@ -320,6 +326,9 @@ export default function LiveWritingProjectorPage() {
                             <div
                                 role="timer"
                                 aria-live="off"
+                                aria-label={t('liveWriting.projector_time_remaining', {
+                                    time: formatCountdown(remainingMs),
+                                })}
                                 style={{
                                     fontFamily: 'monospace',
                                     fontVariantNumeric: 'tabular-nums',
@@ -627,9 +636,11 @@ function ProgressBoard({
 }) {
     const { t } = useTranslation();
     return (
-        <section style={{ ...panel, marginTop: 24 }}>
+        <section aria-labelledby="live-writing-progress-title" style={{ ...panel, marginTop: 24 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-                <h2 style={{ margin: 0, fontSize: 22 }}>{t('liveWriting.projector_progress')}</h2>
+                <h2 id="live-writing-progress-title" style={{ margin: 0, fontSize: 22 }}>
+                    {t('liveWriting.projector_progress')}
+                </h2>
                 <button type="button" className="btn btn-ghost btn-sm" disabled={busy} onClick={onHide}>
                     <EyeOff size={16} /> {t('liveWriting.projector_hide_progress')}
                 </button>
@@ -643,6 +654,11 @@ function ProgressBoard({
                     {rows.map((row) => (
                         <div
                             key={row.participantId}
+                            role="group"
+                            aria-label={t('liveWriting.projector_progress_row', {
+                                name: row.displayName,
+                                count: row.wordCount,
+                            })}
                             style={{
                                 display: 'grid',
                                 gridTemplateColumns: 'minmax(120px, 220px) minmax(0, 1fr) 80px 64px',
@@ -662,6 +678,14 @@ function ProgressBoard({
                                 {row.displayName}
                             </span>
                             <span
+                                role="progressbar"
+                                aria-valuemin={0}
+                                aria-valuemax={maxWords}
+                                aria-valuenow={row.wordCount}
+                                aria-label={t('liveWriting.projector_progress_row', {
+                                    name: row.displayName,
+                                    count: row.wordCount,
+                                })}
                                 style={{
                                     height: 16,
                                     borderRadius: 999,

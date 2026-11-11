@@ -4876,7 +4876,40 @@
         "route_join_label": "Entrar a una escritura en vivo",
         "route_join_desc": "Pantalla pública de escritura: introduce el código, elige tu nombre, escribe con el temporizador y las pistas, y después autoevalúate y vota por dos textos anónimos.",
         "es_live_title": "Sesiones de escritura en vivo",
-        "es_live_body": "Lanza una sesión cronometrada opcional en clase: define un enunciado, una clase, el tiempo y 1–3 rondas, y proyecta el código. Los estudiantes eligen su nombre de la lista, sin cuenta. Los borradores, entregas, autoevaluaciones y un voto por ronda se quedan en la sesión; los textos podrán pasar después a la corrección de ensayos. Sin generación por IA: las ayudas las escribe el profesor y la tabla de progreso solo muestra palabras y entregas."
+        "es_live_body": "Lanza una sesión cronometrada opcional en clase: define un enunciado, una clase, el tiempo y 1–3 rondas, y proyecta el código. Los estudiantes eligen su nombre de la lista, sin cuenta. Los borradores, entregas, autoevaluaciones y un voto por ronda se quedan en la sesión; los textos podrán pasar después a la corrección de ensayos. Sin generación por IA: las ayudas las escribe el profesor y la tabla de progreso solo muestra palabras y entregas.",
+        "tab_live_writing": "Escritura en vivo",
+        "lw_intro_title": "Sesiones de escritura en vivo",
+        "lw_intro_body": "Lanza un sprint de escritura corto y sincrónico en clase. El alumnado entra con un código y un nombre de la lista de clase, sin cuenta, correo ni instalación. La sesión orquesta el temporizador, la autoevaluación, el voto entre pares y el circuito de calificación existentes; nunca genera texto, pistas, comentarios, notas ni ganadores.",
+        "lw_teacher_title": "Configurar y dirigir",
+        "lw_teacher_body": "La consola docente reúne enunciado, clase, temporizador y rondas. El proyector se abre en otra ventana para mantener los controles en el portátil.",
+        "lw_teacher_item_setup": "Elige clase, enunciado, 1–3 rondas y hasta tres pistas escritas por el docente.",
+        "lw_teacher_item_projector": "Proyecta el enlace/QR, la cuenta atrás del servidor y un panel de progreso que solo muestra palabras y entregas.",
+        "lw_teacher_item_timer": "Pausa, reanuda, añade un minuto, termina la escritura o la sesión; cada dispositivo sigue la fecha límite del servidor.",
+        "lw_teacher_item_progress": "El panel de progreso es opcional y nunca un ranking de calidad. El MCER solo aparece tras 25 palabras como estimación temprana de vocabulario.",
+        "lw_teacher_item_reconnect": "Actualiza o cambia entre proyector y consola con seguridad; el sondeo y la hora del servidor recuperan la fase actual.",
+        "lw_student_title": "Qué hace el alumnado",
+        "lw_student_body": "El alumnado recorre el mismo bucle en cualquier navegador; después la clase ve las finales.",
+        "lw_student_item_join": "Introduce el código y elige un nombre de la lista; el alumnado del portal omite el selector si el docente activa la entrada por portal.",
+        "lw_student_item_editor": "Escribe en el editor de enfoque con enunciado, temporizador, contador en vivo, guardado automático y pistas de una en una.",
+        "lw_student_item_selfcheck": "Entrega antes o al terminar, elige contento/neutral/disconforme y añade una nota opcional.",
+        "lw_student_item_vote": "Lee dos textos anónimos y elige el más fuerte; un voto por pareja y ronda, y los compañeros nunca ven recuentos ni nombres.",
+        "lw_finals_title": "Finales y entrega a calificación",
+        "lw_finals_body": "El docente controla la audiencia: los textos son anónimos por defecto y solo se identifican cuando se revelan los nombres explícitamente.",
+        "lw_finals_item_anonymous": "La galería de finales muestra los textos entregados de forma anónima; se ordena por votos, longitud u hora de entrega.",
+        "lw_finals_item_spotlight": "Destacar ofrece una lectura grande con estadísticas deterministas de palabras, frases, transiciones y legibilidad.",
+        "lw_finals_item_moderate": "Oculta un texto o reemplaza su contenido; los textos ocultos salen de la galería, de su voto y de todas las parejas actuales y futuras.",
+        "lw_finals_item_grading": "Elige una rúbrica y envía un texto o toda la ronda al circuito normal de ensayos; reenviar actualiza la misma entrega en vez de duplicarla.",
+        "lw_finals_item_insights": "El resumen, la tabla por estudiante y el CSV muestran participantes, palabras, estimación MCER, autoevaluación, votos y estado de entrega/calificación.",
+        "lw_finals_info": "La estimación MCER es solo un indicador temprano de vocabulario. Nunca se escribe en un perfil MCER, un resultado de nivelación ni una nota.",
+        "lw_privacy_title": "Privacidad y límite de nube",
+        "lw_privacy_item_roster": "La entrada se resuelve a un student_id de la lista de clase, así que un texto terminado es atribuible para calificarlo.",
+        "lw_privacy_item_broadcast": "El proyector solo recibe nombres, recuentos y avisos de fase; nunca el texto de los participantes por el canal de difusión.",
+        "lw_privacy_item_cloud": "Las sesiones en vivo necesitan el backend Supabase. Sin él, /live explica que hace falta conexión de nube en vez de fingir que funciona en local.",
+        "lw_privacy_item_no_ai": "No hay generación con IA en la sesión: las pistas las escribe el docente, las estadísticas son deterministas y el docente dirige la conversación.",
+        "route_join_entry_label": "Entrar en una sesión en vivo",
+        "route_join_entry_desc": "Introduce un código de escritura en vivo sin cuenta.",
+        "route_live_new_label": "Nueva sesión de escritura en vivo",
+        "route_live_new_desc": "Crear una sesión en vivo en borrador."
     },
     "studentProfile": {
         "tab_overview": "Resumen",
@@ -5844,7 +5877,9 @@
             "peer_review_title": "Peer Review",
             "peer_review_desc": "Leave structured feedback on a classmate's work using the same rubric your teacher uses.",
             "live_writing_title": "Escritura en vivo",
-            "live_writing_desc": "Lanza una sesión de escritura cronometrada en clase: los estudiantes entran con un código corto, eligen su nombre y escriben, sin cuentas y sin IA."
+            "live_writing_desc": "Lanza una sesión de escritura cronometrada en clase: los estudiantes entran con un código corto, eligen su nombre y escriben, sin cuentas y sin IA.",
+            "live_writing_student_title": "Escritura en vivo",
+            "live_writing_student_desc": "Únete a un sprint de escritura de la clase con un código, elige tu nombre, escribe con el temporizador y las pistas del docente, y después autoevalúate y vota por dos textos anónimos. No hace falta cuenta."
         }
     },
     "liveWriting": {
@@ -6099,6 +6134,8 @@
         "finals_replace_label": "Texto de reemplazo",
         "finals_replace_cancel": "Cancelar",
         "finals_replace_save": "Guardar reemplazo",
-        "finals_replaced_toast": "Texto reemplazado."
+        "finals_replaced_toast": "Texto reemplazado.",
+        "projector_time_remaining": "Tiempo restante: {{time}}",
+        "projector_progress_row": "{{name}}: {{count}} palabras"
     }
 }

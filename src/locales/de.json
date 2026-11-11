@@ -4876,7 +4876,40 @@
         "route_join_label": "Bei Live-Schreiben mitmachen",
         "route_join_desc": "Öffentlicher Schreibbildschirm: Code eingeben, Namen wählen, mit Timer und Hinweisen schreiben, dann Selbsteinschätzung und Abstimmung über zwei anonyme Texte.",
         "es_live_title": "Live-Schreibsessions",
-        "es_live_body": "Starte eine optionale zeitlich begrenzte Session im Unterricht: Lege Aufgabe, Klasse, Zeit und 1–3 Runden fest und projiziere den Beitrittscode. Schüler wählen ihren Namen aus der Klassenliste — ohne Konto. Entwürfe, Abgaben, Selbsteinschätzungen und eine Peer-Stimme pro Runde bleiben in der Session; Texte können später in die Essay-Bewertung fließen. Keine KI-Generierung: Hinweise schreibst du selbst, und die Fortschritts-Rangliste zeigt nur Wörter und Abgaben."
+        "es_live_body": "Starte eine optionale zeitlich begrenzte Session im Unterricht: Lege Aufgabe, Klasse, Zeit und 1–3 Runden fest und projiziere den Beitrittscode. Schüler wählen ihren Namen aus der Klassenliste — ohne Konto. Entwürfe, Abgaben, Selbsteinschätzungen und eine Peer-Stimme pro Runde bleiben in der Session; Texte können später in die Essay-Bewertung fließen. Keine KI-Generierung: Hinweise schreibst du selbst, und die Fortschritts-Rangliste zeigt nur Wörter und Abgaben.",
+        "tab_live_writing": "Live-Schreiben",
+        "lw_intro_title": "Live-Schreibsitzungen",
+        "lw_intro_body": "Starte einen kurzen, synchronen Schreibsprint im Unterricht. Schülerinnen und Schüler treten mit Code und einem Namen aus der Klassenliste bei — ohne Konto, E-Mail oder Installation. Die Sitzung orchestriert den vorhandenen Timer, die Selbsteinschätzung, die Peer-Abstimmung und den Essay-Bewertungsweg; sie erzeugt nie Text, Hinweise, Feedback, Noten oder Gewinner.",
+        "lw_teacher_title": "Einrichten und durchführen",
+        "lw_teacher_body": "Die Lehrkraft-Konsole hält Aufgabe, Klasse, Timer und Runden zusammen. Der Projektor öffnet sich in einem zweiten Fenster, damit die Steuerung auf dem Laptop bleibt.",
+        "lw_teacher_item_setup": "Wähle Klasse, Aufgabe, 1–3 Runden und bis zu drei von der Lehrkraft geschriebene Hinweise.",
+        "lw_teacher_item_projector": "Projiziere Beitrittslink/QR, serverseitigen Countdown und eine Fortschrittstafel, die nur Wörter und Abgaben zeigt.",
+        "lw_teacher_item_timer": "Pausiere, setze fort, füge eine Minute hinzu, beende das Schreiben oder die Sitzung; jedes Gerät folgt der Serverfrist.",
+        "lw_teacher_item_progress": "Die Fortschrittstafel ist optional und nie eine Qualitätsrangliste. GER erscheint erst nach 25 Wörtern als frühe Wortschatzschätzung.",
+        "lw_teacher_item_reconnect": "Aktualisiere oder wechsle sicher zwischen Projektor und Konsole; Polling und Serverzeit stellen die aktuelle Phase wieder her.",
+        "lw_student_title": "Was Schülerinnen und Schüler tun",
+        "lw_student_body": "Sie durchlaufen dieselbe Schleife in jedem Browser; danach sieht die Klasse die Finale.",
+        "lw_student_item_join": "Code eingeben und einen Namen aus der Klassenliste wählen; Portal-Schüler überspringen die Auswahl, wenn die Lehrkraft Portalbeitritt aktiviert.",
+        "lw_student_item_editor": "Im Fokus-Editor mit Aufgabe, Timer, Live-Wortzahl, Autospeicherung und Hinweisen einzeln schreiben.",
+        "lw_student_item_selfcheck": "Früh oder bei Zeitablauf abgeben, dann zufrieden/neutral/unzufrieden wählen und optional eine Notiz ergänzen.",
+        "lw_student_item_vote": "Zwei anonyme Texte lesen und den stärkeren wählen; eine Stimme pro Paar und Runde, Mitschüler sehen nie Zahlen oder Namen.",
+        "lw_finals_title": "Finale und Übergabe zur Bewertung",
+        "lw_finals_body": "Die Lehrkraft bestimmt das Publikum: Texte sind standardmäßig anonym und werden erst durch ausdrückliches Zeigen der Namen zuordenbar.",
+        "lw_finals_item_anonymous": "Die Finalgalerie zeigt abgegebene Texte anonym; sortiert wird nach Stimmen, Länge oder Abgabezeit.",
+        "lw_finals_item_spotlight": "Hervorheben bietet eine große Leseansicht mit deterministischen Wort-, Satz-, Übergangs- und Lesbarkeitsstatistiken.",
+        "lw_finals_item_moderate": "Text verbergen oder Inhalt ersetzen; verborgene Texte verlassen Galerie, Stimme und alle aktuellen und künftigen Paare.",
+        "lw_finals_item_grading": "Rubrik wählen und einen Text oder die ganze Runde in den normalen Essay-Weg senden; erneutes Senden aktualisiert dieselbe Abgabe statt sie zu duplizieren.",
+        "lw_finals_item_insights": "Zusammenfassung, Tabelle pro Schüler/in und CSV zeigen Teilnehmende, Wörter, GER-Schätzung, Selbsteinschätzung, Stimmen sowie Abgabe-/Bewertungsstatus.",
+        "lw_finals_info": "Die GER-Schätzung ist nur ein früher Wortschatzindikator. Sie wird nie in ein GER-Profil, ein Einstufungsergebnis oder eine Note geschrieben.",
+        "lw_privacy_title": "Datenschutz und Cloud-Grenze",
+        "lw_privacy_item_roster": "Der Beitritt löst eine student_id aus der Klassenliste auf, sodass ein fertiger Text für die Bewertung zuordenbar ist.",
+        "lw_privacy_item_broadcast": "Der Projektor erhält nur Namen, Wortzahlen und Phasenhinweise — nie Teilnehmertext über den Broadcast-Kanal.",
+        "lw_privacy_item_cloud": "Live-Sitzungen brauchen das Supabase-Backend. Ohne es erklärt /live, dass eine Cloud-Verbindung nötig ist, statt lokal etwas vorzutäuschen.",
+        "lw_privacy_item_no_ai": "In der Sitzung gibt es keine KI-Generierung: Hinweise stammen von der Lehrkraft, Statistiken sind deterministisch und die Lehrkraft leitet das Gespräch.",
+        "route_join_entry_label": "Einer Live-Sitzung beitreten",
+        "route_join_entry_desc": "Gib einen Live-Schreibcode ohne Konto ein.",
+        "route_live_new_label": "Neue Live-Schreibsitzung",
+        "route_live_new_desc": "Eine Live-Sitzung als Entwurf erstellen."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",
@@ -5844,7 +5877,9 @@
             "peer_review_title": "Peer Review",
             "peer_review_desc": "Leave structured feedback on a classmate's work using the same rubric your teacher uses.",
             "live_writing_title": "Live-Schreiben",
-            "live_writing_desc": "Starte eine zeitlich begrenzte Schreibsession im Unterricht: Schüler treten mit einem kurzen Code bei, wählen ihren Namen und schreiben — ohne Konto und ohne KI."
+            "live_writing_desc": "Starte eine zeitlich begrenzte Schreibsession im Unterricht: Schüler treten mit einem kurzen Code bei, wählen ihren Namen und schreiben — ohne Konto und ohne KI.",
+            "live_writing_student_title": "Live-Schreiben",
+            "live_writing_student_desc": "Tritt einem Schreibsprint der Klasse mit einem Code bei, wähle deinen Namen, schreibe mit dem Klassentimer und den Hinweisen der Lehrkraft und stimme danach über zwei anonyme Texte ab. Kein Konto nötig."
         }
     },
     "liveWriting": {
@@ -6099,6 +6134,8 @@
         "finals_replace_label": "Ersatztext",
         "finals_replace_cancel": "Abbrechen",
         "finals_replace_save": "Ersatz speichern",
-        "finals_replaced_toast": "Text ersetzt."
+        "finals_replaced_toast": "Text ersetzt.",
+        "projector_time_remaining": "Verbleibende Zeit: {{time}}",
+        "projector_progress_row": "{{name}}: {{count}} Wörter"
     }
 }

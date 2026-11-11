@@ -4876,7 +4876,40 @@
         "route_join_label": "Join a live write",
         "route_join_desc": "Public writing screen: enter the code, pick your name, write with the class timer and teacher hints, then self-check and vote on two anonymous texts.",
         "es_live_title": "Live writing sessions",
-        "es_live_body": "Run an optional timed session in class: set a prompt, class, timing and 1–3 rounds, then project the join code. Students pick their name from the roster — no account needed. Drafts, hand-ins, self-checks and one peer vote per round stay in the session; responses can later be sent to the essay grading loop. There is no AI generation: hints are written by the teacher, and the progress leaderboard shows words and hand-ins only."
+        "es_live_body": "Run an optional timed session in class: set a prompt, class, timing and 1–3 rounds, then project the join code. Students pick their name from the roster — no account needed. Drafts, hand-ins, self-checks and one peer vote per round stay in the session; responses can later be sent to the essay grading loop. There is no AI generation: hints are written by the teacher, and the progress leaderboard shows words and hand-ins only.",
+        "tab_live_writing": "Live writing",
+        "lw_intro_title": "Live writing sessions",
+        "lw_intro_body": "Run a short, synchronous writing sprint in class. Students join with a code and a roster name — no account, email or install. The session orchestrates the existing timer, self-check, peer vote and grading pipeline; it never generates text, hints, feedback, grades or winners.",
+        "lw_teacher_title": "Set up and run",
+        "lw_teacher_body": "The teacher console keeps the prompt, class, timer and rounds together. The projector opens in a second window so the laptop stays on the controls.",
+        "lw_teacher_item_setup": "Choose a class, prompt, 1–3 rounds and up to three teacher-written hints.",
+        "lw_teacher_item_projector": "Project the join link/QR, server-timed countdown and a progress board that shows words and hand-ins only.",
+        "lw_teacher_item_timer": "Pause, resume, add a minute, end writing early or end the session; every device follows the server deadline.",
+        "lw_teacher_item_progress": "The progress board is optional and is never a quality ranking. CEFR appears only as an early vocabulary estimate after 25 words.",
+        "lw_teacher_item_reconnect": "Refresh or move between projector and console safely; polling and the server timestamp recover the current phase.",
+        "lw_student_title": "What students do",
+        "lw_student_body": "Students move through the same loop on any browser, then the class watches the finals.",
+        "lw_student_item_join": "Enter the code and pick a name from the class roster; portal students can skip the picker when the teacher enables portal join.",
+        "lw_student_item_editor": "Write in the focus editor with the prompt, timer, live word count, autosave and one-at-a-time hints.",
+        "lw_student_item_selfcheck": "Hand in early or at time-up, then choose happy/neutral/not happy and add an optional note.",
+        "lw_student_item_vote": "Read two anonymous class texts and pick the stronger one; one vote per pair per round, and classmates never see counts or names.",
+        "lw_finals_title": "Finals and grading hand-off",
+        "lw_finals_body": "The teacher controls the audience: texts are anonymous by default and only become attributable when names are explicitly revealed.",
+        "lw_finals_item_anonymous": "The finals gallery shows handed-in texts anonymously; sorting is by votes, length or hand-in time.",
+        "lw_finals_item_spotlight": "Spotlight gives a large reading view with deterministic word/sentence, transition and readability statistics.",
+        "lw_finals_item_moderate": "Hide a text or replace its content; hidden texts leave the gallery, its vote and all current/future pairs.",
+        "lw_finals_item_grading": "Choose a rubric and send one text or the whole round into the ordinary essay pipeline; re-sending updates the same submission instead of duplicating it.",
+        "lw_finals_item_insights": "The session summary, per-student table and CSV report participants, words, CEFR estimate, self-check, votes and hand-in/grading status.",
+        "lw_finals_info": "The CEFR estimate is an early vocabulary indicator only. It is never written into a CEFR profile, placement result or grade.",
+        "lw_privacy_title": "Privacy and cloud boundary",
+        "lw_privacy_item_roster": "Joining resolves to a class roster student_id, so a finished text is attributable for grading.",
+        "lw_privacy_item_broadcast": "The projector receives only names, word counts and phase hints — never participant text on the broadcast channel.",
+        "lw_privacy_item_cloud": "Live sessions need the Supabase backend. Without it, /live explains that a cloud connection is required instead of pretending to run locally.",
+        "lw_privacy_item_no_ai": "There is no AI generation anywhere in the session: hints are teacher-authored, stats are deterministic and the teacher leads the discussion.",
+        "route_join_entry_label": "Join a live session",
+        "route_join_entry_desc": "Enter a live writing code without an account.",
+        "route_live_new_label": "New live writing session",
+        "route_live_new_desc": "Create a draft live writing session."
     },
     "studentProfile": {
         "tab_overview": "Overview",
@@ -5844,7 +5877,9 @@
             "peer_review_title": "Peer Review",
             "peer_review_desc": "Leave structured feedback on a classmate's work using the same rubric your teacher uses.",
             "live_writing_title": "Live Writing",
-            "live_writing_desc": "Run a timed in-class writing session: students join with a short code, pick their name, and write — no accounts and no AI."
+            "live_writing_desc": "Run a timed in-class writing session: students join with a short code, pick their name, and write — no accounts and no AI.",
+            "live_writing_student_title": "Live Writing",
+            "live_writing_student_desc": "Join a class writing sprint with a code, pick your name, write with the class timer and teacher hints, then self-check and vote on two anonymous texts. No account needed."
         }
     },
     "liveWriting": {
@@ -6099,6 +6134,8 @@
         "finals_replace_label": "Replacement text",
         "finals_replace_cancel": "Cancel",
         "finals_replace_save": "Save replacement",
-        "finals_replaced_toast": "Text replaced."
+        "finals_replaced_toast": "Text replaced.",
+        "projector_time_remaining": "Time remaining: {{time}}",
+        "projector_progress_row": "{{name}}: {{count}} words"
     }
 }
