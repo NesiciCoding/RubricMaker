@@ -260,7 +260,7 @@
         "enter_otp_code": "Saisissez le code à 8 chiffres.",
         "verify_code": "Vérifier le code",
         "verifying": "Vérification…",
-        "student_login_password": "Connexion élève (mot de passe)",
+        "sign_in_with_password": "Se connecter avec un mot de passe",
         "enter_email_and_password": "Saisissez votre e-mail et votre mot de passe.",
         "sign_in": "Se connecter",
         "signing_in": "Connexion…",
@@ -270,7 +270,11 @@
             "invalid_credentials": "Cette adresse e-mail ou ce mot de passe est incorrect. Vérifie les deux et réessaie, ou demande à ton professeur de réinitialiser ton mot de passe.",
             "email_not_confirmed": "Cette adresse e-mail n'a pas encore été confirmée. Demande de l'aide à ton professeur.",
             "user_banned": "Ce compte a été bloqué. Demande de l'aide à ton professeur.",
-            "rate_limited": "Trop de tentatives. Attends quelques minutes et réessaie."
+            "rate_limited": "Trop de tentatives. Attends quelques minutes et réessaie.",
+            "weak_password": "Ce mot de passe est trop faible. Choisissez-en un plus long ou mélangez lettres, chiffres et symboles.",
+            "same_password": "C'est déjà votre mot de passe. Choisissez-en un autre.",
+            "reauthentication_needed": "Par sécurité, déconnectez-vous et reconnectez-vous avec un code par e-mail, puis définissez aussitôt votre mot de passe.",
+            "session_expired": "Votre session a expiré. Reconnectez-vous et réessayez."
         }
     },
     "slip_sheet": {
@@ -583,7 +587,16 @@
         "calibration_spread_tooltip": "Écart quadratique moyen avec les deux autres sources. Plus bas signifie que la source concorde avec le reste des preuves et gagne donc du poids.",
         "calibration_cefr_shifted": "{{count}} sur {{total}} compétences décalées",
         "calibration_cefr_shift_entry": "{{skill}} : {{from}} → {{to}}",
-        "calibration_cefr_tooltip": "Les attentes bougent d’un sous-niveau au maximum, et seulement si au moins {{min}} élèves sont évalués pour la compétence et que {{share}} % d’entre eux se situent du même côté de la bande du programme."
+        "calibration_cefr_tooltip": "Les attentes bougent d’un sous-niveau au maximum, et seulement si au moins {{min}} élèves sont évalués pour la compétence et que {{share}} % d’entre eux se situent du même côté de la bande du programme.",
+        "account_password_heading": "Mot de passe du compte",
+        "account_password_description": "Définissez un mot de passe pour votre compte afin d'utiliser « Se connecter avec un mot de passe » au lieu d'attendre un code par e-mail. Vous pouvez le modifier ici à tout moment.",
+        "account_password_new": "Nouveau mot de passe",
+        "account_password_confirm": "Confirmer le nouveau mot de passe",
+        "account_password_save": "Enregistrer le mot de passe",
+        "account_password_saved": "Mot de passe enregistré. La prochaine fois, connectez-vous avec votre e-mail et ce mot de passe.",
+        "account_password_mismatch": "Les mots de passe ne correspondent pas.",
+        "account_password_too_short_one": "Utilisez au moins {{count}} caractère.",
+        "account_password_too_short_other": "Utilisez au moins {{count}} caractères."
     },
     "navigation": {
         "dashboard": "Tableau de bord",
@@ -4688,7 +4701,7 @@
         "da_sync_item_source": "Tant que la connexion est active, Supabase est le stockage principal. Les modifications faites hors ligne sont conservées dans le navigateur et envoyées dès le retour de la connexion.",
         "da_sync_item_collab": "Collaboration multi-enseignants : partagez des rubriques entre comptes dans le même projet Supabase.",
         "da_sync_item_otp": "Connexion par OTP par e-mail — facultative ; nécessite une configuration SMTP dans Docker.",
-        "da_sync_item_student_password": "Connexion par mot de passe pour les élèves — depuis la page Élèves, générez un mot de passe pour un élève ayant un e-mail enregistré, puis communiquez-le-lui directement. L'élève se connecte au portail élève avec son e-mail et ce mot de passe, sans passer par l'OTP par e-mail (utile lorsque les filtres anti-spam de l'école bloquent ou retardent les messages OTP de Supabase).",
+        "da_sync_item_student_password": "Connexion par mot de passe pour les élèves — depuis la page Élèves, générez un mot de passe pour un élève ayant un e-mail enregistré, puis communiquez-le-lui directement. L'élève se connecte au portail élève avec son e-mail et ce mot de passe, sans passer par l'OTP par e-mail (utile lorsque les filtres anti-spam de l'école bloquent ou retardent les messages OTP de Supabase). Les enseignants peuvent utiliser la même option « Se connecter avec un mot de passe » une fois qu'un administrateur a défini un mot de passe pour leur compte dans Supabase. Tout utilisateur connecté peut aussi définir ou modifier son propre mot de passe dans Paramètres → Général → Mot de passe du compte.",
         "da_sync_item_conflict": "Résolution de conflit : lorsque les données locales et cloud diffèrent, le changement le plus récent l'emporte. Les modifications effectuées hors ligne sont protégées et ne sont jamais écrasées par des données cloud plus anciennes jusqu'à ce qu'elles aient été synchronisées.",
         "da_sync_item_loading": "Indicateur de chargement : après la connexion, une barre en haut de l'écran indique la progression du chargement de vos données depuis le cloud. Sur un nouvel appareil ou un compte volumineux, cela peut prendre un moment — vos grilles, notes et tests apparaissent dès la fin du chargement.",
         "da_stress_title": "Journalisation de test de charge",
