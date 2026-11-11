@@ -14,7 +14,9 @@ import type {
 } from '../types';
 import { sortByDisplayOrder } from './displayOrder';
 import { calcGradeSummary } from './gradeCalc';
-import { calcStudentTestRawPoints, calcTestMaxPoints, calcTestPercentage } from './testCalc';
+import { scoreTestAnswer } from './testCalc';
+import { scoreStudentTest } from './studentTestScore';
+import { estimatePlacement } from './placementResult';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
 
 export interface ActivityDashboardSummary {
@@ -114,20 +116,28 @@ function rubricLevelCounts(sr: StudentRubric, rubric: Rubric | undefined): Parti
     return counts;
 }
 
-function testLevelCounts(st: StudentTest, test: Test | undefined): Partial<Record<CefrLevel, number>> {
-    const sections = test?.sections ?? [];
-    const questions = test?.questions ?? [];
-    if (!test || sections.length === 0) return {};
-    const sectionsById = new Map(sections.map((section) => [section.id, section]));
-    const questionsById = new Map(questions.map((question) => [question.id, question]));
+function testLevelCounts(
+    st: StudentTest,
+    test: Test,
+    score: ReturnType<typeof scoreStudentTest> = scoreStudentTest(test, st)
+): Partial<Record<CefrLevel, number>> {
+    if (test.mode === 'placement') {
+        const estimate = estimatePlacement(test, st);
+        return estimate ? { [estimate.level]: 1 } : {};
+    }
+
+    const sectionsById = new Map((score.scoredTest.sections ?? []).map((section) => [section.id, section]));
+    const levelByQuestionId = new Map((st.levelPath ?? []).map((step) => [step.questionId, step.level]));
     const latestAnswers = new Map<string, (typeof st.answers)[number]>();
     for (const answer of st.answers) latestAnswers.set(answer.questionId, answer);
 
     const counts: Partial<Record<CefrLevel, number>> = {};
-    for (const answer of latestAnswers.values()) {
-        const question = questionsById.get(answer.questionId);
-        if (!question?.sectionId) continue;
-        const level = sectionsById.get(question.sectionId)?.cefrLevel;
+    for (const question of score.pathQuestions) {
+        const answer = latestAnswers.get(question.id);
+        if (!answer || scoreTestAnswer(question, answer) <= 0) continue;
+        const level =
+            levelByQuestionId.get(question.id) ??
+            (question.sectionId ? sectionsById.get(question.sectionId)?.cefrLevel : undefined);
         if (!level) continue;
         counts[level] = (counts[level] ?? 0) + 1;
     }
@@ -221,15 +231,16 @@ export function buildDashboardMatrix(
                 const scores: number[] = [];
                 const levelCounts: Partial<Record<CefrLevel, number>> = {};
                 for (const sr of gradedRecords) {
-                    const sourceRubric = rubric ?? sr.rubricSnapshot;
+                    const sourceRubric = sr.rubricSnapshot ?? rubric;
                     if (!sourceRubric) continue;
                     scores.push(
                         calcGradeSummary(sr, sourceRubric.criteria, gradeScaleFor(sourceRubric), sourceRubric)
                             .modifiedPercentage
                     );
                     const achieved = rubricLevelCounts(sr, sourceRubric);
-                    if (Object.keys(achieved).length === 0 && sourceRubric.cefrTargetLevel) {
-                        achieved[sourceRubric.cefrTargetLevel] = 1;
+                    const targetLevel = (rubric ?? sourceRubric).cefrTargetLevel;
+                    if (Object.keys(achieved).length === 0 && targetLevel) {
+                        achieved[targetLevel] = 1;
                     }
                     addLevelCounts(levelCounts, achieved);
                 }
@@ -263,24 +274,15 @@ export function buildDashboardMatrix(
                     else graded.set(cls, [st]);
                 }
             }
-            const testQuestions = test?.questions ?? [];
-            const maxPoints = test ? calcTestMaxPoints({ ...test, questions: testQuestions }) : 0;
-
             for (const cls of classes) {
                 const gradedRecords = latestGradedByStudent(graded.get(cls.id) ?? []);
                 const scores: number[] = [];
                 const levelCounts: Partial<Record<CefrLevel, number>> = {};
                 if (test) {
                     for (const st of gradedRecords) {
-                        const raw =
-                            st.rawTotalPoints ??
-                            calcStudentTestRawPoints({ ...test, questions: testQuestions }, st.answers);
-                        if (maxPoints > 0) scores.push(calcTestPercentage(raw, maxPoints));
-                        const achieved = testLevelCounts(st, test);
-                        if (Object.keys(achieved).length === 0 && test.cefrTargetLevel) {
-                            achieved[test.cefrTargetLevel] = 1;
-                        }
-                        addLevelCounts(levelCounts, achieved);
+                        const score = scoreStudentTest(test, st);
+                        if (score.maxPoints > 0) scores.push(score.percentage);
+                        addLevelCounts(levelCounts, testLevelCounts(st, test, score));
                     }
                 }
 
@@ -323,17 +325,19 @@ export function buildDashboardMatrix(
                 const gradedRecords = latestGradedByStudent(gradedByClass.get(cls.id) ?? []);
                 const scores: number[] = [];
                 const levelCounts: Partial<Record<CefrLevel, number>> = {};
-                if (rubric) {
-                    for (const sr of gradedRecords) {
-                        scores.push(
-                            calcGradeSummary(sr, rubric.criteria, gradeScaleFor(rubric), rubric).modifiedPercentage
-                        );
-                        const achieved = rubricLevelCounts(sr, rubric);
-                        if (Object.keys(achieved).length === 0 && rubric.cefrTargetLevel) {
-                            achieved[rubric.cefrTargetLevel] = 1;
-                        }
-                        addLevelCounts(levelCounts, achieved);
+                for (const sr of gradedRecords) {
+                    const sourceRubric = sr.rubricSnapshot ?? rubric;
+                    if (!sourceRubric) continue;
+                    scores.push(
+                        calcGradeSummary(sr, sourceRubric.criteria, gradeScaleFor(sourceRubric), sourceRubric)
+                            .modifiedPercentage
+                    );
+                    const achieved = rubricLevelCounts(sr, sourceRubric);
+                    const targetLevel = (rubric ?? sourceRubric).cefrTargetLevel;
+                    if (Object.keys(achieved).length === 0 && targetLevel) {
+                        achieved[targetLevel] = 1;
                     }
+                    addLevelCounts(levelCounts, achieved);
                 }
 
                 row[cls.id] = {

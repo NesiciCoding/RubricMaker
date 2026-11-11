@@ -388,7 +388,8 @@ describe('dashboard cell grading stats', () => {
         const test: Test = {
             ...mkTest('t1'),
             cefrTargetLevel: 'B2',
-            questions: [{ id: 'q1', points: 10 } as never],
+            sections: [{ id: 'sec-b2', title: 'B2 section', cefrLevel: 'B2' }],
+            questions: [{ id: 'q1', points: 10, sectionId: 'sec-b2' } as never],
         };
         const sts: StudentTest[] = [
             { ...mkST('a', 't1', 's1', 'submitted') },
@@ -396,6 +397,7 @@ describe('dashboard cell grading stats', () => {
                 ...mkST('b', 't1', 's2', 'graded'),
                 gradedAt: '2024-01-10T00:00:00Z',
                 rawTotalPoints: 8,
+                answers: [{ questionId: 'q1', response: 'answer', pointsEarned: 8 }],
             },
         ];
         const matrix = buildDashboardMatrix(activities, classes, students, [], sts, [], [], [test]);
@@ -406,6 +408,99 @@ describe('dashboard cell grading stats', () => {
         expect(cell.averageScore).toBe(80);
         expect(cell.mostCommonCefrLevel).toBe('B2');
         expect(cell.setCefrLevel).toBe('B2');
+    });
+
+    it('counts test CEFR only from positively scored answers', () => {
+        const activities = [{ kind: 'test' as const, id: 't1', name: 'T1' }];
+        const test: Test = {
+            ...mkTest('t1'),
+            cefrTargetLevel: 'C1',
+            sections: [{ id: 'sec-b1', title: 'B1 section', cefrLevel: 'B1' }],
+            questions: [{ id: 'q1', points: 10, sectionId: 'sec-b1' } as never],
+        };
+        const sts: StudentTest[] = [
+            {
+                ...mkST('a', 't1', 's1', 'graded'),
+                gradedAt: '2024-01-10T00:00:00Z',
+                answers: [{ questionId: 'q1', response: 'answer', pointsEarned: 0 }],
+            },
+            {
+                ...mkST('b', 't1', 's2', 'graded'),
+                gradedAt: '2024-01-10T00:00:00Z',
+                answers: [{ questionId: 'q1', response: 'answer', pointsEarned: 5 }],
+            },
+        ];
+        const matrix = buildDashboardMatrix(activities, classes, students, [], sts, [], [], [test]);
+        const cell = matrix['test:t1']['cls1'];
+
+        expect(cell.cefrLevelCounts?.B1).toBe(1);
+        expect(cell.mostCommonCefrLevel).toBe('B1');
+    });
+
+    it('uses the shared scorer so adjustments affect the average', () => {
+        const activities = [{ kind: 'test' as const, id: 't1', name: 'T1' }];
+        const test: Test = {
+            ...mkTest('t1'),
+            questions: [{ id: 'q1', points: 10 } as never],
+        };
+        const sts: StudentTest[] = [
+            {
+                ...mkST('a', 't1', 's1', 'graded'),
+                gradedAt: '2024-01-10T00:00:00Z',
+                rawTotalPoints: 5,
+                adjustmentPoints: 1,
+                answers: [{ questionId: 'q1', response: 'answer', pointsEarned: 5 }],
+            },
+        ];
+        const matrix = buildDashboardMatrix(activities, classes, students, [], sts, [], [], [test]);
+
+        expect(matrix['test:t1']['cls1'].averageScore).toBe(60);
+    });
+
+    it('uses the rubric snapshot for historical rubric grades and CEFR', () => {
+        const activities = [{ kind: 'rubric' as const, id: 'r1', name: 'R1' }];
+        const liveRubric: Rubric = { ...mkRubric('r1'), cefrTargetLevel: 'C1', criteria: [] };
+        const srs: StudentRubric[] = [
+            {
+                ...mkSR('a', 'r1', 's1'),
+                gradedAt: '2024-01-10T00:00:00Z',
+                rubricSnapshot: rubric,
+                entries: [{ criterionId: 'c1', levelId: 'l1', overridePoints: 80, checkedSubItems: [], comment: '' }],
+            },
+        ];
+        const matrix = buildDashboardMatrix(activities, classes, students, srs, [], [], [liveRubric]);
+        const cell = matrix['rubric:r1']['cls1'];
+
+        expect(cell.averageScore).toBe(80);
+        expect(cell.mostCommonCefrLevel).toBe('B1');
+        expect(cell.setCefrLevel).toBe('C1');
+    });
+
+    it('uses the rubric snapshot for historical essay grades and CEFR', () => {
+        const activities = [{ kind: 'essay' as const, id: 'ek1', name: 'Essay' }];
+        const liveRubric: Rubric = { ...mkRubric('r1'), cefrTargetLevel: 'C1', criteria: [] };
+        const srs: StudentRubric[] = [
+            {
+                ...mkSR('a', 'r1', 's1'),
+                gradedAt: '2024-01-10T00:00:00Z',
+                rubricSnapshot: rubric,
+                entries: [{ criterionId: 'c1', levelId: 'l1', overridePoints: 80, checkedSubItems: [], comment: '' }],
+            },
+        ];
+        const matrix = buildDashboardMatrix(
+            activities,
+            classes,
+            students,
+            srs,
+            [],
+            [mkEssay('ek1', 's1', 'Essay', 'r1')],
+            [liveRubric]
+        );
+        const cell = matrix['essay:ek1']['cls1'];
+
+        expect(cell.averageScore).toBe(80);
+        expect(cell.mostCommonCefrLevel).toBe('B1');
+        expect(cell.setCefrLevel).toBe('C1');
     });
 
     it('summarizes only expected work in the visible matrix', () => {

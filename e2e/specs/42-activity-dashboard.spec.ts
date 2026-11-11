@@ -42,8 +42,8 @@ test.describe('Activity Dashboard', () => {
     });
 
     test('a graded student is reflected in the submission count', async ({ appPage, seedStorage }) => {
-        const cls = buildClass({ id: 'class-ad-2', name: 'Graded Class' });
         const rubric = buildRubric({ id: 'rubric-ad-2', name: 'Graded Rubric' });
+        const cls = buildClass({ id: 'class-ad-2', name: 'Graded Class', rubricIds: [rubric.id] });
         const student = buildStudent(cls.id, { id: 'student-ad-2', name: 'Graded Student' });
         const studentRubric = buildStudentRubric(rubric, student);
         await seedStorage({

@@ -101,7 +101,9 @@
     position: sticky;
     left: 0;
     z-index: 3;
-    min-width: 210px;
+    width: 200px;
+    min-width: 200px;
+    max-width: 200px;
     text-align: left;
 }
 
@@ -138,8 +140,8 @@
     position: sticky;
     left: 0;
     z-index: 2;
-    width: 210px;
-    max-width: 210px;
+    width: 200px;
+    max-width: 200px;
     padding: 8px 12px;
     background: var(--bg-card);
     transition: background 0.12s ease;
@@ -150,7 +152,7 @@
     align-items: center;
     gap: 2px;
     min-width: 0;
-    max-width: 200px;
+    max-width: 100%;
 }
 
 .ad-activity-name {
@@ -282,26 +284,25 @@
 
 .ad-cefr-set {
     border-style: dashed;
-    opacity: 0.82;
 }
 
 .ad-cefr-a1 {
-    color: #64748b;
+    color: color-mix(in srgb, #64748b 35%, var(--text));
 }
 .ad-cefr-a2 {
-    color: #0e7490;
+    color: color-mix(in srgb, #0e7490 35%, var(--text));
 }
 .ad-cefr-b1 {
-    color: #1d4ed8;
+    color: color-mix(in srgb, #1d4ed8 35%, var(--text));
 }
 .ad-cefr-b2 {
-    color: #6d28d9;
+    color: color-mix(in srgb, #6d28d9 35%, var(--text));
 }
 .ad-cefr-c1 {
-    color: #b45309;
+    color: color-mix(in srgb, #b45309 35%, var(--text));
 }
 .ad-cefr-c2 {
-    color: #b91c1c;
+    color: color-mix(in srgb, #b91c1c 35%, var(--text));
 }
 
 .ad-cefr-sep {
