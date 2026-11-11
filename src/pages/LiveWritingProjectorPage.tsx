@@ -730,10 +730,7 @@ function ProgressBoard({
 }
 
 const fullScreen = {
-    position: 'fixed',
-    inset: 0,
-    zIndex: 60,
-    overflow: 'auto',
+    minHeight: '100vh',
     background: 'var(--bg)',
     color: 'var(--text)',
     padding: 'clamp(20px, 4vw, 56px)',

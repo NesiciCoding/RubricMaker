@@ -211,6 +211,15 @@ export function getRouteTree(t: TFunction): RouteNode[] {
                     description: t('docs.route_live_session_desc'),
                     color: '#ec4899',
                 },
+            ],
+        },
+        {
+            path: '/join',
+            label: t('docs.route_join_label'),
+            description: t('docs.route_join_desc'),
+            color: '#ec4899',
+            badge: 'public',
+            children: [
                 {
                     path: '/live/:sessionId/project',
                     label: t('docs.route_live_project_label'),
