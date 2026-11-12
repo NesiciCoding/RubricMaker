@@ -195,7 +195,7 @@ export function getRouteTree(t: TFunction): RouteNode[] {
             path: '/live',
             label: t('docs.route_live_label'),
             description: t('docs.route_live_desc'),
-            color: '#ec4899',
+            color: 'var(--purple-text)',
             children: [
                 {
                     path: '/live/new',
@@ -203,19 +203,19 @@ export function getRouteTree(t: TFunction): RouteNode[] {
                     description: t('docs.route_live_new_desc', {
                         defaultValue: 'Create a draft live writing session.',
                     }),
-                    color: '#ec4899',
+                    color: 'var(--purple-text)',
                 },
                 {
                     path: '/live/:sessionId',
                     label: t('docs.route_live_session_label'),
                     description: t('docs.route_live_session_desc'),
-                    color: '#ec4899',
+                    color: 'var(--purple-text)',
                 },
                 {
                     path: '/live/:sessionId/project',
                     label: t('docs.route_live_project_label'),
                     description: t('docs.route_live_project_desc'),
-                    color: '#ec4899',
+                    color: 'var(--purple-text)',
                 },
             ],
         },
@@ -225,14 +225,14 @@ export function getRouteTree(t: TFunction): RouteNode[] {
             description: t('docs.route_join_entry_desc', {
                 defaultValue: 'Enter a live writing code without an account.',
             }),
-            color: '#ec4899',
+            color: 'var(--purple-text)',
             badge: 'public',
             children: [
                 {
                     path: '/join/:code',
                     label: t('docs.route_join_label'),
                     description: t('docs.route_join_desc'),
-                    color: '#ec4899',
+                    color: 'var(--purple-text)',
                     badge: 'student',
                 },
             ],
@@ -1868,6 +1868,9 @@ function LiveWritingTab() {
             <FeatureSection icon={Radio} title={t('docs.lw_intro_title')} color="#ec4899">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     {t('docs.lw_intro_body')}
+                </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    {t('docs.lw_where_body')}
                 </p>
             </FeatureSection>
 

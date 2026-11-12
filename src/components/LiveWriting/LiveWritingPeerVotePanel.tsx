@@ -9,12 +9,20 @@ interface VoteOption {
     wordCount: number;
 }
 
+// Peer text is participant-authored raw HTML, so it may not pull anything from a remote host: no
+// media elements, no URL-bearing attributes, no styles. That keeps a classmate's text from leaking
+// the viewer's address to a host the author controls.
+const PEER_TEXT_SANITIZE = {
+    FORBID_TAGS: ['img', 'picture', 'source', 'video', 'audio', 'track', 'input', 'style'],
+    FORBID_ATTR: ['src', 'srcset', 'poster', 'background', 'style'],
+};
+
 interface Props {
     optionA?: VoteOption;
     optionB?: VoteOption;
     hasPair: boolean;
     voted: boolean;
-    votesOpen: boolean;
+    votesOpen?: boolean;
     saving: boolean;
     failed: boolean;
     onVote: (choice: LiveWritingVoteChoice) => void;
@@ -31,8 +39,8 @@ export default function LiveWritingPeerVotePanel({
     onVote,
 }: Props) {
     const { t } = useTranslation();
-    const cleanA = useMemo(() => DOMPurify.sanitize(optionA?.html ?? ''), [optionA?.html]);
-    const cleanB = useMemo(() => DOMPurify.sanitize(optionB?.html ?? ''), [optionB?.html]);
+    const cleanA = useMemo(() => DOMPurify.sanitize(optionA?.html ?? '', PEER_TEXT_SANITIZE), [optionA?.html]);
+    const cleanB = useMemo(() => DOMPurify.sanitize(optionB?.html ?? '', PEER_TEXT_SANITIZE), [optionB?.html]);
 
     if (voted) {
         return (
@@ -62,7 +70,9 @@ export default function LiveWritingPeerVotePanel({
                 {t('liveWriting.student_vote_intro')}
             </p>
 
-            {!votesOpen ? (
+            {votesOpen === undefined ? (
+                <p className="text-muted">{t('liveWriting.student_vote_loading')}</p>
+            ) : !votesOpen ? (
                 <p className="text-muted">{t('liveWriting.student_vote_closed')}</p>
             ) : !hasPair || !optionA || !optionB ? (
                 <p className="text-muted">{t('liveWriting.student_vote_waiting_pair')}</p>

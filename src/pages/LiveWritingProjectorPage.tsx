@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Eye, EyeOff, Pause, Play, Plus, SkipForward, Square, Users } from 'lucide-react';
@@ -40,6 +40,7 @@ export default function LiveWritingProjectorPage() {
     const [loading, setLoading] = useState(true);
     const [failed, setFailed] = useState(false);
     const [busy, setBusy] = useState(false);
+    const inFlightRef = useRef(false);
 
     const applyTimer = useCallback((next: LiveWritingTimerSnapshot) => {
         const serverNow = Date.parse(next.serverNow);
@@ -60,7 +61,8 @@ export default function LiveWritingProjectorPage() {
     }, []);
 
     const refresh = useCallback(async () => {
-        if (!adapter || !sessionId) return;
+        if (!adapter || !sessionId || inFlightRef.current) return;
+        inFlightRef.current = true;
         try {
             const nextTimer = await adapter.getTimer(sessionId);
             applyTimer(nextTimer);
@@ -75,6 +77,8 @@ export default function LiveWritingProjectorPage() {
             setFailed(false);
         } catch {
             setFailed(true);
+        } finally {
+            inFlightRef.current = false;
         }
     }, [adapter, sessionId, applyTimer]);
 
