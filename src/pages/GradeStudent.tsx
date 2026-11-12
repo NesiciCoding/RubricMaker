@@ -1067,6 +1067,10 @@ function GradeStudentEditor() {
                         <button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)}>
                             <ArrowLeft size={15} /> {t('gradeStudent.action_back')}
                         </button>
+                        {/* Jump to another student without leaving the rubric's grading flow. */}
+                        <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/rubrics/${rubricId}/grade`)}>
+                            <Users size={15} /> {t('gradingQueue.all_students')}
+                        </button>
                         {voice.isListening && (
                             <button
                                 className="btn btn-danger btn-sm pulse no-print"

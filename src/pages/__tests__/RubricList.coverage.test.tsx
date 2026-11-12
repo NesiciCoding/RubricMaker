@@ -245,7 +245,7 @@ describe('RubricList coverage', () => {
         fireEvent.click(within_row(rows[1], 'rubricList.action_edit'));
         expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1');
         fireEvent.click(within_row(rows[1], 'rubricList.grade_students'));
-        expect(mockNavigate).toHaveBeenCalledWith('/students');
+        expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade');
         fireEvent.click(within_row(rows[1], 'rubricList.action_compare'));
         expect(mockNavigate).toHaveBeenCalledWith('/grade-comparative/c1/r1');
         fireEvent.click(within_row(rows[1], 'rubricList.action_duplicate'));
@@ -287,7 +287,7 @@ describe('RubricList coverage', () => {
         fireEvent.click(screen.getAllByText('rubricList.edit_rubric')[0]);
         expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1');
         fireEvent.click(screen.getAllByText('rubricList.grade_students')[0]);
-        expect(mockNavigate).toHaveBeenCalledWith('/students');
+        expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade');
         fireEvent.click(screen.getAllByTitle('Start Comparative Grading')[0]);
         expect(mockNavigate).toHaveBeenCalledWith('/grade-comparative/c1/r1');
 

@@ -75,6 +75,12 @@ export function getRouteTree(t: TFunction): RouteNode[] {
                     color: '#3b82f6',
                     children: [
                         {
+                            path: '/rubrics/:rubricId/grade',
+                            label: t('docs.route_grading_queue_label'),
+                            description: t('docs.route_grading_queue_desc'),
+                            color: '#8b5cf6',
+                        },
+                        {
                             path: '/rubrics/:rubricId/grade/:studentId',
                             label: t('docs.route_grade_student_label'),
                             description: t('docs.route_grade_student_desc'),

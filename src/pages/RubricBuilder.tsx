@@ -32,6 +32,7 @@ import {
     Printer,
     Info,
     ListChecks,
+    Users,
 } from 'lucide-react';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 import Topbar from '../components/Layout/Topbar';
@@ -1106,6 +1107,15 @@ function RubricBuilderEditor({ shared }: { shared?: SharedEntry<Rubric> }) {
                         <button className="btn btn-ghost btn-sm" onClick={() => navigate('/rubrics')}>
                             <ArrowLeft size={15} /> {t('rubricBuilder.action_back')}
                         </button>
+                        {/* Grading a saved rubric from its own page keeps the rubric selected. */}
+                        {id && (
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => navigate(`/rubrics/${id}/grade`)}
+                            >
+                                <Users size={15} /> {t('rubricList.grade_students')}
+                            </button>
+                        )}
                         {/* Leading the toolbar keeps Save on screen: the action strip scrolls and narrower
                             windows hide its trailing buttons first. */}
                         <button

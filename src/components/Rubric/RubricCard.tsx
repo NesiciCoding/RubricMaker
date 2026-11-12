@@ -34,7 +34,7 @@ export interface RubricCardActions {
     onCopyShareCode: (id: string) => void;
     onSharePreview: (id: string) => void;
     onOpenShareModal: (id: string, name: string) => void;
-    onGradeStudents: () => void;
+    onGradeStudents: (rubricId: string) => void;
     onCompare: (id: string) => void;
     onGroupGrade: (rubric: Rubric) => void;
     onSpeakingSelect: (rubricId: string, studentId: string) => void;
@@ -347,7 +347,7 @@ function RubricCard({
                             <button
                                 className="btn btn-secondary btn-sm"
                                 style={{ flex: '1 1 auto' }}
-                                onClick={() => actions.onGradeStudents()}
+                                onClick={() => actions.onGradeStudents(rubric.id)}
                             >
                                 <Users size={14} /> {t('rubricList.grade_students')}
                             </button>

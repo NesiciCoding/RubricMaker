@@ -542,7 +542,9 @@ export default function RubricList() {
     );
 
     const goToRubric = useCallback((rubricId: string) => navigate(`/rubrics/${rubricId}`), [navigate]);
-    const goToStudents = useCallback(() => navigate('/students'), [navigate]);
+    // Grading starts from the rubric, not the student list: the picked rubric stays selected all
+    // the way into the grading screen instead of being chosen a second time per student.
+    const goToGradeStudents = useCallback((rubricId: string) => navigate(`/rubrics/${rubricId}/grade`), [navigate]);
     const goToCompare = useCallback(
         (rubricId: string) => {
             const activeClass = classes.find((c) => c.id === settings.activeClassId);
@@ -569,7 +571,7 @@ export default function RubricList() {
             onCopyShareCode: handleCopyShareCode,
             onSharePreview: handleSharePreview,
             onOpenShareModal: openShareModal,
-            onGradeStudents: goToStudents,
+            onGradeStudents: goToGradeStudents,
             onCompare: goToCompare,
             onGroupGrade: openGroupGradeModal,
             onSpeakingSelect: goToSpeaking,
@@ -583,7 +585,7 @@ export default function RubricList() {
             handleCopyShareCode,
             handleSharePreview,
             openShareModal,
-            goToStudents,
+            goToGradeStudents,
             goToCompare,
             openGroupGradeModal,
             goToSpeaking,
@@ -765,7 +767,7 @@ export default function RubricList() {
                                                             className="btn btn-ghost btn-icon btn-sm"
                                                             title={t('rubricList.grade_students')}
                                                             aria-label={t('rubricList.grade_students')}
-                                                            onClick={() => navigate('/students')}
+                                                            onClick={() => navigate(`/rubrics/${r.id}/grade`)}
                                                         >
                                                             <Users size={14} />
                                                         </button>
