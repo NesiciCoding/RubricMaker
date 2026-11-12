@@ -6024,6 +6024,7 @@
         "student_vote_thanks": "Voto registrado",
         "student_vote_thanks_desc": "Tu elección es privada. Espera a que tu profesor muestre los textos a la clase.",
         "student_vote_closed": "La votación ha cerrado. Tu profesor mostrará los textos.",
+        "student_vote_loading": "Comprobando si la votación está abierta…",
         "student_vote_waiting_pair": "Esperando un par. Tu profesor necesita al menos tres textos entregados.",
         "student_vote_after_selfcheck": "Termina primero tu autoevaluación de arriba para ver dos textos.",
         "student_vote_failed": "No se pudo guardar tu voto. Inténtalo de nuevo.",

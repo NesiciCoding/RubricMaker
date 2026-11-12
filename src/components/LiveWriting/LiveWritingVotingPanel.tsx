@@ -99,9 +99,14 @@ export default function LiveWritingVotingPanel({
                                     <td>{row.displayName}</td>
                                     <td>
                                         {row.selfRating ? (
-                                            <span title={row.selfNote}>
-                                                {t(liveWritingSelfRatingKey(row.selfRating))}
-                                            </span>
+                                            <div>
+                                                <span>{t(liveWritingSelfRatingKey(row.selfRating))}</span>
+                                                {row.selfNote && (
+                                                    <span className="text-muted text-xs" style={{ display: 'block' }}>
+                                                        {row.selfNote}
+                                                    </span>
+                                                )}
+                                            </div>
                                         ) : (
                                             <span className="text-muted">—</span>
                                         )}

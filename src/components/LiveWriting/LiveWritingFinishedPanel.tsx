@@ -110,7 +110,7 @@ export default function LiveWritingFinishedPanel({
                         }
                         hasPair={Boolean(voteState?.hasPair)}
                         voted={Boolean(voteState?.voted)}
-                        votesOpen={Boolean(voteState?.votesOpen)}
+                        votesOpen={voteState ? voteState.votesOpen : undefined}
                         saving={voteSaving}
                         failed={voteFailed}
                         onVote={onVote}
