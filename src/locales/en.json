@@ -6024,6 +6024,7 @@
         "student_vote_thanks": "Vote recorded",
         "student_vote_thanks_desc": "Your choice is private. Wait for your teacher to show the class.",
         "student_vote_closed": "Voting has closed. Your teacher will show the texts.",
+        "student_vote_loading": "Checking whether voting is open…",
         "student_vote_waiting_pair": "Waiting for a pair. Your teacher needs at least three handed-in texts.",
         "student_vote_after_selfcheck": "Finish your self-check above to see two texts.",
         "student_vote_failed": "Could not save your vote. Try again.",

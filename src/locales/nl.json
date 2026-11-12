@@ -6024,6 +6024,7 @@
         "student_vote_thanks": "Stem opgeslagen",
         "student_vote_thanks_desc": "Je keuze is privé. Wacht tot je docent de teksten aan de klas laat zien.",
         "student_vote_closed": "Het stemmen is gesloten. Je docent laat de teksten zien.",
+        "student_vote_loading": "Controleren of stemmen open is…",
         "student_vote_waiting_pair": "Wachten op een tweetal. Je docent heeft minstens drie ingeleverde teksten nodig.",
         "student_vote_after_selfcheck": "Rond eerst je zelfcheck hierboven af om twee teksten te zien.",
         "student_vote_failed": "Je stem kon niet worden opgeslagen. Probeer opnieuw.",

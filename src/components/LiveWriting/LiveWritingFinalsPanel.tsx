@@ -38,7 +38,10 @@ function median(values: number[]): number {
 
 function csvCell(value: string | number | boolean | undefined): string {
     const text = value === undefined ? '' : String(value);
-    return `"${text.replace(/"/g, '""')}"`;
+    // Untrusted student text stays out of spreadsheet formulas: a leading =, +, -, @, tab or CR is
+    // neutralised with a quote prefix (numbers and booleans are left alone).
+    const safe = typeof value === 'string' && /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
+    return `"${safe.replace(/"/g, '""')}"`;
 }
 
 function downloadCsv(filename: string, rows: (string | number | boolean | undefined)[][]): void {
@@ -119,8 +122,13 @@ export default function LiveWritingFinalsPanel({
 
     function beginReplace(text: LiveWritingFinalText) {
         setReplaceTarget(text);
+        const withBreaks = text.contentHtml
+            .replace(/<br\s*\/?>/gi, '\n')
+            .replace(/<\/(p|h[1-6]|li|blockquote)>/gi, '</$1>\n');
         setReplaceDraft(
-            DOMPurify.sanitize(text.contentHtml, { ALLOWED_TAGS: [], KEEP_CONTENT: true }).replace(/\s+/g, ' ').trim()
+            DOMPurify.sanitize(withBreaks, { ALLOWED_TAGS: [], KEEP_CONTENT: true })
+                .replace(/[ \t]+/g, ' ')
+                .trim()
         );
     }
 

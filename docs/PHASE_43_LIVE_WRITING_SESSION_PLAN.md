@@ -1,6 +1,6 @@
 # Phase 43 — Live Writing Session (WeWillWrite-style)
 
-**Status:** Research + mockup complete. **Design decisions signed off 10 Nov 2026. No implementation started.** This document is the design authority, not a build log.
+**Status:** Research + mockup complete. **Design decisions signed off 10 Nov 2026. Implementation shipped through 43.6 in the Phase 43 stack (#1160–#1169); §6 records the shipped schema deltas.** This document is the design authority, not a build log.
 **Source:** [#851 — A we-will-write Like synchronous writing task](https://github.com/NesiciCoding/RubricMaker/issues/851) (`enhancement`, `priority: low`, `role:teacher`, `role:student`, `route:student`, `database`).
 **Mockup:** [`docs/mockups/live-writing-session.html`](mockups/live-writing-session.html) — self-contained, light/dark, screens for teacher setup, projector, finals, insights and the full student loop.
 **Tracking issues:** 43.1 [#1159](https://github.com/NesiciCoding/RubricMaker/issues/1159) · 43.2 [#1155](https://github.com/NesiciCoding/RubricMaker/issues/1155) · 43.3 [#1158](https://github.com/NesiciCoding/RubricMaker/issues/1158) · 43.4 [#1154](https://github.com/NesiciCoding/RubricMaker/issues/1154) · 43.5 [#1156](https://github.com/NesiciCoding/RubricMaker/issues/1156) · 43.6 [#1153](https://github.com/NesiciCoding/RubricMaker/issues/1153) · 43.7 [#1157](https://github.com/NesiciCoding/RubricMaker/issues/1157)
@@ -197,6 +197,14 @@ live_writing_votes
   shown_participant_ids uuid[], chosen_participant_id uuid, created_at,
   unique (session_id, round_index, voter_participant_id)
 ```
+
+**Shipped schema deltas (43.1–43.6)** — the tables above keep their shape, with these differences:
+
+- `join_token_hash` shipped as a plaintext `join_token`, returned once to the participant at join and matched by the RPCs.
+- There is no separate `selfcheck` session status: self-checks are accepted while the session is in `voting`.
+- `voting_open` shipped as `votes_open boolean not null default false`.
+- Join codes expire after **24 hours** (not 3); the throttle is a pruned join-attempt table.
+- Vote pair validation shipped in 43.4: `submit_live_writing_vote` rejects a pair that is not that round's pairing.
 
 **Access model**
 

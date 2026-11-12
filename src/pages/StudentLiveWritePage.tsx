@@ -185,8 +185,11 @@ export default function StudentLiveWritePage() {
     useEffect(() => {
         if (!adapter || !join) return;
         let cancelled = false;
+        let inFlight = false;
 
         const pull = async () => {
+            if (inFlight) return;
+            inFlight = true;
             try {
                 const next = await adapter.getStudentState(join.participantId, join.joinToken);
                 if (cancelled) return;
@@ -217,6 +220,8 @@ export default function StudentLiveWritePage() {
                 } else {
                     setReconnecting(true);
                 }
+            } finally {
+                inFlight = false;
             }
         };
 
