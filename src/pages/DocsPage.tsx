@@ -76,9 +76,21 @@ export function getRouteTree(t: TFunction): RouteNode[] {
                     color: '#3b82f6',
                     children: [
                         {
+                            path: '/rubrics/:rubricId/grade',
+                            label: t('docs.route_rubric_queue_label'),
+                            description: t('docs.route_rubric_queue_desc'),
+                            color: '#8b5cf6',
+                        },
+                        {
                             path: '/rubrics/:rubricId/grade/:studentId',
                             label: t('docs.route_grade_student_label'),
                             description: t('docs.route_grade_student_desc'),
+                            color: '#8b5cf6',
+                        },
+                        {
+                            path: '/rubrics/:rubricId/peer-review',
+                            label: t('docs.route_peer_review_roster_label'),
+                            description: t('docs.route_peer_review_roster_desc'),
                             color: '#8b5cf6',
                         },
                         {
@@ -1087,6 +1099,16 @@ function GradingTab() {
                     {t('docs.gr_unsaved_note')}
                 </p>
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.gr_queue_title')}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
+                    {t('docs.gr_queue_body')}
+                </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
+                    {t('docs.gr_queue_group')}
+                </p>
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.gr_scoring_title')}
                 </h3>
                 <FeatureList
@@ -2010,7 +2032,8 @@ function AnalyticsTab() {
                         t('docs.an_activity_item_essays'),
                         t('docs.an_activity_item_tests'),
                         t('docs.an_activity_item_filter'),
-                        t('docs.an_activity_item_coverage'),
+                        t('docs.an_activity_item_cefr'),
+                        t('docs.an_activity_item_summary'),
                         t('docs.an_activity_item_reorder'),
                     ]}
                 />

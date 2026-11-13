@@ -256,16 +256,14 @@ describe('RubricList extended', () => {
         fireEvent.click(checkboxes[1]);
 
         fireEvent.click(screen.getByText(/rubricList.group_grade_start_btn/));
-        expect(mockCreateGroupStudentRubrics).toHaveBeenCalledWith('r1', ['s1', 's2']);
+        expect(mockCreateGroupStudentRubrics).toHaveBeenCalledWith('r1', ['s1', 's2'], undefined, mockRubric.criteria);
         expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s1');
     });
 
     it('launches a speaking session for a selected student', () => {
         renderPage();
-        const select = screen.getAllByLabelText('rubricList.speaking_select_student')[0];
-        // The student options are rendered lazily on first interaction (#670).
-        fireEvent.mouseDown(select);
-        fireEvent.change(select, { target: { value: 's1' } });
+        fireEvent.click(screen.getAllByLabelText('rubricList.speaking_select_student')[0]);
+        fireEvent.click(within(screen.getByRole('menu')).getByText('Alice'));
         expect(mockNavigate).toHaveBeenCalledWith('/speaking/r1/s1');
     });
 

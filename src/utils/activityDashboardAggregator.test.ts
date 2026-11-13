@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getActivityRows, buildDashboardMatrix } from './activityDashboardAggregator';
+import { getActivityRows, buildDashboardMatrix, summarizeDashboardMatrix } from './activityDashboardAggregator';
 import type { Rubric, Test, EssayAssignment, Student, StudentRubric, StudentTest, Class } from '../types';
 
 // ─── Builders ─────────────────────────────────────────────────────────────────
@@ -308,6 +308,221 @@ describe('buildDashboardMatrix', () => {
             expect(matrix['test:dup']).toBeDefined();
             expect(Object.keys(matrix)).toHaveLength(2);
         });
+    });
+});
+
+// ─── Scores, CEFR and summary ────────────────────────────────────────────────
+
+describe('dashboard cell grading stats', () => {
+    const classes = [mkClass('cls1', ['r1'])];
+    const students = [mkStudent('s1', 'cls1'), mkStudent('s2', 'cls1')];
+
+    const rubric: Rubric = {
+        ...mkRubric('r1'),
+        cefrTargetLevel: 'B1',
+        criteria: [
+            {
+                id: 'c1',
+                title: 'Content',
+                description: '',
+                weight: 100,
+                levels: [
+                    {
+                        id: 'l1',
+                        label: 'Good',
+                        minPoints: 80,
+                        maxPoints: 100,
+                        description: '',
+                        subItems: [],
+                        cefrLevel: 'B1',
+                    },
+                ],
+            },
+        ],
+    };
+
+    it('counts only graded submissions and derives average score + CEFR pair', () => {
+        const activities = [{ kind: 'rubric' as const, id: 'r1', name: 'R1' }];
+        const srs: StudentRubric[] = [
+            {
+                ...mkSR('a', 'r1', 's1'),
+                gradedAt: '2024-01-10T00:00:00Z',
+                entries: [{ criterionId: 'c1', levelId: 'l1', overridePoints: 80, checkedSubItems: [], comment: '' }],
+            },
+            {
+                ...mkSR('b', 'r1', 's2'),
+                entries: [{ criterionId: 'c1', levelId: 'l1', overridePoints: 90, checkedSubItems: [], comment: '' }],
+            },
+        ];
+        const matrix = buildDashboardMatrix(activities, classes, students, srs, [], [], [rubric]);
+        const cell = matrix['rubric:r1']['cls1'];
+
+        expect(cell.submittedCount).toBe(2);
+        expect(cell.gradedCount).toBe(1);
+        expect(cell.averageScore).toBe(80);
+        expect(cell.mostCommonCefrLevel).toBe('B1');
+        expect(cell.setCefrLevel).toBe('B1');
+    });
+
+    it('keeps the latest regrade per student instead of counting both', () => {
+        const activities = [{ kind: 'rubric' as const, id: 'r1', name: 'R1' }];
+        const srs: StudentRubric[] = [
+            {
+                ...mkSR('old', 'r1', 's1'),
+                gradedAt: '2024-01-10T00:00:00Z',
+                entries: [{ criterionId: 'c1', levelId: 'l1', overridePoints: 80, checkedSubItems: [], comment: '' }],
+            },
+            {
+                ...mkSR('new', 'r1', 's1'),
+                gradedAt: '2024-02-10T00:00:00Z',
+                entries: [{ criterionId: 'c1', levelId: 'l1', overridePoints: 90, checkedSubItems: [], comment: '' }],
+            },
+        ];
+        const matrix = buildDashboardMatrix(activities, classes, students, srs, [], [], [rubric]);
+        expect(matrix['rubric:r1']['cls1'].gradedCount).toBe(1);
+        expect(matrix['rubric:r1']['cls1'].averageScore).toBe(90);
+    });
+
+    it('separates submitted from graded test attempts', () => {
+        const activities = [{ kind: 'test' as const, id: 't1', name: 'T1' }];
+        const test: Test = {
+            ...mkTest('t1'),
+            cefrTargetLevel: 'B2',
+            sections: [{ id: 'sec-b2', title: 'B2 section', cefrLevel: 'B2' }],
+            questions: [{ id: 'q1', points: 10, sectionId: 'sec-b2' } as never],
+        };
+        const sts: StudentTest[] = [
+            { ...mkST('a', 't1', 's1', 'submitted') },
+            {
+                ...mkST('b', 't1', 's2', 'graded'),
+                gradedAt: '2024-01-10T00:00:00Z',
+                rawTotalPoints: 8,
+                answers: [{ questionId: 'q1', response: 'answer', pointsEarned: 8 }],
+            },
+        ];
+        const matrix = buildDashboardMatrix(activities, classes, students, [], sts, [], [], [test]);
+        const cell = matrix['test:t1']['cls1'];
+
+        expect(cell.submittedCount).toBe(2);
+        expect(cell.gradedCount).toBe(1);
+        expect(cell.averageScore).toBe(80);
+        expect(cell.mostCommonCefrLevel).toBe('B2');
+        expect(cell.setCefrLevel).toBe('B2');
+    });
+
+    it('counts test CEFR only from positively scored answers', () => {
+        const activities = [{ kind: 'test' as const, id: 't1', name: 'T1' }];
+        const test: Test = {
+            ...mkTest('t1'),
+            cefrTargetLevel: 'C1',
+            sections: [{ id: 'sec-b1', title: 'B1 section', cefrLevel: 'B1' }],
+            questions: [{ id: 'q1', points: 10, sectionId: 'sec-b1' } as never],
+        };
+        const sts: StudentTest[] = [
+            {
+                ...mkST('a', 't1', 's1', 'graded'),
+                gradedAt: '2024-01-10T00:00:00Z',
+                answers: [{ questionId: 'q1', response: 'answer', pointsEarned: 0 }],
+            },
+            {
+                ...mkST('b', 't1', 's2', 'graded'),
+                gradedAt: '2024-01-10T00:00:00Z',
+                answers: [{ questionId: 'q1', response: 'answer', pointsEarned: 5 }],
+            },
+        ];
+        const matrix = buildDashboardMatrix(activities, classes, students, [], sts, [], [], [test]);
+        const cell = matrix['test:t1']['cls1'];
+
+        expect(cell.cefrLevelCounts?.B1).toBe(1);
+        expect(cell.mostCommonCefrLevel).toBe('B1');
+    });
+
+    it('uses the shared scorer so adjustments affect the average', () => {
+        const activities = [{ kind: 'test' as const, id: 't1', name: 'T1' }];
+        const test: Test = {
+            ...mkTest('t1'),
+            questions: [{ id: 'q1', points: 10 } as never],
+        };
+        const sts: StudentTest[] = [
+            {
+                ...mkST('a', 't1', 's1', 'graded'),
+                gradedAt: '2024-01-10T00:00:00Z',
+                rawTotalPoints: 5,
+                adjustmentPoints: 1,
+                answers: [{ questionId: 'q1', response: 'answer', pointsEarned: 5 }],
+            },
+        ];
+        const matrix = buildDashboardMatrix(activities, classes, students, [], sts, [], [], [test]);
+
+        expect(matrix['test:t1']['cls1'].averageScore).toBe(60);
+    });
+
+    it('uses the rubric snapshot for historical rubric grades and CEFR', () => {
+        const activities = [{ kind: 'rubric' as const, id: 'r1', name: 'R1' }];
+        const liveRubric: Rubric = { ...mkRubric('r1'), cefrTargetLevel: 'C1', criteria: [] };
+        const srs: StudentRubric[] = [
+            {
+                ...mkSR('a', 'r1', 's1'),
+                gradedAt: '2024-01-10T00:00:00Z',
+                rubricSnapshot: rubric,
+                entries: [{ criterionId: 'c1', levelId: 'l1', overridePoints: 80, checkedSubItems: [], comment: '' }],
+            },
+        ];
+        const matrix = buildDashboardMatrix(activities, classes, students, srs, [], [], [liveRubric]);
+        const cell = matrix['rubric:r1']['cls1'];
+
+        expect(cell.averageScore).toBe(80);
+        expect(cell.mostCommonCefrLevel).toBe('B1');
+        expect(cell.setCefrLevel).toBe('C1');
+    });
+
+    it('uses the rubric snapshot for historical essay grades and CEFR', () => {
+        const activities = [{ kind: 'essay' as const, id: 'ek1', name: 'Essay' }];
+        const liveRubric: Rubric = { ...mkRubric('r1'), cefrTargetLevel: 'C1', criteria: [] };
+        const srs: StudentRubric[] = [
+            {
+                ...mkSR('a', 'r1', 's1'),
+                gradedAt: '2024-01-10T00:00:00Z',
+                rubricSnapshot: rubric,
+                entries: [{ criterionId: 'c1', levelId: 'l1', overridePoints: 80, checkedSubItems: [], comment: '' }],
+            },
+        ];
+        const matrix = buildDashboardMatrix(
+            activities,
+            classes,
+            students,
+            srs,
+            [],
+            [mkEssay('ek1', 's1', 'Essay', 'r1')],
+            [liveRubric]
+        );
+        const cell = matrix['essay:ek1']['cls1'];
+
+        expect(cell.averageScore).toBe(80);
+        expect(cell.mostCommonCefrLevel).toBe('B1');
+        expect(cell.setCefrLevel).toBe('C1');
+    });
+
+    it('summarizes only expected work in the visible matrix', () => {
+        const activities = [
+            { kind: 'rubric' as const, id: 'r1', name: 'R1' },
+            { kind: 'rubric' as const, id: 'r2', name: 'R2' },
+        ];
+        const srs: StudentRubric[] = [
+            {
+                ...mkSR('a', 'r1', 's1'),
+                gradedAt: '2024-01-10T00:00:00Z',
+                entries: [{ criterionId: 'c1', levelId: 'l1', overridePoints: 80, checkedSubItems: [], comment: '' }],
+            },
+        ];
+        const matrix = buildDashboardMatrix(activities, classes, students, srs, [], [], [rubric]);
+        const summary = summarizeDashboardMatrix(activities, classes, matrix);
+
+        expect(summary.expected).toBe(2); // only r1 is linked
+        expect(summary.graded).toBe(1);
+        expect(summary.averageScore).toBe(80);
+        expect(summary.mostCommonCefrLevel).toBe('B1');
+        expect(summary.byClass[0]).toMatchObject({ classId: 'cls1', graded: 1, expected: 2, averageScore: 80 });
     });
 });
 

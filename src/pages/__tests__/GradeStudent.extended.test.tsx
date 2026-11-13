@@ -327,7 +327,7 @@ describe('GradeStudent extended', () => {
         fireEvent.click(screen.getByLabelText('gradeStudent.more_actions'));
         fireEvent.click(screen.getByText('gradeStudent.action_not_handed_in'));
         expect(mockSaveStudentRubric).toHaveBeenCalledWith(expect.objectContaining({ notHandedIn: true }));
-        expect(mockNavigate).toHaveBeenCalledWith(-1);
+        expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade');
     });
 
     it('deletes an existing grade via the confirm dialog', () => {
@@ -339,7 +339,17 @@ describe('GradeStudent extended', () => {
         expect(screen.getByText('gradeStudent.delete_grade_message')).toBeInTheDocument();
         fireEvent.click(screen.getByText('common.delete'));
         expect(mockDeleteStudentRubric).toHaveBeenCalledWith('sr1', 'student');
-        expect(mockNavigate).toHaveBeenCalledWith(-1);
+        expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade');
+    });
+
+    it('names the group in the grading banner', () => {
+        mockStudentRubricsArr = [
+            { ...existingSR, groupId: 'g1', groupName: 'Group 3' },
+            { ...existingSR, id: 'sr2', studentId: 's2', groupId: 'g1', groupName: 'Group 3' },
+        ] as never[];
+        mockAppValue.studentRubrics = mockStudentRubricsArr;
+        renderPage();
+        expect(screen.getByText(/gradeStudent.group_grade_banner_named.*Group 3/)).toBeInTheDocument();
     });
 
     it('deletes a group grade with the group scope selected', () => {
@@ -363,7 +373,7 @@ describe('GradeStudent extended', () => {
         fireEvent.click(screen.getByText('gradeStudent.delete_grade_scope_group:{"names":"Bob"}'));
         fireEvent.click(screen.getAllByText('common.delete')[0]);
         expect(mockDeleteStudentRubric).toHaveBeenCalledWith('sr1', 'group');
-        expect(mockNavigate).toHaveBeenCalledWith(-1);
+        expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade');
     });
 
     it('starts a co-grading session from the actions menu', () => {

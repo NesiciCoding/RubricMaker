@@ -54,6 +54,9 @@ const noopActions: RubricCardActions = {
     onGradeStudents: noop,
     onCompare: noop,
     onGroupGrade: noop,
+    onPeerReview: noop,
+    onStatistics: noop,
+    onExport: noop,
     onSpeakingSelect: noop,
 };
 

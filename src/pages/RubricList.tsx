@@ -37,6 +37,7 @@ import { VO_TRACKS, VO_TRACK_LABELS, VO_TRACK_COLORS, VO_TRACK_DEFAULT_CEFR } fr
 import { CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import ImportRubricModal from '../components/Rubric/ImportRubricModal';
+import GroupGradeModal from '../components/Rubric/GroupGradeModal';
 import NewRubricChooserModal from '../components/Rubric/NewRubricChooserModal';
 import RubricCard, { type RubricCardActions } from '../components/Rubric/RubricCard';
 import FolderBar from '../components/Folders/FolderBar';
@@ -119,14 +120,17 @@ export default function RubricList() {
     // Group grading (phase 1): pick students to share one grade, then jump into the normal
     // single-student grading UI — saving any member duplicates scores to the rest of the group.
     const [groupModalRubric, setGroupModalRubric] = useState<Rubric | null>(null);
-    const [groupStudentIds, setGroupStudentIds] = useState<Set<string>>(new Set());
 
-    function startGroupGrading() {
+    function startGroupGrading(studentIds: string[], groupName: string) {
         /* v8 ignore next -- provably dead: the start button is disabled below 2 selections and only renders with a modal rubric */
-        if (!groupModalRubric || groupStudentIds.size < 2) return;
-        const srs = createGroupStudentRubrics(groupModalRubric.id, Array.from(groupStudentIds));
+        if (!groupModalRubric || studentIds.length < 2) return;
+        const srs = createGroupStudentRubrics(
+            groupModalRubric.id,
+            studentIds,
+            groupName.trim() || undefined,
+            groupModalRubric.criteria
+        );
         setGroupModalRubric(null);
-        setGroupStudentIds(new Set());
         navigate(`/rubrics/${groupModalRubric.id}/grade/${srs[0].studentId}`);
     }
 
@@ -542,7 +546,22 @@ export default function RubricList() {
     );
 
     const goToRubric = useCallback((rubricId: string) => navigate(`/rubrics/${rubricId}`), [navigate]);
-    const goToStudents = useCallback(() => navigate('/students'), [navigate]);
+    const goToGradeQueue = useCallback((rubricId: string) => navigate(`/rubrics/${rubricId}/grade`), [navigate]);
+    const goToPeerReview = useCallback((rubricId: string) => navigate(`/rubrics/${rubricId}/peer-review`), [navigate]);
+    // Statistics and export both read ?rubric= so the card's rubric survives the jump instead of
+    // the page defaulting to whichever rubric happens to be first in the library.
+    const goToStatistics = useCallback(
+        (rubricId: string) =>
+            navigate(
+                `/statistics?rubric=${rubricId}${settings.activeClassId ? `&class=${settings.activeClassId}` : ''}`
+            ),
+        [navigate, settings.activeClassId]
+    );
+    const goToExport = useCallback(
+        (rubricId: string) =>
+            navigate(`/export?rubric=${rubricId}${settings.activeClassId ? `&class=${settings.activeClassId}` : ''}`),
+        [navigate, settings.activeClassId]
+    );
     const goToCompare = useCallback(
         (rubricId: string) => {
             const activeClass = classes.find((c) => c.id === settings.activeClassId);
@@ -556,7 +575,6 @@ export default function RubricList() {
     );
     const openGroupGradeModal = useCallback((rubric: Rubric) => {
         setGroupModalRubric(rubric);
-        setGroupStudentIds(new Set());
     }, []);
 
     const cardActions: RubricCardActions = useMemo(
@@ -569,9 +587,12 @@ export default function RubricList() {
             onCopyShareCode: handleCopyShareCode,
             onSharePreview: handleSharePreview,
             onOpenShareModal: openShareModal,
-            onGradeStudents: goToStudents,
+            onGradeStudents: goToGradeQueue,
             onCompare: goToCompare,
             onGroupGrade: openGroupGradeModal,
+            onPeerReview: goToPeerReview,
+            onStatistics: goToStatistics,
+            onExport: goToExport,
             onSpeakingSelect: goToSpeaking,
         }),
         [
@@ -583,9 +604,12 @@ export default function RubricList() {
             handleCopyShareCode,
             handleSharePreview,
             openShareModal,
-            goToStudents,
+            goToGradeQueue,
             goToCompare,
             openGroupGradeModal,
+            goToPeerReview,
+            goToStatistics,
+            goToExport,
             goToSpeaking,
         ]
     );
@@ -765,7 +789,7 @@ export default function RubricList() {
                                                             className="btn btn-ghost btn-icon btn-sm"
                                                             title={t('rubricList.grade_students')}
                                                             aria-label={t('rubricList.grade_students')}
-                                                            onClick={() => navigate('/students')}
+                                                            onClick={() => navigate(`/rubrics/${r.id}/grade`)}
                                                         >
                                                             <Users size={14} />
                                                         </button>
@@ -908,83 +932,19 @@ export default function RubricList() {
                 )}
 
                 {groupModalRubric && (
-                    <Modal titleId="group-grade-title" onClose={() => setGroupModalRubric(null)} maxWidth={480}>
-                        <div style={{ padding: 20 }}>
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    marginBottom: 4,
-                                }}
-                            >
-                                <h2 id="group-grade-title" style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>
-                                    {t('rubricList.group_grade_title')}
-                                </h2>
-                                <button
-                                    className="btn btn-ghost btn-icon btn-sm"
-                                    onClick={() => setGroupModalRubric(null)}
-                                    aria-label={t('common.close')}
-                                >
-                                    <X size={16} />
-                                </button>
-                            </div>
-                            <p style={{ margin: '0 0 12px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                                {t('rubricList.group_grade_help')}
-                            </p>
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: 4,
-                                    maxHeight: 320,
-                                    overflowY: 'auto',
-                                }}
-                            >
-                                {(settings.activeClassId
-                                    ? students.filter((s) => s.classId === settings.activeClassId)
-                                    : students
-                                ).map((s) => (
-                                    <label
-                                        key={s.id}
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 8,
-                                            padding: '6px 4px',
-                                            fontSize: '0.9rem',
-                                        }}
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            checked={groupStudentIds.has(s.id)}
-                                            onChange={() =>
-                                                setGroupStudentIds((prev) => {
-                                                    const next = new Set(prev);
-                                                    if (next.has(s.id)) next.delete(s.id);
-                                                    else next.add(s.id);
-                                                    return next;
-                                                })
-                                            }
-                                        />
-                                        {s.name}
-                                    </label>
-                                ))}
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
-                                <button className="btn btn-secondary btn-sm" onClick={() => setGroupModalRubric(null)}>
-                                    {t('common.cancel')}
-                                </button>
-                                <button
-                                    className="btn btn-primary btn-sm"
-                                    disabled={groupStudentIds.size < 2}
-                                    onClick={startGroupGrading}
-                                >
-                                    {t('rubricList.group_grade_start_btn', { count: groupStudentIds.size })}
-                                </button>
-                            </div>
-                        </div>
-                    </Modal>
+                    <GroupGradeModal
+                        rubric={groupModalRubric}
+                        students={
+                            settings.activeClassId
+                                ? students.filter((s) => s.classId === settings.activeClassId)
+                                : students
+                        }
+                        classes={classes}
+                        studentRubrics={studentRubrics}
+                        showClassNames={!settings.activeClassId}
+                        onClose={() => setGroupModalRubric(null)}
+                        onStart={startGroupGrading}
+                    />
                 )}
 
                 {differentiateId && (

@@ -111,6 +111,7 @@ const mockAppValue: Record<string, unknown> = {
     studentRubrics: [],
     studentTests: [],
     settings: mockSettings,
+    gradeScales: [],
     gradingTasks: [],
     updateClass: mockUpdateClass,
     addEssayAssignments: mockAddEssayAssignments,
@@ -161,10 +162,6 @@ vi.mock('react-joyride', () => ({
         return null;
     },
     STATUS: { FINISHED: 'finished', SKIPPED: 'skipped' },
-}));
-
-vi.mock('../../components/Standards/ClassCoverageGapPanel', () => ({
-    default: () => null,
 }));
 
 vi.mock('react-i18next', () => ({
@@ -301,6 +298,7 @@ describe('ActivityDashboardPage coverage', () => {
     });
 
     it('closes the assign modal via Escape, header close, and cancel', () => {
+        mockClass.rubricIds = ['r1'];
         renderPage();
         const assignBtn = screen.getByTitle('gradingTasks.assign_title');
         fireEvent.click(assignBtn);
@@ -319,6 +317,7 @@ describe('ActivityDashboardPage coverage', () => {
     });
 
     it('assigns grading tasks without a due date and excludes peer-review or mismatched submissions', () => {
+        mockClass.rubricIds = ['r1'];
         mockAppValue.studentRubrics = [
             { id: 'sr1', rubricId: 'r1', studentId: 's1', isPeerReview: true, entries: [], overallComment: '' },
             { id: 'sr2', rubricId: 'other', studentId: 's1', isPeerReview: false, entries: [], overallComment: '' },

@@ -116,8 +116,11 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
             key: 'overview',
             icon: LayoutDashboard,
             label: t('sidebar.domain_overview'),
-            matchPrefixes: ['/'],
-            items: [{ to: '/', icon: LayoutDashboard, label: t('navigation.dashboard'), end: true }],
+            matchPrefixes: ['/', '/activity-dashboard'],
+            items: [
+                { to: '/', icon: LayoutDashboard, label: t('navigation.dashboard'), end: true },
+                { to: '/activity-dashboard', icon: LayoutGrid, label: t('navigation.activity_dashboard') },
+            ],
         },
         {
             key: 'assessments',
@@ -168,11 +171,10 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
             key: 'insights',
             icon: BarChart3,
             label: t('sidebar.domain_insights'),
-            matchPrefixes: ['/statistics', '/export', '/activity-dashboard', '/notifications'],
+            matchPrefixes: ['/statistics', '/export', '/notifications'],
             items: [
                 { to: '/statistics', icon: BarChart3, label: t('navigation.statistics') },
                 { to: '/export', icon: Download, label: t('navigation.export') },
-                { to: '/activity-dashboard', icon: LayoutGrid, label: t('navigation.activity_dashboard') },
                 {
                     to: '/notifications',
                     icon: Bell,
