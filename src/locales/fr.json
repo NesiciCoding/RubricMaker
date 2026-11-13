@@ -5984,6 +5984,13 @@
         "student_session_invalid": "Cette session n’est plus ouverte. Demande un nouveau code à ton enseignant.",
         "student_waiting_after_handin": "Attends que ton enseignant termine l'écriture.",
         "student_finals_waiting": "Ton enseignant présente la finale. Regarde le tableau.",
-        "student_not_handed_in": "Cette manche s'est terminée avant que ton texte soit rendu. Demande à ton enseignant."
+        "student_not_handed_in": "Cette manche s'est terminée avant que ton texte soit rendu. Demande à ton enseignant.",
+        "image_add": "Ajouter une image",
+        "image_remove": "Retirer l'image",
+        "image_uploading": "Envoi…",
+        "image_hint": "Affichée sur le projecteur et sur la page de chaque élève. JPG, PNG ou WebP, 5 Mo maximum.",
+        "image_invalid": "Choisissez une image JPG, PNG ou WebP.",
+        "image_too_large": "Cette image dépasse 5 Mo.",
+        "image_upload_failed": "L'image n'a pas pu être envoyée."
     }
 }
