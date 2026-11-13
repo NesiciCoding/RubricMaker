@@ -5948,6 +5948,13 @@
         "projector_no_progress": "Aún no se han contado palabras.",
         "projector_cefr_estimate": "Estimación CEFR según el vocabulario",
         "projector_progress_note": "Solo palabras y entregas — nunca calidad ni una clasificación de los textos.",
-        "projector_action_failed": "No se pudo completar. Inténtalo de nuevo."
+        "projector_action_failed": "No se pudo completar. Inténtalo de nuevo.",
+        "image_add": "Añadir imagen",
+        "image_remove": "Quitar imagen",
+        "image_uploading": "Subiendo…",
+        "image_hint": "Se muestra en el proyector y en la página de cada estudiante. JPG, PNG o WebP, 5 MB como máximo.",
+        "image_invalid": "Elige una imagen JPG, PNG o WebP.",
+        "image_too_large": "Esa imagen supera los 5 MB.",
+        "image_upload_failed": "No se pudo subir la imagen."
     }
 }

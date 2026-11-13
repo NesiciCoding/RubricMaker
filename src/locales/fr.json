@@ -5948,6 +5948,13 @@
         "projector_no_progress": "Aucun mot compté pour l'instant.",
         "projector_cefr_estimate": "Estimation CEFR d'après le vocabulaire",
         "projector_progress_note": "Uniquement des mots et des remises — jamais la qualité ni un classement des textes.",
-        "projector_action_failed": "L'action a échoué. Réessayez."
+        "projector_action_failed": "L'action a échoué. Réessayez.",
+        "image_add": "Ajouter une image",
+        "image_remove": "Retirer l'image",
+        "image_uploading": "Envoi…",
+        "image_hint": "Affichée sur le projecteur et sur la page de chaque élève. JPG, PNG ou WebP, 5 Mo maximum.",
+        "image_invalid": "Choisissez une image JPG, PNG ou WebP.",
+        "image_too_large": "Cette image dépasse 5 Mo.",
+        "image_upload_failed": "L'image n'a pas pu être envoyée."
     }
 }

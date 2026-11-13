@@ -5948,6 +5948,13 @@
         "projector_no_progress": "Nog geen woorden geteld.",
         "projector_cefr_estimate": "CEFR-schatting op basis van woordenschat",
         "projector_progress_note": "Alleen woorden en inleveringen — nooit kwaliteit of een ranglijst van het schrijven.",
-        "projector_action_failed": "Dat lukte niet. Probeer opnieuw."
+        "projector_action_failed": "Dat lukte niet. Probeer opnieuw.",
+        "image_add": "Afbeelding toevoegen",
+        "image_remove": "Afbeelding verwijderen",
+        "image_uploading": "Uploaden…",
+        "image_hint": "Wordt getoond op het projector en op de pagina van elke leerling. JPG, PNG of WebP, max. 5 MB.",
+        "image_invalid": "Kies een JPG-, PNG- of WebP-afbeelding.",
+        "image_too_large": "Die afbeelding is groter dan 5 MB.",
+        "image_upload_failed": "De afbeelding kon niet worden geüpload."
     }
 }

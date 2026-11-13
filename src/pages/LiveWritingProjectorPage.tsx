@@ -207,6 +207,7 @@ export default function LiveWritingProjectorPage() {
     const totalWords = progress.reduce((sum, row) => sum + row.wordCount, 0);
     const maxWords = Math.max(1, ...progress.map((row) => row.wordCount));
     const className = classes.find((cls) => cls.id === session.classId)?.name ?? '';
+    const promptImageUrl = session.imagePath ? adapter.promptImageUrl(session.imagePath) : undefined;
     const joinLink = liveWritingJoinLink(session.joinCode);
 
     return (
@@ -284,9 +285,9 @@ export default function LiveWritingProjectorPage() {
                             >
                                 {session.prompt || t('liveWriting.projector_no_prompt')}
                             </p>
-                            {session.imagePath?.startsWith('http') && (
+                            {promptImageUrl && (
                                 <img
-                                    src={session.imagePath}
+                                    src={promptImageUrl}
                                     alt=""
                                     style={{
                                         display: 'block',

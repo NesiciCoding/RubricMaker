@@ -5948,6 +5948,13 @@
         "projector_no_progress": "Noch keine Wörter gezählt.",
         "projector_cefr_estimate": "CEFR-Schätzung nach Wortschatz",
         "projector_progress_note": "Nur Wörter und Abgaben — nie Qualität oder eine Rangliste der Texte.",
-        "projector_action_failed": "Das hat nicht geklappt. Versuche es erneut."
+        "projector_action_failed": "Das hat nicht geklappt. Versuche es erneut.",
+        "image_add": "Bild hinzufügen",
+        "image_remove": "Bild entfernen",
+        "image_uploading": "Wird hochgeladen…",
+        "image_hint": "Wird am Projektor und auf der Seite jeder Schülerin und jedes Schülers angezeigt. JPG, PNG oder WebP, max. 5 MB.",
+        "image_invalid": "Wähle ein JPG-, PNG- oder WebP-Bild.",
+        "image_too_large": "Dieses Bild ist größer als 5 MB.",
+        "image_upload_failed": "Das Bild konnte nicht hochgeladen werden."
     }
 }

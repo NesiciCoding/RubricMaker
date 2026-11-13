@@ -5948,6 +5948,13 @@
         "projector_no_progress": "No words counted yet.",
         "projector_cefr_estimate": "CEFR estimate from vocabulary so far",
         "projector_progress_note": "Words and hand-ins only — never quality or a ranking of the writing.",
-        "projector_action_failed": "That did not work. Try again."
+        "projector_action_failed": "That did not work. Try again.",
+        "image_add": "Add image",
+        "image_remove": "Remove image",
+        "image_uploading": "Uploading…",
+        "image_hint": "Shown on the projector and on each student's page. JPG, PNG or WebP, up to 5 MB.",
+        "image_invalid": "Choose a JPG, PNG or WebP image.",
+        "image_too_large": "That image is larger than 5 MB.",
+        "image_upload_failed": "The image could not be uploaded."
     }
 }
