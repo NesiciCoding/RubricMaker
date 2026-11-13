@@ -673,7 +673,9 @@ export default function StudentsPage() {
         const lastByClass = new Map<string, { rubricId: string; at: number }>();
         const gradedByStudent = new Map<string, Set<string>>();
         for (const sr of studentRubrics) {
-            if (sr.isPeerReview) continue;
+            // `gradedAt` marks a saved grade; a blank record created by grouping is not one, and
+            // must not mark its rubric as graded nor become the class's last-used rubric.
+            if (sr.isPeerReview || !sr.gradedAt) continue;
             let graded = gradedByStudent.get(sr.studentId);
             if (!graded) {
                 graded = new Set();

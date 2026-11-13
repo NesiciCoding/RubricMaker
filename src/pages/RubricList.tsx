@@ -124,9 +124,12 @@ export default function RubricList() {
     function startGroupGrading(studentIds: string[], groupName: string) {
         /* v8 ignore next -- provably dead: the start button is disabled below 2 selections and only renders with a modal rubric */
         if (!groupModalRubric || studentIds.length < 2) return;
-        const srs = groupName.trim()
-            ? createGroupStudentRubrics(groupModalRubric.id, studentIds, groupName)
-            : createGroupStudentRubrics(groupModalRubric.id, studentIds);
+        const srs = createGroupStudentRubrics(
+            groupModalRubric.id,
+            studentIds,
+            groupName.trim() || undefined,
+            groupModalRubric.criteria
+        );
         setGroupModalRubric(null);
         navigate(`/rubrics/${groupModalRubric.id}/grade/${srs[0].studentId}`);
     }

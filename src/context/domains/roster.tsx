@@ -8,7 +8,15 @@ import {
     isOffline,
     useContextOrThrow,
 } from '../storeCore';
-import type { Attachment, Class, ComparativeMatchup, ScoreEntry, Student, StudentRubric } from '../../types';
+import type {
+    Attachment,
+    Class,
+    ComparativeMatchup,
+    RubricCriterion,
+    ScoreEntry,
+    Student,
+    StudentRubric,
+} from '../../types';
 import { StoreData } from '../../store/storage';
 import { nanoid } from '../../utils/nanoid';
 import { loadDb } from '../../services/database/lazyDb';
@@ -205,11 +213,14 @@ export function createRosterActions(ctx: StoreActionsCtx): RosterActions {
         studentIds: string[],
         groupId: string,
         groupName: string | undefined,
-        staleGroupIds: string[] = []
+        staleGroupIds: string[] = [],
+        providedCriteria?: RubricCriterion[]
     ): StudentRubric[] => {
-        const rubric = getState().rubrics.find((r) => r.id === rubricId);
+        // An editable shared rubric lives outside the local collection, so its criteria arrive from
+        // the caller: without them new group records would be created with no entries at all.
+        const criteria = getState().rubrics.find((r) => r.id === rubricId)?.criteria ?? providedCriteria ?? [];
         const blankEntries = (): ScoreEntry[] =>
-            (rubric?.criteria ?? []).map((c) => ({
+            criteria.map((c) => ({
                 criterionId: c.id,
                 levelId: null,
                 comment: '',
@@ -217,7 +228,12 @@ export function createRosterActions(ctx: StoreActionsCtx): RosterActions {
             }));
         const existingByStudent = new Map<string, StudentRubric>();
         for (const sr of getState().studentRubrics) {
-            if (sr.rubricId === rubricId && !sr.isPeerReview) existingByStudent.set(sr.studentId, sr);
+            if (sr.rubricId !== rubricId || sr.isPeerReview) continue;
+            // A live record outranks a soft-deleted one for the same student (restoring an older
+            // grade after deleting its replacement leaves both); grouping the deleted row would
+            // bring it back alongside the live grade.
+            const current = existingByStudent.get(sr.studentId);
+            if (!current || (current.deletedAt && !sr.deletedAt)) existingByStudent.set(sr.studentId, sr);
         }
         const previousGroupIds = new Set(staleGroupIds);
         // No explicit name means "keep whatever this group was called before".
@@ -269,15 +285,21 @@ export function createRosterActions(ctx: StoreActionsCtx): RosterActions {
         });
         return srs;
     };
-    const createGroupStudentRubrics = (rubricId: string, studentIds: string[], groupName?: string): StudentRubric[] =>
-        applyStudentGroup(rubricId, studentIds, nanoid(), groupName);
+    const createGroupStudentRubrics = (
+        rubricId: string,
+        studentIds: string[],
+        groupName?: string,
+        criteria?: RubricCriterion[]
+    ): StudentRubric[] => applyStudentGroup(rubricId, studentIds, nanoid(), groupName, [], criteria);
     // Editing keeps the group's id (and its name unless renamed), so the teacher's grouping survives
     // a membership change instead of looking like a brand-new group.
     const updateStudentGroup = (groupId: string, studentIds: string[], groupName?: string): StudentRubric[] => {
         const member = getState().studentRubrics.find((sr) => sr.groupId === groupId && !sr.isPeerReview);
         /* v8 ignore next -- the edit form only opens from a live group row */
         if (!member) return [];
-        return applyStudentGroup(member.rubricId, studentIds, groupId, groupName, [groupId]);
+        // No rename requested: keep the name the group already carries, even when every new member
+        // is fresh (the name only lives on the members being replaced).
+        return applyStudentGroup(member.rubricId, studentIds, groupId, groupName ?? member.groupName, [groupId]);
     };
     const deleteStudentRubric = (id: string, scope: 'student' | 'group') => {
         logAuditEvent('grade', 'student_rubric_delete', 'student_rubric', id, { scope });

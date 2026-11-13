@@ -72,8 +72,12 @@ export default function SpeakingStudentMenu({
                         placeholder={t('rubricList.speaking_search_student')}
                         aria-label={t('rubricList.speaking_search_student')}
                         style={{ width: '100%', paddingLeft: 30 }}
-                        // Arrow keys inside the search box should edit the text, not jump menu items.
-                        onKeyDown={(e) => e.stopPropagation()}
+                        // Arrow keys inside the search box edit the text, not menu items; every other
+                        // key (Escape above all) has to reach DropdownMenu's document-level handler,
+                        // which is what closes the menu and restores trigger focus.
+                        onKeyDown={(e) => {
+                            if (e.key.startsWith('Arrow') || e.key === 'Home' || e.key === 'End') e.stopPropagation();
+                        }}
                     />
                 </div>
                 {visible.map((s) => (

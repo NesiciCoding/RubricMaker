@@ -80,6 +80,14 @@ export default function RubricGradingQueuePage() {
         return roster.filter((s) => s.name.toLowerCase().includes(q));
     }, [roster, search]);
 
+    // The picker stays inside the queue's own roster: a group drawn from another class would hold
+    // members this page never lists, while the students who do appear stay unavailable to group.
+    const groupPickerStudents = useMemo(() => {
+        if (!settings.activeClassId) return roster;
+        const inClass = roster.filter((s) => s.classId === settings.activeClassId);
+        return inClass.length > 0 ? inClass : roster;
+    }, [roster, settings.activeClassId]);
+
     if (!rubric) {
         return (
             <>
@@ -99,10 +107,6 @@ export default function RubricGradingQueuePage() {
             </>
         );
     }
-
-    const activeClassStudents = settings.activeClassId
-        ? students.filter((s) => s.classId === settings.activeClassId)
-        : roster;
 
     return (
         <>
@@ -279,15 +283,18 @@ export default function RubricGradingQueuePage() {
             {groupModalOpen && (
                 <GroupGradeModal
                     rubric={rubric}
-                    students={activeClassStudents}
+                    students={groupPickerStudents}
                     classes={classes}
                     studentRubrics={studentRubrics}
                     showClassNames={!settings.activeClassId}
                     onClose={() => setGroupModalOpen(false)}
                     onStart={(studentIds, groupName) => {
-                        const srs = groupName.trim()
-                            ? createGroupStudentRubrics(rubric.id, studentIds, groupName)
-                            : createGroupStudentRubrics(rubric.id, studentIds);
+                        const srs = createGroupStudentRubrics(
+                            rubric.id,
+                            studentIds,
+                            groupName.trim() || undefined,
+                            rubric.criteria
+                        );
                         setGroupModalOpen(false);
                         if (srs[0]) navigate(`/rubrics/${rubric.id}/grade/${srs[0].studentId}`);
                     }}

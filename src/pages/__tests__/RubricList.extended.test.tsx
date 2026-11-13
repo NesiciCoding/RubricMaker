@@ -256,7 +256,7 @@ describe('RubricList extended', () => {
         fireEvent.click(checkboxes[1]);
 
         fireEvent.click(screen.getByText(/rubricList.group_grade_start_btn/));
-        expect(mockCreateGroupStudentRubrics).toHaveBeenCalledWith('r1', ['s1', 's2']);
+        expect(mockCreateGroupStudentRubrics).toHaveBeenCalledWith('r1', ['s1', 's2'], undefined, mockRubric.criteria);
         expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s1');
     });
 

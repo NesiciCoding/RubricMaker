@@ -31,6 +31,7 @@ import type {
     QuestionBankItem,
     QuestionBankSkill,
     Rubric,
+    RubricCriterion,
     RubricVersion,
     SelfAssessment,
     SpeakingSession,
@@ -1103,7 +1104,13 @@ export interface AppContextValue extends StoreData {
     saveStudentRubric: (sr: StudentRubric) => void;
     saveRubricSelfAssessment: (id: string, levels: Record<string, string | null>, reflection: string) => void;
     createStudentRubric: (rubricId: string, studentId: string) => StudentRubric;
-    createGroupStudentRubrics: (rubricId: string, studentIds: string[], groupName?: string) => StudentRubric[];
+    /** `criteria` carries a shared rubric's criteria when it isn't in the local collection. */
+    createGroupStudentRubrics: (
+        rubricId: string,
+        studentIds: string[],
+        groupName?: string,
+        criteria?: RubricCriterion[]
+    ) => StudentRubric[];
     /** Renames a group and/or replaces its members, keeping the group's id and name. */
     updateStudentGroup: (groupId: string, studentIds: string[], groupName?: string) => StudentRubric[];
     deleteStudentRubric: (id: string, scope: 'student' | 'group') => void;

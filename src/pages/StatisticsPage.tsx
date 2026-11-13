@@ -207,12 +207,17 @@ export default function StatisticsPage() {
         return getClassWeakWritingCriteria(ids, studentRubrics, rubrics, essayAssignments);
     }, [selectedClassId, students, studentRubrics, rubrics, essayAssignments]);
 
-    // Follow the global Topbar class selector (settings.activeClassId) when it changes elsewhere —
-    // unless the page was opened on an explicit ?class=, which is the teacher's own choice.
+    // An explicit ?class= seeds the initial selection only: the Topbar selector still drives the page
+    // afterwards, so picking another class updates charts and CSV exports instead of being ignored
+    // for the rest of the visit.
+    const classParamConsumed = useRef(!classParam);
     useEffect(() => {
-        if (classParam) return;
+        if (!classParamConsumed.current) {
+            classParamConsumed.current = true;
+            return;
+        }
         setSelectedClassId(settings.activeClassId ?? 'all');
-    }, [settings.activeClassId, classParam]);
+    }, [settings.activeClassId]);
 
     function handleSelectedClassChange(classId: string) {
         setSelectedClassId(classId);

@@ -1123,9 +1123,12 @@ function RubricBuilderEditor({ shared }: { shared?: SharedEntry<Rubric> }) {
                     showClassNames={!settings.activeClassId}
                     onClose={() => setGroupGradeOpen(false)}
                     onStart={(studentIds, groupName) => {
-                        const srs = groupName.trim()
-                            ? createGroupStudentRubrics(existing.id, studentIds, groupName)
-                            : createGroupStudentRubrics(existing.id, studentIds);
+                        const srs = createGroupStudentRubrics(
+                            existing.id,
+                            studentIds,
+                            groupName.trim() || undefined,
+                            existing.criteria
+                        );
                         setGroupGradeOpen(false);
                         if (srs[0]) navigate(`/rubrics/${existing.id}/grade/${srs[0].studentId}`);
                     }}

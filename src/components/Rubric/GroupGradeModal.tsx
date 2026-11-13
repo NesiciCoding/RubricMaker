@@ -52,6 +52,7 @@ export default function GroupGradeModal({
     }, [studentRubrics, rubric.id]);
 
     const classNameById = useMemo(() => new Map(classes.map((c) => [c.id, c.name])), [classes]);
+    const selectableIds = useMemo(() => new Set(students.map((s) => s.id)), [students]);
 
     const groupSizes = useMemo(() => {
         const sizes = new Map<string, number>();
@@ -87,7 +88,10 @@ export default function GroupGradeModal({
             const groupId = gradeByStudent.get(student.id)?.groupId;
             if (groupId) {
                 for (const sr of gradeByStudent.values()) {
-                    if (sr.groupId === groupId) next.add(sr.studentId);
+                    // Only members the teacher can actually see here: pulling in a classmate from a
+                    // class outside the supplied roster would select a hidden member nobody can
+                    // review or deselect before the group is saved.
+                    if (sr.groupId === groupId && selectableIds.has(sr.studentId)) next.add(sr.studentId);
                 }
             }
             return next;
@@ -211,7 +215,7 @@ export default function GroupGradeModal({
                     </button>
                     <button
                         className="btn btn-primary btn-sm"
-                        disabled={selected.size < 2}
+                        disabled={selected.size < (mode === 'edit' ? 1 : 2)}
                         onClick={() => onStart([...selected], groupName)}
                     >
                         {mode === 'edit'

@@ -245,7 +245,9 @@ export default function ExportPage() {
                 summary: r ? calcGradeSummary(sr, r.criteria, scale, r) : null,
             };
         })
-        .filter((x) => x.student && x.summary);
+        // ?class= narrows the rubric's rows to the class the link was about, so "Select all" and the
+        // CSV/PDF/DOCX exports can't pull in another class that happens to hold the same rubric.
+        .filter((x) => x.student && x.summary && (!classParam || x.student.classId === classParam));
 
     function toggleStudent(id: string) {
         setSelectedStudentIds((prev) => {
