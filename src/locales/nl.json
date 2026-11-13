@@ -6102,6 +6102,13 @@
         "finals_replace_label": "Vervangende tekst",
         "finals_replace_cancel": "Annuleren",
         "finals_replace_save": "Vervanging opslaan",
-        "finals_replaced_toast": "Tekst vervangen."
+        "finals_replaced_toast": "Tekst vervangen.",
+        "image_add": "Afbeelding toevoegen",
+        "image_remove": "Afbeelding verwijderen",
+        "image_uploading": "Uploaden…",
+        "image_hint": "Wordt getoond op het projector en op de pagina van elke leerling. JPG, PNG of WebP, max. 5 MB.",
+        "image_invalid": "Kies een JPG-, PNG- of WebP-afbeelding.",
+        "image_too_large": "Die afbeelding is groter dan 5 MB.",
+        "image_upload_failed": "De afbeelding kon niet worden geüpload."
     }
 }

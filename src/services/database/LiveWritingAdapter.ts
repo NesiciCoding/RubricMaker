@@ -63,6 +63,8 @@ export interface LiveWritingStudentState {
 export interface LiveWritingSessionInput {
     title: string;
     prompt: string;
+    /** Storage object path in the public `live-writing` bucket, never a full URL. */
+    imagePath?: string;
     classId: string;
     minutesPerRound: number;
     roundCount: number;
@@ -331,6 +333,7 @@ export class LiveWritingAdapter {
             .insert({
                 title: input.title,
                 prompt: input.prompt,
+                image_path: input.imagePath?.trim() ? input.imagePath.trim() : null,
                 class_id: input.classId,
                 minutes_per_round: input.minutesPerRound,
                 round_count: input.roundCount,
@@ -352,6 +355,8 @@ export class LiveWritingAdapter {
         const row: Row = {};
         if (patch.title !== undefined) row.title = patch.title;
         if (patch.prompt !== undefined) row.prompt = patch.prompt;
+        if (patch.imagePath !== undefined)
+            row.image_path = patch.imagePath.trim() === '' ? null : patch.imagePath.trim();
         if (patch.classId !== undefined) row.class_id = patch.classId;
         if (patch.minutesPerRound !== undefined) row.minutes_per_round = patch.minutesPerRound;
         if (patch.roundCount !== undefined) row.round_count = patch.roundCount;
@@ -374,6 +379,37 @@ export class LiveWritingAdapter {
             .single();
         throwIfError(error);
         return mapSession(data as Row);
+    }
+
+    /**
+     * Uploads a prompt image to the public `live-writing` bucket. The first path segment must be
+     * the uploader's uid: that is what the bucket's storage policies check.
+     */
+    async uploadPromptImage(file: File): Promise<string> {
+        const { data, error } = await this.client.auth.getUser();
+        throwIfError(error);
+        if (!data.user) throw new Error('not_authenticated');
+        const extension = (file.name.split('.').pop() ?? '').toLowerCase().replace(/[^a-z0-9]/g, '') || 'png';
+        const path = `${data.user.id}/${crypto.randomUUID()}.${extension}`;
+        const { error: uploadError } = await this.client.storage.from('live-writing').upload(path, file, {
+            contentType: file.type || 'image/png',
+            upsert: false,
+        });
+        throwIfError(uploadError);
+        return path;
+    }
+
+    /** Public URL for a prompt image object path. Full URLs are returned unchanged. */
+    promptImageUrl(path: string): string {
+        return /^https?:\/\//i.test(path)
+            ? path
+            : this.client.storage.from('live-writing').getPublicUrl(path).data.publicUrl;
+    }
+
+    /** Best-effort cleanup of a replaced image; the session row is the source of truth. */
+    async removePromptImage(path: string): Promise<void> {
+        if (!path || /^https?:\/\//i.test(path)) return;
+        await this.client.storage.from('live-writing').remove([path]);
     }
 
     async listParticipants(sessionId: string): Promise<LiveWritingParticipant[]> {

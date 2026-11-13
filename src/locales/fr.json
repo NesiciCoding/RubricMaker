@@ -6102,6 +6102,13 @@
         "finals_replace_label": "Texte de remplacement",
         "finals_replace_cancel": "Annuler",
         "finals_replace_save": "Enregistrer",
-        "finals_replaced_toast": "Texte remplacé."
+        "finals_replaced_toast": "Texte remplacé.",
+        "image_add": "Ajouter une image",
+        "image_remove": "Retirer l'image",
+        "image_uploading": "Envoi…",
+        "image_hint": "Affichée sur le projecteur et sur la page de chaque élève. JPG, PNG ou WebP, 5 Mo maximum.",
+        "image_invalid": "Choisissez une image JPG, PNG ou WebP.",
+        "image_too_large": "Cette image dépasse 5 Mo.",
+        "image_upload_failed": "L'image n'a pas pu être envoyée."
     }
 }
