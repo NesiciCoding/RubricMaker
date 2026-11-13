@@ -5989,6 +5989,8 @@
         "voting_close": "Stemmen sluiten",
         "voting_reopen": "Stemmen heropenen",
         "voting_reopen_confirm": "Stemmen heropenen? Hiermee wis je de stemmen van deze ronde en krijgt elke leerling een nieuw tweetal teksten.",
+        "voting_show_finals": "Eindronde tonen",
+        "finals_opened_toast": "Eindronde geopend",
         "voting_load_failed": "Stemresultaten konden niet worden geladen.",
         "voting_no_results": "Er zijn nog geen deelnemers in deze ronde.",
         "voting_student": "Leerling",

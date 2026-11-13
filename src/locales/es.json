@@ -5989,6 +5989,8 @@
         "voting_close": "Cerrar la votación",
         "voting_reopen": "Reabrir la votación",
         "voting_reopen_confirm": "¿Reabrir la votación? Esto borra los votos de esta ronda y da a cada estudiante un nuevo par de textos.",
+        "voting_show_finals": "Mostrar la final",
+        "finals_opened_toast": "Final abierta",
         "voting_load_failed": "No se pudieron cargar los resultados de la votación.",
         "voting_no_results": "Todavía no hay participantes en esta ronda.",
         "voting_student": "Estudiante",

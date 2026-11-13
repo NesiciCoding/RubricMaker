@@ -5989,6 +5989,8 @@
         "voting_close": "Fermer le vote",
         "voting_reopen": "Rouvrir le vote",
         "voting_reopen_confirm": "Rouvrir le vote ? Cela efface les votes de cette manche et donne à chaque élève une nouvelle paire de textes.",
+        "voting_show_finals": "Afficher la finale",
+        "finals_opened_toast": "Finale ouverte",
         "voting_load_failed": "Impossible de charger les résultats du vote.",
         "voting_no_results": "Aucun participant dans cette manche pour l'instant.",
         "voting_student": "Élève",

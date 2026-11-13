@@ -5989,6 +5989,8 @@
         "voting_close": "Abstimmung schließen",
         "voting_reopen": "Abstimmung erneut öffnen",
         "voting_reopen_confirm": "Abstimmung erneut öffnen? Dadurch werden die Stimmen dieser Runde gelöscht und jede Schülerin und jeder Schüler erhält ein neues Textpaar.",
+        "voting_show_finals": "Finale anzeigen",
+        "finals_opened_toast": "Finale geöffnet",
         "voting_load_failed": "Abstimmungsergebnisse konnten nicht geladen werden.",
         "voting_no_results": "In dieser Runde sind noch keine Teilnehmenden.",
         "voting_student": "Schüler/in",

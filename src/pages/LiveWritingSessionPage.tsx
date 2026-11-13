@@ -363,6 +363,22 @@ export default function LiveWritingSessionPage() {
         }
     }
 
+    async function showFinals() {
+        if (!adapter || !session) return;
+        setVoteBusy(true);
+        try {
+            await adapter.showFinals(session.id);
+            const updated = await adapter.getSession(session.id);
+            setSession(updated);
+            await refreshFinals();
+            showToast(t('liveWriting.finals_opened_toast'), 'success');
+        } catch {
+            showToast(t('liveWriting.projector_action_failed'), 'error');
+        } finally {
+            setVoteBusy(false);
+        }
+    }
+
     const editable = !session || session.status === 'draft';
 
     function patchDraft(patch: Partial<DraftState>) {
@@ -819,6 +835,7 @@ export default function LiveWritingSessionPage() {
                             failed={voteFailed}
                             onCloseVoting={() => void setVoting(false)}
                             onReopenVoting={() => void setVoting(true)}
+                            onShowFinals={() => void showFinals()}
                         />
                     </div>
                 )}
