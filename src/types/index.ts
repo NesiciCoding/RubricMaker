@@ -1986,6 +1986,163 @@ export interface EssaySubmission {
     events?: ProctorEvent[];
 }
 
+// ─── Live writing sessions (Phase 43) ────────────────────────────────────────
+
+/**
+ * A teacher-run, in-class writing session. Transient by design: it holds the prompt, who joined,
+ * the text written per round and the peer votes. "Send to grading" later turns the roster's
+ * student_id into ordinary essay submissions, which is the only link to the grading pipeline.
+ */
+export type LiveWritingSessionStatus = 'draft' | 'lobby' | 'writing' | 'voting' | 'finals' | 'closed';
+export type LiveWritingTimerState = 'idle' | 'running' | 'paused' | 'ended';
+export type LiveWritingSelfRating = 'happy' | 'neutral' | 'unhappy';
+export type LiveWritingVoteChoice = 'a' | 'b';
+
+export interface LiveWritingSession {
+    id: string;
+    classId: string;
+    title: string;
+    prompt: string;
+    imagePath?: string;
+    status: LiveWritingSessionStatus;
+    joinCode: string;
+    joinCodeExpiresAt?: string;
+    roundCount: number;
+    currentRound: number;
+    minutesPerRound: number;
+    minWords: number;
+    maxWords?: number;
+    /** Teacher-authored hints only; never generated. */
+    scaffoldEnabled: boolean;
+    scaffoldPrompts: string[];
+    /** Progress framing only: words written and hand-ins, never quality. */
+    liveLeaderboard: boolean;
+    lockAfterStart: boolean;
+    /** When false, ending writing skips voting and goes straight to finals. */
+    peerVoting: boolean;
+    votesOpen: boolean;
+    /** Server-authoritative countdown for the projector and, later, student clients. */
+    timerState: LiveWritingTimerState;
+    timerEndsAt?: string;
+    /** Frozen remainder while paused, in milliseconds. */
+    timerRemainingMs: number;
+    showProgressBoard: boolean;
+    createdAt: string;
+    updatedAt: string;
+    startedAt?: string;
+    endedAt?: string;
+}
+
+export interface LiveWritingParticipant {
+    id: string;
+    sessionId: string;
+    studentId: string;
+    displayName: string;
+    joinedAt: string;
+    lastSeenAt: string;
+}
+
+export interface LiveWritingTimerSnapshot {
+    status: LiveWritingSessionStatus;
+    timerState: LiveWritingTimerState;
+    endsAt?: string;
+    remainingMs: number;
+    serverNow: string;
+    currentRound: number;
+    roundCount: number;
+    minutesPerRound: number;
+    showProgressBoard: boolean;
+}
+
+export interface LiveWritingRosterEntry {
+    studentId: string;
+    name: string;
+}
+
+/** What the join RPC hands a student: a participant id plus the secret token for save/vote RPCs. */
+export interface LiveWritingJoin {
+    participantId: string;
+    joinToken: string;
+    title: string;
+    status: LiveWritingSessionStatus;
+    currentRound: number;
+    roundCount: number;
+    minutesPerRound: number;
+    minWords: number;
+    maxWords?: number;
+    scaffoldEnabled: boolean;
+}
+
+/** The student's own view of a live session; response text is only ever this participant's. */
+export interface LiveWritingStudentState {
+    sessionId: string;
+    participantId: string;
+    displayName: string;
+    sessionTitle: string;
+    status: LiveWritingSessionStatus;
+    timerState: LiveWritingTimerState;
+    endsAt?: string;
+    remainingMs: number;
+    serverNow: string;
+    currentRound: number;
+    roundCount: number;
+    minutesPerRound: number;
+    minWords: number;
+    maxWords?: number;
+    prompt: string;
+    imagePath?: string;
+    imageUrl?: string;
+    scaffoldEnabled: boolean;
+    scaffoldPrompts: string[];
+    peerVoting: boolean;
+    responseRound?: number;
+    contentHtml: string;
+    wordCount: number;
+    cefrEstimate?: CefrLevel;
+    handedInAt?: string;
+    selfRating?: LiveWritingSelfRating;
+    selfNote?: string;
+}
+
+/** The two anonymous texts a participant may compare, plus their own self-check state. */
+export interface LiveWritingVoteState {
+    status: LiveWritingSessionStatus;
+    currentRound: number;
+    roundCount: number;
+    peerVoting: boolean;
+    votesOpen: boolean;
+    selfRating?: LiveWritingSelfRating;
+    selfNote?: string;
+    hasPair: boolean;
+    voted: boolean;
+    optionAHtml?: string;
+    optionBHtml?: string;
+    optionAWordCount: number;
+    optionBWordCount: number;
+}
+
+/** Teacher-only vote roll-up. Students never receive voter or count data. */
+export interface LiveWritingVoteResult {
+    participantId: string;
+    displayName: string;
+    selfRating?: LiveWritingSelfRating;
+    selfNote?: string;
+    votedForParticipantId?: string;
+    votedForName?: string;
+    votesReceived: number;
+    hasPair: boolean;
+}
+
+export type LiveWritingRoundLogAction = 'voting_opened' | 'voting_closed' | 'voting_reopened';
+
+export interface LiveWritingRoundLogEntry {
+    id: string;
+    roundIndex: number;
+    action: LiveWritingRoundLogAction;
+    detail: Record<string, unknown>;
+    createdAt: string;
+}
+
 // ─── Audit log ───────────────────────────────────────────────────────────────
 
 export type AuditCategory = 'admin' | 'grade' | 'export' | 'auth';
