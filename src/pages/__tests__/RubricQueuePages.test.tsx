@@ -114,6 +114,7 @@ describe('rubric grading queue and peer-review roster', () => {
         QueuePage = (await import('../RubricGradingQueuePage')).default;
         RosterPage = (await import('../PeerReviewRosterPage')).default;
         mockAppValue.rubrics = [rubric];
+        mockAppValue.students = [alice, bob, cara];
         mockAppValue.studentRubrics = [gradedSr, notHandedInSr];
         mockAppValue.updateStudentGroup.mockClear();
     });
@@ -141,6 +142,47 @@ describe('rubric grading queue and peer-review roster', () => {
         expect(screen.queryByText('Alice')).not.toBeInTheDocument();
     });
 
+    it('matches names across accents and word order, and searches the class and group labels', () => {
+        mockAppValue.students = [
+            { id: 's4', name: 'José Alvarez', classId: 'c1' },
+            { id: 's5', name: 'Amara Okafor', classId: 'c1' },
+        ];
+        mockAppValue.studentRubrics = [{ ...gradedSr, studentId: 's4', groupId: 'g1', groupName: 'Group 3' }];
+        renderAt('/rubrics/r1/grade', <QueuePage />, '/rubrics/:rubricId/grade');
+        const search = screen.getByLabelText('rubricQueue.search');
+        // The groups panel above the table names its members too, so assertions stay inside the table.
+        const inTable = (name: string) => within(screen.getByRole('table')).queryByText(name);
+
+        fireEvent.change(search, { target: { value: 'jose' } });
+        expect(inTable('José Alvarez')).toBeInTheDocument();
+        expect(inTable('Amara Okafor')).not.toBeInTheDocument();
+
+        fireEvent.change(search, { target: { value: 'okafor amara' } });
+        expect(inTable('Amara Okafor')).toBeInTheDocument();
+        expect(inTable('José Alvarez')).not.toBeInTheDocument();
+
+        fireEvent.change(search, { target: { value: 'class 4a' } });
+        expect(inTable('Amara Okafor')).toBeInTheDocument();
+        expect(inTable('José Alvarez')).toBeInTheDocument();
+
+        fireEvent.change(search, { target: { value: 'group 3' } });
+        expect(inTable('José Alvarez')).toBeInTheDocument();
+        expect(inTable('Amara Okafor')).not.toBeInTheDocument();
+
+        fireEvent.change(search, { target: { value: '   ' } });
+        expect(inTable('Amara Okafor')).toBeInTheDocument();
+        expect(inTable('José Alvarez')).toBeInTheDocument();
+    });
+
+    it('says so when a search matches no one, and keeps the progress count on the full roster', () => {
+        renderAt('/rubrics/r1/grade', <QueuePage />, '/rubrics/:rubricId/grade');
+        fireEvent.change(screen.getByLabelText('rubricQueue.search'), { target: { value: 'zzz' } });
+
+        expect(screen.getByText('gradingQueue.no_matches')).toBeInTheDocument();
+        expect(screen.queryByRole('table')).not.toContainElement(screen.queryByText('Alice'));
+        expect(screen.getByText(/rubricQueue.progress/)).toHaveTextContent('"graded":1,"total":3');
+    });
+
     it('lists named groups and edits their name and members from the queue', () => {
         mockAppValue.studentRubrics = [
             { ...gradedSr, groupId: 'g1', groupName: 'Group 3' },
@@ -163,6 +205,41 @@ describe('rubric grading queue and peer-review roster', () => {
             expect.arrayContaining(['s1', 's3']),
             'Renamed'
         );
+    });
+
+    it('filters the queue to one group, showing how much of it is graded, and back to everyone', () => {
+        mockAppValue.studentRubrics = [
+            { ...gradedSr, studentId: 's1', groupId: 'g1', groupName: 'Group 3' },
+            { ...gradedSr, studentId: 's3', groupId: 'g1', groupName: 'Group 3' },
+            { ...notHandedInSr, studentId: 's2', groupId: 'g2', groupName: 'Group 4' },
+        ];
+        renderAt('/rubrics/r1/grade', <QueuePage />, '/rubrics/:rubricId/grade');
+        const inTable = (name: string) => within(screen.getByRole('table')).queryByText(name);
+
+        const chip = screen.getByRole('button', { name: /Group 3 · 2\/2/ });
+        expect(chip).toHaveAttribute('aria-pressed', 'false');
+
+        fireEvent.click(chip);
+        expect(chip).toHaveAttribute('aria-pressed', 'true');
+        expect(inTable('Alice')).toBeInTheDocument();
+        expect(inTable('Cara')).toBeInTheDocument();
+        expect(inTable('Bob')).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: 'common.all' }));
+        expect(inTable('Bob')).toBeInTheDocument();
+    });
+
+    it('narrows a group filter further with the search box', () => {
+        mockAppValue.studentRubrics = [
+            { ...gradedSr, studentId: 's1', groupId: 'g1', groupName: 'Group 3' },
+            { ...gradedSr, studentId: 's3', groupId: 'g1', groupName: 'Group 3' },
+        ];
+        renderAt('/rubrics/r1/grade', <QueuePage />, '/rubrics/:rubricId/grade');
+
+        fireEvent.click(screen.getByRole('button', { name: /Group 3/ }));
+        fireEvent.change(screen.getByLabelText('rubricQueue.search'), { target: { value: 'bob' } });
+
+        expect(screen.getByText('gradingQueue.no_matches')).toBeInTheDocument();
     });
 
     it('shows a group badge on grouped students', () => {
