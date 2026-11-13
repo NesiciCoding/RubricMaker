@@ -341,6 +341,16 @@
       ]
     },
     {
+      "route": "/rubrics/rubric-a11y-1/grade",
+      "theme": "dark",
+      "violations": []
+    },
+    {
+      "route": "/rubrics/rubric-a11y-1/grade",
+      "theme": "light",
+      "violations": []
+    },
+    {
       "route": "/rubrics/rubric-a11y-1/grade/student-a11y-1",
       "theme": "dark",
       "violations": [
