@@ -126,6 +126,7 @@ Pages are lazy-loaded from `src/pages/`. Key routes:
 | `/`                                     | LandingPage             |
 | `/rubrics`                              | RubricList              |
 | `/rubrics/:id`                          | RubricBuilder           |
+| `/rubrics/:id/grade`                    | RubricGradingQueuePage  |
 | `/rubrics/:id/grade/:studentId`         | GradeStudent            |
 | `/grade-comparative/:classId/:rubricId` | ComparativeGrading      |
 | `/students`                             | StudentsPage            |

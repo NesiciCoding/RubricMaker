@@ -23,6 +23,7 @@ import {
     ArrowDown,
     Minus,
     Share2,
+    ChevronDown,
 } from 'lucide-react';
 import PageTour from '../components/Tour/PageTour';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
@@ -667,6 +668,34 @@ export default function StudentsPage() {
         return map;
     }, [classes, rubrics, sharedRubricEntries, students, studentRubrics]);
 
+    // The row's Grade button repeats the class's last-graded rubric in one click; the menu stays
+    // for every other rubric and marks which ones already hold a grade for that student.
+    const { lastRubricByClass, gradedRubricsByStudent } = useMemo(() => {
+        const classOfStudent = new Map(students.map((st) => [st.id, st.classId]));
+        const lastByClass = new Map<string, { rubricId: string; at: number }>();
+        const gradedByStudent = new Map<string, Set<string>>();
+        for (const sr of studentRubrics) {
+            // `gradedAt` marks a saved grade; a blank record created by grouping is not one, and
+            // must not mark its rubric as graded nor become the class's last-used rubric.
+            if (sr.isPeerReview || !sr.gradedAt) continue;
+            let graded = gradedByStudent.get(sr.studentId);
+            if (!graded) {
+                graded = new Set();
+                gradedByStudent.set(sr.studentId, graded);
+            }
+            graded.add(sr.rubricId);
+            const classId = classOfStudent.get(sr.studentId);
+            if (!classId) continue;
+            const at = sr.gradedAt ? Date.parse(sr.gradedAt) : 0;
+            const prev = lastByClass.get(classId);
+            if (!prev || at >= prev.at) lastByClass.set(classId, { rubricId: sr.rubricId, at });
+        }
+        return {
+            lastRubricByClass: new Map([...lastByClass].map(([classId, v]) => [classId, v.rubricId])),
+            gradedRubricsByStudent: gradedByStudent,
+        };
+    }, [studentRubrics, students]);
+
     /* v8 ignore start -- singleClassId always resolves to a live class, so the ?? fallback never fires */
     const rosterLabel = singleClassId
         ? (classById.get(singleClassId)?.name ?? t('studentsPage.default_class_name'))
@@ -1306,6 +1335,12 @@ export default function StudentsPage() {
                                             // Grade menu shows the rubrics linked to THIS student's class (not the
                                             // single active class), so links stay effective in the combined roster.
                                             const studentRubricList = classRubricsById.get(s.classId) ?? rubrics;
+                                            // Only repeat a rubric the student's class actually lists.
+                                            const lastRubric =
+                                                studentRubricList.find(
+                                                    (r) => r.id === lastRubricByClass.get(s.classId)
+                                                ) ?? null;
+                                            const gradedRubricIds = gradedRubricsByStudent.get(s.id);
                                             return (
                                                 <tr key={s.id}>
                                                     <td style={{ fontWeight: 500 }}>
@@ -1456,7 +1491,32 @@ export default function StudentsPage() {
                                                             }}
                                                         >
                                                             {studentRubricList.length > 0 && (
-                                                                <>
+                                                                <div style={{ display: 'flex' }}>
+                                                                    <button
+                                                                        type="button"
+                                                                        className="btn btn-primary btn-sm"
+                                                                        title={
+                                                                            lastRubric
+                                                                                ? t('studentsPage.grade_last_used', {
+                                                                                      rubric: lastRubric.name,
+                                                                                  })
+                                                                                : undefined
+                                                                        }
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            if (lastRubric) {
+                                                                                navigate(
+                                                                                    `/rubrics/${lastRubric.id}/grade/${s.id}`
+                                                                                );
+                                                                                return;
+                                                                            }
+                                                                            setGradeMenuOpen(
+                                                                                gradeMenuOpen === s.id ? null : s.id
+                                                                            );
+                                                                        }}
+                                                                    >
+                                                                        {t('studentsPage.grade_prefix')}
+                                                                    </button>
                                                                     <button
                                                                         type="button"
                                                                         ref={
@@ -1464,9 +1524,12 @@ export default function StudentsPage() {
                                                                                 ? gradeMenuAnchorRef
                                                                                 : undefined
                                                                         }
-                                                                        className="btn btn-primary btn-sm"
+                                                                        className="btn btn-primary btn-icon btn-sm"
                                                                         aria-haspopup="menu"
                                                                         aria-expanded={gradeMenuOpen === s.id}
+                                                                        aria-label={t(
+                                                                            'studentsPage.grade_choose_rubric'
+                                                                        )}
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
                                                                             setGradeMenuOpen(
@@ -1474,14 +1537,16 @@ export default function StudentsPage() {
                                                                             );
                                                                         }}
                                                                     >
-                                                                        {t('studentsPage.grade_prefix')} ▾
+                                                                        <ChevronDown size={14} />
                                                                     </button>
                                                                     <DropdownMenu
                                                                         open={gradeMenuOpen === s.id}
                                                                         onClose={() => setGradeMenuOpen(null)}
                                                                         anchorRef={gradeMenuAnchorRef}
-                                                                        minWidth={180}
-                                                                        ariaLabel={t('studentsPage.grade_prefix')}
+                                                                        minWidth={220}
+                                                                        ariaLabel={t(
+                                                                            'studentsPage.grade_choose_rubric'
+                                                                        )}
                                                                     >
                                                                         {studentRubricList.map((r) => (
                                                                             <button
@@ -1492,6 +1557,7 @@ export default function StudentsPage() {
                                                                                 style={{
                                                                                     width: '100%',
                                                                                     justifyContent: 'flex-start',
+                                                                                    gap: 8,
                                                                                 }}
                                                                                 onClick={() => {
                                                                                     setGradeMenuOpen(null);
@@ -1500,11 +1566,23 @@ export default function StudentsPage() {
                                                                                     );
                                                                                 }}
                                                                             >
-                                                                                {r.name}
+                                                                                <span
+                                                                                    style={{
+                                                                                        flex: 1,
+                                                                                        textAlign: 'left',
+                                                                                    }}
+                                                                                >
+                                                                                    {r.name}
+                                                                                </span>
+                                                                                {gradedRubricIds?.has(r.id) && (
+                                                                                    <span className="badge badge-green">
+                                                                                        {t('studentsPage.graded_badge')}
+                                                                                    </span>
+                                                                                )}
                                                                             </button>
                                                                         ))}
                                                                     </DropdownMenu>
-                                                                </>
+                                                                </div>
                                                             )}
                                                             <button
                                                                 type="button"

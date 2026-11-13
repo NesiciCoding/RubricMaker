@@ -29,6 +29,7 @@ export const ROUTE_SKELETON_RULES: ReadonlyArray<readonly [RegExp, SkeletonShape
     [/^\/rubrics\/new$/, BuilderPageSkeleton],
     [/^\/rubrics\/[^/]+\/peer-review\//, GradingSkeleton],
     [/^\/rubrics\/[^/]+\/self-assess\//, GradingSkeleton],
+    [/^\/rubrics\/[^/]+\/grade$/, TablePageSkeleton],
     [/^\/rubrics\/[^/]+\/grade\//, GradingSkeleton],
     [/^\/rubrics\/[^/]+/, BuilderPageSkeleton],
 
