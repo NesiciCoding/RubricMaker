@@ -67,6 +67,7 @@ import type {
     StudentTest,
 } from '../types';
 import Avatar from '../components/ui/Avatar';
+import DropdownMenu from '../components/ui/DropdownMenu';
 import ToggleChipGroup from '../components/ui/ToggleChipGroup';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import { getCefrStudentOverview, skillLevelStatus, type CefrLevelStatus } from '../utils/cefrStudentAggregator';
@@ -485,6 +486,7 @@ export default function StudentsPage() {
     const classMenuOpen = classMenu?.id ?? null;
     const classMenuTarget = classes.find((c) => c.id === classMenu?.id);
     const [gradeMenuOpen, setGradeMenuOpen] = useState<string | null>(null);
+    const gradeMenuAnchorRef = useRef<HTMLButtonElement | null>(null);
 
     // Class Management Modal States
     const [renameClassId, setRenameClassId] = useState<string | null>(null);
@@ -1486,110 +1488,100 @@ export default function StudentsPage() {
                                                                 display: 'flex',
                                                                 gap: 6,
                                                                 flexWrap: 'wrap',
-                                                                position: 'relative',
                                                             }}
                                                         >
                                                             {studentRubricList.length > 0 && (
-                                                                <div style={{ position: 'relative' }}>
-                                                                    <div style={{ display: 'flex' }}>
-                                                                        <button
-                                                                            type="button"
-                                                                            className="btn btn-primary btn-sm"
-                                                                            title={
-                                                                                lastRubric
-                                                                                    ? t(
-                                                                                          'studentsPage.grade_last_used',
-                                                                                          {
-                                                                                              rubric: lastRubric.name,
-                                                                                          }
-                                                                                      )
-                                                                                    : undefined
+                                                                <div style={{ display: 'flex' }}>
+                                                                    <button
+                                                                        type="button"
+                                                                        className="btn btn-primary btn-sm"
+                                                                        title={
+                                                                            lastRubric
+                                                                                ? t('studentsPage.grade_last_used', {
+                                                                                      rubric: lastRubric.name,
+                                                                                  })
+                                                                                : undefined
+                                                                        }
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            if (lastRubric) {
+                                                                                navigate(
+                                                                                    `/rubrics/${lastRubric.id}/grade/${s.id}`
+                                                                                );
+                                                                                return;
                                                                             }
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                if (lastRubric) {
+                                                                            setGradeMenuOpen(
+                                                                                gradeMenuOpen === s.id ? null : s.id
+                                                                            );
+                                                                        }}
+                                                                    >
+                                                                        {t('studentsPage.grade_prefix')}
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        ref={
+                                                                            gradeMenuOpen === s.id
+                                                                                ? gradeMenuAnchorRef
+                                                                                : undefined
+                                                                        }
+                                                                        className="btn btn-primary btn-icon btn-sm"
+                                                                        aria-haspopup="menu"
+                                                                        aria-expanded={gradeMenuOpen === s.id}
+                                                                        aria-label={t(
+                                                                            'studentsPage.grade_choose_rubric'
+                                                                        )}
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setGradeMenuOpen(
+                                                                                gradeMenuOpen === s.id ? null : s.id
+                                                                            );
+                                                                        }}
+                                                                    >
+                                                                        <ChevronDown size={14} />
+                                                                    </button>
+                                                                    <DropdownMenu
+                                                                        open={gradeMenuOpen === s.id}
+                                                                        onClose={() => setGradeMenuOpen(null)}
+                                                                        anchorRef={gradeMenuAnchorRef}
+                                                                        minWidth={220}
+                                                                        ariaLabel={t(
+                                                                            'studentsPage.grade_choose_rubric'
+                                                                        )}
+                                                                    >
+                                                                        {studentRubricList.map((r) => (
+                                                                            <button
+                                                                                key={r.id}
+                                                                                type="button"
+                                                                                role="menuitem"
+                                                                                className="btn btn-ghost btn-sm"
+                                                                                style={{
+                                                                                    width: '100%',
+                                                                                    justifyContent: 'flex-start',
+                                                                                    gap: 8,
+                                                                                }}
+                                                                                onClick={() => {
+                                                                                    setGradeMenuOpen(null);
                                                                                     navigate(
-                                                                                        `/rubrics/${lastRubric.id}/grade/${s.id}`
+                                                                                        `/rubrics/${r.id}/grade/${s.id}`
                                                                                     );
-                                                                                    return;
-                                                                                }
-                                                                                setGradeMenuOpen(
-                                                                                    gradeMenuOpen === s.id ? null : s.id
-                                                                                );
-                                                                            }}
-                                                                        >
-                                                                            {t('studentsPage.grade_prefix')}
-                                                                        </button>
-                                                                        <button
-                                                                            type="button"
-                                                                            className="btn btn-primary btn-icon btn-sm"
-                                                                            aria-haspopup="menu"
-                                                                            aria-expanded={gradeMenuOpen === s.id}
-                                                                            aria-label={t(
-                                                                                'studentsPage.grade_choose_rubric'
-                                                                            )}
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                setGradeMenuOpen(
-                                                                                    gradeMenuOpen === s.id ? null : s.id
-                                                                                );
-                                                                            }}
-                                                                        >
-                                                                            <ChevronDown size={14} />
-                                                                        </button>
-                                                                    </div>
-                                                                    {gradeMenuOpen === s.id && (
-                                                                        <div
-                                                                            className="card"
-                                                                            role="menu"
-                                                                            style={{
-                                                                                position: 'absolute',
-                                                                                left: 0,
-                                                                                top: '100%',
-                                                                                zIndex: 10,
-                                                                                padding: 4,
-                                                                                minWidth: 220,
-                                                                                boxShadow: 'var(--shadow-lg)',
-                                                                            }}
-                                                                            onClick={(e) => e.stopPropagation()}
-                                                                        >
-                                                                            {studentRubricList.map((r) => (
-                                                                                <button
-                                                                                    key={r.id}
-                                                                                    type="button"
-                                                                                    role="menuitem"
-                                                                                    className="btn btn-ghost btn-sm"
+                                                                                }}
+                                                                            >
+                                                                                <span
                                                                                     style={{
-                                                                                        width: '100%',
-                                                                                        justifyContent: 'flex-start',
-                                                                                        gap: 8,
-                                                                                    }}
-                                                                                    onClick={() => {
-                                                                                        setGradeMenuOpen(null);
-                                                                                        navigate(
-                                                                                            `/rubrics/${r.id}/grade/${s.id}`
-                                                                                        );
+                                                                                        flex: 1,
+                                                                                        textAlign: 'left',
                                                                                     }}
                                                                                 >
-                                                                                    <span
-                                                                                        style={{
-                                                                                            flex: 1,
-                                                                                            textAlign: 'left',
-                                                                                        }}
-                                                                                    >
-                                                                                        {r.name}
+                                                                                    {r.name}
+                                                                                </span>
+                                                                                {gradedRubricIds?.has(r.id) && (
+                                                                                    <span className="badge badge-green">
+                                                                                        {t('studentsPage.graded_badge')}
                                                                                     </span>
-                                                                                    {gradedRubricIds?.has(r.id) && (
-                                                                                        <span className="badge badge-green">
-                                                                                            {t(
-                                                                                                'studentsPage.graded_badge'
-                                                                                            )}
-                                                                                        </span>
-                                                                                    )}
-                                                                                </button>
-                                                                            ))}
-                                                                        </div>
-                                                                    )}
+                                                                                )}
+                                                                            </button>
+                                                                        ))}
+                                                                    </DropdownMenu>
                                                                 </div>
                                                             )}
                                                             <button

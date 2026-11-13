@@ -533,6 +533,48 @@ h3 {
     .topbar-actions > div {
         flex-wrap: wrap;
     }
+
+    /* The queue hero stacks its text above the ring on phones; centre the ring rather
+       than leaving it stranded at the left edge. */
+    .grading-queue-ring {
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+
+/* The list view's class column pushes the row action off a phone screen. Move the class
+   under the student's name and keep the action visible without horizontal scrolling. */
+.queue-row-class-inline {
+    display: none;
+}
+
+@media (max-width: 640px) {
+    .queue-col-class,
+    .queue-col-score {
+        display: none;
+    }
+
+    .queue-row-class-inline {
+        display: block;
+    }
+}
+
+/* Between the phone layout and a wide desktop the queue's five actions overflow the topbar.
+   Keep them reachable as icon buttons there instead of a clipped scrolling strip. */
+@media (min-width: 641px) and (max-width: 1120px) {
+    .queue-action-label {
+        display: none;
+    }
+
+    /* The icon row fits in this range; the 1px sub-pixel overflow would otherwise draw a
+       scrollbar under the buttons. */
+    .topbar-actions:has(.queue-action-label) {
+        scrollbar-width: none;
+    }
+
+    .topbar-actions:has(.queue-action-label)::-webkit-scrollbar {
+        display: none;
+    }
 }
 
 /* ─── Buttons ───────────────────────────────────────────────────────────────── */
