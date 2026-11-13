@@ -8,6 +8,7 @@ import GroupGradeModal from '../components/Rubric/GroupGradeModal';
 import { useAuthoring, useClasses, useGrading, useSettings, useStudents } from '../context/AppContext';
 import { useRubricPool } from '../hooks/useMaterialPool';
 import { studentsForRubric } from '../utils/rubricRoster';
+import { matchesSearch } from '../utils/searchMatch';
 
 /**
  * The rubric's grading queue: the roster the teacher grades from, with the rubric already in the
@@ -75,10 +76,11 @@ export default function RubricGradingQueuePage() {
     const gradedCount = roster.filter((s) => isGraded(s.id)).length;
 
     const visible = useMemo(() => {
-        const q = search.trim().toLowerCase();
-        if (!q) return roster;
-        return roster.filter((s) => s.name.toLowerCase().includes(q));
-    }, [roster, search]);
+        if (!search.trim()) return roster;
+        return roster.filter((s) =>
+            matchesSearch(search, s.name, classById.get(s.classId ?? '')?.name, gradeByStudent.get(s.id)?.groupName)
+        );
+    }, [roster, search, classById, gradeByStudent]);
 
     // The picker stays inside the queue's own roster: a group drawn from another class would hold
     // members this page never lists, while the students who do appear stay unavailable to group.
@@ -274,6 +276,17 @@ export default function RubricGradingQueuePage() {
                                         </tr>
                                     );
                                 })}
+                                {visible.length === 0 && (
+                                    <tr>
+                                        <td
+                                            colSpan={4}
+                                            className="text-muted text-sm"
+                                            style={{ textAlign: 'center', padding: 24 }}
+                                        >
+                                            {t('gradingQueue.no_matches')}
+                                        </td>
+                                    </tr>
+                                )}
                             </tbody>
                         </table>
                     </div>
