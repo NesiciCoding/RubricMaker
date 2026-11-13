@@ -445,7 +445,8 @@ export default function StudentLiveWritePage() {
     const wordCount = useMemo(() => countWords(html), [html]);
     const cefrEstimate = useMemo<CefrLevel | null>(() => liveWritingCefrEstimate(html, wordCount), [html, wordCount]);
     const editorContent = state && readyRound === state.currentRound ? html : (state?.contentHtml ?? '');
-    const editable = sessionStatus === 'writing' && !handedInAt && readyRound === state?.currentRound;
+    const editable =
+        sessionStatus === 'writing' && !handedInAt && readyRound === state?.currentRound && remainingMs > 0;
     const timerText = formatCountdown(remainingMs);
     const imageSrc =
         state?.imageUrl ?? (state?.imagePath && /^https?:\/\//i.test(state.imagePath) ? state.imagePath : undefined);
