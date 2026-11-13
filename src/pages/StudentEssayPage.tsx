@@ -13,6 +13,7 @@ import {
     Download,
     X,
     Lightbulb,
+    LogOut,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import EssayEditor from '../components/Editor/EssayEditor';
@@ -28,7 +29,7 @@ const MemoizedEssayEditor = React.memo(EssayEditor);
 const DEFAULT_ESSAY_CONTENT_LANG = 'en';
 import { decodeEssayAssignment } from '../utils/shareCode';
 import { encodeEssaySubmission } from '../utils/shareCode';
-import { downloadSebConfig } from '../utils/sebConfig';
+import { downloadSebConfigForAssignment, isRunningInSEB, quitSafeExamBrowser } from '../utils/sebConfig';
 import { countWords } from '../utils/essayUtils';
 import { nanoid } from '../utils/nanoid';
 import { useLiveSessionTelemetry } from '../hooks/useLiveSessionTelemetry';
@@ -266,8 +267,7 @@ export default function StudentEssayPage() {
 
     // SEB detection is user-agent sniffing only — a tech-savvy student can spoof it.
     // It is a deterrent, not a hard enforcement mechanism.
-    const isInSEB = /SEB/i.test(navigator.userAgent);
-    const sebQuitUrl = `${window.location.origin}/#/seb-done`;
+    const isInSEB = isRunningInSEB();
     const draftKey = DRAFT_KEY_PREFIX + (code ?? '');
 
     // Auth state (only used in DB mode)
@@ -510,7 +510,7 @@ export default function StudentEssayPage() {
         if (isInSEB) {
             copyText(legacyCode);
             setTimeout(() => {
-                window.location.href = sebQuitUrl;
+                quitSafeExamBrowser();
             }, 1500);
         }
     }, [
@@ -522,7 +522,6 @@ export default function StudentEssayPage() {
         studentUserId,
         studentEmail,
         isInSEB,
-        sebQuitUrl,
         resolvedContent,
         telemetry,
         t,
@@ -558,12 +557,30 @@ export default function StudentEssayPage() {
         setCopied(true);
         if (isInSEB) {
             setTimeout(() => {
-                window.location.href = sebQuitUrl;
+                quitSafeExamBrowser();
             }, 800);
         } else {
             setTimeout(() => setCopied(false), 2500);
         }
-    }, [submissionCode, isInSEB, sebQuitUrl]);
+    }, [submissionCode, isInSEB]);
+
+    // Prefer the server-built config (identical on every device); fall back to a local one when
+    // the app is running offline or the assignment cannot serve it.
+    function handleDownloadSeb() {
+        const name = resolvedContent?.title || assignment?.title || 'essay';
+        void downloadSebConfigForAssignment({
+            endpoint:
+                hasDb && assignment?.supabaseUrl
+                    ? {
+                          supabaseUrl: assignment.supabaseUrl,
+                          code: assignment.teacherKey,
+                          apikey: assignment.supabaseAnonKey,
+                      }
+                    : undefined,
+            startUrl: window.location.href,
+            fileName: name,
+        });
+    }
 
     // The failure panel's copy must not quit SEB like the post-submit copy does: Retry is still pending.
     const handleCopyBackup = useCallback(() => {
@@ -757,9 +774,7 @@ export default function StudentEssayPage() {
                     <AlertTriangle size={16} style={{ flexShrink: 0 }} />
                     {t('essay.seb_blocked')}
                     <button
-                        onClick={() =>
-                            downloadSebConfig(window.location.href, resolvedContent?.title || assignment.title)
-                        }
+                        onClick={handleDownloadSeb}
                         style={{
                             marginLeft: 'auto',
                             display: 'flex',
@@ -1003,6 +1018,16 @@ export default function StudentEssayPage() {
                                     {copied ? t('essay.copied') : t('essay.copy')}
                                 </button>
                             </div>
+                            {isInSEB && (
+                                <button
+                                    type="button"
+                                    onClick={() => quitSafeExamBrowser()}
+                                    className="btn btn-secondary"
+                                    style={{ marginTop: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                                >
+                                    <LogOut size={14} /> {t('tests.taking.seb_quit')}
+                                </button>
+                            )}
                         </div>
                     )}
 
