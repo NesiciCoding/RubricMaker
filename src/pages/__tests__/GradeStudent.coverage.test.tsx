@@ -1576,10 +1576,10 @@ describe('GradeStudent coverage', () => {
         expect(screen.queryByText('Keyboard Shortcuts')).not.toBeInTheDocument();
     });
 
-    it('navigates back via the topbar back button', () => {
+    it('navigates back to the rubric grading queue via the topbar back button', () => {
         renderPage();
         fireEvent.click(screen.getByText('gradeStudent.action_back'));
-        expect(mockNavigate).toHaveBeenCalledWith(-1);
+        expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade');
     });
 
     it('cancels the colleague fetch when the modal closes', async () => {

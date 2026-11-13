@@ -56,6 +56,7 @@ import { hasFloorRange } from '../utils/gradeCalc';
 import { seedDemoData } from '../utils/seedDemoData';
 import { diffRestoredSettings, hasIgnoredProtectedSettings, type SettingChange } from '../utils/backupSettings';
 import BackupSettingsChanges from '../components/Settings/BackupSettingsChanges';
+import AccountPasswordCard from '../components/Settings/AccountPasswordCard';
 import { hashPin, verifyPin, isHashed } from '../utils/pinHash';
 import { THEME_BUNDLES, ACCENT_PRESETS } from '../data/themes';
 import { SCHOOL_YEAR_LABELS } from '../data/schoolYears';
@@ -784,6 +785,8 @@ export default function SettingsPage() {
                                 </p>
                             )}
                         </div>
+
+                        <AccountPasswordCard />
 
                         {/* Display */}
                         <div data-tour="set-display" className="card" style={{ marginBottom: 24 }}>
