@@ -9,9 +9,10 @@ vi.mock('react-i18next', () => ({
     }),
 }));
 
-vi.mock('../../../utils/sebConfig', () => ({
-    downloadSebConfigForAssignment: vi.fn(),
-}));
+vi.mock('../../../utils/sebConfig', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../../utils/sebConfig')>();
+    return { ...actual, downloadSebConfigForAssignment: vi.fn() };
+});
 
 import { downloadSebConfigForAssignment } from '../../../utils/sebConfig';
 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Download, ExternalLink, ShieldAlert } from 'lucide-react';
-import { downloadSebConfigForAssignment, type SebConfigEndpoint } from '../../utils/sebConfig';
+import { downloadSebConfigForAssignment, isRunningInSEB, type SebConfigEndpoint } from '../../utils/sebConfig';
 
 const SEB_DOWNLOAD_URL = 'https://safeexambrowser.org/download_en.html';
 
@@ -24,7 +24,7 @@ export interface SebGateProps {
 export default function SebGate({ requireSEB, startUrl, fileName, configEndpoint, children }: SebGateProps) {
     const { t } = useTranslation();
     const [preparing, setPreparing] = useState(false);
-    const isInSEB = /SEB/i.test(navigator.userAgent);
+    const isInSEB = isRunningInSEB();
 
     async function handleDownload() {
         if (!startUrl) return;

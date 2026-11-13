@@ -55,7 +55,7 @@ SEB quits when it detects a navigation to the quit URL. The app is a hash-routed
 
 `?seb-done=1` on the app's own base path is a real navigation, so SEB detects it, and because it addresses the existing base path it also works on sub-path deployments such as GitHub Pages (`base: './'`). `buildSebQuitUrl()` is the single source of truth, used both for the config and for the post-submit redirect in the test and essay pages.
 
-`useSebQuitRedirect(submitted)` owns the automatic redirect (two seconds after submission, cancelled if submission is rolled back), and `quitSafeExamBrowser()` is the navigation both the hook and the manual button use, so the button cannot drift from the config's quit URL.
+`useSebQuitRedirect(submitted)` owns the automatic redirect (two seconds after submission, cancelled if submission is rolled back), and `quitSafeExamBrowser(url)` is the navigation both the hook and the manual button use, so the button cannot drift from the config's quit URL.
 
 ### URL filtering and Supabase
 

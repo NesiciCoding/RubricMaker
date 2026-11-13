@@ -4,12 +4,7 @@ import { gunzipSync } from 'node:zlib';
 vi.mock('file-saver', () => ({ saveAs: vi.fn() }));
 
 import { saveAs } from 'file-saver';
-import {
-    buildSebQuitUrl,
-    downloadAssignmentSebConfig,
-    downloadSebConfig,
-    downloadSebConfigForAssignment,
-} from './sebConfig';
+import { buildSebQuitUrl, downloadSebConfig, downloadSebConfigForAssignment } from './sebConfig';
 import {
     normalizeAppBase,
     renderSebConfigBytes,
@@ -89,53 +84,6 @@ describe('buildSebQuitUrl', () => {
     });
 });
 
-describe('downloadAssignmentSebConfig', () => {
-    beforeEach(() => {
-        vi.mocked(saveAs).mockClear();
-    });
-
-    afterEach(() => {
-        vi.unstubAllGlobals();
-    });
-
-    it('fetches the server-built .seb for the assignment code and saves it', async () => {
-        const blob = new Blob(['seb']);
-        const fetchMock = vi.fn().mockResolvedValue({ ok: true, blob: async () => blob });
-        vi.stubGlobal('fetch', fetchMock);
-
-        const served = await downloadAssignmentSebConfig(
-            { supabaseUrl: 'https://sb.example/', code: 'abc123xyzQ', apikey: 'anon-key' },
-            'Unit 3 — Test'
-        );
-
-        expect(served).toBe(true);
-        expect(fetchMock).toHaveBeenCalledWith('https://sb.example/functions/v1/get-seb-config?code=abc123xyzQ', {
-            headers: { apikey: 'anon-key', Authorization: 'Bearer anon-key' },
-        });
-        expect(saveAs).toHaveBeenCalledWith(blob, 'unit-3-test.seb');
-    });
-
-    it('returns false when the server refuses, so the caller can use the local file', async () => {
-        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, blob: async () => new Blob([]) }));
-
-        const served = await downloadAssignmentSebConfig(
-            { supabaseUrl: 'https://sb.example', code: 'abc123xyzQ' },
-            'Unit 3'
-        );
-
-        expect(served).toBe(false);
-        expect(saveAs).not.toHaveBeenCalled();
-    });
-
-    it('returns false instead of throwing on a network failure', async () => {
-        vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
-
-        await expect(
-            downloadAssignmentSebConfig({ supabaseUrl: 'https://sb.example', code: 'abc123xyzQ' }, 'Unit 3')
-        ).resolves.toBe(false);
-    });
-});
-
 describe('downloadSebConfig', () => {
     beforeEach(() => {
         vi.mocked(saveAs).mockClear();
@@ -180,22 +128,24 @@ describe('downloadSebConfigForAssignment', () => {
         vi.unstubAllGlobals();
     });
 
-    it('uses the server config when the assignment has an endpoint', async () => {
-        const fetchMock = vi.fn().mockResolvedValue({ ok: true, blob: async () => new Blob(['server']) });
+    it('fetches the server-built .seb for the assignment code and saves it', async () => {
+        const blob = new Blob(['seb']);
+        const fetchMock = vi.fn().mockResolvedValue({ ok: true, blob: async () => blob });
         vi.stubGlobal('fetch', fetchMock);
 
         await downloadSebConfigForAssignment({
-            endpoint: { supabaseUrl: 'https://sb.example', code: 'abc123xyzQ' },
+            endpoint: { supabaseUrl: 'https://sb.example/', code: 'abc123xyzQ', apikey: 'anon-key' },
             startUrl: 'https://app/#/test/abc',
-            fileName: 'Unit 3',
+            fileName: 'Unit 3 — Test',
         });
 
-        expect(fetchMock).toHaveBeenCalledOnce();
-        expect(saveAs).toHaveBeenCalledOnce();
-        expect(vi.mocked(saveAs).mock.calls[0][1]).toBe('unit-3.seb');
+        expect(fetchMock).toHaveBeenCalledWith('https://sb.example/functions/v1/get-seb-config?code=abc123xyzQ', {
+            headers: { apikey: 'anon-key', Authorization: 'Bearer anon-key' },
+        });
+        expect(saveAs).toHaveBeenCalledWith(blob, 'unit-3-test.seb');
     });
 
-    it('falls back to the local config when the server cannot serve one', async () => {
+    it('falls back to the local config when the server refuses', async () => {
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, blob: async () => new Blob([]) }));
 
         await downloadSebConfigForAssignment({
@@ -208,6 +158,19 @@ describe('downloadSebConfigForAssignment', () => {
         expect(vi.mocked(saveAs).mock.calls[0][1]).toBe('unit-3.seb');
         const block = gunzipSync(await savedBytes());
         expect(new TextDecoder().decode(block.subarray(0, 4))).toBe('plnd');
+    });
+
+    it('falls back to the local config on a network failure', async () => {
+        vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+
+        await expect(
+            downloadSebConfigForAssignment({
+                endpoint: { supabaseUrl: 'https://sb.example', code: 'abc123xyzQ' },
+                startUrl: 'https://app/#/test/abc',
+                fileName: 'Unit 3',
+            })
+        ).resolves.toBeUndefined();
+        expect(saveAs).toHaveBeenCalledOnce();
     });
 
     it('generates locally without a request when there is no endpoint', async () => {

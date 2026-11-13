@@ -29,7 +29,12 @@ const MemoizedEssayEditor = React.memo(EssayEditor);
 const DEFAULT_ESSAY_CONTENT_LANG = 'en';
 import { decodeEssayAssignment } from '../utils/shareCode';
 import { encodeEssaySubmission } from '../utils/shareCode';
-import { downloadSebConfigForAssignment, isRunningInSEB, quitSafeExamBrowser } from '../utils/sebConfig';
+import {
+    buildSebQuitUrl,
+    downloadSebConfigForAssignment,
+    isRunningInSEB,
+    quitSafeExamBrowser,
+} from '../utils/sebConfig';
 import { countWords } from '../utils/essayUtils';
 import { nanoid } from '../utils/nanoid';
 import { useLiveSessionTelemetry } from '../hooks/useLiveSessionTelemetry';
@@ -268,6 +273,7 @@ export default function StudentEssayPage() {
     // SEB detection is user-agent sniffing only — a tech-savvy student can spoof it.
     // It is a deterrent, not a hard enforcement mechanism.
     const isInSEB = isRunningInSEB();
+    const sebExitUrl = buildSebQuitUrl();
     const draftKey = DRAFT_KEY_PREFIX + (code ?? '');
 
     // Auth state (only used in DB mode)
@@ -510,10 +516,11 @@ export default function StudentEssayPage() {
         if (isInSEB) {
             copyText(legacyCode);
             setTimeout(() => {
-                quitSafeExamBrowser();
+                quitSafeExamBrowser(sebExitUrl);
             }, 1500);
         }
     }, [
+        sebExitUrl,
         assignment,
         html,
         draftKey,
@@ -557,12 +564,12 @@ export default function StudentEssayPage() {
         setCopied(true);
         if (isInSEB) {
             setTimeout(() => {
-                quitSafeExamBrowser();
+                quitSafeExamBrowser(sebExitUrl);
             }, 800);
         } else {
             setTimeout(() => setCopied(false), 2500);
         }
-    }, [submissionCode, isInSEB]);
+    }, [submissionCode, isInSEB, sebExitUrl]);
 
     // Prefer the server-built config (identical on every device); fall back to a local one when
     // the app is running offline or the assignment cannot serve it.
@@ -1021,7 +1028,7 @@ export default function StudentEssayPage() {
                             {isInSEB && (
                                 <button
                                     type="button"
-                                    onClick={() => quitSafeExamBrowser()}
+                                    onClick={() => quitSafeExamBrowser(sebExitUrl)}
                                     className="btn btn-secondary"
                                     style={{ marginTop: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}
                                 >

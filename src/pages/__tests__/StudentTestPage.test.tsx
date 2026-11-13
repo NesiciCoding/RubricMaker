@@ -45,7 +45,13 @@ vi.mock('../../services/database/TestAdapter', () => ({
     },
 }));
 
+vi.mock('../../utils/sebConfig', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../utils/sebConfig')>();
+    return { ...actual, quitSafeExamBrowser: vi.fn() };
+});
+
 import StudentTestPage from '../StudentTestPage';
+import { buildSebQuitUrl, quitSafeExamBrowser } from '../../utils/sebConfig';
 
 const makeTest = (overrides: Partial<Test> = {}): Test => ({
     id: 'test1',
@@ -630,5 +636,41 @@ describe('StudentTestPage — DB mode (TestAdapter, short-code link)', () => {
         // Falls back to the legacy code textarea so the student isn't stuck.
         const textarea = screen.getByDisplayValue(/.+/) as HTMLTextAreaElement;
         expect(decodeTestSubmission(textarea.value)).not.toBeNull();
+    });
+});
+
+describe('StudentTestPage — SEB quit button', () => {
+    const originalUserAgent = window.navigator.userAgent;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        localStorage.clear();
+        sessionStorage.clear();
+        Object.defineProperty(window.navigator, 'userAgent', {
+            value: 'Mozilla/5.0 (X11; Linux x86_64) SEB 3.10.2',
+            configurable: true,
+        });
+    });
+
+    afterEach(() => {
+        Object.defineProperty(window.navigator, 'userAgent', { value: originalUserAgent, configurable: true });
+        vi.restoreAllMocks();
+    });
+
+    it('offers a manual quit on the submitted screen that navigates to the quit URL', async () => {
+        renderPage(makeAssignment());
+
+        fireEvent.click(screen.getByRole('radio', { name: '4' }));
+        fireEvent.click(screen.getByText('tests.taking.next'));
+        fireEvent.change(screen.getByPlaceholderText('tests.taking.open_answer_placeholder'), {
+            target: { value: 'Autumn.' },
+        });
+        await act(async () => {
+            fireEvent.click(screen.getByText('tests.taking.submit_btn'));
+        });
+
+        fireEvent.click(screen.getByRole('button', { name: 'tests.taking.seb_quit' }));
+
+        expect(quitSafeExamBrowser).toHaveBeenCalledWith(buildSebQuitUrl());
     });
 });

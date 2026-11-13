@@ -17,7 +17,7 @@ import {
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { decodeTestAssignment } from '../utils/shareCode';
-import { quitSafeExamBrowser } from '../utils/sebConfig';
+import { buildSebQuitUrl, quitSafeExamBrowser } from '../utils/sebConfig';
 import { useSebQuitRedirect } from '../hooks/useSebQuitRedirect';
 import { encodeTestSubmission } from '../utils/shareCode';
 import { nanoid } from '../utils/nanoid';
@@ -1091,7 +1091,7 @@ export default function StudentTestPage() {
                             {inSeb && (
                                 <button
                                     type="button"
-                                    onClick={() => quitSafeExamBrowser()}
+                                    onClick={() => quitSafeExamBrowser(buildSebQuitUrl())}
                                     className="btn btn-secondary"
                                     style={{ marginTop: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}
                                 >
