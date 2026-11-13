@@ -16,8 +16,8 @@ test.describe('Grading task assignment', () => {
         appPage,
         seedStorage,
     }) => {
-        const cls = buildClass({ id: 'class-task-1', name: 'Task Class' });
         const rubric = buildRubric({ id: 'rubric-task-1', name: 'Task Rubric' });
+        const cls = buildClass({ id: 'class-task-1', name: 'Task Class', rubricIds: [rubric.id] });
         const student = buildStudent(cls.id, { id: 'student-task-1', name: 'Ungraded Student' });
         await seedStorage({
             rm_classes: [cls],

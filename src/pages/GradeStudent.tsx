@@ -586,7 +586,7 @@ function GradeStudentEditor() {
         if (nextStudent) {
             navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}`, { replace: true });
         } else {
-            navigate(-1);
+            navigate(`/rubrics/${rubricId}/grade`);
         }
     }, [
         readOnly,
@@ -1050,6 +1050,7 @@ function GradeStudentEditor() {
               .map((other) => students.find((s) => s.id === other.studentId)?.name)
               .filter((name): name is string => Boolean(name))
         : [];
+    const groupName = existingSR?.groupId ? existingSR.groupName : undefined;
 
     return (
         <>
@@ -1064,7 +1065,9 @@ function GradeStudentEditor() {
                 title={`${t('gradeStudent.title_prefix')} ${student.name}`}
                 actions={
                     <>
-                        <button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)}>
+                        {/* Always the rubric's grading queue: one named destination that survives a
+                            bookmark, a shared link or a refreshed tab, where navigate(-1) did not. */}
+                        <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/rubrics/${rubricId}/grade`)}>
                             <ArrowLeft size={15} /> {t('gradeStudent.action_back')}
                         </button>
                         {voice.isListening && (
@@ -1199,7 +1202,12 @@ function GradeStudentEditor() {
                             background: 'var(--bg-elevated)',
                         }}
                     >
-                        {t('gradeStudent.group_grade_banner', { names: groupMemberNames.join(', ') })}
+                        {groupName
+                            ? t('gradeStudent.group_grade_banner_named', {
+                                  name: groupName,
+                                  names: groupMemberNames.join(', '),
+                              })
+                            : t('gradeStudent.group_grade_banner', { names: groupMemberNames.join(', ') })}
                     </div>
                 )}
 
@@ -2320,7 +2328,7 @@ function GradeStudentEditor() {
                         deleteStudentRubric(existingSR.id, 'student');
                         setShowDeleteGrade(false);
                         allowNavigation();
-                        navigate(-1);
+                        navigate(`/rubrics/${rubricId}/grade`);
                     }}
                 />
             )}
@@ -2364,7 +2372,7 @@ function GradeStudentEditor() {
                                     deleteStudentRubric(existingSR.id, deleteGradeScope);
                                     setShowDeleteGrade(false);
                                     allowNavigation();
-                                    navigate(-1);
+                                    navigate(`/rubrics/${rubricId}/grade`);
                                 }}
                             >
                                 {t('common.delete')}

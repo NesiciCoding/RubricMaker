@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { saveAs } from 'file-saver';
 import { CSV_UNPARSE_OPTIONS } from '../utils/csvOptions';
 import { csvDate, downloadCsv, uniqueColumnLabels } from '../utils/csvDownload';
@@ -156,7 +157,12 @@ export default function ExportPage() {
 
     const { showToast } = useToast();
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
-    const [selectedRubricId, setSelectedRubricId] = useState(rubrics[0]?.id ?? '');
+    // ?rubric= carries the rubric the teacher opened this page for (card/editor/queue); without it
+    // the page would silently export whichever rubric happens to sort first.
+    const [searchParams] = useSearchParams();
+    const rubricParam = searchParams.get('rubric');
+    const classParam = searchParams.get('class');
+    const [selectedRubricId, setSelectedRubricId] = useState(rubricParam ?? rubrics[0]?.id ?? '');
     // useRubricPool's colleague rubrics arrive asynchronously, after this state's initial value is
     // already locked in — a co-teacher with no own rubrics would otherwise be stuck on '' forever,
     // even once their only selectable rubric (a colleague's) loads. Recomputed every render instead.
@@ -188,7 +194,7 @@ export default function ExportPage() {
 
     // ── Period report state ────────────────────────────────────────────────────
     // F15: start on the globally selected class so Export agrees with the Topbar selector.
-    const [reportClassId, setReportClassId] = useState(settings.activeClassId ?? '');
+    const [reportClassId, setReportClassId] = useState(classParam ?? settings.activeClassId ?? '');
     const [reportStudentIds, setReportStudentIds] = useState<Set<string>>(new Set());
     const [reportDateFrom, setReportDateFrom] = useState('');
     const [reportDateTo, setReportDateTo] = useState('');
@@ -239,7 +245,9 @@ export default function ExportPage() {
                 summary: r ? calcGradeSummary(sr, r.criteria, scale, r) : null,
             };
         })
-        .filter((x) => x.student && x.summary);
+        // ?class= narrows the rubric's rows to the class the link was about, so "Select all" and the
+        // CSV/PDF/DOCX exports can't pull in another class that happens to hold the same rubric.
+        .filter((x) => x.student && x.summary && (!classParam || x.student.classId === classParam));
 
     function toggleStudent(id: string) {
         setSelectedStudentIds((prev) => {

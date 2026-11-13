@@ -511,16 +511,22 @@ describe('StudentsPage extended', () => {
 
     it('opens the grade menu, toggles it shut, and navigates to grading', () => {
         renderPage();
-        const gradeBtn = screen.getAllByRole('button', { name: /studentsPage\.grade_prefix/ })[0];
-        fireEvent.click(gradeBtn);
+        const menuBtn = screen.getAllByRole('button', { name: 'studentsPage.grade_choose_rubric' })[0];
+        fireEvent.click(menuBtn);
         const menu = screen.getByRole('menu');
         expect(within(menu).getByText('Essay Rubric')).toBeInTheDocument();
         // Toggling the button again closes the menu.
-        fireEvent.click(gradeBtn);
+        fireEvent.click(menuBtn);
         expect(screen.queryByRole('menu')).not.toBeInTheDocument();
         // Re-open and navigate.
-        fireEvent.click(gradeBtn);
+        fireEvent.click(menuBtn);
         fireEvent.click(within(screen.getByRole('menu')).getByText('Essay Rubric'));
+        expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s1');
+    });
+
+    it('repeats the class’s last-used rubric from the one-click grade button', () => {
+        renderPage();
+        fireEvent.click(screen.getAllByRole('button', { name: /studentsPage\.grade_prefix/ })[0]);
         expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s1');
     });
 
@@ -1170,7 +1176,7 @@ describe('StudentsPage extended', () => {
         mockAppValue.studentRubrics = [...studentRubricsArr, mkSr('sr-shared', 's1', 'rG', '2024-05-01T00:00:00Z')];
         renderPage();
 
-        fireEvent.click(screen.getAllByRole('button', { name: /studentsPage\.grade_prefix/ })[0]);
+        fireEvent.click(screen.getAllByRole('button', { name: 'studentsPage.grade_choose_rubric' })[0]);
         const menu = screen.getByRole('menu');
         expect(within(menu).getByText('Colleague Linked')).toBeInTheDocument();
         expect(within(menu).getByText('Colleague Graded')).toBeInTheDocument();

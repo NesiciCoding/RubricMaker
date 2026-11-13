@@ -31,19 +31,19 @@ test.describe('Activity Dashboard', () => {
         const page = new ActivityDashboardPage(appPage);
         await page.goto();
 
-        // Not yet linked: 0 of 1 student submitted, "Link" offered.
-        await expect(page.cell('Matrix Rubric')).toContainText('0/1');
+        // Not yet linked: the cell offers "Link" instead of progress until it is linked.
         await expect(page.cell('Matrix Rubric').getByRole('button', { name: 'Link' })).toBeVisible();
 
         await page.toggleLink('Matrix Rubric');
+        await expect(page.cell('Matrix Rubric')).toContainText('0/1');
         await expect(page.cell('Matrix Rubric').getByRole('button', { name: 'Unlink' })).toBeVisible({
             timeout: 5_000,
         });
     });
 
     test('a graded student is reflected in the submission count', async ({ appPage, seedStorage }) => {
-        const cls = buildClass({ id: 'class-ad-2', name: 'Graded Class' });
         const rubric = buildRubric({ id: 'rubric-ad-2', name: 'Graded Rubric' });
+        const cls = buildClass({ id: 'class-ad-2', name: 'Graded Class', rubricIds: [rubric.id] });
         const student = buildStudent(cls.id, { id: 'student-ad-2', name: 'Graded Student' });
         const studentRubric = buildStudentRubric(rubric, student);
         await seedStorage({
@@ -68,8 +68,8 @@ test.describe('Activity Dashboard', () => {
         const page = new ActivityDashboardPage(appPage);
         await page.goto();
 
-        // "Jaar 1 Class" also matches option text in the sidebar's Active-class select and
-        // the Standards Coverage select — scope to the matrix's own column header.
+        // "Jaar 1 Class" also matches option text in the sidebar's Active-class select —
+        // scope to the matrix's own column header.
         const year1Header = appPage.getByRole('columnheader', { name: /Jaar 1 Class/ });
         const year2Header = appPage.getByRole('columnheader', { name: /Jaar 2 Class/ });
         await expect(year1Header).toBeVisible();

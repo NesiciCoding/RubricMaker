@@ -111,8 +111,10 @@ describe('modal usage', () => {
         // Batch 1 (#533): six raw overlays became <Modal>, which is what gives them the focus
         // trap, Escape and focus restoration they never had.
         ['pages/StudentsPage.tsx', 7], // add-student + the six migrated dialogs
-        // Batch 2: differentiate + share on the rubric list, assign on the dashboard.
-        ['pages/RubricList.tsx', 4],
+        // Batch 2: differentiate + share on the rubric list, assign on the dashboard. The group
+        // grade dialog moved to components/Rubric/GroupGradeModal (also <Modal>-based) so the
+        // card, editor and grading queue share it.
+        ['pages/RubricList.tsx', 3],
         ['pages/ActivityDashboardPage.tsx', 1],
         // Batch 3: preview, standards picker and sync on the builder, standards on the question editor.
         ['pages/RubricBuilder.tsx', 5],

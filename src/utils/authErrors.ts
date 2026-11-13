@@ -7,6 +7,10 @@ const AUTH_ERROR_KEYS: Record<string, string> = {
     user_banned: 'auth.errors.user_banned',
     over_request_rate_limit: 'auth.errors.rate_limited',
     over_email_send_rate_limit: 'auth.errors.rate_limited',
+    weak_password: 'auth.errors.weak_password',
+    same_password: 'auth.errors.same_password',
+    reauthentication_needed: 'auth.errors.reauthentication_needed',
+    session_not_found: 'auth.errors.session_expired',
 };
 
 export function authErrorKey(code: string | undefined): string | null {

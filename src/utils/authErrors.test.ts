@@ -9,6 +9,10 @@ describe('authErrorKey', () => {
         expect(authErrorKey('user_banned')).toBe('auth.errors.user_banned');
         expect(authErrorKey('over_request_rate_limit')).toBe('auth.errors.rate_limited');
         expect(authErrorKey('over_email_send_rate_limit')).toBe('auth.errors.rate_limited');
+        expect(authErrorKey('weak_password')).toBe('auth.errors.weak_password');
+        expect(authErrorKey('same_password')).toBe('auth.errors.same_password');
+        expect(authErrorKey('reauthentication_needed')).toBe('auth.errors.reauthentication_needed');
+        expect(authErrorKey('session_not_found')).toBe('auth.errors.session_expired');
     });
 
     it('returns null for unknown or missing codes', () => {
