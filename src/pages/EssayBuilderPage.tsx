@@ -496,6 +496,16 @@ export default function EssayBuilderPage() {
                                                     ? t('essays.submission_status_submitted')
                                                     : t('essays.submission_status_pending')}
                                             </span>
+                                            {row.rubricId && (
+                                                <Link
+                                                    to={`/rubrics/${row.rubricId}/grade/${row.studentId}`}
+                                                    className="btn btn-secondary btn-sm"
+                                                    title={t('essays.action_grade_with_rubric')}
+                                                >
+                                                    <FileText size={14} />
+                                                    {t('essays.action_grade_with_rubric')}
+                                                </Link>
+                                            )}
                                             <button
                                                 className="btn btn-ghost btn-icon btn-sm"
                                                 title={t('essays.copy_link')}

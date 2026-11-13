@@ -29,10 +29,12 @@ const mockSettings: AppSettings = {
     language: 'en',
     accentColor: '#3b82f6',
     defaultFormat: DEFAULT_FORMAT,
+    activityDashboardCompact: false,
 };
 
 const mockUpdateClass = vi.fn();
 const mockUpdateRubric = vi.fn();
+const mockUpdateSettings = vi.fn();
 const mockAddGradingTasks = vi.fn();
 const mockDeleteGradingTask = vi.fn();
 
@@ -51,6 +53,7 @@ const mockAppValue = {
     studentRubrics: emptyArr,
     studentTests: emptyArr,
     settings: mockSettings,
+    gradeScales: emptyArr,
     updateClass: mockUpdateClass,
     addEssayAssignments: vi.fn(),
     updateRubric: mockUpdateRubric,
@@ -59,6 +62,7 @@ const mockAppValue = {
     gradingTasks: emptyArr,
     addGradingTasks: mockAddGradingTasks,
     deleteGradingTask: mockDeleteGradingTask,
+    updateSettings: mockUpdateSettings,
 };
 
 vi.mock('../../context/AppContext', () => ({
@@ -96,10 +100,6 @@ vi.mock('@hello-pangea/dnd', () => ({
 vi.mock('react-joyride', () => ({
     Joyride: () => null,
     STATUS: { FINISHED: 'finished', SKIPPED: 'skipped' },
-}));
-
-vi.mock('../../components/Standards/ClassCoverageGapPanel', () => ({
-    default: () => null,
 }));
 
 vi.mock('react-i18next', () => ({
@@ -150,10 +150,18 @@ describe('ActivityDashboardPage', () => {
         expect(screen.getByText('activityDashboard.section_rubrics')).toBeInTheDocument();
     });
 
-    it('renders coverage section title when class exists', () => {
+    it('renders the year summary below the grid, closed by default', () => {
+        const { container } = renderPage();
+        expect(screen.getByText('activityDashboard.summary_title')).toBeInTheDocument();
+        expect(container.querySelector('details.ad-summary')).not.toHaveAttribute('open');
+    });
+
+    it('remembers the compact density choice through settings', () => {
         renderPage();
-        // visibleClasses includes Class A so coverage section renders.
-        expect(screen.getAllByText('activityDashboard.coverage_title').length).toBeGreaterThan(0);
+        fireEvent.click(screen.getByText('activityDashboard.compact'));
+        expect(mockUpdateSettings).toHaveBeenCalledWith({ activityDashboardCompact: true });
+        fireEvent.click(screen.getByText('activityDashboard.comfortable'));
+        expect(mockUpdateSettings).toHaveBeenCalledWith({ activityDashboardCompact: false });
     });
 
     it('opens the assign-task modal when assign button is clicked', () => {

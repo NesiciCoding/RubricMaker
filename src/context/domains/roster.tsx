@@ -8,7 +8,15 @@ import {
     isOffline,
     useContextOrThrow,
 } from '../storeCore';
-import type { Attachment, Class, ComparativeMatchup, ScoreEntry, Student, StudentRubric } from '../../types';
+import type {
+    Attachment,
+    Class,
+    ComparativeMatchup,
+    RubricCriterion,
+    ScoreEntry,
+    Student,
+    StudentRubric,
+} from '../../types';
 import { StoreData } from '../../store/storage';
 import { nanoid } from '../../utils/nanoid';
 import { loadDb } from '../../services/database/lazyDb';
@@ -41,6 +49,7 @@ export type RosterValue = Pick<
     | 'saveRubricSelfAssessment'
     | 'createStudentRubric'
     | 'createGroupStudentRubrics'
+    | 'updateStudentGroup'
     | 'deleteStudentRubric'
     | 'restoreStudentRubric'
     | 'addAttachment'
@@ -80,6 +89,7 @@ export type GradingValue = Pick<
     | 'saveRubricSelfAssessment'
     | 'createStudentRubric'
     | 'createGroupStudentRubrics'
+    | 'updateStudentGroup'
     | 'deleteStudentRubric'
     | 'restoreStudentRubric'
     | 'addAttachment'
@@ -105,6 +115,7 @@ export type RosterActions = Pick<
     | 'saveRubricSelfAssessment'
     | 'createStudentRubric'
     | 'createGroupStudentRubrics'
+    | 'updateStudentGroup'
     | 'deleteStudentRubric'
     | 'restoreStudentRubric'
     | 'addAttachment'
@@ -194,38 +205,101 @@ export function createRosterActions(ctx: StoreActionsCtx): RosterActions {
         dispatch({ type: 'SAVE_STUDENT_RUBRIC', payload: sr });
         return sr;
     };
-    const createGroupStudentRubrics = (rubricId: string, studentIds: string[]): StudentRubric[] => {
-        const rubric = getState().rubrics.find((r) => r.id === rubricId);
-        const entries: ScoreEntry[] = (rubric?.criteria ?? []).map((c) => ({
-            criterionId: c.id,
-            levelId: null,
-            comment: '',
-            checkedSubItems: [],
-        }));
-        const groupId = nanoid();
+    // Shared body of "create a group" and "edit a group": every selected student ends up in
+    // `groupId` with the same name, an existing grade keeps its own scores, and members of the
+    // groups involved who were left out are ungrouped.
+    const applyStudentGroup = (
+        rubricId: string,
+        studentIds: string[],
+        groupId: string,
+        groupName: string | undefined,
+        staleGroupIds: string[] = [],
+        providedCriteria?: RubricCriterion[]
+    ): StudentRubric[] => {
+        // An editable shared rubric lives outside the local collection, so its criteria arrive from
+        // the caller: without them new group records would be created with no entries at all.
+        const criteria = getState().rubrics.find((r) => r.id === rubricId)?.criteria ?? providedCriteria ?? [];
+        const blankEntries = (): ScoreEntry[] =>
+            criteria.map((c) => ({
+                criterionId: c.id,
+                levelId: null,
+                comment: '',
+                checkedSubItems: [],
+            }));
+        const existingByStudent = new Map<string, StudentRubric>();
+        for (const sr of getState().studentRubrics) {
+            if (sr.rubricId !== rubricId || sr.isPeerReview) continue;
+            // A live record outranks a soft-deleted one for the same student (restoring an older
+            // grade after deleting its replacement leaves both); grouping the deleted row would
+            // bring it back alongside the live grade.
+            const current = existingByStudent.get(sr.studentId);
+            if (!current || (current.deletedAt && !sr.deletedAt)) existingByStudent.set(sr.studentId, sr);
+        }
+        const previousGroupIds = new Set(staleGroupIds);
+        // No explicit name means "keep whatever this group was called before".
+        const previousName = studentIds
+            .map((studentId) => existingByStudent.get(studentId))
+            .find((sr) => sr?.groupId && sr.groupName)?.groupName;
+        const nextName = groupName === undefined ? previousName : groupName.trim() || undefined;
         const srs = studentIds.map((studentId): StudentRubric => {
-            const existing = getState().studentRubrics.find(
-                (sr) => sr.rubricId === rubricId && sr.studentId === studentId && !sr.isPeerReview
-            );
-            return {
-                ...existing,
-                id: existing?.id ?? nanoid(),
-                rubricId,
-                studentId,
-                entries: entries.map((e) => ({ ...e })),
-                overallComment: '',
-                isPeerReview: false,
-                groupId,
-                gradedBy: undefined,
-                gradedAt: undefined,
-                submittedAt: undefined,
-                notHandedIn: undefined,
-                round: undefined,
-                deletedAt: undefined,
-            };
+            const existing = existingByStudent.get(studentId);
+            if (existing?.groupId) previousGroupIds.add(existing.groupId);
+            // Grouping only adds a group id and name: an existing grade keeps its scores, comment
+            // and gradedAt. Rebuilding the entry list here used to blank a student's grade just
+            // for being added to a group.
+            return existing
+                ? {
+                      ...existing,
+                      rubricId,
+                      studentId,
+                      isPeerReview: false,
+                      groupId,
+                      groupName: nextName,
+                      deletedAt: undefined,
+                  }
+                : {
+                      id: nanoid(),
+                      rubricId,
+                      studentId,
+                      entries: blankEntries(),
+                      overallComment: '',
+                      isPeerReview: false,
+                      groupId,
+                      groupName: nextName,
+                  };
         });
-        srs.forEach((sr) => dispatch({ type: 'SAVE_STUDENT_RUBRIC', payload: sr }));
+        // Members dropped from a group they used to share must stop fanning grades into it; their
+        // stale groupId would otherwise keep propagating scores from a group they are no longer in.
+        const selected = new Set(studentIds);
+        const droppedMembers = getState().studentRubrics.filter(
+            (sr) =>
+                !!sr.groupId &&
+                previousGroupIds.has(sr.groupId) &&
+                sr.rubricId === rubricId &&
+                !sr.isPeerReview &&
+                !selected.has(sr.studentId)
+        );
+        dispatch({
+            type: 'GROUP_STUDENT_RUBRICS',
+            payload: [...srs, ...droppedMembers.map((sr) => ({ ...sr, groupId: undefined, groupName: undefined }))],
+        });
         return srs;
+    };
+    const createGroupStudentRubrics = (
+        rubricId: string,
+        studentIds: string[],
+        groupName?: string,
+        criteria?: RubricCriterion[]
+    ): StudentRubric[] => applyStudentGroup(rubricId, studentIds, nanoid(), groupName, [], criteria);
+    // Editing keeps the group's id (and its name unless renamed), so the teacher's grouping survives
+    // a membership change instead of looking like a brand-new group.
+    const updateStudentGroup = (groupId: string, studentIds: string[], groupName?: string): StudentRubric[] => {
+        const member = getState().studentRubrics.find((sr) => sr.groupId === groupId && !sr.isPeerReview);
+        /* v8 ignore next -- the edit form only opens from a live group row */
+        if (!member) return [];
+        // No rename requested: keep the name the group already carries, even when every new member
+        // is fresh (the name only lives on the members being replaced).
+        return applyStudentGroup(member.rubricId, studentIds, groupId, groupName ?? member.groupName, [groupId]);
     };
     const deleteStudentRubric = (id: string, scope: 'student' | 'group') => {
         logAuditEvent('grade', 'student_rubric_delete', 'student_rubric', id, { scope });
@@ -297,6 +371,7 @@ export function createRosterActions(ctx: StoreActionsCtx): RosterActions {
         saveRubricSelfAssessment,
         createStudentRubric,
         createGroupStudentRubrics,
+        updateStudentGroup,
         deleteStudentRubric,
         restoreStudentRubric,
         addAttachment,
@@ -364,6 +439,7 @@ export function useRosterValue(
             saveRubricSelfAssessment: actions.saveRubricSelfAssessment,
             createStudentRubric: actions.createStudentRubric,
             createGroupStudentRubrics: actions.createGroupStudentRubrics,
+            updateStudentGroup: actions.updateStudentGroup,
             deleteStudentRubric: actions.deleteStudentRubric,
             restoreStudentRubric: actions.restoreStudentRubric,
             addAttachment: actions.addAttachment,

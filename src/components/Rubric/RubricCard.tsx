@@ -1,5 +1,4 @@
-import { memo, useState } from 'react';
-import { flushSync } from 'react-dom';
+import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     Edit2,
@@ -15,6 +14,9 @@ import {
     Users2,
     ExternalLink,
     UsersRound,
+    BarChart3,
+    Download,
+    UserRoundCheck,
 } from 'lucide-react';
 import { Draggable } from '@hello-pangea/dnd';
 import type { MaterialSharing, Rubric, Student } from '../../types';
@@ -23,6 +25,7 @@ import FolderLocationBadge from '../Folders/FolderLocationBadge';
 import SharingBadge from '../Sharing/SharingBadge';
 import CardTile from '../ui/CardTile';
 import CardGrip from '../ui/CardGrip';
+import SpeakingStudentMenu from './SpeakingStudentMenu';
 import { encodeRubricShareCode } from '../../utils/rubricImport';
 
 export interface RubricCardActions {
@@ -34,9 +37,12 @@ export interface RubricCardActions {
     onCopyShareCode: (id: string) => void;
     onSharePreview: (id: string) => void;
     onOpenShareModal: (id: string, name: string) => void;
-    onGradeStudents: () => void;
+    onGradeStudents: (id: string) => void;
     onCompare: (id: string) => void;
     onGroupGrade: (rubric: Rubric) => void;
+    onPeerReview: (id: string) => void;
+    onStatistics: (id: string) => void;
+    onExport: (id: string) => void;
     onSpeakingSelect: (rubricId: string, studentId: string) => void;
 }
 
@@ -60,59 +66,6 @@ interface RubricCardProps {
     folderLabel?: string;
     /** Effective sharing (own, folder or default); a badge shows when it is not private. */
     sharing?: MaterialSharing;
-}
-
-// The per-card speaking-session picker used to map every student into an <option> for all 300+
-// cards on first render, whether or not a teacher ever opened it. Options are built lazily, on
-// the first time the control is actually interacted with — flushSync so a mousedown-triggered
-// native dropdown open sees the options that same tick (#670).
-function SpeakingSessionSelect({
-    rubricId,
-    classStudents,
-    onSelect,
-}: {
-    rubricId: string;
-    classStudents: Student[];
-    onSelect: (rubricId: string, studentId: string) => void;
-}) {
-    const { t } = useTranslation();
-    const [opened, setOpened] = useState(false);
-    const reveal = () => {
-        if (!opened) flushSync(() => setOpened(true));
-    };
-    return (
-        <div style={{ position: 'relative', flex: '1 1 auto' }}>
-            <select
-                value=""
-                aria-label={t('rubricList.speaking_select_student')}
-                onMouseDown={reveal}
-                onFocus={reveal}
-                onChange={(e) => {
-                    if (e.target.value) onSelect(rubricId, e.target.value);
-                }}
-                style={{
-                    width: '100%',
-                    padding: '5px 8px',
-                    borderRadius: 6,
-                    border: '1px solid var(--border)',
-                    background: 'var(--bg-elevated)',
-                    color: 'var(--text)',
-                    fontSize: '0.8rem',
-                    cursor: 'pointer',
-                }}
-            >
-                <option value="" disabled>
-                    {t('rubricList.speaking_select_student')}
-                </option>
-                {opened &&
-                    classStudents.map((s) => (
-                        <option key={s.id} value={s.id}>
-                            {s.name}
-                        </option>
-                    ))}
-            </select>
-        </div>
-    );
 }
 
 /** One rubric card in the grid view. Memoized so editing unrelated state on the page (search,
@@ -347,7 +300,7 @@ function RubricCard({
                             <button
                                 className="btn btn-secondary btn-sm"
                                 style={{ flex: '1 1 auto' }}
-                                onClick={() => actions.onGradeStudents()}
+                                onClick={() => actions.onGradeStudents(rubric.id)}
                             >
                                 <Users size={14} /> {t('rubricList.grade_students')}
                             </button>
@@ -372,12 +325,45 @@ function RubricCard({
                             </button>
                             {/* Speaking session launcher */}
                             {classStudents.length > 0 && (
-                                <SpeakingSessionSelect
+                                <SpeakingStudentMenu
                                     rubricId={rubric.id}
-                                    classStudents={classStudents}
+                                    students={classStudents}
                                     onSelect={actions.onSpeakingSelect}
                                 />
                             )}
+                            <button
+                                className="btn btn-ghost btn-icon btn-sm"
+                                title={t('rubricList.action_peer_review')}
+                                aria-label={t('rubricList.action_peer_review')}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    actions.onPeerReview(rubric.id);
+                                }}
+                            >
+                                <UserRoundCheck size={14} />
+                            </button>
+                            <button
+                                className="btn btn-ghost btn-icon btn-sm"
+                                title={t('rubricList.action_statistics')}
+                                aria-label={t('rubricList.action_statistics')}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    actions.onStatistics(rubric.id);
+                                }}
+                            >
+                                <BarChart3 size={14} />
+                            </button>
+                            <button
+                                className="btn btn-ghost btn-icon btn-sm"
+                                title={t('rubricList.action_export')}
+                                aria-label={t('rubricList.action_export')}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    actions.onExport(rubric.id);
+                                }}
+                            >
+                                <Download size={14} />
+                            </button>
                         </div>
                     </div>
                 </CardTile>
