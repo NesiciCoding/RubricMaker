@@ -137,6 +137,30 @@ export default function LiveWritingSessionPage() {
         };
     }, [adapter, isNew, sessionId]);
 
+    // The projector drives the phases, so the console re-reads the session when it regains focus
+    // instead of showing the draft/lobby it loaded on mount.
+    const refreshSession = useCallback(async () => {
+        if (!adapter || isNew || !sessionId) return;
+        try {
+            setSession(await adapter.getSession(sessionId));
+        } catch {
+            // Keep the last good session; the next focus or action retries.
+        }
+    }, [adapter, isNew, sessionId]);
+
+    useEffect(() => {
+        if (!adapter || isNew || !sessionId) return;
+        const onVisible = () => {
+            if (document.visibilityState === 'visible') void refreshSession();
+        };
+        window.addEventListener('focus', onVisible);
+        document.addEventListener('visibilitychange', onVisible);
+        return () => {
+            window.removeEventListener('focus', onVisible);
+            document.removeEventListener('visibilitychange', onVisible);
+        };
+    }, [adapter, isNew, sessionId, refreshSession]);
+
     const refreshParticipants = useCallback(async () => {
         if (!adapter || !session) return;
         try {
