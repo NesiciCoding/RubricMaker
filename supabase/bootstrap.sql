@@ -8981,7 +8981,14 @@ BEGIN
         RAISE EXCEPTION 'invalid_estimate';
     END IF;
 
-    IF p_content_html IS NOT NULL THEN
+    -- The deadline already froze the last autosaved draft; text sent after it is not accepted.
+    IF p_content_html IS NOT NULL
+        AND NOT (
+            v_session.timer_state = 'running'
+            AND v_session.timer_ends_at IS NOT NULL
+            AND v_session.timer_ends_at <= now()
+        )
+    THEN
         v_words := public.live_writing_word_count(p_content_html);
         v_estimate := CASE WHEN v_words >= 25 THEN p_cefr_estimate ELSE NULL END;
 
