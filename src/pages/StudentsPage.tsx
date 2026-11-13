@@ -66,6 +66,7 @@ import type {
     StudentTest,
 } from '../types';
 import Avatar from '../components/ui/Avatar';
+import DropdownMenu from '../components/ui/DropdownMenu';
 import ToggleChipGroup from '../components/ui/ToggleChipGroup';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import { getCefrStudentOverview, skillLevelStatus, type CefrLevelStatus } from '../utils/cefrStudentAggregator';
@@ -484,6 +485,7 @@ export default function StudentsPage() {
     const classMenuOpen = classMenu?.id ?? null;
     const classMenuTarget = classes.find((c) => c.id === classMenu?.id);
     const [gradeMenuOpen, setGradeMenuOpen] = useState<string | null>(null);
+    const gradeMenuAnchorRef = useRef<HTMLButtonElement | null>(null);
 
     // Class Management Modal States
     const [renameClassId, setRenameClassId] = useState<string | null>(null);
@@ -1451,13 +1453,17 @@ export default function StudentsPage() {
                                                                 display: 'flex',
                                                                 gap: 6,
                                                                 flexWrap: 'wrap',
-                                                                position: 'relative',
                                                             }}
                                                         >
                                                             {studentRubricList.length > 0 && (
-                                                                <div style={{ position: 'relative' }}>
+                                                                <>
                                                                     <button
                                                                         type="button"
+                                                                        ref={
+                                                                            gradeMenuOpen === s.id
+                                                                                ? gradeMenuAnchorRef
+                                                                                : undefined
+                                                                        }
                                                                         className="btn btn-primary btn-sm"
                                                                         aria-haspopup="menu"
                                                                         aria-expanded={gradeMenuOpen === s.id}
@@ -1470,44 +1476,35 @@ export default function StudentsPage() {
                                                                     >
                                                                         {t('studentsPage.grade_prefix')} ▾
                                                                     </button>
-                                                                    {gradeMenuOpen === s.id && (
-                                                                        <div
-                                                                            className="card"
-                                                                            role="menu"
-                                                                            style={{
-                                                                                position: 'absolute',
-                                                                                left: 0,
-                                                                                top: '100%',
-                                                                                zIndex: 10,
-                                                                                padding: 4,
-                                                                                minWidth: 180,
-                                                                                boxShadow: 'var(--shadow-lg)',
-                                                                            }}
-                                                                            onClick={(e) => e.stopPropagation()}
-                                                                        >
-                                                                            {studentRubricList.map((r) => (
-                                                                                <button
-                                                                                    key={r.id}
-                                                                                    type="button"
-                                                                                    role="menuitem"
-                                                                                    className="btn btn-ghost btn-sm"
-                                                                                    style={{
-                                                                                        width: '100%',
-                                                                                        justifyContent: 'flex-start',
-                                                                                    }}
-                                                                                    onClick={() => {
-                                                                                        setGradeMenuOpen(null);
-                                                                                        navigate(
-                                                                                            `/rubrics/${r.id}/grade/${s.id}`
-                                                                                        );
-                                                                                    }}
-                                                                                >
-                                                                                    {r.name}
-                                                                                </button>
-                                                                            ))}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
+                                                                    <DropdownMenu
+                                                                        open={gradeMenuOpen === s.id}
+                                                                        onClose={() => setGradeMenuOpen(null)}
+                                                                        anchorRef={gradeMenuAnchorRef}
+                                                                        minWidth={180}
+                                                                        ariaLabel={t('studentsPage.grade_prefix')}
+                                                                    >
+                                                                        {studentRubricList.map((r) => (
+                                                                            <button
+                                                                                key={r.id}
+                                                                                type="button"
+                                                                                role="menuitem"
+                                                                                className="btn btn-ghost btn-sm"
+                                                                                style={{
+                                                                                    width: '100%',
+                                                                                    justifyContent: 'flex-start',
+                                                                                }}
+                                                                                onClick={() => {
+                                                                                    setGradeMenuOpen(null);
+                                                                                    navigate(
+                                                                                        `/rubrics/${r.id}/grade/${s.id}`
+                                                                                    );
+                                                                                }}
+                                                                            >
+                                                                                {r.name}
+                                                                            </button>
+                                                                        ))}
+                                                                    </DropdownMenu>
+                                                                </>
                                                             )}
                                                             <button
                                                                 type="button"
