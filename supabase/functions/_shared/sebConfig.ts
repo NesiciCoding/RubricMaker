@@ -53,7 +53,7 @@ export function sebFileSlug(value: string | null | undefined, fallback: string):
 /** Builds the settings plist for one assignment. */
 export function renderSebConfigXml({ startUrl, appBase }: { startUrl: string; appBase: string }): string {
     const quitUrl = escapeXml(sebQuitUrl(appBase));
-    const filterExpression = escapeXml(`${appBase}/.*`);
+    const filterExpression = escapeXml(`${appBase}/*`);
     return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">

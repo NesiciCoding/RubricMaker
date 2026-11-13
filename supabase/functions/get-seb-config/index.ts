@@ -69,7 +69,7 @@ serve(async (req) => {
     }
     if (!assignment.require_seb) return failure('This assignment does not require Safe Exam Browser', 409);
 
-    const appBase = normalizeAppBase(Deno.env.get('APP_URL')) ?? normalizeAppBase(req.headers.get('Origin'));
+    const appBase = normalizeAppBase(Deno.env.get('APP_URL'));
     if (!appBase) return failure('APP_URL is not configured on the server', 500);
 
     const startUrl = sebStartUrl(appBase, kind, code);

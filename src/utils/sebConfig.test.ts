@@ -51,7 +51,7 @@ describe('shared SEB config renderer (used by the client and get-seb-config)', (
         expect(xml).toContain('<?xml version="1.0" encoding="UTF-8"?>');
         expect(xml).toContain(`<string>${base}/#/essay/abc123</string>`);
         expect(xml).toContain(`<string>${base}/?seb-done=1</string>`);
-        expect(xml).toContain(`<string>${base}/.*</string>`);
+        expect(xml).toContain(`<string>${base}/*</string>`);
         expect(xml).toContain('<key>allowQuit</key>\n\t<false/>');
         // Content requests must stay unfiltered or Supabase auth/data calls fail inside SEB.
         expect(xml).toContain('<key>URLFilterEnableContentFilter</key>\n\t<false/>');
