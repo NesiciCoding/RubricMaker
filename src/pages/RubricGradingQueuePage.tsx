@@ -26,6 +26,7 @@ export default function RubricGradingQueuePage() {
     const { rubrics } = useRubricPool(ownRubrics);
 
     const [search, setSearch] = useState('');
+    const [groupFilter, setGroupFilter] = useState<string | null>(null);
     const [groupModalOpen, setGroupModalOpen] = useState(false);
     const [editingGroup, setEditingGroup] = useState<{
         groupId: string;
@@ -68,6 +69,14 @@ export default function RubricGradingQueuePage() {
 
     const classById = useMemo(() => new Map(classes.map((c) => [c.id, c])), [classes]);
     const studentById = useMemo(() => new Map(students.map((s) => [s.id, s])), [students]);
+    const rosterIds = useMemo(() => new Set(roster.map((s) => s.id)), [roster]);
+    const groupMembers = useMemo(() => new Map(groups.map((g) => [g.groupId, new Set(g.memberIds)])), [groups]);
+    // A group whose members all sit outside this rubric's roster cannot be filtered to, so it is not
+    // offered as a chip even though it still exists on the rubric.
+    const groupChips = useMemo(
+        () => groups.filter((g) => g.memberIds.some((id) => rosterIds.has(id))),
+        [groups, rosterIds]
+    );
     const isGraded = (id: string) => {
         const sr = gradeByStudent.get(id);
         return !!sr && (!!sr.gradedAt || sr.entries.some((e) => e.levelId !== null));
@@ -76,11 +85,12 @@ export default function RubricGradingQueuePage() {
     const gradedCount = roster.filter((s) => isGraded(s.id)).length;
 
     const visible = useMemo(() => {
-        if (!search.trim()) return roster;
-        return roster.filter((s) =>
+        const scoped = groupFilter ? roster.filter((s) => groupMembers.get(groupFilter)?.has(s.id)) : roster;
+        if (!search.trim()) return scoped;
+        return scoped.filter((s) =>
             matchesSearch(search, s.name, classById.get(s.classId ?? '')?.name, gradeByStudent.get(s.id)?.groupName)
         );
-    }, [roster, search, classById, gradeByStudent]);
+    }, [roster, search, groupFilter, groupMembers, classById, gradeByStudent]);
 
     // The picker stays inside the queue's own roster: a group drawn from another class would hold
     // members this page never lists, while the students who do appear stay unavailable to group.
@@ -214,6 +224,40 @@ export default function RubricGradingQueuePage() {
                         {t('rubricQueue.progress', { graded: gradedCount, total: roster.length })}
                     </span>
                 </div>
+
+                {(groupChips.length > 0 || groupFilter !== null) && (
+                    <div
+                        role="group"
+                        aria-label={t('gradingQueue.filter_label')}
+                        style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}
+                    >
+                        <button
+                            type="button"
+                            className={`btn btn-sm ${groupFilter === null ? 'btn-primary' : 'btn-secondary'}`}
+                            aria-pressed={groupFilter === null}
+                            onClick={() => setGroupFilter(null)}
+                        >
+                            {t('common.all')}
+                        </button>
+                        {groupChips.map((group) => {
+                            const members = group.memberIds.filter((id) => rosterIds.has(id));
+                            const graded = members.filter((id) => isGraded(id)).length;
+                            const active = groupFilter === group.groupId;
+                            return (
+                                <button
+                                    key={group.groupId}
+                                    type="button"
+                                    className={`btn btn-sm ${active ? 'btn-primary' : 'btn-secondary'}`}
+                                    aria-pressed={active}
+                                    title={t('rubricQueue.progress', { graded, total: members.length })}
+                                    onClick={() => setGroupFilter(active ? null : group.groupId)}
+                                >
+                                    {group.name || t('rubricQueue.group_unnamed')} · {graded}/{members.length}
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
 
                 {roster.length === 0 ? (
                     <EmptyState

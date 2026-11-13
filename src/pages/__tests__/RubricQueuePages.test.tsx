@@ -207,6 +207,41 @@ describe('rubric grading queue and peer-review roster', () => {
         );
     });
 
+    it('filters the queue to one group, showing how much of it is graded, and back to everyone', () => {
+        mockAppValue.studentRubrics = [
+            { ...gradedSr, studentId: 's1', groupId: 'g1', groupName: 'Group 3' },
+            { ...gradedSr, studentId: 's3', groupId: 'g1', groupName: 'Group 3' },
+            { ...notHandedInSr, studentId: 's2', groupId: 'g2', groupName: 'Group 4' },
+        ];
+        renderAt('/rubrics/r1/grade', <QueuePage />, '/rubrics/:rubricId/grade');
+        const inTable = (name: string) => within(screen.getByRole('table')).queryByText(name);
+
+        const chip = screen.getByRole('button', { name: /Group 3 · 2\/2/ });
+        expect(chip).toHaveAttribute('aria-pressed', 'false');
+
+        fireEvent.click(chip);
+        expect(chip).toHaveAttribute('aria-pressed', 'true');
+        expect(inTable('Alice')).toBeInTheDocument();
+        expect(inTable('Cara')).toBeInTheDocument();
+        expect(inTable('Bob')).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: 'common.all' }));
+        expect(inTable('Bob')).toBeInTheDocument();
+    });
+
+    it('narrows a group filter further with the search box', () => {
+        mockAppValue.studentRubrics = [
+            { ...gradedSr, studentId: 's1', groupId: 'g1', groupName: 'Group 3' },
+            { ...gradedSr, studentId: 's3', groupId: 'g1', groupName: 'Group 3' },
+        ];
+        renderAt('/rubrics/r1/grade', <QueuePage />, '/rubrics/:rubricId/grade');
+
+        fireEvent.click(screen.getByRole('button', { name: /Group 3/ }));
+        fireEvent.change(screen.getByLabelText('rubricQueue.search'), { target: { value: 'bob' } });
+
+        expect(screen.getByText('gradingQueue.no_matches')).toBeInTheDocument();
+    });
+
     it('shows a group badge on grouped students', () => {
         mockAppValue.studentRubrics = [{ ...gradedSr, groupId: 'g1', groupName: 'Group 3' }, notHandedInSr];
         renderAt('/rubrics/r1/grade', <QueuePage />, '/rubrics/:rubricId/grade');
