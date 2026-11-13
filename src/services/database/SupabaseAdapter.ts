@@ -205,6 +205,14 @@ export class SupabaseAdapter {
         return error ? { error: error.message, code: error.code } : {};
     }
 
+    /** Lets a signed-in (non-anonymous) user add or change their own password, so they can skip OTP email next time. */
+    async updateMyPassword(password: string): Promise<{ error?: string; code?: string }> {
+        if (!this.client) return { error: 'Not connected' };
+        if (this.userIsAnonymous) return { error: 'Not signed in' };
+        const { error } = await this.client.auth.updateUser({ password });
+        return error ? { error: error.message, code: error.code } : {};
+    }
+
     /**
      * Set (or reset) the login password for one of this teacher's own students, via the
      * set-student-password edge function — writing auth.users requires the service-role

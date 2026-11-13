@@ -282,6 +282,127 @@ describe('AppContext', () => {
         expect(new Set(result.current.studentRubrics.map((sr) => sr.studentId))).toEqual(new Set(['s1', 's2', 's3']));
     });
 
+    it('should keep each student’s existing grade when they are added to a group', () => {
+        const { result } = renderHook(() => ({ ...useRoster(), ...useAuthoring(), ...useSettings() }), { wrapper });
+        act(() => {
+            result.current.addRubric({
+                name: 'Group Project',
+                subject: '',
+                description: '',
+                criteria: [{ id: 'c1', title: 'C1', description: '', weight: 100, levels: [] }],
+                gradeScaleId: 'default-scale',
+                format: result.current.settings.defaultFormat,
+                attachmentIds: [],
+                totalMaxPoints: 100,
+                scoringMode: 'total-points',
+            });
+        });
+        const rubricId = result.current.rubrics[0].id;
+
+        let alice: ReturnType<typeof result.current.createStudentRubric> | undefined;
+        act(() => {
+            alice = result.current.createStudentRubric(rubricId, 's1');
+        });
+        act(() => {
+            result.current.saveStudentRubric({
+                ...alice!,
+                entries: [{ criterionId: 'c1', levelId: 'l4', comment: 'Top marks', checkedSubItems: [] }],
+                overallComment: 'Excellent',
+                gradedAt: '2026-01-01T10:00:00.000Z',
+            });
+        });
+
+        act(() => {
+            result.current.createGroupStudentRubrics(rubricId, ['s1', 's2']);
+        });
+
+        const groupedAlice = result.current.studentRubrics.find((sr) => sr.studentId === 's1')!;
+        expect(groupedAlice.entries[0].levelId).toBe('l4');
+        expect(groupedAlice.entries[0].comment).toBe('Top marks');
+        expect(groupedAlice.overallComment).toBe('Excellent');
+        expect(groupedAlice.gradedAt).toBe('2026-01-01T10:00:00.000Z');
+        expect(groupedAlice.groupId).toBeTruthy();
+        // Grouping keeps Alice's grade rather than fanning it onto the new blank member.
+        const bob = result.current.studentRubrics.find((sr) => sr.studentId === 's2')!;
+        expect(bob.entries[0].levelId).toBeNull();
+    });
+
+    it('should ungroup members left out when a group is rebuilt', () => {
+        const { result } = renderHook(() => ({ ...useRoster(), ...useAuthoring() }), { wrapper });
+        act(() => {
+            result.current.addRubric({
+                name: 'Group Project',
+                subject: '',
+                description: '',
+                criteria: [{ id: 'c1', title: 'C1', description: '', weight: 100, levels: [] }],
+                gradeScaleId: 'default-scale',
+                format: { showLevelDescriptions: true } as never,
+                attachmentIds: [],
+                totalMaxPoints: 100,
+                scoringMode: 'total-points',
+            });
+        });
+        const rubricId = result.current.rubrics[0].id;
+
+        act(() => {
+            result.current.createGroupStudentRubrics(rubricId, ['s1', 's2', 's3']);
+        });
+        let rebuilt: ReturnType<typeof result.current.createGroupStudentRubrics> = [];
+        act(() => {
+            rebuilt = result.current.createGroupStudentRubrics(rubricId, ['s1', 's2']);
+        });
+
+        const s3 = result.current.studentRubrics.find((sr) => sr.studentId === 's3')!;
+        expect(s3.groupId).toBeUndefined();
+        expect(rebuilt).toHaveLength(2);
+        expect(new Set(rebuilt.map((sr) => sr.groupId)).size).toBe(1);
+    });
+
+    it('should store a group name and carry it through a membership edit', () => {
+        const { result } = renderHook(() => ({ ...useRoster(), ...useAuthoring(), ...useSettings() }), { wrapper });
+        act(() => {
+            result.current.addRubric({
+                name: 'Group Project',
+                subject: '',
+                description: '',
+                criteria: [{ id: 'c1', title: 'C1', description: '', weight: 100, levels: [] }],
+                gradeScaleId: 'default-scale',
+                format: result.current.settings.defaultFormat,
+                attachmentIds: [],
+                totalMaxPoints: 100,
+                scoringMode: 'total-points',
+            });
+        });
+        const rubricId = result.current.rubrics[0].id;
+
+        let created: ReturnType<typeof result.current.createGroupStudentRubrics> = [];
+        act(() => {
+            created = result.current.createGroupStudentRubrics(rubricId, ['s1', 's2'], 'Group 3');
+        });
+        expect(created.every((sr) => sr.groupName === 'Group 3')).toBe(true);
+        const groupId = created[0].groupId!;
+
+        act(() => {
+            result.current.updateStudentGroup(groupId, ['s1', 's2', 's3'], 'Group 3 — Plastic');
+        });
+        const members = result.current.studentRubrics.filter((sr) => sr.groupId === groupId);
+        expect(members.map((m) => m.studentId).sort()).toEqual(['s1', 's2', 's3']);
+        expect(members.every((m) => m.groupName === 'Group 3 — Plastic')).toBe(true);
+
+        // Dropping members keeps the group's identity and name; the leavers are fully ungrouped.
+        act(() => {
+            result.current.updateStudentGroup(groupId, ['s1']);
+        });
+        const remaining = result.current.studentRubrics.filter((sr) => sr.groupId === groupId);
+        expect(remaining.map((m) => m.studentId)).toEqual(['s1']);
+        expect(remaining[0].groupName).toBe('Group 3 — Plastic');
+        for (const studentId of ['s2', 's3']) {
+            const dropped = result.current.studentRubrics.find((sr) => sr.studentId === studentId)!;
+            expect(dropped.groupId).toBeUndefined();
+            expect(dropped.groupName).toBeUndefined();
+        }
+    });
+
     it('should only fan out collaborative criteria in group grading, leaving individually-scoped criteria per student', () => {
         const { result } = renderHook(() => ({ ...useRoster(), ...useAuthoring(), ...useSettings() }), { wrapper });
         act(() => {

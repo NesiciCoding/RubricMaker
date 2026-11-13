@@ -23,7 +23,7 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
     const [error, setError] = useState('');
     const [done, setDone] = useState(false);
 
-    // Student login via teacher-issued password — the alternative when OTP email
+    // Password login (teacher-issued for students, admin-set for teachers) — the alternative when OTP email
     // delivery is unreliable (school spam filters, low default send limits).
     const [studentLoginOpen, setStudentLoginOpen] = useState(false);
     const [studentEmail, setStudentEmail] = useState('');
@@ -343,9 +343,9 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
                 </div>
             )}
 
-            {/* Student login (password) — bypasses OTP email entirely, for schools where
-                Supabase's default email delivery is blocked or delayed. The teacher issues
-                this password from the Students page. */}
+            {/* Password login — bypasses OTP email entirely, for schools where
+                Supabase's default email delivery is blocked or delayed. Students get theirs from the
+                Students page; teacher passwords are set by an admin in Supabase. */}
             <button
                 style={{
                     ...btnBase,
@@ -359,7 +359,7 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
                 onClick={() => setStudentLoginOpen((o) => !o)}
             >
                 <KeyRound size={16} />
-                {t('auth.student_login_password')}
+                {t('auth.sign_in_with_password')}
                 {studentLoginOpen ? (
                     <ChevronUp size={14} style={{ marginLeft: 'auto' }} />
                 ) : (
