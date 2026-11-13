@@ -84,16 +84,18 @@ describe('Sidebar', () => {
         expect(screen.getByText('sidebar.domain_library')).toBeInTheDocument();
     });
 
-    it('shows the Overview domain sub-items by default at /', () => {
+    it('shows the Overview domain sub-items, including Activity Dashboard, by default at /', () => {
         renderSidebar('/');
         expect(screen.getByText('navigation.dashboard')).toBeInTheDocument();
+        expect(screen.getByText('navigation.activity_dashboard')).toBeInTheDocument();
     });
 
-    it('shows the Insights domain sub-items including Activity Dashboard', () => {
+    it('shows Activity Dashboard under Overview, not Insights', () => {
         renderSidebar('/activity-dashboard');
-        expect(screen.getByText('navigation.statistics')).toBeInTheDocument();
-        expect(screen.getByText('navigation.export')).toBeInTheDocument();
         expect(screen.getByText('navigation.activity_dashboard')).toBeInTheDocument();
+        expect(screen.getByText('navigation.dashboard')).toBeInTheDocument();
+        expect(screen.queryByText('navigation.statistics')).not.toBeInTheDocument();
+        expect(screen.queryByText('navigation.export')).not.toBeInTheDocument();
     });
 
     it('shows moderation under Assessments and messages under Students', () => {

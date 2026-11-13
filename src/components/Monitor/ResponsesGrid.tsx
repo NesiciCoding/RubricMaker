@@ -354,7 +354,7 @@ export default function ResponsesGrid({
 
     return (
         <>
-            <div style={{ overflowX: 'auto' }}>
+            <div style={{ overflowX: 'auto', flexShrink: 0 }}>
                 <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: '0.85rem' }}>
                     <thead>
                         <tr>
