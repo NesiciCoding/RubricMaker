@@ -3,17 +3,20 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Copy, ImagePlus, MonitorPlay, RefreshCw, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
+import LiveWritingFinalsPanel from '../components/LiveWriting/LiveWritingFinalsPanel';
 import LiveWritingVotingPanel from '../components/LiveWriting/LiveWritingVotingPanel';
-import { useClasses } from '../context/AppContext';
+import { useAuthoring, useClasses } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { LiveWritingAdapter, type LiveWritingSessionInput } from '../services/database/LiveWritingAdapter';
 import type {
+    LiveWritingFinalText,
     LiveWritingParticipant,
     LiveWritingRoundLogEntry,
     LiveWritingSession,
     LiveWritingSessionStatus,
     LiveWritingVoteResult,
 } from '../types';
+import { promptToHtml } from '../utils/exportDataPrep';
 import { liveWritingJoinLink, liveWritingStatusKey } from '../utils/liveWriting';
 
 interface DraftState {
@@ -96,6 +99,7 @@ export default function LiveWritingSessionPage() {
     const navigate = useNavigate();
     const { showToast } = useToast();
     const { classes } = useClasses();
+    const { rubrics } = useAuthoring();
     const adapter = useMemo(() => LiveWritingAdapter.forTeacher(), []);
     const isNew = !sessionId || sessionId === 'new';
 
@@ -110,6 +114,12 @@ export default function LiveWritingSessionPage() {
     const [roundLog, setRoundLog] = useState<LiveWritingRoundLogEntry[]>([]);
     const [voteBusy, setVoteBusy] = useState(false);
     const [voteFailed, setVoteFailed] = useState(false);
+    const [finals, setFinals] = useState<LiveWritingFinalText[]>([]);
+    const [finalsBusy, setFinalsBusy] = useState(false);
+    const [finalsFailed, setFinalsFailed] = useState(false);
+    const [finalsSendingIds, setFinalsSendingIds] = useState<Set<string>>(new Set());
+    const [finalsSendingAll, setFinalsSendingAll] = useState(false);
+    const [finalsRubricId, setFinalsRubricId] = useState('');
 
     useEffect(() => {
         if (!isNew) return;
@@ -216,6 +226,131 @@ export default function LiveWritingSessionPage() {
         return () => clearInterval(timer);
     }, [session, refreshVoting]);
 
+    const availableRubrics = useMemo(() => rubrics.filter((rubric) => !rubric.archivedAt), [rubrics]);
+
+    useEffect(() => {
+        if (!finalsRubricId && availableRubrics.length > 0) setFinalsRubricId(availableRubrics[0].id);
+    }, [availableRubrics, finalsRubricId]);
+
+    const refreshFinals = useCallback(async () => {
+        if (!adapter || !session) return;
+        try {
+            setFinals(await adapter.getFinals(session.id, session.currentRound));
+            setFinalsFailed(false);
+        } catch {
+            setFinalsFailed(true);
+        }
+    }, [adapter, session]);
+
+    useEffect(() => {
+        if (!session || (session.status !== 'finals' && session.status !== 'closed')) {
+            setFinals([]);
+            return;
+        }
+        void refreshFinals();
+        const timer = setInterval(() => void refreshFinals(), 5000);
+        return () => clearInterval(timer);
+    }, [session, refreshFinals]);
+
+    async function toggleFinalHidden(text: LiveWritingFinalText) {
+        if (!adapter || !session) return;
+        setFinalsBusy(true);
+        try {
+            await adapter.setFinalHidden(session.id, session.currentRound, text.participantId, !text.hidden);
+            await refreshFinals();
+            showToast(
+                t(text.hidden ? 'liveWriting.finals_unhidden_toast' : 'liveWriting.finals_hidden_toast'),
+                'success'
+            );
+        } catch {
+            showToast(t('liveWriting.finals_action_failed'), 'error');
+        } finally {
+            setFinalsBusy(false);
+        }
+    }
+
+    async function replaceFinalText(text: LiveWritingFinalText, replacementText: string) {
+        if (!adapter || !session) return;
+        setFinalsBusy(true);
+        try {
+            await adapter.replaceFinalText(
+                session.id,
+                session.currentRound,
+                text.participantId,
+                promptToHtml(replacementText)
+            );
+            await refreshFinals();
+            showToast(t('liveWriting.finals_replaced_toast'), 'success');
+        } catch {
+            showToast(t('liveWriting.finals_action_failed'), 'error');
+        } finally {
+            setFinalsBusy(false);
+        }
+    }
+
+    async function sendFinalToGrading(text: LiveWritingFinalText): Promise<boolean> {
+        if (!adapter || !session || !finalsRubricId) return false;
+        setFinalsSendingIds((current) => new Set(current).add(text.participantId));
+        try {
+            await adapter.sendFinalTextToGrading(session, text, finalsRubricId);
+            return true;
+        } catch {
+            return false;
+        } finally {
+            setFinalsSendingIds((current) => {
+                const next = new Set(current);
+                next.delete(text.participantId);
+                return next;
+            });
+        }
+    }
+
+    async function sendOneFinal(text: LiveWritingFinalText) {
+        if (!adapter || !session) return;
+        setFinalsBusy(true);
+        const ok = await sendFinalToGrading(text);
+        await refreshFinals();
+        setFinalsBusy(false);
+        showToast(
+            t(ok ? 'liveWriting.finals_sent_toast' : 'liveWriting.finals_action_failed'),
+            ok ? 'success' : 'error'
+        );
+    }
+
+    async function sendAllFinals(texts: LiveWritingFinalText[]) {
+        if (!adapter || !session || texts.length === 0) return;
+        setFinalsSendingAll(true);
+        let sent = 0;
+        for (const text of texts) {
+            if (await sendFinalToGrading(text)) sent += 1;
+        }
+        await refreshFinals();
+        setFinalsSendingAll(false);
+        showToast(
+            t(sent === texts.length ? 'liveWriting.finals_sent_all_toast' : 'liveWriting.finals_send_partial_toast', {
+                sent,
+                total: texts.length,
+            }),
+            sent === texts.length ? 'success' : 'error'
+        );
+    }
+
+    async function startAnotherRound() {
+        if (!adapter || !session) return;
+        setFinalsBusy(true);
+        try {
+            await adapter.startRound(session.id, session.currentRound + 1);
+            const updated = await adapter.getSession(session.id);
+            setSession(updated);
+            setDraft(draftFromSession(updated));
+            showToast(t('liveWriting.finals_next_round_toast'), 'success');
+        } catch {
+            showToast(t('liveWriting.finals_action_failed'), 'error');
+        } finally {
+            setFinalsBusy(false);
+        }
+    }
+
     async function setVoting(open: boolean) {
         if (!adapter || !session) return;
         setVoteBusy(true);
@@ -226,6 +361,22 @@ export default function LiveWritingSessionPage() {
             setDraft(draftFromSession(updated));
             await refreshVoting();
             showToast(t(open ? 'liveWriting.voting_reopened_toast' : 'liveWriting.voting_closed_toast'), 'success');
+        } catch {
+            showToast(t('liveWriting.projector_action_failed'), 'error');
+        } finally {
+            setVoteBusy(false);
+        }
+    }
+
+    async function showFinals() {
+        if (!adapter || !session) return;
+        setVoteBusy(true);
+        try {
+            await adapter.showFinals(session.id);
+            const updated = await adapter.getSession(session.id);
+            setSession(updated);
+            await refreshFinals();
+            showToast(t('liveWriting.finals_opened_toast'), 'success');
         } catch {
             showToast(t('liveWriting.projector_action_failed'), 'error');
         } finally {
@@ -767,8 +918,29 @@ export default function LiveWritingSessionPage() {
                             failed={voteFailed}
                             onCloseVoting={() => void setVoting(false)}
                             onReopenVoting={() => void setVoting(true)}
+                            onShowFinals={() => void showFinals()}
                         />
                     </div>
+                )}
+                {session && (session.status === 'finals' || session.status === 'closed') && (
+                    <LiveWritingFinalsPanel
+                        roundIndex={session.currentRound}
+                        roundCount={session.roundCount}
+                        status={session.status}
+                        texts={finals}
+                        rubrics={availableRubrics}
+                        rubricId={finalsRubricId}
+                        busy={finalsBusy}
+                        failed={finalsFailed}
+                        sendingParticipantIds={finalsSendingIds}
+                        sendingAll={finalsSendingAll}
+                        onRubricChange={setFinalsRubricId}
+                        onToggleHidden={(text) => void toggleFinalHidden(text)}
+                        onReplace={(text, replacement) => void replaceFinalText(text, replacement)}
+                        onSendToGrading={(text) => void sendOneFinal(text)}
+                        onSendAllToGrading={(texts) => void sendAllFinals(texts)}
+                        onAnotherRound={() => void startAnotherRound()}
+                    />
                 )}
             </div>
         </>

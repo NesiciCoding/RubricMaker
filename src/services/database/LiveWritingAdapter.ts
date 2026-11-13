@@ -3,6 +3,7 @@ import { storageSync } from './StorageSync';
 import { isAllowedSupabaseUrl } from './trustedSupabaseUrl';
 import type {
     CefrLevel,
+    LiveWritingFinalText,
     LiveWritingJoin,
     LiveWritingParticipant,
     LiveWritingRosterEntry,
@@ -233,6 +234,35 @@ function mapVoteResult(row: Row): LiveWritingVoteResult {
         votesReceived: number(row.votes_received),
         hasPair: bool(row.has_pair),
     };
+}
+
+function mapFinalText(row: Row): LiveWritingFinalText {
+    return {
+        participantId: text(row.participant_id),
+        studentId: text(row.student_id),
+        displayName: text(row.display_name, 'Student'),
+        contentHtml: text(row.content_html),
+        wordCount: number(row.word_count),
+        cefrEstimate: optionalText(row.cefr_estimate) as CefrLevel | undefined,
+        selfRating: optionalText(row.self_rating) as LiveWritingSelfRating | undefined,
+        selfNote: optionalText(row.self_note),
+        votesReceived: number(row.votes_received),
+        hidden: bool(row.final_hidden),
+        handedInAt: optionalText(row.handed_in_at),
+        gradingAssignmentId: optionalText(row.grading_assignment_id),
+        gradingSubmissionId: optionalText(row.grading_submission_id),
+    };
+}
+
+function handoffId(prefix: string, sessionId: string, participantId: string, roundIndex?: number): string {
+    const compact = (value: string) =>
+        value
+            .replace(/[^a-z0-9]/gi, '')
+            .slice(0, 12)
+            .toLowerCase();
+    return [prefix, compact(sessionId), compact(participantId), roundIndex === undefined ? '' : `r${roundIndex}`]
+        .filter(Boolean)
+        .join('-');
 }
 
 function mapRoundLog(row: Row): LiveWritingRoundLogEntry {
@@ -513,6 +543,142 @@ export class LiveWritingAdapter {
             p_choice: choice,
         });
         throwIfError(error);
+    }
+
+    async showFinals(sessionId: string): Promise<void> {
+        const { error } = await this.client.rpc('show_live_writing_finals', { p_session_id: sessionId });
+        throwIfError(error);
+    }
+
+    async getFinals(sessionId: string, roundIndex: number): Promise<LiveWritingFinalText[]> {
+        const { data, error } = await this.client.rpc('get_live_writing_finals', {
+            p_session_id: sessionId,
+            p_round_index: roundIndex,
+        });
+        throwIfError(error);
+        return asRows(data).map(mapFinalText);
+    }
+
+    async setFinalHidden(sessionId: string, roundIndex: number, participantId: string, hidden: boolean): Promise<void> {
+        const { error } = await this.client.rpc('set_live_writing_text_hidden', {
+            p_session_id: sessionId,
+            p_round_index: roundIndex,
+            p_participant_id: participantId,
+            p_hidden: hidden,
+        });
+        throwIfError(error);
+    }
+
+    async replaceFinalText(
+        sessionId: string,
+        roundIndex: number,
+        participantId: string,
+        contentHtml: string
+    ): Promise<void> {
+        const { error } = await this.client.rpc('replace_live_writing_final_text', {
+            p_session_id: sessionId,
+            p_round_index: roundIndex,
+            p_participant_id: participantId,
+            p_content_html: contentHtml,
+        });
+        throwIfError(error);
+    }
+
+    /**
+     * Hands one finished text to the ordinary essay pipeline. IDs are deterministic, so pressing
+     * the button twice reuses the same assignment and submission instead of duplicating work.
+     */
+    async sendFinalTextToGrading(
+        session: LiveWritingSession,
+        finalText: LiveWritingFinalText,
+        rubricId: string
+    ): Promise<{ assignmentId: string; submissionId: string }> {
+        if (!rubricId) throw new Error('rubric_required');
+        const { data: userData, error: userError } = await this.client.auth.getUser();
+        throwIfError(userError);
+        if (!userData.user) throw new Error('not_authenticated');
+
+        // The portal lists a submission only when its student_email matches the student's verified
+        // account email, so resolve the roster email instead of leaving the row invisible.
+        const { data: studentRow, error: studentError } = await this.client
+            .from('students')
+            .select('data')
+            .eq('id', finalText.studentId)
+            .maybeSingle();
+        throwIfError(studentError);
+        const studentData = (studentRow?.data ?? {}) as Row;
+        const studentEmail =
+            typeof studentData.email === 'string' && studentData.email.trim() !== '' ? studentData.email.trim() : null;
+
+        const assignmentId = handoffId('lw', session.id, finalText.participantId);
+        const submissionId = handoffId('lw', session.id, finalText.participantId, session.currentRound);
+        const storagePath = `${assignmentId}/${submissionId}.html`;
+
+        const { error: assignmentError } = await this.client.from('essay_assignments').upsert(
+            {
+                id: assignmentId,
+                owner_id: userData.user.id,
+                rubric_id: rubricId,
+                student_id: finalText.studentId,
+                title: session.title.slice(0, 200),
+                prompt: session.prompt,
+                min_words: null,
+                max_words: null,
+                time_limit_minutes: null,
+                require_seb: false,
+                read_only_after_submit: true,
+            },
+            { onConflict: 'id' }
+        );
+        throwIfError(assignmentError);
+
+        const { error: uploadError } = await this.client.storage
+            .from('essays')
+            .upload(storagePath, new Blob([finalText.contentHtml], { type: 'text/html' }), {
+                contentType: 'text/html',
+                upsert: true,
+            });
+        throwIfError(uploadError);
+
+        const { data: existing, error: existingError } = await this.client
+            .from('essay_submissions')
+            .select('id')
+            .eq('id', submissionId)
+            .maybeSingle();
+        throwIfError(existingError);
+        if (existing) {
+            const { error: updateError } = await this.client
+                .from('essay_submissions')
+                .update({
+                    word_count: finalText.wordCount,
+                    storage_path: storagePath,
+                    student_email: studentEmail,
+                })
+                .eq('id', submissionId);
+            throwIfError(updateError);
+        } else {
+            const { error: submissionError } = await this.client.from('essay_submissions').insert({
+                id: submissionId,
+                assignment_id: assignmentId,
+                student_email: studentEmail,
+                student_user_id: null,
+                word_count: finalText.wordCount,
+                storage_path: storagePath,
+            });
+            if (submissionError && submissionError.code !== '23505') {
+                throw new Error(submissionError.message);
+            }
+        }
+
+        const { error: markError } = await this.client.rpc('set_live_writing_grading_handoff', {
+            p_session_id: session.id,
+            p_round_index: session.currentRound,
+            p_participant_id: finalText.participantId,
+            p_assignment_id: assignmentId,
+            p_submission_id: submissionId,
+        });
+        throwIfError(markError);
+        return { assignmentId, submissionId };
     }
 
     async getVoteResults(sessionId: string, roundIndex: number): Promise<LiveWritingVoteResult[]> {

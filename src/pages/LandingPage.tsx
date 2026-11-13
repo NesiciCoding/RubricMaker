@@ -190,7 +190,7 @@ const TEACHER_FEATURES = [
         icon: Radio,
         key: 'live_writing',
         title: 'Live Writing',
-        desc: 'Run a timed writing session with teacher hints, a three-way self-check, and an anonymous peer vote — no accounts and no AI.',
+        desc: 'Run a timed writing session with teacher hints, a three-way self-check and an anonymous peer vote, then reveal, moderate or spotlight the finals. Send every finished text into the ordinary essay rubric with one idempotent action — no accounts and no AI.',
         color: '#ec4899',
     },
 ];
@@ -265,6 +265,13 @@ const STUDENT_FEATURES = [
         title: 'Study Flashcards',
         desc: 'Practice vocabulary decks from your teacher with smart spaced repetition — see the pronunciation on each card, track a progress bar, and watch hard words come back sooner. Make your own private decks too, and share one with your teacher in a tap.',
         color: '#8b5cf6',
+    },
+    {
+        icon: Radio,
+        key: 'live_writing_student',
+        title: 'Live Writing',
+        desc: 'Join a class writing sprint with a code, pick your name, write with the class timer and teacher hints, then self-check and vote on two anonymous texts. No account needed.',
+        color: '#ec4899',
     },
     {
         icon: Newspaper,

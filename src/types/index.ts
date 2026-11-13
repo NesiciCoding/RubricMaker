@@ -2133,6 +2133,22 @@ export interface LiveWritingVoteResult {
     hasPair: boolean;
 }
 
+export interface LiveWritingFinalText {
+    participantId: string;
+    studentId: string;
+    displayName: string;
+    contentHtml: string;
+    wordCount: number;
+    cefrEstimate?: CefrLevel;
+    selfRating?: LiveWritingSelfRating;
+    selfNote?: string;
+    votesReceived: number;
+    hidden: boolean;
+    handedInAt?: string;
+    gradingAssignmentId?: string;
+    gradingSubmissionId?: string;
+}
+
 export type LiveWritingRoundLogAction = 'voting_opened' | 'voting_closed' | 'voting_reopened';
 
 export interface LiveWritingRoundLogEntry {
