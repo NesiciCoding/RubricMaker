@@ -425,7 +425,7 @@ export default function LiveWritingProjectorPage() {
                         </button>
                     </div>
 
-                    {session.showProgressBoard && (
+                    {session.liveLeaderboard && session.showProgressBoard && (
                         <ProgressBoard
                             rows={progress}
                             maxWords={maxWords}
@@ -433,7 +433,7 @@ export default function LiveWritingProjectorPage() {
                             busy={busy}
                         />
                     )}
-                    {!session.showProgressBoard && (
+                    {session.liveLeaderboard && !session.showProgressBoard && (
                         <button
                             type="button"
                             className="btn btn-ghost btn-sm"

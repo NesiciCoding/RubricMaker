@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Lock, RefreshCw, Unlock } from 'lucide-react';
+import { Lock, RefreshCw, Sparkles, Unlock } from 'lucide-react';
 import type { LiveWritingRoundLogEntry, LiveWritingVoteResult } from '../../types';
 import { liveWritingSelfRatingKey } from '../../utils/liveWriting';
 
@@ -12,6 +12,7 @@ interface Props {
     failed: boolean;
     onCloseVoting: () => void;
     onReopenVoting: () => void;
+    onShowFinals: () => void;
 }
 
 function logKey(action: LiveWritingRoundLogEntry['action']): string {
@@ -27,6 +28,7 @@ export default function LiveWritingVotingPanel({
     failed,
     onCloseVoting,
     onReopenVoting,
+    onShowFinals,
 }: Props) {
     const { t } = useTranslation();
     const selfChecks = results.filter((row) => row.selfRating).length;
@@ -68,6 +70,9 @@ export default function LiveWritingVotingPanel({
                             <RefreshCw size={15} /> {t('liveWriting.voting_reopen')}
                         </button>
                     )}
+                    <button type="button" className="btn btn-primary btn-sm" disabled={busy} onClick={onShowFinals}>
+                        <Sparkles size={15} /> {t('liveWriting.voting_show_finals')}
+                    </button>
                     {votesOpen ? <Unlock size={16} className="text-muted" aria-hidden="true" /> : null}
                 </div>
             </div>

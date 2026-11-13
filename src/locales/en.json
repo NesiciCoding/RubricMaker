@@ -6025,6 +6025,8 @@
         "voting_close": "Close voting",
         "voting_reopen": "Reopen voting",
         "voting_reopen_confirm": "Reopen voting? This clears this round's votes and gives every student a new pair of texts.",
+        "voting_show_finals": "Show finals",
+        "finals_opened_toast": "Finals opened",
         "voting_load_failed": "Could not load voting results.",
         "voting_no_results": "No participants have joined this round yet.",
         "voting_student": "Student",

@@ -8540,7 +8540,8 @@ DECLARE
     v_now timestamptz;
 BEGIN
     SELECT * INTO v_session FROM public.live_writing_sessions
-    WHERE id = p_session_id AND owner_id = auth.uid();
+    WHERE id = p_session_id AND owner_id = auth.uid()
+    FOR UPDATE;
     IF NOT FOUND THEN
         RAISE EXCEPTION 'not_session_owner';
     END IF;
@@ -8980,7 +8981,14 @@ BEGIN
         RAISE EXCEPTION 'invalid_estimate';
     END IF;
 
-    IF p_content_html IS NOT NULL THEN
+    -- The deadline already froze the last autosaved draft; text sent after it is not accepted.
+    IF p_content_html IS NOT NULL
+        AND NOT (
+            v_session.timer_state = 'running'
+            AND v_session.timer_ends_at IS NOT NULL
+            AND v_session.timer_ends_at <= now()
+        )
+    THEN
         v_words := public.live_writing_word_count(p_content_html);
         v_estimate := CASE WHEN v_words >= 25 THEN p_cefr_estimate ELSE NULL END;
 
@@ -9703,7 +9711,8 @@ DECLARE
     v_now timestamptz;
 BEGIN
     SELECT * INTO v_session FROM public.live_writing_sessions
-    WHERE id = p_session_id AND owner_id = auth.uid();
+    WHERE id = p_session_id AND owner_id = auth.uid()
+    FOR UPDATE;
     IF NOT FOUND THEN
         RAISE EXCEPTION 'not_session_owner';
     END IF;
@@ -10316,6 +10325,66 @@ BEGIN
     RETURN v_pairs;
 END;
 $$;
+
+create or replace function public.show_live_writing_finals(p_session_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM public.live_writing_sessions
+        WHERE id = p_session_id AND owner_id = auth.uid()
+    ) THEN
+        RAISE EXCEPTION 'not_session_owner';
+    END IF;
+
+    UPDATE public.live_writing_sessions
+    SET status = 'finals',
+        votes_open = false,
+        timer_state = 'ended',
+        timer_ends_at = NULL
+    WHERE id = p_session_id
+      AND status IN ('voting', 'finals');
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'session_not_voting';
+    END IF;
+END;
+$$;
+
+revoke all on function public.show_live_writing_finals(uuid) from public;
+grant execute on function public.show_live_writing_finals(uuid) to authenticated;
+
+-- The grading hand-off inserts and updates a submission as the assignment owner; the existing
+-- insert policy only covered the student's own submission.
+drop policy if exists essay_submissions_teacher_insert on public.essay_submissions;
+create policy essay_submissions_teacher_insert on public.essay_submissions for insert
+    with check (
+        EXISTS (
+            SELECT 1 FROM public.essay_assignments ea
+            WHERE ea.id = essay_submissions.assignment_id
+              AND ea.owner_id = (SELECT auth.uid())
+        )
+    );
+
+drop policy if exists essay_submissions_teacher_update on public.essay_submissions;
+create policy essay_submissions_teacher_update on public.essay_submissions for update
+    using (
+        EXISTS (
+            SELECT 1 FROM public.essay_assignments ea
+            WHERE ea.id = essay_submissions.assignment_id
+              AND ea.owner_id = (SELECT auth.uid())
+        )
+    )
+    with check (
+        EXISTS (
+            SELECT 1 FROM public.essay_assignments ea
+            WHERE ea.id = essay_submissions.assignment_id
+              AND ea.owner_id = (SELECT auth.uid())
+        )
+    );
 
 revoke all on function public.set_live_writing_text_hidden(uuid, int, uuid, boolean) from public;
 revoke all on function public.set_live_writing_grading_handoff(uuid, int, uuid, text, text) from public;

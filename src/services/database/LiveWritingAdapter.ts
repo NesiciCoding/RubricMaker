@@ -509,6 +509,11 @@ export class LiveWritingAdapter {
         throwIfError(error);
     }
 
+    async showFinals(sessionId: string): Promise<void> {
+        const { error } = await this.client.rpc('show_live_writing_finals', { p_session_id: sessionId });
+        throwIfError(error);
+    }
+
     async getFinals(sessionId: string, roundIndex: number): Promise<LiveWritingFinalText[]> {
         const { data, error } = await this.client.rpc('get_live_writing_finals', {
             p_session_id: sessionId,
