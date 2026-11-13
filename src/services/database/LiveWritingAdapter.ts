@@ -598,6 +598,18 @@ export class LiveWritingAdapter {
         throwIfError(userError);
         if (!userData.user) throw new Error('not_authenticated');
 
+        // The portal lists a submission only when its student_email matches the student's verified
+        // account email, so resolve the roster email instead of leaving the row invisible.
+        const { data: studentRow, error: studentError } = await this.client
+            .from('students')
+            .select('data')
+            .eq('id', finalText.studentId)
+            .maybeSingle();
+        throwIfError(studentError);
+        const studentData = (studentRow?.data ?? {}) as Row;
+        const studentEmail =
+            typeof studentData.email === 'string' && studentData.email.trim() !== '' ? studentData.email.trim() : null;
+
         const assignmentId = handoffId('lw', session.id, finalText.participantId);
         const submissionId = handoffId('lw', session.id, finalText.participantId, session.currentRound);
         const storagePath = `${assignmentId}/${submissionId}.html`;
@@ -637,14 +649,18 @@ export class LiveWritingAdapter {
         if (existing) {
             const { error: updateError } = await this.client
                 .from('essay_submissions')
-                .update({ word_count: finalText.wordCount, storage_path: storagePath })
+                .update({
+                    word_count: finalText.wordCount,
+                    storage_path: storagePath,
+                    student_email: studentEmail,
+                })
                 .eq('id', submissionId);
             throwIfError(updateError);
         } else {
             const { error: submissionError } = await this.client.from('essay_submissions').insert({
                 id: submissionId,
                 assignment_id: assignmentId,
-                student_email: null,
+                student_email: studentEmail,
                 student_user_id: null,
                 word_count: finalText.wordCount,
                 storage_path: storagePath,
