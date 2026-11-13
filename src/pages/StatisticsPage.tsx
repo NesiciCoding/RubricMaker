@@ -12,6 +12,7 @@ import {
     ChevronUp,
     SlidersHorizontal,
 } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { BLOOM_LEVELS } from '../data/bloomsTaxonomy';
 import { IB_ATTRIBUTES } from '../data/ibLearnerProfile';
@@ -177,14 +178,21 @@ export default function StatisticsPage() {
         return () => cancelAnimationFrame(id);
     }, [viewMode, filterTrack, filterYear]);
 
+    // ── Deep-linked selections ────────────────────────────────────────────────
+    // The rubric card, editor and grading queue link here with ?rubric= (and ?class=), so the page
+    // opens on the material the teacher was looking at instead of the library's first rubric.
+    const [searchParams] = useSearchParams();
+    const rubricParam = searchParams.get('rubric');
+    const classParam = searchParams.get('class');
+
     // ── Compare mode state ────────────────────────────────────────────────────
     const [compareClassIds, setCompareClassIds] = useState<string[]>([]);
-    const [compareRubricId, setCompareRubricId] = useState(rubrics[0]?.id ?? '');
+    const [compareRubricId, setCompareRubricId] = useState(rubricParam ?? rubrics[0]?.id ?? '');
     const [insightsOpen, setInsightsOpen] = useState(false);
 
     // ── Rubric view state ─────────────────────────────────────────────────────
-    const [selectedRubricId, setSelectedRubricId] = useState(rubrics[0]?.id ?? '');
-    const [selectedClassId, setSelectedClassId] = useState<string>(settings.activeClassId ?? 'all');
+    const [selectedRubricId, setSelectedRubricId] = useState(rubricParam ?? rubrics[0]?.id ?? '');
+    const [selectedClassId, setSelectedClassId] = useState<string>(classParam ?? settings.activeClassId ?? 'all');
     // useRubricPool's colleague rubrics arrive asynchronously, after these states' initial values
     // are already locked in — a co-teacher with no own rubrics would otherwise be stuck on ''
     // forever, even once their only selectable rubric (a colleague's) loads. Recomputed every render.
@@ -199,10 +207,12 @@ export default function StatisticsPage() {
         return getClassWeakWritingCriteria(ids, studentRubrics, rubrics, essayAssignments);
     }, [selectedClassId, students, studentRubrics, rubrics, essayAssignments]);
 
-    // Follow the global Topbar class selector (settings.activeClassId) when it changes elsewhere
+    // Follow the global Topbar class selector (settings.activeClassId) when it changes elsewhere —
+    // unless the page was opened on an explicit ?class=, which is the teacher's own choice.
     useEffect(() => {
+        if (classParam) return;
         setSelectedClassId(settings.activeClassId ?? 'all');
-    }, [settings.activeClassId]);
+    }, [settings.activeClassId, classParam]);
 
     function handleSelectedClassChange(classId: string) {
         setSelectedClassId(classId);

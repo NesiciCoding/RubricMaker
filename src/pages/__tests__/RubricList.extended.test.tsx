@@ -262,10 +262,8 @@ describe('RubricList extended', () => {
 
     it('launches a speaking session for a selected student', () => {
         renderPage();
-        const select = screen.getAllByLabelText('rubricList.speaking_select_student')[0];
-        // The student options are rendered lazily on first interaction (#670).
-        fireEvent.mouseDown(select);
-        fireEvent.change(select, { target: { value: 's1' } });
+        fireEvent.click(screen.getAllByLabelText('rubricList.speaking_select_student')[0]);
+        fireEvent.click(within(screen.getByRole('menu')).getByText('Alice'));
         expect(mockNavigate).toHaveBeenCalledWith('/speaking/r1/s1');
     });
 

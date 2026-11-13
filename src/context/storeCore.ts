@@ -130,6 +130,7 @@ export type Action =
     | { type: 'UPDATE_CLASS'; payload: Class }
     | { type: 'DELETE_CLASS'; id: string }
     | { type: 'SAVE_STUDENT_RUBRIC'; payload: StudentRubric }
+    | { type: 'GROUP_STUDENT_RUBRICS'; payload: StudentRubric[] }
     | { type: 'DELETE_STUDENT_RUBRIC'; id: string; scope: 'student' | 'group' }
     | { type: 'RESTORE_STUDENT_RUBRIC'; id: string }
     | { type: 'SAVE_RUBRIC_SELF_ASSESSMENT'; id: string; levels: Record<string, string | null>; reflection: string }
@@ -464,6 +465,20 @@ export function reducer(state: StoreData, action: Action): StoreData {
                         updatedAt: payload.updatedAt,
                     };
                 });
+            }
+            if (isOffline()) saveStudentRubrics(next);
+            return { ...state, studentRubrics: next };
+        }
+        case 'GROUP_STUDENT_RUBRICS': {
+            // Group creation and reshaping land each row exactly as it should end up: an existing
+            // grade keeps its own scores, only the grouping changes. Deliberately not routed through
+            // SAVE_STUDENT_RUBRIC, whose group fan-out would copy the first member's scores over the
+            // others' existing grades.
+            const now = new Date().toISOString();
+            const changed = new Map(action.payload.map((sr) => [sr.id, { ...sr, updatedAt: now }]));
+            const next = state.studentRubrics.map((sr) => changed.get(sr.id) ?? sr);
+            for (const [id, sr] of changed) {
+                if (!state.studentRubrics.some((existing) => existing.id === id)) next.push(sr);
             }
             if (isOffline()) saveStudentRubrics(next);
             return { ...state, studentRubrics: next };
@@ -1088,7 +1103,9 @@ export interface AppContextValue extends StoreData {
     saveStudentRubric: (sr: StudentRubric) => void;
     saveRubricSelfAssessment: (id: string, levels: Record<string, string | null>, reflection: string) => void;
     createStudentRubric: (rubricId: string, studentId: string) => StudentRubric;
-    createGroupStudentRubrics: (rubricId: string, studentIds: string[]) => StudentRubric[];
+    createGroupStudentRubrics: (rubricId: string, studentIds: string[], groupName?: string) => StudentRubric[];
+    /** Renames a group and/or replaces its members, keeping the group's id and name. */
+    updateStudentGroup: (groupId: string, studentIds: string[], groupName?: string) => StudentRubric[];
     deleteStudentRubric: (id: string, scope: 'student' | 'group') => void;
     restoreStudentRubric: (id: string) => void;
     /** Soft-deleted grades (Phase 15.3), surfaced for a "recently deleted" restore view; excluded from `studentRubrics`. */
