@@ -6031,6 +6031,13 @@
         "student_vote_privacy": "Leerlingen zien nooit stemcijfers of wie op wie heeft gestemd.",
         "student_waiting_after_handin": "Wachten tot je docent het schrijven beëindigt.",
         "student_finals_waiting": "Je docent toont de finale. Kijk naar het bord.",
-        "student_not_handed_in": "Deze ronde eindigde voordat je tekst was ingeleverd. Vraag het je docent."
+        "student_not_handed_in": "Deze ronde eindigde voordat je tekst was ingeleverd. Vraag het je docent.",
+        "image_add": "Afbeelding toevoegen",
+        "image_remove": "Afbeelding verwijderen",
+        "image_uploading": "Uploaden…",
+        "image_hint": "Wordt getoond op het projector en op de pagina van elke leerling. JPG, PNG of WebP, max. 5 MB.",
+        "image_invalid": "Kies een JPG-, PNG- of WebP-afbeelding.",
+        "image_too_large": "Die afbeelding is groter dan 5 MB.",
+        "image_upload_failed": "De afbeelding kon niet worden geüpload."
     }
 }

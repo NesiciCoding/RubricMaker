@@ -6031,6 +6031,13 @@
         "student_vote_privacy": "El alumnado nunca ve recuentos de votos ni quién votó por quién.",
         "student_waiting_after_handin": "Espera a que tu profesor termine la escritura.",
         "student_finals_waiting": "Tu profesor está mostrando la final. Mira la pizarra.",
-        "student_not_handed_in": "Esta ronda terminó antes de que se entregara tu texto. Pregunta a tu profesor."
+        "student_not_handed_in": "Esta ronda terminó antes de que se entregara tu texto. Pregunta a tu profesor.",
+        "image_add": "Añadir imagen",
+        "image_remove": "Quitar imagen",
+        "image_uploading": "Subiendo…",
+        "image_hint": "Se muestra en el proyector y en la página de cada estudiante. JPG, PNG o WebP, 5 MB como máximo.",
+        "image_invalid": "Elige una imagen JPG, PNG o WebP.",
+        "image_too_large": "Esa imagen supera los 5 MB.",
+        "image_upload_failed": "No se pudo subir la imagen."
     }
 }

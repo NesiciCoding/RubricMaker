@@ -6031,6 +6031,13 @@
         "student_vote_privacy": "Students never see vote counts or who voted for whom.",
         "student_waiting_after_handin": "Waiting for your teacher to end writing.",
         "student_finals_waiting": "Your teacher is showing the finals. Watch the board.",
-        "student_not_handed_in": "This round ended before your text was handed in. Ask your teacher."
+        "student_not_handed_in": "This round ended before your text was handed in. Ask your teacher.",
+        "image_add": "Add image",
+        "image_remove": "Remove image",
+        "image_uploading": "Uploading…",
+        "image_hint": "Shown on the projector and on each student's page. JPG, PNG or WebP, up to 5 MB.",
+        "image_invalid": "Choose a JPG, PNG or WebP image.",
+        "image_too_large": "That image is larger than 5 MB.",
+        "image_upload_failed": "The image could not be uploaded."
     }
 }
