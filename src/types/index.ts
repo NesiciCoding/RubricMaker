@@ -1011,6 +1011,10 @@ export interface AppSettings {
     gradeNavigationScope?: 'current-class' | 'rubric-classes';
     /** The teacher's preferred grading-queue direction (By question / By student / Matrix); undefined means Matrix */
     gradeQueueView?: 'question' | 'student' | 'matrix';
+    /** The rubric grading queue's saved layout; undefined means cards. */
+    gradeQueueLayout?: 'cards' | 'list';
+    /** The class the rubric grading queue is scoped to; undefined means all classes. */
+    gradeQueueClassId?: string;
     /** Whether the user has seen the guided UI tutorial */
     hasSeenTutorial?: boolean;
     /** Chart type for the per-criterion statistics panel (on-screen toggle) */
