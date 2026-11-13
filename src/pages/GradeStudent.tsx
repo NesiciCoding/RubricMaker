@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
     ArrowLeft,
     Save,
@@ -111,6 +111,9 @@ function GradeStudentEditor() {
     const { t, i18n } = useTranslation();
     const { rubricId, studentId } = useParams();
     const navigate = useNavigate();
+    // The grading queue carries its own scope here so returning keeps it (see RubricGradingQueuePage).
+    const [searchParams] = useSearchParams();
+    const queueScope = searchParams.get('from');
     const {
         students: allStudents,
         studentRubrics: allStudentRubrics,
@@ -1068,7 +1071,12 @@ function GradeStudentEditor() {
                             <ArrowLeft size={15} /> {t('gradeStudent.action_back')}
                         </button>
                         {/* Jump to another student without leaving the rubric's grading flow. */}
-                        <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/rubrics/${rubricId}/grade`)}>
+                        <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() =>
+                                navigate(`/rubrics/${rubricId}/grade${queueScope ? `?from=${queueScope}` : ''}`)
+                            }
+                        >
                             <Users size={15} /> {t('gradingQueue.all_students')}
                         </button>
                         {voice.isListening && (

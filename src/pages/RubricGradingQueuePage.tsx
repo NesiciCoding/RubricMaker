@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ChevronRight, ListChecks, Search, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
@@ -55,34 +55,50 @@ export default function RubricGradingQueuePage() {
     const [search, setSearch] = useState('');
     const [filter, setFilter] = useState<Filter>('all');
 
+    // The queue's scope has to survive the round trip through the grading screen: opening a student
+    // adopts that student's class as `settings.activeClassId`, so "All students" comes back to a
+    // queue that would otherwise be narrowed to that one class. The scope therefore travels in the
+    // URL (`?from=<classId>` or `?from=all`) and takes precedence over the adopted active class.
+    const [searchParams] = useSearchParams();
+    const scopeParam = searchParams.get('from');
+    const linkedClassIds = useMemo(
+        () => (rubric ? classes.filter((c) => c.rubricIds?.includes(rubric.id)).map((c) => c.id) : []),
+        [classes, rubric]
+    );
+
     // Same scoping as GradeStudent's "next student" walk: the classes this rubric is linked to.
-    // With no linked class, fall back to the class the teacher is currently filtering by, then to
-    // the whole roster — a sprawling school-wide list would be useless as a starting point.
+    // With no linked class, fall back to the scope the queue was opened with, then to the class the
+    // teacher is currently filtering by, then to the whole roster — a sprawling school-wide list
+    // would be useless as a starting point.
     const rows: QueueRow[] = useMemo(() => {
         if (!rubric) return [];
-        const linkedClassIds = classes.filter((c) => c.rubricIds?.includes(rubric.id)).map((c) => c.id);
         let eligible = allStudents.filter((s) => !s.archivedAt);
         if (linkedClassIds.length > 0) {
             eligible = eligible.filter((s) => linkedClassIds.includes(s.classId));
-        } else if (settings.activeClassId) {
-            eligible = eligible.filter((s) => s.classId === settings.activeClassId);
+        } else if (scopeParam !== 'all') {
+            const classId = scopeParam ?? settings.activeClassId;
+            if (classId) eligible = eligible.filter((s) => s.classId === classId);
         }
         const gradeScale = resolveScale(rubric.gradeScaleId, gradeScales, settings.defaultGradeScaleId);
         return [...eligible]
             .sort((a, b) => a.name.localeCompare(b.name))
             .map((student) => {
+                // `gradedAt` is what marks a saved grade; a blank record created by grouping is not
+                // a grade yet. Historical grades keep the rubric they were scored against.
                 const grade = allStudentRubrics.find(
-                    (sr) => sr.rubricId === rubric.id && sr.studentId === student.id && !sr.deletedAt
+                    (sr) => sr.rubricId === rubric.id && sr.studentId === student.id && !sr.deletedAt && !!sr.gradedAt
                 );
+                const gradeRubric = grade?.rubricSnapshot ?? rubric;
                 return {
                     student,
                     grade,
-                    summary: grade ? calcGradeSummary(grade, rubric.criteria, gradeScale, rubric) : undefined,
+                    summary: grade ? calcGradeSummary(grade, gradeRubric.criteria, gradeScale, gradeRubric) : undefined,
                 };
             });
     }, [
         rubric,
-        classes,
+        linkedClassIds,
+        scopeParam,
         allStudents,
         allStudentRubrics,
         gradeScales,
@@ -104,8 +120,10 @@ export default function RubricGradingQueuePage() {
     const firstUngraded = rows.find((row) => !row.grade);
     const showClassColumn = new Set(rows.map((row) => row.student.classId)).size > 1;
 
+    const scopeQuery = linkedClassIds.length > 0 ? '' : `?from=${scopeParam ?? settings.activeClassId ?? 'all'}`;
+
     function openStudent(studentId: string) {
-        navigate(`/rubrics/${rubricId}/grade/${studentId}`);
+        navigate(`/rubrics/${rubricId}/grade/${studentId}${scopeQuery}`);
     }
 
     if (!rubric && rubricLoading) {
