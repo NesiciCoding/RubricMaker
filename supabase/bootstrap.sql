@@ -8540,7 +8540,8 @@ DECLARE
     v_now timestamptz;
 BEGIN
     SELECT * INTO v_session FROM public.live_writing_sessions
-    WHERE id = p_session_id AND owner_id = auth.uid();
+    WHERE id = p_session_id AND owner_id = auth.uid()
+    FOR UPDATE;
     IF NOT FOUND THEN
         RAISE EXCEPTION 'not_session_owner';
     END IF;
