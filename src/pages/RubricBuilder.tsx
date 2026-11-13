@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { flushSync } from 'react-dom';
 import { saveAs } from 'file-saver';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
     Plus,
     Trash2,
@@ -32,7 +32,10 @@ import {
     Printer,
     Info,
     ListChecks,
-    Users,
+    UsersRound,
+    UserRoundCheck,
+    BarChart3,
+    Download,
 } from 'lucide-react';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 import Topbar from '../components/Layout/Topbar';
@@ -60,6 +63,7 @@ import { nanoid } from '../utils/nanoid';
 import { subItemMode, subItemRange } from '../utils/subItems';
 import { createTieredConfig, newTieredCriterion, syncBandLevels } from '../utils/tieredRubric';
 import TieredConfigPanel from '../components/Rubric/TieredConfigPanel';
+import GroupGradeModal from '../components/Rubric/GroupGradeModal';
 import TieredSheetView from '../components/Rubric/TieredSheetView';
 import { buildTieredSheet } from '../utils/tieredSheet';
 import StandardsPickerModal from '../components/Standards/StandardsPickerModal';
@@ -181,12 +185,16 @@ function RubricBuilderEditor({ shared }: { shared?: SharedEntry<Rubric> }) {
         gradeScales,
         peerReviews,
         settings,
+        students,
+        classes,
     } = useStoreSelector((s) => ({
         studentRubrics: s.studentRubrics,
         rubrics: s.rubrics,
         gradeScales: s.gradeScales,
         peerReviews: s.peerReviews,
         settings: s.settings,
+        students: s.students,
+        classes: s.classes,
     }));
     // The roster domain hooks filtered soft-deleted rows; keep that behavior here.
     const studentRubrics = React.useMemo(() => allStudentRubrics.filter((sr) => !sr.deletedAt), [allStudentRubrics]);
@@ -203,6 +211,7 @@ function RubricBuilderEditor({ shared }: { shared?: SharedEntry<Rubric> }) {
         deleteVocabularyItem,
         deleteVocabularyItems,
         saveUserTemplate,
+        createGroupStudentRubrics,
     } = useStoreActions();
 
     const { save: saveSharedRubric } = useSharedMaterials('rubric', false);
@@ -269,6 +278,7 @@ function RubricBuilderEditor({ shared }: { shared?: SharedEntry<Rubric> }) {
     const [diffAgainstVersion, setDiffAgainstVersion] = useState<RubricVersion | null>(null);
     const [showPreviewStdDesc, setShowPreviewStdDesc] = useState(false);
     const [tourRun, setTourRun] = useState(false);
+    const [groupGradeOpen, setGroupGradeOpen] = useState(false);
     const rubricTourSteps = React.useMemo(() => getRubricBuilderTourSteps(t), [t]);
 
     // ── Collapsible criteria ─────────────────────────────────────────────────
@@ -1100,6 +1110,30 @@ function RubricBuilderEditor({ shared }: { shared?: SharedEntry<Rubric> }) {
                 onFinish={() => setTourRun(false)}
                 onStartRequest={() => setTourRun(true)}
             />
+            {groupGradeOpen && existing && (
+                <GroupGradeModal
+                    rubric={existing}
+                    students={
+                        settings.activeClassId
+                            ? students.filter((s) => s.classId === settings.activeClassId && !s.archivedAt)
+                            : students.filter((s) => !s.archivedAt)
+                    }
+                    classes={classes}
+                    studentRubrics={studentRubrics}
+                    showClassNames={!settings.activeClassId}
+                    onClose={() => setGroupGradeOpen(false)}
+                    onStart={(studentIds, groupName) => {
+                        const srs = createGroupStudentRubrics(
+                            existing.id,
+                            studentIds,
+                            groupName.trim() || undefined,
+                            existing.criteria
+                        );
+                        setGroupGradeOpen(false);
+                        if (srs[0]) navigate(`/rubrics/${existing.id}/grade/${srs[0].studentId}`);
+                    }}
+                />
+            )}
             <Topbar
                 title={id ? t('rubricBuilder.edit_rubric') : t('rubricBuilder.new_rubric')}
                 actions={
@@ -1107,14 +1141,32 @@ function RubricBuilderEditor({ shared }: { shared?: SharedEntry<Rubric> }) {
                         <button className="btn btn-ghost btn-sm" onClick={() => navigate('/rubrics')}>
                             <ArrowLeft size={15} /> {t('rubricBuilder.action_back')}
                         </button>
-                        {/* Grading a saved rubric from its own page keeps the rubric selected. */}
-                        {id && (
-                            <button
-                                className="btn btn-secondary btn-sm"
-                                onClick={() => navigate(`/rubrics/${id}/grade`)}
-                            >
-                                <Users size={15} /> {t('rubricList.grade_students')}
-                            </button>
+                        {/* Grading and data surfaces for this rubric, linked from where it is edited
+                            so the rubric never has to be picked again downstream. */}
+                        {existing && !readOnly && (
+                            <>
+                                <Link to={`/rubrics/${existing.id}/grade`} className="btn btn-secondary btn-sm">
+                                    <ListChecks size={15} /> {t('rubricQueue.title_short')}
+                                </Link>
+                                <button className="btn btn-secondary btn-sm" onClick={() => setGroupGradeOpen(true)}>
+                                    <UsersRound size={15} /> {t('rubricList.action_group_grade')}
+                                </button>
+                                <Link to={`/rubrics/${existing.id}/peer-review`} className="btn btn-ghost btn-sm">
+                                    <UserRoundCheck size={15} /> {t('rubricList.action_peer_review')}
+                                </Link>
+                                <Link
+                                    to={`/statistics?rubric=${existing.id}${settings.activeClassId ? `&class=${settings.activeClassId}` : ''}`}
+                                    className="btn btn-ghost btn-sm"
+                                >
+                                    <BarChart3 size={15} /> {t('rubricList.action_statistics')}
+                                </Link>
+                                <Link
+                                    to={`/export?rubric=${existing.id}${settings.activeClassId ? `&class=${settings.activeClassId}` : ''}`}
+                                    className="btn btn-ghost btn-sm"
+                                >
+                                    <Download size={15} /> {t('rubricList.action_export')}
+                                </Link>
+                            </>
                         )}
                         {/* Leading the toolbar keeps Save on screen: the action strip scrolls and narrower
                             windows hide its trailing buttons first. */}

@@ -30,6 +30,7 @@ const RubricList = lazy(() => import('./pages/RubricList'));
 const RubricBuilder = lazy(() => import('./pages/RubricBuilder'));
 const GradeStudent = lazy(() => import('./pages/GradeStudent'));
 const RubricGradingQueuePage = lazy(() => import('./pages/RubricGradingQueuePage'));
+const PeerReviewRosterPage = lazy(() => import('./pages/PeerReviewRosterPage'));
 const StudentsPage = lazy(() => import('./pages/StudentsPage'));
 const AttachmentsPage = lazy(() => import('./pages/AttachmentsPage'));
 const ExportPage = lazy(() => import('./pages/ExportPage'));
@@ -284,6 +285,7 @@ export default function App() {
                                     <Route path="/rubrics/:id" element={<RubricBuilder />} />
                                     <Route path="/rubrics/:rubricId/grade" element={<RubricGradingQueuePage />} />
                                     <Route path="/rubrics/:rubricId/grade/:studentId" element={<GradeStudentRoute />} />
+                                    <Route path="/rubrics/:rubricId/peer-review" element={<PeerReviewRosterPage />} />
                                     <Route
                                         path="/rubrics/:rubricId/peer-review/:studentId"
                                         element={<PeerReviewView />}

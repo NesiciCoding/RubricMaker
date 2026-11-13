@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
     ArrowLeft,
     Save,
@@ -111,9 +111,6 @@ function GradeStudentEditor() {
     const { t, i18n } = useTranslation();
     const { rubricId, studentId } = useParams();
     const navigate = useNavigate();
-    // The grading queue carries its own scope here so returning keeps it (see RubricGradingQueuePage).
-    const [searchParams] = useSearchParams();
-    const queueScope = searchParams.get('from');
     const {
         students: allStudents,
         studentRubrics: allStudentRubrics,
@@ -589,7 +586,7 @@ function GradeStudentEditor() {
         if (nextStudent) {
             navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}`, { replace: true });
         } else {
-            navigate(-1);
+            navigate(`/rubrics/${rubricId}/grade`);
         }
     }, [
         readOnly,
@@ -1053,6 +1050,7 @@ function GradeStudentEditor() {
               .map((other) => students.find((s) => s.id === other.studentId)?.name)
               .filter((name): name is string => Boolean(name))
         : [];
+    const groupName = existingSR?.groupId ? existingSR.groupName : undefined;
 
     return (
         <>
@@ -1067,17 +1065,10 @@ function GradeStudentEditor() {
                 title={`${t('gradeStudent.title_prefix')} ${student.name}`}
                 actions={
                     <>
-                        <button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)}>
+                        {/* Always the rubric's grading queue: one named destination that survives a
+                            bookmark, a shared link or a refreshed tab, where navigate(-1) did not. */}
+                        <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/rubrics/${rubricId}/grade`)}>
                             <ArrowLeft size={15} /> {t('gradeStudent.action_back')}
-                        </button>
-                        {/* Jump to another student without leaving the rubric's grading flow. */}
-                        <button
-                            className="btn btn-ghost btn-sm"
-                            onClick={() =>
-                                navigate(`/rubrics/${rubricId}/grade${queueScope ? `?from=${queueScope}` : ''}`)
-                            }
-                        >
-                            <Users size={15} /> {t('gradingQueue.all_students')}
                         </button>
                         {voice.isListening && (
                             <button
@@ -1211,7 +1202,12 @@ function GradeStudentEditor() {
                             background: 'var(--bg-elevated)',
                         }}
                     >
-                        {t('gradeStudent.group_grade_banner', { names: groupMemberNames.join(', ') })}
+                        {groupName
+                            ? t('gradeStudent.group_grade_banner_named', {
+                                  name: groupName,
+                                  names: groupMemberNames.join(', '),
+                              })
+                            : t('gradeStudent.group_grade_banner', { names: groupMemberNames.join(', ') })}
                     </div>
                 )}
 
@@ -2332,7 +2328,7 @@ function GradeStudentEditor() {
                         deleteStudentRubric(existingSR.id, 'student');
                         setShowDeleteGrade(false);
                         allowNavigation();
-                        navigate(-1);
+                        navigate(`/rubrics/${rubricId}/grade`);
                     }}
                 />
             )}
@@ -2376,7 +2372,7 @@ function GradeStudentEditor() {
                                     deleteStudentRubric(existingSR.id, deleteGradeScope);
                                     setShowDeleteGrade(false);
                                     allowNavigation();
-                                    navigate(-1);
+                                    navigate(`/rubrics/${rubricId}/grade`);
                                 }}
                             >
                                 {t('common.delete')}

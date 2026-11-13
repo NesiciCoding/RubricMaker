@@ -309,17 +309,12 @@ describe('RubricList coverage', () => {
         expect(mockDeleteRubric).not.toHaveBeenCalled();
     });
 
-    it('hides the speaking launcher when there are no students and resets the select', () => {
+    it('hides the speaking launcher when there are no students and closes its menu after picking', () => {
         renderPage();
-        const selects = screen.getAllByLabelText('rubricList.speaking_select_student');
-        // The student options are rendered lazily on first interaction (#670), so open the
-        // control before picking a value — matching how a real click/keyboard open behaves.
-        fireEvent.mouseDown(selects[0]);
-        fireEvent.change(selects[0], { target: { value: 's1' } });
+        fireEvent.click(screen.getAllByLabelText('rubricList.speaking_select_student')[0]);
+        fireEvent.click(within(screen.getByRole('menu')).getByText('Alice'));
         expect(mockNavigate).toHaveBeenCalledWith('/speaking/r1/s1');
-        // Clearing the selection back to the disabled placeholder does not navigate.
-        fireEvent.change(selects[0], { target: { value: '' } });
-        expect(mockNavigate).toHaveBeenCalledTimes(1);
+        expect(screen.queryByRole('menu')).not.toBeInTheDocument();
 
         const saved = mockStudentsArr.slice();
         mockStudentsArr.length = 0;

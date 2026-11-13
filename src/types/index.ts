@@ -932,6 +932,8 @@ export interface StudentRubric {
      * scoped ones stay per-student. globalModifier/overallComment still fan out whole-record.
      */
     groupId?: string;
+    /** Optional label given to a group grade, shown instead of the member list; stored on every member. */
+    groupName?: string;
     /** ISO timestamp set when the grade was soft-deleted by a teacher; presence hides it from grading/analytics. */
     deletedAt?: string;
     /** Tiered rubrics: the tier this grade was given in, kept so a later track change doesn't rewrite it. */

@@ -1,155 +1,104 @@
-import React, { useMemo, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, ChevronRight, ListChecks, Search, Users } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { ArrowLeft, BarChart3, Download, FileText, Search, UserRoundCheck, UsersRound } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { EmptyState } from '../components/ui/EmptyState';
-import SegmentedToggle from '../components/ui/SegmentedToggle';
-import { SkeletonRow } from '../components/ui/Skeleton';
-import { useSettings } from '../context/AppContext';
-import { useStoreSelector } from '../context/useStore';
-import { useOwnOrSharedItem } from '../hooks/useSharedMaterials';
-import { calcGradeSummary, type GradeSummary } from '../utils/gradeCalc';
-import type { GradeScale, Student, StudentRubric } from '../types';
-
-type Filter = 'all' | 'ungraded';
-
-interface QueueRow {
-    student: Student;
-    grade: StudentRubric | undefined;
-    summary: GradeSummary | undefined;
-}
+import GroupGradeModal from '../components/Rubric/GroupGradeModal';
+import { useAuthoring, useClasses, useGrading, useSettings, useStudents } from '../context/AppContext';
+import { useRubricPool } from '../hooks/useMaterialPool';
+import { studentsForRubric } from '../utils/rubricRoster';
 
 /**
- * Rubric-first grading entry point: `/rubrics/:rubricId/grade`.
- *
- * The rubric card's “Grade students” button used to drop the teacher on `/students`, where they had
- * to pick a student and then pick the same rubric again from the student's grade menu. The rubric
- * is already known here, so this page shows that rubric's classes with each student's progress and
- * goes straight into `/rubrics/:rubricId/grade/:studentId`.
+ * The rubric's grading queue: the roster the teacher grades from, with the rubric already in the
+ * URL. Every student row links straight to the grading screen, so choosing the rubric happens once.
  */
 export default function RubricGradingQueuePage() {
     const { rubricId } = useParams<{ rubricId: string }>();
-    const { t } = useTranslation();
     const navigate = useNavigate();
+    const { t } = useTranslation();
+    const { students } = useStudents();
+    const { classes } = useClasses();
+    const { rubrics: ownRubrics } = useAuthoring();
+    const { studentRubrics, createGroupStudentRubrics, updateStudentGroup } = useGrading();
     const { settings } = useSettings();
-    const {
-        students: allStudents,
-        studentRubrics: allStudentRubrics,
-        classes,
-        rubrics,
-        gradeScales,
-    } = useStoreSelector((s) => ({
-        students: s.students,
-        studentRubrics: s.studentRubrics,
-        classes: s.classes,
-        rubrics: s.rubrics,
-        gradeScales: s.gradeScales,
-    }));
-    const { item: rubric, loading: rubricLoading } = useOwnOrSharedItem(
-        'rubric',
-        rubricId,
-        rubrics.find((r) => r.id === rubricId)
-    );
+    const { rubrics } = useRubricPool(ownRubrics);
 
     const [search, setSearch] = useState('');
-    const [filter, setFilter] = useState<Filter>('all');
+    const [groupModalOpen, setGroupModalOpen] = useState(false);
+    const [editingGroup, setEditingGroup] = useState<{
+        groupId: string;
+        memberIds: string[];
+        name: string;
+    } | null>(null);
 
-    // The queue's scope has to survive the round trip through the grading screen: opening a student
-    // adopts that student's class as `settings.activeClassId`, so "All students" comes back to a
-    // queue that would otherwise be narrowed to that one class. The scope therefore travels in the
-    // URL (`?from=<classId>` or `?from=all`) and takes precedence over the adopted active class.
-    const [searchParams] = useSearchParams();
-    const scopeParam = searchParams.get('from');
-    const linkedClassIds = useMemo(
-        () => (rubric ? classes.filter((c) => c.rubricIds?.includes(rubric.id)).map((c) => c.id) : []),
-        [classes, rubric]
+    const rubric = rubrics.find((r) => r.id === rubricId);
+
+    const roster = useMemo(
+        () => (rubricId ? studentsForRubric(rubricId, students, classes) : []),
+        [rubricId, students, classes]
     );
 
-    // Same scoping as GradeStudent's "next student" walk: the classes this rubric is linked to.
-    // With no linked class, fall back to the scope the queue was opened with, then to the class the
-    // teacher is currently filtering by, then to the whole roster — a sprawling school-wide list
-    // would be useless as a starting point.
-    const rows: QueueRow[] = useMemo(() => {
-        if (!rubric) return [];
-        let eligible = allStudents.filter((s) => !s.archivedAt);
-        if (linkedClassIds.length > 0) {
-            eligible = eligible.filter((s) => linkedClassIds.includes(s.classId));
-        } else if (scopeParam !== 'all') {
-            const classId = scopeParam ?? settings.activeClassId;
-            if (classId) eligible = eligible.filter((s) => s.classId === classId);
+    const gradeByStudent = useMemo(() => {
+        const map = new Map<string, (typeof studentRubrics)[number]>();
+        for (const sr of studentRubrics) {
+            if (sr.rubricId === rubricId && !sr.isPeerReview) map.set(sr.studentId, sr);
         }
-        const gradeScale = resolveScale(rubric.gradeScaleId, gradeScales, settings.defaultGradeScaleId);
-        return [...eligible]
-            .sort((a, b) => a.name.localeCompare(b.name))
-            .map((student) => {
-                // `gradedAt` is what marks a saved grade; a blank record created by grouping is not
-                // a grade yet. Historical grades keep the rubric they were scored against.
-                const grade = allStudentRubrics.find(
-                    (sr) => sr.rubricId === rubric.id && sr.studentId === student.id && !sr.deletedAt && !!sr.gradedAt
-                );
-                const gradeRubric = grade?.rubricSnapshot ?? rubric;
-                return {
-                    student,
-                    grade,
-                    summary: grade ? calcGradeSummary(grade, gradeRubric.criteria, gradeScale, gradeRubric) : undefined,
-                };
-            });
-    }, [
-        rubric,
-        linkedClassIds,
-        scopeParam,
-        allStudents,
-        allStudentRubrics,
-        gradeScales,
-        settings.activeClassId,
-        settings.defaultGradeScaleId,
-    ]);
+        return map;
+    }, [studentRubrics, rubricId]);
 
-    const visibleRows = useMemo(() => {
-        const needle = search.trim().toLowerCase();
-        return rows.filter((row) => {
-            if (filter === 'ungraded' && row.grade) return false;
-            if (!needle) return true;
-            const className = classes.find((c) => c.id === row.student.classId)?.name ?? '';
-            return row.student.name.toLowerCase().includes(needle) || className.toLowerCase().includes(needle);
-        });
-    }, [rows, search, filter, classes]);
+    // Existing groups for this rubric, so a teacher can see (and rename or re-member) what was
+    // already grouped instead of re-running the picker from memory.
+    const groups = useMemo(() => {
+        const byGroup = new Map<string, { groupId: string; name?: string; memberIds: string[] }>();
+        for (const sr of gradeByStudent.values()) {
+            if (!sr.groupId) continue;
+            const entry = byGroup.get(sr.groupId) ?? {
+                groupId: sr.groupId,
+                name: sr.groupName,
+                memberIds: [],
+            };
+            entry.memberIds.push(sr.studentId);
+            if (sr.groupName) entry.name = sr.groupName;
+            byGroup.set(sr.groupId, entry);
+        }
+        return [...byGroup.values()];
+    }, [gradeByStudent]);
 
-    const gradedCount = rows.filter((row) => row.grade).length;
-    const firstUngraded = rows.find((row) => !row.grade);
-    const showClassColumn = new Set(rows.map((row) => row.student.classId)).size > 1;
+    const classById = useMemo(() => new Map(classes.map((c) => [c.id, c])), [classes]);
+    const studentById = useMemo(() => new Map(students.map((s) => [s.id, s])), [students]);
+    const isGraded = (id: string) => {
+        const sr = gradeByStudent.get(id);
+        return !!sr && (!!sr.gradedAt || sr.entries.some((e) => e.levelId !== null));
+    };
 
-    const scopeQuery = linkedClassIds.length > 0 ? '' : `?from=${scopeParam ?? settings.activeClassId ?? 'all'}`;
+    const gradedCount = roster.filter((s) => isGraded(s.id)).length;
 
-    function openStudent(studentId: string) {
-        navigate(`/rubrics/${rubricId}/grade/${studentId}${scopeQuery}`);
-    }
+    const visible = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        if (!q) return roster;
+        return roster.filter((s) => s.name.toLowerCase().includes(q));
+    }, [roster, search]);
 
-    if (!rubric && rubricLoading) {
-        return (
-            <>
-                <Topbar title={t('gradingQueue.title')} />
-                <div className="page-content fade-in" aria-busy="true">
-                    <SkeletonRow />
-                    <SkeletonRow />
-                </div>
-            </>
-        );
-    }
+    // The picker stays inside the queue's own roster: a group drawn from another class would hold
+    // members this page never lists, while the students who do appear stay unavailable to group.
+    const groupPickerStudents = useMemo(() => {
+        if (!settings.activeClassId) return roster;
+        const inClass = roster.filter((s) => s.classId === settings.activeClassId);
+        return inClass.length > 0 ? inClass : roster;
+    }, [roster, settings.activeClassId]);
 
     if (!rubric) {
         return (
             <>
-                <Topbar title={t('gradingQueue.title')} />
+                <Topbar title={t('rubricQueue.not_found_title')} />
                 <div className="page-content">
                     <EmptyState
-                        icon={ListChecks}
-                        title={t('gradingQueue.not_found')}
-                        titleLevel={2}
-                        description={t('gradingQueue.not_found_desc')}
+                        icon={FileText}
+                        title={t('rubricQueue.not_found_title')}
+                        description={t('rubricQueue.not_found_hint')}
                         action={{
-                            label: t('gradingQueue.back_to_rubrics'),
+                            label: t('rubricQueue.back_to_rubrics'),
                             icon: ArrowLeft,
                             onClick: () => navigate('/rubrics'),
                         }}
@@ -159,204 +108,216 @@ export default function RubricGradingQueuePage() {
         );
     }
 
-    const progressPct = rows.length ? (gradedCount / rows.length) * 100 : 0;
-
     return (
         <>
             <Topbar
-                title={t('gradingQueue.title_with_name', { name: rubric.name })}
+                title={t('rubricQueue.title', { name: rubric.name })}
                 actions={
-                    <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/rubrics/${rubric.id}`)}>
-                        <ArrowLeft size={15} /> {t('gradingQueue.back_to_rubric')}
-                    </button>
+                    <>
+                        <Link to={`/rubrics/${rubric.id}`} className="btn btn-ghost btn-sm">
+                            <ArrowLeft size={15} /> {t('rubricQueue.back_to_rubric')}
+                        </Link>
+                        <button className="btn btn-secondary btn-sm" onClick={() => setGroupModalOpen(true)}>
+                            <UsersRound size={15} /> {t('rubricList.action_group_grade')}
+                        </button>
+                        <Link to={`/rubrics/${rubric.id}/peer-review`} className="btn btn-secondary btn-sm">
+                            <UserRoundCheck size={15} /> {t('rubricList.action_peer_review')}
+                        </Link>
+                        <Link to={`/statistics?rubric=${rubric.id}`} className="btn btn-secondary btn-sm">
+                            <BarChart3 size={15} /> {t('rubricList.action_statistics')}
+                        </Link>
+                        <Link to={`/export?rubric=${rubric.id}`} className="btn btn-secondary btn-sm">
+                            <Download size={15} /> {t('rubricList.action_export')}
+                        </Link>
+                    </>
                 }
             />
-            <div className="page-content fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {rows.length === 0 ? (
-                    <EmptyState
-                        icon={Users}
-                        title={t('gradingQueue.empty_title')}
-                        titleLevel={2}
-                        description={t('gradingQueue.empty_desc')}
-                        action={{
-                            label: t('gradingQueue.back_to_rubric'),
-                            icon: ArrowLeft,
-                            onClick: () => navigate(`/rubrics/${rubric.id}`),
-                        }}
-                    />
-                ) : (
-                    <>
-                        <div
-                            className="card"
-                            style={{
-                                display: 'flex',
-                                gap: 16,
-                                alignItems: 'center',
-                                flexWrap: 'wrap',
-                                padding: 16,
-                            }}
-                        >
-                            <div style={{ flex: '1 1 220px', minWidth: 200 }}>
-                                <div className="text-muted text-xs">{t('gradingQueue.progress_label')}</div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}>
-                                    <span style={{ fontSize: '1.1rem', fontWeight: 700 }}>
-                                        {t('gradingQueue.progress', { graded: gradedCount, total: rows.length })}
-                                    </span>
+            <div className="page-content fade-in">
+                {groups.length > 0 && (
+                    <div className="card" style={{ marginBottom: 16 }}>
+                        <h2 style={{ margin: '0 0 10px', fontSize: '0.95rem', fontWeight: 700 }}>
+                            {t('rubricQueue.groups_title')}
+                        </h2>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            {groups.map((group) => {
+                                const members = group.memberIds
+                                    .map((id) => studentById.get(id)?.name)
+                                    .filter((name): name is string => Boolean(name));
+                                return (
                                     <div
-                                        role="progressbar"
-                                        aria-valuemin={0}
-                                        aria-valuemax={rows.length}
-                                        aria-valuenow={gradedCount}
-                                        aria-label={t('gradingQueue.progress_label')}
+                                        key={group.groupId}
                                         style={{
-                                            flex: 1,
-                                            height: 8,
-                                            minWidth: 90,
-                                            borderRadius: 4,
-                                            background: 'var(--border)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 8,
+                                            flexWrap: 'wrap',
                                         }}
                                     >
-                                        <div
-                                            style={{
-                                                width: `${progressPct}%`,
-                                                height: '100%',
-                                                borderRadius: 4,
-                                                background: 'var(--accent)',
-                                            }}
-                                        />
+                                        <span style={{ fontWeight: 600 }}>
+                                            {group.name || t('rubricQueue.group_unnamed')}
+                                        </span>
+                                        <span className="text-muted text-sm" style={{ flex: 1, minWidth: 160 }}>
+                                            {members.join(', ')}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            className="btn btn-secondary btn-sm"
+                                            onClick={() =>
+                                                setEditingGroup({
+                                                    groupId: group.groupId,
+                                                    memberIds: group.memberIds,
+                                                    name: group.name ?? '',
+                                                })
+                                            }
+                                        >
+                                            {t('rubricQueue.group_edit')}
+                                        </button>
                                     </div>
-                                </div>
-                            </div>
-                            {firstUngraded ? (
-                                <button
-                                    className="btn btn-primary btn-sm"
-                                    onClick={() => openStudent(firstUngraded.student.id)}
-                                >
-                                    <ChevronRight size={15} />
-                                    {t('gradingQueue.continue_cta', { name: firstUngraded.student.name })}
-                                </button>
-                            ) : (
-                                <span className="badge badge-green">{t('gradingQueue.all_graded')}</span>
-                            )}
+                                );
+                            })}
                         </div>
+                    </div>
+                )}
+                <div
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        flexWrap: 'wrap',
+                        marginBottom: 16,
+                    }}
+                >
+                    <div style={{ position: 'relative', flex: 1, minWidth: 200, maxWidth: 360 }}>
+                        <Search
+                            size={15}
+                            aria-hidden="true"
+                            style={{
+                                position: 'absolute',
+                                left: 12,
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                color: 'var(--text-dim)',
+                            }}
+                        />
+                        <input
+                            type="search"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder={t('rubricQueue.search')}
+                            aria-label={t('rubricQueue.search')}
+                            style={{ paddingLeft: 36, width: '100%' }}
+                        />
+                    </div>
+                    <span className="text-muted text-sm" role="status">
+                        {t('rubricQueue.progress', { graded: gradedCount, total: roster.length })}
+                    </span>
+                </div>
 
-                        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-                            <div style={{ position: 'relative', flex: 1, minWidth: 200, maxWidth: 360 }}>
-                                <Search
-                                    size={15}
-                                    style={{
-                                        position: 'absolute',
-                                        left: 12,
-                                        top: '50%',
-                                        transform: 'translateY(-50%)',
-                                        color: 'var(--text-dim)',
-                                    }}
-                                />
-                                <input
-                                    type="text"
-                                    placeholder={t('gradingQueue.search_placeholder')}
-                                    aria-label={t('gradingQueue.search_placeholder')}
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                    style={{ paddingLeft: 36, width: '100%' }}
-                                />
-                            </div>
-                            <SegmentedToggle
-                                ariaLabel={t('gradingQueue.filter_label')}
-                                value={filter}
-                                onChange={(value) => setFilter(value as Filter)}
-                                options={[
-                                    { value: 'all', label: t('gradingQueue.filter_all') },
-                                    { value: 'ungraded', label: t('gradingQueue.filter_ungraded') },
-                                ]}
-                            />
-                        </div>
-
-                        {visibleRows.length === 0 ? (
-                            <EmptyState
-                                icon={Search}
-                                title={t('gradingQueue.no_matches')}
-                                titleLevel={2}
-                                description=""
-                            />
-                        ) : (
-                            <div style={{ overflowX: 'auto' }}>
-                                <table className="data-table">
-                                    <thead>
-                                        <tr>
-                                            <th>{t('gradingQueue.col_student')}</th>
-                                            {showClassColumn && <th>{t('gradingQueue.col_class')}</th>}
-                                            <th>{t('gradingQueue.col_status')}</th>
-                                            <th>{t('common.actions')}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {visibleRows.map(({ student, grade, summary }) => {
-                                            const className =
-                                                classes.find((c) => c.id === student.classId)?.name ?? '—';
-                                            return (
-                                                <tr
-                                                    key={student.id}
-                                                    style={{ cursor: 'pointer' }}
-                                                    onClick={() => openStudent(student.id)}
+                {roster.length === 0 ? (
+                    <EmptyState
+                        icon={FileText}
+                        title={t('rubricQueue.no_students')}
+                        description={t('rubricQueue.no_students_hint')}
+                    />
+                ) : (
+                    <div style={{ overflowX: 'auto' }}>
+                        <table className="data-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">{t('rubricQueue.col_student')}</th>
+                                    <th scope="col">{t('rubricQueue.col_class')}</th>
+                                    <th scope="col">{t('rubricQueue.col_status')}</th>
+                                    <th scope="col">{t('common.actions')}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {visible.map((s) => {
+                                    const graded = isGraded(s.id);
+                                    const notHandedIn = gradeByStudent.get(s.id)?.notHandedIn;
+                                    return (
+                                        <tr key={s.id}>
+                                            <td style={{ fontWeight: 500 }}>
+                                                {s.name}
+                                                {gradeByStudent.get(s.id)?.groupId && (
+                                                    <span className="badge badge-blue" style={{ marginLeft: 8 }}>
+                                                        {gradeByStudent.get(s.id)?.groupName ??
+                                                            t('rubricQueue.in_group')}
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td className="text-muted text-sm">
+                                                {classById.get(s.classId ?? '')?.name ?? '—'}
+                                            </td>
+                                            <td>
+                                                {notHandedIn ? (
+                                                    <span className="badge badge-yellow">
+                                                        {t('rubricQueue.not_handed_in')}
+                                                    </span>
+                                                ) : graded ? (
+                                                    <span className="badge badge-green">{t('rubricQueue.graded')}</span>
+                                                ) : (
+                                                    <span className="badge badge-blue">
+                                                        {t('rubricQueue.not_graded')}
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td>
+                                                <Link
+                                                    to={`/rubrics/${rubric.id}/grade/${s.id}`}
+                                                    className="btn btn-primary btn-sm"
                                                 >
-                                                    <td style={{ fontWeight: 500 }}>{student.name}</td>
-                                                    {showClassColumn && (
-                                                        <td className="text-muted text-sm">{className}</td>
-                                                    )}
-                                                    <td>
-                                                        {grade?.notHandedIn ? (
-                                                            <span className="badge badge-yellow">
-                                                                {t('gradingQueue.status_not_handed_in')}
-                                                            </span>
-                                                        ) : grade && summary ? (
-                                                            <span className="badge badge-green">
-                                                                {t('gradingQueue.status_graded', {
-                                                                    letter: summary.letterGrade,
-                                                                    percentage: Math.round(summary.modifiedPercentage),
-                                                                })}
-                                                            </span>
-                                                        ) : (
-                                                            <span className="badge">
-                                                                {t('gradingQueue.status_not_graded')}
-                                                            </span>
-                                                        )}
-                                                    </td>
-                                                    <td onClick={(e) => e.stopPropagation()}>
-                                                        <button
-                                                            type="button"
-                                                            className={`btn btn-sm ${grade ? 'btn-secondary' : 'btn-primary'}`}
-                                                            onClick={() => openStudent(student.id)}
-                                                        >
-                                                            {/* The visible label stays first so WCAG 2.5.3
-                                                                (label in name) holds; the student's name is
-                                                                announced from visually hidden text. */}
-                                                            {grade
-                                                                ? t('gradingQueue.open_again')
-                                                                : t('gradingQueue.open')}
-                                                            <span className="sr-only"> · {student.name}</span>
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                    </>
+                                                    {graded
+                                                        ? t('rubricQueue.action_open')
+                                                        : t('rubricQueue.action_grade')}
+                                                </Link>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
             </div>
+
+            {groupModalOpen && (
+                <GroupGradeModal
+                    rubric={rubric}
+                    students={groupPickerStudents}
+                    classes={classes}
+                    studentRubrics={studentRubrics}
+                    showClassNames={!settings.activeClassId}
+                    onClose={() => setGroupModalOpen(false)}
+                    onStart={(studentIds, groupName) => {
+                        const srs = createGroupStudentRubrics(
+                            rubric.id,
+                            studentIds,
+                            groupName.trim() || undefined,
+                            rubric.criteria
+                        );
+                        setGroupModalOpen(false);
+                        if (srs[0]) navigate(`/rubrics/${rubric.id}/grade/${srs[0].studentId}`);
+                    }}
+                />
+            )}
+
+            {editingGroup && (
+                <GroupGradeModal
+                    rubric={rubric}
+                    students={roster}
+                    classes={classes}
+                    studentRubrics={studentRubrics}
+                    showClassNames={!settings.activeClassId}
+                    initialStudentIds={editingGroup.memberIds}
+                    initialName={editingGroup.name}
+                    mode="edit"
+                    onClose={() => setEditingGroup(null)}
+                    onStart={(studentIds, groupName) => {
+                        updateStudentGroup(editingGroup.groupId, studentIds, groupName);
+                        setEditingGroup(null);
+                    }}
+                />
+            )}
         </>
     );
-}
-
-function resolveScale(
-    gradeScaleId: string | undefined,
-    scales: GradeScale[],
-    defaultGradeScaleId: string | undefined
-): GradeScale | null {
-    const id = gradeScaleId ?? defaultGradeScaleId;
-    if (!id || id === 'none') return null;
-    return scales.find((s) => s.id === id) ?? scales[0] ?? null;
 }

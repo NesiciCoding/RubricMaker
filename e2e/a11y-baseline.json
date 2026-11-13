@@ -379,6 +379,16 @@
       ]
     },
     {
+      "route": "/rubrics/rubric-a11y-1/peer-review",
+      "theme": "dark",
+      "violations": []
+    },
+    {
+      "route": "/rubrics/rubric-a11y-1/peer-review",
+      "theme": "light",
+      "violations": []
+    },
+    {
       "route": "/rubrics/rubric-a11y-1/peer-review/student-a11y-1",
       "theme": "dark",
       "violations": []

@@ -76,14 +76,20 @@ export function getRouteTree(t: TFunction): RouteNode[] {
                     children: [
                         {
                             path: '/rubrics/:rubricId/grade',
-                            label: t('docs.route_grading_queue_label'),
-                            description: t('docs.route_grading_queue_desc'),
+                            label: t('docs.route_rubric_queue_label'),
+                            description: t('docs.route_rubric_queue_desc'),
                             color: '#8b5cf6',
                         },
                         {
                             path: '/rubrics/:rubricId/grade/:studentId',
                             label: t('docs.route_grade_student_label'),
                             description: t('docs.route_grade_student_desc'),
+                            color: '#8b5cf6',
+                        },
+                        {
+                            path: '/rubrics/:rubricId/peer-review',
+                            label: t('docs.route_peer_review_roster_label'),
+                            description: t('docs.route_peer_review_roster_desc'),
                             color: '#8b5cf6',
                         },
                         {
@@ -1044,6 +1050,16 @@ function GradingTab() {
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     {t('docs.gr_unsaved_note')}
                 </p>
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.gr_queue_title')}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
+                    {t('docs.gr_queue_body')}
+                </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
+                    {t('docs.gr_queue_group')}
+                </p>
+
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.gr_scoring_title')}
                 </h3>
