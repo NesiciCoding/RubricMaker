@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Copy, MonitorPlay, RefreshCw, Users } from 'lucide-react';
+import { ArrowLeft, Copy, ImagePlus, MonitorPlay, RefreshCw, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import LiveWritingFinalsPanel from '../components/LiveWriting/LiveWritingFinalsPanel';
@@ -22,6 +22,7 @@ import { liveWritingJoinLink, liveWritingStatusKey } from '../utils/liveWriting'
 interface DraftState {
     title: string;
     prompt: string;
+    imagePath: string;
     classId: string;
     minutesPerRound: number;
     roundCount: number;
@@ -38,6 +39,7 @@ function emptyDraft(): DraftState {
     return {
         title: '',
         prompt: '',
+        imagePath: '',
         classId: '',
         minutesPerRound: 10,
         roundCount: 1,
@@ -55,6 +57,7 @@ function draftFromSession(session: LiveWritingSession): DraftState {
     return {
         title: session.title,
         prompt: session.prompt,
+        imagePath: session.imagePath ?? '',
         classId: session.classId,
         minutesPerRound: session.minutesPerRound,
         roundCount: session.roundCount,
@@ -73,6 +76,7 @@ function toInput(draft: DraftState): LiveWritingSessionInput {
     return {
         title: draft.title.trim(),
         prompt: draft.prompt.trim(),
+        imagePath: draft.imagePath,
         classId: draft.classId,
         minutesPerRound: Math.min(120, Math.max(1, Math.floor(draft.minutesPerRound) || 10)),
         roundCount: Math.min(3, Math.max(1, Math.floor(draft.roundCount) || 1)),
@@ -104,6 +108,7 @@ export default function LiveWritingSessionPage() {
     const [participants, setParticipants] = useState<LiveWritingParticipant[]>([]);
     const [loading, setLoading] = useState(!isNew);
     const [saving, setSaving] = useState(false);
+    const [imageUploading, setImageUploading] = useState(false);
     const [loadFailed, setLoadFailed] = useState(false);
     const [voteResults, setVoteResults] = useState<LiveWritingVoteResult[]>([]);
     const [roundLog, setRoundLog] = useState<LiveWritingRoundLogEntry[]>([]);
@@ -385,6 +390,30 @@ export default function LiveWritingSessionPage() {
         setDraft((current) => ({ ...current, ...patch }));
     }
 
+    async function uploadImage(file: File | undefined) {
+        if (!file || !adapter) return;
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+            showToast(t('liveWriting.image_invalid'), 'error');
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            showToast(t('liveWriting.image_too_large'), 'error');
+            return;
+        }
+        setImageUploading(true);
+        try {
+            patchDraft({ imagePath: await adapter.uploadPromptImage(file) });
+        } catch {
+            showToast(t('liveWriting.image_upload_failed'), 'error');
+        } finally {
+            setImageUploading(false);
+        }
+    }
+
+    function removeImage() {
+        patchDraft({ imagePath: '' });
+    }
+
     async function persist(status?: LiveWritingSessionStatus) {
         if (!adapter) return;
         const input = toInput(draft);
@@ -400,10 +429,14 @@ export default function LiveWritingSessionPage() {
                 showToast(t('liveWriting.saved'), 'success');
                 navigate(`/live/${created.id}`, { replace: true });
             } else if (session) {
+                const previousImage = session.imagePath;
                 const updated = await adapter.updateSession(session.id, {
                     ...input,
                     ...(status ? { status } : {}),
                 });
+                if (previousImage && previousImage !== updated.imagePath) {
+                    void adapter.removePromptImage(previousImage);
+                }
                 setSession(updated);
                 setDraft(draftFromSession(updated));
                 showToast(t('liveWriting.saved'), 'success');
@@ -513,6 +546,56 @@ export default function LiveWritingSessionPage() {
                                 onChange={(e) => patchDraft({ prompt: e.target.value })}
                                 style={{ marginBottom: 16, resize: 'vertical' }}
                             />
+
+                            <div style={{ marginBottom: 16 }}>
+                                {draft.imagePath ? (
+                                    <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                                        <img
+                                            src={adapter.promptImageUrl(draft.imagePath)}
+                                            alt={t('liveWriting.prompt')}
+                                            style={{
+                                                maxWidth: 220,
+                                                maxHeight: 140,
+                                                objectFit: 'cover',
+                                                borderRadius: 10,
+                                                border: '1px solid var(--border)',
+                                            }}
+                                        />
+                                        <button
+                                            type="button"
+                                            className="btn btn-ghost btn-sm"
+                                            onClick={removeImage}
+                                            disabled={!editable}
+                                        >
+                                            {t('liveWriting.image_remove')}
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <label
+                                        className="btn btn-ghost btn-sm"
+                                        style={{
+                                            display: 'inline-flex',
+                                            cursor: editable ? 'pointer' : 'not-allowed',
+                                        }}
+                                    >
+                                        <ImagePlus size={14} />{' '}
+                                        {imageUploading ? t('liveWriting.image_uploading') : t('liveWriting.image_add')}
+                                        <input
+                                            type="file"
+                                            accept="image/jpeg,image/png,image/webp"
+                                            hidden
+                                            disabled={!editable || imageUploading}
+                                            onChange={(event) => {
+                                                void uploadImage(event.target.files?.[0]);
+                                                event.target.value = '';
+                                            }}
+                                        />
+                                    </label>
+                                )}
+                                <p className="text-muted text-xs" style={{ margin: '6px 0 0' }}>
+                                    {t('liveWriting.image_hint')}
+                                </p>
+                            </div>
 
                             <label htmlFor="live-class" style={{ display: 'block', marginBottom: 6 }}>
                                 {t('liveWriting.class')}

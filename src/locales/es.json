@@ -6140,6 +6140,13 @@
         "finals_replace_save": "Guardar reemplazo",
         "finals_replaced_toast": "Texto reemplazado.",
         "projector_time_remaining": "Tiempo restante: {{time}}",
-        "projector_progress_row": "{{name}}: {{count}} palabras"
+        "projector_progress_row": "{{name}}: {{count}} palabras",
+        "image_add": "Añadir imagen",
+        "image_remove": "Quitar imagen",
+        "image_uploading": "Subiendo…",
+        "image_hint": "Se muestra en el proyector y en la página de cada estudiante. JPG, PNG o WebP, 5 MB como máximo.",
+        "image_invalid": "Elige una imagen JPG, PNG o WebP.",
+        "image_too_large": "Esa imagen supera los 5 MB.",
+        "image_upload_failed": "No se pudo subir la imagen."
     }
 }

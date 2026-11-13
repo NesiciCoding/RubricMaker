@@ -6140,6 +6140,13 @@
         "finals_replace_save": "Vervanging opslaan",
         "finals_replaced_toast": "Tekst vervangen.",
         "projector_time_remaining": "Resterende tijd: {{time}}",
-        "projector_progress_row": "{{name}}: {{count}} woorden"
+        "projector_progress_row": "{{name}}: {{count}} woorden",
+        "image_add": "Afbeelding toevoegen",
+        "image_remove": "Afbeelding verwijderen",
+        "image_uploading": "Uploaden…",
+        "image_hint": "Wordt getoond op het projector en op de pagina van elke leerling. JPG, PNG of WebP, max. 5 MB.",
+        "image_invalid": "Kies een JPG-, PNG- of WebP-afbeelding.",
+        "image_too_large": "Die afbeelding is groter dan 5 MB.",
+        "image_upload_failed": "De afbeelding kon niet worden geüpload."
     }
 }
