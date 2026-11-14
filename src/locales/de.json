@@ -2651,6 +2651,12 @@
         "confirm_accept_message": "Die Note von {{student}} ändert sich von {{before}} zu {{after}}. Die ursprünglichen Punkte, der Kommentar und die Anpassung werden ersetzt; die Bewertung des Zweitprüfers bleibt als erledigt gespeichert."
     },
     "commentBank": {
+        "export_button": "Exportieren",
+        "import_button": "Importieren",
+        "export_success_toast": "Kommentarbank exportiert",
+        "import_success_toast": "{{count}} Kommentare importiert",
+        "import_invalid_toast": "Diese Datei ist kein gültiger Export der Kommentarbank",
+        "import_empty_toast": "Keine Kommentare in dieser Datei gefunden",
         "title": "Kommentarbank",
         "search_placeholder": "Kommentare durchsuchen...",
         "new_button": "Neu",
@@ -4560,6 +4566,7 @@
         "gr_comment_bank_nav": "Kommentarbank",
         "gr_comment_bank_body": "in der Seitenleiste, um deine Schnipsel zu verwalten. Organisiere sie mit Tags (z. B. „Schreiben“, „Grammatik“, „Engagement“) — auf der vollständigen Kommentarbank-Seite werden diese Tags zu einer linken Kategorieliste mit der Anzahl der Einträge pro Tag; klicke auf einen Tag zum Filtern oder auf „Alle Kommentare“, um den Filter zu löschen; das kompakte Einfügepanel während der Bewertung bleibt eine flache Liste. Ein mit einem CEFR-Niveau (z. B. „B1“) getaggter Kommentar zeigt dieses Niveau als farbiges Abzeichen auf seiner Karte. Klicke während der Bewertung auf das Kommentarsymbol, um die Bank zu öffnen und einen Schnipsel mit einem Klick in das Feedbackfeld einzufügen — jede Einfügung wird gezählt, auf der Karte angezeigt, und die Sortierfunktion der Kommentarbank-Seite kann deine meistgenutzten Kommentare zuerst anzeigen. Bei verbundener Cloud-Synchronisierung kannst du auf das Abteilungssymbol eines Eintrags klicken, um ihn schreibgeschützt mit jedem anderen Lehrer an deiner Schule zu teilen; von Kollegen geteilte Einträge erscheinen in der Bank mit einem „Abteilung“-Abzeichen. Wählen Sie mehrere Tags, werden nur Kommentare angezeigt, die alle davon haben; nach dem Löschen eines Kommentars erscheint einige Sekunden lang eine Schaltfläche Rückgängig.",
         "gr_comment_bank_suggested_note": "Wenn ein Kriterium eine Serie niedriger Bewertungen hatte, öffnet sich die Kommentarbank mit einer Gruppe „Vorgeschlagen“ oben — Kommentare, die mit der GER-Kompetenz oder dem -Niveau dieses Kriteriums getaggt sind (z. B. „speaking_interaction“, „B1“).",
+        "gr_comment_bank_io_note": "Auf der vollständigen Seite „Kommentarbank“ lädt „Exportieren“ deine Kommentare (Text und Tags) als JSON herunter, „Importieren“ fügt sie wieder hinzu — praktisch, um eine Bank zwischen Geräten zu verschieben oder sie einer Kollegin zu geben. Der Import überspringt Einträge ohne Text und endet bei 500 Kommentaren.",
         "gr_question_bank_title": "Fragenbank",
         "gr_question_bank_body_prefix": "Speichere jede Testfrage über das Lesezeichen-Symbol im Fragen-Editor in einer wiederverwendbaren Bank und füge gespeicherte Fragen dann in jeden Test ein über",
         "gr_question_bank_body_suffix": "— verwalte, tagge und durchsuche dort deine gespeicherten Fragen.",
