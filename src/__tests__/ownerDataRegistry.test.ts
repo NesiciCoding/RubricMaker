@@ -11,7 +11,17 @@ const migrations = readdirSync(dir)
 // Account- or org-level tables that are deliberately not part of a teacher's own data
 // (mirrors the comment in 079_owner_data_registry.sql). Adding a table here is a decision:
 // it will be missing from nightly backups and from "Delete all my database data".
-const NOT_OWNER_DATA = ['profiles', 'schools', 'school_members', 'audit_logs', 'client_logs', 'site_config'];
+const NOT_OWNER_DATA = [
+    'profiles',
+    'schools',
+    'school_members',
+    'audit_logs',
+    'client_logs',
+    'site_config',
+    // Ephemeral failed-join throttle (migration 100): no owner, pruned on use, and deliberately
+    // not part of nightly backups or "Delete all my database data".
+    'live_writing_join_attempts',
+];
 
 function publicTables(): Set<string> {
     const tables = new Set<string>();

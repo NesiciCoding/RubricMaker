@@ -95,7 +95,8 @@ const TOP_LEVEL_BLOCK_TAGS = new Set([
 
 /** Wraps runs of top-level text and inline elements (e.g. `Read <b>this</b> carefully.`) in <p>, so block-oriented converters don't drop the text around the markup. */
 function wrapTopLevelInline(html: string): string {
-    const root = new DOMParser().parseFromString(`<div>${html}</div>`, 'text/html').body.firstElementChild!;
+    const root = new DOMParser().parseFromString(`<div>${DOMPurify.sanitize(html)}</div>`, 'text/html').body
+        .firstElementChild!;
     const isInline = (node: ChildNode) =>
         node.nodeType === Node.TEXT_NODE
             ? !!node.textContent?.trim()

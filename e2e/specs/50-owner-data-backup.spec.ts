@@ -20,7 +20,15 @@ const svc = {
 };
 const uniq = () => `${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
 // Keep in sync with NOT_OWNER_DATA in src/__tests__/ownerDataRegistry.test.ts.
-const NOT_OWNER_DATA = ['profiles', 'schools', 'school_members', 'audit_logs', 'client_logs', 'site_config'];
+const NOT_OWNER_DATA = [
+    'profiles',
+    'schools',
+    'school_members',
+    'audit_logs',
+    'client_logs',
+    'site_config',
+    'live_writing_join_attempts',
+];
 
 async function svcInsert(table: string, body: unknown): Promise<void> {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {

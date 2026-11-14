@@ -35,7 +35,8 @@ import type { TFunction } from 'i18next';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
-type TabId = 'route-map' | 'getting-started' | 'rubrics' | 'grading' | 'cefr' | 'essays' | 'analytics' | 'data';
+type TabId =
+    'route-map' | 'getting-started' | 'rubrics' | 'grading' | 'cefr' | 'essays' | 'live-writing' | 'analytics' | 'data';
 
 interface RouteNode {
     path: string;
@@ -199,6 +200,52 @@ export function getRouteTree(t: TFunction): RouteNode[] {
                             color: '#8b5cf6',
                         },
                     ],
+                },
+            ],
+        },
+        {
+            path: '/live',
+            label: t('docs.route_live_label'),
+            description: t('docs.route_live_desc'),
+            color: 'var(--purple-text)',
+            children: [
+                {
+                    path: '/live/new',
+                    label: t('docs.route_live_new_label', { defaultValue: 'New live writing session' }),
+                    description: t('docs.route_live_new_desc', {
+                        defaultValue: 'Create a draft live writing session.',
+                    }),
+                    color: 'var(--purple-text)',
+                },
+                {
+                    path: '/live/:sessionId',
+                    label: t('docs.route_live_session_label'),
+                    description: t('docs.route_live_session_desc'),
+                    color: 'var(--purple-text)',
+                },
+                {
+                    path: '/live/:sessionId/project',
+                    label: t('docs.route_live_project_label'),
+                    description: t('docs.route_live_project_desc'),
+                    color: 'var(--purple-text)',
+                },
+            ],
+        },
+        {
+            path: '/join',
+            label: t('docs.route_join_entry_label', { defaultValue: 'Join a live session' }),
+            description: t('docs.route_join_entry_desc', {
+                defaultValue: 'Enter a live writing code without an account.',
+            }),
+            color: 'var(--purple-text)',
+            badge: 'public',
+            children: [
+                {
+                    path: '/join/:code',
+                    label: t('docs.route_join_label'),
+                    description: t('docs.route_join_desc'),
+                    color: 'var(--purple-text)',
+                    badge: 'student',
                 },
             ],
         },
@@ -407,6 +454,7 @@ export function getDocsTabs(t: TFunction): { id: TabId; label: string; icon: Rea
         { id: 'grading', label: t('docs.tab_grading'), icon: PenLine },
         { id: 'cefr', label: t('docs.tab_cefr'), icon: GraduationCap },
         { id: 'essays', label: t('docs.tab_essays'), icon: FileText },
+        { id: 'live-writing', label: t('docs.tab_live_writing'), icon: Radio },
         { id: 'analytics', label: t('docs.tab_analytics'), icon: BarChart3 },
         { id: 'data', label: t('docs.tab_data'), icon: Database },
     ];
@@ -1058,6 +1106,9 @@ function GradingTab() {
                 </p>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
                     {t('docs.gr_queue_group')}
+                </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
+                    {t('docs.gr_queue_view')}
                 </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
@@ -1717,6 +1768,12 @@ function EssaysTab() {
     const { t } = useTranslation();
     return (
         <div>
+            <FeatureSection icon={FileText} title={t('docs.es_live_title')} color="#ec4899">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    {t('docs.es_live_body')}
+                </p>
+            </FeatureSection>
+
             <FeatureSection icon={FileText} title={t('docs.es_stats_title')} color="#6366f1">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     {t('docs.es_stats_body')}
@@ -1822,6 +1879,78 @@ function EssaysTab() {
                         t('docs.es_export_item_combined'),
                         t('docs.es_export_item_ics'),
                         t('docs.es_export_item_styling'),
+                    ]}
+                />
+            </FeatureSection>
+        </div>
+    );
+}
+
+function LiveWritingTab() {
+    const { t } = useTranslation();
+    return (
+        <div>
+            <FeatureSection icon={Radio} title={t('docs.lw_intro_title')} color="#ec4899">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    {t('docs.lw_intro_body')}
+                </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    {t('docs.lw_where_body')}
+                </p>
+            </FeatureSection>
+
+            <FeatureSection icon={PenLine} title={t('docs.lw_teacher_title')} color="#ec4899">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    {t('docs.lw_teacher_body')}
+                </p>
+                <FeatureList
+                    items={[
+                        t('docs.lw_teacher_item_setup'),
+                        t('docs.lw_teacher_item_projector'),
+                        t('docs.lw_teacher_item_timer'),
+                        t('docs.lw_teacher_item_progress'),
+                        t('docs.lw_teacher_item_reconnect'),
+                    ]}
+                />
+            </FeatureSection>
+
+            <FeatureSection icon={Globe} title={t('docs.lw_student_title')} color="#ec4899">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    {t('docs.lw_student_body')}
+                </p>
+                <FeatureList
+                    items={[
+                        t('docs.lw_student_item_join'),
+                        t('docs.lw_student_item_editor'),
+                        t('docs.lw_student_item_selfcheck'),
+                        t('docs.lw_student_item_vote'),
+                    ]}
+                />
+            </FeatureSection>
+
+            <FeatureSection icon={Award} title={t('docs.lw_finals_title')} color="#ec4899">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    {t('docs.lw_finals_body')}
+                </p>
+                <FeatureList
+                    items={[
+                        t('docs.lw_finals_item_anonymous'),
+                        t('docs.lw_finals_item_spotlight'),
+                        t('docs.lw_finals_item_moderate'),
+                        t('docs.lw_finals_item_grading'),
+                        t('docs.lw_finals_item_insights'),
+                    ]}
+                />
+                <InfoBox color="#ec4899">{t('docs.lw_finals_info')}</InfoBox>
+            </FeatureSection>
+
+            <FeatureSection icon={Shield} title={t('docs.lw_privacy_title')} color="#ec4899">
+                <FeatureList
+                    items={[
+                        t('docs.lw_privacy_item_roster'),
+                        t('docs.lw_privacy_item_broadcast'),
+                        t('docs.lw_privacy_item_cloud'),
+                        t('docs.lw_privacy_item_no_ai'),
                     ]}
                 />
             </FeatureSection>
@@ -2057,6 +2186,7 @@ const TAB_CONTENT: Record<TabId, React.ReactNode> = {
     grading: <GradingTab />,
     cefr: <CefrTab />,
     essays: <EssaysTab />,
+    'live-writing': <LiveWritingTab />,
     analytics: <AnalyticsTab />,
     data: <DataTab />,
 };

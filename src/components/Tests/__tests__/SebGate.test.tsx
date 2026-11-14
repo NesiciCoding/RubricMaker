@@ -9,12 +9,21 @@ vi.mock('react-i18next', () => ({
     }),
 }));
 
+// Keeps the real isRunningInSEB so gate-visibility tests still exercise it. prepareSebConfigBlob
+// never resolves by default, so the prefetch-in-flight fallback path (identical to the
+// pre-prefetch behavior) is what most of these tests exercise; the two tests below that cover
+// the prefetched-ready path override it per-test.
 vi.mock('../../../utils/sebConfig', async (importOriginal) => {
     const actual = await importOriginal<typeof import('../../../utils/sebConfig')>();
-    return { ...actual, downloadSebConfigForAssignment: vi.fn() };
+    return {
+        ...actual,
+        downloadSebConfigForAssignment: vi.fn().mockResolvedValue(undefined),
+        prepareSebConfigBlob: vi.fn(() => new Promise(() => {})),
+        saveSebConfigBlob: vi.fn(),
+    };
 });
 
-import { downloadSebConfigForAssignment } from '../../../utils/sebConfig';
+import { downloadSebConfigForAssignment, prepareSebConfigBlob, saveSebConfigBlob } from '../../../utils/sebConfig';
 
 function stubUserAgent(ua: string) {
     Object.defineProperty(window.navigator, 'userAgent', { value: ua, configurable: true });
@@ -26,6 +35,10 @@ describe('SebGate', () => {
     afterEach(() => {
         stubUserAgent(originalUserAgent);
         vi.mocked(downloadSebConfigForAssignment).mockReset();
+        vi.mocked(downloadSebConfigForAssignment).mockResolvedValue(undefined);
+        vi.mocked(saveSebConfigBlob).mockReset();
+        vi.mocked(prepareSebConfigBlob).mockReset();
+        vi.mocked(prepareSebConfigBlob).mockImplementation(() => new Promise(() => {}));
     });
 
     it('renders children when requireSEB is false, regardless of user agent', () => {
@@ -112,6 +125,54 @@ describe('SebGate', () => {
                 fileName: 'Unit 3 test',
             })
         );
+    });
+
+    it('saves the prefetched blob synchronously once it is ready, instead of re-fetching on click', async () => {
+        stubUserAgent('Mozilla/5.0 (regular browser)');
+        const blob = new Blob(['seb']);
+        vi.mocked(prepareSebConfigBlob).mockResolvedValue(blob);
+
+        render(
+            <SebGate requireSEB={true} startUrl="https://app/#/test/abc" fileName="Unit 3 test">
+                <div>protected content</div>
+            </SebGate>
+        );
+
+        await waitFor(() =>
+            expect(prepareSebConfigBlob).toHaveBeenCalledWith({
+                endpoint: undefined,
+                startUrl: 'https://app/#/test/abc',
+            })
+        );
+        // Let the prefetch promise settle before the click, so preparedBlobRef is populated.
+        await waitFor(() => Promise.resolve());
+
+        fireEvent.click(screen.getByRole('button', { name: /tests\.taking\.seb_download_config/ }));
+
+        expect(saveSebConfigBlob).toHaveBeenCalledWith(blob, 'Unit 3 test');
+        expect(downloadSebConfigForAssignment).not.toHaveBeenCalled();
+    });
+
+    it('falls back to the fetch-then-save path when the prefetch has not resolved yet', async () => {
+        stubUserAgent('Mozilla/5.0 (regular browser)');
+        // Default mock (never resolves) is already in place from beforeEach/afterEach reset.
+
+        render(
+            <SebGate requireSEB={true} startUrl="https://app/#/test/abc" fileName="Unit 3 test">
+                <div>protected content</div>
+            </SebGate>
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: /tests\.taking\.seb_download_config/ }));
+
+        await waitFor(() =>
+            expect(downloadSebConfigForAssignment).toHaveBeenCalledWith({
+                endpoint: undefined,
+                startUrl: 'https://app/#/test/abc',
+                fileName: 'Unit 3 test',
+            })
+        );
+        expect(saveSebConfigBlob).not.toHaveBeenCalled();
     });
 
     it('omits the config download when no start URL is supplied', () => {

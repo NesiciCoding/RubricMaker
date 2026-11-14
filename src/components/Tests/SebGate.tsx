@@ -1,7 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Download, ExternalLink, ShieldAlert } from 'lucide-react';
-import { downloadSebConfigForAssignment, isRunningInSEB, type SebConfigEndpoint } from '../../utils/sebConfig';
+import {
+    downloadSebConfigForAssignment,
+    isRunningInSEB,
+    prepareSebConfigBlob,
+    saveSebConfigBlob,
+    type SebConfigEndpoint,
+} from '../../utils/sebConfig';
 
 const SEB_DOWNLOAD_URL = 'https://safeexambrowser.org/download_en.html';
 
@@ -26,18 +32,36 @@ export default function SebGate({ requireSEB, startUrl, fileName, configEndpoint
     const [preparing, setPreparing] = useState(false);
     const isInSEB = isRunningInSEB();
 
-    async function handleDownload() {
+    // Prefetched ahead of the click so the download can save synchronously from inside the click
+    // handler: Safari only treats `saveAs`'s anchor click as a trusted download request within
+    // the synchronous extent of a user gesture, and the server-config fetch is async.
+    const preparedBlobRef = useRef<Blob | null>(null);
+    useEffect(() => {
+        preparedBlobRef.current = null;
         if (!startUrl) return;
-        setPreparing(true);
-        try {
-            await downloadSebConfigForAssignment({
-                endpoint: configEndpoint,
-                startUrl,
-                fileName: fileName || 'test',
-            });
-        } finally {
-            setPreparing(false);
+        let cancelled = false;
+        void prepareSebConfigBlob({ endpoint: configEndpoint, startUrl }).then((blob) => {
+            if (!cancelled) preparedBlobRef.current = blob;
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [configEndpoint, startUrl]);
+
+    function handleDownload() {
+        if (!startUrl) return;
+        if (preparedBlobRef.current) {
+            saveSebConfigBlob(preparedBlobRef.current, fileName || 'test');
+            return;
         }
+        // Prefetch hasn't landed yet (slow connection, or the click came right after mount) —
+        // fall back to the original fetch-then-save path.
+        setPreparing(true);
+        void downloadSebConfigForAssignment({
+            endpoint: configEndpoint,
+            startUrl,
+            fileName: fileName || 'test',
+        }).finally(() => setPreparing(false));
     }
 
     if (!requireSEB || isInSEB) return <>{children}</>;
@@ -88,7 +112,7 @@ export default function SebGate({ requireSEB, startUrl, fileName, configEndpoint
                             style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
                             aria-busy={preparing}
                             disabled={preparing}
-                            onClick={() => void handleDownload()}
+                            onClick={handleDownload}
                         >
                             <Download size={14} /> {t('tests.taking.seb_download_config')}
                         </button>

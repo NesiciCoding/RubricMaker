@@ -22,11 +22,11 @@ RubricMaker can require [Safe Exam Browser](https://safeexambrowser.org/) (SEB) 
 
 `get-seb-config` builds the file on the server and the gate downloads it as `<test-or-essay-name>.seb`. The client keeps `src/utils/sebConfig.ts` as an offline fallback (no database, or the edge runtime is unreachable), and both paths render through the same `supabase/functions/_shared/sebConfig.ts`, so the bytes match.
 
-Generation belongs on the server because the config embeds the app base URL. Built in the teacher's browser it depended on whichever origin and path that browser was using, so the same assignment could produce different files on different devices. The function derives the base from `APP_URL` (falling back to the request `Origin`), which also gives each assignment a stable file — the prerequisite for a one-scan `sebs://` launcher and for config-key verification later.
+Generation belongs on the server because the config embeds the app base URL. Built in the teacher's browser it depended on whichever origin and path that browser was using, so the same assignment could produce different files on different devices. The function derives the base from `APP_URL` only — never the request's `Origin` header, which a caller controls — which also gives each assignment a stable file — the prerequisite for a one-scan `sebs://` launcher and for config-key verification later.
 
 `GET /functions/v1/get-seb-config?code=<assignment code>` returns 404 for an unknown code, 410 when the assignment has expired, and 409 when it does not require SEB. The assignment code is the credential and the file contains no answers or keys, so the function runs with `verify_jwt = false` (see `supabase/config.toml`).
 
-Set `APP_URL` in the function environment (for example `https://school.example/rubricmaker`, no trailing slash). Without it the function falls back to the caller's `Origin`, which is correct only for a root deployment.
+Set `APP_URL` in the function environment (for example `https://school.example/rubricmaker`, no trailing slash). Without it the function returns 500 instead of guessing from the caller's `Origin` — trusting that header would let anyone with a valid assignment code point a student's SEB lockdown at an attacker-controlled domain.
 
 The bytes are:
 

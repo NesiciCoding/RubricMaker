@@ -420,8 +420,13 @@ export default function StudentTestPage() {
         advanceGenerator,
     ]);
 
-    // Navigating to the config's quit URL is the only way out of a session with allowQuit=false.
-    const inSeb = useSebQuitRedirect(submitted);
+    // Navigating to the config's quit URL is the only way out of a session with allowQuit=false,
+    // but it must wait for a confirmed hand-in: a failed/queued DB submit is still retrying in the
+    // background (SEB quitting would abandon those retries), and a practice run never leaves a
+    // record worth protecting, so it should stay open for the student to review their answers
+    // instead of auto-quitting. The manual quit button below is unaffected and always available.
+    const deliveryConfirmed = submitted && test?.mode !== 'practice' && (!hasDb || !submitError);
+    const inSeb = useSebQuitRedirect(deliveryConfirmed);
 
     // ── Draft autosave ────────────────────────────────────────────────────────
     useEffect(() => {
