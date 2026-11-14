@@ -3799,6 +3799,8 @@
         "permission_denied": "Browsernotificaties geblokkeerd. Sta ze toe in de browserinstellingen.",
         "browser_title": "RubricMaker — Achterstallig nakijkwerk",
         "clear_all": "Alles verbergen",
+        "clear_type": "{{type}} wissen",
+        "mark_all_read": "Alles als gelezen markeren",
         "unread_messages_subtitle": "{{count}} ongelezen berichtdraad(en)",
         "moderation_subtitle": "{{count}} openstaande moderatiebeoordeling(en)",
         "view_all": "Alle meldingen bekijken",

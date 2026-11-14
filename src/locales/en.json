@@ -3799,6 +3799,8 @@
         "permission_denied": "Browser notifications blocked. Allow them in browser settings.",
         "browser_title": "RubricMaker — Overdue Grading",
         "clear_all": "Clear all",
+        "clear_type": "Clear {{type}}",
+        "mark_all_read": "Mark all read",
         "unread_messages_subtitle": "{{count}} unread message thread(s)",
         "moderation_subtitle": "{{count}} pending moderation review(s)",
         "view_all": "View all notifications",

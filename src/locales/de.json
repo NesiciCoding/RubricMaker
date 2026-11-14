@@ -3799,6 +3799,8 @@
         "permission_denied": "Browser-Benachrichtigungen blockiert. Erlauben Sie sie in den Browser-Einstellungen.",
         "browser_title": "RubricMaker — Überfällige Bewertungen",
         "clear_all": "Alle löschen",
+        "clear_type": "{{type}} löschen",
+        "mark_all_read": "Alle als gelesen markieren",
         "unread_messages_subtitle": "{{count}} ungelesene Nachrichtenverlauf/-verläufe",
         "moderation_subtitle": "{{count}} ausstehende Moderationsprüfung(en)",
         "view_all": "Alle Benachrichtigungen anzeigen",
