@@ -2669,6 +2669,12 @@
         "tag_group_other": "Etiquetas"
     },
     "questionBank": {
+        "new_button": "Nueva pregunta",
+        "create_question_title": "Nueva pregunta",
+        "sort_label": "Ordenar",
+        "sort_newest": "Más recientes",
+        "sort_prompt": "A–Z",
+        "duplicate_warning_toast": "Ya hay una pregunta con el mismo enunciado en el banco",
         "title": "Banco de preguntas",
         "page_intro": "Preguntas de examen reutilizables que puedes insertar en cualquier prueba.",
         "search_placeholder": "Buscar preguntas...",
@@ -4879,6 +4885,7 @@
         "ce_news_flashes_item_read_receipts": "Cada novedad en la lista del profesor muestra cuántos alumnos la han leído — haz clic en el número para ver quiénes.",
         "ce_news_flashes_info": "Las novedades se envían a todos los alumnos del profesor que las creó — no hay asignación por alumno ni se envía ningún correo.",
         "gr_question_bank_item_cefr": "Etiquete cualquier elemento del banco con un nivel MCER para un filtrado fiable, además de las etiquetas de texto libre.",
+        "gr_question_bank_item_author": "El botón Nueva pregunta permite escribir una pregunta directamente en el banco en lugar de hacerlo desde un test. La exportación descarga solo las filas que coinciden con tus filtros, y un enunciado ya existente muestra un aviso sin bloquear el guardado.",
         "gr_question_bank_item_filter": "Acote el banco con el filtro de etiquetas con búsqueda, más los filtros por clase, tipo, MCER y destreza — luego seleccione elementos y defina en bloque sus etiquetas, nivel MCER o destreza en una sola acción.",
         "gr_question_bank_item_bundle_save": "Agrupe todo un pasaje de lectura/audición — el contenido de la sección, el audio y sus preguntas — en una sola entrada reutilizable del banco mediante \"Guardar este pasaje + preguntas en el banco\" en el generador de exámenes.",
         "gr_question_bank_item_bundle_insert": "Vuelva a insertar un conjunto guardado en cualquier examen como una sección completamente formada, lista para seguir editando.",
