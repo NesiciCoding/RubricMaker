@@ -7640,6 +7640,2804 @@ GRANT EXECUTE ON FUNCTION public.get_unread_messages_counts(uuid[]) TO service_r
 ALTER TABLE IF EXISTS public.essay_assignments
   ADD COLUMN IF NOT EXISTS content_language TEXT;
 
+-- ── 100_live_writing_sessions.sql ──────────────────────────────────────────────────────────────
+
+-- Live writing sessions (Phase 43.1, #1159).
+--
+-- A live session is a transient orchestration layer over the existing essay pipeline, not a new
+-- assignment type. It stores only what happens in the room: the prompt, who joined, the text each
+-- student wrote per round, their hand-in and self-check, and one peer vote per round. "Send to
+-- grading" (a later phase) creates essay_submissions rows using the roster student_id below, which
+-- is the seam into the existing grading loop.
+--
+-- Zero AI: no column here is filled by a model. `cefr_estimate` is an optional early indicator
+-- computed by a deterministic rule set (43.4), stored on the response only, and never written into
+-- the CEFR aggregation, placement results or grades.
+--
+-- Access model:
+--   teachers  — direct table CRUD through RLS, owner only (co-teacher read comes later);
+--   students  — no direct table access at all, only the SECURITY DEFINER RPCs at the bottom of
+--               this file, authenticated by the participant's join token.
+
+-- ── 1. Tables ────────────────────────────────────────────────────────────────
+
+create table if not exists public.live_writing_sessions (
+    id uuid primary key default gen_random_uuid(),
+    owner_id uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+    class_id text not null references public.classes(id) on delete cascade,
+    title text not null,
+    prompt text not null default '',
+    image_path text,
+    status text not null default 'draft'
+        check (status in ('draft', 'lobby', 'writing', 'voting', 'finals', 'closed')),
+    join_code text not null default '' unique,
+    join_code_expires_at timestamptz,
+    round_count int not null default 1 check (round_count between 1 and 3),
+    current_round int not null default 1 check (current_round between 1 and 3),
+    minutes_per_round int not null default 10 check (minutes_per_round between 1 and 120),
+    min_words int not null default 0 check (min_words >= 0),
+    max_words int check (max_words is null or max_words >= min_words),
+    scaffold_enabled boolean not null default true,
+    scaffold_prompts jsonb not null default '[]'::jsonb
+        check (jsonb_typeof(scaffold_prompts) = 'array'),
+    live_leaderboard boolean not null default true,
+    lock_after_start boolean not null default false,
+    votes_open boolean not null default false,
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now(),
+    started_at timestamptz,
+    ended_at timestamptz,
+    constraint live_writing_sessions_round_range check (current_round <= round_count),
+    constraint live_writing_sessions_title_length check (char_length(title) between 1 and 200),
+    constraint live_writing_sessions_prompt_length check (char_length(prompt) <= 5000),
+    -- Storage object path only (bucket `live-writing`), never an external image URL.
+    constraint live_writing_sessions_image_path_length check (image_path is null or char_length(image_path) between 1 and 500)
+);
+
+create table if not exists public.live_writing_participants (
+    id uuid primary key default gen_random_uuid(),
+    session_id uuid not null references public.live_writing_sessions(id) on delete cascade,
+    student_id text not null,
+    display_name text not null,
+    join_token text not null,
+    joined_at timestamptz not null default now(),
+    last_seen_at timestamptz not null default now(),
+    unique (session_id, student_id)
+);
+
+create table if not exists public.live_writing_responses (
+    id uuid primary key default gen_random_uuid(),
+    session_id uuid not null references public.live_writing_sessions(id) on delete cascade,
+    participant_id uuid not null references public.live_writing_participants(id) on delete cascade,
+    round_index int not null default 1 check (round_index between 1 and 3),
+    content_html text not null default '',
+    word_count int not null default 0 check (word_count >= 0),
+    handed_in_at timestamptz,
+    self_rating int check (self_rating between 1 and 5),
+    self_note text check (self_note is null or char_length(self_note) <= 1000),
+    -- Early indicator only (43.4). Never summed, averaged or written to profiles/CEFR aggregation.
+    cefr_estimate text check (cefr_estimate in ('A1', 'A2', 'B1', 'B2', 'C1', 'C2')),
+    cefr_estimate_source text check (cefr_estimate_source is null or cefr_estimate_source = 'heuristic'),
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now(),
+    unique (participant_id, round_index)
+);
+
+create table if not exists public.live_writing_votes (
+    id uuid primary key default gen_random_uuid(),
+    session_id uuid not null references public.live_writing_sessions(id) on delete cascade,
+    round_index int not null check (round_index between 1 and 3),
+    voter_participant_id uuid not null references public.live_writing_participants(id) on delete cascade,
+    chosen_participant_id uuid not null references public.live_writing_participants(id) on delete cascade,
+    created_at timestamptz not null default now(),
+    constraint live_writing_votes_not_self check (voter_participant_id <> chosen_participant_id),
+    -- One vote per pair per round. A teacher reopening a round deletes these first, which is what
+    -- makes a second quality-control round possible.
+    constraint live_writing_votes_one_per_round unique (session_id, round_index, voter_participant_id)
+);
+
+-- Ephemeral abuse guard for join codes. No owner and no student link: it exists only to throttle
+-- failed guesses and is pruned on use, so it is deliberately outside the owner/student backups.
+create table if not exists public.live_writing_join_attempts (
+    rate_key text not null,
+    attempted_at timestamptz not null default now()
+);
+create index if not exists live_writing_join_attempts_key_idx
+    on public.live_writing_join_attempts(rate_key, attempted_at desc);
+
+create index if not exists live_writing_sessions_owner_idx on public.live_writing_sessions(owner_id);
+create index if not exists live_writing_sessions_code_idx on public.live_writing_sessions(join_code);
+create index if not exists live_writing_participants_session_idx on public.live_writing_participants(session_id);
+create index if not exists live_writing_participants_student_idx on public.live_writing_participants(student_id);
+create index if not exists live_writing_responses_session_idx on public.live_writing_responses(session_id);
+create index if not exists live_writing_votes_session_idx on public.live_writing_votes(session_id);
+
+comment on table public.live_writing_sessions is
+    'Teacher-run live writing sessions (Phase 43). Transient orchestration over the essay pipeline; no AI.';
+comment on column public.live_writing_sessions.scaffold_prompts is
+    'Teacher-authored hints, shown only when scaffold_enabled. Never generated.';
+comment on column public.live_writing_responses.cefr_estimate is
+    'Early indicator from deterministic rules (43.4). Not a grade and never aggregated into CEFR levels.';
+
+-- ── 2. Code + timestamps ─────────────────────────────────────────────────────
+
+create or replace function public.live_writing_assign_code()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_code text;
+BEGIN
+    IF NEW.join_code IS NULL OR NEW.join_code = '' THEN
+        LOOP
+            -- 6 hex characters, with visually ambiguous 0/1 mapped to 2/3. 16^6 codes plus the
+            -- join-attempt throttle below keeps guessing impractical for a classroom window.
+            v_code := 'RM-' || translate(
+                upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 6)),
+                '0O1I',
+                '2345'
+            );
+            EXIT WHEN NOT EXISTS (
+                SELECT 1 FROM public.live_writing_sessions WHERE join_code = v_code
+            );
+        END LOOP;
+        NEW.join_code := v_code;
+    END IF;
+    NEW.join_code_expires_at := coalesce(NEW.join_code_expires_at, now() + interval '24 hours');
+    RETURN NEW;
+END;
+$$;
+
+drop trigger if exists live_writing_sessions_assign_code on public.live_writing_sessions;
+create trigger live_writing_sessions_assign_code
+    before insert on public.live_writing_sessions
+    for each row execute function public.live_writing_assign_code();
+
+create or replace function public.live_writing_touch_updated_at()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+BEGIN
+    NEW.updated_at := now();
+    -- Opening the lobby revives an expired code: a draft may sit for days before class.
+    IF TG_TABLE_NAME = 'live_writing_sessions'
+        AND NEW.status IN ('lobby', 'writing')
+        AND OLD.status = 'draft'
+    THEN
+        NEW.join_code_expires_at := now() + interval '24 hours';
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+drop trigger if exists live_writing_sessions_touch on public.live_writing_sessions;
+create trigger live_writing_sessions_touch
+    before update on public.live_writing_sessions
+    for each row execute function public.live_writing_touch_updated_at();
+
+drop trigger if exists live_writing_responses_touch on public.live_writing_responses;
+create trigger live_writing_responses_touch
+    before update on public.live_writing_responses
+    for each row execute function public.live_writing_touch_updated_at();
+
+-- ── 3. RLS ───────────────────────────────────────────────────────────────────
+
+alter table public.live_writing_sessions enable row level security;
+alter table public.live_writing_participants enable row level security;
+alter table public.live_writing_responses enable row level security;
+alter table public.live_writing_votes enable row level security;
+alter table public.live_writing_join_attempts enable row level security;
+
+drop policy if exists live_writing_sessions_owner on public.live_writing_sessions;
+create policy live_writing_sessions_owner on public.live_writing_sessions
+    for all using (owner_id = auth.uid()) with check (owner_id = auth.uid());
+
+drop policy if exists live_writing_participants_owner_read on public.live_writing_participants;
+create policy live_writing_participants_owner_read on public.live_writing_participants
+    for select using (
+        session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = auth.uid())
+    );
+
+drop policy if exists live_writing_responses_owner_read on public.live_writing_responses;
+create policy live_writing_responses_owner_read on public.live_writing_responses
+    for select using (
+        session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = auth.uid())
+    );
+
+drop policy if exists live_writing_votes_owner_read on public.live_writing_votes;
+create policy live_writing_votes_owner_read on public.live_writing_votes
+    for select using (
+        session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = auth.uid())
+    );
+
+-- Students never touch these tables directly, and the attempt log is internal only.
+revoke all on public.live_writing_sessions from anon;
+revoke all on public.live_writing_participants from anon;
+revoke all on public.live_writing_responses from anon;
+revoke all on public.live_writing_votes from anon;
+revoke all on public.live_writing_join_attempts from anon, authenticated;
+
+grant select, insert, update, delete on public.live_writing_sessions to authenticated;
+grant select on public.live_writing_participants to authenticated;
+grant select on public.live_writing_responses to authenticated;
+grant select on public.live_writing_votes to authenticated;
+
+-- ── 4. Helpers ───────────────────────────────────────────────────────────────
+
+create or replace function public.live_writing_normalize_code(p_code text)
+RETURNS text
+LANGUAGE sql
+IMMUTABLE
+SET search_path = public
+AS $$
+    WITH cleaned AS (
+        SELECT upper(regexp_replace(coalesce(p_code, ''), '[^A-Za-z0-9]', '', 'g')) AS c
+    )
+    SELECT CASE
+        WHEN c ~ '^RM[0-9A-Z]{6}$' THEN 'RM-' || substr(c, 3)
+        WHEN c ~ '^[0-9A-Z]{6}$'   THEN 'RM-' || c
+        ELSE ''
+    END
+    FROM cleaned
+$$;
+
+create or replace function public.live_writing_rate_key(p_code text)
+RETURNS text
+LANGUAGE plpgsql
+STABLE
+SET search_path = public
+AS $$
+DECLARE
+    v_ip text;
+BEGIN
+    v_ip := '';
+    BEGIN
+        v_ip := split_part(
+            coalesce(current_setting('request.headers', true)::json ->> 'x-forwarded-for', ''),
+            ',',
+            1
+        );
+    EXCEPTION WHEN others THEN
+        v_ip := '';
+    END;
+    IF trim(v_ip) = '' THEN
+        RETURN 'unknown:' || coalesce(p_code, '');
+    END IF;
+    RETURN trim(v_ip) || ':' || coalesce(p_code, '');
+END;
+$$;
+
+-- Called with p_failed = true only when the code did not resolve. Limit is per caller+code, so a
+-- class sharing one NAT address is not locked out by one student's typos.
+create or replace function public.live_writing_rate_check(p_code text, p_failed boolean)
+RETURNS void
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+DECLARE
+    v_key text := public.live_writing_rate_key(p_code);
+    v_recent int;
+    v_limit int;
+BEGIN
+    IF p_failed THEN
+        DELETE FROM public.live_writing_join_attempts WHERE attempted_at < now() - interval '1 day';
+        INSERT INTO public.live_writing_join_attempts(rate_key) VALUES (v_key);
+    END IF;
+
+    SELECT count(*) INTO v_recent
+    FROM public.live_writing_join_attempts
+    WHERE rate_key = v_key AND attempted_at > now() - interval '10 minutes';
+
+    v_limit := CASE WHEN v_key LIKE 'unknown:%' THEN 200 ELSE 30 END;
+    IF v_recent > v_limit THEN
+        RAISE EXCEPTION 'too_many_attempts';
+    END IF;
+END;
+$$;
+
+create or replace function public.live_writing_word_count(p_html text)
+RETURNS int
+LANGUAGE sql
+IMMUTABLE
+SET search_path = public
+AS $$
+    SELECT coalesce(
+        array_length(
+            regexp_split_to_array(
+                nullif(trim(regexp_replace(coalesce(p_html, ''), '<[^>]*>', ' ', 'g')), ''),
+                '\s+'
+            ),
+            1
+        ),
+        0
+    )
+$$;
+
+-- Resolve a participant by id + secret token. SECURITY DEFINER so students need no table access.
+create or replace function public.live_writing_participant_for_token(
+    p_participant_id uuid,
+    p_token text
+)
+RETURNS public.live_writing_participants
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+    SELECT * FROM public.live_writing_participants
+    WHERE id = p_participant_id AND join_token = p_token
+$$;
+
+revoke all on function public.live_writing_participant_for_token(uuid, text) from public, anon, authenticated;
+revoke all on function public.live_writing_rate_check(text, boolean) from public, anon, authenticated;
+revoke all on function public.live_writing_rate_key(text) from public, anon, authenticated;
+revoke all on function public.live_writing_normalize_code(text) from public, anon, authenticated;
+
+-- ── 5. Student RPCs ──────────────────────────────────────────────────────────
+
+-- Names for the picker. Only a live (lobby/writing) code returns anything, and only the roster of
+-- the session's own class — never emails, grades or other classes.
+create or replace function public.live_writing_roster(p_code text)
+RETURNS TABLE (student_id text, name text)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_code text := public.live_writing_normalize_code(p_code);
+    v_session public.live_writing_sessions;
+BEGIN
+    PERFORM public.live_writing_rate_check(p_code, false);
+    SELECT * INTO v_session FROM public.live_writing_sessions WHERE join_code = v_code;
+
+    IF v_code = '' OR NOT FOUND
+        OR v_session.status NOT IN ('lobby', 'writing')
+        OR v_session.join_code_expires_at < now()
+    THEN
+        PERFORM public.live_writing_rate_check(p_code, true);
+        RAISE EXCEPTION 'invalid_code';
+    END IF;
+
+    RETURN QUERY
+        SELECT s.id, coalesce(s.data ->> 'name', 'Student')
+        FROM public.students s
+        WHERE s.class_id = v_session.class_id
+          AND s.owner_id = v_session.owner_id
+          AND s.data ->> 'archivedAt' IS NULL
+        ORDER BY lower(coalesce(s.data ->> 'name', 'Student'));
+END;
+$$;
+
+create or replace function public.join_live_writing_session(p_code text, p_student_id text)
+RETURNS TABLE (
+    participant_id uuid,
+    join_token text,
+    title text,
+    status text,
+    current_round int,
+    round_count int,
+    minutes_per_round int,
+    min_words int,
+    max_words int,
+    scaffold_enabled boolean
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_code text := public.live_writing_normalize_code(p_code);
+    v_session public.live_writing_sessions;
+    v_name text;
+    v_participant public.live_writing_participants;
+    v_token text;
+BEGIN
+    PERFORM public.live_writing_rate_check(p_code, false);
+    SELECT * INTO v_session FROM public.live_writing_sessions WHERE join_code = v_code;
+
+    IF v_code = '' OR NOT FOUND
+        OR v_session.join_code_expires_at < now()
+        OR v_session.status NOT IN ('lobby', 'writing')
+        OR (v_session.status = 'writing' AND v_session.lock_after_start)
+    THEN
+        PERFORM public.live_writing_rate_check(p_code, true);
+        RAISE EXCEPTION 'invalid_code';
+    END IF;
+
+    SELECT coalesce(s.data ->> 'name', 'Student') INTO v_name
+    FROM public.students s
+    WHERE s.id = p_student_id
+      AND s.class_id = v_session.class_id
+      AND s.owner_id = v_session.owner_id
+      AND s.data ->> 'archivedAt' IS NULL;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'student_not_in_class';
+    END IF;
+
+    -- Two UUIDs: a fresh token per join, so a lost/shared device can be replaced by the teacher
+    -- simply having the student pick their name again.
+    v_token := replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', '');
+
+    INSERT INTO public.live_writing_participants(session_id, student_id, display_name, join_token)
+    VALUES (v_session.id, p_student_id, v_name, v_token)
+    ON CONFLICT (session_id, student_id) DO UPDATE
+        SET join_token = EXCLUDED.join_token,
+            display_name = EXCLUDED.display_name,
+            last_seen_at = now()
+    RETURNING * INTO v_participant;
+
+    RETURN QUERY SELECT
+        v_participant.id,
+        v_participant.join_token,
+        v_session.title,
+        v_session.status,
+        v_session.current_round,
+        v_session.round_count,
+        v_session.minutes_per_round,
+        v_session.min_words,
+        v_session.max_words,
+        v_session.scaffold_enabled;
+END;
+$$;
+
+-- Draft autosave. Only the current round, only while writing, and only before hand-in.
+create or replace function public.save_live_writing_text(
+    p_participant_id uuid,
+    p_token text,
+    p_round_index int,
+    p_content_html text
+)
+RETURNS TABLE (word_count int, saved_at timestamptz)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_participant public.live_writing_participants;
+    v_session public.live_writing_sessions;
+    v_words int;
+    v_saved_at timestamptz;
+BEGIN
+    v_participant := public.live_writing_participant_for_token(p_participant_id, p_token);
+    IF v_participant.id IS NULL THEN
+        RAISE EXCEPTION 'invalid_token';
+    END IF;
+
+    SELECT * INTO v_session FROM public.live_writing_sessions WHERE id = v_participant.session_id;
+    IF v_session.status <> 'writing' OR v_session.current_round <> p_round_index THEN
+        RAISE EXCEPTION 'round_closed';
+    END IF;
+    IF p_content_html IS NOT NULL AND char_length(p_content_html) > 20000 THEN
+        RAISE EXCEPTION 'response_too_long';
+    END IF;
+
+    v_words := public.live_writing_word_count(p_content_html);
+
+    INSERT INTO public.live_writing_responses(
+        session_id, participant_id, round_index, content_html, word_count
+    )
+    VALUES (v_session.id, v_participant.id, p_round_index, coalesce(p_content_html, ''), v_words)
+    ON CONFLICT (participant_id, round_index) DO UPDATE
+        SET content_html = EXCLUDED.content_html,
+            word_count = EXCLUDED.word_count
+        WHERE live_writing_responses.handed_in_at IS NULL
+    RETURNING updated_at INTO v_saved_at;
+
+    IF v_saved_at IS NULL THEN
+        RAISE EXCEPTION 'already_handed_in';
+    END IF;
+
+    UPDATE public.live_writing_participants SET last_seen_at = now() WHERE id = v_participant.id;
+
+    RETURN QUERY SELECT v_words, v_saved_at;
+END;
+$$;
+
+create or replace function public.hand_in_live_writing(
+    p_participant_id uuid,
+    p_token text,
+    p_round_index int
+)
+RETURNS TABLE (handed_in_at timestamptz)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_participant public.live_writing_participants;
+    v_session public.live_writing_sessions;
+    v_handed_in timestamptz;
+BEGIN
+    v_participant := public.live_writing_participant_for_token(p_participant_id, p_token);
+    IF v_participant.id IS NULL THEN
+        RAISE EXCEPTION 'invalid_token';
+    END IF;
+
+    SELECT * INTO v_session FROM public.live_writing_sessions WHERE id = v_participant.session_id;
+    IF v_session.status <> 'writing' OR v_session.current_round <> p_round_index THEN
+        RAISE EXCEPTION 'round_closed';
+    END IF;
+
+    INSERT INTO public.live_writing_responses(session_id, participant_id, round_index)
+    VALUES (v_session.id, v_participant.id, p_round_index)
+    ON CONFLICT (participant_id, round_index) DO NOTHING;
+
+    UPDATE public.live_writing_responses
+    SET handed_in_at = coalesce(handed_in_at, now())
+    WHERE participant_id = v_participant.id AND round_index = p_round_index
+    RETURNING handed_in_at INTO v_handed_in;
+
+    UPDATE public.live_writing_participants SET last_seen_at = now() WHERE id = v_participant.id;
+
+    RETURN QUERY SELECT v_handed_in;
+END;
+$$;
+
+-- Self-check: rating + note only, after hand-in. Deliberately separate from the teacher's grade.
+create or replace function public.self_check_live_writing(
+    p_participant_id uuid,
+    p_token text,
+    p_round_index int,
+    p_rating int,
+    p_note text
+)
+RETURNS TABLE (self_rating int, self_note text)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_participant public.live_writing_participants;
+    v_session public.live_writing_sessions;
+BEGIN
+    IF p_rating NOT BETWEEN 1 AND 5 THEN
+        RAISE EXCEPTION 'invalid_rating';
+    END IF;
+    IF p_note IS NOT NULL AND char_length(p_note) > 1000 THEN
+        RAISE EXCEPTION 'note_too_long';
+    END IF;
+
+    v_participant := public.live_writing_participant_for_token(p_participant_id, p_token);
+    IF v_participant.id IS NULL THEN
+        RAISE EXCEPTION 'invalid_token';
+    END IF;
+
+    SELECT * INTO v_session FROM public.live_writing_sessions WHERE id = v_participant.session_id;
+    IF v_session.status NOT IN ('writing', 'voting', 'finals') THEN
+        RAISE EXCEPTION 'round_closed';
+    END IF;
+
+    UPDATE public.live_writing_responses
+    SET self_rating = p_rating, self_note = p_note
+    WHERE participant_id = v_participant.id
+      AND round_index = p_round_index
+      AND handed_in_at IS NOT NULL;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'not_handed_in';
+    END IF;
+
+    RETURN QUERY SELECT p_rating, p_note;
+END;
+$$;
+
+create or replace function public.submit_live_writing_vote(
+    p_participant_id uuid,
+    p_token text,
+    p_round_index int,
+    p_chosen_participant_id uuid
+)
+RETURNS TABLE (chosen_participant_id uuid)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_participant public.live_writing_participants;
+    v_session public.live_writing_sessions;
+BEGIN
+    v_participant := public.live_writing_participant_for_token(p_participant_id, p_token);
+    IF v_participant.id IS NULL THEN
+        RAISE EXCEPTION 'invalid_token';
+    END IF;
+
+    SELECT * INTO v_session FROM public.live_writing_sessions WHERE id = v_participant.session_id;
+    IF v_session.status <> 'voting' OR NOT v_session.votes_open
+        OR v_session.current_round <> p_round_index
+    THEN
+        RAISE EXCEPTION 'voting_closed';
+    END IF;
+    IF p_chosen_participant_id = v_participant.id THEN
+        RAISE EXCEPTION 'self_vote';
+    END IF;
+
+    -- Only a handed-in response from the same session and round can be chosen, and the voter must
+    -- have handed in too. This keeps the vote tied to what was actually shown in class.
+    IF NOT EXISTS (
+        SELECT 1 FROM public.live_writing_responses
+        WHERE participant_id = v_participant.id
+          AND round_index = p_round_index
+          AND handed_in_at IS NOT NULL
+    ) THEN
+        RAISE EXCEPTION 'not_handed_in';
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM public.live_writing_responses
+        WHERE participant_id = p_chosen_participant_id
+          AND session_id = v_session.id
+          AND round_index = p_round_index
+          AND handed_in_at IS NOT NULL
+    ) THEN
+        RAISE EXCEPTION 'invalid_choice';
+    END IF;
+
+    BEGIN
+        INSERT INTO public.live_writing_votes(
+            session_id, round_index, voter_participant_id, chosen_participant_id
+        )
+        VALUES (v_session.id, p_round_index, v_participant.id, p_chosen_participant_id);
+    EXCEPTION WHEN unique_violation THEN
+        RAISE EXCEPTION 'already_voted';
+    END;
+
+    RETURN QUERY SELECT p_chosen_participant_id;
+END;
+$$;
+
+-- ── 6. Teacher vote control ──────────────────────────────────────────────────
+
+-- Opening a round deletes that round's votes, which is what a teacher's "reopen" means: students
+-- vote again on fresh pairs. Closing just freezes the current votes.
+create or replace function public.set_live_writing_voting(
+    p_session_id uuid,
+    p_round_index int,
+    p_open boolean
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_session public.live_writing_sessions;
+BEGIN
+    SELECT * INTO v_session FROM public.live_writing_sessions
+    WHERE id = p_session_id AND owner_id = auth.uid();
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'not_session_owner';
+    END IF;
+
+    IF p_open THEN
+        IF p_round_index NOT BETWEEN 1 AND v_session.round_count THEN
+            RAISE EXCEPTION 'invalid_round';
+        END IF;
+        DELETE FROM public.live_writing_votes
+        WHERE session_id = p_session_id AND round_index = p_round_index;
+        UPDATE public.live_writing_sessions
+        SET status = 'voting', current_round = p_round_index, votes_open = true
+        WHERE id = p_session_id;
+    ELSE
+        UPDATE public.live_writing_sessions SET votes_open = false WHERE id = p_session_id;
+    END IF;
+END;
+$$;
+
+-- ── 7. Grants ────────────────────────────────────────────────────────────────
+
+revoke all on function public.live_writing_roster(text) from public;
+revoke all on function public.join_live_writing_session(text, text) from public;
+revoke all on function public.save_live_writing_text(uuid, text, int, text) from public;
+revoke all on function public.hand_in_live_writing(uuid, text, int) from public;
+revoke all on function public.self_check_live_writing(uuid, text, int, int, text) from public;
+revoke all on function public.submit_live_writing_vote(uuid, text, int, uuid) from public;
+revoke all on function public.set_live_writing_voting(uuid, int, boolean) from public;
+
+grant execute on function public.live_writing_roster(text) to anon, authenticated;
+grant execute on function public.join_live_writing_session(text, text) to anon, authenticated;
+grant execute on function public.save_live_writing_text(uuid, text, int, text) to anon, authenticated;
+grant execute on function public.hand_in_live_writing(uuid, text, int) to anon, authenticated;
+grant execute on function public.self_check_live_writing(uuid, text, int, int, text) to anon, authenticated;
+grant execute on function public.submit_live_writing_vote(uuid, text, int, uuid) to anon, authenticated;
+grant execute on function public.set_live_writing_voting(uuid, int, boolean) to authenticated;
+
+-- ── 8. Data registries ───────────────────────────────────────────────────────
+
+CREATE OR REPLACE FUNCTION public.owner_data_tables()
+RETURNS TABLE (key text, table_name text, owner_filter text)
+LANGUAGE sql
+IMMUTABLE
+SET search_path = public
+AS $$
+  VALUES
+    ('rubrics',                   'rubrics',                   'owner_id = $1'),
+    ('folders',                   'folders',                   'owner_id = $1'),
+    ('rubric_versions',           'rubric_versions',           'owner_id = $1'),
+    ('rubric_shares',             'rubric_shares',             'rubric_id IN (SELECT id FROM public.rubrics WHERE owner_id = $1)'),
+    ('classes',                   'classes',                   'owner_id = $1'),
+    ('class_members',             'class_members',             'class_id IN (SELECT id FROM public.classes WHERE owner_id = $1)'),
+    ('students',                  'students',                  'owner_id = $1'),
+    ('student_rubrics',           'student_rubrics',           'grader_id = $1 AND is_peer_review = false'),
+    ('peer_reviews',              'student_rubrics',           'grader_id = $1 AND is_peer_review = true'),
+    ('attachments',               'attachments',               'owner_id = $1'),
+    ('grade_scales',              'grade_scales',              'owner_id = $1'),
+    ('comment_snippets',          'comment_snippets',          'owner_id = $1'),
+    ('comment_bank',              'comment_bank',              'owner_id = $1'),
+    ('export_templates',          'export_templates',          'owner_id = $1'),
+    ('favorite_standards',        'favorite_standards',        'owner_id = $1'),
+    ('standard_mastery_targets',  'standard_mastery_targets',  'owner_id = $1'),
+    ('self_assessments',          'self_assessments',          'owner_id = $1'),
+    ('speaking_sessions',         'speaking_sessions',         'owner_id = $1'),
+    ('recording_metadata',        'recording_metadata',        'owner_id = $1'),
+    ('scan_metadata',             'scan_metadata',             'owner_id = $1'),
+    ('analysis_results',          'analysis_results',          'owner_id = $1'),
+    ('tests',                     'tests',                     'owner_id = $1'),
+    ('test_assignments',          'test_assignments',          'owner_id = $1'),
+    ('student_tests',             'student_tests',             'owner_id = $1'),
+    ('placement_sessions',        'placement_sessions',        'owner_id = $1'),
+    ('essay_templates',           'essay_templates',           'owner_id = $1'),
+    ('essay_assignments',         'essay_assignments',         'owner_id = $1'),
+    ('essay_submissions',         'essay_submissions',         'assignment_id IN (SELECT id FROM public.essay_assignments WHERE owner_id = $1)'),
+    ('essay_batch_assignments',   'essay_batch_assignments',   'owner_id = $1'),
+    ('essay_offline_submissions', 'essay_offline_submissions', 'owner_id = $1'),
+    ('grading_tasks',             'grading_tasks',             'owner_id = $1'),
+    ('user_templates',            'user_templates',            'owner_id = $1'),
+    ('user_settings',             'user_settings',             'user_id = $1'),
+    ('flashcard_decks',           'flashcard_decks',           'owner_id = $1'),
+    ('flashcard_assignments',     'flashcard_assignments',     'owner_id = $1'),
+    ('flashcard_reviews',         'flashcard_reviews',         'owner_id = $1'),
+    ('news_flashes',              'news_flashes',              'owner_id = $1'),
+    ('news_flash_reads',          'news_flash_reads',          'owner_id = $1'),
+    ('messages',                  'messages',                  'owner_id = $1'),
+    ('question_bank_items',       'question_bank_items',       'owner_id = $1'),
+    ('document_comments',         'document_comments',         'owner_id = $1'),
+    ('notification_dismissals',   'notification_dismissals',   'owner_id = $1'),
+    ('comparative_matchups',      'comparative_matchups',      'owner_id = $1'),
+    ('marketplace_listings',      'marketplace_listings',      'published_by = $1'),
+    ('marketplace_upvotes',       'marketplace_upvotes',       'profile_id = $1'),
+    ('live_writing_votes',        'live_writing_votes',        'session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = $1)'),
+    ('live_writing_responses',    'live_writing_responses',    'session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = $1)'),
+    ('live_writing_participants', 'live_writing_participants', 'session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = $1)'),
+    ('live_writing_sessions',     'live_writing_sessions',     'owner_id = $1')
+$$;
+
+CREATE OR REPLACE FUNCTION public.student_data_tables()
+RETURNS TABLE (key text, table_name text, student_filter text, owner_filter text)
+LANGUAGE sql
+IMMUTABLE
+SET search_path = public
+AS $$
+  VALUES
+    ('document_comments',         'document_comments',         $f$data->>'attachmentId' IN (SELECT id FROM public.attachments WHERE data->>'studentId' = $1)$f$, 'owner_id = $2'),
+    ('attachments',               'attachments',               $f$data->>'studentId' = $1$f$,                                                              'owner_id = $2'),
+    ('recording_metadata',        'recording_metadata',        'session_id IN (SELECT id FROM public.speaking_sessions WHERE student_id = $1)',            'owner_id = $2'),
+    ('speaking_sessions',         'speaking_sessions',         'student_id = $1',                                                                          'owner_id = $2'),
+    ('self_assessments',          'self_assessments',          'student_id = $1',                                                                          'owner_id = $2'),
+    ('analysis_results',          'analysis_results',          'student_id = $1',                                                                          'owner_id = $2'),
+    ('scan_metadata',             'scan_metadata',             'student_id = $1',                                                                          'owner_id = $2'),
+    ('student_rubrics',           'student_rubrics',           'student_id = $1',                                                                          'grader_id = $2'),
+    ('essay_submissions',         'essay_submissions',         'assignment_id IN (SELECT id FROM public.essay_assignments WHERE student_id = $1)',         'assignment_id IN (SELECT id FROM public.essay_assignments WHERE owner_id = $2)'),
+    ('essay_assignments',         'essay_assignments',         'student_id = $1',                                                                          'owner_id = $2'),
+    ('essay_batch_assignments',   'essay_batch_assignments',   $f$data->>'studentId' = $1$f$,                                                              'owner_id = $2'),
+    ('essay_offline_submissions', 'essay_offline_submissions', $f$data->>'assignmentStudentId' = $1$f$,                                                    'owner_id = $2'),
+    ('placement_sessions',        'placement_sessions',        'assignment_id IN (SELECT id FROM public.test_assignments WHERE student_id = $1)',          'owner_id = $2'),
+    ('student_tests',             'student_tests',             $f$data->>'studentId' = $1 OR assignment_id IN (SELECT id FROM public.test_assignments WHERE student_id = $1)$f$, 'owner_id = $2'),
+    ('test_assignments',          'test_assignments',          'student_id = $1',                                                                          'owner_id = $2'),
+    ('messages',                  'messages',                  'student_id = $1',                                                                          'owner_id = $2'),
+    ('flashcard_reviews',         'flashcard_reviews',         'student_id = $1',                                                                          'owner_id = $2'),
+    ('flashcard_assignments',     'flashcard_assignments',     'student_id = $1',                                                                          'owner_id = $2'),
+    ('flashcard_decks',           'flashcard_decks',           'student_id = $1',                                                                          'owner_id = $2'),
+    ('news_flash_reads',          'news_flash_reads',          'student_id = $1',                                                                          'owner_id = $2'),
+    ('grading_tasks',             'grading_tasks',             $f$data->>'studentId' = $1$f$,                                                              'owner_id = $2'),
+    ('comparative_matchups',      'comparative_matchups',      $f$data->>'studentAId' = $1 OR data->>'studentBId' = $1$f$,                                 'owner_id = $2'),
+    ('live_writing_votes',        'live_writing_votes',        'voter_participant_id IN (SELECT id FROM public.live_writing_participants WHERE student_id = $1)', 'session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = $2)'),
+    ('live_writing_responses',    'live_writing_responses',    'participant_id IN (SELECT id FROM public.live_writing_participants WHERE student_id = $1)',       'session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = $2)'),
+    ('live_writing_participants', 'live_writing_participants', 'student_id = $1',                                                                          'session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = $2)'),
+    ('students',                  'students',                  'id = $1',                                                                                  'owner_id = $2')
+$$;
+
+-- ── 101_live_writing_projector_timer.sql ──────────────────────────────────────────────────────────────
+
+-- Live writing projector + server-authoritative timer (Phase 43.2, #1155).
+--
+-- The projector is a separate window but never the source of truth: start, pause, resume, +1 min
+-- and end are database writes owned by the session's teacher. Every device derives the countdown
+-- from `timer_ends_at` plus the database's `now()`, so a refresh or a slow browser cannot drift.
+-- `timer_remaining_ms` holds the frozen remainder while paused.
+--
+-- Realtime presence/progress is broadcast-only (see LiveWritingAdapter) and never carries response
+-- text. Nothing here changes the zero-AI or early-indicator contract from migration 100.
+
+alter table public.live_writing_sessions
+    add column if not exists timer_state text not null default 'idle'
+        check (timer_state in ('idle', 'running', 'paused', 'ended')),
+    add column if not exists timer_ends_at timestamptz,
+    add column if not exists timer_remaining_ms bigint not null default 0
+        check (timer_remaining_ms >= 0),
+    add column if not exists show_progress_board boolean not null default true;
+
+comment on column public.live_writing_sessions.timer_ends_at is
+    'Absolute database deadline for the current writing round. Clients must derive the countdown from this and server_now, not from a local interval.';
+comment on column public.live_writing_sessions.timer_remaining_ms is
+    'Frozen remainder while paused, in milliseconds.';
+
+-- ── Teacher controls ─────────────────────────────────────────────────────────
+
+create or replace function public.start_live_writing_session(p_session_id uuid)
+RETURNS TABLE (
+    status text,
+    timer_state text,
+    timer_ends_at timestamptz,
+    timer_remaining_ms bigint,
+    server_now timestamptz
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_session public.live_writing_sessions;
+    v_status text;
+    v_state text;
+    v_ends timestamptz;
+    v_remaining bigint;
+    v_now timestamptz;
+BEGIN
+    SELECT * INTO v_session FROM public.live_writing_sessions
+    WHERE id = p_session_id AND owner_id = auth.uid();
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'not_session_owner';
+    END IF;
+    IF v_session.status <> 'lobby' THEN
+        RAISE EXCEPTION 'session_not_in_lobby';
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM public.live_writing_participants WHERE session_id = p_session_id
+    ) THEN
+        RAISE EXCEPTION 'no_participants';
+    END IF;
+
+    UPDATE public.live_writing_sessions AS s
+    SET status = 'writing',
+        timer_state = 'running',
+        timer_ends_at = now() + make_interval(mins => v_session.minutes_per_round),
+        timer_remaining_ms = 0,
+        started_at = coalesce(s.started_at, now())
+    WHERE s.id = p_session_id
+    RETURNING s.status, s.timer_state, s.timer_ends_at, s.timer_remaining_ms, now()
+    INTO v_status, v_state, v_ends, v_remaining, v_now;
+
+    RETURN QUERY SELECT v_status, v_state, v_ends, v_remaining, v_now;
+END;
+$$;
+
+create or replace function public.control_live_writing_timer(
+    p_session_id uuid,
+    p_action text
+)
+RETURNS TABLE (
+    status text,
+    timer_state text,
+    timer_ends_at timestamptz,
+    timer_remaining_ms bigint,
+    server_now timestamptz
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_session public.live_writing_sessions;
+    v_remaining bigint;
+    v_status text;
+    v_state text;
+    v_ends timestamptz;
+    v_frozen bigint;
+    v_now timestamptz;
+BEGIN
+    SELECT * INTO v_session FROM public.live_writing_sessions
+    WHERE id = p_session_id AND owner_id = auth.uid()
+    FOR UPDATE;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'not_session_owner';
+    END IF;
+    IF p_action NOT IN ('pause', 'resume', 'extend', 'end_writing', 'end_session') THEN
+        RAISE EXCEPTION 'invalid_action';
+    END IF;
+
+    IF p_action = 'pause' THEN
+        IF v_session.timer_state <> 'running' THEN
+            RAISE EXCEPTION 'timer_not_running';
+        END IF;
+        v_remaining := greatest(
+            0,
+            (extract(epoch FROM (v_session.timer_ends_at - now())) * 1000)::bigint
+        );
+        UPDATE public.live_writing_sessions AS s
+        SET timer_state = 'paused', timer_remaining_ms = v_remaining, timer_ends_at = NULL
+        WHERE s.id = p_session_id;
+    ELSIF p_action = 'resume' THEN
+        IF v_session.timer_state <> 'paused' THEN
+            RAISE EXCEPTION 'timer_not_paused';
+        END IF;
+        UPDATE public.live_writing_sessions AS s
+        SET timer_state = 'running',
+            timer_ends_at = now() + (s.timer_remaining_ms * interval '1 millisecond'),
+            timer_remaining_ms = 0
+        WHERE s.id = p_session_id;
+    ELSIF p_action = 'extend' THEN
+        IF v_session.timer_state = 'running' THEN
+            UPDATE public.live_writing_sessions AS s
+            SET timer_ends_at = coalesce(s.timer_ends_at, now()) + interval '1 minute'
+            WHERE s.id = p_session_id;
+        ELSIF v_session.timer_state = 'paused' THEN
+            UPDATE public.live_writing_sessions AS s
+            SET timer_remaining_ms = s.timer_remaining_ms + 60000
+            WHERE s.id = p_session_id;
+        ELSE
+            RAISE EXCEPTION 'timer_not_active';
+        END IF;
+    ELSIF p_action = 'end_writing' THEN
+        IF v_session.status <> 'writing' THEN
+            RAISE EXCEPTION 'session_not_writing';
+        END IF;
+        UPDATE public.live_writing_sessions AS s
+        SET status = 'voting', timer_state = 'ended', timer_ends_at = NULL, votes_open = false
+        WHERE s.id = p_session_id;
+    ELSE
+        UPDATE public.live_writing_sessions AS s
+        SET status = 'closed', timer_state = 'ended', timer_ends_at = NULL,
+            votes_open = false, ended_at = now()
+        WHERE s.id = p_session_id;
+    END IF;
+
+    SELECT s.status, s.timer_state, s.timer_ends_at, s.timer_remaining_ms, now()
+    INTO v_status, v_state, v_ends, v_frozen, v_now
+    FROM public.live_writing_sessions s WHERE s.id = p_session_id;
+
+    RETURN QUERY SELECT v_status, v_state, v_ends, v_frozen, v_now;
+END;
+$$;
+
+create or replace function public.get_live_writing_timer(p_session_id uuid)
+RETURNS TABLE (
+    status text,
+    timer_state text,
+    timer_ends_at timestamptz,
+    timer_remaining_ms bigint,
+    server_now timestamptz,
+    current_round int,
+    round_count int,
+    minutes_per_round int,
+    show_progress_board boolean
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_session public.live_writing_sessions;
+BEGIN
+    SELECT * INTO v_session FROM public.live_writing_sessions
+    WHERE id = p_session_id AND owner_id = auth.uid();
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'not_session_owner';
+    END IF;
+
+    RETURN QUERY SELECT
+        v_session.status,
+        v_session.timer_state,
+        v_session.timer_ends_at,
+        v_session.timer_remaining_ms,
+        now(),
+        v_session.current_round,
+        v_session.round_count,
+        v_session.minutes_per_round,
+        v_session.show_progress_board;
+END;
+$$;
+
+create or replace function public.set_live_writing_progress_board(
+    p_session_id uuid,
+    p_show boolean
+)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    UPDATE public.live_writing_sessions
+    SET show_progress_board = p_show
+    WHERE id = p_session_id AND owner_id = auth.uid();
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'not_session_owner';
+    END IF;
+    RETURN p_show;
+END;
+$$;
+
+revoke all on function public.start_live_writing_session(uuid) from public;
+revoke all on function public.control_live_writing_timer(uuid, text) from public;
+revoke all on function public.get_live_writing_timer(uuid) from public;
+revoke all on function public.set_live_writing_progress_board(uuid, boolean) from public;
+
+grant execute on function public.start_live_writing_session(uuid) to authenticated;
+grant execute on function public.control_live_writing_timer(uuid, text) to authenticated;
+grant execute on function public.get_live_writing_timer(uuid) to authenticated;
+grant execute on function public.set_live_writing_progress_board(uuid, boolean) to authenticated;
+
+-- ── Prompt images (43.2) ─────────────────────────────────────────────────────
+-- The prompt image is a teacher-supplied visual aid shown next to the prompt on the projector and
+-- on each student's page. Students join with a code and no account, so the bucket is public: the
+-- object is a classroom prompt, never student work. Writes stay inside the teacher's own folder so
+-- one teacher cannot replace another's images.
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+    'live-writing', 'live-writing', true, 5242880,
+    array['image/jpeg', 'image/png', 'image/webp']
+)
+on conflict (id) do update
+set public = excluded.public,
+    file_size_limit = excluded.file_size_limit,
+    allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists live_writing_prompt_image_insert on storage.objects;
+create policy live_writing_prompt_image_insert on storage.objects for insert to authenticated
+    with check (
+        bucket_id = 'live-writing'
+        and (storage.foldername(name))[1] = (select auth.uid())::text
+    );
+
+drop policy if exists live_writing_prompt_image_update on storage.objects;
+create policy live_writing_prompt_image_update on storage.objects for update to authenticated
+    using (
+        bucket_id = 'live-writing'
+        and (storage.foldername(name))[1] = (select auth.uid())::text
+    )
+    with check (
+        bucket_id = 'live-writing'
+        and (storage.foldername(name))[1] = (select auth.uid())::text
+    );
+
+drop policy if exists live_writing_prompt_image_delete on storage.objects;
+create policy live_writing_prompt_image_delete on storage.objects for delete to authenticated
+    using (
+        bucket_id = 'live-writing'
+        and (storage.foldername(name))[1] = (select auth.uid())::text
+    );
+
+-- ── 102_live_writing_student_writing.sql ──────────────────────────────────────────────────────────────
+
+-- Live writing student screen (Phase 43.3, #1158).
+--
+-- Students still have no table access. The student state RPC resolves the participant by its
+-- join token and returns only that participant's own draft, the current prompt, teacher-authored
+-- hints and the server timer. The save RPC now also stores the deterministic CEFR vocabulary
+-- estimate, but only after the 25-word threshold; it remains an early indicator, never a grade.
+--
+-- This migration also makes the server's word count match the editor's countWords() (notably
+-- &nbsp; between two words), freezes a round when its phase ends, and gives the teacher an explicit
+-- way to start the next configured round with a clean response row.
+
+-- ── 1. Word count parity with src/utils/essayUtils.ts ────────────────────────
+
+create or replace function public.live_writing_word_count(p_html text)
+RETURNS int
+LANGUAGE sql
+IMMUTABLE
+SET search_path = public
+AS $$
+    WITH cleaned AS (
+        SELECT regexp_replace(
+            regexp_replace(
+                regexp_replace(
+                    regexp_replace(
+                        regexp_replace(coalesce(p_html, ''), '<[^>]*>', ' ', 'g'),
+                        '&nbsp;', ' ', 'gi'
+                    ),
+                    '&lt;', '<', 'gi'
+                ),
+                '&gt;', '>', 'gi'
+            ),
+            '&amp;', '&', 'gi'
+        ) AS text
+    ),
+    visible AS (
+        SELECT regexp_replace(text, '&[a-zA-Z]+;', ' ', 'g') AS text FROM cleaned
+    )
+    SELECT coalesce(
+        array_length(
+            regexp_split_to_array(nullif(trim(text), ''), '\s+'),
+            1
+        ),
+        0
+    )
+    FROM visible
+$$;
+
+-- ── 2. Shared updated_at trigger must work on responses too ────────────────
+
+-- Migration 100 reuses this function on both sessions and responses, but the session-only
+-- branch reads NEW.status. PostgreSQL resolves that field on every call, so a response update
+-- raised "record new has no field status". Keep the session branch nested behind the table check.
+create or replace function public.live_writing_touch_updated_at()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+BEGIN
+    NEW.updated_at := now();
+    IF TG_TABLE_NAME = 'live_writing_sessions' THEN
+        -- Opening the lobby revives an expired code: a draft may sit for days before class.
+        IF NEW.status IN ('lobby', 'writing') AND OLD.status = 'draft' THEN
+            NEW.join_code_expires_at := now() + interval '24 hours';
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+-- ── 3. Freeze a round as soon as writing ends ───────────────────────────────
+
+create or replace function public.live_writing_freeze_round_on_phase_change()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    IF OLD.status = 'writing' AND NEW.status <> 'writing' THEN
+        UPDATE public.live_writing_responses
+        SET handed_in_at = coalesce(handed_in_at, now())
+        WHERE session_id = NEW.id
+          AND round_index = OLD.current_round
+          AND handed_in_at IS NULL;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+drop trigger if exists live_writing_sessions_freeze_round on public.live_writing_sessions;
+create trigger live_writing_sessions_freeze_round
+    before update of status on public.live_writing_sessions
+    for each row execute function public.live_writing_freeze_round_on_phase_change();
+
+-- ── 4. Autosave with a guarded vocabulary estimate ─────────────────────────
+
+-- Replaced rather than overloaded: one function keeps PostgREST's RPC resolution unambiguous.
+drop function if exists public.save_live_writing_text(uuid, text, int, text);
+
+create or replace function public.save_live_writing_text(
+    p_participant_id uuid,
+    p_token text,
+    p_round_index int,
+    p_content_html text,
+    p_cefr_estimate text default null
+)
+RETURNS TABLE (word_count int, saved_at timestamptz)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_participant public.live_writing_participants;
+    v_session public.live_writing_sessions;
+    v_words int;
+    v_estimate text;
+    v_saved_at timestamptz;
+BEGIN
+    v_participant := public.live_writing_participant_for_token(p_participant_id, p_token);
+    IF v_participant.id IS NULL THEN
+        RAISE EXCEPTION 'invalid_token';
+    END IF;
+
+    SELECT * INTO v_session FROM public.live_writing_sessions WHERE id = v_participant.session_id;
+    IF v_session.status <> 'writing' OR v_session.current_round <> p_round_index THEN
+        RAISE EXCEPTION 'round_closed';
+    END IF;
+    IF v_session.timer_state = 'running'
+        AND v_session.timer_ends_at IS NOT NULL
+        AND v_session.timer_ends_at <= now()
+    THEN
+        -- The deadline is over. Freeze the last saved text and let the next state read hand it in.
+        UPDATE public.live_writing_responses
+        SET handed_in_at = coalesce(handed_in_at, v_session.timer_ends_at)
+        WHERE participant_id = v_participant.id
+          AND round_index = p_round_index
+          AND handed_in_at IS NULL;
+        RAISE EXCEPTION 'round_closed';
+    END IF;
+    IF p_content_html IS NOT NULL AND char_length(p_content_html) > 20000 THEN
+        RAISE EXCEPTION 'response_too_long';
+    END IF;
+    IF p_cefr_estimate IS NOT NULL AND p_cefr_estimate NOT IN ('A1', 'A2', 'B1', 'B2', 'C1', 'C2') THEN
+        RAISE EXCEPTION 'invalid_estimate';
+    END IF;
+
+    v_words := public.live_writing_word_count(p_content_html);
+    v_estimate := CASE WHEN v_words >= 25 THEN p_cefr_estimate ELSE NULL END;
+
+    INSERT INTO public.live_writing_responses(
+        session_id, participant_id, round_index, content_html, word_count,
+        cefr_estimate, cefr_estimate_source
+    )
+    VALUES (
+        v_session.id, v_participant.id, p_round_index, coalesce(p_content_html, ''), v_words,
+        v_estimate, CASE WHEN v_estimate IS NULL THEN NULL ELSE 'heuristic' END
+    )
+    ON CONFLICT (participant_id, round_index) DO UPDATE
+        SET content_html = EXCLUDED.content_html,
+            word_count = EXCLUDED.word_count,
+            cefr_estimate = EXCLUDED.cefr_estimate,
+            cefr_estimate_source = EXCLUDED.cefr_estimate_source
+        WHERE live_writing_responses.handed_in_at IS NULL
+    RETURNING updated_at INTO v_saved_at;
+
+    IF v_saved_at IS NULL THEN
+        RAISE EXCEPTION 'already_handed_in';
+    END IF;
+
+    UPDATE public.live_writing_participants SET last_seen_at = now() WHERE id = v_participant.id;
+
+    RETURN QUERY SELECT v_words, v_saved_at;
+END;
+$$;
+
+revoke all on function public.save_live_writing_text(uuid, text, int, text, text) from public;
+grant execute on function public.save_live_writing_text(uuid, text, int, text, text) to anon, authenticated;
+
+-- ── 5. Student state: own draft, prompt, hints and server timer ─────────────
+
+create or replace function public.get_live_writing_student_state(
+    p_participant_id uuid,
+    p_token text
+)
+RETURNS TABLE (
+    session_id uuid,
+    participant_id uuid,
+    display_name text,
+    session_title text,
+    session_status text,
+    timer_state text,
+    timer_ends_at timestamptz,
+    timer_remaining_ms bigint,
+    server_now timestamptz,
+    current_round int,
+    round_count int,
+    minutes_per_round int,
+    min_words int,
+    max_words int,
+    prompt text,
+    image_path text,
+    scaffold_enabled boolean,
+    scaffold_prompts jsonb,
+    response_round_index int,
+    content_html text,
+    word_count int,
+    cefr_estimate text,
+    handed_in_at timestamptz
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_participant public.live_writing_participants;
+    v_session public.live_writing_sessions;
+    v_response public.live_writing_responses;
+BEGIN
+    v_participant := public.live_writing_participant_for_token(p_participant_id, p_token);
+    IF v_participant.id IS NULL THEN
+        RAISE EXCEPTION 'invalid_token';
+    END IF;
+
+    SELECT * INTO v_session FROM public.live_writing_sessions WHERE id = v_participant.session_id;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'invalid_token';
+    END IF;
+
+    UPDATE public.live_writing_participants SET last_seen_at = now() WHERE id = v_participant.id;
+
+    SELECT r.* INTO v_response
+    FROM public.live_writing_responses AS r
+    WHERE r.participant_id = v_participant.id
+      AND r.round_index = v_session.current_round;
+
+    RETURN QUERY SELECT
+        v_session.id,
+        v_participant.id,
+        v_participant.display_name,
+        v_session.title,
+        v_session.status,
+        v_session.timer_state,
+        v_session.timer_ends_at,
+        v_session.timer_remaining_ms,
+        now(),
+        v_session.current_round,
+        v_session.round_count,
+        v_session.minutes_per_round,
+        v_session.min_words,
+        v_session.max_words,
+        v_session.prompt,
+        v_session.image_path,
+        v_session.scaffold_enabled,
+        CASE WHEN v_session.scaffold_enabled THEN v_session.scaffold_prompts ELSE '[]'::jsonb END,
+        coalesce(v_response.round_index, v_session.current_round),
+        coalesce(v_response.content_html, ''),
+        coalesce(v_response.word_count, 0),
+        v_response.cefr_estimate,
+        v_response.handed_in_at;
+END;
+$$;
+
+revoke all on function public.get_live_writing_student_state(uuid, text) from public;
+grant execute on function public.get_live_writing_student_state(uuid, text) to anon, authenticated;
+
+-- ── 6. Hand-in carries the final draft ──────────────────────────────────────
+
+-- Auto hand-in at 0:00 must freeze exactly what is on screen, not whatever the last debounced
+-- autosave happened to send. The optional content is only written while the round is still open;
+-- the phase trigger remains the authority once writing ends.
+drop function if exists public.hand_in_live_writing(uuid, text, int);
+
+create or replace function public.hand_in_live_writing(
+    p_participant_id uuid,
+    p_token text,
+    p_round_index int,
+    p_content_html text default null,
+    p_cefr_estimate text default null
+)
+RETURNS TABLE (handed_in_at timestamptz)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_participant public.live_writing_participants;
+    v_session public.live_writing_sessions;
+    v_words int;
+    v_estimate text;
+    v_handed_in timestamptz;
+BEGIN
+    v_participant := public.live_writing_participant_for_token(p_participant_id, p_token);
+    IF v_participant.id IS NULL THEN
+        RAISE EXCEPTION 'invalid_token';
+    END IF;
+
+    SELECT * INTO v_session FROM public.live_writing_sessions WHERE id = v_participant.session_id;
+    IF v_session.status <> 'writing' OR v_session.current_round <> p_round_index THEN
+        RAISE EXCEPTION 'round_closed';
+    END IF;
+    IF p_content_html IS NOT NULL AND char_length(p_content_html) > 20000 THEN
+        RAISE EXCEPTION 'response_too_long';
+    END IF;
+    IF p_cefr_estimate IS NOT NULL AND p_cefr_estimate NOT IN ('A1', 'A2', 'B1', 'B2', 'C1', 'C2') THEN
+        RAISE EXCEPTION 'invalid_estimate';
+    END IF;
+
+    -- The deadline already froze the last autosaved draft; text sent after it is not accepted.
+    IF p_content_html IS NOT NULL
+        AND NOT (
+            v_session.timer_state = 'running'
+            AND v_session.timer_ends_at IS NOT NULL
+            AND v_session.timer_ends_at <= now()
+        )
+    THEN
+        v_words := public.live_writing_word_count(p_content_html);
+        v_estimate := CASE WHEN v_words >= 25 THEN p_cefr_estimate ELSE NULL END;
+
+        INSERT INTO public.live_writing_responses(
+            session_id, participant_id, round_index, content_html, word_count,
+            cefr_estimate, cefr_estimate_source
+        )
+        VALUES (
+            v_session.id, v_participant.id, p_round_index, p_content_html, v_words,
+            v_estimate, CASE WHEN v_estimate IS NULL THEN NULL ELSE 'heuristic' END
+        )
+        ON CONFLICT (participant_id, round_index) DO UPDATE
+            SET content_html = EXCLUDED.content_html,
+                word_count = EXCLUDED.word_count,
+                cefr_estimate = EXCLUDED.cefr_estimate,
+                cefr_estimate_source = EXCLUDED.cefr_estimate_source
+            WHERE live_writing_responses.handed_in_at IS NULL;
+    ELSE
+        INSERT INTO public.live_writing_responses(session_id, participant_id, round_index)
+        VALUES (v_session.id, v_participant.id, p_round_index)
+        ON CONFLICT (participant_id, round_index) DO NOTHING;
+    END IF;
+
+    UPDATE public.live_writing_responses AS r
+    SET handed_in_at = coalesce(r.handed_in_at, now())
+    WHERE r.participant_id = v_participant.id AND r.round_index = p_round_index
+    RETURNING r.handed_in_at INTO v_handed_in;
+
+    UPDATE public.live_writing_participants SET last_seen_at = now() WHERE id = v_participant.id;
+
+    RETURN QUERY SELECT v_handed_in;
+END;
+$$;
+
+revoke all on function public.hand_in_live_writing(uuid, text, int, text, text) from public;
+grant execute on function public.hand_in_live_writing(uuid, text, int, text, text) to anon, authenticated;
+
+-- ── 7. Teacher: start the next round with a clean row ───────────────────────
+
+create or replace function public.start_live_writing_round(
+    p_session_id uuid,
+    p_round_index int
+)
+RETURNS TABLE (
+    status text,
+    timer_state text,
+    timer_ends_at timestamptz,
+    timer_remaining_ms bigint,
+    server_now timestamptz,
+    current_round int,
+    round_count int,
+    minutes_per_round int,
+    show_progress_board boolean
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_session public.live_writing_sessions;
+    v_status text;
+    v_state text;
+    v_ends timestamptz;
+    v_remaining bigint;
+    v_now timestamptz;
+    v_round int;
+    v_total int;
+    v_minutes int;
+    v_board boolean;
+BEGIN
+    SELECT * INTO v_session FROM public.live_writing_sessions
+    WHERE id = p_session_id AND owner_id = auth.uid();
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'not_session_owner';
+    END IF;
+    IF p_round_index <> v_session.current_round + 1 OR p_round_index > v_session.round_count THEN
+        RAISE EXCEPTION 'invalid_round';
+    END IF;
+    IF v_session.status NOT IN ('voting', 'finals') THEN
+        RAISE EXCEPTION 'round_not_finished';
+    END IF;
+
+    -- The phase trigger normally freezes these already; this covers a session whose status was
+    -- changed directly by an older client.
+    UPDATE public.live_writing_responses
+    SET handed_in_at = coalesce(handed_in_at, now())
+    WHERE session_id = p_session_id
+      AND round_index = v_session.current_round
+      AND handed_in_at IS NULL;
+
+    UPDATE public.live_writing_sessions AS s
+    SET status = 'writing',
+        current_round = p_round_index,
+        timer_state = 'running',
+        timer_ends_at = now() + make_interval(mins => v_session.minutes_per_round),
+        timer_remaining_ms = 0,
+        votes_open = false
+    WHERE s.id = p_session_id
+    RETURNING s.status, s.timer_state, s.timer_ends_at, s.timer_remaining_ms, now(),
+              s.current_round, s.round_count, s.minutes_per_round, s.show_progress_board
+    INTO v_status, v_state, v_ends, v_remaining, v_now, v_round, v_total, v_minutes, v_board;
+
+    RETURN QUERY SELECT v_status, v_state, v_ends, v_remaining, v_now, v_round, v_total, v_minutes, v_board;
+END;
+$$;
+
+revoke all on function public.start_live_writing_round(uuid, int) from public;
+grant execute on function public.start_live_writing_round(uuid, int) to authenticated;
+
+-- ── 103_live_writing_self_check_peer_voting.sql ──────────────────────────────────────────────────────────────
+
+-- Live writing self-check + peer voting (Phase 43.4, #1154).
+--
+-- After hand-in a student records one of three self-check ratings. When peer voting is enabled,
+-- the teacher ends writing into a voting phase where the server generates one stored pair of
+-- anonymous class texts per participant. The vote RPC accepts only `a` or `b`, so a student never
+-- receives another participant's id; the server resolves the choice against the stored pair.
+--
+-- One vote per participant per round is enforced by the existing unique constraint. Reopening a
+-- round deletes that round's votes and pairs, increments a generation, and writes a round-log row
+-- so the teacher can see that the distribution changed. Peer voting off ends writing directly in
+-- finals; no pairing or voting work is done for that round.
+
+-- ── 1. Session and response fields ───────────────────────────────────────────
+
+alter table public.live_writing_sessions
+    add column if not exists peer_voting boolean not null default true,
+    add column if not exists vote_generation int not null default 0;
+
+comment on column public.live_writing_sessions.peer_voting is
+    'When false, ending writing skips the voting phase and goes straight to finals.';
+comment on column public.live_writing_sessions.vote_generation is
+    'Increments on every voting open/reopen; used to rotate the generated pairs.';
+
+alter table public.live_writing_responses
+    drop constraint if exists live_writing_responses_self_rating_check;
+
+alter table public.live_writing_responses
+    alter column self_rating type text
+    using (
+        case
+            when self_rating is null then null
+            when self_rating <= 2 then 'unhappy'
+            when self_rating = 3 then 'neutral'
+            else 'happy'
+        end
+    );
+
+alter table public.live_writing_responses
+    add constraint live_writing_responses_self_rating_check
+    check (self_rating is null or self_rating in ('happy', 'neutral', 'unhappy'));
+
+comment on column public.live_writing_responses.self_rating is
+    'Three-option self-check after hand-in. Deliberately separate from any grade.';
+
+-- ── 2. Pairing and round log ────────────────────────────────────────────────
+
+create table if not exists public.live_writing_peer_pairs (
+    id uuid primary key default gen_random_uuid(),
+    session_id uuid not null references public.live_writing_sessions(id) on delete cascade,
+    round_index int not null check (round_index between 1 and 3),
+    voter_participant_id uuid not null references public.live_writing_participants(id) on delete cascade,
+    option_a_participant_id uuid not null references public.live_writing_participants(id) on delete cascade,
+    option_b_participant_id uuid not null references public.live_writing_participants(id) on delete cascade,
+    created_at timestamptz not null default now(),
+    constraint live_writing_peer_pairs_one_per_round unique (session_id, round_index, voter_participant_id),
+    constraint live_writing_peer_pairs_not_self check (
+        voter_participant_id <> option_a_participant_id
+        and voter_participant_id <> option_b_participant_id
+    ),
+    constraint live_writing_peer_pairs_distinct check (option_a_participant_id <> option_b_participant_id)
+);
+
+create table if not exists public.live_writing_round_log (
+    id uuid primary key default gen_random_uuid(),
+    session_id uuid not null references public.live_writing_sessions(id) on delete cascade,
+    round_index int not null check (round_index between 1 and 3),
+    action text not null check (action in ('voting_opened', 'voting_closed', 'voting_reopened')),
+    detail jsonb not null default '{}'::jsonb,
+    created_at timestamptz not null default now()
+);
+
+create index if not exists live_writing_peer_pairs_session_idx
+    on public.live_writing_peer_pairs(session_id, round_index);
+create index if not exists live_writing_round_log_session_idx
+    on public.live_writing_round_log(session_id, round_index, created_at desc);
+
+alter table public.live_writing_peer_pairs enable row level security;
+alter table public.live_writing_round_log enable row level security;
+
+drop policy if exists live_writing_peer_pairs_owner_read on public.live_writing_peer_pairs;
+create policy live_writing_peer_pairs_owner_read on public.live_writing_peer_pairs
+    for select using (
+        session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = auth.uid())
+    );
+
+drop policy if exists live_writing_round_log_owner_read on public.live_writing_round_log;
+create policy live_writing_round_log_owner_read on public.live_writing_round_log
+    for select using (
+        session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = auth.uid())
+    );
+
+revoke all on public.live_writing_peer_pairs from anon;
+revoke all on public.live_writing_round_log from anon, authenticated;
+grant select on public.live_writing_peer_pairs to authenticated;
+grant select on public.live_writing_round_log to authenticated;
+
+-- ── 3. Closing writing hands every joined participant a response row ───────
+
+create or replace function public.live_writing_freeze_round_on_phase_change()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    IF OLD.status = 'writing' AND NEW.status <> 'writing' THEN
+        INSERT INTO public.live_writing_responses(session_id, participant_id, round_index, handed_in_at)
+        SELECT NEW.id, p.id, OLD.current_round, now()
+        FROM public.live_writing_participants p
+        WHERE p.session_id = NEW.id
+          AND NOT EXISTS (
+              SELECT 1
+              FROM public.live_writing_responses r
+              WHERE r.participant_id = p.id
+                AND r.round_index = OLD.current_round
+          )
+        ON CONFLICT DO NOTHING;
+
+        UPDATE public.live_writing_responses
+        SET handed_in_at = coalesce(handed_in_at, now())
+        WHERE session_id = NEW.id
+          AND round_index = OLD.current_round
+          AND handed_in_at IS NULL;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+drop trigger if exists live_writing_sessions_freeze_round on public.live_writing_sessions;
+create trigger live_writing_sessions_freeze_round
+    before update of status on public.live_writing_sessions
+    for each row execute function public.live_writing_freeze_round_on_phase_change();
+
+-- ── 4. Deterministic pair generation ────────────────────────────────────────
+
+-- Every handed-in participant with a non-empty text gets two other writers. Rotation is derived
+-- from the session's vote generation, so a reopen produces a different pair wherever the class
+-- has enough writers for one (with exactly three writers, only one pair of peers exists).
+create or replace function public.live_writing_generate_pairs(
+    p_session_id uuid,
+    p_round_index int,
+    p_rotation int
+)
+RETURNS int
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_pairs int;
+BEGIN
+    DELETE FROM public.live_writing_peer_pairs
+    WHERE session_id = p_session_id AND round_index = p_round_index;
+
+    WITH candidates AS (
+        SELECT
+            p.id,
+            (row_number() OVER (ORDER BY p.joined_at, p.id) - 1)::int AS idx,
+            (count(*) OVER ())::int AS n
+        FROM public.live_writing_participants p
+        JOIN public.live_writing_responses r
+          ON r.participant_id = p.id
+         AND r.round_index = p_round_index
+        WHERE p.session_id = p_session_id
+          AND r.handed_in_at IS NOT NULL
+          AND r.word_count > 0
+    ),
+    offsets AS (
+        SELECT
+            c.*,
+            ((p_rotation - 1) % (c.n - 1)) + 1 AS offset_a,
+            (((p_rotation - 1) % (c.n - 1)) + 1) % (c.n - 1) + 1 AS offset_b
+        FROM candidates c
+        WHERE c.n >= 3
+    ),
+    generated AS (
+        SELECT
+            c.id AS voter_participant_id,
+            a.id AS option_a_participant_id,
+            b.id AS option_b_participant_id
+        FROM offsets c
+        JOIN candidates a ON a.idx = (c.idx + c.offset_a) % c.n
+        JOIN candidates b ON b.idx = (c.idx + c.offset_b) % c.n
+    )
+    INSERT INTO public.live_writing_peer_pairs(
+        session_id, round_index, voter_participant_id, option_a_participant_id, option_b_participant_id
+    )
+    SELECT p_session_id, p_round_index, voter_participant_id, option_a_participant_id, option_b_participant_id
+    FROM generated;
+
+    GET DIAGNOSTICS v_pairs = ROW_COUNT;
+    RETURN v_pairs;
+END;
+$$;
+
+-- Internal helper shared by end-writing and the explicit teacher reopen control. It clears that
+-- round's old votes and pairs before generating fresh ones, which is the definition of a reopen.
+create or replace function public.live_writing_open_voting(
+    p_session_id uuid,
+    p_round_index int,
+    p_reopen boolean
+)
+RETURNS int
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_session public.live_writing_sessions;
+    v_generation int;
+    v_votes int;
+    v_pairs int;
+BEGIN
+    SELECT * INTO v_session FROM public.live_writing_sessions WHERE id = p_session_id;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'not_session_owner';
+    END IF;
+    IF p_round_index <> v_session.current_round
+        OR p_round_index < 1
+        OR p_round_index > v_session.round_count
+    THEN
+        RAISE EXCEPTION 'invalid_round';
+    END IF;
+
+    SELECT count(*) INTO v_votes
+    FROM public.live_writing_votes
+    WHERE session_id = p_session_id AND round_index = p_round_index;
+
+    DELETE FROM public.live_writing_votes
+    WHERE session_id = p_session_id AND round_index = p_round_index;
+
+    v_generation := coalesce(v_session.vote_generation, 0) + 1;
+    v_pairs := public.live_writing_generate_pairs(
+        p_session_id,
+        p_round_index,
+        (v_generation * 2) - 1
+    );
+
+    UPDATE public.live_writing_sessions
+    SET status = 'voting',
+        current_round = p_round_index,
+        votes_open = true,
+        vote_generation = v_generation
+    WHERE id = p_session_id;
+
+    INSERT INTO public.live_writing_round_log(session_id, round_index, action, detail)
+    VALUES (
+        p_session_id,
+        p_round_index,
+        CASE WHEN p_reopen THEN 'voting_reopened' ELSE 'voting_opened' END,
+        jsonb_build_object(
+            'votesCleared', v_votes,
+            'pairs', v_pairs,
+            'generation', v_generation
+        )
+    );
+
+    RETURN v_pairs;
+END;
+$$;
+
+revoke all on function public.live_writing_generate_pairs(uuid, int, int) from public, anon, authenticated;
+revoke all on function public.live_writing_open_voting(uuid, int, boolean) from public, anon, authenticated;
+
+-- ── 5. Self-check, vote state and vote submission ───────────────────────────
+
+drop function if exists public.self_check_live_writing(uuid, text, int, int, text);
+
+create or replace function public.self_check_live_writing(
+    p_participant_id uuid,
+    p_token text,
+    p_round_index int,
+    p_rating text,
+    p_note text default null
+)
+RETURNS TABLE (self_rating text, self_note text)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_participant public.live_writing_participants;
+    v_session public.live_writing_sessions;
+    v_note text;
+BEGIN
+    IF p_rating NOT IN ('happy', 'neutral', 'unhappy') THEN
+        RAISE EXCEPTION 'invalid_rating';
+    END IF;
+    v_note := nullif(trim(coalesce(p_note, '')), '');
+    IF v_note IS NOT NULL AND char_length(v_note) > 1000 THEN
+        RAISE EXCEPTION 'note_too_long';
+    END IF;
+
+    v_participant := public.live_writing_participant_for_token(p_participant_id, p_token);
+    IF v_participant.id IS NULL THEN
+        RAISE EXCEPTION 'invalid_token';
+    END IF;
+
+    SELECT * INTO v_session FROM public.live_writing_sessions WHERE id = v_participant.session_id;
+    IF v_session.status NOT IN ('writing', 'voting', 'finals')
+        OR v_session.current_round <> p_round_index
+    THEN
+        RAISE EXCEPTION 'round_closed';
+    END IF;
+
+    UPDATE public.live_writing_responses AS r
+    SET self_rating = p_rating, self_note = v_note
+    WHERE r.participant_id = v_participant.id
+      AND r.round_index = p_round_index
+      AND r.handed_in_at IS NOT NULL;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'not_handed_in';
+    END IF;
+
+    RETURN QUERY SELECT p_rating, v_note;
+END;
+$$;
+
+drop function if exists public.get_live_writing_student_state(uuid, text);
+
+create or replace function public.get_live_writing_student_state(
+    p_participant_id uuid,
+    p_token text
+)
+RETURNS TABLE (
+    session_id uuid,
+    participant_id uuid,
+    display_name text,
+    session_title text,
+    session_status text,
+    timer_state text,
+    timer_ends_at timestamptz,
+    timer_remaining_ms bigint,
+    server_now timestamptz,
+    current_round int,
+    round_count int,
+    minutes_per_round int,
+    min_words int,
+    max_words int,
+    prompt text,
+    image_path text,
+    scaffold_enabled boolean,
+    scaffold_prompts jsonb,
+    peer_voting boolean,
+    response_round_index int,
+    content_html text,
+    word_count int,
+    cefr_estimate text,
+    handed_in_at timestamptz,
+    self_rating text,
+    self_note text
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_participant public.live_writing_participants;
+    v_session public.live_writing_sessions;
+    v_response public.live_writing_responses;
+BEGIN
+    v_participant := public.live_writing_participant_for_token(p_participant_id, p_token);
+    IF v_participant.id IS NULL THEN
+        RAISE EXCEPTION 'invalid_token';
+    END IF;
+
+    SELECT * INTO v_session FROM public.live_writing_sessions WHERE id = v_participant.session_id;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'invalid_token';
+    END IF;
+
+    UPDATE public.live_writing_participants SET last_seen_at = now() WHERE id = v_participant.id;
+
+    SELECT r.* INTO v_response
+    FROM public.live_writing_responses AS r
+    WHERE r.participant_id = v_participant.id
+      AND r.round_index = v_session.current_round;
+
+    RETURN QUERY SELECT
+        v_session.id,
+        v_participant.id,
+        v_participant.display_name,
+        v_session.title,
+        v_session.status,
+        v_session.timer_state,
+        v_session.timer_ends_at,
+        v_session.timer_remaining_ms,
+        now(),
+        v_session.current_round,
+        v_session.round_count,
+        v_session.minutes_per_round,
+        v_session.min_words,
+        v_session.max_words,
+        v_session.prompt,
+        v_session.image_path,
+        v_session.scaffold_enabled,
+        CASE WHEN v_session.scaffold_enabled THEN v_session.scaffold_prompts ELSE '[]'::jsonb END,
+        v_session.peer_voting,
+        coalesce(v_response.round_index, v_session.current_round),
+        coalesce(v_response.content_html, ''),
+        coalesce(v_response.word_count, 0),
+        v_response.cefr_estimate,
+        v_response.handed_in_at,
+        v_response.self_rating,
+        v_response.self_note;
+END;
+$$;
+
+revoke all on function public.get_live_writing_student_state(uuid, text) from public;
+grant execute on function public.get_live_writing_student_state(uuid, text) to anon, authenticated;
+
+create or replace function public.get_live_writing_vote_state(
+    p_participant_id uuid,
+    p_token text
+)
+RETURNS TABLE (
+    session_status text,
+    current_round int,
+    round_count int,
+    peer_voting boolean,
+    votes_open boolean,
+    self_rating text,
+    self_note text,
+    has_pair boolean,
+    voted boolean,
+    option_a_html text,
+    option_b_html text,
+    option_a_word_count int,
+    option_b_word_count int
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_participant public.live_writing_participants;
+    v_session public.live_writing_sessions;
+    v_response public.live_writing_responses;
+    v_pair public.live_writing_peer_pairs;
+    v_a public.live_writing_responses;
+    v_b public.live_writing_responses;
+    v_voted boolean;
+BEGIN
+    v_participant := public.live_writing_participant_for_token(p_participant_id, p_token);
+    IF v_participant.id IS NULL THEN
+        RAISE EXCEPTION 'invalid_token';
+    END IF;
+
+    SELECT * INTO v_session FROM public.live_writing_sessions WHERE id = v_participant.session_id;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'invalid_token';
+    END IF;
+
+    SELECT r.* INTO v_response
+    FROM public.live_writing_responses AS r
+    WHERE r.participant_id = v_participant.id
+      AND r.round_index = v_session.current_round;
+
+    SELECT p.* INTO v_pair
+    FROM public.live_writing_peer_pairs AS p
+    WHERE p.session_id = v_session.id
+      AND p.round_index = v_session.current_round
+      AND p.voter_participant_id = v_participant.id;
+
+    IF v_pair.id IS NOT NULL THEN
+        SELECT r.* INTO v_a
+        FROM public.live_writing_responses AS r
+        WHERE r.participant_id = v_pair.option_a_participant_id
+          AND r.round_index = v_session.current_round;
+
+        SELECT r.* INTO v_b
+        FROM public.live_writing_responses AS r
+        WHERE r.participant_id = v_pair.option_b_participant_id
+          AND r.round_index = v_session.current_round;
+    END IF;
+
+    SELECT EXISTS (
+        SELECT 1
+        FROM public.live_writing_votes AS v
+        WHERE v.session_id = v_session.id
+          AND v.round_index = v_session.current_round
+          AND v.voter_participant_id = v_participant.id
+    ) INTO v_voted;
+
+    RETURN QUERY SELECT
+        v_session.status,
+        v_session.current_round,
+        v_session.round_count,
+        v_session.peer_voting,
+        v_session.votes_open,
+        v_response.self_rating,
+        v_response.self_note,
+        v_pair.id IS NOT NULL,
+        v_voted,
+        CASE WHEN v_session.peer_voting THEN v_a.content_html ELSE NULL END,
+        CASE WHEN v_session.peer_voting THEN v_b.content_html ELSE NULL END,
+        CASE WHEN v_session.peer_voting THEN coalesce(v_a.word_count, 0) ELSE 0 END,
+        CASE WHEN v_session.peer_voting THEN coalesce(v_b.word_count, 0) ELSE 0 END;
+END;
+$$;
+
+drop function if exists public.submit_live_writing_vote(uuid, text, int, uuid);
+
+create or replace function public.submit_live_writing_vote(
+    p_participant_id uuid,
+    p_token text,
+    p_round_index int,
+    p_choice text
+)
+RETURNS TABLE (chosen_participant_id uuid)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_participant public.live_writing_participants;
+    v_session public.live_writing_sessions;
+    v_pair public.live_writing_peer_pairs;
+    v_chosen uuid;
+BEGIN
+    IF p_choice NOT IN ('a', 'b') THEN
+        RAISE EXCEPTION 'invalid_choice';
+    END IF;
+
+    v_participant := public.live_writing_participant_for_token(p_participant_id, p_token);
+    IF v_participant.id IS NULL THEN
+        RAISE EXCEPTION 'invalid_token';
+    END IF;
+
+    SELECT * INTO v_session FROM public.live_writing_sessions WHERE id = v_participant.session_id;
+    IF v_session.status <> 'voting' OR NOT v_session.votes_open
+        OR v_session.current_round <> p_round_index
+    THEN
+        RAISE EXCEPTION 'voting_closed';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM public.live_writing_responses
+        WHERE participant_id = v_participant.id
+          AND round_index = p_round_index
+          AND handed_in_at IS NOT NULL
+    ) THEN
+        RAISE EXCEPTION 'not_handed_in';
+    END IF;
+
+    SELECT p.* INTO v_pair
+    FROM public.live_writing_peer_pairs AS p
+    WHERE p.session_id = v_session.id
+      AND p.round_index = p_round_index
+      AND p.voter_participant_id = v_participant.id;
+
+    IF v_pair.id IS NULL THEN
+        RAISE EXCEPTION 'pair_not_ready';
+    END IF;
+
+    v_chosen := CASE p_choice
+        WHEN 'a' THEN v_pair.option_a_participant_id
+        ELSE v_pair.option_b_participant_id
+    END;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM public.live_writing_responses
+        WHERE participant_id = v_chosen
+          AND session_id = v_session.id
+          AND round_index = p_round_index
+          AND handed_in_at IS NOT NULL
+    ) THEN
+        RAISE EXCEPTION 'invalid_choice';
+    END IF;
+
+    BEGIN
+        INSERT INTO public.live_writing_votes(
+            session_id, round_index, voter_participant_id, chosen_participant_id
+        )
+        VALUES (v_session.id, p_round_index, v_participant.id, v_chosen);
+    EXCEPTION WHEN unique_violation THEN
+        RAISE EXCEPTION 'already_voted';
+    END;
+
+    RETURN QUERY SELECT v_chosen;
+END;
+$$;
+
+-- ── 6. Teacher controls, results and round log ──────────────────────────────
+
+create or replace function public.control_live_writing_timer(
+    p_session_id uuid,
+    p_action text
+)
+RETURNS TABLE (
+    status text,
+    timer_state text,
+    timer_ends_at timestamptz,
+    timer_remaining_ms bigint,
+    server_now timestamptz
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_session public.live_writing_sessions;
+    v_remaining bigint;
+    v_status text;
+    v_state text;
+    v_ends timestamptz;
+    v_frozen bigint;
+    v_now timestamptz;
+BEGIN
+    SELECT * INTO v_session FROM public.live_writing_sessions
+    WHERE id = p_session_id AND owner_id = auth.uid()
+    FOR UPDATE;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'not_session_owner';
+    END IF;
+    IF p_action NOT IN ('pause', 'resume', 'extend', 'end_writing', 'end_session') THEN
+        RAISE EXCEPTION 'invalid_action';
+    END IF;
+
+    IF p_action = 'pause' THEN
+        IF v_session.timer_state <> 'running' THEN
+            RAISE EXCEPTION 'timer_not_running';
+        END IF;
+        v_remaining := greatest(
+            0,
+            (extract(epoch FROM (v_session.timer_ends_at - now())) * 1000)::bigint
+        );
+        UPDATE public.live_writing_sessions AS s
+        SET timer_state = 'paused', timer_remaining_ms = v_remaining, timer_ends_at = NULL
+        WHERE s.id = p_session_id;
+    ELSIF p_action = 'resume' THEN
+        IF v_session.timer_state <> 'paused' THEN
+            RAISE EXCEPTION 'timer_not_paused';
+        END IF;
+        UPDATE public.live_writing_sessions AS s
+        SET timer_state = 'running',
+            timer_ends_at = now() + (s.timer_remaining_ms * interval '1 millisecond'),
+            timer_remaining_ms = 0
+        WHERE s.id = p_session_id;
+    ELSIF p_action = 'extend' THEN
+        IF v_session.timer_state = 'running' THEN
+            UPDATE public.live_writing_sessions AS s
+            SET timer_ends_at = coalesce(s.timer_ends_at, now()) + interval '1 minute'
+            WHERE s.id = p_session_id;
+        ELSIF v_session.timer_state = 'paused' THEN
+            UPDATE public.live_writing_sessions AS s
+            SET timer_remaining_ms = s.timer_remaining_ms + 60000
+            WHERE s.id = p_session_id;
+        ELSE
+            RAISE EXCEPTION 'timer_not_active';
+        END IF;
+    ELSIF p_action = 'end_writing' THEN
+        IF v_session.status <> 'writing' THEN
+            RAISE EXCEPTION 'session_not_writing';
+        END IF;
+        IF v_session.peer_voting THEN
+            UPDATE public.live_writing_sessions AS s
+            SET status = 'voting', timer_state = 'ended', timer_ends_at = NULL, votes_open = false
+            WHERE s.id = p_session_id;
+            PERFORM public.live_writing_open_voting(p_session_id, v_session.current_round, false);
+        ELSE
+            UPDATE public.live_writing_sessions AS s
+            SET status = 'finals', timer_state = 'ended', timer_ends_at = NULL, votes_open = false
+            WHERE s.id = p_session_id;
+        END IF;
+    ELSE
+        UPDATE public.live_writing_sessions AS s
+        SET status = 'closed', timer_state = 'ended', timer_ends_at = NULL,
+            votes_open = false, ended_at = now()
+        WHERE s.id = p_session_id;
+    END IF;
+
+    SELECT s.status, s.timer_state, s.timer_ends_at, s.timer_remaining_ms, now()
+    INTO v_status, v_state, v_ends, v_frozen, v_now
+    FROM public.live_writing_sessions s WHERE s.id = p_session_id;
+
+    RETURN QUERY SELECT v_status, v_state, v_ends, v_frozen, v_now;
+END;
+$$;
+
+create or replace function public.set_live_writing_voting(
+    p_session_id uuid,
+    p_round_index int,
+    p_open boolean
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_session public.live_writing_sessions;
+    v_reopen boolean;
+BEGIN
+    SELECT * INTO v_session FROM public.live_writing_sessions
+    WHERE id = p_session_id AND owner_id = auth.uid();
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'not_session_owner';
+    END IF;
+
+    IF p_open THEN
+        IF NOT v_session.peer_voting THEN
+            RAISE EXCEPTION 'peer_voting_disabled';
+        END IF;
+        v_reopen := EXISTS (
+            SELECT 1 FROM public.live_writing_round_log
+            WHERE session_id = p_session_id
+              AND round_index = p_round_index
+              AND action IN ('voting_opened', 'voting_reopened')
+        );
+        PERFORM public.live_writing_open_voting(p_session_id, p_round_index, v_reopen);
+    ELSIF v_session.votes_open THEN
+        UPDATE public.live_writing_sessions
+        SET votes_open = false
+        WHERE id = p_session_id;
+
+        INSERT INTO public.live_writing_round_log(session_id, round_index, action, detail)
+        VALUES (
+            p_session_id,
+            p_round_index,
+            'voting_closed',
+            jsonb_build_object('votesKept', (
+                SELECT count(*) FROM public.live_writing_votes
+                WHERE session_id = p_session_id AND round_index = p_round_index
+            ))
+        );
+    END IF;
+END;
+$$;
+
+create or replace function public.get_live_writing_vote_results(
+    p_session_id uuid,
+    p_round_index int
+)
+RETURNS TABLE (
+    participant_id uuid,
+    display_name text,
+    self_rating text,
+    self_note text,
+    voted_for_participant_id uuid,
+    voted_for_name text,
+    votes_received int,
+    has_pair boolean
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM public.live_writing_sessions
+        WHERE id = p_session_id AND owner_id = auth.uid()
+    ) THEN
+        RAISE EXCEPTION 'not_session_owner';
+    END IF;
+
+    RETURN QUERY
+    SELECT
+        p.id,
+        p.display_name,
+        r.self_rating,
+        r.self_note,
+        v.chosen_participant_id,
+        chosen.display_name,
+        (
+            SELECT count(*)::int
+            FROM public.live_writing_votes AS received
+            WHERE received.session_id = p_session_id
+              AND received.round_index = p_round_index
+              AND received.chosen_participant_id = p.id
+        ),
+        EXISTS (
+            SELECT 1
+            FROM public.live_writing_peer_pairs AS pair
+            WHERE pair.session_id = p_session_id
+              AND pair.round_index = p_round_index
+              AND pair.voter_participant_id = p.id
+        )
+    FROM public.live_writing_participants AS p
+    LEFT JOIN public.live_writing_responses AS r
+      ON r.participant_id = p.id
+     AND r.round_index = p_round_index
+    LEFT JOIN public.live_writing_votes AS v
+      ON v.session_id = p_session_id
+     AND v.round_index = p_round_index
+     AND v.voter_participant_id = p.id
+    LEFT JOIN public.live_writing_participants AS chosen
+      ON chosen.id = v.chosen_participant_id
+    WHERE p.session_id = p_session_id
+    ORDER BY p.display_name;
+END;
+$$;
+
+create or replace function public.get_live_writing_round_log(
+    p_session_id uuid,
+    p_round_index int
+)
+RETURNS TABLE (
+    log_id uuid,
+    round_index int,
+    action text,
+    detail jsonb,
+    created_at timestamptz
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM public.live_writing_sessions
+        WHERE id = p_session_id AND owner_id = auth.uid()
+    ) THEN
+        RAISE EXCEPTION 'not_session_owner';
+    END IF;
+
+    RETURN QUERY
+    SELECT l.id, l.round_index, l.action, l.detail, l.created_at
+    FROM public.live_writing_round_log AS l
+    WHERE l.session_id = p_session_id
+      AND l.round_index = p_round_index
+    ORDER BY l.created_at DESC;
+END;
+$$;
+
+-- ── 7. Grants ────────────────────────────────────────────────────────────────
+
+revoke all on function public.self_check_live_writing(uuid, text, int, text, text) from public;
+revoke all on function public.get_live_writing_vote_state(uuid, text) from public;
+revoke all on function public.submit_live_writing_vote(uuid, text, int, text) from public;
+revoke all on function public.control_live_writing_timer(uuid, text) from public;
+revoke all on function public.set_live_writing_voting(uuid, int, boolean) from public;
+revoke all on function public.get_live_writing_vote_results(uuid, int) from public;
+revoke all on function public.get_live_writing_round_log(uuid, int) from public;
+
+grant execute on function public.self_check_live_writing(uuid, text, int, text, text) to anon, authenticated;
+grant execute on function public.get_live_writing_vote_state(uuid, text) to anon, authenticated;
+grant execute on function public.submit_live_writing_vote(uuid, text, int, text) to anon, authenticated;
+grant execute on function public.control_live_writing_timer(uuid, text) to authenticated;
+grant execute on function public.set_live_writing_voting(uuid, int, boolean) to authenticated;
+grant execute on function public.get_live_writing_vote_results(uuid, int) to authenticated;
+grant execute on function public.get_live_writing_round_log(uuid, int) to authenticated;
+
+-- ── 8. Data registries ───────────────────────────────────────────────────────
+
+CREATE OR REPLACE FUNCTION public.owner_data_tables()
+RETURNS TABLE (key text, table_name text, owner_filter text)
+LANGUAGE sql
+IMMUTABLE
+SET search_path = public
+AS $$
+  VALUES
+    ('rubrics',                   'rubrics',                   'owner_id = $1'),
+    ('folders',                   'folders',                   'owner_id = $1'),
+    ('rubric_versions',           'rubric_versions',           'owner_id = $1'),
+    ('rubric_shares',             'rubric_shares',             'rubric_id IN (SELECT id FROM public.rubrics WHERE owner_id = $1)'),
+    ('classes',                   'classes',                   'owner_id = $1'),
+    ('class_members',             'class_members',             'class_id IN (SELECT id FROM public.classes WHERE owner_id = $1)'),
+    ('students',                  'students',                  'owner_id = $1'),
+    ('student_rubrics',           'student_rubrics',           'grader_id = $1 AND is_peer_review = false'),
+    ('peer_reviews',              'student_rubrics',           'grader_id = $1 AND is_peer_review = true'),
+    ('attachments',               'attachments',               'owner_id = $1'),
+    ('grade_scales',              'grade_scales',               'owner_id = $1'),
+    ('comment_snippets',          'comment_snippets',          'owner_id = $1'),
+    ('comment_bank',              'comment_bank',              'owner_id = $1'),
+    ('export_templates',          'export_templates',          'owner_id = $1'),
+    ('favorite_standards',        'favorite_standards',        'owner_id = $1'),
+    ('standard_mastery_targets',  'standard_mastery_targets',  'owner_id = $1'),
+    ('self_assessments',          'self_assessments',          'owner_id = $1'),
+    ('speaking_sessions',         'speaking_sessions',         'owner_id = $1'),
+    ('recording_metadata',        'recording_metadata',        'owner_id = $1'),
+    ('scan_metadata',             'scan_metadata',             'owner_id = $1'),
+    ('analysis_results',          'analysis_results',          'owner_id = $1'),
+    ('tests',                     'tests',                     'owner_id = $1'),
+    ('test_assignments',          'test_assignments',          'owner_id = $1'),
+    ('student_tests',             'student_tests',             'owner_id = $1'),
+    ('placement_sessions',        'placement_sessions',        'owner_id = $1'),
+    ('essay_templates',           'essay_templates',           'owner_id = $1'),
+    ('essay_assignments',         'essay_assignments',         'owner_id = $1'),
+    ('essay_submissions',         'essay_submissions',         'assignment_id IN (SELECT id FROM public.essay_assignments WHERE owner_id = $1)'),
+    ('essay_batch_assignments',   'essay_batch_assignments',   'owner_id = $1'),
+    ('essay_offline_submissions', 'essay_offline_submissions', 'owner_id = $1'),
+    ('grading_tasks',             'grading_tasks',             'owner_id = $1'),
+    ('user_templates',            'user_templates',            'owner_id = $1'),
+    ('user_settings',             'user_settings',             'user_id = $1'),
+    ('flashcard_decks',           'flashcard_decks',           'owner_id = $1'),
+    ('flashcard_assignments',     'flashcard_assignments',     'owner_id = $1'),
+    ('flashcard_reviews',         'flashcard_reviews',         'owner_id = $1'),
+    ('news_flashes',              'news_flashes',              'owner_id = $1'),
+    ('news_flash_reads',          'news_flash_reads',          'owner_id = $1'),
+    ('messages',                  'messages',                  'owner_id = $1'),
+    ('question_bank_items',       'question_bank_items',       'owner_id = $1'),
+    ('document_comments',         'document_comments',         'owner_id = $1'),
+    ('notification_dismissals',   'notification_dismissals',   'owner_id = $1'),
+    ('comparative_matchups',      'comparative_matchups',      'owner_id = $1'),
+    ('marketplace_listings',      'marketplace_listings',      'published_by = $1'),
+    ('marketplace_upvotes',       'marketplace_upvotes',       'profile_id = $1'),
+    ('live_writing_peer_pairs',   'live_writing_peer_pairs',   'session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = $1)'),
+    ('live_writing_round_log',    'live_writing_round_log',    'session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = $1)'),
+    ('live_writing_votes',        'live_writing_votes',        'session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = $1)'),
+    ('live_writing_responses',    'live_writing_responses',    'session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = $1)'),
+    ('live_writing_participants', 'live_writing_participants', 'session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = $1)'),
+    ('live_writing_sessions',     'live_writing_sessions',     'owner_id = $1')
+$$;
+
+CREATE OR REPLACE FUNCTION public.student_data_tables()
+RETURNS TABLE (key text, table_name text, student_filter text, owner_filter text)
+LANGUAGE sql
+IMMUTABLE
+SET search_path = public
+AS $$
+  VALUES
+    ('document_comments',         'document_comments',         $f$data->>'attachmentId' IN (SELECT id FROM public.attachments WHERE data->>'studentId' = $1)$f$, 'owner_id = $2'),
+    ('attachments',               'attachments',               $f$data->>'studentId' = $1$f$,                                                              'owner_id = $2'),
+    ('recording_metadata',        'recording_metadata',        'session_id IN (SELECT id FROM public.speaking_sessions WHERE student_id = $1)',            'owner_id = $2'),
+    ('speaking_sessions',         'speaking_sessions',         'student_id = $1',                                                                          'owner_id = $2'),
+    ('self_assessments',          'self_assessments',          'student_id = $1',                                                                          'owner_id = $2'),
+    ('analysis_results',          'analysis_results',          'student_id = $1',                                                                          'owner_id = $2'),
+    ('scan_metadata',             'scan_metadata',             'student_id = $1',                                                                          'owner_id = $2'),
+    ('student_rubrics',           'student_rubrics',           'student_id = $1',                                                                          'grader_id = $2'),
+    ('essay_submissions',         'essay_submissions',         'assignment_id IN (SELECT id FROM public.essay_assignments WHERE student_id = $1)',         'assignment_id IN (SELECT id FROM public.essay_assignments WHERE owner_id = $2)'),
+    ('essay_assignments',         'essay_assignments',         'student_id = $1',                                                                          'owner_id = $2'),
+    ('essay_batch_assignments',   'essay_batch_assignments',   $f$data->>'studentId' = $1$f$,                                                              'owner_id = $2'),
+    ('essay_offline_submissions', 'essay_offline_submissions', $f$data->>'assignmentStudentId' = $1$f$,                                                    'owner_id = $2'),
+    ('placement_sessions',        'placement_sessions',        'assignment_id IN (SELECT id FROM public.test_assignments WHERE student_id = $1)',          'owner_id = $2'),
+    ('student_tests',             'student_tests',             $f$data->>'studentId' = $1 OR assignment_id IN (SELECT id FROM public.test_assignments WHERE student_id = $1)$f$, 'owner_id = $2'),
+    ('test_assignments',          'test_assignments',          'student_id = $1',                                                                          'owner_id = $2'),
+    ('messages',                  'messages',                  'student_id = $1',                                                                          'owner_id = $2'),
+    ('flashcard_reviews',         'flashcard_reviews',         'student_id = $1',                                                                          'owner_id = $2'),
+    ('flashcard_assignments',     'flashcard_assignments',     'student_id = $1',                                                                          'owner_id = $2'),
+    ('flashcard_decks',           'flashcard_decks',           'student_id = $1',                                                                          'owner_id = $2'),
+    ('news_flash_reads',          'news_flash_reads',          'student_id = $1',                                                                          'owner_id = $2'),
+    ('grading_tasks',             'grading_tasks',             $f$data->>'studentId' = $1$f$,                                                              'owner_id = $2'),
+    ('comparative_matchups',      'comparative_matchups',      $f$data->>'studentAId' = $1 OR data->>'studentBId' = $1$f$,                                 'owner_id = $2'),
+    ('live_writing_peer_pairs',   'live_writing_peer_pairs',   $f$voter_participant_id IN (SELECT id FROM public.live_writing_participants WHERE student_id = $1) OR option_a_participant_id IN (SELECT id FROM public.live_writing_participants WHERE student_id = $1) OR option_b_participant_id IN (SELECT id FROM public.live_writing_participants WHERE student_id = $1)$f$, 'session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = $2)'),
+    ('live_writing_votes',        'live_writing_votes',        'voter_participant_id IN (SELECT id FROM public.live_writing_participants WHERE student_id = $1)', 'session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = $2)'),
+    ('live_writing_responses',    'live_writing_responses',    'participant_id IN (SELECT id FROM public.live_writing_participants WHERE student_id = $1)',       'session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = $2)'),
+    ('live_writing_participants', 'live_writing_participants', 'student_id = $1',                                                                          'session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = $2)'),
+    ('students',                  'students',                  'id = $1',                                                                                  'owner_id = $2')
+$$;
+
+-- ── 104_live_writing_finals_insights_grading.sql ──────────────────────────────────────────────────────────────
+
+-- Live writing finals, insights and grading hand-off (Phase 43.5, #1156).
+--
+-- The finals gallery is teacher-only. Hidden texts disappear from later peer pairs and their
+-- received vote is removed, so a moderated text cannot win a vote it was hidden from. Grading
+-- hand-off markers make repeated "send" presses idempotent from the teacher UI's perspective.
+
+alter table public.live_writing_responses
+    add column if not exists final_hidden boolean not null default false,
+    add column if not exists hidden_at timestamptz,
+    add column if not exists grading_assignment_id text,
+    add column if not exists grading_submission_id text;
+
+create index if not exists live_writing_responses_finals_idx
+    on public.live_writing_responses(session_id, round_index, handed_in_at desc);
+
+comment on column public.live_writing_responses.final_hidden is
+    'Teacher moderation flag: hidden texts are excluded from finals, pairs and votes.';
+comment on column public.live_writing_responses.grading_assignment_id is
+    'Set after a finals text is handed to the ordinary essay grading pipeline.';
+comment on column public.live_writing_responses.grading_submission_id is
+    'Set after a finals text is handed to the ordinary essay grading pipeline.';
+
+create or replace function public.set_live_writing_text_hidden(
+    p_session_id uuid,
+    p_round_index int,
+    p_participant_id uuid,
+    p_hidden boolean
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM public.live_writing_sessions
+        WHERE id = p_session_id AND owner_id = auth.uid()
+    ) THEN
+        RAISE EXCEPTION 'not_session_owner';
+    END IF;
+
+    IF p_hidden THEN
+        DELETE FROM public.live_writing_votes
+        WHERE session_id = p_session_id
+          AND round_index = p_round_index
+          AND chosen_participant_id = p_participant_id;
+
+        DELETE FROM public.live_writing_peer_pairs
+        WHERE session_id = p_session_id
+          AND round_index = p_round_index
+          AND (
+              voter_participant_id = p_participant_id
+              OR option_a_participant_id = p_participant_id
+              OR option_b_participant_id = p_participant_id
+          );
+    END IF;
+
+    UPDATE public.live_writing_responses
+    SET final_hidden = p_hidden,
+        hidden_at = CASE WHEN p_hidden THEN now() ELSE NULL END
+    WHERE session_id = p_session_id
+      AND round_index = p_round_index
+      AND participant_id = p_participant_id
+      AND handed_in_at IS NOT NULL;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'text_not_found';
+    END IF;
+END;
+$$;
+
+create or replace function public.set_live_writing_grading_handoff(
+    p_session_id uuid,
+    p_round_index int,
+    p_participant_id uuid,
+    p_assignment_id text,
+    p_submission_id text
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM public.live_writing_sessions
+        WHERE id = p_session_id AND owner_id = auth.uid()
+    ) THEN
+        RAISE EXCEPTION 'not_session_owner';
+    END IF;
+
+    UPDATE public.live_writing_responses
+    SET grading_assignment_id = p_assignment_id,
+        grading_submission_id = p_submission_id
+    WHERE session_id = p_session_id
+      AND round_index = p_round_index
+      AND participant_id = p_participant_id
+      AND handed_in_at IS NOT NULL;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'text_not_found';
+    END IF;
+END;
+$$;
+
+create or replace function public.replace_live_writing_final_text(
+    p_session_id uuid,
+    p_round_index int,
+    p_participant_id uuid,
+    p_content_html text
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM public.live_writing_sessions
+        WHERE id = p_session_id AND owner_id = auth.uid()
+    ) THEN
+        RAISE EXCEPTION 'not_session_owner';
+    END IF;
+
+    DELETE FROM public.live_writing_votes
+    WHERE session_id = p_session_id
+      AND round_index = p_round_index
+      AND chosen_participant_id = p_participant_id;
+
+    DELETE FROM public.live_writing_peer_pairs
+    WHERE session_id = p_session_id
+      AND round_index = p_round_index
+      AND (
+          voter_participant_id = p_participant_id
+          OR option_a_participant_id = p_participant_id
+          OR option_b_participant_id = p_participant_id
+      );
+
+    UPDATE public.live_writing_responses
+    SET content_html = p_content_html,
+        word_count = public.live_writing_word_count(p_content_html),
+        cefr_estimate = NULL,
+        self_rating = NULL,
+        self_note = NULL,
+        final_hidden = false,
+        hidden_at = NULL,
+        grading_assignment_id = NULL,
+        grading_submission_id = NULL
+    WHERE session_id = p_session_id
+      AND round_index = p_round_index
+      AND participant_id = p_participant_id
+      AND handed_in_at IS NOT NULL;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'text_not_found';
+    END IF;
+END;
+$$;
+
+create or replace function public.get_live_writing_finals(
+    p_session_id uuid,
+    p_round_index int
+)
+RETURNS TABLE (
+    participant_id uuid,
+    student_id text,
+    display_name text,
+    content_html text,
+    word_count int,
+    cefr_estimate text,
+    self_rating text,
+    self_note text,
+    votes_received int,
+    final_hidden boolean,
+    handed_in_at timestamptz,
+    grading_assignment_id text,
+    grading_submission_id text
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM public.live_writing_sessions
+        WHERE id = p_session_id AND owner_id = auth.uid()
+    ) THEN
+        RAISE EXCEPTION 'not_session_owner';
+    END IF;
+
+    RETURN QUERY
+    SELECT
+        p.id,
+        p.student_id,
+        p.display_name,
+        coalesce(r.content_html, ''),
+        coalesce(r.word_count, 0),
+        r.cefr_estimate,
+        r.self_rating,
+        r.self_note,
+        (
+            SELECT count(*)::int
+            FROM public.live_writing_votes AS v
+            WHERE v.session_id = p_session_id
+              AND v.round_index = p_round_index
+              AND v.chosen_participant_id = p.id
+        ),
+        coalesce(r.final_hidden, false),
+        r.handed_in_at,
+        r.grading_assignment_id,
+        r.grading_submission_id
+    FROM public.live_writing_participants AS p
+    LEFT JOIN public.live_writing_responses AS r
+      ON r.participant_id = p.id
+     AND r.round_index = p_round_index
+    WHERE p.session_id = p_session_id
+    ORDER BY 9 DESC, r.handed_in_at ASC NULLS LAST, p.display_name;
+END;
+$$;
+
+-- Hidden texts cannot be handed to a later voting round.
+create or replace function public.live_writing_generate_pairs(
+    p_session_id uuid,
+    p_round_index int,
+    p_rotation int
+)
+RETURNS int
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_pairs int;
+BEGIN
+    DELETE FROM public.live_writing_peer_pairs
+    WHERE session_id = p_session_id AND round_index = p_round_index;
+
+    WITH candidates AS (
+        SELECT
+            p.id,
+            (row_number() OVER (ORDER BY p.joined_at, p.id) - 1)::int AS idx,
+            (count(*) OVER ())::int AS n
+        FROM public.live_writing_participants p
+        JOIN public.live_writing_responses r
+          ON r.participant_id = p.id
+         AND r.round_index = p_round_index
+        WHERE p.session_id = p_session_id
+          AND r.handed_in_at IS NOT NULL
+          AND r.word_count > 0
+          AND NOT r.final_hidden
+    ),
+    offsets AS (
+        SELECT
+            c.*,
+            ((p_rotation - 1) % (c.n - 1)) + 1 AS offset_a,
+            (((p_rotation - 1) % (c.n - 1)) + 1) % (c.n - 1) + 1 AS offset_b
+        FROM candidates c
+        WHERE c.n >= 3
+    ),
+    generated AS (
+        SELECT
+            c.id AS voter_participant_id,
+            a.id AS option_a_participant_id,
+            b.id AS option_b_participant_id
+        FROM offsets c
+        JOIN candidates a ON a.idx = (c.idx + c.offset_a) % c.n
+        JOIN candidates b ON b.idx = (c.idx + c.offset_b) % c.n
+    )
+    INSERT INTO public.live_writing_peer_pairs(
+        session_id, round_index, voter_participant_id, option_a_participant_id, option_b_participant_id
+    )
+    SELECT p_session_id, p_round_index, voter_participant_id, option_a_participant_id, option_b_participant_id
+    FROM generated;
+
+    GET DIAGNOSTICS v_pairs = ROW_COUNT;
+    RETURN v_pairs;
+END;
+$$;
+
+create or replace function public.show_live_writing_finals(p_session_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM public.live_writing_sessions
+        WHERE id = p_session_id AND owner_id = auth.uid()
+    ) THEN
+        RAISE EXCEPTION 'not_session_owner';
+    END IF;
+
+    UPDATE public.live_writing_sessions
+    SET status = 'finals',
+        votes_open = false,
+        timer_state = 'ended',
+        timer_ends_at = NULL
+    WHERE id = p_session_id
+      AND status IN ('voting', 'finals');
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'session_not_voting';
+    END IF;
+END;
+$$;
+
+revoke all on function public.show_live_writing_finals(uuid) from public;
+grant execute on function public.show_live_writing_finals(uuid) to authenticated;
+
+-- The grading hand-off inserts and updates a submission as the assignment owner; the existing
+-- insert policy only covered the student's own submission.
+drop policy if exists essay_submissions_teacher_insert on public.essay_submissions;
+create policy essay_submissions_teacher_insert on public.essay_submissions for insert
+    with check (
+        EXISTS (
+            SELECT 1 FROM public.essay_assignments ea
+            WHERE ea.id = essay_submissions.assignment_id
+              AND ea.owner_id = (SELECT auth.uid())
+        )
+    );
+
+drop policy if exists essay_submissions_teacher_update on public.essay_submissions;
+create policy essay_submissions_teacher_update on public.essay_submissions for update
+    using (
+        EXISTS (
+            SELECT 1 FROM public.essay_assignments ea
+            WHERE ea.id = essay_submissions.assignment_id
+              AND ea.owner_id = (SELECT auth.uid())
+        )
+    )
+    with check (
+        EXISTS (
+            SELECT 1 FROM public.essay_assignments ea
+            WHERE ea.id = essay_submissions.assignment_id
+              AND ea.owner_id = (SELECT auth.uid())
+        )
+    );
+
+revoke all on function public.set_live_writing_text_hidden(uuid, int, uuid, boolean) from public;
+revoke all on function public.set_live_writing_grading_handoff(uuid, int, uuid, text, text) from public;
+revoke all on function public.replace_live_writing_final_text(uuid, int, uuid, text) from public;
+revoke all on function public.get_live_writing_finals(uuid, int) from public;
+revoke all on function public.live_writing_generate_pairs(uuid, int, int) from public, anon, authenticated;
+
+grant execute on function public.set_live_writing_text_hidden(uuid, int, uuid, boolean) to authenticated;
+grant execute on function public.set_live_writing_grading_handoff(uuid, int, uuid, text, text) to authenticated;
+grant execute on function public.replace_live_writing_final_text(uuid, int, uuid, text) to authenticated;
+grant execute on function public.get_live_writing_finals(uuid, int) to authenticated;
+
 -- ── 20260617093844_delete_old_attachments_fn.sql ──────────────────────────────────────────────────────────────
 
 -- Returns attachments whose updated_at has passed the owner's school retention
@@ -7778,5 +10576,10 @@ insert into public._migrations (name) values
     ('097_coteacher_grading_perf_indexes.sql'),
     ('098_scheduled_digest_batch_counts.sql'),
     ('099_essay_content_language.sql'),
+    ('100_live_writing_sessions.sql'),
+    ('101_live_writing_projector_timer.sql'),
+    ('102_live_writing_student_writing.sql'),
+    ('103_live_writing_self_check_peer_voting.sql'),
+    ('104_live_writing_finals_insights_grading.sql'),
     ('20260617093844_delete_old_attachments_fn.sql')
 on conflict (name) do nothing;

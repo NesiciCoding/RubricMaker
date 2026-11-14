@@ -12,10 +12,13 @@ import {
     ChevronDown,
     Lightbulb,
     Flag,
+    LogOut,
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { decodeTestAssignment } from '../utils/shareCode';
+import { buildSebQuitUrl, quitSafeExamBrowser } from '../utils/sebConfig';
+import { useSebQuitRedirect } from '../hooks/useSebQuitRedirect';
 import { encodeTestSubmission } from '../utils/shareCode';
 import { nanoid } from '../utils/nanoid';
 import { loadTestDraft, saveTestDraft, clearTestDraft, clearTestTimer } from '../store/storage';
@@ -416,6 +419,14 @@ export default function StudentTestPage() {
         submitted,
         advanceGenerator,
     ]);
+
+    // Navigating to the config's quit URL is the only way out of a session with allowQuit=false,
+    // but it must wait for a confirmed hand-in: a failed/queued DB submit is still retrying in the
+    // background (SEB quitting would abandon those retries), and a practice run never leaves a
+    // record worth protecting, so it should stay open for the student to review their answers
+    // instead of auto-quitting. The manual quit button below is unaffected and always available.
+    const deliveryConfirmed = submitted && test?.mode !== 'practice' && (!hasDb || !submitError);
+    const inSeb = useSebQuitRedirect(deliveryConfirmed);
 
     // ── Draft autosave ────────────────────────────────────────────────────────
     useEffect(() => {
@@ -860,7 +871,20 @@ export default function StudentTestPage() {
             : null;
 
     return (
-        <SebGate requireSEB={/* v8 ignore next 1 */ resolvedContent?.requireSEB ?? assignment.requireSEB}>
+        <SebGate
+            requireSEB={/* v8 ignore next 1 */ resolvedContent?.requireSEB ?? assignment.requireSEB}
+            startUrl={window.location.href}
+            fileName={test.name}
+            configEndpoint={
+                hasDb && assignment.supabaseUrl
+                    ? {
+                          supabaseUrl: assignment.supabaseUrl,
+                          code: assignment.teacherKey,
+                          apikey: assignment.supabaseAnonKey,
+                      }
+                    : undefined
+            }
+        >
             <div
                 style={{
                     minHeight: '100vh',
@@ -1067,6 +1091,16 @@ export default function StudentTestPage() {
                                     style={{ marginTop: 12 }}
                                 >
                                     {t('tests.taking.retake')}
+                                </button>
+                            )}
+                            {inSeb && (
+                                <button
+                                    type="button"
+                                    onClick={() => quitSafeExamBrowser(buildSebQuitUrl())}
+                                    className="btn btn-secondary"
+                                    style={{ marginTop: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                                >
+                                    <LogOut size={14} /> {t('tests.taking.seb_quit')}
                                 </button>
                             )}
                         </div>

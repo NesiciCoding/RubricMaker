@@ -12,6 +12,7 @@ import * as sharedSecureCompare from '../../supabase/functions/_shared/secureCom
 import * as sharedHeartbeat from '../../supabase/functions/_shared/heartbeat.ts';
 import * as sharedSmtp from '../../supabase/functions/_shared/smtp.ts';
 import * as sharedNotificationEmails from '../../supabase/functions/_shared/notificationEmails.ts';
+import * as sharedSebConfig from '../../supabase/functions/_shared/sebConfig.ts';
 import * as testCalc from '../utils/testCalc';
 import * as clozeParse from '../utils/clozeParse';
 import * as placementRouting from '../utils/placementRouting';
@@ -40,6 +41,7 @@ const SHARED_MODULES = {
     heartbeat: sharedHeartbeat,
     smtp: sharedSmtp,
     notificationEmails: sharedNotificationEmails,
+    sebConfig: sharedSebConfig,
 };
 
 const EDGE_FUNCTION_IMPORTS: Record<string, (keyof typeof SHARED_MODULES)[]> = {
@@ -48,6 +50,7 @@ const EDGE_FUNCTION_IMPORTS: Record<string, (keyof typeof SHARED_MODULES)[]> = {
     'notify-student-graded': ['notificationEmails', 'smtp'],
     'notify-student-message': ['notificationEmails', 'smtp'],
     'scheduled-digest': ['notificationEmails', 'smtp'],
+    'get-seb-config': ['sebConfig'],
 };
 
 const sharedFunctionNames = [
