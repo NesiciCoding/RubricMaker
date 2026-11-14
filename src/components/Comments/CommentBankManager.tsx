@@ -1,5 +1,6 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { Plus, Search, Trash2, Edit2, Tag, Save, Users2 } from 'lucide-react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { Plus, Search, Trash2, Edit2, Tag, Save, Users2, Download, Upload } from 'lucide-react';
+import { saveAs } from 'file-saver';
 import { useTranslation } from 'react-i18next';
 import { useAuthoring } from '../../context/AppContext';
 import { useDbStatus } from '../../hooks/useDbStatus';
@@ -7,6 +8,7 @@ import { useToast } from '../../hooks/useToast';
 import { storageSync } from '../../services/database';
 import { CEFR_LEVELS } from '../../data/cefrDescriptors';
 import CefrBadge from '../CEFR/CefrBadge';
+import { exportCommentBankJson, parseCommentBankJson } from '../../utils/commentBankJson';
 import { CommentBankItem, type CefrLevel } from '../../types';
 import { EmptyState } from '../ui/EmptyState';
 
@@ -62,6 +64,7 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
     const [editingId, setEditingId] = useState<string | null>(null);
     const [isCreating, setIsCreating] = useState(false);
     const [sortMode, setSortMode] = useState<SortMode>('newest');
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
 
     useEffect(() => {
         if (!dbStatus.isConnected) {
@@ -188,6 +191,26 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
         } else {
             addCommentBankItem(formText, tags);
             setIsCreating(false);
+        }
+    };
+
+    const handleExport = () => {
+        const blob = new Blob([exportCommentBankJson(commentBank)], { type: 'application/json;charset=utf-8;' });
+        saveAs(blob, 'comment-bank-export.json');
+        showToast(t('commentBank.export_success_toast'), 'success');
+    };
+
+    const handleImportFile = async (file: File) => {
+        try {
+            const items = parseCommentBankJson(await file.text());
+            if (items.length === 0) {
+                showToast(t('commentBank.import_empty_toast'), 'info');
+                return;
+            }
+            items.forEach((item) => addCommentBankItem(item.text, item.tags));
+            showToast(t('commentBank.import_success_toast', { count: items.length }), 'success');
+        } catch {
+            showToast(t('commentBank.import_invalid_toast'), 'error');
         }
     };
 
@@ -377,6 +400,34 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
         </div>
     );
 
+    const bankIoRow = (
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+            <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={handleExport}
+                disabled={commentBank.length === 0}
+            >
+                <Download size={14} /> {t('commentBank.export_button')}
+            </button>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => fileInputRef.current?.click()}>
+                <Upload size={14} /> {t('commentBank.import_button')}
+            </button>
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/json,.json"
+                aria-label={t('commentBank.import_button')}
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = '';
+                    if (file) void handleImportFile(file);
+                }}
+            />
+        </div>
+    );
+
     const sortToggleRow = (
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
             <span className="text-xs text-muted">{t('commentBank.sort_label')}</span>
@@ -561,6 +612,7 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
                         }}
                     >
                         {searchAndNewRow}
+                        {bankIoRow}
                         {sortToggleRow}
                     </div>
                     {editorForm}

@@ -1246,8 +1246,11 @@ function GradingTab() {
                     {t('docs.gr_comment_bank_body_prefix')} <strong>{t('docs.gr_comment_bank_nav')}</strong>{' '}
                     {t('docs.gr_comment_bank_body')}
                 </p>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
                     {t('docs.gr_comment_bank_suggested_note')}
+                </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    {t('docs.gr_comment_bank_io_note')}
                 </p>
             </FeatureSection>
 

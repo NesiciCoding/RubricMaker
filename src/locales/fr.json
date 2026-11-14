@@ -2651,6 +2651,12 @@
         "confirm_accept_message": "La note de {{student}} passe de {{before}} à {{after}}. Les scores, le commentaire et l'ajustement d'origine sont remplacés ; l'évaluation du second correcteur est conservée comme résolue."
     },
     "commentBank": {
+        "export_button": "Exporter",
+        "import_button": "Importer",
+        "export_success_toast": "Banque de commentaires exportée",
+        "import_success_toast": "{{count}} commentaires importés",
+        "import_invalid_toast": "Ce fichier n'est pas un export valide de la banque de commentaires",
+        "import_empty_toast": "Aucun commentaire trouvé dans ce fichier",
         "title": "Banque de commentaires",
         "search_placeholder": "Rechercher des commentaires...",
         "new_button": "Nouveau",
@@ -4553,6 +4559,7 @@
         "gr_comment_bank_nav": "Banque de commentaires",
         "gr_comment_bank_body": "dans la barre latérale pour gérer vos extraits. Organisez-les avec des étiquettes (par ex. « écriture », « grammaire », « effort ») — sur la page complète Banque de commentaires, ces étiquettes deviennent une liste de catégories à gauche affichant le nombre d'éléments par étiquette ; cliquez sur l'une d'elles pour filtrer, ou sur « Tous les commentaires » pour effacer le filtre ; le panneau compact d'insertion utilisé pendant la notation reste une liste à plat. Un commentaire étiqueté avec un niveau CECR (par ex. « B1 ») affiche ce niveau sous forme de badge coloré sur sa carte. Pendant la notation, cliquez sur l'icône de commentaire pour ouvrir la banque et insérer n'importe quel extrait dans le champ de feedback en un clic — chaque insertion est comptabilisée, affichée sur la carte, et le contrôle de tri de la page Banque de commentaires peut afficher vos commentaires les plus utilisés en premier. Avec la synchronisation cloud connectée, cliquez sur l'icône de département d'un élément pour le partager en lecture seule avec tous les autres enseignants de votre établissement ; les éléments partagés par des collègues apparaissent dans la banque avec un badge « Département ». Sélectionner plusieurs étiquettes n'affiche que les commentaires qui les ont toutes, et la suppression d'un commentaire affiche un bouton Annuler pendant quelques secondes.",
         "gr_comment_bank_suggested_note": "Si un critère a connu une série de scores faibles, la banque de commentaires s'ouvre avec un groupe « Suggéré » en haut — des commentaires étiquetés avec la compétence ou le niveau CECRL de ce critère (ex. « speaking_interaction », « B1 »).",
+        "gr_comment_bank_io_note": "Sur la page complète Banque de commentaires, Exporter télécharge vos commentaires (texte et étiquettes) au format JSON et Importer les réajoute — pratique pour déplacer une banque entre appareils ou la transmettre à un collègue. L'import ignore les entrées sans texte et s'arrête à 500 commentaires.",
         "gr_question_bank_title": "Banque de questions",
         "gr_question_bank_body_prefix": "Enregistrez n'importe quelle question de test dans une banque réutilisable via l'icône de signet dans l'éditeur de question, puis insérez les questions enregistrées dans n'importe quel test depuis",
         "gr_question_bank_body_suffix": "— gérez, étiquetez et recherchez vos questions enregistrées là-bas.",
