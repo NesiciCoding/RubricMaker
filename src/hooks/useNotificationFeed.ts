@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { useAssessment, useAuthoring, useEssays, useGrading, useStudents } from '../context/AppContext';
+import { useAssessment, useAuthoring, useEssays, useGrading, useSettings, useStudents } from '../context/AppContext';
 import { usePendingGrading } from './usePendingGrading';
 import { groupMessageThreads, MessageThread } from '../utils/messageThreads';
 import { DEFAULT_MODERATION_THRESHOLD_PERCENT, getModerationQueue } from '../utils/coGradingModerationQueue';
@@ -11,8 +11,8 @@ import type { NotificationDismissalType } from '../types';
  * the three can't drift out of sync. Merges three independently-computed sources —
  * overdue grading (usePendingGrading: handed-in work waiting past the threshold, one item
  * per test or essay), unread messages (groupMessageThreads), and
- * moderation-pending (getModerationQueue, same defaults Sidebar.tsx's badge already
- * uses — no colleagueIds resolution here, matching that existing simplification) —
+ * moderation-pending (getModerationQueue, at the teacher's persisted threshold like the
+ * moderation page, though without its colleagueIds resolution) —
  * filtered against persisted dismissals for the two types that have them.
  *
  * Unread messages are deliberately not dismissible here: Message.readByTeacher is
@@ -78,6 +78,7 @@ export function useNotificationFeed(): UseNotificationFeedResult {
     // nearly every page via Topbar, so any test double that predates this hook may not
     // stub every one of these collections.
     const { students = [] } = useStudents();
+    const { settings } = useSettings();
     const { studentRubrics = [] } = useGrading();
 
     const { rubrics = [] } = useAuthoring();
@@ -137,14 +138,10 @@ export function useNotificationFeed(): UseNotificationFeedResult {
             .sort((a, b) => a.sortKey.localeCompare(b.sortKey));
     }, [messages, students]);
 
+    const moderationThreshold = settings?.moderationThresholdPercent ?? DEFAULT_MODERATION_THRESHOLD_PERCENT;
+
     const moderationItems = useMemo<ModerationPendingNotification[]>(() => {
-        const queue = getModerationQueue(
-            rubrics,
-            studentRubrics,
-            peerReviews,
-            students,
-            DEFAULT_MODERATION_THRESHOLD_PERCENT
-        );
+        const queue = getModerationQueue(rubrics, studentRubrics, peerReviews, students, moderationThreshold);
         return queue
             .filter(
                 (item) =>
@@ -167,7 +164,7 @@ export function useNotificationFeed(): UseNotificationFeedResult {
                 };
             })
             .sort((a, b) => a.sortKey.localeCompare(b.sortKey));
-    }, [rubrics, studentRubrics, peerReviews, students, isDismissed]);
+    }, [rubrics, studentRubrics, peerReviews, students, moderationThreshold, isDismissed]);
 
     const items = useMemo<NotificationFeedItem[]>(
         () => [...overdueItems, ...messageItems, ...moderationItems].sort((a, b) => a.sortKey.localeCompare(b.sortKey)),

@@ -50,12 +50,16 @@ export default function ModerationQueuePage() {
     useEffect(() => {
         latestStudentRubrics.current = studentRubrics;
     }, [studentRubrics]);
-    const { saveStudentRubric, savePeerReview } = useStoreActions();
+    const { saveStudentRubric, savePeerReview, updateSettings } = useStoreActions();
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
     const { fetchSchoolMembers } = usePlatform();
 
     const dbStatus = useDbStatus();
-    const [threshold, setThreshold] = useState(DEFAULT_MODERATION_THRESHOLD_PERCENT);
+    // Persisted, and read back by useNotificationFeed: an unpersisted page-local threshold made the
+    // page and the notification counts disagree as soon as a teacher changed it.
+    const [threshold, setThreshold] = useState(
+        settings.moderationThresholdPercent ?? DEFAULT_MODERATION_THRESHOLD_PERCENT
+    );
     const [colleagues, setColleagues] = useState<DbUser[]>([]);
     // The queue's reviewer filter is built from the school roster, so until it settles every
     // second marker would render as a raw user id — hold a row skeleton instead.
@@ -203,7 +207,8 @@ export default function ModerationQueuePage() {
                         max={100}
                         step={1}
                         value={threshold}
-                        onChange={(e) => setThreshold(Number(e.target.value) || 0)}
+                        onChange={(e) => setThreshold(Math.min(100, Math.max(0, Number(e.target.value) || 0)))}
+                        onBlur={() => updateSettings({ moderationThresholdPercent: threshold })}
                     />
                 </div>
 
