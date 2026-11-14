@@ -9,6 +9,17 @@ interface DropdownMenuProps {
     children: React.ReactNode;
     minWidth?: number;
     ariaLabel?: string;
+    /**
+     * Viewport point to open at instead of under the anchor — a right-click or Shift+F10, where there
+     * is no toggle button. `anchorRef` still supplies the element that gets focus back.
+     */
+    point?: { x: number; y: number } | null;
+}
+
+interface MenuPosition {
+    top: number;
+    left?: number;
+    right?: number;
 }
 
 /**
@@ -22,20 +33,53 @@ export default function DropdownMenu({
     children,
     minWidth = 160,
     ariaLabel,
+    point,
 }: DropdownMenuProps) {
     const menuRef = useRef<HTMLDivElement>(null);
-    const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
+    const [pos, setPos] = useState<MenuPosition | null>(null);
 
     const place = useCallback(() => {
+        if (point) {
+            setPos({ top: Math.max(8, point.y), left: Math.max(8, point.x) });
+            return;
+        }
         const rect = anchorRef.current?.getBoundingClientRect();
         if (!rect) return;
         setPos({ top: rect.bottom + 4, right: Math.max(8, window.innerWidth - rect.right) });
-    }, [anchorRef]);
+    }, [anchorRef, point]);
 
     useLayoutEffect(() => {
         if (open) place();
         else setPos(null);
     }, [open, place]);
+
+    // A menu opened at a point can hang off the bottom/right edge; pull it back in before paint. An
+    // anchored menu needs none of this: `right` keeps it on screen and its max-height already uses
+    // the room below the anchor, so clamping would drag a long menu up over the trigger.
+    useLayoutEffect(() => {
+        const el = menuRef.current;
+        if (!open || !pos || !el || !point) return;
+        // scrollHeight, not offsetHeight: a max-height that depends on `top` collapses offsetHeight to
+        // 0 near the bottom edge, which used to make the clamp oscillate and drop the menu entirely.
+        const top = Math.min(pos.top, Math.max(8, window.innerHeight - el.scrollHeight - 8));
+        const left =
+            pos.left === undefined
+                ? undefined
+                : Math.min(pos.left, Math.max(8, window.innerWidth - el.offsetWidth - 8));
+        if (top !== pos.top || left !== pos.left) setPos({ ...pos, top, left });
+    }, [open, pos, point]);
+
+    const onScroll = useCallback(
+        (e: Event) => {
+            // Capture phase also sees scroll events from the menu's own `overflowY: auto` content —
+            // ignore those, or scrolling down a long menu to reach a lower item closes it instead.
+            if (menuRef.current && e.target instanceof Node && menuRef.current.contains(e.target)) return;
+            // An anchored menu follows its trigger; a point-opened one would drift away from what was clicked.
+            if (point) onClose();
+            else place();
+        },
+        [point, onClose, place]
+    );
 
     useEffect(() => {
         if (!open) return;
@@ -53,18 +97,20 @@ export default function DropdownMenu({
         document.addEventListener('mousedown', onPointerDown);
         document.addEventListener('keydown', onKeyDown);
         window.addEventListener('resize', onClose);
-        window.addEventListener('scroll', place, true);
+        window.addEventListener('scroll', onScroll, true);
         return () => {
             document.removeEventListener('mousedown', onPointerDown);
             document.removeEventListener('keydown', onKeyDown);
             window.removeEventListener('resize', onClose);
-            window.removeEventListener('scroll', place, true);
+            window.removeEventListener('scroll', onScroll, true);
         };
-    }, [open, onClose, anchorRef, place]);
+    }, [open, onClose, anchorRef, onScroll]);
 
     const placed = pos !== null;
     useEffect(() => {
-        if (open && placed) menuItems(menuRef.current)[0]?.focus();
+        // preventScroll: focusing an item must not scroll an ancestor, or the point-menu's
+        // close-on-scroll would fire the moment it opened.
+        if (open && placed) menuItems(menuRef.current)[0]?.focus({ preventScroll: true });
     }, [open, placed]);
 
     // The portal sits at the end of <body>, so the menu manages its own keyboard order: arrows move
@@ -84,7 +130,7 @@ export default function DropdownMenu({
         }
         if (!next) return;
         e.preventDefault();
-        next.focus();
+        next.focus({ preventScroll: true });
     };
 
     if (!open || !pos) return null;
@@ -98,9 +144,9 @@ export default function DropdownMenu({
             style={{
                 position: 'fixed',
                 top: pos.top,
-                right: pos.right,
+                ...(pos.left === undefined ? { right: pos.right } : { left: pos.left }),
                 minWidth,
-                maxHeight: `calc(100vh - ${pos.top + 8}px)`,
+                maxHeight: point ? 'calc(100vh - 16px)' : `calc(100vh - ${pos.top + 8}px)`,
                 overflowY: 'auto',
                 padding: 4,
                 zIndex: 200,

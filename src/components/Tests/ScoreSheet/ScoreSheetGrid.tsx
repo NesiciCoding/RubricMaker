@@ -1,6 +1,6 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, ArrowDownToLine, ClipboardPaste, Copy, Eraser, UserCheck, UserX } from 'lucide-react';
 import type { Class, GradeScale, Student, StudentTest, Test, TestAnswer } from '../../../types';
 import { scoreTestAnswer } from '../../../utils/testCalc';
 import { stripHtmlTags } from '../../../utils/exportDataPrep';
@@ -18,6 +18,9 @@ import {
 import { pValueColor } from '../ItemAnalysisPanel';
 import { asTextColor } from './qualityColors';
 import type { ItemQuality } from '../../../utils/testQualityMetrics';
+import { useToast } from '../../../hooks/useToast';
+import ContextMenu, { useContextMenu } from '../../ui/ContextMenu';
+import type { ContextMenuItem } from '../../ui/ContextMenu';
 
 interface Props {
     test: Test;
@@ -59,9 +62,19 @@ export default function ScoreSheetGrid({
     canEdit,
 }: Props) {
     const { t, i18n } = useTranslation();
+    const { showToast } = useToast();
+    const ctx = useContextMenu();
     const tableRef = useRef<HTMLTableElement>(null);
     const [drafts, setDrafts] = useState<Record<string, string>>({});
     const [focus, setFocus] = useState<{ row: number; col: number } | null>(null);
+    // Context-menu items are built once, at open time, but stay selectable after a later
+    // render (e.g. the auto-focus-driven blur-commit that fires right after opening) swaps
+    // in a new `sheetByStudent`. Reading through this ref instead of the closed-over prop
+    // keeps every action's base state fresh instead of the one from the render that opened the menu.
+    const sheetRef = useRef(sheetByStudent);
+    useEffect(() => {
+        sheetRef.current = sheetByStudent;
+    }, [sheetByStudent]);
     const questions = test.questions;
     const classById = new Map(classes.map((c) => [c.id, c]));
     const allLabel = t('tests.norm.tier_all');
@@ -91,7 +104,7 @@ export default function ScoreSheetGrid({
             if (!student || !q) continue;
             const validity = validateCell(raw, q.points);
             if (validity === 'invalid' || validity === 'over_max') continue;
-            const current = touched.has(student.id) ? touched.get(student.id) : sheetByStudent.get(student.id);
+            const current = touched.has(student.id) ? touched.get(student.id) : sheetRef.current.get(student.id);
             const before = latestAnswer(current, q.id);
             const next = validity === 'empty' ? null : parsePoints(raw)!;
             if (next === null && !before) continue;
@@ -100,6 +113,142 @@ export default function ScoreSheetGrid({
         }
         const saved = [...touched.values()].filter((st): st is StudentTest => !!st);
         if (saved.length) onSave(saved);
+    }
+
+    const rowEditable = (student: Student) => canEdit?.(student) ?? true;
+
+    /** The text a cell shows right now — an unblurred draft wins over the saved value. */
+    function cellRaw(student: Student, col: number): string {
+        return drafts[key(student.id, questions[col].id)] ?? shown(sheetByStudent.get(student.id), col);
+    }
+
+    function dropDrafts(keys: string[]) {
+        if (!keys.length) return;
+        setDrafts((d) => {
+            const next = { ...d };
+            for (const k of keys) delete next[k];
+            return next;
+        });
+    }
+
+    function copyText(text: string) {
+        if (!navigator.clipboard) {
+            showToast(t('tests.scoreSheet.menu_copy_blocked'), 'error');
+            return;
+        }
+        navigator.clipboard
+            .writeText(text)
+            .then(() => showToast(t('tests.scoreSheet.menu_copied'), 'success'))
+            .catch(() => showToast(t('tests.scoreSheet.menu_copy_blocked'), 'error'));
+    }
+
+    function clearCell(row: number, col: number) {
+        dropDrafts([key(students[row].id, questions[col].id)]);
+        commit([{ row, col, raw: '' }]);
+    }
+
+    /** Spreadsheet fill-down: every editable, non-absent student below this cell gets the same points. */
+    function fillDown(row: number, col: number) {
+        const max = questions[col].points;
+        const raw = cellRaw(students[row], col);
+        if (validateCell(raw, max) !== 'ok') return;
+        const targets: { row: number; col: number; raw: string }[] = [];
+        const keys: string[] = [];
+        for (let r = row + 1; r < students.length; r++) {
+            const student = students[r];
+            if (!rowEditable(student) || sheetRef.current.get(student.id)?.absent) continue;
+            targets.push({ row: r, col, raw });
+            keys.push(key(student.id, questions[col].id));
+        }
+        if (!targets.length) return;
+        dropDrafts(keys);
+        commit(targets);
+        showToast(t('tests.scoreSheet.menu_filled'), 'success');
+    }
+
+    function clearRow(row: number) {
+        const student = students[row];
+        dropDrafts(questions.map((q) => key(student.id, q.id)));
+        commit(questions.map((_, col) => ({ row, col, raw: '' })));
+    }
+
+    function cellMenu(row: number, col: number): ContextMenuItem[] {
+        const student = students[row];
+        const q = questions[col];
+        const st = sheetByStudent.get(student.id);
+        const absent = !!st?.absent;
+        const raw = cellRaw(student, col);
+        const validity = validateCell(raw, q.points);
+        const editable = rowEditable(student);
+        const hasValue = validity !== 'empty' && absent === false;
+        return [
+            {
+                key: 'absent',
+                label: absent ? t('tests.scoreSheet.menu_mark_present') : t('tests.scoreSheet.menu_mark_absent'),
+                icon: absent ? <UserCheck size={14} aria-hidden /> : <UserX size={14} aria-hidden />,
+                disabled: !editable,
+                onSelect: () => onSave([setAbsent(sheetRef.current.get(student.id), test, student.id, !absent)]),
+            },
+            {
+                key: 'clear',
+                label: t('tests.scoreSheet.menu_clear_cell'),
+                icon: <Eraser size={14} aria-hidden />,
+                disabled: !editable || absent || !hasValue,
+                onSelect: () => clearCell(row, col),
+            },
+            {
+                key: 'copy',
+                label: t('tests.scoreSheet.menu_copy_value'),
+                icon: <Copy size={14} aria-hidden />,
+                disabled: !hasValue,
+                onSelect: () => copyText(raw.trim()),
+            },
+            {
+                key: 'paste',
+                label: t('tests.scoreSheet.menu_paste'),
+                icon: <ClipboardPaste size={14} aria-hidden />,
+                disabled: !editable || absent,
+                onSelect: () => void pasteFromClipboard(row, col),
+            },
+            {
+                key: 'fill',
+                label: t('tests.scoreSheet.menu_fill_down'),
+                icon: <ArrowDownToLine size={14} aria-hidden />,
+                disabled: !editable || absent || validity !== 'ok' || row === students.length - 1,
+                onSelect: () => fillDown(row, col),
+            },
+        ];
+    }
+
+    function rowMenu(row: number): ContextMenuItem[] {
+        const student = students[row];
+        const st = sheetByStudent.get(student.id);
+        const absent = !!st?.absent;
+        const editable = rowEditable(student);
+        const hasAny = !!st && st.answers.length > 0;
+        return [
+            {
+                key: 'absent',
+                label: absent ? t('tests.scoreSheet.menu_mark_present') : t('tests.scoreSheet.menu_mark_absent'),
+                icon: absent ? <UserCheck size={14} aria-hidden /> : <UserX size={14} aria-hidden />,
+                disabled: !editable,
+                onSelect: () => onSave([setAbsent(sheetRef.current.get(student.id), test, student.id, !absent)]),
+            },
+            {
+                key: 'clear-row',
+                label: t('tests.scoreSheet.menu_clear_row'),
+                icon: <Eraser size={14} aria-hidden />,
+                disabled: !editable || absent || !hasAny,
+                onSelect: () => clearRow(row),
+            },
+            {
+                key: 'copy-row',
+                label: t('tests.scoreSheet.menu_copy_row'),
+                icon: <Copy size={14} aria-hidden />,
+                disabled: absent || !hasAny,
+                onSelect: () => copyText(questions.map((_, col) => cellRaw(student, col).trim()).join('\t')),
+            },
+        ];
     }
 
     function handleBlur(row: number, col: number) {
@@ -145,13 +294,48 @@ export default function ScoreSheetGrid({
         focusCell(r, c);
     }
 
+    /** Writes a pasted block from (row, col), skipping rows that are absent or that I cannot edit. */
+    function applyPastedGrid(grid: string[][], row: number, col: number) {
+        const values: { row: number; col: number; raw: string }[] = [];
+        grid.forEach((cells, dr) =>
+            cells.forEach((raw, dc) => {
+                const r = row + dr;
+                const c = col + dc;
+                const student = students[r];
+                const q = questions[c];
+                if (!student || !q || !rowEditable(student) || sheetRef.current.get(student.id)?.absent) return;
+                values.push({ row: r, col: c, raw });
+            })
+        );
+        if (!values.length) return;
+        dropDrafts(values.map(({ row: r, col: c }) => key(students[r].id, questions[c].id)));
+        commit(values);
+    }
+
     function handlePaste(e: React.ClipboardEvent<HTMLInputElement>, row: number, col: number) {
         const grid = parsePastedGrid(e.clipboardData.getData('text'));
+        // A single value keeps the browser's own paste; the input already handles that.
         if (grid.length <= 1 && (grid[0]?.length ?? 0) <= 1) return;
         e.preventDefault();
-        const values: { row: number; col: number; raw: string }[] = [];
-        grid.forEach((cells, dr) => cells.forEach((raw, dc) => values.push({ row: row + dr, col: col + dc, raw })));
-        commit(values);
+        applyPastedGrid(grid, row, col);
+    }
+
+    /** The menu's Paste: right-click no longer offers the browser's, so it reads the clipboard here. */
+    async function pasteFromClipboard(row: number, col: number) {
+        if (!navigator.clipboard) {
+            showToast(t('tests.scoreSheet.menu_paste_blocked'), 'error');
+            return;
+        }
+        let text: string;
+        try {
+            text = await navigator.clipboard.readText();
+        } catch {
+            showToast(t('tests.scoreSheet.menu_paste_blocked'), 'error');
+            return;
+        }
+        const grid = parsePastedGrid(text);
+        if (!grid.length) return;
+        applyPastedGrid(grid, row, col);
     }
 
     const colMeans = items.map((it) => it.mean);
@@ -256,6 +440,11 @@ export default function ScoreSheetGrid({
                             <tr key={student.id} style={{ opacity: absent ? 0.55 : 1 }}>
                                 <th
                                     scope="row"
+                                    tabIndex={0}
+                                    aria-label={t('tests.scoreSheet.row_header_label', { student: student.name })}
+                                    onContextMenu={(e) =>
+                                        ctx.open(e, rowMenu(row), t('tests.scoreSheet.menu_row_label'))
+                                    }
                                     style={{
                                         ...stickyName,
                                         textAlign: 'left',
@@ -277,6 +466,10 @@ export default function ScoreSheetGrid({
                                     return (
                                         <td
                                             key={q.id}
+                                            data-context-menu="cell"
+                                            onContextMenu={(e) =>
+                                                ctx.open(e, cellMenu(row, col), t('tests.scoreSheet.menu_cell_label'))
+                                            }
                                             style={{
                                                 borderBottom: cellBorder,
                                                 padding: 2,
@@ -412,6 +605,7 @@ export default function ScoreSheetGrid({
                     </tr>
                 </tfoot>
             </table>
+            <ContextMenu {...ctx.menuProps} />
         </div>
     );
 }
