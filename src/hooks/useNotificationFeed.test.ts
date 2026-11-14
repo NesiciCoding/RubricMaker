@@ -18,6 +18,7 @@ let mockEssaySubmissions: Array<
     Pick<EssaySubmission, 'teacherKey' | 'assignmentStudentId' | 'assignmentRubricId' | 'submittedAt'>
 > = [];
 let mockNotificationDismissals: Array<{ id: string; type: string; entityId: string; fingerprint: string }> = [];
+let mockModerationThreshold: number | undefined;
 const mockDismissNotification = vi.fn();
 const mockMarkMessageReadByTeacher = vi.fn();
 
@@ -32,7 +33,7 @@ const makeAppContextMock = () => ({
     essaySubmissions: mockEssaySubmissions,
     essayAssignments: [],
     notificationDismissals: mockNotificationDismissals,
-    settings: { overdueReminderThreshold: 7 },
+    settings: { overdueReminderThreshold: 7, moderationThresholdPercent: mockModerationThreshold },
     dismissNotification: mockDismissNotification,
     markMessageReadByTeacher: mockMarkMessageReadByTeacher,
 });
@@ -105,6 +106,7 @@ describe('useNotificationFeed', () => {
         mockMessages = [];
         mockStudentTests = [];
         mockEssaySubmissions = [];
+        mockModerationThreshold = undefined;
         mockNotificationDismissals = [];
         mockDismissNotification.mockClear();
         mockMarkMessageReadByTeacher.mockClear();
@@ -267,6 +269,16 @@ describe('useNotificationFeed', () => {
             expect(result.current.moderationItems[0].studentName).toBe('Alice');
             expect(result.current.moderationItems[0].entityId).toBe('sr-second');
             expect(result.current.count).toBe(1);
+        });
+
+        it('respects the persisted moderation threshold', () => {
+            mockStudents = [{ id: 's1', name: 'Alice', classId: 'c1' }];
+            mockRubrics = [rubric];
+            mockStudentRubrics = [baseline];
+            mockPeerReviews = [secondMarker];
+            mockModerationThreshold = 90;
+            const { result } = renderHook(() => useNotificationFeed());
+            expect(result.current.moderationItems).toHaveLength(0);
         });
 
         it('hides a moderation item that has been dismissed against its current fingerprint', () => {
