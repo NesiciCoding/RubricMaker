@@ -69,6 +69,12 @@ export function getRouteTree(t: TFunction): RouteNode[] {
                     color: '#3b82f6',
                 },
                 {
+                    path: '/rubrics/import/:code',
+                    label: t('docs.route_rubric_import_label'),
+                    description: t('docs.route_rubric_import_desc'),
+                    color: '#3b82f6',
+                },
+                {
                     path: '/rubrics/:id',
                     label: t('docs.route_rubric_builder_label'),
                     description: t('docs.route_rubric_builder_desc'),
@@ -900,6 +906,7 @@ function RubricsTab() {
                         t('docs.rb_import_export_item_tiered'),
                         t('docs.rb_import_export_item_export'),
                         t('docs.rb_import_export_item_share_code'),
+                        t('docs.rb_import_export_item_preview_import'),
                     ]}
                 />
 

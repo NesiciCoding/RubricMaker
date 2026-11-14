@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { decodeRubricShareCode } from '../utils/rubricImport';
+import { Plus } from 'lucide-react';
 import TieredSheetView from '../components/Rubric/TieredSheetView';
 import { buildTieredSheet } from '../utils/tieredSheet';
 import { SharedPageInvalid, SharedPageShell, sharedCardStyle } from '../components/ui/SharedPageShell';
@@ -70,6 +71,22 @@ export default function RubricPreviewPage() {
                         {rubric.description}
                     </p>
                 )}
+                <div
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        flexWrap: 'wrap',
+                        marginTop: 16,
+                    }}
+                >
+                    <Link to={`/rubrics/import/${code}`} className="btn btn-primary btn-sm">
+                        <Plus size={14} aria-hidden="true" /> {t('rubricPreview.import_cta')}
+                    </Link>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                        {t('rubricPreview.import_hint')}
+                    </span>
+                </div>
             </header>
 
             {rubric.tiered && (

@@ -4198,6 +4198,9 @@
         "show_formatting_marks": "Show formatting marks"
     },
     "docs": {
+        "rb_import_export_item_preview_import": "Open a shared preview link and choose \"Import this rubric\" to add a copy to your own rubrics and edit it.",
+        "route_rubric_import_label": "Import a shared rubric",
+        "route_rubric_import_desc": "Adopts the rubric from a share link into your workspace and opens it in the builder.",
         "section_title": "Documentation",
         "sections_nav_label": "Documentation sections",
         "filter_empty": "No sections match.",
@@ -5486,6 +5489,10 @@
         "reload": "Reload page"
     },
     "importRubric": {
+        "importing": "Importing rubric…",
+        "failed_title": "This rubric link can't be imported",
+        "failed_body": "The link is incomplete or damaged. Ask for a fresh link, or paste the code on the Rubrics page.",
+        "back_to_rubrics": "Go to my rubrics",
         "title": "Import Rubric",
         "stage_upload": "Upload",
         "stage_parsing": "Parsing",
@@ -5679,6 +5686,8 @@
         "sub_item_points": "{{score}}/{{max}} pts"
     },
     "rubricPreview": {
+        "import_cta": "Import this rubric",
+        "import_hint": "Adds a copy to your own rubrics.",
         "invalid_title": "This rubric link can't be opened",
         "invalid_body": "The link is incomplete or damaged. Ask your teacher to send it again.",
         "badge": "Assessment rubric",

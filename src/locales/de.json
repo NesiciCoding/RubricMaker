@@ -4198,6 +4198,9 @@
         "show_formatting_marks": "Formatierungszeichen anzeigen"
     },
     "docs": {
+        "rb_import_export_item_preview_import": "Öffne einen geteilten Vorschau-Link und wähle „Diese Rubrik importieren“, um eine Kopie zu deinen Rubriken hinzuzufügen und zu bearbeiten.",
+        "route_rubric_import_label": "Geteilte Rubrik importieren",
+        "route_rubric_import_desc": "Übernimmt die Rubrik aus einem Freigabe-Link in deinen Arbeitsbereich und öffnet sie im Editor.",
         "section_title": "Dokumentation",
         "sections_nav_label": "Dokumentationsbereiche",
         "filter_empty": "No sections match.",
@@ -5486,6 +5489,10 @@
         "reload": "Seite neu laden"
     },
     "importRubric": {
+        "importing": "Rubrik wird importiert…",
+        "failed_title": "Dieser Rubrik-Link kann nicht importiert werden",
+        "failed_body": "Der Link ist unvollständig oder beschädigt. Bitte einen neuen Link anfordern oder den Code auf der Seite Rubriken einfügen.",
+        "back_to_rubrics": "Zu meinen Rubriken",
         "title": "Rubric importieren",
         "stage_upload": "Hochladen",
         "stage_parsing": "Verarbeiten",
@@ -5679,6 +5686,8 @@
         "sub_item_points": "{{score}}/{{max}} Pkt."
     },
     "rubricPreview": {
+        "import_cta": "Diese Rubrik importieren",
+        "import_hint": "Fügt eine Kopie deinen eigenen Rubriken hinzu.",
         "invalid_title": "Dieser Rubrik-Link kann nicht geöffnet werden",
         "invalid_body": "Der Link ist unvollständig oder beschädigt. Bitte deine Lehrkraft, ihn erneut zu senden.",
         "badge": "Bewertungsrubrik",
