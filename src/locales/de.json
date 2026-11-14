@@ -3425,6 +3425,12 @@
         "action_assign": "Zuweisen"
     },
     "messages": {
+        "search_placeholder": "Nachrichten durchsuchen…",
+        "filter_unread_only": "Nur ungelesen",
+        "filter_context_label": "Kontext",
+        "filter_context_all": "Alle Kontexte",
+        "no_matches": "Keine passenden Unterhaltungen",
+        "no_matches_desc": "Suche oder Filter löschen, um alle Unterhaltungen zu sehen.",
         "page_title": "Nachrichten",
         "inbox_empty": "Noch keine Nachrichten",
         "inbox_empty_desc": "Fragen von Schülern zu einer Rubrik, einem Test oder einem Aufsatz erscheinen hier.",
@@ -4543,6 +4549,7 @@
         "gr_messages_body_prefix": "Jede Frage, die ein Schüler über das Portal zu einer Rubrik, einem Test oder einem Aufsatz stellt, landet in Ihrem",
         "gr_messages_body_suffix": "Posteingang als ungelesene Benachrichtigung. Antworten Sie direkt oder starten Sie selbst einen neuen Nachrichtenverlauf — wählen Sie einen Schüler aus der Liste und schreiben Sie eine Nachricht.",
         "gr_messages_scope_note": "Nur Schüler, die sich im Schülerportal anmelden, können Ihnen Nachrichten schicken; ein bloßer Freigabecode-Link (Test-/Aufsatzabgabe ohne Portal-Zugang) hat keine Möglichkeit, eine Antwort zu erhalten.",
+        "gr_messages_search_note": "Unterhaltungen lassen sich nach Schüler:in, Kontext oder Nachrichtentext durchsuchen und auf ungelesen oder einen Kontext (Rubrik, Test, Essay, allgemein) filtern; Datumsangaben folgen der App-Sprache statt der Browsersprache.",
         "gr_notifications_title": "Benachrichtigungszentrale",
         "gr_notifications_body_prefix": "Das Glockensymbol in der oberen Leiste zeigt überfällige Bewertungen, ungelesene Nachrichten und ausstehende Moderationsprüfungen auf einen Blick. Klicken Sie auf „Alle Benachrichtigungen anzeigen“ oder gehen Sie zu",
         "gr_notifications_body_suffix": "für die vollständige, filterbare Liste — ohne 10-Einträge-Limit, und Verwerfungen synchronisieren sich geräteübergreifend.",

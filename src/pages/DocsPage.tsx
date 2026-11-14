@@ -1226,6 +1226,9 @@ function GradingTab() {
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
                     {t('docs.gr_messages_scope_note')}
                 </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    {t('docs.gr_messages_search_note')}
+                </p>
             </FeatureSection>
 
             <FeatureSection icon={Bell} title={t('docs.gr_notifications_title')} color="#f59e0b">
