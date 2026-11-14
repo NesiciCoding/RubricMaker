@@ -5475,6 +5475,7 @@
         "paste_submission_code": "Fügen Sie hier den Einreichungscode des Schülers ein…"
     },
     "notFound": {
+        "quick_links": "Etwas Bestimmtes gesucht?",
         "heading": "404 — Seite nicht gefunden",
         "body": "Die gesuchte Seite existiert nicht oder wurde verschoben.",
         "go_dashboard": "Zum Dashboard",

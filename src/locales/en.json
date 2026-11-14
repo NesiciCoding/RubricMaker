@@ -5475,6 +5475,7 @@
         "paste_submission_code": "Paste the student's submission code here…"
     },
     "notFound": {
+        "quick_links": "Looking for something?",
         "heading": "404 — Page not found",
         "body": "The page you're looking for doesn't exist or has been moved.",
         "go_dashboard": "Go to Dashboard",

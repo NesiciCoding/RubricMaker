@@ -5475,6 +5475,7 @@
         "paste_submission_code": "Pega aquí el código de entrega del alumno…"
     },
     "notFound": {
+        "quick_links": "¿Buscabas algo?",
         "heading": "404 — Página no encontrada",
         "body": "La página que buscas no existe o se ha movido.",
         "go_dashboard": "Ir al panel",
