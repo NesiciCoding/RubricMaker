@@ -1,8 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import PageTour from '../components/Tour/PageTour';
 import { usePageTourState } from '../hooks/usePageTourState';
 import { useTranslation } from 'react-i18next';
-import { Mail, Plus, Send, X } from 'lucide-react';
+import { Mail, Plus, Search, Send, X } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useEssays, useSettings, useStudents } from '../context/AppContext';
 import { nanoid } from '../utils/nanoid';
@@ -17,14 +17,19 @@ const CONTEXT_BADGE_KEY: Record<MessageContextType, string> = {
     general: 'messages.context_general',
 };
 
+type ContextFilter = MessageContextType | 'all';
+
 export default function MessagesPage() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const tour = usePageTourState('messages');
     const { students, archivedStudents = [] } = useStudents();
 
     const { messages, sendMessage, markMessageReadByTeacher, notifyStudentMessage } = useEssays();
     const { settings } = useSettings();
 
+    const [searchTerm, setSearchTerm] = useState('');
+    const [unreadOnly, setUnreadOnly] = useState(false);
+    const [contextFilter, setContextFilter] = useState<ContextFilter>('all');
     const [expandedKey, setExpandedKey] = useState<string | null>(null);
     const [replyText, setReplyText] = useState('');
     const [newThreadOpen, setNewThreadOpen] = useState(false);
@@ -32,6 +37,37 @@ export default function MessagesPage() {
     const [newThreadText, setNewThreadText] = useState('');
 
     const threads = useMemo(() => groupMessageThreads(messages), [messages]);
+
+    const dateFormat = useMemo(
+        () => new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' }),
+        [i18n.language]
+    );
+
+    const studentLabelFor = useCallback(
+        (studentId: string): string => {
+            const student = students.find((s) => s.id === studentId);
+            if (student) return student.name;
+            const archived = archivedStudents.find((s) => s.id === studentId);
+            return archived ? t('messages.archived_student', { name: archived.name }) : t('messages.unknown_student');
+        },
+        [students, archivedStudents, t]
+    );
+
+    const visibleThreads = useMemo(() => {
+        const needle = searchTerm.trim().toLowerCase();
+        return threads.filter((thread) => {
+            if (unreadOnly && thread.unreadByTeacher === 0) return false;
+            if (contextFilter !== 'all' && thread.contextType !== contextFilter) return false;
+            if (!needle) return true;
+            const label = studentLabelFor(thread.studentId);
+            const context = thread.contextLabel ?? t(CONTEXT_BADGE_KEY[thread.contextType]);
+            return (
+                label.toLowerCase().includes(needle) ||
+                context.toLowerCase().includes(needle) ||
+                thread.messages.some((m) => m.body.toLowerCase().includes(needle))
+            );
+        });
+    }, [threads, searchTerm, unreadOnly, contextFilter, studentLabelFor, t]);
 
     function threadKey(thread: Pick<MessageThread, 'studentId' | 'contextType' | 'contextId'>): string {
         return `${thread.studentId}__${thread.contextType}__${thread.contextId ?? ''}`;
@@ -110,7 +146,34 @@ export default function MessagesPage() {
                 }
             />
             <div className="page-content fade-in" data-tour="msg-content">
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <div className="input-group" style={{ flex: '1 1 220px' }}>
+                        <Search size={16} style={{ color: 'var(--text-dim)' }} aria-hidden="true" />
+                        <input
+                            type="text"
+                            placeholder={t('messages.search_placeholder')}
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            style={{ border: 'none', background: 'transparent', width: '100%' }}
+                        />
+                    </div>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem' }}>
+                        <input type="checkbox" checked={unreadOnly} onChange={(e) => setUnreadOnly(e.target.checked)} />
+                        {t('messages.filter_unread_only')}
+                    </label>
+                    <select
+                        aria-label={t('messages.filter_context_label')}
+                        value={contextFilter}
+                        onChange={(e) => setContextFilter(e.target.value as ContextFilter)}
+                        style={{ fontSize: '0.85rem' }}
+                    >
+                        <option value="all">{t('messages.filter_context_all')}</option>
+                        {(Object.keys(CONTEXT_BADGE_KEY) as MessageContextType[]).map((kind) => (
+                            <option key={kind} value={kind}>
+                                {t(CONTEXT_BADGE_KEY[kind])}
+                            </option>
+                        ))}
+                    </select>
                     <button
                         data-tour="msg-new"
                         type="button"
@@ -174,19 +237,18 @@ export default function MessagesPage() {
                         titleLevel={2}
                         description={t('messages.inbox_empty_desc')}
                     />
+                ) : visibleThreads.length === 0 ? (
+                    <EmptyState
+                        icon={Search}
+                        title={t('messages.no_matches')}
+                        titleLevel={2}
+                        description={t('messages.no_matches_desc')}
+                    />
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                        {threads.map((thread) => {
+                        {visibleThreads.map((thread) => {
                             const key = threadKey(thread);
-                            const student = students.find((s) => s.id === thread.studentId);
-                            const archived = student
-                                ? undefined
-                                : archivedStudents.find((s) => s.id === thread.studentId);
-                            const studentLabel = student
-                                ? student.name
-                                : archived
-                                  ? t('messages.archived_student', { name: archived.name })
-                                  : t('messages.unknown_student');
+                            const studentLabel = studentLabelFor(thread.studentId);
                             const expanded = expandedKey === key;
                             return (
                                 <div key={key} className="card">
@@ -239,7 +301,7 @@ export default function MessagesPage() {
                                             </div>
                                         </div>
                                         <span className="text-muted text-xs" style={{ flexShrink: 0 }}>
-                                            {new Date(thread.lastMessage.createdAt).toLocaleString()}
+                                            {dateFormat.format(new Date(thread.lastMessage.createdAt))}
                                         </span>
                                     </button>
 
@@ -286,7 +348,7 @@ export default function MessagesPage() {
                                                                 marginTop: 4,
                                                             }}
                                                         >
-                                                            {new Date(m.createdAt).toLocaleString()}
+                                                            {dateFormat.format(new Date(m.createdAt))}
                                                         </div>
                                                     </div>
                                                 ))}
