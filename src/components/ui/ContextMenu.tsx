@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
+import { Check } from 'lucide-react';
 import DropdownMenu from './DropdownMenu';
 
 export interface ContextMenuItem {
@@ -8,6 +9,12 @@ export interface ContextMenuItem {
     onSelect: () => void;
     disabled?: boolean;
     danger?: boolean;
+    /**
+     * Marks the item as one choice of many: it renders a check mark when true and carries
+     * `menuitemradio` semantics, so the current choice is announced instead of only coloured.
+     * Leave undefined for plain actions.
+     */
+    checked?: boolean;
 }
 
 interface MenuState {
@@ -101,7 +108,8 @@ export default function ContextMenu({ open, point, items, onClose, anchorRef, ar
                 <button
                     key={item.key}
                     type="button"
-                    role="menuitem"
+                    role={item.checked === undefined ? 'menuitem' : 'menuitemradio'}
+                    aria-checked={item.checked}
                     className="btn btn-ghost btn-sm"
                     disabled={item.disabled}
                     style={{
@@ -119,7 +127,16 @@ export default function ContextMenu({ open, point, items, onClose, anchorRef, ar
                         item.onSelect();
                     }}
                 >
-                    {item.icon}
+                    {item.checked === undefined ? (
+                        item.icon
+                    ) : (
+                        <span
+                            aria-hidden="true"
+                            style={{ display: 'inline-flex', width: 14, justifyContent: 'center', flexShrink: 0 }}
+                        >
+                            {item.checked ? <Check size={14} /> : null}
+                        </span>
+                    )}
                     {item.label}
                 </button>
             ))}

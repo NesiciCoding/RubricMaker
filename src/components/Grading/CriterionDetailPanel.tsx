@@ -7,6 +7,9 @@ import TouchStepper from './TouchStepper';
 import SubItemChecklist, { BestFitHint } from './SubItemChecklist';
 import { scoresSubItems, subItemMode, toggleTick } from '../../utils/subItems';
 import CommentComposer from './CommentComposer';
+import ContextMenu, { useContextMenu } from '../ui/ContextMenu';
+import { useToast } from '../../hooks/useToast';
+import { criterionMenuItems, type PreviousFeedback } from './criterionMenuItems';
 
 interface Props {
     criterion: RubricCriterion;
@@ -25,6 +28,10 @@ interface Props {
     onStartAudio: () => void;
     onStopAudio: () => void;
     onRemoveAudio: () => void;
+    /** The classmate graded just before this student, when they left feedback on this criterion. */
+    previousFeedback?: PreviousFeedback;
+    /** Put text at the caret in the comment editor; absent when there is nothing to insert into. */
+    onInsertPreviousFeedback?: (text: string) => void;
 }
 
 /**
@@ -51,8 +58,12 @@ export default function CriterionDetailPanel({
     onStartAudio,
     onStopAudio,
     onRemoveAudio,
+    previousFeedback,
+    onInsertPreviousFeedback,
 }: Props) {
     const { t } = useTranslation();
+    const { showToast } = useToast();
+    const ctx = useContextMenu();
     // Raw text of the override field while it is being edited, so a half-typed entry like "9." is not
     // rewritten by the controlled rerender before the next keystroke lands.
     const [overrideDraft, setOverrideDraft] = useState<string | null>(null);
@@ -67,9 +78,35 @@ export default function CriterionDetailPanel({
     const showBasePoints =
         !!selectedLevel && (selectedLevel.minPoints !== selectedLevel.maxPoints || selectedLevel.subItems.length === 0);
 
+    function copyFeedback(text: string) {
+        const write = navigator.clipboard?.writeText(text);
+        if (!write) return;
+        void write.then(() => showToast(t('gradeStudent.menu_feedback_copied'), 'success')).catch(() => {});
+    }
+
+    const menuItems = criterionMenuItems({
+        levels,
+        entry,
+        labels: {
+            setLevel: (level) => t('gradeStudent.menu_set_level', { level }),
+            openCommentBank: t('gradeStudent.comment_open_bank'),
+            copyFeedback: t('gradeStudent.menu_copy_feedback'),
+            usePrevious: (name) => t('gradeStudent.menu_use_previous_feedback', { name }),
+        },
+        previous: previousFeedback,
+        selectLevel: (levelId) => updateEntry({ levelId, overridePoints: undefined }),
+        openCommentBank: onBrowseAll,
+        copyFeedback,
+        insertPrevious: onInsertPreviousFeedback,
+    });
+
     return (
         <div
             className="grading-detail"
+            // Focusable so Escape can hand focus back to the card after a right-click on the panel
+            // background, which is not an interactive control itself.
+            tabIndex={-1}
+            onContextMenu={(e) => ctx.open(e, menuItems, t('gradeStudent.menu_label'))}
             style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
@@ -310,6 +347,7 @@ export default function CriterionDetailPanel({
                     onRemoveAudio={onRemoveAudio}
                 />
             </div>
+            <ContextMenu {...ctx.menuProps} />
         </div>
     );
 }

@@ -156,5 +156,11 @@ export default function DropdownMenu({
 }
 
 function menuItems(menu: HTMLElement | null): HTMLElement[] {
-    return Array.from(menu?.querySelectorAll<HTMLElement>('[role="menuitem"]:not([disabled])') ?? []);
+    // `menuitemradio` items (one-of-many choices, e.g. the criterion card's levels) are still items
+    // to arrow through, so both roles share the roving focus order.
+    return Array.from(
+        menu?.querySelectorAll<HTMLElement>(
+            '[role="menuitem"]:not([disabled]), [role="menuitemradio"]:not([disabled])'
+        ) ?? []
+    );
 }

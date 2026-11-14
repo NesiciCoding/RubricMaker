@@ -46,6 +46,8 @@ import { remapEntriesToRubric, sameGradeScale } from '../utils/gradeSnapshot';
 import SegmentedToggle from '../components/ui/SegmentedToggle';
 import GradingActionsMenu, { type GradingAction } from '../components/Grading/GradingActionsMenu';
 import GradingGrid from '../components/Grading/GradingGrid';
+import ContextMenu, { useContextMenu } from '../components/ui/ContextMenu';
+import { criterionMenuItems } from '../components/Grading/criterionMenuItems';
 import { FeedbackAudioPlayer } from '../components/Grading/FeedbackAudioPlayer';
 import TouchStepper from '../components/Grading/TouchStepper';
 import { usePlatform } from '../context/AppContext';
@@ -891,6 +893,29 @@ function GradeStudentEditor() {
         [analysisResults, rubricId, studentId]
     );
 
+    // The classmate just before this one in the roster: their feedback on the same criterion is the
+    // most useful starting point when a class hands in similar work.
+    const previousFeedbackFor = useCallback(
+        (criterionId: string) => {
+            const index = classStudents.findIndex((s) => s.id === studentId);
+            if (index <= 0) return undefined;
+            const previous = classStudents[index - 1];
+            const entry = studentRubrics
+                .find((item) => item.rubricId === rubricId && item.studentId === previous.id)
+                ?.entries.find((e) => e.criterionId === criterionId);
+            const text = stripCommentHtml(entry?.comment ?? '').trim();
+            return text ? { name: previous.name, text } : undefined;
+        },
+        [classStudents, studentId, studentRubrics, rubricId]
+    );
+    // One menu for the whole card list: it opens on whichever criterion card was right-clicked.
+    const cardMenu = useContextMenu();
+    const copyFeedbackText = (text: string) => {
+        const write = navigator.clipboard?.writeText(text);
+        if (!write) return;
+        void write.then(() => showToast(t('gradeStudent.menu_feedback_copied'), 'success')).catch(() => {});
+    };
+
     if (!rubric || !student || !sr)
         return (
             <div className="page-content">
@@ -1420,6 +1445,8 @@ function GradeStudentEditor() {
                         recordingKey={audioRecorder.recordingKey}
                         onStartAudio={startAudioRecording}
                         onStopAudio={stopAudioRecording}
+                        previousFeedbackFor={previousFeedbackFor}
+                        onInsertPreviousFeedback={(_criterionId, text) => commentEditorRef.current?.insertContent(text)}
                     />
                 )}
 
@@ -1436,6 +1463,7 @@ function GradeStudentEditor() {
                             fontSize: fmt.fontSize,
                         }}
                     >
+                        <ContextMenu {...cardMenu.menuProps} />
                         {criteria.map((c, criterionIndex) => {
                             const entry = sr.entries.find((e) => e.criterionId === c.id)!;
                             const levels = orderedLevels(c);
@@ -1445,6 +1473,37 @@ function GradeStudentEditor() {
                                 <div
                                     key={c.id}
                                     className="card print-criterion"
+                                    // Focusable so Escape can hand focus back to the card after a
+                                    // right-click on a part of it that is not a control itself.
+                                    tabIndex={-1}
+                                    onContextMenu={(e) =>
+                                        cardMenu.open(
+                                            e,
+                                            criterionMenuItems({
+                                                // A single-point card scores through its outcome buttons, so
+                                                // the menu carries only the comment actions here.
+                                                levels: [],
+                                                entry,
+                                                labels: {
+                                                    setLevel: (level) => t('gradeStudent.menu_set_level', { level }),
+                                                    openCommentBank: t('gradeStudent.comment_open_bank'),
+                                                    copyFeedback: t('gradeStudent.menu_copy_feedback'),
+                                                    usePrevious: (name) =>
+                                                        t('gradeStudent.menu_use_previous_feedback', { name }),
+                                                },
+                                                previous: previousFeedbackFor(c.id),
+                                                selectLevel: () => {},
+                                                openCommentBank: () => setShowCommentBankFor(c.id),
+                                                copyFeedback: copyFeedbackText,
+                                                // Nothing to insert into while this card's comment box is closed.
+                                                insertPrevious:
+                                                    activeCommentCrit === c.id
+                                                        ? (text) => commentEditorRef.current?.insertContent(text)
+                                                        : undefined,
+                                            }),
+                                            t('gradeStudent.menu_label')
+                                        )
+                                    }
                                     style={{
                                         padding: 16,
                                         outline: isCriterionFocused ? '2px solid var(--accent)' : undefined,
