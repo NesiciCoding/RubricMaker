@@ -227,6 +227,7 @@ export default function TestAssignmentModal({ test, onClose, ownerId }: Props) {
                 students={classStudents}
                 testName={test.name}
                 durationMinutes={test.durationMinutes}
+                requireSEB={test.requireSEB}
                 buildUrl={buildUrl}
                 onClose={() => setShowSlips(false)}
             />

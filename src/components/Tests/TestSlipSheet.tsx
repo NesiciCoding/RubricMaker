@@ -10,6 +10,7 @@ interface Props {
     students: SlipStudent[];
     testName: string;
     durationMinutes?: number;
+    requireSEB?: boolean;
     buildUrl: (studentId: string) => string;
     onClose: () => void;
 }
@@ -18,11 +19,13 @@ function SlipItem({
     student,
     testName,
     durationMinutes,
+    requireSEB,
     url,
 }: {
     student: SlipStudent;
     testName: string;
     durationMinutes?: number;
+    requireSEB?: boolean;
     url: string;
 }) {
     const { t } = useTranslation();
@@ -42,6 +45,29 @@ function SlipItem({
                     {student.name}
                 </div>
                 <div style={{ fontSize: '0.78rem', color: '#475569', marginBottom: 4 }}>{testName}</div>
+                {requireSEB && (
+                    <div style={{ marginBottom: 4 }}>
+                        <span
+                            style={{
+                                display: 'inline-block',
+                                background: '#fee2e2',
+                                color: '#7f1d1d',
+                                border: '1px solid #fca5a5',
+                                borderRadius: 4,
+                                padding: '1px 5px',
+                                fontSize: '0.62rem',
+                                fontWeight: 700,
+                                letterSpacing: '0.04em',
+                                textTransform: 'uppercase',
+                            }}
+                        >
+                            {t('slip_sheet.seb_badge')}
+                        </span>
+                        <div style={{ fontSize: '0.68rem', color: '#475569', marginTop: 3, lineHeight: 1.35 }}>
+                            {t('slip_sheet.seb_instruction')}
+                        </div>
+                    </div>
+                )}
                 {durationMinutes && (
                     <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
                         ⏱ {t('slip_sheet.minutes', { count: durationMinutes })}
@@ -69,7 +95,7 @@ function SlipItem({
     );
 }
 
-export default function TestSlipSheet({ students, testName, durationMinutes, buildUrl, onClose }: Props) {
+export default function TestSlipSheet({ students, testName, durationMinutes, requireSEB, buildUrl, onClose }: Props) {
     const { t } = useTranslation();
     const [columns, setColumns] = useState<2 | 4>(2);
 
@@ -87,6 +113,7 @@ export default function TestSlipSheet({ students, testName, durationMinutes, bui
                     student={s}
                     testName={testName}
                     durationMinutes={durationMinutes}
+                    requireSEB={requireSEB}
                     url={buildUrl(s.id)}
                 />
             ))}

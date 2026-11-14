@@ -45,7 +45,25 @@ vi.mock('../../services/database/TestAdapter', () => ({
     },
 }));
 
+// Keeps the real buildSebQuitUrl/isRunningInSEB (so the auto-quit effect runs against the
+// genuinely stubbed navigator.userAgent below) while letting tests observe/stub the actual
+// window navigation.
+vi.mock('../../utils/sebConfig', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../utils/sebConfig')>();
+    return { ...actual, quitSafeExamBrowser: vi.fn() };
+});
+
 import StudentTestPage from '../StudentTestPage';
+import { buildSebQuitUrl, quitSafeExamBrowser } from '../../utils/sebConfig';
+
+function stubInSeb() {
+    const original = window.navigator.userAgent;
+    Object.defineProperty(window.navigator, 'userAgent', {
+        value: 'Mozilla/5.0 SEB/3.5',
+        configurable: true,
+    });
+    return () => Object.defineProperty(window.navigator, 'userAgent', { value: original, configurable: true });
+}
 
 const makeTest = (overrides: Partial<Test> = {}): Test => ({
     id: 'test1',
@@ -630,5 +648,161 @@ describe('StudentTestPage — DB mode (TestAdapter, short-code link)', () => {
         // Falls back to the legacy code textarea so the student isn't stuck.
         const textarea = screen.getByDisplayValue(/.+/) as HTMLTextAreaElement;
         expect(decodeTestSubmission(textarea.value)).not.toBeNull();
+    });
+
+    it('does not auto-quit SEB when the DB submission fails (still retrying in the background)', async () => {
+        vi.useFakeTimers({ shouldAdvanceTime: true });
+        const restoreUserAgent = stubInSeb();
+        mockEnsureSession.mockResolvedValue({ ok: true });
+        mockFetchAssignmentContent.mockResolvedValue({
+            ok: true,
+            data: {
+                testId: 'test1',
+                studentId: 's1',
+                requireSEB: true,
+                durationMinutes: null,
+                expiresAt: null,
+                test: makeTest({ requireSEB: true }),
+            },
+        });
+        mockSubmitTest.mockResolvedValue({ success: false, error: 'Server error 500' });
+
+        try {
+            renderDbPage();
+            await waitFor(() => expect(screen.getByText('Sample Test')).toBeInTheDocument());
+
+            fireEvent.click(screen.getByRole('radio', { name: '4' }));
+            fireEvent.click(screen.getByText('tests.taking.next'));
+
+            await act(async () => {
+                fireEvent.click(screen.getByText('tests.taking.submit_btn'));
+            });
+            await submitAnywayIfAsked();
+
+            expect(screen.getByText('tests.taking.submit_error_db')).toBeInTheDocument();
+            await act(async () => {
+                vi.advanceTimersByTime(5000);
+            });
+            expect(quitSafeExamBrowser).not.toHaveBeenCalled();
+        } finally {
+            restoreUserAgent();
+            vi.useRealTimers();
+        }
+    });
+
+    it('does not auto-quit SEB for a practice-mode submission', async () => {
+        vi.useFakeTimers({ shouldAdvanceTime: true });
+        const restoreUserAgent = stubInSeb();
+        mockEnsureSession.mockResolvedValue({ ok: true });
+        mockFetchAssignmentContent.mockResolvedValue({
+            ok: true,
+            data: {
+                testId: 'test1',
+                studentId: 's1',
+                requireSEB: true,
+                durationMinutes: null,
+                expiresAt: null,
+                test: makeTest({ requireSEB: true, mode: 'practice' }),
+            },
+        });
+        mockSubmitTest.mockResolvedValue({ success: true });
+
+        try {
+            renderDbPage();
+            await waitFor(() => expect(screen.getByText('Sample Test')).toBeInTheDocument());
+
+            fireEvent.click(screen.getByRole('radio', { name: '4' }));
+            fireEvent.click(screen.getByText('tests.taking.next'));
+
+            await act(async () => {
+                fireEvent.click(screen.getByText('tests.taking.submit_btn'));
+            });
+            await submitAnywayIfAsked();
+
+            expect(screen.getByText('tests.taking.submitted_title_db')).toBeInTheDocument();
+            await act(async () => {
+                vi.advanceTimersByTime(5000);
+            });
+            expect(quitSafeExamBrowser).not.toHaveBeenCalled();
+        } finally {
+            restoreUserAgent();
+            vi.useRealTimers();
+        }
+    });
+
+    it('auto-quits SEB once a DB submission succeeds', async () => {
+        vi.useFakeTimers({ shouldAdvanceTime: true });
+        const restoreUserAgent = stubInSeb();
+        mockEnsureSession.mockResolvedValue({ ok: true });
+        mockFetchAssignmentContent.mockResolvedValue({
+            ok: true,
+            data: {
+                testId: 'test1',
+                studentId: 's1',
+                requireSEB: true,
+                durationMinutes: null,
+                expiresAt: null,
+                test: makeTest({ requireSEB: true }),
+            },
+        });
+        mockSubmitTest.mockResolvedValue({ success: true });
+
+        try {
+            renderDbPage();
+            await waitFor(() => expect(screen.getByText('Sample Test')).toBeInTheDocument());
+
+            fireEvent.click(screen.getByRole('radio', { name: '4' }));
+            fireEvent.click(screen.getByText('tests.taking.next'));
+
+            await act(async () => {
+                fireEvent.click(screen.getByText('tests.taking.submit_btn'));
+            });
+            await submitAnywayIfAsked();
+
+            expect(screen.getByText('tests.taking.submitted_title_db')).toBeInTheDocument();
+            await act(async () => {
+                vi.advanceTimersByTime(5000);
+            });
+            expect(quitSafeExamBrowser).toHaveBeenCalled();
+        } finally {
+            restoreUserAgent();
+            vi.useRealTimers();
+        }
+    });
+});
+
+describe('StudentTestPage — SEB quit button', () => {
+    const originalUserAgent = window.navigator.userAgent;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        localStorage.clear();
+        sessionStorage.clear();
+        Object.defineProperty(window.navigator, 'userAgent', {
+            value: 'Mozilla/5.0 (X11; Linux x86_64) SEB 3.10.2',
+            configurable: true,
+        });
+    });
+
+    afterEach(() => {
+        Object.defineProperty(window.navigator, 'userAgent', { value: originalUserAgent, configurable: true });
+        vi.restoreAllMocks();
+    });
+
+    it('offers a manual quit on the submitted screen that navigates to the quit URL', async () => {
+        renderPage(makeAssignment());
+
+        fireEvent.click(screen.getByRole('radio', { name: '4' }));
+        fireEvent.click(screen.getByText('tests.taking.next'));
+        fireEvent.change(screen.getByPlaceholderText('tests.taking.open_answer_placeholder'), {
+            target: { value: 'Autumn.' },
+        });
+        await act(async () => {
+            fireEvent.click(screen.getByText('tests.taking.submit_btn'));
+        });
+
+        fireEvent.click(screen.getByRole('button', { name: 'tests.taking.seb_quit' }));
+
+        expect(quitSafeExamBrowser).toHaveBeenCalledWith(buildSebQuitUrl());
     });
 });
