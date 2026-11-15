@@ -12,7 +12,7 @@ import { getGrammarItemById } from '../../data/grammarStandards';
 import { stripHtmlTags } from '../../utils/exportDataPrep';
 import { plainQuestionPromptText } from '../../utils/clozeParse';
 import { exportQuestionBankJson } from '../../utils/questionBankImport';
-import { QUESTION_TYPES } from './QuestionEditor';
+import { QUESTION_TYPES } from '../../data/questionTypes';
 import type { QuestionBankItem, CefrLevel, QuestionBankSkill, TestQuestion, TestQuestionType } from '../../types';
 import QuestionBankImportModal from './QuestionBankImportModal';
 import QuestionBankItemEditorModal from './QuestionBankItemEditorModal';

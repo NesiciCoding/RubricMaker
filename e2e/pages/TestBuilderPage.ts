@@ -59,12 +59,12 @@ export class TestBuilderPage extends BasePage {
     }
 
     async setQuestionType(index: number, type: 'multiple-choice' | 'short-answer' | 'open'): Promise<void> {
-        // Phase 23.2's rich prompt editor adds its own toolbar <select> elements (paragraph
-        // style, font family, etc.) ahead of this one in DOM order — target by label instead of
-        // positional "first select".
+        // The type field opens the picker rather than a native <select>. Cards carry
+        // data-question-type, so this doesn't depend on translated card labels.
         await this.questionCard(index)
             .getByLabel(/question type/i)
-            .selectOption(type);
+            .click();
+        await this.page.getByRole('dialog').locator(`[data-question-type="${type}"]`).click();
     }
 
     async setQuestionPoints(index: number, points: number): Promise<void> {

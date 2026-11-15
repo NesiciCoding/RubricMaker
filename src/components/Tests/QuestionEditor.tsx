@@ -60,6 +60,7 @@ import { cefrEloRange, LEVEL_TO_ELO } from '../../utils/placementStaircase';
 import { grammarItemToFrameworkDescriptor } from '../../data/grammarStandards';
 import { getQuestionGrammarIds, withGrammarIds } from '../../utils/grammarLinks';
 import { questionTypeHelpKey, questionTypeLabelKey } from '../../utils/questionTypeKey';
+import QuestionTypePicker from './QuestionTypePicker';
 import type {
     TestQuestion,
     TestQuestionType,
@@ -98,28 +99,6 @@ interface Props {
     showSaveToBank?: boolean;
 }
 
-export const QUESTION_TYPES: TestQuestionType[] = [
-    'multiple-choice',
-    'multiple-response',
-    'true-false',
-    'short-answer',
-    'open',
-    'cloze',
-    'cloze-dropdown',
-    'cloze-bank',
-    'matrix',
-    'dictation',
-    'key-word-transformation',
-    'error-correction',
-    'sentence-builder',
-    'matching',
-    'ordering',
-    'categorize',
-    'hot-text',
-    'numeric',
-    'audio-response',
-];
-
 const DEFAULT_MAX_RECORDING_SECONDS = 60;
 
 export default function QuestionEditor({
@@ -150,6 +129,7 @@ export default function QuestionEditor({
     const [advancedOpen, setAdvancedOpen] = React.useState(
         () => !!(question.hint || question.explanation || question.eloRating)
     );
+    const [typePickerOpen, setTypePickerOpen] = React.useState(false);
     const [clozeStrategy, setClozeStrategy] = React.useState<ClozeStrategy>('fixedRatio');
     const [clozeEveryNth, setClozeEveryNth] = React.useState(7);
     const [clozeLevel, setClozeLevel] = React.useState<CefrLevel>('B2');
@@ -698,19 +678,20 @@ export default function QuestionEditor({
         >
             {header}
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                <div className="form-group" style={{ marginBottom: 0, flex: '1 1 200px' }}>
-                    <label htmlFor={`question-type-${question.id}`}>{t('tests.question_type_label')}</label>
-                    <select
+                <div className="form-group" style={{ marginBottom: 0, flex: '1 1 220px' }}>
+                    <label id={`question-type-label-${question.id}`}>{t('tests.question_type_label')}</label>
+                    <button
+                        type="button"
                         id={`question-type-${question.id}`}
-                        value={question.type}
-                        onChange={(e) => changeType(e.target.value as TestQuestionType)}
+                        className="qtype-trigger"
+                        aria-haspopup="dialog"
+                        aria-labelledby={`question-type-label-${question.id}`}
+                        aria-describedby={`question-type-value-${question.id}`}
+                        onClick={() => setTypePickerOpen(true)}
                     >
-                        {QUESTION_TYPES.map((type) => (
-                            <option key={type} value={type}>
-                                {t(questionTypeLabelKey(type))}
-                            </option>
-                        ))}
-                    </select>
+                        <span id={`question-type-value-${question.id}`}>{t(questionTypeLabelKey(question.type))}</span>
+                        <ChevronDown size={15} />
+                    </button>
                 </div>
                 <div className="form-group" style={{ marginBottom: 0, flex: '0 0 120px' }}>
                     <label htmlFor={`question-points-${question.id}`}>{t('tests.question_points_label')}</label>
@@ -2007,6 +1988,17 @@ export default function QuestionEditor({
                     onAddFramework={addFrameworkDescriptor}
                     onRemoveFramework={removeFrameworkDescriptor}
                     onClose={() => setPickingCefr(false)}
+                />
+            )}
+
+            {typePickerOpen && (
+                <QuestionTypePicker
+                    selected={question.type}
+                    onSelect={(type) => {
+                        setTypePickerOpen(false);
+                        changeType(type);
+                    }}
+                    onClose={() => setTypePickerOpen(false)}
                 />
             )}
         </div>
