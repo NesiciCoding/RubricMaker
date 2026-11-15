@@ -3,6 +3,16 @@ Fill in what applies and delete the rest. Keep it short: reviewers read the diff
 so use this to explain the *why* and to point at anything non-obvious.
 -->
 
+<!--
+PR title format (Conventional Commits): `type(scope): imperative summary`
+- type:  feat | fix | docs | refactor | perf | test | build | ci | chore
+- scope: the area touched, e.g. grading, rubrics, live-writing, supabase, a11y (optional)
+- summary: lowercase, imperative, no trailing period, under ~72 characters
+Examples: `feat(grading): add a rubric grading queue`
+          `fix(students): open the row Grade menu in a portal`
+Breaking change? Add `!` after the scope: `feat(store)!: ...`
+-->
+
 ## Summary
 
 <!-- What does this change, and why? Link the issue: "Closes #123". -->
@@ -28,6 +38,7 @@ so use this to explain the *why* and to point at anything non-obvious.
 
 **Quality gates**
 
+- [ ] PR title follows `type(scope): summary` (see the format at the top)
 - [ ] `npm run check` passes (typecheck, lint, format, unit tests)
 - [ ] Tests added or updated; coverage thresholds still met
 - [ ] Playwright e2e added or updated for user-facing flows (`e2e/specs/`)
