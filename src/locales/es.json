@@ -4200,7 +4200,7 @@
     "docs": {
         "rb_import_export_item_preview_import": "Abre un enlace de vista previa compartido y elige \"Importar esta rúbrica\" para añadir una copia a tus rúbricas y editarla.",
         "route_rubric_import_label": "Importar una rúbrica compartida",
-        "route_rubric_import_desc": "Adopta la rúbrica de un enlace compartido en tu espacio y la abre en el editor.",
+        "route_rubric_import_desc": "Muestra la rúbrica de un enlace compartido y, cuando confirmas, añade una copia a tu espacio y la abre en el editor.",
         "section_title": "Documentación",
         "sections_nav_label": "Secciones de la documentación",
         "filter_empty": "No sections match.",
@@ -5489,7 +5489,16 @@
         "reload": "Recargar página"
     },
     "importRubric": {
-        "importing": "Importando rúbrica…",
+        "page_title": "Importar una rúbrica compartida",
+        "confirm_title": "¿Añadir esta rúbrica a tus rúbricas?",
+        "confirm_body": "Se añade una copia a tus propias rúbricas y se abre en el editor, donde puedes modificarla. Añade solo rúbricas de personas de confianza.",
+        "confirm_name": "Nombre",
+        "confirm_subject": "Asignatura",
+        "confirm_criteria_label": "Criterios",
+        "confirm_criteria_one": "{{count}} criterio",
+        "confirm_criteria_other": "{{count}} criterios",
+        "confirm_add": "Añadir a mis rúbricas",
+        "confirm_view_preview": "Ver la vista previa completa",
         "failed_title": "Este enlace de rúbrica no se puede importar",
         "failed_body": "El enlace está incompleto o dañado. Pide un enlace nuevo o pega el código en la página Rúbricas.",
         "back_to_rubrics": "Ir a mis rúbricas",

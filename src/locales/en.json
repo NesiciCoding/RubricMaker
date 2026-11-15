@@ -4200,7 +4200,7 @@
     "docs": {
         "rb_import_export_item_preview_import": "Open a shared preview link and choose \"Import this rubric\" to add a copy to your own rubrics and edit it.",
         "route_rubric_import_label": "Import a shared rubric",
-        "route_rubric_import_desc": "Adopts the rubric from a share link into your workspace and opens it in the builder.",
+        "route_rubric_import_desc": "Shows the rubric from a share link and, once you confirm, adds a copy to your workspace and opens it in the builder.",
         "section_title": "Documentation",
         "sections_nav_label": "Documentation sections",
         "filter_empty": "No sections match.",
@@ -5489,7 +5489,16 @@
         "reload": "Reload page"
     },
     "importRubric": {
-        "importing": "Importing rubric…",
+        "page_title": "Import a shared rubric",
+        "confirm_title": "Add this rubric to your rubrics?",
+        "confirm_body": "A copy is added to your own rubrics and opened in the builder, where you can edit it. Only add rubrics from people you trust.",
+        "confirm_name": "Name",
+        "confirm_subject": "Subject",
+        "confirm_criteria_label": "Criteria",
+        "confirm_criteria_one": "{{count}} criterion",
+        "confirm_criteria_other": "{{count}} criteria",
+        "confirm_add": "Add to my rubrics",
+        "confirm_view_preview": "View full preview",
         "failed_title": "This rubric link can't be imported",
         "failed_body": "The link is incomplete or damaged. Ask for a fresh link, or paste the code on the Rubrics page.",
         "back_to_rubrics": "Go to my rubrics",

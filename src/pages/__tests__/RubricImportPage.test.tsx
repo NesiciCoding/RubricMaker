@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { encodeRubricShareCode } from '../../utils/rubricImport';
@@ -14,6 +14,10 @@ const gradeScales: GradeScale[] = [
 vi.mock('../../context/AppContext', () => ({
     useAuthoring: () => ({ gradeScales, addRubric }),
     useSettings: () => ({ settings: { defaultGradeScaleId: 'gs-mine' } }),
+}));
+
+vi.mock('../../components/Layout/Topbar', () => ({
+    default: ({ title }: { title: string }) => <h1>{title}</h1>,
 }));
 
 vi.mock('react-i18next', () => ({
@@ -62,8 +66,25 @@ beforeEach(() => {
 });
 
 describe('RubricImportPage', () => {
-    it('adds the shared rubric to the workspace and opens it', async () => {
+    it('asks before adding, and adds nothing on its own', async () => {
         await renderImport(encodeRubricShareCode(sharedRubric));
+
+        expect(
+            await screen.findByRole('heading', { level: 2, name: 'importRubric.confirm_title' })
+        ).toBeInTheDocument();
+        expect(screen.getByText('Shared essay rubric')).toBeInTheDocument();
+        expect(screen.getByText('English')).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: 'importRubric.confirm_view_preview' })).toHaveAttribute(
+            'href',
+            expect.stringContaining('/preview/')
+        );
+        expect(addRubric).not.toHaveBeenCalled();
+    });
+
+    it('adds the shared rubric once confirmed and opens it', async () => {
+        await renderImport(encodeRubricShareCode(sharedRubric));
+
+        fireEvent.click(await screen.findByRole('button', { name: /importRubric\.confirm_add/ }));
 
         await waitFor(() => expect(screen.getByRole('heading', { name: 'Rubric builder' })).toBeInTheDocument());
         expect(addRubric).toHaveBeenCalledTimes(1);
@@ -77,17 +98,31 @@ describe('RubricImportPage', () => {
         );
     });
 
-    it('adds the rubric only once', async () => {
+    it('adds the rubric only once, however often the button is clicked', async () => {
         await renderImport(encodeRubricShareCode(sharedRubric));
+
+        const add = await screen.findByRole('button', { name: /importRubric\.confirm_add/ });
+        fireEvent.click(add);
+        fireEvent.click(add);
 
         await waitFor(() => expect(screen.getByRole('heading', { name: 'Rubric builder' })).toBeInTheDocument());
         expect(addRubric).toHaveBeenCalledTimes(1);
+    });
+
+    it('returns to the rubric list without adding when cancelled', async () => {
+        await renderImport(encodeRubricShareCode(sharedRubric));
+
+        fireEvent.click(await screen.findByRole('link', { name: 'common.cancel' }));
+
+        await waitFor(() => expect(screen.getByRole('heading', { name: 'Rubric list' })).toBeInTheDocument());
+        expect(addRubric).not.toHaveBeenCalled();
     });
 
     it('explains a damaged link and offers the rubric list instead', async () => {
         await renderImport('broken-code');
 
         await waitFor(() => expect(screen.getByText('importRubric.failed_title')).toBeInTheDocument());
+        expect(screen.queryByRole('button', { name: /importRubric\.confirm_add/ })).not.toBeInTheDocument();
         expect(addRubric).not.toHaveBeenCalled();
         expect(screen.getByRole('link', { name: 'importRubric.back_to_rubrics' })).toHaveAttribute('href', '/rubrics');
     });

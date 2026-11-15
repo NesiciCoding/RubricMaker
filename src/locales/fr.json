@@ -4200,7 +4200,7 @@
     "docs": {
         "rb_import_export_item_preview_import": "Ouvrez un lien d'aperçu partagé et choisissez « Importer cette grille » pour en ajouter une copie à vos grilles et la modifier.",
         "route_rubric_import_label": "Importer une grille partagée",
-        "route_rubric_import_desc": "Reprend la grille d'un lien de partage dans votre espace et l'ouvre dans l'éditeur.",
+        "route_rubric_import_desc": "Affiche la grille d'un lien de partage et, après votre confirmation, en ajoute une copie à votre espace et l'ouvre dans l'éditeur.",
         "section_title": "Documentation",
         "sections_nav_label": "Sections de la documentation",
         "filter_empty": "No sections match.",
@@ -5489,7 +5489,16 @@
         "reload": "Recharger la page"
     },
     "importRubric": {
-        "importing": "Importation de la grille…",
+        "page_title": "Importer une grille partagée",
+        "confirm_title": "Ajouter cette grille à vos grilles ?",
+        "confirm_body": "Une copie est ajoutée à vos propres grilles et ouverte dans l'éditeur, où vous pouvez la modifier. N'ajoutez que des grilles de personnes de confiance.",
+        "confirm_name": "Nom",
+        "confirm_subject": "Matière",
+        "confirm_criteria_label": "Critères",
+        "confirm_criteria_one": "{{count}} critère",
+        "confirm_criteria_other": "{{count}} critères",
+        "confirm_add": "Ajouter à mes grilles",
+        "confirm_view_preview": "Voir l'aperçu complet",
         "failed_title": "Ce lien de grille ne peut pas être importé",
         "failed_body": "Le lien est incomplet ou endommagé. Demandez un nouveau lien ou collez le code sur la page Grilles.",
         "back_to_rubrics": "Aller à mes grilles",
