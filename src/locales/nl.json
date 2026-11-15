@@ -3469,6 +3469,12 @@
         "action_assign": "Toewijzen"
     },
     "messages": {
+        "search_placeholder": "Berichten zoeken…",
+        "filter_unread_only": "Alleen ongelezen",
+        "filter_context_label": "Context",
+        "filter_context_all": "Alle contexten",
+        "no_matches": "Geen passende gesprekken",
+        "no_matches_desc": "Wis de zoekopdracht of filters om alle gesprekken te zien.",
         "page_title": "Berichten",
         "inbox_empty": "Nog geen berichten",
         "inbox_empty_desc": "Vragen van leerlingen over een rubriek, toets of essay verschijnen hier.",
@@ -4590,6 +4596,7 @@
         "gr_messages_body_prefix": "Elke vraag die een leerling vanuit het portaal stelt over een rubriek, toets of essay komt in je",
         "gr_messages_body_suffix": "postvak binnen als ongelezen melding. Reageer direct, of start zelf een nieuw gesprek — kies een leerling uit de lijst en schrijf een bericht.",
         "gr_messages_scope_note": "Alleen leerlingen die inloggen op het leerlingenportaal kunnen je berichten sturen; een kale deelcode-link (toets/essay inleveren zonder portalaccount) heeft geen plek om een antwoord te ontvangen.",
+        "gr_messages_search_note": "Je kunt gesprekken doorzoeken op leerling, context of berichttekst, filteren op ongelezen of op één context (rubric, toets, essay, algemeen); datums volgen de app-taal in plaats van de browserstandaard.",
         "gr_notifications_title": "Meldingencentrum",
         "gr_notifications_body_prefix": "Het belletje in de bovenbalk toont achterstallig nakijken, ongelezen berichten en openstaande moderatiebeoordelingen in één oogopslag. Klik op \"Alle meldingen bekijken\" of ga naar",
         "gr_notifications_body_suffix": "voor de volledige, filterbare lijst — geen limiet van 10 items, en verbergingen synchroniseren tussen je apparaten.",

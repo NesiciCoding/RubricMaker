@@ -3469,6 +3469,12 @@
         "action_assign": "Attribuer"
     },
     "messages": {
+        "search_placeholder": "Rechercher dans les messages…",
+        "filter_unread_only": "Non lus uniquement",
+        "filter_context_label": "Contexte",
+        "filter_context_all": "Tous les contextes",
+        "no_matches": "Aucune conversation correspondante",
+        "no_matches_desc": "Effacez la recherche ou les filtres pour voir toutes les conversations.",
         "page_title": "Messages",
         "inbox_empty": "Pas encore de messages",
         "inbox_empty_desc": "Les questions des élèves sur une rubrique, un test ou un essai apparaîtront ici.",
@@ -4590,6 +4596,7 @@
         "gr_messages_body_prefix": "Chaque question posée par un élève depuis le portail à propos d'une rubrique, d'un test ou d'un essai arrive dans votre",
         "gr_messages_body_suffix": "boîte de réception comme notification non lue. Répondez directement, ou démarrez vous-même un nouveau fil — choisissez un élève dans la liste et écrivez un message.",
         "gr_messages_scope_note": "Seuls les élèves connectés au portail peuvent vous envoyer un message ; un simple lien à code de partage (remise de test/essai sans compte portail) n'a aucun moyen de recevoir une réponse.",
+        "gr_messages_search_note": "Les conversations se recherchent par élève, contexte ou texte du message, se filtrent sur les non lus ou sur un contexte (grille, test, rédaction, général), et les dates suivent la langue de l'application plutôt que celle du navigateur.",
         "gr_notifications_title": "Centre de notifications",
         "gr_notifications_body_prefix": "L'icône de cloche dans la barre supérieure affiche en un coup d'œil les corrections en retard, les messages non lus et les révisions de modération en attente. Cliquez sur « Voir toutes les notifications » ou allez sur",
         "gr_notifications_body_suffix": "pour la liste complète et filtrable — sans limite de 10 éléments, et les suppressions se synchronisent entre vos appareils.",

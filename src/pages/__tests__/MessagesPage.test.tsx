@@ -140,4 +140,98 @@ describe('MessagesPage', () => {
             })
         );
     });
+
+    describe('finding a thread', () => {
+        const bobMessage: Message = {
+            id: 'm2',
+            studentId: 's2',
+            contextType: 'general',
+            contextId: null,
+            contextLabel: null,
+            sender: 'student',
+            body: 'Unrelated note about the trip',
+            createdAt: '2024-02-01T10:00:00Z',
+            readByTeacher: true,
+            readByStudent: true,
+        };
+
+        function withTwoThreads() {
+            appOverrides = {
+                students: [...mockStudents, { id: 's2', name: 'Bob', classId: 'c1' }],
+                messages: [...mockMessages, bobMessage],
+            };
+        }
+
+        it('filters threads by message body', async () => {
+            withTwoThreads();
+            const { default: MessagesPage } = await import('../MessagesPage');
+            renderWithRouter(<MessagesPage />);
+            expect(screen.getByText('Bob')).toBeInTheDocument();
+
+            fireEvent.change(screen.getByPlaceholderText('messages.search_placeholder'), {
+                target: { value: 'argument' },
+            });
+
+            expect(screen.getByText('Alice')).toBeInTheDocument();
+            expect(screen.queryByText('Bob')).not.toBeInTheDocument();
+        });
+
+        it('filters threads by student name', async () => {
+            withTwoThreads();
+            const { default: MessagesPage } = await import('../MessagesPage');
+            renderWithRouter(<MessagesPage />);
+
+            fireEvent.change(screen.getByPlaceholderText('messages.search_placeholder'), {
+                target: { value: 'bob' },
+            });
+
+            expect(screen.getByText('Bob')).toBeInTheDocument();
+            expect(screen.queryByText('Alice')).not.toBeInTheDocument();
+        });
+
+        it('shows only unread threads when the unread filter is on', async () => {
+            withTwoThreads();
+            const { default: MessagesPage } = await import('../MessagesPage');
+            renderWithRouter(<MessagesPage />);
+
+            fireEvent.click(screen.getByLabelText('messages.filter_unread_only'));
+
+            expect(screen.getByText('Alice')).toBeInTheDocument();
+            expect(screen.queryByText('Bob')).not.toBeInTheDocument();
+        });
+
+        it('filters threads by context', async () => {
+            withTwoThreads();
+            const { default: MessagesPage } = await import('../MessagesPage');
+            renderWithRouter(<MessagesPage />);
+
+            fireEvent.change(screen.getByLabelText('messages.filter_context_label'), {
+                target: { value: 'general' },
+            });
+
+            expect(screen.getByText('Bob')).toBeInTheDocument();
+            expect(screen.queryByText('Alice')).not.toBeInTheDocument();
+        });
+
+        it('explains an empty result instead of claiming the inbox is empty', async () => {
+            withTwoThreads();
+            const { default: MessagesPage } = await import('../MessagesPage');
+            renderWithRouter(<MessagesPage />);
+
+            fireEvent.change(screen.getByPlaceholderText('messages.search_placeholder'), {
+                target: { value: 'nothing matches this' },
+            });
+
+            expect(screen.getByText('messages.no_matches')).toBeInTheDocument();
+            expect(screen.queryByText('messages.inbox_empty')).not.toBeInTheDocument();
+        });
+
+        it('formats dates through the app locale rather than the browser default', async () => {
+            const { default: MessagesPage } = await import('../MessagesPage');
+            renderWithRouter(<MessagesPage />);
+
+            expect(screen.queryByText(/2024-01-01T10:00:00Z/)).not.toBeInTheDocument();
+            expect(screen.getByText(/Jan 1, 2024/)).toBeInTheDocument();
+        });
+    });
 });

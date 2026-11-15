@@ -100,6 +100,7 @@ vi.mock('../../context/AppContext', () => ({
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
         t: (key: string, opts?: Record<string, unknown>) => (opts ? `${key}:${JSON.stringify(opts)}` : key),
+        i18n: { language: 'en' },
     }),
 }));
 
@@ -117,8 +118,9 @@ describe('MessagesPage coverage', () => {
         // An unknown student gets a translated label instead of the raw id (#665).
         expect(screen.getByText('messages.unknown_student')).toBeInTheDocument();
         expect(screen.queryByText('ghost')).toBeNull();
-        expect(screen.getByText('messages.context_general')).toBeInTheDocument();
-        expect(screen.getByText('messages.context_essay')).toBeInTheDocument();
+        // The context filter options carry the same labels as the thread badges.
+        expect(screen.getAllByText('messages.context_general').length).toBeGreaterThan(0);
+        expect(screen.getAllByText('messages.context_essay').length).toBeGreaterThan(0);
 
         // target the rubric thread explicitly (Alice appears in two thread headers)
         const rubricThreadButton = screen.getByText('Essay Rubric').closest('button') as HTMLElement;

@@ -3469,6 +3469,12 @@
         "action_assign": "Asignar"
     },
     "messages": {
+        "search_placeholder": "Buscar mensajes…",
+        "filter_unread_only": "Solo no leídos",
+        "filter_context_label": "Contexto",
+        "filter_context_all": "Todos los contextos",
+        "no_matches": "No hay conversaciones coincidentes",
+        "no_matches_desc": "Borra la búsqueda o los filtros para ver todas las conversaciones.",
         "page_title": "Mensajes",
         "inbox_empty": "Aún no hay mensajes",
         "inbox_empty_desc": "Las preguntas de los estudiantes sobre una rúbrica, prueba o ensayo aparecerán aquí.",
@@ -4590,6 +4596,7 @@
         "gr_messages_body_prefix": "Cada pregunta que un estudiante hace desde el portal sobre una rúbrica, prueba o ensayo llega a tu",
         "gr_messages_body_suffix": "bandeja de entrada como notificación sin leer. Responde directamente o inicia tú mismo un nuevo hilo — elige un estudiante de la lista y escribe un mensaje.",
         "gr_messages_scope_note": "Solo los estudiantes que inician sesión en el portal pueden enviarte mensajes; un simple enlace de código de acceso (entrega de prueba/ensayo sin cuenta de portal) no tiene forma de recibir una respuesta.",
+        "gr_messages_search_note": "Las conversaciones se pueden buscar por estudiante, contexto o texto del mensaje, filtrar por no leídos o por un contexto (rúbrica, test, redacción, general), y las fechas siguen el idioma de la aplicación en lugar del navegador.",
         "gr_notifications_title": "Centro de notificaciones",
         "gr_notifications_body_prefix": "El icono de campana en la barra superior muestra de un vistazo las calificaciones atrasadas, los mensajes sin leer y las revisiones de moderación pendientes. Haz clic en \"Ver todas las notificaciones\" o ve a",
         "gr_notifications_body_suffix": "para la lista completa y filtrable — sin límite de 10 elementos, y los descartes se sincronizan entre tus dispositivos.",
