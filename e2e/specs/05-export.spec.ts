@@ -43,23 +43,21 @@ test.describe('Export page', () => {
     test('switching export types shows the matching workbench', async ({ appPage }) => {
         const page = new ExportPage(appPage);
         await page.goto();
-        const typeGroup = appPage.getByRole('group', { name: 'What do you want to export?' });
-
-        await typeGroup.getByRole('button', { name: /Exam booklet/ }).click();
+        await page.selectExportType('exam');
         await expect(appPage.getByRole('heading', { name: 'Exam booklets', exact: true })).toBeVisible();
         await expect(appPage.getByText('The grading key is always exported separately.')).toBeVisible();
         await expect(appPage.getByRole('heading', { name: 'Rubric grades', exact: true })).toBeHidden();
 
-        await typeGroup.getByRole('button', { name: /Progress reports/ }).click();
+        await page.selectExportType('reports');
         await expect(appPage.getByRole('heading', { name: 'Progress reports', exact: true })).toBeVisible();
         await expect(appPage.getByRole('group', { name: 'Report output' })).toBeVisible();
 
-        await typeGroup.getByRole('button', { name: /Essays/ }).click();
+        await page.selectExportType('essays');
         await expect(appPage.getByRole('heading', { name: 'Essays', exact: true })).toBeVisible();
         await expect(appPage.getByLabel('Select Essay Assignment')).toBeVisible();
         await expect(appPage.getByRole('heading', { name: 'Exam booklets', exact: true })).toBeHidden();
 
-        await typeGroup.getByRole('button', { name: /Rubric grades/ }).click();
+        await page.selectExportType('rubric');
         await expect(appPage.getByRole('heading', { name: 'Rubric grades', exact: true })).toBeVisible();
         await expect(appPage.getByText('Select Rubric to Export')).toBeVisible();
     });
@@ -67,10 +65,7 @@ test.describe('Export page', () => {
     test('report card toggle switches the merged report workbench', async ({ appPage }) => {
         const page = new ExportPage(appPage);
         await page.goto();
-        await appPage
-            .getByRole('group', { name: 'What do you want to export?' })
-            .getByRole('button', { name: /Progress reports/ })
-            .click();
+        await page.selectExportType('reports');
 
         const outputGroup = appPage.getByRole('group', { name: 'Report output' });
         await expect(outputGroup.getByRole('button', { name: 'Period report' })).toHaveAttribute(
@@ -79,7 +74,7 @@ test.describe('Export page', () => {
         );
         await expect(appPage.getByRole('button', { name: 'Generate 0 report(s)', exact: true })).toBeVisible();
 
-        await outputGroup.getByRole('button', { name: 'Report card' }).click();
+        await page.selectReportOutput('card');
         await expect(outputGroup.getByRole('button', { name: 'Report card' })).toHaveAttribute('aria-pressed', 'true');
         await expect(
             appPage.getByText('Generate a consolidated DOCX report card per student with customizable sections.')
@@ -88,7 +83,7 @@ test.describe('Export page', () => {
         await expect(appPage.getByRole('button', { name: 'Export report card', exact: true })).toBeVisible();
         await expect(appPage.getByRole('button', { name: 'Generate 0 report(s)', exact: true })).toBeHidden();
 
-        await outputGroup.getByRole('button', { name: 'Period report' }).click();
+        await page.selectReportOutput('period');
         await expect(appPage.getByRole('button', { name: 'Generate 0 report(s)', exact: true })).toBeVisible();
         await expect(appPage.getByRole('button', { name: 'Export report card', exact: true })).toBeHidden();
     });
@@ -99,17 +94,17 @@ test.describe('Export page', () => {
         await page.selectRubricById('export-rubric');
 
         await expect(appPage.getByText('0 of 2 selected').first()).toBeVisible();
-        await appPage.getByRole('checkbox', { name: 'Export Student', exact: true }).check();
+        await page.setStudentSelected('Export Student', true);
         await expect(appPage.getByText('1 of 2 selected').first()).toBeVisible();
         await expect(appPage.getByRole('button', { name: /Export 1 as DOCX/ })).toBeEnabled();
 
-        await appPage.getByRole('button', { name: 'Select All', exact: true }).click();
+        await page.selectAllStudents();
         await expect(appPage.getByText('2 of 2 selected').first()).toBeVisible();
         await expect(appPage.getByRole('checkbox', { name: 'Second Student', exact: true })).toBeChecked();
         await expect(appPage.getByRole('button', { name: /Export 2 as DOCX/ })).toBeEnabled();
         await expect(appPage.getByRole('button', { name: /Print 2 to PDF/ })).toBeEnabled();
 
-        await appPage.getByRole('button', { name: 'Deselect All', exact: true }).click();
+        await page.deselectAllStudents();
         await expect(appPage.getByText('0 of 2 selected').first()).toBeVisible();
         await expect(appPage.getByRole('checkbox', { name: 'Export Student', exact: true })).not.toBeChecked();
         await expect(appPage.getByRole('button', { name: /Export 0 as DOCX/ })).toBeDisabled();

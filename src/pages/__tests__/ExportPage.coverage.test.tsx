@@ -367,6 +367,25 @@ describe('ExportPage coverage', () => {
         expect(checkbox.checked).toBe(false);
     });
 
+    it('keeps exam booklet selections when switching workbenches', () => {
+        renderPage();
+        fireEvent.click(screen.getByText('tests.export.exam.section_title'));
+        const examSection = screen.getByText('exportPage.exam_key_help').closest('section')!;
+        const scanMarkers = within(examSection).getByLabelText('tests.export.exam.scan_markers_label');
+        const alice = within(examSection).getByLabelText('Alice');
+        fireEvent.click(scanMarkers);
+        fireEvent.click(alice);
+        expect(scanMarkers).toBeChecked();
+        expect(alice).toBeChecked();
+
+        fireEvent.click(screen.getByText('exportPage.rubric_section_title'));
+        fireEvent.click(screen.getByText('tests.export.exam.section_title'));
+
+        const examSectionAfter = screen.getByText('exportPage.exam_key_help').closest('section')!;
+        expect(within(examSectionAfter).getByLabelText('tests.export.exam.scan_markers_label')).toBeChecked();
+        expect(within(examSectionAfter).getByLabelText('Alice')).toBeChecked();
+    });
+
     it('copies a feedback link and opens the dev preview', async () => {
         renderPage();
         openSection('exportPage.rubric_students_section_title');
@@ -731,7 +750,7 @@ describe('ExportPage coverage', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Class A' }));
         const aliceBtn = screen.getAllByText('Alice').find((el) => el.tagName === 'BUTTON');
         fireEvent.click(aliceBtn!);
-        openSection('reportCard.title');
+        fireEvent.click(screen.getByText('exportPage.report_output_card'));
         // toggle every config checkbox
         fireEvent.click(screen.getByText('reportCard.section_rubrics'));
         fireEvent.click(screen.getByText('reportCard.section_standards'));
@@ -739,6 +758,7 @@ describe('ExportPage coverage', () => {
         fireEvent.click(screen.getByText('reportCard.section_cefr'));
         fireEvent.click(screen.getByText('reportCard.section_test_summary'));
         await act(async () => {
+            expect(screen.getByText('reportCard.generate_single_btn')).toBeVisible();
             fireEvent.click(screen.getByText('reportCard.generate_single_btn'));
         });
         expect(mockExportReportCard).toHaveBeenCalled();
@@ -1007,8 +1027,9 @@ describe('ExportPage coverage', () => {
         const [fromInput, toInput] = document.querySelectorAll('input[type="date"]');
         fireEvent.change(fromInput, { target: { value: '2024-01-01' } });
         fireEvent.change(toInput, { target: { value: '2024-01-31' } });
-        openSection('reportCard.title');
+        fireEvent.click(screen.getByText('exportPage.report_output_card'));
         await act(async () => {
+            expect(screen.getByText('reportCard.generate_single_btn')).toBeVisible();
             fireEvent.click(screen.getByText('reportCard.generate_single_btn'));
         });
         expect(mockExportReportCard).toHaveBeenCalledTimes(1);
@@ -1022,9 +1043,10 @@ describe('ExportPage coverage', () => {
         const bobBtn = screen.getAllByText('Bob').find((el) => el.tagName === 'BUTTON');
         fireEvent.click(aliceBtn!);
         fireEvent.click(bobBtn!);
-        openSection('reportCard.title');
+        fireEvent.click(screen.getByText('exportPage.report_output_card'));
         // the handler chains several dynamic imports per student, so poll until the batch lands
         await act(async () => {
+            expect(screen.getByText(/reportCard.generate_batch_btn/)).toBeVisible();
             fireEvent.click(screen.getByText(/reportCard.generate_batch_btn/));
             await waitFor(() => expect(mockExportReportCardsBatch).toHaveBeenCalledTimes(1));
         });
@@ -1034,6 +1056,7 @@ describe('ExportPage coverage', () => {
         );
         mockExportReportCardsBatch.mockRejectedValueOnce(new Error('boom'));
         await act(async () => {
+            expect(screen.getByText(/reportCard.generate_batch_btn/)).toBeVisible();
             fireEvent.click(screen.getByText(/reportCard.generate_batch_btn/));
             await waitFor(() => expect(mockShowToast).toHaveBeenCalledWith('toast.export_error', 'error'));
         });
@@ -1046,8 +1069,9 @@ describe('ExportPage coverage', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Class A' }));
         const aliceBtn = screen.getAllByText('Alice').find((el) => el.tagName === 'BUTTON');
         fireEvent.click(aliceBtn!);
-        openSection('reportCard.title');
+        fireEvent.click(screen.getByText('exportPage.report_output_card'));
         await act(async () => {
+            expect(screen.getByText('reportCard.generate_single_btn')).toBeVisible();
             fireEvent.click(screen.getByText('reportCard.generate_single_btn'));
         });
         expect(mockShowToast).toHaveBeenCalledWith('toast.export_error', 'error');

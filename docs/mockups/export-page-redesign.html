@@ -2187,13 +2187,17 @@
                 );
 
                 function refresh(panel) {
+                    const chips = [...panel.querySelectorAll('.student-chips .chip')];
                     const boxes = [...panel.querySelectorAll('input[type="checkbox"][data-student]')];
-                    const selected = boxes.filter((box) => box.checked).length;
+                    const selected = chips.length
+                        ? chips.filter((chip) => chip.classList.contains('active')).length
+                        : boxes.filter((box) => box.checked).length;
+                    const total = chips.length || boxes.length;
                     panel.querySelectorAll('[data-selected-count]').forEach((el) => {
                         el.textContent = String(selected);
                     });
                     panel.querySelectorAll('[data-total-count]').forEach((el) => {
-                        el.textContent = String(boxes.length);
+                        el.textContent = String(total);
                     });
                     panel.querySelectorAll('[data-requires-selection]').forEach((button) => {
                         button.disabled = selected === 0;
@@ -2202,7 +2206,7 @@
                     if (bulk) bulk.hidden = selected === 0;
                     const selectAll = panel.querySelector('[data-select-all]');
                     if (selectAll) {
-                        selectAll.textContent = selected === boxes.length && selected > 0 ? 'Clear all' : 'Select all';
+                        selectAll.textContent = selected === total && selected > 0 ? 'Clear all' : 'Select all';
                     }
                 }
 
@@ -2214,11 +2218,20 @@
                     const selectAll = panel.querySelector('[data-select-all]');
                     if (selectAll) {
                         selectAll.addEventListener('click', () => {
-                            const boxes = [...panel.querySelectorAll('input[type="checkbox"][data-student]')];
-                            const all = boxes.length > 0 && boxes.every((box) => box.checked);
-                            boxes.forEach((box) => {
-                                box.checked = !all;
-                            });
+                            const chips = [...panel.querySelectorAll('.student-chips .chip')];
+                            if (chips.length > 0) {
+                                const all = chips.every((chip) => chip.classList.contains('active'));
+                                chips.forEach((chip) => {
+                                    chip.classList.toggle('active', !all);
+                                    chip.setAttribute('aria-pressed', String(!all));
+                                });
+                            } else {
+                                const boxes = [...panel.querySelectorAll('input[type="checkbox"][data-student]')];
+                                const all = boxes.length > 0 && boxes.every((box) => box.checked);
+                                boxes.forEach((box) => {
+                                    box.checked = !all;
+                                });
+                            }
                             refresh(panel);
                         });
                     }
@@ -2230,6 +2243,7 @@
                             if (chip) {
                                 chip.classList.toggle('active');
                                 chip.setAttribute('aria-pressed', String(chip.classList.contains('active')));
+                                refresh(panel);
                             }
                         });
                     }
@@ -2252,35 +2266,6 @@
                     });
                 });
 
-                // Report students are chips, not checkboxes: keep the count in step with the chips.
-                const reportPanel = document.querySelector('.workbench[data-panel="reports"]');
-                if (reportPanel) {
-                    const recount = () => {
-                        const chips = [...reportPanel.querySelectorAll('.student-chips .chip')];
-                        const selected = chips.filter((chip) => chip.classList.contains('active')).length;
-                        reportPanel.querySelectorAll('[data-selected-count]').forEach((el) => {
-                            el.textContent = String(selected);
-                        });
-                        reportPanel.querySelectorAll('[data-total-count]').forEach((el) => {
-                            el.textContent = String(chips.length);
-                        });
-                        reportPanel.querySelectorAll('[data-requires-selection]').forEach((button) => {
-                            button.disabled = selected === 0;
-                        });
-                    };
-                    reportPanel.querySelector('.student-chips').addEventListener('click', recount);
-                    const selectAll = reportPanel.querySelector('[data-select-all]');
-                    selectAll.addEventListener('click', () => {
-                        const chips = [...reportPanel.querySelectorAll('.student-chips .chip')];
-                        const all = chips.every((chip) => chip.classList.contains('active'));
-                        chips.forEach((chip) => {
-                            chip.classList.toggle('active', !all);
-                            chip.setAttribute('aria-pressed', String(!all));
-                        });
-                        recount();
-                    });
-                }
-
                 document.querySelector('[data-student-search]').addEventListener('input', (event) => {
                     const query = event.target.value.trim().toLowerCase();
                     document.querySelectorAll('[data-panel="rubric"] .student-row').forEach((row) => {
@@ -2290,10 +2275,18 @@
 
                 document.getElementById('demo-select').addEventListener('click', () => {
                     const panel = document.querySelector('.workbench:not([hidden])');
-                    const boxes = [...panel.querySelectorAll('input[type="checkbox"][data-student]')].slice(0, 3);
-                    boxes.forEach((box) => {
-                        box.checked = true;
-                    });
+                    const chips = [...panel.querySelectorAll('.student-chips .chip')].slice(0, 3);
+                    if (chips.length > 0) {
+                        chips.forEach((chip) => {
+                            chip.classList.add('active');
+                            chip.setAttribute('aria-pressed', 'true');
+                        });
+                    } else {
+                        const boxes = [...panel.querySelectorAll('input[type="checkbox"][data-student]')].slice(0, 3);
+                        boxes.forEach((box) => {
+                            box.checked = true;
+                        });
+                    }
                     refresh(panel);
                 });
 

@@ -10,6 +10,32 @@ export class ExportPage extends BasePage {
         await this.navigate('/export');
     }
 
+    async selectExportType(type: 'rubric' | 'reports' | 'exam' | 'essays'): Promise<void> {
+        const names: Record<typeof type, RegExp> = {
+            rubric: /Rubric grades/,
+            reports: /Progress reports/,
+            exam: /Exam booklet/,
+            essays: /Essays/,
+        };
+        await this.page
+            .getByRole('group', { name: 'What do you want to export?' })
+            .getByRole('button', { name: names[type] })
+            .click();
+    }
+
+    async selectReportOutput(mode: 'period' | 'card'): Promise<void> {
+        await this.page
+            .getByRole('group', { name: 'Report output' })
+            .getByRole('button', { name: mode === 'period' ? 'Period report' : 'Report card', exact: true })
+            .click();
+    }
+
+    async setStudentSelected(studentName: string, selected: boolean): Promise<void> {
+        const checkbox = this.page.getByRole('checkbox', { name: studentName, exact: true });
+        if (selected) await checkbox.check();
+        else await checkbox.uncheck();
+    }
+
     async selectRubric(rubricName: string): Promise<void> {
         const select = this.page.locator('[data-tour="export-rubric"] select').first();
         await select.selectOption({ label: rubricName });
@@ -27,7 +53,11 @@ export class ExportPage extends BasePage {
     }
 
     async selectAllStudents(): Promise<void> {
-        await this.page.getByRole('button', { name: /select all/i }).click();
+        await this.page.getByRole('button', { name: 'Select All', exact: true }).click();
+    }
+
+    async deselectAllStudents(): Promise<void> {
+        await this.page.getByRole('button', { name: 'Deselect All', exact: true }).click();
     }
 
     async exportPdf(): Promise<Download> {

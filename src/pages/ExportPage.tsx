@@ -142,6 +142,7 @@ export default function ExportPage() {
     const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
     const [exporting, setExporting] = useState(false);
     const [activeExportType, setActiveExportType] = useState<ExportType>('rubric');
+    const [hasOpenedExam, setHasOpenedExam] = useState(false);
     const [reportOutput, setReportOutput] = useState<'period' | 'card'>('period');
     const [selectedTestId, setSelectedTestId] = useState(tests[0]?.id ?? '');
     const selectedTest = tests.find((tst) => tst.id === selectedTestId) ?? tests[0];
@@ -781,7 +782,10 @@ export default function ExportPage() {
                         description={t('exportPage.type_exam_desc')}
                         meta={t('exportPage.type_meta_tests', { count: tests.length })}
                         active={activeExportType === 'exam'}
-                        onSelect={() => setActiveExportType('exam')}
+                        onSelect={() => {
+                            setActiveExportType('exam');
+                            setHasOpenedExam(true);
+                        }}
                     />
                     <ExportTypeCard
                         icon={Layout}
@@ -1304,13 +1308,19 @@ export default function ExportPage() {
                                             ))}
                                         </select>
                                     </div>
-                                    {selectedTest && activeExportType === 'exam' && (
-                                        <ExamBookletExportPanel
-                                            test={selectedTest}
-                                            students={students}
-                                            fontFamily={settings.defaultFormat.fontFamily}
-                                            styleTemplate={activeStyleTemplate}
-                                        />
+                                    {selectedTest && hasOpenedExam && (
+                                        <div
+                                            style={{
+                                                display: activeExportType === 'exam' ? undefined : 'none',
+                                            }}
+                                        >
+                                            <ExamBookletExportPanel
+                                                test={selectedTest}
+                                                students={students}
+                                                fontFamily={settings.defaultFormat.fontFamily}
+                                                styleTemplate={activeStyleTemplate}
+                                            />
+                                        </div>
                                     )}
                                 </>
                             )}
