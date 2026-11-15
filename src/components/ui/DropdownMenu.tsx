@@ -69,11 +69,17 @@ export default function DropdownMenu({
         if (top !== pos.top || left !== pos.left) setPos({ ...pos, top, left });
     }, [open, pos, point]);
 
-    const onScroll = useCallback(() => {
-        // An anchored menu follows its trigger; a point-opened one would drift away from what was clicked.
-        if (point) onClose();
-        else place();
-    }, [point, onClose, place]);
+    const onScroll = useCallback(
+        (e: Event) => {
+            // Capture phase also sees scroll events from the menu's own `overflowY: auto` content —
+            // ignore those, or scrolling down a long menu to reach a lower item closes it instead.
+            if (menuRef.current && e.target instanceof Node && menuRef.current.contains(e.target)) return;
+            // An anchored menu follows its trigger; a point-opened one would drift away from what was clicked.
+            if (point) onClose();
+            else place();
+        },
+        [point, onClose, place]
+    );
 
     useEffect(() => {
         if (!open) return;

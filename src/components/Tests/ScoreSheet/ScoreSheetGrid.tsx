@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertTriangle, ArrowDownToLine, ClipboardPaste, Copy, Eraser, UserCheck, UserX } from 'lucide-react';
 import type { Class, GradeScale, Student, StudentTest, Test, TestAnswer } from '../../../types';
@@ -67,6 +67,14 @@ export default function ScoreSheetGrid({
     const tableRef = useRef<HTMLTableElement>(null);
     const [drafts, setDrafts] = useState<Record<string, string>>({});
     const [focus, setFocus] = useState<{ row: number; col: number } | null>(null);
+    // Context-menu items are built once, at open time, but stay selectable after a later
+    // render (e.g. the auto-focus-driven blur-commit that fires right after opening) swaps
+    // in a new `sheetByStudent`. Reading through this ref instead of the closed-over prop
+    // keeps every action's base state fresh instead of the one from the render that opened the menu.
+    const sheetRef = useRef(sheetByStudent);
+    useEffect(() => {
+        sheetRef.current = sheetByStudent;
+    }, [sheetByStudent]);
     const questions = test.questions;
     const classById = new Map(classes.map((c) => [c.id, c]));
     const allLabel = t('tests.norm.tier_all');
@@ -96,7 +104,7 @@ export default function ScoreSheetGrid({
             if (!student || !q) continue;
             const validity = validateCell(raw, q.points);
             if (validity === 'invalid' || validity === 'over_max') continue;
-            const current = touched.has(student.id) ? touched.get(student.id) : sheetByStudent.get(student.id);
+            const current = touched.has(student.id) ? touched.get(student.id) : sheetRef.current.get(student.id);
             const before = latestAnswer(current, q.id);
             const next = validity === 'empty' ? null : parsePoints(raw)!;
             if (next === null && !before) continue;
@@ -124,9 +132,14 @@ export default function ScoreSheetGrid({
     }
 
     function copyText(text: string) {
-        const write = navigator.clipboard?.writeText(text);
-        if (!write) return;
-        void write.then(() => showToast(t('tests.scoreSheet.menu_copied'), 'success')).catch(() => {});
+        if (!navigator.clipboard) {
+            showToast(t('tests.scoreSheet.menu_copy_blocked'), 'error');
+            return;
+        }
+        navigator.clipboard
+            .writeText(text)
+            .then(() => showToast(t('tests.scoreSheet.menu_copied'), 'success'))
+            .catch(() => showToast(t('tests.scoreSheet.menu_copy_blocked'), 'error'));
     }
 
     function clearCell(row: number, col: number) {
@@ -143,7 +156,7 @@ export default function ScoreSheetGrid({
         const keys: string[] = [];
         for (let r = row + 1; r < students.length; r++) {
             const student = students[r];
-            if (!rowEditable(student) || sheetByStudent.get(student.id)?.absent) continue;
+            if (!rowEditable(student) || sheetRef.current.get(student.id)?.absent) continue;
             targets.push({ row: r, col, raw });
             keys.push(key(student.id, questions[col].id));
         }
@@ -174,7 +187,7 @@ export default function ScoreSheetGrid({
                 label: absent ? t('tests.scoreSheet.menu_mark_present') : t('tests.scoreSheet.menu_mark_absent'),
                 icon: absent ? <UserCheck size={14} aria-hidden /> : <UserX size={14} aria-hidden />,
                 disabled: !editable,
-                onSelect: () => onSave([setAbsent(st, test, student.id, !absent)]),
+                onSelect: () => onSave([setAbsent(sheetRef.current.get(student.id), test, student.id, !absent)]),
             },
             {
                 key: 'clear',
@@ -219,7 +232,7 @@ export default function ScoreSheetGrid({
                 label: absent ? t('tests.scoreSheet.menu_mark_present') : t('tests.scoreSheet.menu_mark_absent'),
                 icon: absent ? <UserCheck size={14} aria-hidden /> : <UserX size={14} aria-hidden />,
                 disabled: !editable,
-                onSelect: () => onSave([setAbsent(st, test, student.id, !absent)]),
+                onSelect: () => onSave([setAbsent(sheetRef.current.get(student.id), test, student.id, !absent)]),
             },
             {
                 key: 'clear-row',
@@ -290,7 +303,7 @@ export default function ScoreSheetGrid({
                 const c = col + dc;
                 const student = students[r];
                 const q = questions[c];
-                if (!student || !q || !rowEditable(student) || sheetByStudent.get(student.id)?.absent) return;
+                if (!student || !q || !rowEditable(student) || sheetRef.current.get(student.id)?.absent) return;
                 values.push({ row: r, col: c, raw });
             })
         );
@@ -309,9 +322,13 @@ export default function ScoreSheetGrid({
 
     /** The menu's Paste: right-click no longer offers the browser's, so it reads the clipboard here. */
     async function pasteFromClipboard(row: number, col: number) {
+        if (!navigator.clipboard) {
+            showToast(t('tests.scoreSheet.menu_paste_blocked'), 'error');
+            return;
+        }
         let text: string;
         try {
-            text = (await navigator.clipboard?.readText()) ?? '';
+            text = await navigator.clipboard.readText();
         } catch {
             showToast(t('tests.scoreSheet.menu_paste_blocked'), 'error');
             return;
@@ -423,7 +440,8 @@ export default function ScoreSheetGrid({
                             <tr key={student.id} style={{ opacity: absent ? 0.55 : 1 }}>
                                 <th
                                     scope="row"
-                                    tabIndex={-1}
+                                    tabIndex={0}
+                                    aria-label={t('tests.scoreSheet.row_header_label', { student: student.name })}
                                     onContextMenu={(e) =>
                                         ctx.open(e, rowMenu(row), t('tests.scoreSheet.menu_row_label'))
                                     }

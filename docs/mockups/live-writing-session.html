@@ -1,0 +1,3072 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Live writing session — mockup — RubricMaker #851</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            :root {
+                --font: 'Hanken Grotesk', system-ui, sans-serif;
+                --font-display: 'Bricolage Grotesque', var(--font);
+                --bg: #161410;
+                --bg-raised: #201d17;
+                --bg-elevated: #2a261f;
+                --bg-card: #201d17;
+                --border: #332e26;
+                --border-light: #433c31;
+                --text: #f1ebdf;
+                --text-muted: #c6bfb2;
+                --text-dim: #b7b1a8;
+                --accent: #37b49c;
+                --accent-text: #8fd5c8;
+                --accent-hover: #45bda6;
+                --accent-fg: #0e1512;
+                --accent-soft: #1c3a35;
+                --green: #46b783;
+                --green-text: #97d7ba;
+                --yellow: #e3a648;
+                --yellow-text: #edc68a;
+                --red: #e07a62;
+                --red-text: #eeb5a8;
+                --purple: #8b5cf6;
+                --purple-text: #cbb6fb;
+                --radius: 10px;
+                --radius-lg: 14px;
+                --shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+                --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.5);
+                color-scheme: dark;
+            }
+            [data-theme='light'] {
+                color-scheme: light;
+                --bg: #f1ebe0;
+                --bg-raised: #ffffff;
+                --bg-elevated: #f6f1e8;
+                --bg-card: #ffffff;
+                --border: #e7decf;
+                --border-light: #d9ceba;
+                --text: #2b2722;
+                --text-muted: #4a443d;
+                --text-dim: #534d45;
+                --accent: #0b6356;
+                --accent-text: #08473e;
+                --accent-hover: #0a574c;
+                --accent-fg: #ffffff;
+                --accent-soft: #e2f0ed;
+                --green: #2e9e6b;
+                --green-text: #174f36;
+                --yellow: #c9851f;
+                --yellow-text: #62410f;
+                --red: #c9543c;
+                --red-text: #6e2e21;
+                --purple-text: #4c3287;
+                --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+                --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.1);
+            }
+            *,
+            *::before,
+            *::after {
+                box-sizing: border-box;
+            }
+            body {
+                margin: 0;
+                min-height: 100vh;
+                display: flex;
+                background: var(--bg);
+                color: var(--text);
+                font-family: var(--font);
+                font-size: 15px;
+                line-height: 1.55;
+                -webkit-font-smoothing: antialiased;
+            }
+            button,
+            input,
+            textarea,
+            select {
+                font: inherit;
+                color: inherit;
+            }
+            h1,
+            h2,
+            h3,
+            h4 {
+                font-family: var(--font-display);
+                line-height: 1.15;
+                margin: 0;
+            }
+            p {
+                margin: 0;
+            }
+            a {
+                color: var(--accent-text);
+            }
+
+            /* ── Rail ─────────────────────────────────────────────── */
+            .rail {
+                width: 238px;
+                flex: none;
+                border-right: 1px solid var(--border);
+                padding: 18px 12px;
+                display: flex;
+                flex-direction: column;
+                gap: 22px;
+                position: sticky;
+                top: 0;
+                height: 100vh;
+                background: var(--bg-raised);
+                z-index: 5;
+            }
+            .brand {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 0 6px;
+            }
+            .brand-mark {
+                width: 36px;
+                height: 36px;
+                border-radius: 10px;
+                background: linear-gradient(135deg, var(--accent), var(--purple));
+                color: #0e1512;
+                display: grid;
+                place-items: center;
+                font-family: var(--font-display);
+                font-weight: 800;
+                font-size: 1rem;
+                flex: none;
+            }
+            .brand b {
+                display: block;
+                font-family: var(--font-display);
+                font-size: 0.98rem;
+                letter-spacing: -0.01em;
+            }
+            .brand small {
+                display: block;
+                font-size: 0.67rem;
+                color: var(--text-dim);
+                letter-spacing: 0.02em;
+            }
+            .nav-group {
+                display: flex;
+                flex-direction: column;
+                gap: 3px;
+            }
+            .nav-label {
+                font-size: 0.63rem;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                color: var(--text-dim);
+                font-weight: 700;
+                padding: 0 10px 6px;
+            }
+            .nav-item {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 8px 10px;
+                border-radius: 8px;
+                border: 1px solid transparent;
+                background: none;
+                color: var(--text-muted);
+                font-size: 0.83rem;
+                text-align: left;
+                cursor: pointer;
+                transition:
+                    background 0.15s,
+                    color 0.15s;
+                width: 100%;
+            }
+            .nav-item:hover {
+                background: var(--bg-elevated);
+                color: var(--text);
+            }
+            .nav-item.active {
+                background: var(--accent-soft);
+                color: var(--accent-text);
+                border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+                font-weight: 600;
+            }
+            .nav-num {
+                font-size: 0.62rem;
+                font-variant-numeric: tabular-nums;
+                color: var(--text-dim);
+                min-width: 15px;
+            }
+            .rail-foot {
+                margin-top: auto;
+                border-top: 1px solid var(--border);
+                padding: 14px 6px 0;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+            .rail-foot p {
+                font-size: 0.7rem;
+                color: var(--text-dim);
+                line-height: 1.45;
+            }
+            .theme-btn {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 8px;
+                width: 100%;
+                padding: 8px 10px;
+                border-radius: 8px;
+                border: 1px solid var(--border);
+                background: var(--bg-elevated);
+                color: var(--text-muted);
+                font-size: 0.78rem;
+                cursor: pointer;
+            }
+            .theme-btn:hover {
+                border-color: var(--border-light);
+                color: var(--text);
+            }
+
+            /* ── Stage ────────────────────────────────────────────── */
+            .stage {
+                flex: 1;
+                min-width: 0;
+                display: flex;
+                flex-direction: column;
+            }
+            .stage-head {
+                position: sticky;
+                top: 0;
+                z-index: 4;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 16px;
+                padding: 12px 28px;
+                border-bottom: 1px solid var(--border);
+                background: color-mix(in srgb, var(--bg) 88%, transparent);
+                backdrop-filter: blur(12px);
+            }
+            .kicker {
+                font-size: 0.66rem;
+                font-weight: 700;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: var(--text-dim);
+            }
+            .stage-head h2 {
+                font-size: 1rem;
+                font-weight: 700;
+                margin-top: 2px;
+            }
+            .head-actions {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .mock-pill {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                font-size: 0.68rem;
+                font-weight: 700;
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+                padding: 4px 9px;
+                border-radius: 999px;
+                border: 1px dashed var(--border-light);
+                color: var(--text-dim);
+            }
+            .mock-pill i {
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background: var(--yellow);
+            }
+            .icon-btn {
+                border: 1px solid var(--border);
+                background: var(--bg-elevated);
+                color: var(--text-muted);
+                border-radius: 8px;
+                padding: 6px 11px;
+                font-size: 0.77rem;
+                font-weight: 600;
+                cursor: pointer;
+            }
+            .icon-btn[aria-pressed='true'],
+            .icon-btn:hover {
+                color: var(--text);
+                border-color: var(--border-light);
+            }
+            .stage-body {
+                display: flex;
+                align-items: flex-start;
+            }
+            main {
+                flex: 1;
+                min-width: 0;
+                padding: 26px 28px 70px;
+            }
+            .screen {
+                display: none;
+                max-width: 1320px;
+                animation: fade 0.18s ease-out;
+            }
+            .screen.active {
+                display: block;
+            }
+            @keyframes fade {
+                from {
+                    opacity: 0;
+                    transform: translateY(4px);
+                }
+                to {
+                    opacity: 1;
+                    transform: none;
+                }
+            }
+            @media (prefers-reduced-motion: reduce) {
+                * {
+                    animation: none !important;
+                    transition: none !important;
+                }
+            }
+
+            /* ── Notes panel ──────────────────────────────────────── */
+            .notes {
+                width: 320px;
+                flex: none;
+                display: none;
+                border-left: 1px solid var(--border);
+                padding: 22px 20px;
+                position: fixed;
+                top: 57px;
+                right: 0;
+                height: calc(100vh - 57px);
+                overflow: auto;
+                background: var(--bg-raised);
+                box-shadow: -18px 0 40px rgba(0, 0, 0, 0.35);
+                z-index: 8;
+            }
+            .notes.open {
+                display: block;
+            }
+            .notes h3 {
+                font-size: 0.82rem;
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                color: var(--text-dim);
+                margin-bottom: 10px;
+            }
+            .notes ul {
+                margin: 0;
+                padding-left: 16px;
+                display: flex;
+                flex-direction: column;
+                gap: 9px;
+                font-size: 0.78rem;
+                color: var(--text-muted);
+                line-height: 1.5;
+            }
+            .notes li::marker {
+                color: var(--accent);
+            }
+
+            /* ── Primitives ───────────────────────────────────────── */
+            .page-head {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 18px;
+                flex-wrap: wrap;
+                margin-bottom: 22px;
+            }
+            .crumbs {
+                font-size: 0.72rem;
+                color: var(--text-dim);
+                margin-bottom: 6px;
+            }
+            .page-head h1 {
+                font-size: 1.6rem;
+                font-weight: 700;
+                letter-spacing: -0.02em;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+            .page-head .sub {
+                color: var(--text-muted);
+                font-size: 0.84rem;
+                margin-top: 5px;
+            }
+            .actions {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+            .btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 7px;
+                padding: 9px 15px;
+                border-radius: 8px;
+                border: 1px solid transparent;
+                font-size: 0.83rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition:
+                    background 0.15s,
+                    border-color 0.15s;
+            }
+            .btn-primary {
+                background: var(--accent);
+                color: var(--accent-fg);
+            }
+            .btn-primary:hover {
+                background: var(--accent-hover);
+            }
+            .btn-secondary {
+                background: var(--bg-elevated);
+                border-color: var(--border-light);
+                color: var(--text);
+            }
+            .btn-secondary:hover {
+                border-color: var(--accent);
+                color: var(--accent-text);
+            }
+            .btn-ghost {
+                background: none;
+                color: var(--text-muted);
+            }
+            .btn-ghost:hover {
+                background: var(--bg-elevated);
+                color: var(--text);
+            }
+            .btn-sm {
+                padding: 6px 10px;
+                font-size: 0.76rem;
+            }
+            .card {
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: var(--radius-lg);
+                padding: 18px;
+            }
+            .card + .card {
+                margin-top: 14px;
+            }
+            .card-head {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 12px;
+                margin-bottom: 14px;
+            }
+            .card-head h3 {
+                font-size: 0.98rem;
+                font-weight: 700;
+            }
+            .card-head p {
+                font-size: 0.76rem;
+                color: var(--text-dim);
+                margin-top: 3px;
+            }
+            .field {
+                display: block;
+                margin-top: 13px;
+            }
+            .field:first-of-type {
+                margin-top: 0;
+            }
+            .label {
+                display: block;
+                font-size: 0.74rem;
+                font-weight: 700;
+                color: var(--text-muted);
+                margin-bottom: 6px;
+                letter-spacing: 0.01em;
+            }
+            .hint {
+                font-size: 0.73rem;
+                color: var(--text-dim);
+                margin-top: 6px;
+                line-height: 1.45;
+            }
+            .input,
+            .textarea,
+            .select {
+                width: 100%;
+                background: var(--bg-elevated);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 9px 11px;
+                font-size: 0.85rem;
+                outline: none;
+            }
+            .input:focus,
+            .textarea:focus,
+            .select:focus {
+                border-color: var(--accent);
+                box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+            }
+            .textarea {
+                resize: vertical;
+                min-height: 94px;
+                line-height: 1.6;
+            }
+            .badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 5px;
+                padding: 3px 9px;
+                border-radius: 999px;
+                font-size: 0.68rem;
+                font-weight: 700;
+                letter-spacing: 0.03em;
+            }
+            .badge-draft {
+                background: color-mix(in srgb, var(--yellow) 16%, transparent);
+                color: var(--yellow-text);
+                border: 1px solid color-mix(in srgb, var(--yellow) 35%, transparent);
+                text-transform: uppercase;
+            }
+            .badge-live {
+                background: color-mix(in srgb, var(--green) 16%, transparent);
+                color: var(--green-text);
+                border: 1px solid color-mix(in srgb, var(--green) 38%, transparent);
+            }
+            .badge-live i {
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background: currentColor;
+            }
+            .badge-neutral {
+                background: var(--bg-elevated);
+                color: var(--text-muted);
+                border: 1px solid var(--border);
+            }
+            .chip {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 5px 11px;
+                border-radius: 999px;
+                border: 1px solid var(--border-light);
+                background: var(--bg-elevated);
+                color: var(--text-muted);
+                font-size: 0.77rem;
+                font-weight: 600;
+                cursor: pointer;
+            }
+            .chip:hover {
+                color: var(--text);
+            }
+            .chip.active {
+                background: var(--accent-soft);
+                border-color: var(--accent);
+                color: var(--accent-text);
+            }
+            .chip-row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 7px;
+            }
+            .cols {
+                display: grid;
+                grid-template-columns: minmax(0, 1.55fr) minmax(290px, 1fr);
+                gap: 18px;
+                align-items: start;
+            }
+            .muted {
+                color: var(--text-muted);
+            }
+            .dim {
+                color: var(--text-dim);
+                font-size: 0.78rem;
+            }
+            .divider {
+                height: 1px;
+                background: var(--border);
+                margin: 14px 0;
+            }
+            .switch {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 14px;
+                padding: 11px 0;
+                border-top: 1px solid var(--border);
+                cursor: pointer;
+            }
+            .switch:first-of-type {
+                border-top: 0;
+                padding-top: 0;
+            }
+            .switch b {
+                display: block;
+                font-size: 0.82rem;
+                font-weight: 600;
+                color: var(--text);
+            }
+            .switch small {
+                display: block;
+                font-size: 0.72rem;
+                color: var(--text-dim);
+                margin-top: 2px;
+                line-height: 1.4;
+            }
+            .switch input {
+                position: absolute;
+                opacity: 0;
+                width: 1px;
+                height: 1px;
+            }
+            .track {
+                width: 38px;
+                height: 22px;
+                flex: none;
+                border-radius: 999px;
+                background: var(--border-light);
+                position: relative;
+                transition: background 0.18s;
+                margin-top: 2px;
+            }
+            .track::after {
+                content: '';
+                position: absolute;
+                width: 16px;
+                height: 16px;
+                top: 3px;
+                left: 3px;
+                border-radius: 50%;
+                background: var(--bg-card);
+                transition: transform 0.18s;
+            }
+            .switch input:checked + .track {
+                background: var(--accent);
+            }
+            .switch input:checked + .track::after {
+                transform: translateX(16px);
+                background: var(--accent-fg);
+            }
+            .switch input:focus-visible + .track {
+                outline: 2px solid var(--accent);
+                outline-offset: 2px;
+            }
+            .stepper {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                padding: 9px 11px;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                background: var(--bg-elevated);
+            }
+            .stepper span {
+                font-size: 0.8rem;
+                color: var(--text-muted);
+            }
+            .stepper b {
+                font-variant-numeric: tabular-nums;
+                min-width: 58px;
+                text-align: right;
+                font-size: 0.85rem;
+            }
+            .image-drop {
+                height: 116px;
+                border-radius: 10px;
+                border: 1px dashed var(--border-light);
+                background:
+                    radial-gradient(120% 120% at 20% 10%, #e9a760 0%, #b96a5f 38%, #4b3f63 72%, #242235 100%),
+                    var(--bg-elevated);
+                display: flex;
+                align-items: flex-end;
+                justify-content: space-between;
+                gap: 10px;
+                padding: 10px 12px;
+                color: #fff;
+                position: relative;
+                overflow: hidden;
+            }
+            .image-drop::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background: linear-gradient(180deg, transparent 40%, rgba(0, 0, 0, 0.55));
+            }
+            .image-drop > * {
+                position: relative;
+            }
+            .image-drop span {
+                font-size: 0.74rem;
+                font-weight: 600;
+                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            }
+            .image-drop button {
+                border: 1px solid rgba(255, 255, 255, 0.4);
+                background: rgba(0, 0, 0, 0.35);
+                color: #fff;
+                border-radius: 7px;
+                padding: 4px 8px;
+                font-size: 0.72rem;
+                cursor: pointer;
+            }
+            .summary-line {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                font-size: 0.79rem;
+                color: var(--text-muted);
+                padding: 4px 0;
+            }
+            .summary-line b {
+                color: var(--text);
+                font-variant-numeric: tabular-nums;
+            }
+            .code-preview {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                padding: 11px 12px;
+                background: var(--bg-elevated);
+                margin: 12px 0;
+            }
+            .code-preview small {
+                display: block;
+                font-size: 0.68rem;
+                color: var(--text-dim);
+                letter-spacing: 0.05em;
+                text-transform: uppercase;
+            }
+            .code-preview code {
+                font-family: var(--font-display);
+                font-size: 1.15rem;
+                font-weight: 700;
+                letter-spacing: 0.06em;
+                color: var(--accent-text);
+            }
+            .code-preview button {
+                border: 1px solid var(--border-light);
+                background: var(--bg-card);
+                border-radius: 7px;
+                padding: 5px 9px;
+                font-size: 0.72rem;
+                color: var(--text-muted);
+                cursor: pointer;
+                white-space: nowrap;
+            }
+            .code-preview button:hover {
+                color: var(--text);
+            }
+            .full {
+                width: 100%;
+            }
+
+            /* CEFR badges */
+            .lvl {
+                --lvl-a1: #a0662e;
+                --lvl-a2: #8a6b23;
+                --lvl-b1: #587f48;
+                --lvl-b2: #327e66;
+                --lvl-c1: #2e7e8c;
+                --lvl-c2: #3a5e9e;
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                padding: 2px 7px;
+                border-radius: 6px;
+                font-size: 0.68rem;
+                font-weight: 800;
+                letter-spacing: 0.03em;
+                color: #f6efe4;
+                background: var(--lvl, var(--border-light));
+                border: 1px solid color-mix(in srgb, #000 18%, transparent);
+                white-space: nowrap;
+            }
+            [data-theme='light'] .lvl {
+                color: #fff;
+            }
+            .lvl.a1 {
+                --lvl: var(--lvl-a1);
+            }
+            .lvl.a2 {
+                --lvl: var(--lvl-a2);
+            }
+            .lvl.b1 {
+                --lvl: var(--lvl-b1);
+            }
+            .lvl.b2 {
+                --lvl: var(--lvl-b2);
+            }
+            .lvl.c1 {
+                --lvl: var(--lvl-c1);
+            }
+            .lvl.c2 {
+                --lvl: var(--lvl-c2);
+            }
+            .lvl.est {
+                background: transparent;
+                border: 1.5px dashed var(--border-light);
+                color: var(--text-dim);
+            }
+            .lvl.none {
+                background: transparent;
+                border: 1px solid var(--border);
+                color: var(--text-dim);
+            }
+
+            /* ── Projector ───────────────────────────────────────── */
+            .projector {
+                background: var(--bg-raised);
+                border: 1px solid var(--border);
+                border-radius: 18px;
+                box-shadow: var(--shadow-lg);
+                overflow: hidden;
+            }
+            .proj-head {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 20px;
+                flex-wrap: wrap;
+                padding: 18px 24px;
+                border-bottom: 1px solid var(--border);
+                background: var(--bg-card);
+            }
+            .proj-head h1 {
+                font-size: 1.5rem;
+                letter-spacing: -0.02em;
+            }
+            .proj-head .sub {
+                color: var(--text-muted);
+                font-size: 0.83rem;
+                margin-top: 3px;
+            }
+            .proj-timer {
+                text-align: center;
+                min-width: 190px;
+            }
+            .proj-timer small {
+                display: block;
+                font-size: 0.66rem;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: var(--text-dim);
+                font-weight: 700;
+            }
+            .proj-timer strong {
+                display: block;
+                font-family: var(--font-display);
+                font-size: 3.3rem;
+                line-height: 1;
+                font-variant-numeric: tabular-nums;
+                letter-spacing: -0.02em;
+            }
+            .bar {
+                height: 5px;
+                border-radius: 99px;
+                background: var(--border);
+                overflow: hidden;
+                margin-top: 8px;
+            }
+            .bar i {
+                display: block;
+                height: 100%;
+                border-radius: 99px;
+                background: var(--accent);
+            }
+            .proj-controls {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+            .proj-body {
+                display: grid;
+                grid-template-columns: 280px minmax(0, 1fr);
+                gap: 18px;
+                padding: 20px 24px 24px;
+            }
+            .proj-left {
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+            }
+            .join-card {
+                text-align: center;
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                background: var(--bg-card);
+                padding: 16px;
+            }
+            .join-card small {
+                display: block;
+                font-size: 0.66rem;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                color: var(--text-dim);
+                font-weight: 700;
+            }
+            .join-card .url {
+                display: block;
+                font-family: var(--font-display);
+                font-size: 0.92rem;
+                font-weight: 600;
+                margin: 5px 0 12px;
+                color: var(--text-muted);
+            }
+            .join-card .big-code {
+                font-family: var(--font-display);
+                font-size: 2.1rem;
+                font-weight: 800;
+                letter-spacing: 0.08em;
+                color: var(--accent-text);
+                line-height: 1;
+            }
+            .join-card .joined {
+                font-size: 0.76rem;
+                color: var(--text-muted);
+                margin-top: 12px;
+            }
+            .qr {
+                width: 66px;
+                height: 66px;
+                margin: 14px auto 0;
+                border-radius: 7px;
+                background-color: #fff;
+                background-image:
+                    repeating-conic-gradient(#161410 0 25%, transparent 0 50%),
+                    repeating-conic-gradient(#161410 0 25%, transparent 0 50%);
+                background-size:
+                    12px 12px,
+                    12px 12px;
+                background-position:
+                    0 0,
+                    6px 6px;
+                border: 5px solid #fff;
+                box-shadow: 0 0 0 1px var(--border);
+            }
+            .prompt-mini {
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                padding: 14px;
+                background: var(--bg-card);
+            }
+            .prompt-mini .quote {
+                font-size: 0.85rem;
+                line-height: 1.55;
+                color: var(--text);
+            }
+            .prompt-mini .tags {
+                margin-top: 9px;
+                font-size: 0.69rem;
+                color: var(--text-dim);
+                letter-spacing: 0.02em;
+            }
+            .proj-right {
+                min-width: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+            .proj-stats {
+                display: flex;
+                gap: 18px;
+                flex-wrap: wrap;
+                font-size: 0.78rem;
+                color: var(--text-muted);
+                padding: 2px 2px 0;
+            }
+            .proj-stats b {
+                color: var(--text);
+                font-variant-numeric: tabular-nums;
+            }
+            .board {
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                overflow: hidden;
+                background: var(--bg-card);
+            }
+            .board-head,
+            .board-row {
+                display: grid;
+                grid-template-columns: 1fr 72px 66px;
+                align-items: center;
+                gap: 12px;
+                padding: 9px 15px;
+            }
+            .board-head {
+                font-size: 0.65rem;
+                letter-spacing: 0.09em;
+                text-transform: uppercase;
+                color: var(--text-dim);
+                font-weight: 700;
+                background: var(--bg-elevated);
+                border-bottom: 1px solid var(--border);
+            }
+            .board-row {
+                border-top: 1px solid var(--border);
+                font-size: 0.84rem;
+            }
+            .board-row:first-of-type {
+                border-top: 0;
+            }
+            .board-row .who {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                min-width: 0;
+            }
+            .avatar {
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                flex: none;
+                display: grid;
+                place-items: center;
+                font-size: 0.62rem;
+                font-weight: 800;
+                background: var(--accent-soft);
+                color: var(--accent-text);
+                border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+            }
+            .board-row .words {
+                text-align: right;
+                font-variant-numeric: tabular-nums;
+                font-weight: 700;
+            }
+            .board-row .meter {
+                height: 4px;
+                border-radius: 99px;
+                background: var(--border);
+                margin-top: 4px;
+                overflow: hidden;
+            }
+            .board-row .meter i {
+                display: block;
+                height: 100%;
+                background: var(--accent);
+                border-radius: 99px;
+            }
+            .board-row.top .avatar {
+                background: color-mix(in srgb, var(--yellow) 22%, transparent);
+                color: var(--yellow-text);
+                border-color: color-mix(in srgb, var(--yellow) 40%, transparent);
+            }
+            .proj-note {
+                font-size: 0.7rem;
+                color: var(--text-dim);
+                display: flex;
+                gap: 6px;
+                align-items: center;
+            }
+            .proj-foot {
+                border-top: 1px solid var(--border);
+                padding: 10px 24px;
+                display: flex;
+                justify-content: space-between;
+                gap: 14px;
+                flex-wrap: wrap;
+                font-size: 0.72rem;
+                color: var(--text-dim);
+                background: var(--bg-elevated);
+            }
+
+            /* ── Finals ──────────────────────────────────────────── */
+            .toolbar {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                flex-wrap: wrap;
+                margin-bottom: 16px;
+            }
+            .toolbar .left,
+            .toolbar .right {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+            .gallery {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 14px;
+            }
+            .text-card {
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 16px;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+            .text-card.spotlight {
+                grid-column: 1 / -1;
+                border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+                background:
+                    linear-gradient(180deg, color-mix(in srgb, var(--accent) 5%, transparent), transparent 55%),
+                    var(--bg-card);
+            }
+            .text-top {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+            }
+            .who-pill {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 0.78rem;
+                font-weight: 600;
+                color: var(--text-muted);
+            }
+            .votes {
+                display: inline-flex;
+                align-items: center;
+                gap: 5px;
+                font-size: 0.72rem;
+                font-weight: 700;
+                color: var(--accent-text);
+                background: var(--accent-soft);
+                border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+                border-radius: 999px;
+                padding: 3px 9px;
+            }
+            .text-body {
+                font-size: 0.9rem;
+                line-height: 1.72;
+                color: var(--text);
+            }
+            .text-card.spotlight .text-body {
+                font-size: 1.02rem;
+                line-height: 1.75;
+            }
+            mark.hl {
+                background: color-mix(in srgb, var(--accent) 20%, transparent);
+                color: var(--text);
+                border-radius: 3px;
+                padding: 0 2px;
+            }
+            .text-meta {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                flex-wrap: wrap;
+                font-size: 0.72rem;
+                color: var(--text-dim);
+                border-top: 1px solid var(--border);
+                padding-top: 10px;
+            }
+            .text-actions {
+                display: flex;
+                gap: 6px;
+                margin-left: auto;
+                flex-wrap: wrap;
+            }
+            .real {
+                display: none;
+            }
+            [data-revealed='true'] .anon {
+                display: none;
+            }
+            [data-revealed='true'] .real {
+                display: inline;
+            }
+            .stat-chips {
+                display: flex;
+                gap: 7px;
+                flex-wrap: wrap;
+            }
+            .stat-chips span {
+                font-size: 0.7rem;
+                padding: 3px 8px;
+                border-radius: 6px;
+                background: var(--bg-elevated);
+                border: 1px solid var(--border);
+                color: var(--text-muted);
+            }
+
+            /* ── Insights ────────────────────────────────────────── */
+            .kpis {
+                display: grid;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 12px;
+                margin-bottom: 16px;
+            }
+            .kpi {
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                padding: 14px 15px;
+            }
+            .kpi small {
+                display: block;
+                font-size: 0.68rem;
+                letter-spacing: 0.07em;
+                text-transform: uppercase;
+                color: var(--text-dim);
+                font-weight: 700;
+            }
+            .kpi b {
+                display: block;
+                font-family: var(--font-display);
+                font-size: 1.65rem;
+                line-height: 1.25;
+                margin-top: 4px;
+            }
+            .kpi span {
+                font-size: 0.72rem;
+                color: var(--text-dim);
+            }
+            .table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 0.82rem;
+            }
+            .table th {
+                text-align: left;
+                font-size: 0.65rem;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: var(--text-dim);
+                padding: 9px 12px;
+                border-bottom: 1px solid var(--border);
+                white-space: nowrap;
+            }
+            .table td {
+                padding: 10px 12px;
+                border-bottom: 1px solid var(--border);
+                vertical-align: middle;
+            }
+            .table tr:last-child td {
+                border-bottom: 0;
+            }
+            .table .num {
+                text-align: right;
+                font-variant-numeric: tabular-nums;
+            }
+            .table .name {
+                display: flex;
+                align-items: center;
+                gap: 9px;
+                font-weight: 600;
+            }
+            .self-split {
+                display: flex;
+                height: 9px;
+                border-radius: 99px;
+                overflow: hidden;
+                margin: 10px 0 6px;
+                background: var(--border);
+            }
+            .self-split i {
+                display: block;
+                height: 100%;
+            }
+            .legend {
+                display: flex;
+                gap: 12px;
+                flex-wrap: wrap;
+                font-size: 0.7rem;
+                color: var(--text-dim);
+            }
+            .legend span {
+                display: inline-flex;
+                align-items: center;
+                gap: 5px;
+            }
+            .dot {
+                width: 7px;
+                height: 7px;
+                border-radius: 50%;
+                display: inline-block;
+            }
+
+            /* ── Student join ────────────────────────────────────── */
+            .student-shell {
+                max-width: 960px;
+                margin: 0 auto;
+            }
+            .student-brand {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 9px;
+                margin-bottom: 18px;
+            }
+            .student-brand .brand-mark {
+                width: 30px;
+                height: 30px;
+                border-radius: 8px;
+                font-size: 0.85rem;
+            }
+            .student-brand b {
+                font-family: var(--font-display);
+                font-size: 1rem;
+            }
+            .join-grid {
+                display: grid;
+                grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+                gap: 14px;
+            }
+            .code-input {
+                font-family: var(--font-display);
+                font-size: 1.7rem;
+                font-weight: 700;
+                letter-spacing: 0.16em;
+                text-align: center;
+                text-transform: uppercase;
+                padding: 12px;
+            }
+            .class-found {
+                display: flex;
+                align-items: center;
+                gap: 9px;
+                margin-top: 12px;
+                font-size: 0.79rem;
+                color: var(--green-text);
+            }
+            .name-grid {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 6px;
+                max-height: 216px;
+                overflow: auto;
+                padding-right: 4px;
+                margin-top: 10px;
+            }
+            .name-btn {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 7px 9px;
+                border-radius: 8px;
+                border: 1px solid var(--border);
+                background: var(--bg-elevated);
+                color: var(--text);
+                font-size: 0.8rem;
+                text-align: left;
+                cursor: pointer;
+            }
+            .name-btn:hover {
+                border-color: var(--accent);
+            }
+            .name-btn.selected {
+                background: var(--accent-soft);
+                border-color: var(--accent);
+                color: var(--accent-text);
+                font-weight: 600;
+            }
+            .name-btn .avatar {
+                width: 21px;
+                height: 21px;
+                font-size: 0.56rem;
+            }
+            .privacy-note {
+                display: flex;
+                gap: 8px;
+                align-items: flex-start;
+                font-size: 0.72rem;
+                color: var(--text-dim);
+                margin-top: 14px;
+                padding: 10px 12px;
+                border-radius: 8px;
+                background: var(--bg-elevated);
+                border: 1px solid var(--border);
+                line-height: 1.5;
+            }
+
+            /* ── Student writing ─────────────────────────────────── */
+            .write-shell {
+                border: 1px solid var(--border);
+                border-radius: 16px;
+                overflow: hidden;
+                background: var(--bg-card);
+                box-shadow: var(--shadow);
+            }
+            .write-head {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 14px;
+                flex-wrap: wrap;
+                padding: 13px 18px;
+                border-bottom: 1px solid var(--border);
+                background: var(--bg-elevated);
+            }
+            .write-head .title h1 {
+                font-size: 1.02rem;
+                font-weight: 700;
+            }
+            .write-head .title p {
+                font-size: 0.72rem;
+                color: var(--text-dim);
+                margin-top: 2px;
+            }
+            .write-meta {
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                flex-wrap: wrap;
+                font-size: 0.78rem;
+                color: var(--text-muted);
+            }
+            .write-meta b {
+                color: var(--text);
+                font-variant-numeric: tabular-nums;
+            }
+            .timer {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                font-family: var(--font-display);
+                font-size: 1.12rem;
+                font-weight: 700;
+                font-variant-numeric: tabular-nums;
+            }
+            .write-body {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) 294px;
+                gap: 0;
+            }
+            .editor-wrap {
+                padding: 18px;
+                min-width: 0;
+            }
+            .editor-toolbar {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                flex-wrap: wrap;
+                padding: 6px;
+                border: 1px solid var(--border);
+                border-bottom: 0;
+                border-radius: 9px 9px 0 0;
+                background: var(--bg-elevated);
+            }
+            .editor-toolbar button {
+                border: 1px solid transparent;
+                background: none;
+                border-radius: 6px;
+                padding: 4px 8px;
+                font-size: 0.78rem;
+                color: var(--text-muted);
+                cursor: pointer;
+                min-width: 28px;
+            }
+            .editor-toolbar button:hover {
+                background: var(--bg-card);
+                border-color: var(--border);
+                color: var(--text);
+            }
+            .editor-toolbar .sep {
+                width: 1px;
+                height: 16px;
+                background: var(--border);
+                margin: 0 3px;
+            }
+            .editor {
+                min-height: 300px;
+                border: 1px solid var(--border);
+                border-radius: 0 0 9px 9px;
+                padding: 18px 20px;
+                font-size: 0.98rem;
+                line-height: 1.8;
+                background: var(--bg-card);
+                outline: none;
+            }
+            .editor:focus {
+                border-color: var(--accent);
+                box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
+            }
+            .editor p + p {
+                margin-top: 10px;
+            }
+            .write-foot {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                flex-wrap: wrap;
+                border-top: 1px solid var(--border);
+                padding: 10px 18px;
+                font-size: 0.74rem;
+                color: var(--text-dim);
+                background: var(--bg-elevated);
+            }
+            .write-side {
+                border-left: 1px solid var(--border);
+                padding: 18px;
+                background: var(--bg-raised);
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+            }
+            .prompt-card .img {
+                height: 108px;
+                border-radius: 10px;
+                background:
+                    radial-gradient(110% 110% at 25% 15%, #f0bd77 0%, #c07162 40%, #4a3a5f 78%, #201f31 100%);
+                border: 1px solid var(--border);
+                margin-bottom: 10px;
+            }
+            .prompt-card h3 {
+                font-size: 0.9rem;
+                margin-bottom: 6px;
+            }
+            .prompt-card p {
+                font-size: 0.82rem;
+                line-height: 1.6;
+                color: var(--text-muted);
+            }
+            .hint-card {
+                border: 1px solid var(--border);
+                background: var(--bg-card);
+                border-radius: 9px;
+                padding: 9px 11px;
+                font-size: 0.76rem;
+                color: var(--text-muted);
+                cursor: pointer;
+                text-align: left;
+                width: 100%;
+            }
+            .hint-card b {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 8px;
+                color: var(--text);
+                font-size: 0.78rem;
+            }
+            .hint-card:hover {
+                border-color: var(--accent);
+            }
+            .hint-body {
+                display: none;
+                margin-top: 7px;
+                color: var(--text-muted);
+                line-height: 1.5;
+            }
+            .hint-card.revealed .hint-body {
+                display: block;
+            }
+
+            /* ── Self-check & vote ───────────────────────────────── */
+            .narrow {
+                max-width: 720px;
+                margin: 0 auto;
+            }
+            .handin-banner {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 11px 14px;
+                border-radius: 10px;
+                background: color-mix(in srgb, var(--green) 14%, transparent);
+                border: 1px solid color-mix(in srgb, var(--green) 35%, transparent);
+                color: var(--green-text);
+                font-size: 0.8rem;
+                font-weight: 600;
+                margin-bottom: 14px;
+            }
+            .emoji-row {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 10px;
+                margin-top: 6px;
+            }
+            .emoji-card {
+                border: 2px solid var(--border);
+                background: var(--bg-elevated);
+                border-radius: 12px;
+                padding: 16px 10px;
+                text-align: center;
+                cursor: pointer;
+                color: var(--text);
+            }
+            .emoji-card span {
+                font-size: 1.8rem;
+                display: block;
+                line-height: 1.2;
+            }
+            .emoji-card b {
+                display: block;
+                font-size: 0.82rem;
+                margin-top: 6px;
+            }
+            .emoji-card small {
+                display: block;
+                font-size: 0.69rem;
+                color: var(--text-dim);
+                margin-top: 2px;
+            }
+            .emoji-card:hover {
+                border-color: var(--border-light);
+            }
+            .emoji-card.selected {
+                border-color: var(--accent);
+                background: var(--accent-soft);
+            }
+            .emoji-card.selected b {
+                color: var(--accent-text);
+            }
+            .vote-grid {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 14px;
+            }
+            .vote-card {
+                border: 2px solid var(--border);
+                border-radius: 14px;
+                background: var(--bg-card);
+                padding: 16px;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                transition:
+                    border-color 0.15s,
+                    opacity 0.15s;
+            }
+            .vote-card.chosen {
+                border-color: var(--accent);
+                background:
+                    linear-gradient(180deg, color-mix(in srgb, var(--accent) 7%, transparent), transparent 50%),
+                    var(--bg-card);
+            }
+            .vote-grid.has-pick .vote-card:not(.chosen) {
+                opacity: 0.62;
+            }
+            .vote-card .label {
+                font-size: 0.68rem;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                color: var(--text-dim);
+                font-weight: 700;
+            }
+            .vote-card .text-body {
+                flex: 1;
+                font-size: 0.88rem;
+            }
+            .vote-progress {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                flex-wrap: wrap;
+                font-size: 0.76rem;
+                color: var(--text-dim);
+                margin-bottom: 12px;
+            }
+            .vote-progress .dots {
+                display: flex;
+                gap: 5px;
+            }
+            .vote-progress .dots i {
+                width: 22px;
+                height: 5px;
+                border-radius: 99px;
+                background: var(--border);
+            }
+            .vote-progress .dots i.done {
+                background: var(--accent);
+            }
+            .thanks {
+                display: none;
+                text-align: center;
+                padding: 30px 10px;
+            }
+            .thanks.show {
+                display: block;
+            }
+
+            @media (max-width: 1080px) {
+                .cols {
+                    grid-template-columns: 1fr;
+                }
+                .kpis {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+            }
+            @media (max-width: 1100px) {
+                .proj-body {
+                    grid-template-columns: 1fr;
+                }
+            }
+            @media (max-width: 980px) {
+                .rail {
+                    width: 198px;
+                }
+                .notes {
+                    display: none !important;
+                }
+                .write-body {
+                    grid-template-columns: 1fr;
+                }
+                .write-side {
+                    border-left: 0;
+                    border-top: 1px solid var(--border);
+                }
+            }
+            @media (max-width: 760px) {
+                .rail {
+                    display: none;
+                }
+                main {
+                    padding: 18px 14px 50px;
+                }
+                .stage-head {
+                    padding: 10px 14px;
+                }
+                .gallery,
+                .join-grid,
+                .vote-grid {
+                    grid-template-columns: 1fr;
+                }
+                .kpis {
+                    grid-template-columns: 1fr 1fr;
+                }
+                .proj-head {
+                    padding: 14px;
+                }
+                .proj-body {
+                    padding: 14px;
+                }
+                .proj-timer strong {
+                    font-size: 2.5rem;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <aside class="rail">
+            <div class="brand">
+                <div class="brand-mark">R</div>
+                <div>
+                    <b>RubricMaker</b>
+                    <small>Live writing · mockup</small>
+                </div>
+            </div>
+
+            <nav class="nav-group" aria-label="Teacher mockup screens">
+                <div class="nav-label">Teacher</div>
+                <button class="nav-item active" data-screen="t-setup">
+                    <span class="nav-num">01</span> Session setup
+                </button>
+                <button class="nav-item" data-screen="t-project">
+                    <span class="nav-num">02</span> Projector
+                </button>
+                <button class="nav-item" data-screen="t-finals">
+                    <span class="nav-num">03</span> Finals gallery
+                </button>
+                <button class="nav-item" data-screen="t-insights">
+                    <span class="nav-num">04</span> Session insights
+                </button>
+            </nav>
+
+            <nav class="nav-group" aria-label="Student mockup screens">
+                <div class="nav-label">Student</div>
+                <button class="nav-item" data-screen="s-join">
+                    <span class="nav-num">05</span> Join &amp; pick name
+                </button>
+                <button class="nav-item" data-screen="s-write">
+                    <span class="nav-num">06</span> Writing
+                </button>
+                <button class="nav-item" data-screen="s-selfcheck">
+                    <span class="nav-num">07</span> Self-check
+                </button>
+                <button class="nav-item" data-screen="s-vote">
+                    <span class="nav-num">08</span> Peer vote
+                </button>
+            </nav>
+
+            <div class="rail-foot">
+                <p>
+                    Design mockup for
+                    <a href="https://github.com/NesiciCoding/RubricMaker/issues/851">issue #851</a>. Not shipped UI.
+                </p>
+                <button class="theme-btn" id="themeBtn">
+                    <span id="themeLabel">Light mode</span>
+                    <span aria-hidden="true">◐</span>
+                </button>
+            </div>
+        </aside>
+
+        <div class="stage">
+            <header class="stage-head">
+                <div>
+                    <div class="kicker">Issue #851 · Live writing session</div>
+                    <h2 id="screenTitle">Teacher · Session setup</h2>
+                </div>
+                <div class="head-actions">
+                    <span class="mock-pill"><i></i> Mockup · not built</span>
+                    <button class="icon-btn" id="notesBtn" aria-pressed="false">Design notes</button>
+                </div>
+            </header>
+
+            <div class="stage-body">
+                <main>
+                    <!-- 01 · TEACHER SETUP -->
+                    <section class="screen active" id="t-setup">
+                        <div class="page-head">
+                            <div>
+                                <div class="crumbs">Live writing / New session</div>
+                                <h1>
+                                    The last day of summer
+                                    <span class="badge badge-draft">Draft</span>
+                                </h1>
+                                <p class="sub">4HAVO · English · 26 students · not started</p>
+                            </div>
+                            <div class="actions">
+                                <button class="btn btn-ghost">Save draft</button>
+                                <button class="btn btn-secondary" data-goto="s-join">Preview student view</button>
+                                <button class="btn btn-primary" data-goto="t-project">Start session</button>
+                            </div>
+                        </div>
+
+                        <div class="cols">
+                            <div>
+                                <div class="card">
+                                    <div class="card-head">
+                                        <div>
+                                            <h3>Prompt</h3>
+                                            <p>The only thing students see on their screen while they write.</p>
+                                        </div>
+                                        <span class="badge badge-neutral">Required</span>
+                                    </div>
+
+                                    <div class="field">
+                                        <label class="label" for="session-title">Session title</label>
+                                        <input class="input" id="session-title" value="The last day of summer" />
+                                    </div>
+
+                                    <div class="field">
+                                        <label class="label" for="session-prompt">Writing prompt</label>
+                                        <textarea class="textarea" id="session-prompt">Write a scene from the last day of summer. Use one sound, one smell and one thing nobody says out loud.</textarea>
+                                        <p class="hint">Keep it to one or two sentences. A tight prompt produces better five-minute writing.</p>
+                                    </div>
+
+                                    <div class="field">
+                                        <label class="label">Image (optional)</label>
+                                        <div class="image-drop">
+                                            <span>lake-evening.jpg · 1.2 MB</span>
+                                            <button type="button">Replace</button>
+                                        </div>
+                                        <p class="hint">Stored in the media bucket, never inside a share code. Max 2 MB.</p>
+                                    </div>
+
+                                    <div class="field">
+                                        <label class="label">Writing focus</label>
+                                        <div class="chip-row">
+                                            <button class="chip active" type="button">Sensory detail</button>
+                                            <button class="chip active" type="button">Show, don't tell</button>
+                                            <button class="chip" type="button">Dialogue</button>
+                                            <button class="chip" type="button">Tension</button>
+                                            <button class="chip" type="button">+ Focus</button>
+                                        </div>
+                                        <p class="hint">Shown to students as a small tag under the prompt. Not graded.</p>
+                                    </div>
+                                </div>
+
+                                <div class="card">
+                                    <div class="card-head">
+                                        <div>
+                                            <h3>Class &amp; roster</h3>
+                                            <p>Students pick their own name from this class. No accounts, no emails.</p>
+                                        </div>
+                                    </div>
+                                    <div class="chip-row">
+                                        <button class="chip active" type="button">4HAVO · 26</button>
+                                        <button class="chip" type="button">4VWO · 24</button>
+                                        <button class="chip" type="button">3HAVO · 28</button>
+                                    </div>
+
+                                    <label class="switch" style="margin-top: 14px">
+                                        <span class="switch-copy">
+                                            <b>Also open in the student portal</b>
+                                            <small>Students signed in to the portal see a "Live write" card in Assignments and join without typing the code.</small>
+                                        </span>
+                                        <input type="checkbox" checked />
+                                        <span class="track"></span>
+                                    </label>
+                                </div>
+
+                                <div class="card">
+                                    <div class="card-head">
+                                        <div>
+                                            <h3>Timing</h3>
+                                            <p>One round by default, configurable. The timer is server-authoritative, so pausing applies to the whole class.</p>
+                                        </div>
+                                        <span class="badge badge-neutral">10 min total</span>
+                                    </div>
+
+                                    <div class="field">
+                                        <div class="stepper">
+                                            <span>Writing</span>
+                                            <b>5 min</b>
+                                        </div>
+                                    </div>
+                                    <div class="field">
+                                        <div class="stepper">
+                                            <span>Self-check</span>
+                                            <b>2 min</b>
+                                        </div>
+                                    </div>
+                                    <div class="field">
+                                        <div class="stepper">
+                                            <span>Reading &amp; voting</span>
+                                            <b>3 min</b>
+                                        </div>
+                                    </div>
+                                    <div class="field">
+                                        <div class="stepper">
+                                            <span>Rounds</span>
+                                            <b>1</b>
+                                        </div>
+                                    </div>
+                                    <p class="hint">
+                                        Writing time can be extended live from the projector controls. Auto hand-in at 0:00.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="card">
+                                    <div class="card-head">
+                                        <div>
+                                            <h3>Session options</h3>
+                                            <p>What the class sees and does after writing.</p>
+                                        </div>
+                                    </div>
+
+                                    <label class="switch">
+                                        <span class="switch-copy">
+                                            <b>Peer voting</b>
+                                            <small>Students read two classmates' texts and pick the stronger one.</small>
+                                        </span>
+                                        <input type="checkbox" checked />
+                                        <span class="track"></span>
+                                    </label>
+                                    <label class="switch">
+                                        <span class="switch-copy">
+                                            <b>Anonymous texts</b>
+                                            <small>Classmates never see names. You always do.</small>
+                                        </span>
+                                        <input type="checkbox" checked />
+                                        <span class="track"></span>
+                                    </label>
+                                    <label class="switch">
+                                        <span class="switch-copy">
+                                            <b>Live CEFR estimate</b>
+                                            <small>Vocabulary-based estimate after 25 words. Not a grade.</small>
+                                        </span>
+                                        <input type="checkbox" checked />
+                                        <span class="track"></span>
+                                    </label>
+                                    <label class="switch">
+                                        <span class="switch-copy">
+                                            <b>Hint cards</b>
+                                            <small>Teacher-authored tips students reveal one at a time. This switch hides them entirely.</small>
+                                        </span>
+                                        <input type="checkbox" checked />
+                                        <span class="track"></span>
+                                    </label>
+                                    <label class="switch">
+                                        <span class="switch-copy">
+                                            <b>Progress board</b>
+                                            <small>Words written per student, ranked. Shows effort, not quality.</small>
+                                        </span>
+                                        <input type="checkbox" checked />
+                                        <span class="track"></span>
+                                    </label>
+                                    <label class="switch">
+                                        <span class="switch-copy">
+                                            <b>Lock joins after start</b>
+                                            <small>Late students can still watch the finals, but cannot write.</small>
+                                        </span>
+                                        <input type="checkbox" />
+                                        <span class="track"></span>
+                                    </label>
+                                    <label class="switch">
+                                        <span class="switch-copy">
+                                            <b>Moderate before finals</b>
+                                            <small>Hold the gallery until you remove texts that don't meet expectations.</small>
+                                        </span>
+                                        <input type="checkbox" checked />
+                                        <span class="track"></span>
+                                    </label>
+                                </div>
+
+                                <div class="card">
+                                    <div class="card-head">
+                                        <div>
+                                            <h3>Rubric</h3>
+                                            <p>Optional. Enables "send to grading" after the session.</p>
+                                        </div>
+                                    </div>
+                                    <select class="select">
+                                        <option>English Writing · B1 paragraph</option>
+                                        <option>English Writing · short story</option>
+                                        <option>No rubric — practice only</option>
+                                    </select>
+                                    <p class="hint">
+                                        Session texts are not graded automatically. Sending them to grading creates normal essay
+                                        submissions you can score with this rubric.
+                                    </p>
+                                </div>
+
+                                <div class="card">
+                                    <div class="code-preview">
+                                        <div>
+                                            <small>Join code</small>
+                                            <code>RM-4821</code>
+                                        </div>
+                                        <button type="button" class="copy-code">Copy link</button>
+                                    </div>
+                                    <div class="summary-line"><span>Class</span><b>4HAVO · 26</b></div>
+                                    <div class="summary-line"><span>Total time</span><b>10 min</b></div>
+                                    <div class="summary-line"><span>After writing</span><b>Self-check + vote</b></div>
+                                    <button class="btn btn-primary full" data-goto="t-project" style="margin-top: 12px">
+                                        Start session
+                                    </button>
+                                    <p class="hint" style="text-align: center">
+                                        Opens the projector window and the student join screen.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 02 · TEACHER PROJECTOR -->
+                    <section class="screen" id="t-project">
+                        <div class="page-head">
+                            <div>
+                                <div class="crumbs">Live writing / Projector window</div>
+                                <h1>
+                                    Projector
+                                    <span class="badge badge-live"><i></i> Writing</span>
+                                </h1>
+                                <p class="sub">Second screen · the console stays open on your laptop</p>
+                            </div>
+                            <div class="actions">
+                                <button class="btn btn-secondary" data-goto="t-finals">End writing</button>
+                                <button class="btn btn-ghost" data-goto="t-setup">Back to setup</button>
+                            </div>
+                        </div>
+
+                        <div class="projector">
+                            <div class="proj-head">
+                                <div>
+                                    <div class="kicker">4HAVO · English</div>
+                                    <h1>The last day of summer</h1>
+                                    <p class="sub">Sensory detail · Show, don't tell</p>
+                                </div>
+                                <div class="proj-timer">
+                                    <small>Time left</small>
+                                    <strong>03:42</strong>
+                                    <div class="bar"><i style="width: 38%"></i></div>
+                                </div>
+                                <div class="proj-controls">
+                                    <button class="btn btn-secondary btn-sm">❚❚ Pause</button>
+                                    <button class="btn btn-secondary btn-sm">+1 min</button>
+                                    <button class="btn btn-primary btn-sm" data-goto="t-finals">End writing</button>
+                                </div>
+                            </div>
+
+                            <div class="proj-body">
+                                <div class="proj-left">
+                                    <div class="join-card">
+                                        <small>Students join at</small>
+                                        <span class="url">rubricmaker.app/join</span>
+                                        <div class="big-code">RM-4821</div>
+                                        <div class="qr" role="img" aria-label="QR code placeholder"></div>
+                                        <p class="joined"><b>19 of 26</b> writers joined</p>
+                                    </div>
+                                    <div class="prompt-mini">
+                                        <p class="quote">
+                                            Write a scene from the last day of summer. Use one sound, one smell and one
+                                            thing nobody says out loud.
+                                        </p>
+                                        <div class="tags">FOCUS · Sensory detail · Show, don't tell</div>
+                                    </div>
+                                </div>
+
+                                <div class="proj-right">
+                                    <div class="proj-stats">
+                                        <span><b>3,184</b> words written</span>
+                                        <span>Class estimate <b>B1</b></span>
+                                        <span><b>14</b> on pace · <b>5</b> behind</span>
+                                        <span><b>19</b> writing</span>
+                                    </div>
+
+                                    <div class="board">
+                                        <div class="board-head">
+                                            <span>Writer</span>
+                                            <span style="text-align: right">Words</span>
+                                            <span>Level</span>
+                                        </div>
+                                        <div class="board-row top">
+                                            <div class="who">
+                                                <span class="avatar">W4</span>
+                                                <span>Writer 04</span>
+                                                <div class="meter"><i style="width: 96%"></i></div>
+                                            </div>
+                                            <span class="words">186</span>
+                                            <span class="lvl b2">B2</span>
+                                        </div>
+                                        <div class="board-row">
+                                            <div class="who">
+                                                <span class="avatar">W11</span>
+                                                <span>Writer 11</span>
+                                                <div class="meter"><i style="width: 84%"></i></div>
+                                            </div>
+                                            <span class="words">164</span>
+                                            <span class="lvl b1">B1</span>
+                                        </div>
+                                        <div class="board-row">
+                                            <div class="who">
+                                                <span class="avatar">W02</span>
+                                                <span>Writer 02</span>
+                                                <div class="meter"><i style="width: 78%"></i></div>
+                                            </div>
+                                            <span class="words">151</span>
+                                            <span class="lvl b1">B1</span>
+                                        </div>
+                                        <div class="board-row">
+                                            <div class="who">
+                                                <span class="avatar">W19</span>
+                                                <span>Writer 19</span>
+                                                <div class="meter"><i style="width: 76%"></i></div>
+                                            </div>
+                                            <span class="words">148</span>
+                                            <span class="lvl b1">B1</span>
+                                        </div>
+                                        <div class="board-row">
+                                            <div class="who">
+                                                <span class="avatar">W07</span>
+                                                <span>Writer 07</span>
+                                                <div class="meter"><i style="width: 68%"></i></div>
+                                            </div>
+                                            <span class="words">132</span>
+                                            <span class="lvl a2">A2</span>
+                                        </div>
+                                        <div class="board-row">
+                                            <div class="who">
+                                                <span class="avatar">W15</span>
+                                                <span>Writer 15</span>
+                                                <div class="meter"><i style="width: 62%"></i></div>
+                                            </div>
+                                            <span class="words">121</span>
+                                            <span class="lvl b1">B1</span>
+                                        </div>
+                                        <div class="board-row">
+                                            <div class="who">
+                                                <span class="avatar">W23</span>
+                                                <span>Writer 23</span>
+                                                <div class="meter"><i style="width: 50%"></i></div>
+                                            </div>
+                                            <span class="words">98</span>
+                                            <span class="lvl a2">A2</span>
+                                        </div>
+                                        <div class="board-row">
+                                            <div class="who">
+                                                <span class="avatar">W09</span>
+                                                <span>Writer 09</span>
+                                                <div class="meter"><i style="width: 38%"></i></div>
+                                            </div>
+                                            <span class="words">74</span>
+                                            <span class="lvl none">—</span>
+                                        </div>
+                                    </div>
+
+                                    <p class="proj-note">
+                                        ⓘ Ranked by words written, not quality. Names hidden on this screen while
+                                        anonymous mode is on.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="proj-foot">
+                                <span>Drafts save automatically · texts never appear on this screen before the finals</span>
+                                <span>19 writing · 2 joined late · 5 not joined</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 03 · FINALS -->
+                    <section class="screen" id="t-finals" data-revealed="false">
+                        <div class="page-head">
+                            <div>
+                                <div class="crumbs">Live writing / After the timer</div>
+                                <h1>
+                                    Finals
+                                    <span class="badge badge-neutral">26 handed in</span>
+                                </h1>
+                                <p class="sub">Read together, then discuss what worked. Vote counts are yours, not a grade.</p>
+                            </div>
+                            <div class="actions">
+                                <button class="btn btn-secondary" data-goto="t-insights">Session insights</button>
+                                <button class="btn btn-primary" data-goto="t-project">Back to projector</button>
+                            </div>
+                        </div>
+
+                        <div class="toolbar">
+                            <div class="left">
+                                <span class="chip active">Round 1</span>
+                                <span class="chip">Most votes</span>
+                                <span class="chip">Longest</span>
+                                <span class="chip">Newest</span>
+                            </div>
+                            <div class="right">
+                                <button class="btn btn-secondary btn-sm" id="revealBtn">Reveal names</button>
+                                <button class="btn btn-ghost btn-sm">Hide a text</button>
+                                <button class="btn btn-primary btn-sm">Show on projector</button>
+                            </div>
+                        </div>
+
+                        <div class="gallery">
+                            <article class="text-card spotlight">
+                                <div class="text-top">
+                                    <span class="who-pill">
+                                        <span class="avatar">W4</span>
+                                        <span class="anon">Writer 04</span>
+                                        <span class="real">Mila de Vries</span>
+                                        <span class="lvl b2">B2</span>
+                                    </span>
+                                    <span class="votes">★ 9 votes</span>
+                                </div>
+                                <p class="text-body">
+                                    The last day of summer always feels strange. My friends and I went to the lake one more
+                                    time, <mark class="hl">although</mark> the water was already cold. We didn't talk about
+                                    school, <mark class="hl">because</mark> nobody wanted to say it out loud. When the sun went
+                                    down, my mother called us in. <mark class="hl">I still remember</mark> how quiet the street
+                                    was. Even the dogs stopped barking, <mark class="hl">as if</mark> the whole neighbourhood was
+                                    holding its breath.
+                                </p>
+                                <div class="text-meta">
+                                    <div class="stat-chips">
+                                        <span>72 words</span>
+                                        <span>6 sentences</span>
+                                        <span>12.0 words/sentence</span>
+                                        <span>3 transitions</span>
+                                        <span>A2/B1 vocabulary</span>
+                                    </div>
+                                    <div class="text-actions">
+                                        <button class="btn btn-secondary btn-sm">Spotlight</button>
+                                        <button class="btn btn-ghost btn-sm">Send to grading</button>
+                                    </div>
+                                </div>
+                            </article>
+
+                            <article class="text-card">
+                                <div class="text-top">
+                                    <span class="who-pill">
+                                        <span class="avatar">W11</span>
+                                        <span class="anon">Writer 11</span>
+                                        <span class="real">Noah Bakker</span>
+                                        <span class="lvl b1">B1</span>
+                                    </span>
+                                    <span class="votes">★ 7 votes</span>
+                                </div>
+                                <p class="text-body">
+                                    The ice cream truck played its song for the last time. My little brother ran outside
+                                    <mark class="hl">before</mark> it even turned the corner. <mark class="hl">For a moment</mark>
+                                    I wanted to go with him, <mark class="hl">but</mark> I stayed on the step and watched. Tomorrow
+                                    the street would be full of schoolbags again.
+                                </p>
+                                <div class="text-meta">
+                                    <div class="stat-chips"><span>54 words</span><span>4 sentences</span></div>
+                                    <div class="text-actions">
+                                        <button class="btn btn-ghost btn-sm">Send to grading</button>
+                                    </div>
+                                </div>
+                            </article>
+
+                            <article class="text-card">
+                                <div class="text-top">
+                                    <span class="who-pill">
+                                        <span class="avatar">W02</span>
+                                        <span class="anon">Writer 02</span>
+                                        <span class="real">Sara Yılmaz</span>
+                                        <span class="lvl b1">B1</span>
+                                    </span>
+                                    <span class="votes">★ 5 votes</span>
+                                </div>
+                                <p class="text-body">
+                                    Nobody said anything on the bike ride home. The air smelled like cut grass and someone's
+                                    barbecue. I kept thinking about the sentence I had written in my notebook, the one I would
+                                    never show anyone.
+                                </p>
+                                <div class="text-meta">
+                                    <div class="stat-chips"><span>41 words</span><span>3 sentences</span></div>
+                                    <div class="text-actions">
+                                        <button class="btn btn-ghost btn-sm">Send to grading</button>
+                                    </div>
+                                </div>
+                            </article>
+
+                            <article class="text-card">
+                                <div class="text-top">
+                                    <span class="who-pill">
+                                        <span class="avatar">W19</span>
+                                        <span class="anon">Writer 19</span>
+                                        <span class="real">Daan Smit</span>
+                                        <span class="lvl b1">B1</span>
+                                    </span>
+                                    <span class="votes">★ 3 votes</span>
+                                </div>
+                                <p class="text-body">
+                                    We promised to meet at the same spot next year. <mark class="hl">Of course</mark> we knew
+                                    that some of us would move away. Still, we said it, because saying it made the evening last
+                                    a little longer.
+                                </p>
+                                <div class="text-meta">
+                                    <div class="stat-chips"><span>38 words</span><span>3 sentences</span></div>
+                                    <div class="text-actions">
+                                        <button class="btn btn-ghost btn-sm">Send to grading</button>
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
+
+                        <p class="hint" style="margin-top: 14px">
+                            26 texts · highlighted transition words and sentence-length stats are deterministic, no AI
+                            commentary. Students see only the anonymous gallery, never the votes of their classmates.
+                        </p>
+                    </section>
+
+                    <!-- 04 · INSIGHTS -->
+                    <section class="screen" id="t-insights">
+                        <div class="page-head">
+                            <div>
+                                <div class="crumbs">Live writing / Session closed</div>
+                                <h1>Session insights</h1>
+                                <p class="sub">The last day of summer · 4HAVO · 10 Nov 2026 · 10 min</p>
+                            </div>
+                            <div class="actions">
+                                <button class="btn btn-ghost">Export CSV</button>
+                                <button class="btn btn-secondary">Run another round</button>
+                                <button class="btn btn-primary">Send all to grading</button>
+                            </div>
+                        </div>
+
+                        <div class="kpis">
+                            <div class="kpi">
+                                <small>Wrote something</small>
+                                <b>24 / 26</b>
+                                <span>19 joined before the timer, 5 late</span>
+                            </div>
+                            <div class="kpi">
+                                <small>Median words</small>
+                                <b>118</b>
+                                <span>range 22–186</span>
+                            </div>
+                            <div class="kpi">
+                                <small>CEFR estimate</small>
+                                <b>B1</b>
+                                <span>early indicator only · not aggregated</span>
+                            </div>
+                            <div class="kpi">
+                                <small>Peer votes cast</small>
+                                <b>23 / 24</b>
+                                <span>1 student left before voting</span>
+                            </div>
+                        </div>
+
+                        <div class="cols">
+                            <div class="card">
+                                <div class="card-head">
+                                    <div>
+                                        <h3>By student</h3>
+                                        <p>Session data only. Nothing here changes a grade or the CEFR profile.</p>
+                                    </div>
+                                    <span class="badge badge-neutral">26 rows</span>
+                                </div>
+
+                                <div style="overflow-x: auto">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Student</th>
+                                                <th class="num">Words</th>
+                                                <th>CEFR est.</th>
+                                                <th>Self-check</th>
+                                                <th class="num">Votes</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>
+                                                    <span class="name"><span class="avatar">MV</span> Mila de Vries</span>
+                                                </td>
+                                                <td class="num">186</td>
+                                                <td><span class="lvl b2">B2</span></td>
+                                                <td>🙂 Happy</td>
+                                                <td class="num">9</td>
+                                                <td><span class="badge badge-live">Handed in</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <span class="name"><span class="avatar">NB</span> Noah Bakker</span>
+                                                </td>
+                                                <td class="num">164</td>
+                                                <td><span class="lvl b1">B1</span></td>
+                                                <td>🙂 Happy</td>
+                                                <td class="num">7</td>
+                                                <td><span class="badge badge-live">Handed in</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <span class="name"><span class="avatar">SY</span> Sara Yılmaz</span>
+                                                </td>
+                                                <td class="num">151</td>
+                                                <td><span class="lvl b1">B1</span></td>
+                                                <td>😐 Neutral</td>
+                                                <td class="num">5</td>
+                                                <td><span class="badge badge-live">Handed in</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <span class="name"><span class="avatar">DS</span> Daan Smit</span>
+                                                </td>
+                                                <td class="num">148</td>
+                                                <td><span class="lvl b1">B1</span></td>
+                                                <td>🙂 Happy</td>
+                                                <td class="num">3</td>
+                                                <td><span class="badge badge-live">Handed in</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <span class="name"><span class="avatar">LK</span> Lina Kovač</span>
+                                                </td>
+                                                <td class="num">96</td>
+                                                <td><span class="lvl a2">A2</span></td>
+                                                <td>😕 Not happy</td>
+                                                <td class="num">2</td>
+                                                <td><span class="badge badge-live">Handed in</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <span class="name"><span class="avatar">JB</span> Jort Bijlsma</span>
+                                                </td>
+                                                <td class="num">22</td>
+                                                <td><span class="lvl none">—</span></td>
+                                                <td>—</td>
+                                                <td class="num">0</td>
+                                                <td><span class="badge badge-neutral">Joined late</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <span class="name"><span class="avatar">EM</span> Emma Mulder</span>
+                                                </td>
+                                                <td class="num">0</td>
+                                                <td><span class="lvl none">—</span></td>
+                                                <td>—</td>
+                                                <td class="num">0</td>
+                                                <td><span class="badge badge-neutral">Did not join</span></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="card">
+                                    <div class="card-head">
+                                        <div>
+                                            <h3>Self-check</h3>
+                                            <p>How the class felt about their own text.</p>
+                                        </div>
+                                    </div>
+                                    <div class="self-split" role="img" aria-label="62% happy, 28% neutral, 10% not happy">
+                                        <i style="width: 62%; background: var(--green)"></i>
+                                        <i style="width: 28%; background: var(--yellow)"></i>
+                                        <i style="width: 10%; background: var(--red)"></i>
+                                    </div>
+                                    <div class="legend">
+                                        <span><i class="dot" style="background: var(--green)"></i>🙂 Happy 62%</span>
+                                        <span><i class="dot" style="background: var(--yellow)"></i>😐 Neutral 28%</span>
+                                        <span><i class="dot" style="background: var(--red)"></i>😕 Not happy 10%</span>
+                                    </div>
+                                </div>
+
+                                <div class="card">
+                                    <div class="card-head">
+                                        <div>
+                                            <h3>Follow-ups</h3>
+                                            <p>What this session can feed into.</p>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-secondary full" style="justify-content: flex-start">
+                                        Send all texts to grading · B1 paragraph
+                                    </button>
+                                    <button class="btn btn-ghost full" style="justify-content: flex-start; margin-top: 6px">
+                                        Open Emma Mulder's portfolio
+                                    </button>
+                                    <button class="btn btn-ghost full" style="justify-content: flex-start; margin-top: 6px">
+                                        Repeat this prompt next week
+                                    </button>
+                                    <p class="hint">
+                                        Grades stay manual. These texts become essay submissions and appear in the normal essay
+                                        list, grading screen and student portal.
+                                    </p>
+                                </div>
+
+                                <div class="card">
+                                    <div class="card-head">
+                                        <div>
+                                            <h3>Privacy</h3>
+                                        </div>
+                                    </div>
+                                    <p class="dim">
+                                        Names were visible to you throughout. Classmates only saw anonymous texts during voting
+                                        and finals. Texts are retained with the essay data and can be deleted per session.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 05 · STUDENT JOIN -->
+                    <section class="screen" id="s-join">
+                        <div class="student-shell">
+                            <div class="student-brand">
+                                <div class="brand-mark">R</div>
+                                <b>RubricMaker · Live write</b>
+                            </div>
+
+                            <div class="join-grid">
+                                <div class="card">
+                                    <div class="card-head">
+                                        <div>
+                                            <h3>Join a session</h3>
+                                            <p>Your teacher will show the code on the board.</p>
+                                        </div>
+                                    </div>
+                                    <label class="label" for="join-code">Session code</label>
+                                    <input class="input code-input" id="join-code" value="RM4821" autocomplete="off" />
+                                    <div class="class-found">
+                                        <span aria-hidden="true">✓</span>
+                                        <span><b>4HAVO · English</b> — The last day of summer</span>
+                                    </div>
+                                    <button class="btn btn-primary full" style="margin-top: 14px">Find my name</button>
+                                    <p class="privacy-note">
+                                        <span aria-hidden="true">🔒</span>
+                                        <span>
+                                            No account or email needed. Your name is only visible to your teacher, never to
+                                            classmates.
+                                        </span>
+                                    </p>
+                                </div>
+
+                                <div class="card">
+                                    <div class="card-head">
+                                        <div>
+                                            <h3>Who are you?</h3>
+                                            <p>Pick your name from the class list.</p>
+                                        </div>
+                                        <span class="badge badge-neutral">Step 2 of 2</span>
+                                    </div>
+
+                                    <label class="label" for="name-search">Find your name</label>
+                                    <input class="input" id="name-search" placeholder="Type to filter 26 names" />
+                                    <div class="name-grid" role="listbox" aria-label="Class roster">
+                                        <button class="name-btn" type="button">
+                                            <span class="avatar">AA</span> Aya Amin
+                                        </button>
+                                        <button class="name-btn" type="button">
+                                            <span class="avatar">NB</span> Noah Bakker
+                                        </button>
+                                        <button class="name-btn" type="button">
+                                            <span class="avatar">JB</span> Jort Bijlsma
+                                        </button>
+                                        <button class="name-btn" type="button">
+                                            <span class="avatar">MV</span> Mila de Vries
+                                        </button>
+                                        <button class="name-btn" type="button">
+                                            <span class="avatar">LK</span> Lina Kovač
+                                        </button>
+                                        <button class="name-btn" type="button">
+                                            <span class="avatar">EM</span> Emma Mulder
+                                        </button>
+                                        <button class="name-btn" type="button">
+                                            <span class="avatar">DS</span> Daan Smit
+                                        </button>
+                                        <button class="name-btn" type="button">
+                                            <span class="avatar">SY</span> Sara Yılmaz
+                                        </button>
+                                    </div>
+                                    <p class="hint">Not in the list? Ask your teacher — you may be in a different class.</p>
+
+                                    <button class="btn btn-primary full" style="margin-top: 14px" data-goto="s-write">
+                                        Join as …
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 06 · STUDENT WRITING -->
+                    <section class="screen" id="s-write">
+                        <div class="student-shell">
+                            <div class="write-shell">
+                                <div class="write-head">
+                                    <div class="title">
+                                        <h1>The last day of summer</h1>
+                                        <p>4HAVO · English · Mila de Vries</p>
+                                    </div>
+                                    <div class="write-meta">
+                                        <span class="timer">⏱ <span id="writeTimer">02:14</span></span>
+                                        <span><b id="wordCount">64</b> words</span>
+                                        <span class="lvl est" title="Vocabulary-based estimate, not a grade">B1 est.</span>
+                                    </div>
+                                </div>
+
+                                <div class="write-body">
+                                    <div class="editor-wrap">
+                                        <div class="editor-toolbar" aria-label="Formatting">
+                                            <button type="button"><b>B</b></button>
+                                            <button type="button"><i>I</i></button>
+                                            <button type="button"><u>U</u></button>
+                                            <span class="sep"></span>
+                                            <button type="button">“ ”</button>
+                                            <button type="button">• List</button>
+                                            <span class="sep"></span>
+                                            <button type="button">Undo</button>
+                                        </div>
+                                        <div
+                                            class="editor"
+                                            id="sampleText"
+                                            contenteditable="true"
+                                            spellcheck="true"
+                                            role="textbox"
+                                            aria-multiline="true"
+                                            aria-label="Your writing"
+                                        >
+                                            <p>
+                                                The last day of summer always feels strange. My friends and I went to the lake
+                                                one more time, although the water was already cold. We didn't talk about
+                                                school, because nobody wanted to say it out loud.
+                                            </p>
+                                            <p>
+                                                When the sun went down, my mother called us in. I still remember how quiet the
+                                                street was.
+                                            </p>
+                                        </div>
+                                        <div class="write-foot">
+                                            <span>✓ Saved just now · your teacher can see you are writing</span>
+                                            <span>Need to stop? Ask your teacher before leaving.</span>
+                                        </div>
+                                    </div>
+
+                                    <aside class="write-side">
+                                        <div class="prompt-card">
+                                            <div class="img" role="img" aria-label="Evening light over a lake"></div>
+                                            <h3>Your prompt</h3>
+                                            <p>
+                                                Write a scene from the last day of summer. Use one sound, one smell and one
+                                                thing nobody says out loud.
+                                            </p>
+                                            <div class="chip-row" style="margin-top: 10px">
+                                                <span class="chip active" style="cursor: default">Sensory detail</span>
+                                                <span class="chip active" style="cursor: default">Show, don't tell</span>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <div class="label" style="margin-bottom: 7px">Stuck? Open a hint</div>
+                                            <button class="hint-card" type="button">
+                                                <b>Start with a sound <span aria-hidden="true">+</span></b>
+                                                <span class="hint-body">Ice cream trucks, cicadas, a screen door. A sound places the reader in the scene faster than a description.</span>
+                                            </button>
+                                            <button class="hint-card" type="button" style="margin-top: 6px">
+                                                <b>Use one small object <span aria-hidden="true">+</span></b>
+                                                <span class="hint-body">A wet towel, a half-finished drink. Let the object carry the feeling instead of naming it.</span>
+                                            </button>
+                                            <button class="hint-card" type="button" style="margin-top: 6px">
+                                                <b>End on what is not said <span aria-hidden="true">+</span></b>
+                                                <span class="hint-body">Try ending with a line of dialogue or a small action that hints at the change.</span>
+                                            </button>
+                                        </div>
+
+                                        <div class="divider"></div>
+                                        <p class="dim">
+                                            Auto hand-in at 0:00. You'll get a moment to reflect, then read two class texts.
+                                        </p>
+                                        <button class="btn btn-secondary full" data-goto="s-selfcheck">Hand in early</button>
+                                    </aside>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 07 · SELF-CHECK -->
+                    <section class="screen" id="s-selfcheck">
+                        <div class="narrow">
+                            <div class="handin-banner">
+                                <span aria-hidden="true">✓</span>
+                                Time's up — your text was handed in. Nothing else to submit.
+                            </div>
+
+                            <div class="card">
+                                <div class="page-head" style="margin-bottom: 12px">
+                                    <div>
+                                        <div class="crumbs">The last day of summer · 64 words</div>
+                                        <h1 style="font-size: 1.35rem">How do you feel about your text?</h1>
+                                        <p class="sub">Be honest — your teacher uses this to plan the next lesson, not to grade you.</p>
+                                    </div>
+                                </div>
+
+                                <div class="emoji-row">
+                                    <button class="emoji-card" type="button">
+                                        <span aria-hidden="true">🙂</span>
+                                        <b>Happy</b>
+                                        <small>It says what I wanted to say</small>
+                                    </button>
+                                    <button class="emoji-card selected" type="button">
+                                        <span aria-hidden="true">😐</span>
+                                        <b>Neutral</b>
+                                        <small>It's okay, not my best</small>
+                                    </button>
+                                    <button class="emoji-card" type="button">
+                                        <span aria-hidden="true">😕</span>
+                                        <b>Not happy</b>
+                                        <small>I would write it differently</small>
+                                    </button>
+                                </div>
+
+                                <div class="field">
+                                    <label class="label" for="self-note">What would you change? (optional)</label>
+                                    <input class="input" id="self-note" placeholder="One line is enough" />
+                                </div>
+
+                                <button class="btn btn-primary full" style="margin-top: 14px" data-goto="s-vote">
+                                    Continue to reading
+                                </button>
+                                <p class="hint" style="text-align: center">
+                                    Your self-check is visible to your teacher, not to classmates.
+                                </p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 08 · VOTE -->
+                    <section class="screen" id="s-vote">
+                        <div class="narrow">
+                            <div class="page-head">
+                                <div>
+                                    <div class="crumbs">Peer reading · 1 of 2</div>
+                                    <h1>Which text is stronger?</h1>
+                                    <p class="sub">Both texts are from your class. Names are hidden — choose the one that works better.</p>
+                                </div>
+                            </div>
+
+                            <div class="vote-progress">
+                                <span>Your vote is private. Your teacher sees the results, not your name.</span>
+                                <span class="dots" aria-hidden="true"><i class="done"></i><i></i></span>
+                            </div>
+
+                            <div class="vote-grid" id="voteGrid">
+                                <article class="vote-card">
+                                    <span class="label">Text A</span>
+                                    <p class="text-body">
+                                        The ice cream truck played its song for the last time. My little brother ran outside
+                                        before it even turned the corner. For a moment I wanted to go with him, but I stayed on
+                                        the step and watched. Tomorrow the street would be full of schoolbags again.
+                                    </p>
+                                    <div class="text-meta" style="border-top: 0; padding-top: 0">
+                                        <span>54 words</span>
+                                        <span class="lvl b1">B1</span>
+                                    </div>
+                                    <button class="btn btn-secondary full vote-btn">This one is stronger</button>
+                                </article>
+
+                                <article class="vote-card">
+                                    <span class="label">Text B</span>
+                                    <p class="text-body">
+                                        Summer was fun. We went to the beach a lot. I liked the ice cream and the warm
+                                        weather. Now it is finished and I am sad about it, but I also want to see my friends at
+                                        school again.
+                                    </p>
+                                    <div class="text-meta" style="border-top: 0; padding-top: 0">
+                                        <span>43 words</span>
+                                        <span class="lvl a2">A2</span>
+                                    </div>
+                                    <button class="btn btn-secondary full vote-btn">This one is stronger</button>
+                                </article>
+                            </div>
+
+                            <div class="thanks" id="voteThanks">
+                                <p style="font-size: 1.4rem; margin-bottom: 6px" aria-hidden="true">✓</p>
+                                <h2 style="font-size: 1.15rem">Vote saved</h2>
+                                <p class="muted" style="font-size: 0.85rem; margin-top: 4px">
+                                    One more pair, then your teacher will show the finals.
+                                </p>
+                            </div>
+
+                            <p class="hint" style="text-align: center; margin-top: 16px">
+                                You never see your own text and never vote on the same classmate twice.
+                            </p>
+                        </div>
+                    </section>
+                </main>
+
+                <aside class="notes" id="notes" aria-label="Design notes">
+                    <h3>Design notes</h3>
+                    <ul id="notesList"></ul>
+                </aside>
+            </div>
+        </div>
+
+        <script>
+            const screenTitles = {
+                't-setup': 'Teacher · Session setup',
+                't-project': 'Teacher · Projector while the class writes',
+                't-finals': 'Teacher · Finals gallery',
+                't-insights': 'Teacher · Session insights',
+                's-join': 'Student · Join with a code and pick a name',
+                's-write': 'Student · Writing screen',
+                's-selfcheck': 'Student · Self-check after hand-in',
+                's-vote': 'Student · Read two texts and vote',
+            };
+
+            const screenNotes = {
+                't-setup': [
+                    'Prompt authoring mirrors the Essay Builder card rhythm: prompt, image, timing, rubric. Image lives in the media bucket — never in a share code.',
+                    'Roster is the class list already in the app, so every text is attributable without student accounts or roster sync.',
+                    'Options choose the social shape of the session: voting, anonymity, hints, progress board, join lock and moderation. Defaults are the safe classroom set.',
+                    'Rounds are configurable (default one). Each round repeats the same prompt, keeps the same roster identity and reopens voting for that round.',
+                    'Hints are written by the teacher and switched on or off per session. No generated hints, images or commentary anywhere in the flow.',
+                ],
+                't-project': [
+                    'A separate window/route so the classroom screen is not the teacher console. It survives refresh and reconnect.',
+                    'Join URL + 6-character code, large enough to read from the back row. QR is a convenience, not the primary path.',
+                    'The board ranks words written, not quality, and is labelled as progress. It is switchable off so it never becomes a public ranking of writing.',
+                    'The CEFR chip is an estimate from the existing vocabulary profiler, shown only after 25 words. It is never a grade.',
+                    'Texts never travel to the projector before finals and never over the broadcast channel.',
+                ],
+                't-finals': [
+                    'Anonymous by default; Reveal names is an explicit teacher action. Classmates only ever see the anonymous view.',
+                    'Highlights are deterministic (transition words, sentence stats) — no AI commentary about the writing.',
+                    'Send to grading is opt-in and creates normal EssaySubmissions, so the existing grading and portfolio flows take over.',
+                    'Moderation is a first-class action: hide/replace before this gallery reaches the projector.',
+                ],
+                't-insights': [
+                    'Same summary language as the rest of the app: KPI tiles, a roster table, self-check split, follow-up actions.',
+                    'Nothing here mutates grades or the CEFR profile. Session CEFR remains a vocabulary estimate.',
+                    'Per-student rows link to the existing profile; the session becomes another data point inside it, not a parallel record.',
+                    'Retention follows essay data, with a per-session delete.',
+                ],
+                's-join': [
+                    'Code first, then the roster name picker — the class list only exists behind a valid, unexpired code.',
+                    'Names are buttons in a normal list so keyboard and screen-reader users can pick without a custom combobox.',
+                    'No account or email. Privacy copy is visible, not buried.',
+                    'Portal students skip code entry and arrive with their name pre-selected for confirmation.',
+                ],
+                's-write': [
+                    'Deliberately close to the existing StudentEssayPage: same editor, timer, word count and prompt sidebar.',
+                    'The CEFR chip is dashed and labelled “est.” until the text is long enough; it never invites students to game a level.',
+                    'Hints open one at a time and are never required. They scaffold without giving content.',
+                    'Draft saving and auto hand-in reuse the existing timed-attempt and draft mechanisms.',
+                ],
+                's-selfcheck': [
+                    'Three plain-language options with emoji plus a one-line optional note. No rubric, no score, no judgement.',
+                    'The hand-in banner is explicit so students who saw the timer hit zero know their text was saved.',
+                    'Copy tells students the teacher uses this for planning, which keeps self-assessment honest.',
+                ],
+                's-vote': [
+                    'Two anonymous class texts, never the student’s own and never the same writer twice.',
+                    'One pick, clearly labelled. No scores, no comments, no way to identify the writer.',
+                    'Immediate “vote saved” acknowledgement; results go to the teacher, not back to students.',
+                    'This is deliberately lighter than the existing rubric-based peer review, which remains the deep option.',
+                ],
+            };
+
+            const screenIds = Object.keys(screenTitles);
+            const navItems = Array.from(document.querySelectorAll('.nav-item'));
+            const screens = Array.from(document.querySelectorAll('.screen'));
+            const titleEl = document.getElementById('screenTitle');
+            const notesEl = document.getElementById('notes');
+            const notesList = document.getElementById('notesList');
+
+            function renderNotes(id) {
+                notesList.innerHTML = screenNotes[id]
+                    .map(function (note) {
+                        return '<li>' + note + '</li>';
+                    })
+                    .join('');
+            }
+
+            function showScreen(id) {
+                if (!screenTitles[id]) return;
+                screens.forEach(function (s) {
+                    s.classList.toggle('active', s.id === id);
+                });
+                navItems.forEach(function (b) {
+                    const active = b.dataset.screen === id;
+                    b.classList.toggle('active', active);
+                    if (active) b.setAttribute('aria-current', 'page');
+                    else b.removeAttribute('aria-current');
+                });
+                titleEl.textContent = screenTitles[id];
+                renderNotes(id);
+                window.scrollTo({ top: 0, behavior: 'auto' });
+            }
+
+            navItems.forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    showScreen(btn.dataset.screen);
+                });
+            });
+
+            document.querySelectorAll('[data-goto]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    showScreen(btn.dataset.goto);
+                });
+            });
+
+            const notesBtn = document.getElementById('notesBtn');
+            notesBtn.addEventListener('click', function () {
+                const open = notesEl.classList.toggle('open');
+                notesBtn.setAttribute('aria-pressed', String(open));
+            });
+
+            const themeBtn = document.getElementById('themeBtn');
+            const themeLabel = document.getElementById('themeLabel');
+            themeBtn.addEventListener('click', function () {
+                const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+                document.documentElement.dataset.theme = next;
+                themeLabel.textContent = next === 'light' ? 'Dark mode' : 'Light mode';
+            });
+
+            document.querySelectorAll('.chip-row .chip').forEach(function (chip) {
+                chip.addEventListener('click', function () {
+                    if (chip.textContent.trim().startsWith('+')) return;
+                    chip.classList.toggle('active');
+                });
+            });
+
+            document.querySelectorAll('.copy-code').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const text = 'https://rubricmaker.app/join/RM4821';
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(text);
+                    }
+                    const original = btn.textContent;
+                    btn.textContent = 'Copied';
+                    setTimeout(function () {
+                        btn.textContent = original;
+                    }, 1400);
+                });
+            });
+
+            const editor = document.getElementById('sampleText');
+            const wordCountEl = document.getElementById('wordCount');
+            function updateWordCount() {
+                if (!editor || !wordCountEl) return;
+                const words = editor.innerText.trim().split(/\s+/).filter(Boolean).length;
+                wordCountEl.textContent = String(words);
+            }
+            if (editor) {
+                editor.addEventListener('input', updateWordCount);
+                updateWordCount();
+            }
+
+            document.querySelectorAll('.emoji-card').forEach(function (card) {
+                card.addEventListener('click', function () {
+                    document.querySelectorAll('.emoji-card').forEach(function (c) {
+                        c.classList.remove('selected');
+                    });
+                    card.classList.add('selected');
+                });
+            });
+
+            document.querySelectorAll('.name-btn').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    document.querySelectorAll('.name-btn').forEach(function (b) {
+                        b.classList.remove('selected');
+                    });
+                    btn.classList.add('selected');
+                    const name = btn.textContent.trim();
+                    const joinBtn = document.querySelector('#s-join .btn-primary');
+                    if (joinBtn) {
+                        joinBtn.textContent = 'Join as ' + name;
+                        joinBtn.removeAttribute('disabled');
+                    }
+                });
+            });
+
+            const nameSearch = document.getElementById('name-search');
+            if (nameSearch) {
+                nameSearch.addEventListener('input', function () {
+                    const q = nameSearch.value.trim().toLowerCase();
+                    document.querySelectorAll('.name-btn').forEach(function (btn) {
+                        btn.style.display = btn.textContent.toLowerCase().includes(q) ? '' : 'none';
+                    });
+                });
+            }
+
+            document.querySelectorAll('.hint-card').forEach(function (card) {
+                card.addEventListener('click', function () {
+                    card.classList.toggle('revealed');
+                    const plus = card.querySelector('b span');
+                    if (plus) plus.textContent = card.classList.contains('revealed') ? '−' : '+';
+                });
+            });
+
+            const voteGrid = document.getElementById('voteGrid');
+            const voteThanks = document.getElementById('voteThanks');
+            document.querySelectorAll('.vote-btn').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const card = btn.closest('.vote-card');
+                    const already = card.classList.contains('chosen');
+                    document.querySelectorAll('.vote-card').forEach(function (c) {
+                        c.classList.remove('chosen');
+                    });
+                    document.querySelectorAll('.vote-btn').forEach(function (b) {
+                        b.textContent = 'This one is stronger';
+                        b.classList.remove('btn-primary');
+                        b.classList.add('btn-secondary');
+                    });
+                    if (already) {
+                        voteGrid.classList.remove('has-pick');
+                        return;
+                    }
+                    card.classList.add('chosen');
+                    voteGrid.classList.add('has-pick');
+                    btn.textContent = 'Your pick ✓';
+                    btn.classList.remove('btn-secondary');
+                    btn.classList.add('btn-primary');
+                    const dots = document.querySelectorAll('.vote-progress .dots i');
+                    if (dots[0]) dots[0].classList.add('done');
+                });
+            });
+
+            const revealBtn = document.getElementById('revealBtn');
+            if (revealBtn) {
+                revealBtn.addEventListener('click', function () {
+                    const section = document.getElementById('t-finals');
+                    const revealed = section.dataset.revealed === 'true';
+                    section.dataset.revealed = revealed ? 'false' : 'true';
+                    revealBtn.textContent = revealed ? 'Reveal names' : 'Hide names';
+                    revealBtn.setAttribute('aria-pressed', String(!revealed));
+                });
+            }
+
+            renderNotes('t-setup');
+        </script>
+    </body>
+</html>

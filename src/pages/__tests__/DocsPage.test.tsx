@@ -54,6 +54,7 @@ describe('DocsPage', () => {
         'docs.tab_grading',
         'docs.tab_cefr',
         'docs.tab_essays',
+        'docs.tab_live_writing',
         'docs.tab_analytics',
         'docs.tab_data',
     ])('switches to the %s tab without crashing', (tabKey) => {

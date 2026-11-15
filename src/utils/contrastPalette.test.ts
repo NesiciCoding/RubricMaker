@@ -14,7 +14,7 @@ import {
 } from './contrastCheck';
 import { ACCENT_PRESETS, THEME_BUNDLES } from '../data/themes';
 import { CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
-import { THEME_SURFACES, themeSurfaces, type ThemeName } from '../data/themeSurfaces';
+import { THEME_SURFACES, type ThemeName } from '../data/themeSurfaces';
 
 /**
  * The contrast guard for #533.

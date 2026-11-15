@@ -163,7 +163,7 @@ export default function AttachmentViewer({ attachment, commentable = false }: Pr
                             onLoad={() => setImageLoaded(true)}
                             onError={() => setImageError(true)}
                             style={{
-                                display: imageLoaded && !imageError ? 'block' : 'none',
+                                display: imageLoaded ? 'block' : 'none',
                                 width: '100%',
                                 borderRadius: 4,
                                 border: '1px solid var(--border)',

@@ -29,9 +29,11 @@ const rubric: Rubric = {
 };
 
 const classA: Class = { id: 'c1', name: 'Class 4A', rubricIds: ['r1'] };
+const classB: Class = { id: 'c2', name: 'Class 4B', rubricIds: ['r1'] };
 const alice: Student = { id: 's1', name: 'Alice', classId: 'c1' };
 const bob: Student = { id: 's2', name: 'Bob', classId: 'c1' };
 const cara: Student = { id: 's3', name: 'Cara', classId: 'c1' };
+const dan: Student = { id: 's4', name: 'Dan', classId: 'c2' };
 
 const gradedSr: StudentRubric = {
     id: 'sr1',
@@ -71,6 +73,7 @@ const mockAppValue = {
         },
     ],
     settings,
+    updateSettings: vi.fn(),
     createGroupStudentRubrics: vi.fn(),
     updateStudentGroup: vi.fn(),
 };
@@ -114,8 +117,13 @@ describe('rubric grading queue and peer-review roster', () => {
         QueuePage = (await import('../RubricGradingQueuePage')).default;
         RosterPage = (await import('../PeerReviewRosterPage')).default;
         mockAppValue.rubrics = [rubric];
+        mockAppValue.students = [alice, bob, cara];
+        mockAppValue.classes = [classA];
         mockAppValue.studentRubrics = [gradedSr, notHandedInSr];
         mockAppValue.updateStudentGroup.mockClear();
+        mockAppValue.updateSettings.mockClear();
+        delete settings.gradeQueueClassId;
+        delete settings.gradeQueueLayout;
     });
 
     it('lists the rubric roster with graded, ungraded and not-handed-in status plus deep links', () => {
@@ -123,15 +131,22 @@ describe('rubric grading queue and peer-review roster', () => {
 
         expect(screen.getByText('Alice')).toBeInTheDocument();
         expect(screen.getByText('Bob')).toBeInTheDocument();
-        expect(screen.getByText('rubricQueue.graded')).toBeInTheDocument();
-        expect(screen.getByText('rubricQueue.not_graded')).toBeInTheDocument();
-        expect(screen.getByText('rubricQueue.not_handed_in')).toBeInTheDocument();
-        expect(screen.getAllByText('Class 4A')).toHaveLength(3);
+        expect(screen.getAllByText('rubricQueue.graded').length).toBeGreaterThan(0);
+        expect(screen.getAllByText('rubricQueue.not_graded').length).toBeGreaterThan(0);
+        expect(screen.getAllByText('rubricQueue.not_handed_in').length).toBeGreaterThan(0);
+        expect(screen.getAllByText('Class 4A').length).toBeGreaterThanOrEqual(3);
 
-        const open = screen.getByRole('link', { name: 'rubricQueue.action_open' });
+        const open = screen.getByRole('link', { name: 'rubricQueue.action_open_for:{"name":"Alice"}' });
         expect(open).toHaveAttribute('href', '/rubrics/r1/grade/s1');
-        const grade = screen.getAllByRole('link', { name: 'rubricQueue.action_grade' })[0];
+        expect(open).toHaveTextContent('rubricQueue.action_open');
+        const grade = screen.getByRole('link', { name: 'rubricQueue.action_grade_for:{"name":"Bob"}' });
         expect(grade).toHaveAttribute('href', '/rubrics/r1/grade/s2');
+        expect(grade).toHaveTextContent('rubricQueue.action_grade');
+        // Repeated actions must still be distinguishable to screen readers.
+        expect(screen.getByRole('link', { name: 'rubricQueue.action_grade_for:{"name":"Cara"}' })).toHaveAttribute(
+            'href',
+            '/rubrics/r1/grade/s3'
+        );
     });
 
     it('filters the queue by name', () => {
@@ -139,6 +154,51 @@ describe('rubric grading queue and peer-review roster', () => {
         fireEvent.change(screen.getByLabelText('rubricQueue.search'), { target: { value: 'bob' } });
         expect(screen.getByText('Bob')).toBeInTheDocument();
         expect(screen.queryByText('Alice')).not.toBeInTheDocument();
+    });
+
+    it('shows cards by default and list when that layout was saved', () => {
+        const { unmount } = renderAt('/rubrics/r1/grade', <QueuePage />, '/rubrics/:rubricId/grade');
+        expect(screen.queryByRole('table')).not.toBeInTheDocument();
+        unmount();
+
+        settings.gradeQueueLayout = 'list';
+        renderAt('/rubrics/r1/grade', <QueuePage />, '/rubrics/:rubricId/grade');
+        expect(screen.getByRole('table')).toBeInTheDocument();
+        expect(screen.getByRole('columnheader', { name: 'rubricQueue.col_score' })).toBeInTheDocument();
+    });
+
+    it('persists the chosen layout for this teacher', () => {
+        renderAt('/rubrics/r1/grade', <QueuePage />, '/rubrics/:rubricId/grade');
+        fireEvent.click(screen.getByRole('button', { name: 'common.view_list' }));
+        expect(mockAppValue.updateSettings).toHaveBeenCalledWith({ gradeQueueLayout: 'list' });
+    });
+
+    it('scopes the queue to the saved class and persists a new class choice', () => {
+        mockAppValue.classes = [classA, classB];
+        mockAppValue.students = [alice, bob, cara, dan];
+        settings.gradeQueueClassId = 'c2';
+
+        renderAt('/rubrics/r1/grade', <QueuePage />, '/rubrics/:rubricId/grade');
+        expect(screen.getByText('Dan')).toBeInTheDocument();
+        expect(screen.queryByText('Alice')).not.toBeInTheDocument();
+        expect(screen.getByText('rubricQueue.summary_title:{"graded":0,"total":1}')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: /search\.all_classes/ }));
+        expect(mockAppValue.updateSettings).toHaveBeenCalledWith({ gradeQueueClassId: undefined });
+    });
+
+    it('filters by status and clears an empty result back to the full roster', () => {
+        renderAt('/rubrics/r1/grade', <QueuePage />, '/rubrics/:rubricId/grade');
+
+        fireEvent.click(screen.getByRole('button', { name: /rubricQueue\.not_handed_in/ }));
+        expect(screen.getByText('Cara')).toBeInTheDocument();
+        expect(screen.queryByText('Alice')).not.toBeInTheDocument();
+
+        fireEvent.change(screen.getByLabelText('rubricQueue.search'), { target: { value: 'zzz' } });
+        expect(screen.getByText('rubricQueue.no_matches')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'rubricQueue.clear_filters' }));
+        expect(screen.getByText('Alice')).toBeInTheDocument();
+        expect(screen.getByText('Cara')).toBeInTheDocument();
     });
 
     it('lists named groups and edits their name and members from the queue', () => {

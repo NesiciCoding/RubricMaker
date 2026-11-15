@@ -59,6 +59,17 @@ describe('TestSlipSheet', () => {
         expect(onClose).toHaveBeenCalled();
     });
 
+    it('prints an SEB badge and instruction on every slip when the test requires SEB', () => {
+        render(<TestSlipSheet students={students} testName="T" requireSEB buildUrl={(id) => id} onClose={vi.fn()} />);
+        expect(screen.getAllByText('slip_sheet.seb_badge')).toHaveLength(2);
+        expect(screen.getAllByText('slip_sheet.seb_instruction')).toHaveLength(2);
+    });
+
+    it('omits the SEB badge when the test does not require SEB', () => {
+        render(<TestSlipSheet students={students} testName="T" buildUrl={(id) => id} onClose={vi.fn()} />);
+        expect(screen.queryByText('slip_sheet.seb_badge')).not.toBeInTheDocument();
+    });
+
     it('toggles QR canvases off via the shared SlipSheet control', () => {
         render(<TestSlipSheet students={students} testName="T" buildUrl={(id) => id} onClose={vi.fn()} />);
         const grid = document.querySelector('.slip-sheet-grid') as HTMLElement;

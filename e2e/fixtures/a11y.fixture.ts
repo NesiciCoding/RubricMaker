@@ -68,6 +68,7 @@ const TEST_ID = uid('test');
 const DECK_ID = uid('deck');
 const STUDENT_TEST_ID = uid('student-test');
 const ESSAY_KEY = uid('essay');
+const LIVE_SESSION_ID = uid('live-session');
 
 const levels = [
     { label: 'Excellent', minPoints: 4, maxPoints: 4, description: 'Outstanding work', subItems: [] },
@@ -347,6 +348,12 @@ export const A11Y_ROUTES: readonly A11yRoute[] = [
     { path: '/essays/new', label: 'Essay builder (new)' },
     { path: `/essays/${ESSAY_KEY}`, label: 'Essay builder (edit)' },
     { path: `/essays/${ESSAY_KEY}/monitor`, label: 'Essay live monitor' },
+    { path: '/live', label: 'Live writing' },
+    { path: '/live/new', label: 'Live writing console (new)' },
+    { path: `/live/${LIVE_SESSION_ID}`, label: 'Live writing console' },
+    { path: `/live/${LIVE_SESSION_ID}/project`, label: 'Live writing projector' },
+    { path: '/join', label: 'Live writing join' },
+    { path: '/join/RM-ABC123', label: 'Live writing student screen' },
     { path: '/flashcards', label: 'Flashcards' },
     { path: `/flashcards/${DECK_ID}`, label: 'Flashcard deck' },
     { path: '/news-flashes', label: 'News flashes' },

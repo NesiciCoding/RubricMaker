@@ -239,6 +239,16 @@ describe('StudentsPage', () => {
         expect(mockNavigate).toHaveBeenCalledWith('/students/s1');
     });
 
+    it('opens the Grade menu in a body portal and navigates to the chosen rubric', () => {
+        renderPage();
+        fireEvent.click(screen.getByRole('button', { name: /studentsPage\.grade_choose_rubric/ }));
+        // Portaled to <body>, so the roster's overflow box can never clip it.
+        const item = screen.getByRole('menuitem', { name: /Essay Rubric/ });
+        expect(item.closest('[role="menu"]')?.parentElement).toBe(document.body);
+        fireEvent.click(item);
+        expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s1');
+    });
+
     it('opens the add-student modal and adds a student', () => {
         renderPage();
         // Header button (first occurrence) opens the modal.

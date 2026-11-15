@@ -103,7 +103,7 @@ serve(async (req) => {
     // This prevents one student from grabbing another's submission slot by typing a
     // different email. If the student has no email in the roster we allow the
     // submission — the teacher may have set up the assignment without importing emails.
-    if (!authEmail && studentEmail && assignment.student_id) {
+    if (!authEmail && assignment.student_id) {
         const { data: studentRow } = await admin
             .from('students')
             .select('data')

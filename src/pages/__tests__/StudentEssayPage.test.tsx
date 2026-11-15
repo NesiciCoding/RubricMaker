@@ -59,7 +59,13 @@ vi.mock('../../hooks/useLiveSessionTelemetry', () => ({
 }));
 
 import { encodeEssaySubmission } from '../../utils/shareCode';
+vi.mock('../../utils/sebConfig', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../utils/sebConfig')>();
+    return { ...actual, quitSafeExamBrowser: vi.fn() };
+});
+
 import StudentEssayPage from '../StudentEssayPage';
+import { buildSebQuitUrl, quitSafeExamBrowser } from '../../utils/sebConfig';
 
 const mockEncode = vi.mocked(encodeEssaySubmission);
 
@@ -304,5 +310,37 @@ describe('StudentEssayPage — live monitoring telemetry', () => {
 
         expect(mockFlush).toHaveBeenCalled();
         expect(mockEncode).toHaveBeenCalledWith(expect.objectContaining({ events: flushedEvents }));
+    });
+});
+
+describe('StudentEssayPage — SEB quit button', () => {
+    const originalUserAgent = window.navigator.userAgent;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        sessionStorage.clear();
+        localStorage.clear();
+        Object.defineProperty(window.navigator, 'userAgent', {
+            value: 'Mozilla/5.0 (X11; Linux x86_64) SEB 3.10.2',
+            configurable: true,
+        });
+    });
+
+    afterEach(() => {
+        Object.defineProperty(window.navigator, 'userAgent', { value: originalUserAgent, configurable: true });
+        vi.restoreAllMocks();
+    });
+
+    it('offers a manual quit on the submitted screen that navigates to the quit URL', async () => {
+        renderPage(makeAssignment());
+        setContent(10);
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /essay\.submit_btn/i }));
+        });
+
+        fireEvent.click(screen.getByRole('button', { name: 'tests.taking.seb_quit' }));
+
+        expect(quitSafeExamBrowser).toHaveBeenCalledWith(buildSebQuitUrl());
     });
 });

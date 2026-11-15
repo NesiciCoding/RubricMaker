@@ -22,6 +22,28 @@ function Harness() {
     );
 }
 
+function PointHarness() {
+    const [open, setOpen] = useState(false);
+    const anchorRef = useRef<HTMLButtonElement>(null);
+    return (
+        <div>
+            <button ref={anchorRef} onClick={() => setOpen((o) => !o)}>
+                Toggle
+            </button>
+            <DropdownMenu
+                open={open}
+                onClose={() => setOpen(false)}
+                anchorRef={anchorRef}
+                ariaLabel="Actions"
+                point={{ x: 10, y: 10 }}
+            >
+                <button role="menuitem">First</button>
+                <button role="menuitem">Last</button>
+            </DropdownMenu>
+        </div>
+    );
+}
+
 describe('DropdownMenu', () => {
     it('renders in a portal outside the clipping parent', () => {
         render(<Harness />);
@@ -89,5 +111,22 @@ describe('DropdownMenu', () => {
         fireEvent.keyDown(screen.getByRole('menu'), { key: 'Tab' });
         expect(screen.queryByRole('menu')).not.toBeInTheDocument();
         expect(document.activeElement).toBe(screen.getByText('Toggle'));
+    });
+
+    it("regression: scrolling a point-opened menu's own content does not close it", () => {
+        // The close-on-scroll listener is capture-phase, so it also sees scroll events from the
+        // menu's own `overflowY: auto` content — it must ignore those or a long menu closes the
+        // moment a keyboard/mouse user tries to scroll down to a lower item.
+        render(<PointHarness />);
+        fireEvent.click(screen.getByText('Toggle'));
+        fireEvent.scroll(screen.getByRole('menu'));
+        expect(screen.getByRole('menu')).toBeInTheDocument();
+    });
+
+    it('closes a point-opened menu when the page scrolls outside it', () => {
+        render(<PointHarness />);
+        fireEvent.click(screen.getByText('Toggle'));
+        fireEvent.scroll(window);
+        expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     });
 });

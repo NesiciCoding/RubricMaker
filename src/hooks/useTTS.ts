@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import DOMPurify from 'dompurify';
 
 export type TTSStatus = 'idle' | 'speaking' | 'paused' | 'unsupported';
 
@@ -40,7 +41,7 @@ function pickVoice(lang: string): SpeechSynthesisVoice | null {
 }
 
 export function htmlToPlainText(html: string): string {
-    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const doc = new DOMParser().parseFromString(DOMPurify.sanitize(html), 'text/html');
     doc.body.querySelectorAll('p,br,div,li,h1,h2,h3,h4,h5,h6').forEach((el) => {
         el.prepend(document.createTextNode(' '));
         el.append(document.createTextNode(' '));

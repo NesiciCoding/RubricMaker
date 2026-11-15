@@ -124,6 +124,7 @@ const StudentFeedbackPage = lazy(() => import('./pages/StudentFeedbackPage'));
 const RubricPreviewPage = lazy(() => import('./pages/RubricPreviewPage'));
 const StudentEssayPage = lazy(() => import('./pages/StudentEssayPage'));
 const StudentTestPage = lazy(() => import('./pages/StudentTestPage'));
+const StudentLiveWritePage = lazy(() => import('./pages/StudentLiveWritePage'));
 
 function handleUnhandledRejection(event: PromiseRejectionEvent) {
     console.error('[unhandled rejection]', event.reason);
@@ -134,12 +135,22 @@ window.addEventListener('unhandledrejection', handleUnhandledRejection);
 
 const root = ReactDOM.createRoot(document.getElementById('root')!);
 
-const STUDENT_ROUTES = ['/feedback/', '/preview/', '/essay/', '/test/'];
+const STUDENT_ROUTES = ['/feedback/', '/preview/', '/essay/', '/test/', '/join'];
+const PROJECTOR_ROUTE = /^\/live\/[^/]+\/project\/?$/;
 const TAB_LOCK = 'rubricmaker-active-tab';
 
+function routeHash(): string {
+    return window.location.hash.replace('#', '').replace(/\?.*$/, '');
+}
+
 function isStudentRoute() {
-    const hash = window.location.hash.replace('#', '');
+    const hash = routeHash();
     return STUDENT_ROUTES.some((r) => hash.startsWith(r));
+}
+
+// The projector is a second screen for an already-open console, so it must not take the tab lock.
+function isProjectorRoute() {
+    return PROJECTOR_ROUTE.test(routeHash());
 }
 
 // Each public route carries its own Suspense fallback so a shared link shows a task-shaped
@@ -182,6 +193,22 @@ const router = createHashRouter([
                     <StudentTestPage />
                 </Suspense>
             </ToastProvider>
+        ),
+    },
+    {
+        path: '/join',
+        element: (
+            <Suspense fallback={<StudentTaskSkeleton />}>
+                <StudentLiveWritePage />
+            </Suspense>
+        ),
+    },
+    {
+        path: '/join/:code',
+        element: (
+            <Suspense fallback={<StudentTaskSkeleton />}>
+                <StudentLiveWritePage />
+            </Suspense>
         ),
     },
     {
@@ -267,7 +294,7 @@ function renderBlocked() {
 }
 
 function boot() {
-    if (isStudentRoute() || !('locks' in navigator)) {
+    if (isStudentRoute() || isProjectorRoute() || !('locks' in navigator)) {
         renderApp();
     } else {
         navigator.locks.request(TAB_LOCK, { ifAvailable: true }, (lock) => {

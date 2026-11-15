@@ -54,3 +54,8 @@ enable_confirmations = false
 [auth.mfa.totp]
 enroll_enabled = false
 verify_enabled = false
+
+# The SEB config contains no secrets (no answers, no keys) and the random assignment code is the
+# credential, so it can be loaded directly by SEB for the one-scan launcher.
+[functions.get-seb-config]
+verify_jwt = false
