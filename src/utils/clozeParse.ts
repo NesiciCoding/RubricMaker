@@ -1,13 +1,22 @@
 import type { TestQuestionType } from '../types';
 import {
     CLOZE_GAP_PATTERN,
-    splitClozeAlternatives,
+    clozeGapToSyntax,
+    gapCorrectAnswers,
+    matchClozeGaps,
+    parseClozeGaps,
     type ClozeGap,
 } from '../../supabase/functions/_shared/testScoring.ts';
 
-export { parseClozeGaps, parseHotTextFragments } from '../../supabase/functions/_shared/testScoring.ts';
+export {
+    parseClozeGaps,
+    parseHotTextFragments,
+    gapCorrectAnswers,
+    clozeGapToSyntax,
+} from '../../supabase/functions/_shared/testScoring.ts';
 export type {
     ClozeGap,
+    ClozeOptionRole,
     HotTextSegment,
     HotTextTextSegment,
     HotTextFragmentSegment,
@@ -28,20 +37,12 @@ export type ClozeSegment = ClozeTextSegment | ClozeGapSegment;
 export function renderClozeSegments(prompt: string): ClozeSegment[] {
     const segments: ClozeSegment[] = [];
     let lastIndex = 0;
-    let gapIndex = 0;
-    let match: RegExpExecArray | null;
-    const pattern = new RegExp(CLOZE_GAP_PATTERN.source, 'g');
-    while ((match = pattern.exec(prompt)) !== null) {
-        if (match.index > lastIndex) {
-            segments.push({ type: 'text', text: prompt.slice(lastIndex, match.index) });
-        }
-        segments.push({ type: 'gap', gap: { index: gapIndex, alternatives: splitClozeAlternatives(match[1]) } });
-        gapIndex += 1;
-        lastIndex = match.index + match[0].length;
+    for (const { gap, start, end } of matchClozeGaps(prompt)) {
+        if (start > lastIndex) segments.push({ type: 'text', text: prompt.slice(lastIndex, start) });
+        segments.push({ type: 'gap', gap });
+        lastIndex = end;
     }
-    if (lastIndex < prompt.length) {
-        segments.push({ type: 'text', text: prompt.slice(lastIndex) });
-    }
+    if (lastIndex < prompt.length) segments.push({ type: 'text', text: prompt.slice(lastIndex) });
     return segments;
 }
 
@@ -55,8 +56,13 @@ export function renderClozeSegments(prompt: string): ClozeSegment[] {
  */
 export function plainQuestionPromptText(question: { type: TestQuestionType; prompt: string }): string {
     if (question.type === 'cloze' || question.type === 'cloze-dropdown' || question.type === 'cloze-bank') {
+        const legacyFirstOnly = question.type === 'cloze-dropdown';
         return renderClozeSegments(question.prompt)
-            .map((segment) => (segment.type === 'gap' ? (segment.gap.alternatives[0] ?? '') : segment.text))
+            .map((segment) =>
+                segment.type === 'gap'
+                    ? (gapCorrectAnswers(segment.gap, legacyFirstOnly)[0] ?? segment.gap.alternatives[0] ?? '')
+                    : segment.text
+            )
             .join('');
     }
     return question.prompt;
@@ -68,4 +74,49 @@ export function addGapAlternative(prompt: string, gapIndex: number, word: string
     return prompt.replace(new RegExp(CLOZE_GAP_PATTERN.source, 'g'), (match, inner: string) =>
         ++i === gapIndex ? `{{${inner.trim() ? `${inner}|${word}` : word}}}` : match
     );
+}
+
+/**
+ * Adds `word` to a dropdown gap as another correct answer. A legacy gap (`{{correct|wrong}}`) is first
+ * rewritten with explicit roles, so the options it already had keep their meaning: the first stays
+ * correct, the rest stay distractors.
+ */
+export function addDropdownCorrectAnswer(prompt: string, gapIndex: number, word: string): string {
+    const target = parseClozeGaps(prompt)[gapIndex];
+    const text = word.trim();
+    if (!target || !text) return prompt;
+    if (gapCorrectAnswers(target, true).some((answer) => answer.toLowerCase() === text.toLowerCase())) {
+        return prompt;
+    }
+    const roles = target.alternatives.map((_, i) => target.roles?.[i] ?? (i === 0 ? 'correct' : 'wrong'));
+    const serialised = clozeGapToSyntax({
+        index: gapIndex,
+        alternatives: [...target.alternatives, text],
+        roles: [...roles, 'correct'],
+    });
+    return replaceGap(prompt, gapIndex, serialised);
+}
+
+/** Adds `word` to a dropdown gap as another wrong option, upgrading a legacy gap to explicit roles first. */
+export function addDropdownDistractor(prompt: string, gapIndex: number, word: string): string {
+    const target = parseClozeGaps(prompt)[gapIndex];
+    const text = word.trim();
+    if (!target || !text) return prompt;
+    const roles = target.alternatives.map((_, i) => target.roles?.[i] ?? (i === 0 ? 'correct' : 'wrong'));
+    return replaceGap(
+        prompt,
+        gapIndex,
+        clozeGapToSyntax({
+            index: gapIndex,
+            alternatives: [...target.alternatives, text],
+            roles: [...roles, 'wrong'],
+        })
+    );
+}
+
+function replaceGap(prompt: string, gapIndex: number, replacement: string): string {
+    const matches = matchClozeGaps(prompt);
+    const target = matches[gapIndex];
+    if (!target) return prompt;
+    return `${prompt.slice(0, target.start)}${replacement}${prompt.slice(target.end)}`;
 }

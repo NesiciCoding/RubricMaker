@@ -1,5 +1,6 @@
 import type { Test, TestQuestion } from '../types';
 import {
+    gapCorrectAnswers,
     parseClozeGaps,
     parseHotTextFragments,
     parseErrorPassage,
@@ -14,6 +15,7 @@ export type TestQuestionIssue =
     | 'no_correct_option'
     | 'no_gaps'
     | 'empty_gap'
+    | 'no_correct_gap_answer'
     | 'no_statements'
     | 'empty_statement'
     | 'too_few_columns'
@@ -71,6 +73,8 @@ export function testQuestionIssues(q: TestQuestion): TestQuestionIssue[] {
             const gaps = parseClozeGaps(q.prompt ?? '');
             if (gaps.length === 0) issues.push('no_gaps');
             else if (gaps.some((g) => g.alternatives.length === 0)) issues.push('empty_gap');
+            else if (gaps.some((g) => gapCorrectAnswers(g, q.type === 'cloze-dropdown').length === 0))
+                issues.push('no_correct_gap_answer');
             break;
         }
         case 'matrix': {

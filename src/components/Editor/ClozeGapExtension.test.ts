@@ -63,11 +63,20 @@ describe('ClozeGapExtension prompt <-> doc conversion', () => {
                     type: 'paragraph',
                     content: [
                         { type: 'text', text: 'Say ' },
-                        { type: 'clozeGap', attrs: { alternatives: ['hi'] } },
+                        { type: 'clozeGap', attrs: { alternatives: ['hi'], roles: null } },
                     ],
                 },
             ],
         });
+    });
+
+    it('keeps per-option roles for a marked dropdown gap', () => {
+        const doc = promptToClozeContent("Say {{=don't|=do not|~doesn't}} now");
+        expect(doc.content?.[0].content?.[1]).toEqual({
+            type: 'clozeGap',
+            attrs: { alternatives: ["don't", 'do not', "doesn't"], roles: ['correct', 'correct', 'wrong'] },
+        });
+        expect(roundTrip("Say {{=don't|=do not|~doesn't}} now")).toBe("Say {{=don't|=do not|~doesn't}} now");
     });
 });
 

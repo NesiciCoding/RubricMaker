@@ -8,6 +8,17 @@ function parse(response: string): unknown {
     }
 }
 
+/** cloze response: gap index → typed answer; anything but a plain object of strings is empty. */
+export function parseClozeAnswers(response: string): Record<string, string> {
+    const value = parse(response);
+    if (value === null || typeof value !== 'object' || Array.isArray(value)) return {};
+    return Object.fromEntries(
+        Object.entries(value as Record<string, unknown>).filter(
+            (entry): entry is [string, string] => typeof entry[1] === 'string'
+        )
+    );
+}
+
 /** error-correction response: fragment index → typed correction; anything but a plain object is empty. */
 export function parseErrorPicks(response: string): Record<string, string> {
     const value = parse(response);

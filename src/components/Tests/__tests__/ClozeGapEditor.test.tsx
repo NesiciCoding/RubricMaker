@@ -71,7 +71,7 @@ describe('ClozeGapEditor', () => {
         fireEvent.click(dropdownBtn);
         await waitFor(() => {
             expect(onChange).toHaveBeenCalled();
-            expect(onChange.mock.calls.at(-1)![0]).toContain('{{correct|wrong1|wrong2}}');
+            expect(onChange.mock.calls.at(-1)![0]).toContain('{{=correct|~wrong1|~wrong2}}');
         });
     });
 

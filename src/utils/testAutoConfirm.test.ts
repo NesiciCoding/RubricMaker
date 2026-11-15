@@ -127,3 +127,47 @@ describe('answerReviewState / attemptNeedsReview', () => {
         );
     });
 });
+
+describe('sentence-builder auto-confirmation', () => {
+    const builder: TestQuestion = {
+        id: 'sb',
+        type: 'sentence-builder',
+        prompt: 'Put the words in order.',
+        points: 4,
+        sentenceTargets: ['She [has been] waiting.'],
+    };
+
+    it('confirms a correctly ordered sentence', () => {
+        expect(autoGradeVerdict(builder, JSON.stringify(['She', 'has been', 'waiting.']))).toEqual({
+            score: 4,
+            confident: true,
+        });
+    });
+
+    it('sends a partly ordered sentence to review', () => {
+        expect(autoGradeVerdict(builder, JSON.stringify(['waiting.', 'She', 'has been']))).toEqual({
+            score: 3,
+            confident: false,
+            reason: 'near-miss',
+        });
+    });
+
+    it('confirms an empty sentence as clearly wrong', () => {
+        expect(autoGradeVerdict(builder, '[]')).toEqual({ score: 0, confident: true });
+    });
+
+    it('confirms a fully wrong order under all-or-nothing scoring', () => {
+        const strict: TestQuestion = { ...builder, builderScoring: 'all-or-nothing' };
+        expect(autoGradeVerdict(strict, JSON.stringify(['waiting.', 'She', 'has been']))).toEqual({
+            score: 0,
+            confident: true,
+        });
+    });
+
+    it('needs manual grading without a target sentence', () => {
+        expect(autoGradeVerdict({ ...builder, sentenceTargets: [] }, '[]')).toMatchObject({
+            confident: false,
+            reason: 'no-answer-model',
+        });
+    });
+});

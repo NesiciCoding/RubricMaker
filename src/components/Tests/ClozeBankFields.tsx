@@ -16,7 +16,7 @@ export default function ClozeBankFields({ question, update }: Props) {
     const { t } = useTranslation();
     const distractors = question.bankDistractors ?? [];
     const answers = renderClozeSegments(stripHtmlKeepLineBreaks(question.prompt)).flatMap((s) =>
-        s.type === 'gap' ? [s.gap.alternatives[0] ?? ''] : []
+        s.type === 'gap' ? s.gap.alternatives : []
     );
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

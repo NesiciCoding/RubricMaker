@@ -23,6 +23,7 @@ import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse'
 import {
     alignDictation,
     answersMatch,
+    gapAccepts,
     parseErrorPassage,
     sentenceBuilderText,
 } from '../../supabase/functions/_shared/testScoring';
@@ -148,9 +149,7 @@ function formatStudentResponse(
                     if (segment.type === 'text') return <span key={i}>{segment.text}</span>;
                     const gap = segment.gap;
                     const studentAnswer = (answers[gap.index] ?? '').trim();
-                    const correct = isDropdown
-                        ? studentAnswer === gap.alternatives[0]
-                        : gap.alternatives.some((alt) => answersMatch(alt, studentAnswer, question.answerTolerance));
+                    const correct = gapAccepts(gap, studentAnswer, isDropdown, question.answerTolerance);
                     return (
                         <span
                             key={i}

@@ -196,10 +196,10 @@ export function matrixBookletData(question: TestQuestion): MatrixBookletData {
     };
 }
 
-/** Cloze-bank tiles (every gap's answer plus the distractors) as a shuffled, lettered word box for the booklet. */
+/** Cloze-bank tiles (every accepted alternative of every gap plus the distractors) as a shuffled, lettered word box for the booklet. */
 export function bankBookletTiles(question: TestQuestion): { letter: string; text: string }[] {
     const answers = renderClozeSegments(stripHtmlKeepLineBreaks(question.prompt)).flatMap((s) =>
-        s.type === 'gap' ? [s.gap.alternatives[0] ?? ''] : []
+        s.type === 'gap' ? s.gap.alternatives : []
     );
     const tiles = nonIdentityShuffle([...answers, ...(question.bankDistractors ?? [])].filter(Boolean), question.id);
     return tiles.map((text, i) => ({ letter: optionLetter(i), text }));
@@ -213,11 +213,14 @@ function matrixCorrectLetterKey(question: TestQuestion): string {
 function bankCorrectLetterKey(question: TestQuestion): string {
     const unused = bankBookletTiles(question);
     return renderClozeSegments(stripHtmlKeepLineBreaks(question.prompt))
-        .flatMap((s) => (s.type === 'gap' ? [s.gap.alternatives[0] ?? ''] : []))
-        .map((answer, i) => {
-            const at = unused.findIndex((t) => t.text === answer);
-            const letter = at >= 0 ? unused.splice(at, 1)[0].letter : '?';
-            return `${i + 1}→${letter}`;
+        .flatMap((s) => (s.type === 'gap' ? [s.gap.alternatives] : []))
+        .map((alternatives, i) => {
+            const letters = alternatives.map((answer) => {
+                const at = unused.findIndex((t) => t.text === answer);
+                return at >= 0 ? unused.splice(at, 1)[0].letter : '?';
+            });
+            // Any of a gap's alternatives earns the mark, so the key lists every tile that would.
+            return `${i + 1}→${[...new Set(letters)].join('/')}`;
         })
         .join('; ');
 }

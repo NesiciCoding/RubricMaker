@@ -27,7 +27,7 @@ function ClozeBankAnswer({ question, value, onChange, code, lang }: Props) {
         () =>
             seededShuffle(
                 [
-                    ...segments.flatMap((s) => (s.type === 'gap' ? [s.gap.alternatives[0] ?? ''] : [])),
+                    ...segments.flatMap((s) => (s.type === 'gap' ? s.gap.alternatives : [])),
                     ...(question.bankDistractors ?? []),
                 ].filter(Boolean),
                 `${code}-${question.id}-bank`
@@ -148,6 +148,17 @@ function ClozeBankAnswer({ question, value, onChange, code, lang }: Props) {
     );
 }
 
+/** Dropdown options keep their authored order but never repeat: one option, one `<option>`. */
+function uniqueOptions(options: string[]): string[] {
+    const seen = new Set<string>();
+    return options.filter((option) => {
+        const key = option.trim().toLowerCase();
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+}
+
 function ClozeInlineAnswer({ question, value, onChange, code, lang }: Props) {
     const { t } = useTranslation();
     const segments = useMemo(() => renderClozeSegments(question.prompt), [question.prompt]);
@@ -172,7 +183,10 @@ function ClozeInlineAnswer({ question, value, onChange, code, lang }: Props) {
                 const gap = segment.gap;
                 const current = answers[gap.index] ?? '';
                 if (question.type === 'cloze-dropdown') {
-                    const choices = seededShuffle(gap.alternatives, `${code}-${question.id}-${gap.index}`);
+                    const choices = seededShuffle(
+                        uniqueOptions(gap.alternatives),
+                        `${code}-${question.id}-${gap.index}`
+                    );
                     return (
                         <select
                             key={i}

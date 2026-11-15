@@ -1,6 +1,12 @@
 import { Node, mergeAttributes } from '@tiptap/core';
 import type { Editor, JSONContent } from '@tiptap/core';
-import { renderClozeSegments } from '../../utils/clozeParse';
+import {
+    clozeGapToSyntax,
+    gapCorrectAnswers,
+    renderClozeSegments,
+    type ClozeGap as ClozeGapSyntax,
+    type ClozeOptionRole,
+} from '../../utils/clozeParse';
 import { openPillPopover } from './pillPopover';
 
 export interface ClozeGapOptions {
@@ -12,6 +18,14 @@ export interface ClozeGapOptions {
     cancelLabel: string;
     /** Label for the word-formation stem input. */
     stemLabel: string;
+    /** Label above a dropdown gap's accepted answers. */
+    correctLabel: string;
+    /** Label above a dropdown gap's wrong options. */
+    wrongLabel: string;
+    /** Label for a chip section's add button. */
+    addLabel: string;
+    /** Accessible label for removing a chip; `{{value}}` is replaced with the option text. */
+    removeLabel: string;
 }
 
 // Parentheses delimit the stem in the stored `{{answer}}(STEM)` form (see gapStems), so one inside it would end the stem early.
@@ -22,17 +36,16 @@ function cleanStem(stem: string): string {
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         clozeGap: {
-            insertClozeGap: (alternatives: string[]) => ReturnType;
+            insertClozeGap: (alternatives: string[], roles?: (ClozeOptionRole | null)[]) => ReturnType;
         };
     }
 }
 
 /**
  * An inline atom node representing one cloze gap. Renders as a clickable pill; clicking opens an
- * in-app popover anchored to the pill with a pipe-separated alternatives list (first = correct
- * answer), matching the existing {{correct|wrong1|wrong2}} grammar in clozeParse.ts. This node's
- * only job is to let a gap be inserted/edited without hand-typing the raw {{...}} syntax; the
- * parse/scoring layer is untouched.
+ * in-app popover anchored to the pill. A typed gap edits a pipe-separated alternatives list; a
+ * dropdown gap (the editor carries `data-cloze-dropdown`) edits its correct answers and its wrong
+ * options as two separate chip lists, stored as `=`/`~` markers in the same `{{…}}` syntax.
  */
 export const ClozeGap = Node.create<ClozeGapOptions>({
     name: 'clozeGap',
@@ -46,6 +59,10 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
             saveLabel: 'Save',
             cancelLabel: 'Cancel',
             stemLabel: 'Stem word (word formation):',
+            correctLabel: 'Correct answers',
+            wrongLabel: 'Wrong options',
+            addLabel: 'Add',
+            removeLabel: 'Remove {{value}}',
         };
     },
 
@@ -57,6 +74,22 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
                 renderHTML: (attrs: Record<string, unknown>) => ({
                     'data-alternatives': (attrs.alternatives as string[]).join('|'),
                 }),
+            },
+            roles: {
+                default: null as (ClozeOptionRole | null)[] | null,
+                parseHTML: (el: HTMLElement) => {
+                    const raw = el.getAttribute('data-roles');
+                    if (!raw) return null;
+                    return raw
+                        .split('|')
+                        .map(
+                            (role) => (role === 'correct' || role === 'wrong' ? role : null) as ClozeOptionRole | null
+                        );
+                },
+                renderHTML: (attrs: Record<string, unknown>) => {
+                    const roles = attrs.roles as (ClozeOptionRole | null)[] | null;
+                    return roles ? { 'data-roles': roles.map((role) => role ?? '').join('|') } : {};
+                },
             },
             stem: {
                 default: null as string | null,
@@ -78,25 +111,41 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
     addCommands() {
         return {
             insertClozeGap:
-                (alternatives: string[]) =>
+                (alternatives: string[], roles?: (ClozeOptionRole | null)[]) =>
                 ({ commands }) =>
-                    commands.insertContent({ type: this.name, attrs: { alternatives, stem: null } }),
+                    commands.insertContent({
+                        type: this.name,
+                        attrs: { alternatives, roles: roles ?? null, stem: null },
+                    }),
         };
     },
 
     addNodeView() {
-        const { editLabel, saveLabel, cancelLabel, stemLabel } = this.options;
+        const { editLabel, saveLabel, cancelLabel, stemLabel, correctLabel, wrongLabel, addLabel, removeLabel } =
+            this.options;
         return ({ node, editor, getPos }) => {
             const pill = document.createElement('span');
             pill.className = 'cloze-gap-pill';
             pill.contentEditable = 'false';
 
+            // The node view is built before the editor's DOM is mounted, so read the host attribute through
+            // the pill itself (null while detached, which only affects the badge's initial primary answer).
+            const isDropdown = () => pill.closest('[data-cloze-dropdown="true"]') !== null;
+            const alternatives = () => node.attrs.alternatives as string[];
+            const roles = () => node.attrs.roles as (ClozeOptionRole | null)[] | null;
+            const gap = (): ClozeGapSyntax => ({
+                index: 0,
+                alternatives: alternatives(),
+                ...(roles() ? { roles: roles() as (ClozeOptionRole | null)[] } : {}),
+            });
+
             const render = () => {
-                const alternatives = node.attrs.alternatives as string[];
-                pill.textContent = alternatives[0] || '—';
-                if (alternatives.length > 1) {
+                pill.textContent = '';
+                const primary = gapCorrectAnswers(gap(), isDropdown())[0] ?? alternatives()[0] ?? '—';
+                pill.textContent = primary;
+                if (alternatives().length > 1) {
                     const badge = document.createElement('sup');
-                    badge.textContent = `+${alternatives.length - 1}`;
+                    badge.textContent = `+${alternatives().length - 1}`;
                     pill.appendChild(badge);
                 }
                 const stem = node.attrs.stem as string | null;
@@ -106,111 +155,209 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
                     hint.textContent = `(${stem})`;
                     pill.appendChild(hint);
                 }
-                pill.title = alternatives.join(' | ');
+                pill.title = alternatives()
+                    .map((alternative, i) => (roles()?.[i] === 'wrong' ? `~${alternative}` : alternative))
+                    .join(' | ');
             };
             render();
 
             let closePopover: (() => void) | null = null;
 
-            function save(input: HTMLInputElement, stemInput?: HTMLInputElement) {
-                const alternatives = input.value
-                    .split('|')
-                    .map((alt) => alt.trim())
-                    .filter((alt) => alt.length > 0);
-                if (alternatives.length === 0) {
-                    closePopover?.();
-                    return;
-                }
-                /* v8 ignore next -- provably dead: tiptap always provides getPos for node views */
+            const applyNode = (next: string[], nextRoles: (ClozeOptionRole | null)[] | null, stem: string | null) => {
+                /* v8 ignore next -- tiptap always provides getPos for node views */
                 const pos = typeof getPos === 'function' ? getPos() : undefined;
-                /* v8 ignore next -- provably dead: getPos is always a function */
-                if (pos === undefined) {
-                    closePopover?.();
-                    return;
-                }
+                /* v8 ignore next -- getPos is always a function */
+                if (pos === undefined) return;
                 editor
                     .chain()
                     .focus()
                     .command(({ tr }) => {
-                        tr.setNodeMarkup(pos, undefined, {
-                            alternatives,
-                            stem: stemInput ? cleanStem(stemInput.value) || null : (node.attrs.stem as string | null),
-                        });
+                        tr.setNodeMarkup(pos, undefined, { alternatives: next, roles: nextRoles, stem });
                         return true;
                     })
                     .run();
-                closePopover?.();
-            }
+            };
+
+            const fillChips = (container: HTMLElement, values: string[]) => {
+                container.replaceChildren(
+                    ...values.map((value, index) => {
+                        const chip = document.createElement('span');
+                        chip.className = 'cloze-gap-popover-chip';
+                        const text = document.createElement('span');
+                        text.textContent = value;
+                        const remove = document.createElement('button');
+                        remove.type = 'button';
+                        remove.className = 'cloze-gap-popover-chip-remove';
+                        remove.setAttribute('aria-label', removeLabel.replace('{{value}}', value));
+                        remove.textContent = '×';
+                        remove.addEventListener('click', () => {
+                            values.splice(index, 1);
+                            fillChips(container, values);
+                        });
+                        chip.append(text, remove);
+                        return chip;
+                    })
+                );
+            };
+
+            const optionSection = (labelText: string, values: string[]) => {
+                const section = document.createElement('div');
+                section.className = 'cloze-gap-popover-section';
+                const label = document.createElement('div');
+                label.className = 'cloze-gap-popover-label';
+                label.textContent = labelText;
+                const chips = document.createElement('div');
+                chips.className = 'cloze-gap-popover-chips';
+                fillChips(chips, values);
+
+                const row = document.createElement('div');
+                row.className = 'cloze-gap-popover-add';
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'cloze-gap-popover-input';
+                const add = document.createElement('button');
+                add.type = 'button';
+                add.textContent = addLabel;
+                add.addEventListener('click', () => commit());
+                const commit = () => {
+                    const value = input.value.trim();
+                    if (!value) return;
+                    const exists = [...values].some((existing) => existing.toLowerCase() === value.toLowerCase());
+                    if (!exists) values.push(value);
+                    input.value = '';
+                    fillChips(chips, values);
+                    input.focus();
+                };
+                input.addEventListener('keydown', (ke) => {
+                    if (ke.key === 'Enter') {
+                        ke.preventDefault();
+                        commit();
+                    } else if (ke.key === 'Escape') {
+                        ke.preventDefault();
+                        closePopover?.();
+                    }
+                });
+                row.append(input, add);
+
+                section.append(label, chips, row);
+                return section;
+            };
+
+            const stemInput = (popover: HTMLElement) => {
+                // Read at click time from the editor's DOM so toggling word formation needs no editor rebuild.
+                if (editor.view.dom.getAttribute('data-word-formation') !== 'true') return undefined;
+                const label = document.createElement('div');
+                label.className = 'cloze-gap-popover-label';
+                label.textContent = stemLabel;
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'cloze-gap-popover-input';
+                input.value = (node.attrs.stem as string | null) ?? '';
+                input.addEventListener('keydown', (ke) => {
+                    if (ke.key === 'Escape') {
+                        ke.preventDefault();
+                        closePopover?.();
+                    }
+                });
+                popover.append(label, input);
+                return input;
+            };
+
+            const actions = (onSave: () => void) => {
+                const row = document.createElement('div');
+                row.className = 'cloze-gap-popover-actions';
+                const cancel = document.createElement('button');
+                cancel.type = 'button';
+                cancel.textContent = cancelLabel;
+                cancel.addEventListener('click', () => closePopover?.());
+                const save = document.createElement('button');
+                save.type = 'button';
+                save.className = 'cloze-gap-popover-save';
+                save.textContent = saveLabel;
+                save.addEventListener('click', onSave);
+                row.append(cancel, save);
+                return row;
+            };
 
             pill.addEventListener('click', (e) => {
                 e.stopPropagation();
                 closePopover = openPillPopover(pill, 'cloze-gap-popover', (popover, close) => {
-                    const label = document.createElement('div');
-                    label.className = 'cloze-gap-popover-label';
-                    label.textContent = editLabel;
+                    const dropdown = isDropdown();
 
-                    const input = document.createElement('input');
-                    input.type = 'text';
-                    input.className = 'cloze-gap-popover-input';
-                    input.value = (node.attrs.alternatives as string[]).join('|');
-                    let stemInput: HTMLInputElement | undefined;
-                    input.addEventListener('keydown', (ke) => {
-                        if (ke.key === 'Enter') {
-                            ke.preventDefault();
-                            save(input, stemInput);
-                        } else if (ke.key === 'Escape') {
-                            ke.preventDefault();
-                            close();
-                        }
-                    });
+                    if (!dropdown) {
+                        const label = document.createElement('div');
+                        label.className = 'cloze-gap-popover-label';
+                        label.textContent = editLabel;
 
-                    const actions = document.createElement('div');
-                    actions.className = 'cloze-gap-popover-actions';
-                    const cancelBtn = document.createElement('button');
-                    cancelBtn.type = 'button';
-                    cancelBtn.textContent = cancelLabel;
-                    cancelBtn.addEventListener('click', () => close());
-                    const saveBtn = document.createElement('button');
-                    saveBtn.type = 'button';
-                    saveBtn.className = 'cloze-gap-popover-save';
-                    saveBtn.textContent = saveLabel;
-                    saveBtn.addEventListener('click', () => save(input, stemInput));
-                    actions.append(cancelBtn, saveBtn);
-
-                    popover.append(label, input);
-                    // Read at click time from the editor's DOM so toggling word formation needs no editor rebuild.
-                    if (editor.view.dom.getAttribute('data-word-formation') === 'true') {
-                        const stemText = document.createElement('div');
-                        stemText.className = 'cloze-gap-popover-label';
-                        stemText.textContent = stemLabel;
-                        stemInput = document.createElement('input');
-                        stemInput.type = 'text';
-                        stemInput.className = 'cloze-gap-popover-input';
-                        stemInput.value = (node.attrs.stem as string | null) ?? '';
-                        stemInput.addEventListener('keydown', (ke) => {
+                        const input = document.createElement('input');
+                        input.type = 'text';
+                        input.className = 'cloze-gap-popover-input';
+                        input.value = alternatives().join('|');
+                        input.addEventListener('keydown', (ke) => {
                             if (ke.key === 'Enter') {
                                 ke.preventDefault();
-                                save(input, stemInput);
+                                saveAlternatives();
                             } else if (ke.key === 'Escape') {
                                 ke.preventDefault();
                                 close();
                             }
                         });
-                        popover.append(stemText, stemInput);
+                        popover.append(label, input);
+                        const stem = stemInput(popover);
+                        const saveAlternatives = () => {
+                            const next = input.value
+                                .split('|')
+                                .map((alt) => alt.trim())
+                                .filter((alt) => alt.length > 0);
+                            if (next.length === 0) {
+                                close();
+                                return;
+                            }
+                            applyNode(
+                                next,
+                                null,
+                                stem ? cleanStem(stem.value) || null : (node.attrs.stem as string | null)
+                            );
+                            close();
+                        };
+                        popover.append(actions(saveAlternatives));
+                        input.focus();
+                        input.select();
+                        return;
                     }
-                    popover.append(actions);
-                    input.focus();
-                    input.select();
+
+                    const currentRoles = roles();
+                    const isCorrect = (i: number) => (currentRoles ? currentRoles[i] !== 'wrong' : i === 0);
+                    const correct = alternatives().filter((_, i) => isCorrect(i));
+                    const wrong = alternatives().filter((_, i) => !isCorrect(i));
+
+                    popover.append(optionSection(correctLabel, correct), optionSection(wrongLabel, wrong));
+                    popover.append(
+                        actions(() => {
+                            if (correct.length === 0) {
+                                close();
+                                return;
+                            }
+                            applyNode(
+                                [...correct, ...wrong],
+                                [
+                                    ...correct.map((): ClozeOptionRole => 'correct'),
+                                    ...wrong.map((): ClozeOptionRole => 'wrong'),
+                                ],
+                                node.attrs.stem as string | null
+                            );
+                            close();
+                        })
+                    );
                 });
             });
 
             return {
                 dom: pill,
                 update: (updatedNode) => {
-                    /* v8 ignore next -- provably dead: tiptap only calls update with the same node type */
+                    /* v8 ignore next -- tiptap only calls update with the same node type */
                     if (updatedNode.type.name !== 'clozeGap') return false;
                     node = updatedNode;
-                    pill.textContent = '';
                     render();
                     return true;
                 },
@@ -230,7 +377,11 @@ export function promptToClozeContent(prompt: string, wordFormation = false): JSO
             const match = wordFormation && next?.type === 'text' ? /^\(([^()]+)\)/.exec(next.text) : null;
             content.push({
                 type: 'clozeGap',
-                attrs: { alternatives: segment.gap.alternatives, ...(match && { stem: match[1].trim() }) },
+                attrs: {
+                    alternatives: segment.gap.alternatives,
+                    roles: segment.gap.roles ?? null,
+                    ...(match && { stem: match[1].trim() }),
+                },
             });
             return;
         }
@@ -251,7 +402,12 @@ export function clozeContentToPrompt(editor: Editor): string {
             result += node.text ?? '';
         } else if (node.type.name === 'clozeGap') {
             const stem = node.attrs.stem as string | null;
-            result += `{{${(node.attrs.alternatives as string[]).join('|')}}}${stem ? `(${stem})` : ''}`;
+            const gap: ClozeGapSyntax = {
+                index: 0,
+                alternatives: node.attrs.alternatives as string[],
+                ...(node.attrs.roles ? { roles: node.attrs.roles as (ClozeOptionRole | null)[] } : {}),
+            };
+            result += `${clozeGapToSyntax(gap)}${stem ? `(${stem})` : ''}`;
         } else if (node.type.name === 'paragraph' && result.length > 0) {
             result += '\n';
         }

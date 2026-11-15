@@ -1,7 +1,7 @@
 import i18n from 'i18next';
 import type { CefrLevel, Student, StudentTest, Test, TestAnswer, TestQuestion } from '../types';
 import { stripHtmlTags } from './exportDataPrep';
-import { renderClozeSegments, parseHotTextFragments, plainQuestionPromptText } from './clozeParse';
+import { gapCorrectAnswers, renderClozeSegments, parseHotTextFragments, plainQuestionPromptText } from './clozeParse';
 import { parseErrorPicks, parsePlacedWords } from './answerResponseParsers';
 import { keyWordChunks, parseErrorPassage, sentenceBuilderText } from '../../supabase/functions/_shared/testScoring';
 import { parseAudioResponse } from './audioResponseCode';
@@ -146,7 +146,11 @@ export function formatCorrectAnswer(question: TestQuestion): string {
         case 'cloze-dropdown':
         case 'cloze-bank':
             return renderClozeSegments(stripHtmlTags(question.prompt))
-                .map((s) => (s.type === 'text' ? s.text : `[${s.gap.alternatives[0] ?? ''}]`))
+                .map((s) =>
+                    s.type === 'text'
+                        ? s.text
+                        : `[${gapCorrectAnswers(s.gap, question.type === 'cloze-dropdown').join(' / ')}]`
+                )
                 .join('');
         case 'dictation':
             return question.dictationText ?? '';
