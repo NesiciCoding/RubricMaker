@@ -438,6 +438,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         const question = newQuestion(sectionId, type);
         setNewQuestionFor(null);
         setQuestions((prev) => [...prev, question]);
+        setSelectedSectionId(null);
         setSelectedQuestionId(question.id);
     }
 
@@ -1800,6 +1801,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                         ) : selectedSection ? (
                             <div style={{ order: -1, marginBottom: 20 }}>
                                 <TestSectionWorkspace
+                                    key={selectedSection.id}
                                     section={selectedSection}
                                     targetLevel={(cefrTargetLevel || selectedSection.cefrLevel) as CefrLevel | ''}
                                     questionCount={questionsFor(selectedSection.id).length}

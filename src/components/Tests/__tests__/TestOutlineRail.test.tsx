@@ -97,6 +97,14 @@ describe('TestOutlineRail', () => {
         expect(onSelectSection).toHaveBeenCalledWith('s1');
     });
 
+    it('keeps a section without questions reachable', () => {
+        const onSelectSection = vi.fn();
+        renderRail({ sections: [{ id: 's2', title: 'Empty part' }], onSelectSection });
+
+        fireEvent.click(screen.getByTestId('outline-section-s2'));
+        expect(onSelectSection).toHaveBeenCalledWith('s2');
+    });
+
     it('leaves the uncategorised group without a section to open', () => {
         renderRail({ onSelectSection: vi.fn() });
         expect(screen.queryByTestId('outline-section-__none__')).not.toBeInTheDocument();

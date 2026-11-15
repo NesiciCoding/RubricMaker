@@ -69,7 +69,9 @@ export default function TestOutlineRail({
                   )
                 : group.questions,
         }))
-        .filter((group) => group.questions.length > 0);
+        // A section with no questions yet is still a section to open — it is the only way to reach
+        // its workspace (and its own add-question button) from the rail.
+        .filter((group) => group.questions.length > 0 || (!needle && group.id !== '__none__'));
 
     const numberOf = (question: TestQuestion) => questions.indexOf(question) + 1;
 
@@ -119,7 +121,7 @@ export default function TestOutlineRail({
                 />
             )}
 
-            {questions.length === 0 && (
+            {questions.length === 0 && groups.length === 0 && (
                 <p className="text-muted text-xs" style={{ margin: 0 }}>
                     {t('tests.no_questions')}
                 </p>

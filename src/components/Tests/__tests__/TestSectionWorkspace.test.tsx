@@ -102,12 +102,16 @@ describe('TestSectionWorkspace', () => {
         expect(buttons[1].closest('button')).toBeDisabled();
     });
 
-    it('stands alone in the rail layout, with a heading, a way back and add-question', () => {
+    it('stands alone in the rail layout, with an editable title, a way back and add-question', () => {
         const onAddQuestion = vi.fn();
         const onClose = vi.fn();
-        renderWorkspace({ onAddQuestion, onClose });
+        const { onPatch } = renderWorkspace({ onAddQuestion, onClose });
 
-        expect(screen.getByRole('heading', { name: 'Part 1 — Reading' })).toBeInTheDocument();
+        const title = screen.getByLabelText('tests.section_name_label');
+        expect(title).toHaveValue('Part 1 — Reading');
+        fireEvent.change(title, { target: { value: 'Part 1b' } });
+        expect(onPatch).toHaveBeenCalledWith({ title: 'Part 1b' });
+
         fireEvent.click(screen.getByText('tests.add_question'));
         expect(onAddQuestion).toHaveBeenCalled();
         fireEvent.click(screen.getByRole('button', { name: 'common.close' }));
@@ -118,5 +122,7 @@ describe('TestSectionWorkspace', () => {
         renderWorkspace();
         expect(screen.queryByText('tests.add_question')).not.toBeInTheDocument();
         expect(screen.queryByRole('button', { name: 'common.close' })).not.toBeInTheDocument();
+        // The Sections card above the list already owns the title field in this layout.
+        expect(screen.queryByLabelText('tests.section_name_label')).not.toBeInTheDocument();
     });
 });

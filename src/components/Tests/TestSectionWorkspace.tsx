@@ -68,7 +68,12 @@ export default function TestSectionWorkspace({
         >
             {onClose && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <h2 style={{ margin: 0, fontSize: '0.95rem', minWidth: 0 }}>{section.title}</h2>
+                    <input
+                        aria-label={t('tests.section_name_label')}
+                        value={section.title}
+                        onChange={(e) => onPatch({ title: e.target.value })}
+                        style={{ flex: 1, minWidth: 0, fontWeight: 600, fontSize: '0.95rem' }}
+                    />
                     <span className="text-muted text-xs" style={{ marginLeft: 'auto' }}>
                         {t('tests.section_question_count', { count: questionCount })}
                     </span>

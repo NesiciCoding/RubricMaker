@@ -1324,11 +1324,25 @@ describe('TestBuilderPage extended', () => {
             fireEvent.click(screen.getByTestId(`outline-section-${s1.id}`));
 
             const workspace = within(screen.getByTestId(`section-workspace-${s1.id}`));
-            expect(workspace.getByRole('heading', { name: 'Part 1' })).toBeInTheDocument();
+            expect(workspace.getByLabelText('tests.section_name_label')).toHaveValue('Part 1');
             expect(workspace.getByText('questionBank.save_section_to_bank')).toBeInTheDocument();
             expect(workspace.getByLabelText('tests.section_passage_placeholder')).toHaveValue('<p>Passage body</p>');
 
-            // Choosing a question from the rail closes the workspace and opens that question.
+            // The section title is editable here, not only in the Sections card below.
+            fireEvent.change(workspace.getByLabelText('tests.section_name_label'), {
+                target: { value: 'Part 1b' },
+            });
+            fireEvent.click(screen.getByText('common.save'));
+            expect(mockUpdateTest.mock.calls[0][0].sections[0].title).toBe('Part 1b');
+
+            // Adding from the workspace opens the new question rather than leaving the section open.
+            fireEvent.click(workspace.getByText('tests.add_question'));
+            pickNewQuestionType();
+            expect(screen.queryByTestId(`section-workspace-${s1.id}`)).not.toBeInTheDocument();
+            expect(screen.getByTestId('question-focus')).toBeInTheDocument();
+
+            // Choosing a question from the rail does the same.
+            fireEvent.click(screen.getByTestId(`outline-section-${s1.id}`));
             fireEvent.click(screen.getByTestId('outline-question-qa'));
             expect(screen.queryByTestId(`section-workspace-${s1.id}`)).not.toBeInTheDocument();
             expect(screen.getByTestId('question-focus')).toBeInTheDocument();
