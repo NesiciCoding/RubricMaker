@@ -5567,6 +5567,7 @@
         "paste_submission_code": "Plak hier de inzendcode van de leerling…"
     },
     "notFound": {
+        "quick_links": "Iets zoeken?",
         "heading": "404 — Pagina niet gevonden",
         "body": "De pagina die je zoekt bestaat niet of is verplaatst.",
         "go_dashboard": "Naar dashboard",
