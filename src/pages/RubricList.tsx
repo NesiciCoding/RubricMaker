@@ -30,7 +30,6 @@ import { useDbStatus } from '../hooks/useDbStatus';
 import { useToast } from '../hooks/useToast';
 import { storageSync } from '../services/database';
 import { addToPendingQueue } from '../store/storage';
-import { DEFAULT_FORMAT } from '../types';
 import type { Folder, MaterialSharing, Rubric } from '../types';
 import type { VoTrack, CefrLevel, CohortFilter as CohortFilterValue } from '../types';
 import { VO_TRACKS, VO_TRACK_LABELS, VO_TRACK_COLORS, VO_TRACK_DEFAULT_CEFR } from '../data/voTracks';
@@ -56,6 +55,7 @@ import { useFolderDropTarget } from '../hooks/useFolderDropTarget';
 import { sortByDisplayOrder, reorderDisplayOrder, displayOrderAfter } from '../utils/displayOrder';
 import { ALL_FOLDERS, filterByFolder, folderPathLabel, foldersForKind, nextFolderOrder } from '../utils/folders';
 import { cloneRubricForCopy, type RubricInput } from '../utils/rubricClone';
+import { rubricInputFromParsed } from '../utils/rubricShareImport';
 import {
     inheritedSharing,
     isShared,
@@ -246,25 +246,12 @@ export default function RubricList() {
         [rubrics]
     );
 
-    // An exported grade scale id only means something in the workspace it came from.
     function rubricFromImport(parsed: ParsedRubric): RubricInput {
-        const knownScale = gradeScales.some((g) => g.id === parsed.gradeScaleId);
-        return {
-            name: parsed.name || t('rubricList.imported_rubric_name'),
-            subject: parsed.subject || '',
-            description: parsed.description || '',
-            criteria: parsed.criteria,
-            gradeScaleId: knownScale ? parsed.gradeScaleId! : settings.defaultGradeScaleId,
-            format: parsed.format ?? DEFAULT_FORMAT,
-            scoringMode: parsed.scoringMode ?? 'weighted-percentage',
-            totalMaxPoints: parsed.totalMaxPoints ?? 100,
-            attachmentIds: [],
-            cefrTargetLevel: parsed.cefrTargetLevel,
-            cefrSkill: parsed.cefrSkill,
-            cefrAchieveThreshold: parsed.cefrAchieveThreshold,
-            ...(parsed.vocabularyItems && { vocabularyItems: parsed.vocabularyItems }),
-            ...(parsed.tiered && { tiered: parsed.tiered }),
-        };
+        return rubricInputFromParsed(parsed, {
+            gradeScaleIds: gradeScales.map((scale) => scale.id),
+            defaultGradeScaleId: settings.defaultGradeScaleId,
+            fallbackName: t('rubricList.imported_rubric_name'),
+        });
     }
 
     function handleImportFromCode() {

@@ -11,16 +11,19 @@ interface Props {
     item: QuestionBankItem;
     onSave: (item: QuestionBankItem) => void;
     onClose: () => void;
+    /** Overrides the heading — the bank's create flow reuses this editor for a brand-new item. */
+    titleKey?: string;
 }
 
-export default function QuestionBankItemEditorModal({ item, onSave, onClose }: Props) {
+export default function QuestionBankItemEditorModal({ item, onSave, onClose, titleKey: titleKeyProp }: Props) {
     const { t, i18n } = useTranslation();
     const skillLang = i18n?.language?.startsWith('nl') ? 'nl' : 'en';
     const [local, setLocal] = useState<QuestionBankItem>(item);
     const [tagsInput, setTagsInput] = useState(item.tags.join(', '));
 
     const isSection = local.kind === 'section' && !!local.section;
-    const titleKey = isSection ? 'questionBank.edit_section_title' : 'questionBank.edit_question_title';
+    const titleKey =
+        titleKeyProp ?? (isSection ? 'questionBank.edit_section_title' : 'questionBank.edit_question_title');
 
     function handleSave() {
         const tags = tagsInput

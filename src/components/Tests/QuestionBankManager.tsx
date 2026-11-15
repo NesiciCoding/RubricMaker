@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, Trash2, Upload, Download, Pencil, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Search, Trash2, Upload, Download, Pencil, Plus, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { saveAs } from 'file-saver';
 import { useTranslation } from 'react-i18next';
 import { useAuthoring } from '../../context/AppContext';
@@ -18,6 +18,9 @@ import QuestionBankImportModal from './QuestionBankImportModal';
 import QuestionBankItemEditorModal from './QuestionBankItemEditorModal';
 import TagFilterChips from './TagFilterChips';
 import { questionTypeLabelKey } from '../../utils/questionTypeKey';
+import { newQuestion } from '../../utils/testQuestionClone';
+import { nanoid } from '../../utils/nanoid';
+import { findDuplicatePromptItem, questionsOf } from '../../utils/questionBankItems';
 import { EmptyState } from '../ui/EmptyState';
 
 interface QuestionBankManagerProps {
@@ -26,11 +29,6 @@ interface QuestionBankManagerProps {
 }
 
 const PAGE_SIZE = 25;
-
-function questionsOf(item: QuestionBankItem): Omit<TestQuestion, 'sectionId'>[] {
-    if (item.kind === 'section' && item.section) return item.section.questions;
-    return item.question ? [item.question] : [];
-}
 
 function questionSearchText(q: Omit<TestQuestion, 'sectionId'>): string {
     const parts: string[] = [
@@ -56,6 +54,13 @@ function questionSearchText(q: Omit<TestQuestion, 'sectionId'>): string {
         parts.push(fd.descriptionEn, fd.descriptionNl);
     }
     return parts.join(' ');
+}
+
+type SortMode = 'newest' | 'prompt';
+
+function itemSortLabel(item: QuestionBankItem): string {
+    if (item.kind === 'section' && item.section) return item.section.title;
+    return (item.question && plainQuestionPromptText(item.question)) || '';
 }
 
 function itemSearchText(item: QuestionBankItem): string {
@@ -86,9 +91,11 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
     const [kindFilter, setKindFilter] = useState<'all' | 'question' | 'section'>('all');
     const [typeFilter, setTypeFilter] = useState<TestQuestionType | ''>('');
     const [skillFilter, setSkillFilter] = useState<QuestionBankSkill | ''>('');
+    const [sortMode, setSortMode] = useState<SortMode>('newest');
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [editingItem, setEditingItem] = useState<QuestionBankItem | null>(null);
+    const [creatingItem, setCreatingItem] = useState<QuestionBankItem | null>(null);
     const [showImportModal, setShowImportModal] = useState(false);
     const [bulkTagInput, setBulkTagInput] = useState('');
     const [bulkCefrValue, setBulkCefrValue] = useState<CefrLevel | ''>('');
@@ -131,8 +138,22 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
                 const matchesSkill = !skillFilter || item.cefrSkill === skillFilter;
                 return matchesSearch && matchesTags && matchesCefr && matchesKind && matchesType && matchesSkill;
             })
-            .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    }, [questionBank, searchTerm, selectedTags, selectedCefr, kindFilter, typeFilter, skillFilter, searchIndex]);
+            .sort((a, b) =>
+                sortMode === 'newest'
+                    ? b.createdAt.localeCompare(a.createdAt)
+                    : itemSortLabel(a).localeCompare(itemSortLabel(b))
+            );
+    }, [
+        questionBank,
+        searchTerm,
+        selectedTags,
+        selectedCefr,
+        kindFilter,
+        typeFilter,
+        skillFilter,
+        sortMode,
+        searchIndex,
+    ]);
 
     const filterSignature = [
         searchTerm,
@@ -242,8 +263,22 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
         bulkUpdateQuestionBankItems(Array.from(selectedIds), { cefrSkill: bulkSkillValue || null });
     }
 
+    function handleCreate() {
+        const { sectionId: _sectionId, ...question } = newQuestion();
+        const now = new Date().toISOString();
+        setCreatingItem({ id: nanoid(), kind: 'question', question, tags: [], createdAt: now, updatedAt: now });
+    }
+
+    // A duplicate prompt is usually a re-import or a save-from-test the teacher already made;
+    // warn without blocking, since reusing a prompt with different options is legitimate.
+    function warnIfDuplicate(item: QuestionBankItem, ignoreId?: string) {
+        if (findDuplicatePromptItem(questionBank, item, ignoreId)) {
+            showToast(t('questionBank.duplicate_warning_toast'), 'info');
+        }
+    }
+
     function handleExport() {
-        const json = exportQuestionBankJson(questionBank);
+        const json = exportQuestionBankJson(filteredItems);
         const blob = new Blob([json], { type: 'application/json;charset=utf-8;' });
         saveAs(blob, 'question-bank-export.json');
         showToast(t('questionBank.export_success_toast'), 'success');
@@ -262,10 +297,13 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
             >
                 {manager && (
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                        <button type="button" className="btn btn-primary btn-sm" onClick={handleCreate}>
+                            <Plus size={14} /> {t('questionBank.new_button')}
+                        </button>
                         <button
                             type="button"
                             className="btn btn-secondary btn-sm"
-                            disabled={questionBank.length === 0}
+                            disabled={filteredItems.length === 0}
                             onClick={handleExport}
                         >
                             <Download size={14} /> {t('questionBank.export_button')}
@@ -327,6 +365,17 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
                             </option>
                         ))}
                     </select>
+                    {manager && (
+                        <select
+                            aria-label={t('questionBank.sort_label')}
+                            value={sortMode}
+                            onChange={(e) => setSortMode(e.target.value as SortMode)}
+                            style={{ fontSize: '0.8rem' }}
+                        >
+                            <option value="newest">{t('questionBank.sort_newest')}</option>
+                            <option value="prompt">{t('questionBank.sort_prompt')}</option>
+                        </select>
+                    )}
                 </div>
 
                 {allTags.length > 0 && (
@@ -611,9 +660,24 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
                     item={editingItem}
                     onClose={() => setEditingItem(null)}
                     onSave={(updated) => {
+                        warnIfDuplicate(updated, updated.id);
                         updateQuestionBankItem(updated);
                         setEditingItem(null);
                         showToast(t('questionBank.edit_success_toast'), 'success');
+                    }}
+                />
+            )}
+            {creatingItem && (
+                <QuestionBankItemEditorModal
+                    item={creatingItem}
+                    titleKey="questionBank.create_question_title"
+                    onClose={() => setCreatingItem(null)}
+                    onSave={(item) => {
+                        warnIfDuplicate(item);
+                        const { id: _id, createdAt: _createdAt, updatedAt: _updatedAt, ...draft } = item;
+                        addQuestionBankItems([draft]);
+                        setCreatingItem(null);
+                        showToast(t('questionBank.saved_toast'), 'success');
                     }}
                 />
             )}

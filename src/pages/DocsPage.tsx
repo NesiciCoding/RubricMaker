@@ -70,6 +70,12 @@ export function getRouteTree(t: TFunction): RouteNode[] {
                     color: '#3b82f6',
                 },
                 {
+                    path: '/rubrics/import/:code',
+                    label: t('docs.route_rubric_import_label'),
+                    description: t('docs.route_rubric_import_desc'),
+                    color: '#3b82f6',
+                },
+                {
                     path: '/rubrics/:id',
                     label: t('docs.route_rubric_builder_label'),
                     description: t('docs.route_rubric_builder_desc'),
@@ -948,6 +954,7 @@ function RubricsTab() {
                         t('docs.rb_import_export_item_tiered'),
                         t('docs.rb_import_export_item_export'),
                         t('docs.rb_import_export_item_share_code'),
+                        t('docs.rb_import_export_item_preview_import'),
                     ]}
                 />
 
@@ -1148,6 +1155,9 @@ function GradingTab() {
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
                     {t('docs.gr_layout_body')}
                 </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
+                    {t('docs.gr_layout_menu_note')}
+                </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.gr_keyboard_title')}
@@ -1280,6 +1290,9 @@ function GradingTab() {
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
                     {t('docs.gr_messages_scope_note')}
                 </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    {t('docs.gr_messages_search_note')}
+                </p>
             </FeatureSection>
 
             <FeatureSection icon={Bell} title={t('docs.gr_notifications_title')} color="#f59e0b">
@@ -1300,8 +1313,11 @@ function GradingTab() {
                     {t('docs.gr_comment_bank_body_prefix')} <strong>{t('docs.gr_comment_bank_nav')}</strong>{' '}
                     {t('docs.gr_comment_bank_body')}
                 </p>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
                     {t('docs.gr_comment_bank_suggested_note')}
+                </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    {t('docs.gr_comment_bank_io_note')}
                 </p>
             </FeatureSection>
 
@@ -1315,6 +1331,7 @@ function GradingTab() {
                     items={[
                         t('docs.gr_test_results_item_completeness'),
                         t('docs.gr_test_results_item_autoscore'),
+                        t('docs.gr_test_results_item_autoconfirm'),
                         t('docs.gr_test_results_item_open'),
                         t('docs.gr_test_results_item_grade'),
                         t('docs.gr_test_results_item_comment_bank'),
@@ -1336,6 +1353,7 @@ function GradingTab() {
                 <FeatureList
                     items={[
                         t('docs.gr_question_bank_item_cefr'),
+                        t('docs.gr_question_bank_item_author'),
                         t('docs.gr_question_bank_item_filter'),
                         t('docs.gr_question_bank_item_bundle_save'),
                         t('docs.gr_question_bank_item_bundle_insert'),

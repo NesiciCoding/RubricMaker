@@ -22,8 +22,17 @@ export default function NotificationsPage() {
     const { t } = useTranslation();
     const tour = usePageTourState('notifications');
     const navigate = useNavigate();
-    const { items, overdueItems, messageItems, moderationItems, threshold, dismiss, dismissAll, markThreadRead } =
-        useNotificationFeed();
+    const {
+        items,
+        overdueItems,
+        messageItems,
+        moderationItems,
+        threshold,
+        dismiss,
+        dismissAll,
+        markThreadRead,
+        markAllMessagesRead,
+    } = useNotificationFeed();
     const [filter, setFilter] = useState<FilterKind>('all');
 
     const filtered = useMemo(
@@ -45,16 +54,16 @@ export default function NotificationsPage() {
         return '/moderation';
     }
 
-    // Deliberately never bulk-marks unread messages as read — same rationale as
-    // NotificationBell's clearAll: Message.readByTeacher is real, synced state, so
-    // clearing it is a deliberate per-thread action (the "Mark read" button below),
-    // not something a broad "Clear all" click should do silently and irreversibly.
-    function handleClearVisible() {
-        if (filter === 'all' || filter === 'overdue_grading') dismissAll('overdue_grading');
-        if (filter === 'all' || filter === 'moderation_pending') dismissAll('moderation_pending');
-    }
-
-    const canClearVisible = filter !== 'unread_message' && filtered.length > 0;
+    // One clear action per dismissible type, labelled with the type it clears: the old single
+    // "Clear all" left unread messages and any filtered-out type behind, so the label promised
+    // more than the click did. Unread messages are never bulk-cleared here — Message.readByTeacher
+    // is real synced state, so clearing it is the explicit "Mark all read" action instead.
+    type ClearableKind = 'overdue_grading' | 'moderation_pending';
+    const clearableKinds: ClearableKind[] =
+        filter === 'all' ? ['overdue_grading', 'moderation_pending'] : filter === 'unread_message' ? [] : [filter];
+    const visibleClearableKinds = clearableKinds.filter(
+        (kind) => (kind === 'overdue_grading' ? overdueItems : moderationItems).length > 0
+    );
 
     return (
         <>
@@ -94,14 +103,25 @@ export default function NotificationsPage() {
                             )}
                         </button>
                     ))}
-                    {canClearVisible && (
+                    {visibleClearableKinds.map((kind, index) => (
+                        <button
+                            key={kind}
+                            type="button"
+                            className="btn btn-ghost btn-sm"
+                            style={index === 0 ? { marginLeft: 'auto' } : undefined}
+                            onClick={() => dismissAll(kind)}
+                        >
+                            {t('notifications.clear_type', { type: t(`notifications.filter_${kind}`) })}
+                        </button>
+                    ))}
+                    {filter === 'unread_message' && messageItems.length > 0 && (
                         <button
                             type="button"
                             className="btn btn-ghost btn-sm"
                             style={{ marginLeft: 'auto' }}
-                            onClick={handleClearVisible}
+                            onClick={markAllMessagesRead}
                         >
-                            {t('notifications.clear_all')}
+                            {t('notifications.mark_all_read')}
                         </button>
                     )}
                 </div>
@@ -132,8 +152,9 @@ export default function NotificationsPage() {
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
                                         <Icon size={16} style={{ flexShrink: 0, color: 'var(--text-muted)' }} />
                                         <div style={{ minWidth: 0 }}>
-                                            <div
+                                            <h2
                                                 style={{
+                                                    margin: 0,
                                                     fontWeight: 600,
                                                     fontSize: 14,
                                                     overflow: 'hidden',
@@ -142,7 +163,7 @@ export default function NotificationsPage() {
                                                 }}
                                             >
                                                 {item.type === 'overdue_grading' ? item.title : item.studentName}
-                                            </div>
+                                            </h2>
                                             <div className="text-muted text-xs">
                                                 {t(`notifications.filter_${item.type}`)} · {detailFor(item)}
                                             </div>
