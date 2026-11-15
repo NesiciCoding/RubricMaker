@@ -52,7 +52,12 @@ test.describe('Grading criterion card context menu', () => {
         await expect(menu.getByRole('menuitem', { name: /copy feedback/i })).toBeDisabled();
     });
 
-    test('the menu opens from the keyboard with Shift+F10', async ({ appPage }) => {
+    test('the menu opens from the keyboard with Shift+F10', async ({ appPage, browserName }) => {
+        // Only Chromium turns a synthetic Shift+F10 into a contextmenu event; Firefox and WebKit leave that to the OS.
+        test.skip(
+            browserName !== 'chromium',
+            'Shift+F10 does not raise contextmenu through Playwright outside Chromium'
+        );
         const page = new GradeStudentPage(appPage);
         await page.goto(RUBRIC_ID, CURRENT_ID);
         await expect(card(appPage)).toBeVisible({ timeout: 10_000 });
@@ -66,6 +71,19 @@ test.describe('Grading criterion card context menu', () => {
     });
 
     test('copies the feedback typed into the composer', async ({ appPage }) => {
+        await appPage.addInitScript(() => {
+            const copied: string[] = [];
+            (window as unknown as { __copied: string[] }).__copied = copied;
+            Object.defineProperty(navigator, 'clipboard', {
+                configurable: true,
+                value: {
+                    writeText: (text: string) => {
+                        copied.push(text);
+                        return Promise.resolve();
+                    },
+                },
+            });
+        });
         const page = new GradeStudentPage(appPage);
         await page.goto(RUBRIC_ID, CURRENT_ID);
         await card(appPage)
@@ -80,6 +98,9 @@ test.describe('Grading criterion card context menu', () => {
         await appPage.getByRole('menuitem', { name: /copy feedback/i }).click();
 
         await expect(appPage.getByRole('alert')).toContainText(/feedback copied/i);
+        expect(await appPage.evaluate(() => (window as unknown as { __copied: string[] }).__copied)).toEqual([
+            'Strong thesis',
+        ]);
     });
 
     test('inserts the previous student feedback into the open composer', async ({ appPage }) => {
@@ -120,7 +141,7 @@ test.describe('Grading criterion card context menu', () => {
 
         const panel = appPage.locator('.grading-detail');
         await expect(panel).toBeVisible();
-        await panel.click({ button: 'right' });
+        await panel.getByText('Writing Quality').first().click({ button: 'right' });
 
         await expect(appPage.getByRole('menuitemradio')).toHaveCount(4);
         await expect(appPage.getByRole('menuitemradio', { name: /Excellent/ })).toHaveAttribute('aria-checked', 'true');

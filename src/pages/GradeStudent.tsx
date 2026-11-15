@@ -82,7 +82,8 @@ import { criteriaForTier, gradeTier, resolveTier } from '../utils/tieredRubric';
 import SubItemChecklist, { BestFitHint } from '../components/Grading/SubItemChecklist';
 import TieredGradingBar, { type TieredGradePatch } from '../components/Grading/TieredGradingBar';
 import { mergeEditsOntoSavedGrade } from '../utils/hydratedGradeMerge';
-import { stripCommentHtml } from '../utils/exportDataPrep';
+import { escapeHtml, stripCommentHtml } from '../utils/exportDataPrep';
+import { useCopyFeedback } from '../hooks/useCopyFeedback';
 import { getCriterionInterventionFlags } from '../utils/learningPathAggregator';
 import { exportSinglePdf } from '../utils/pdfExport';
 import { logAuditEvent } from '../services/database/AuditLogger';
@@ -910,11 +911,8 @@ function GradeStudentEditor() {
     );
     // One menu for the whole card list: it opens on whichever criterion card was right-clicked.
     const cardMenu = useContextMenu();
-    const copyFeedbackText = (text: string) => {
-        const write = navigator.clipboard?.writeText(text);
-        if (!write) return;
-        void write.then(() => showToast(t('gradeStudent.menu_feedback_copied'), 'success')).catch(() => {});
-    };
+    const copyFeedback = useCopyFeedback();
+    const copyFeedbackText = (text: string) => void copyFeedback(text);
 
     if (!rubric || !student || !sr)
         return (
@@ -1446,7 +1444,9 @@ function GradeStudentEditor() {
                         onStartAudio={startAudioRecording}
                         onStopAudio={stopAudioRecording}
                         previousFeedbackFor={previousFeedbackFor}
-                        onInsertPreviousFeedback={(_criterionId, text) => commentEditorRef.current?.insertContent(text)}
+                        onInsertPreviousFeedback={(_criterionId, text) =>
+                            commentEditorRef.current?.insertContent(escapeHtml(text))
+                        }
                     />
                 )}
 
@@ -1481,8 +1481,8 @@ function GradeStudentEditor() {
                                             e,
                                             criterionMenuItems({
                                                 // A single-point card scores through its outcome buttons, so
-                                                // the menu carries only the comment actions here.
-                                                levels: [],
+                                                // its menu omits the level actions.
+                                                levels: isSinglePoint ? [] : levels,
                                                 entry,
                                                 labels: {
                                                     setLevel: (level) => t('gradeStudent.menu_set_level', { level }),
@@ -1492,13 +1492,18 @@ function GradeStudentEditor() {
                                                         t('gradeStudent.menu_use_previous_feedback', { name }),
                                                 },
                                                 previous: previousFeedbackFor(c.id),
-                                                selectLevel: () => {},
-                                                openCommentBank: () => setShowCommentBankFor(c.id),
+                                                selectLevel: (levelId) =>
+                                                    updateEntry(c.id, { levelId, overridePoints: undefined }),
+                                                openCommentBank: () => {
+                                                    setActiveCommentCrit(c.id);
+                                                    setShowCommentBankFor(c.id);
+                                                },
                                                 copyFeedback: copyFeedbackText,
                                                 // Nothing to insert into while this card's comment box is closed.
                                                 insertPrevious:
                                                     activeCommentCrit === c.id
-                                                        ? (text) => commentEditorRef.current?.insertContent(text)
+                                                        ? (text) =>
+                                                              commentEditorRef.current?.insertContent(escapeHtml(text))
                                                         : undefined,
                                             }),
                                             t('gradeStudent.menu_label')

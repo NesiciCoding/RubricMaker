@@ -8,7 +8,7 @@ import SubItemChecklist, { BestFitHint } from './SubItemChecklist';
 import { scoresSubItems, subItemMode, toggleTick } from '../../utils/subItems';
 import CommentComposer from './CommentComposer';
 import ContextMenu, { useContextMenu } from '../ui/ContextMenu';
-import { useToast } from '../../hooks/useToast';
+import { useCopyFeedback } from '../../hooks/useCopyFeedback';
 import { criterionMenuItems, type PreviousFeedback } from './criterionMenuItems';
 
 interface Props {
@@ -62,7 +62,6 @@ export default function CriterionDetailPanel({
     onInsertPreviousFeedback,
 }: Props) {
     const { t } = useTranslation();
-    const { showToast } = useToast();
     const ctx = useContextMenu();
     // Raw text of the override field while it is being edited, so a half-typed entry like "9." is not
     // rewritten by the controlled rerender before the next keystroke lands.
@@ -78,11 +77,8 @@ export default function CriterionDetailPanel({
     const showBasePoints =
         !!selectedLevel && (selectedLevel.minPoints !== selectedLevel.maxPoints || selectedLevel.subItems.length === 0);
 
-    function copyFeedback(text: string) {
-        const write = navigator.clipboard?.writeText(text);
-        if (!write) return;
-        void write.then(() => showToast(t('gradeStudent.menu_feedback_copied'), 'success')).catch(() => {});
-    }
+    const copyFeedbackToClipboard = useCopyFeedback();
+    const copyFeedback = (text: string) => void copyFeedbackToClipboard(text);
 
     const menuItems = criterionMenuItems({
         levels,
