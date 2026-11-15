@@ -3837,6 +3837,8 @@
         "permission_denied": "Notifications du navigateur bloquées. Autorisez-les dans les paramètres du navigateur.",
         "browser_title": "RubricMaker — Corrections en retard",
         "clear_all": "Tout effacer",
+        "clear_type": "Effacer {{type}}",
+        "mark_all_read": "Tout marquer comme lu",
         "unread_messages_subtitle": "{{count}} fil(s) de message non lu(s)",
         "moderation_subtitle": "{{count}} révision(s) de modération en attente",
         "view_all": "Voir toutes les notifications",
