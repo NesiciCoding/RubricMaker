@@ -12,8 +12,6 @@ import {
     Trash2,
     FileText,
     BookMarked,
-    Music,
-    Layers,
     Eye,
     Settings2,
     Timer,
@@ -27,7 +25,6 @@ import { getTestBuilderTourSteps } from '../data/TutorialSteps';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import Topbar from '../components/Layout/Topbar';
 import { useAssessment, useAuthoring, useFlashcards, useSettings } from '../context/AppContext';
-import { computeTargetVerdict } from '../utils/textLevelVerdict';
 import { htmlToPlainText } from '../hooks/useTTS';
 import { useToast } from '../hooks/useToast';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
@@ -37,9 +34,7 @@ import { toLocalDatetimeInput } from '../utils/dateInput';
 import QuestionEditor from '../components/Tests/QuestionEditor';
 import { type PrintTextFields } from '../components/Tests/TestA4Preview';
 import TestInspector from '../components/Tests/TestInspector';
-import ListeningControlsFields from '../components/Tests/ListeningControlsFields';
-import AudioUrlStatus from '../components/Tests/AudioUrlStatus';
-import EssayEditor from '../components/Editor/EssayEditor';
+import TestSectionWorkspace from '../components/Tests/TestSectionWorkspace';
 import QuestionBankModal from '../components/Tests/QuestionBankModal';
 import TagFilterChips from '../components/Tests/TagFilterChips';
 import { cloneBankItemIntoTest, duplicateQuestion, newQuestion } from '../utils/testQuestionClone';
@@ -54,12 +49,7 @@ import type {
     QuestionBankSkill,
     QuestionBankItem,
 } from '../types';
-import {
-    CEFR_LEVELS,
-    QUESTION_BANK_SKILLS,
-    QUESTION_BANK_SKILL_LABELS,
-    CEFR_LEVEL_COLORS,
-} from '../data/cefrDescriptors';
+import { CEFR_LEVELS, QUESTION_BANK_SKILLS, QUESTION_BANK_SKILL_LABELS } from '../data/cefrDescriptors';
 import { sectionQuestions, isAutoScorable, hasRoutingCycle } from '../utils/placementRouting';
 import { clamp } from '../utils/clamp';
 import { plainQuestionPromptText } from '../utils/clozeParse';
@@ -154,11 +144,11 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         setSelectedQuestionId(questions[0]?.id ?? null);
     }, [questions, selectedQuestionId]);
     const [sections, setSections] = useState<TestSection[]>(existing?.sections ?? generated?.sections ?? []);
+    /** Section workspace open in the focus pane at rail widths; null means a question is showing. */
+    const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
+    const selectedSection = sections.find((s) => s.id === selectedSectionId) ?? null;
     const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
     const [collapsedQuestions, setCollapsedQuestions] = useState<Set<string>>(new Set());
-    const [expandedPassages, setExpandedPassages] = useState<Set<string>>(
-        new Set((existing?.sections ?? generated?.sections ?? []).filter((s) => s.content).map((s) => s.id))
-    );
     const [newSectionTitle, setNewSectionTitle] = useState('');
     const [durationMinutes, setDurationMinutes] = useState(
         existing?.durationMinutes ? String(existing.durationMinutes) : ''
@@ -521,6 +511,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
     /** Opens the question (and its section) and moves focus to it, from the issue list. */
     function jumpToQuestion(qid: string) {
         setChecksOpen(false);
+        setSelectedSectionId(null);
         if (isRailWide) {
             setSelectedQuestionId(qid);
             return;
@@ -586,6 +577,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
     }
 
     function removeSection(sectionId: string) {
+        if (sectionId === selectedSectionId) setSelectedSectionId(null);
         setSections((prev) =>
             prev
                 .filter((s) => s.id !== sectionId)
@@ -930,8 +922,10 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         <TestInspector
             test={previewTest}
             onPrintTextChange={(patch) => setPrintText((prev) => ({ ...prev, ...patch }))}
-            question={focusQuestion}
-            questionNumber={focusQuestion ? displayOrderedQuestions.indexOf(focusQuestion) + 1 : undefined}
+            question={selectedSection ? null : focusQuestion}
+            questionNumber={
+                focusQuestion && !selectedSection ? displayOrderedQuestions.indexOf(focusQuestion) + 1 : undefined
+            }
             questionCount={questions.length}
             lang={contentLanguage || undefined}
         />
@@ -997,7 +991,12 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                         totalPoints={totalPoints}
                         issuesByQuestion={issuesByQuestion}
                         activeId={selectedQuestionId}
+                        activeSectionId={selectedSectionId}
                         onSelect={jumpToQuestion}
+                        onSelectSection={(sectionId) => {
+                            setChecksOpen(false);
+                            setSelectedSectionId(sectionId);
+                        }}
                         onAdd={() => openTypePicker()}
                         onOpenSettings={() => openSettings('basics')}
                     />
@@ -1798,6 +1797,21 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                     {isRailWide ? (
                         checksOpen ? (
                             <div style={{ order: -1 }}>{checksPanel}</div>
+                        ) : selectedSection ? (
+                            <div style={{ order: -1, marginBottom: 20 }}>
+                                <TestSectionWorkspace
+                                    section={selectedSection}
+                                    targetLevel={(cefrTargetLevel || selectedSection.cefrLevel) as CefrLevel | ''}
+                                    questionCount={questionsFor(selectedSection.id).length}
+                                    onPatch={(patch) => updateSection(selectedSection.id, patch)}
+                                    onContentChange={(html) => updateSectionContent(selectedSection.id, html)}
+                                    onSaveToBank={() => saveSectionToBank(selectedSection)}
+                                    onSeedDeck={(words) => seedDeckFromAboveLevelWords(selectedSection, words)}
+                                    onAddQuestion={() => openTypePicker(selectedSection.id)}
+                                    onClose={() => setSelectedSectionId(null)}
+                                    defaultPassageOpen
+                                />
+                            </div>
                         ) : focusQuestion ? (
                             <div data-testid="question-focus" style={{ order: -1, marginBottom: 20 }}>
                                 <div
@@ -1969,191 +1983,18 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
 
                                         {!collapsed && (
                                             <div style={{ padding: '16px 14px' }}>
-                                                <div style={{ marginBottom: 16 }}>
-                                                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                                                        <button
-                                                            type="button"
-                                                            className="btn btn-ghost btn-sm"
-                                                            onClick={() =>
-                                                                setExpandedPassages((prev) => {
-                                                                    const next = new Set(prev);
-                                                                    if (next.has(section.id)) next.delete(section.id);
-                                                                    else next.add(section.id);
-                                                                    return next;
-                                                                })
-                                                            }
-                                                            style={{
-                                                                marginBottom: expandedPassages.has(section.id) ? 8 : 0,
-                                                            }}
-                                                        >
-                                                            <FileText size={14} /> {t('tests.section_passage_label')}
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            className="btn btn-ghost btn-sm"
-                                                            onClick={() => saveSectionToBank(section)}
-                                                            disabled={sectionQs.length === 0}
-                                                        >
-                                                            <BookMarked size={14} />{' '}
-                                                            {t('questionBank.save_section_to_bank')}
-                                                        </button>
-                                                    </div>
-                                                    {expandedPassages.has(section.id) && (
-                                                        <>
-                                                            <EssayEditor
-                                                                content={section.content ?? ''}
-                                                                onChange={(html) =>
-                                                                    updateSectionContent(section.id, html)
-                                                                }
-                                                                placeholder={t('tests.section_passage_placeholder')}
-                                                                minHeight={160}
-                                                                allowPageMode={false}
-                                                                showDragHandle
-                                                                showTableOfContents
-                                                                allowImageEmbedding
-                                                            />
-                                                            {(() => {
-                                                                const targetLevel = (cefrTargetLevel ||
-                                                                    section.cefrLevel) as CefrLevel | '';
-                                                                if (!targetLevel || !section.content) return null;
-                                                                const verdict = computeTargetVerdict(
-                                                                    htmlToPlainText(section.content),
-                                                                    targetLevel
-                                                                );
-                                                                return (
-                                                                    <div
-                                                                        className="text-sm"
-                                                                        style={{
-                                                                            marginTop: 8,
-                                                                            padding: '8px 10px',
-                                                                            borderRadius: 6,
-                                                                            background: 'var(--bg-elevated)',
-                                                                        }}
-                                                                    >
-                                                                        <span
-                                                                            style={{
-                                                                                fontWeight: 700,
-                                                                                color:
-                                                                                    verdict.verdict === 'suitable'
-                                                                                        ? 'var(--green)'
-                                                                                        : verdict.verdict ===
-                                                                                            'slightly_above'
-                                                                                          ? 'var(--yellow)'
-                                                                                          : 'var(--red)',
-                                                                            }}
-                                                                        >
-                                                                            {t(`analysis.verdict_${verdict.verdict}`)}
-                                                                        </span>{' '}
-                                                                        <span className="text-muted">
-                                                                            {t('analysis.coverage_known', {
-                                                                                level: targetLevel,
-                                                                                pct: verdict.coveragePercent.toFixed(0),
-                                                                            })}
-                                                                        </span>
-                                                                        {verdict.aboveTargetWords.length > 0 && (
-                                                                            <div style={{ marginTop: 6 }}>
-                                                                                <div
-                                                                                    style={{
-                                                                                        display: 'flex',
-                                                                                        gap: 6,
-                                                                                        flexWrap: 'wrap',
-                                                                                        marginBottom: 6,
-                                                                                    }}
-                                                                                >
-                                                                                    {verdict.aboveTargetWords.map(
-                                                                                        ({ word, level }) => (
-                                                                                            <span
-                                                                                                key={word}
-                                                                                                title={level}
-                                                                                                style={{
-                                                                                                    fontSize: '0.78rem',
-                                                                                                    padding: '2px 7px',
-                                                                                                    borderRadius: 4,
-                                                                                                    background:
-                                                                                                        CEFR_LEVEL_COLORS[
-                                                                                                            level
-                                                                                                        ] + '18',
-                                                                                                    border: `1px solid ${CEFR_LEVEL_COLORS[level]}44`,
-                                                                                                    color: 'var(--text)',
-                                                                                                }}
-                                                                                            >
-                                                                                                {word}
-                                                                                            </span>
-                                                                                        )
-                                                                                    )}
-                                                                                </div>
-                                                                                <button
-                                                                                    type="button"
-                                                                                    className="btn btn-ghost btn-sm"
-                                                                                    onClick={() =>
-                                                                                        seedDeckFromAboveLevelWords(
-                                                                                            section,
-                                                                                            verdict.aboveTargetWords
-                                                                                        )
-                                                                                    }
-                                                                                >
-                                                                                    <Layers size={14} />{' '}
-                                                                                    {t(
-                                                                                        'tests.section_seed_deck_button'
-                                                                                    )}
-                                                                                </button>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                );
-                                                            })()}
-                                                            <div className="form-group" style={{ marginTop: 8 }}>
-                                                                <label
-                                                                    htmlFor={`section-audio-${section.id}`}
-                                                                    style={{
-                                                                        display: 'flex',
-                                                                        alignItems: 'center',
-                                                                        gap: 6,
-                                                                    }}
-                                                                >
-                                                                    <Music size={14} /> {t('tests.section_audio_label')}{' '}
-                                                                    <span
-                                                                        style={{
-                                                                            color: 'var(--text-muted)',
-                                                                            fontWeight: 400,
-                                                                        }}
-                                                                    >
-                                                                        ({t('essay_assignment.optional')})
-                                                                    </span>
-                                                                </label>
-                                                                <input
-                                                                    id={`section-audio-${section.id}`}
-                                                                    type="url"
-                                                                    value={section.audioUrl ?? ''}
-                                                                    onChange={(e) =>
-                                                                        updateSection(section.id, {
-                                                                            audioUrl: e.target.value || undefined,
-                                                                        })
-                                                                    }
-                                                                    placeholder={t('tests.question_audio_placeholder')}
-                                                                />
-                                                                <AudioUrlStatus url={section.audioUrl} />
-                                                                {section.audioUrl && (
-                                                                    <audio
-                                                                        controls
-                                                                        src={section.audioUrl}
-                                                                        aria-label={t(
-                                                                            'tests.question_audio_preview_alt'
-                                                                        )}
-                                                                        style={{ marginTop: 8, width: '100%' }}
-                                                                    />
-                                                                )}
-                                                                <ListeningControlsFields
-                                                                    id={`section-${section.id}`}
-                                                                    value={section}
-                                                                    onChange={(patch) =>
-                                                                        updateSection(section.id, patch)
-                                                                    }
-                                                                />
-                                                            </div>
-                                                        </>
-                                                    )}
-                                                </div>
+                                                <TestSectionWorkspace
+                                                    section={section}
+                                                    targetLevel={
+                                                        (cefrTargetLevel || section.cefrLevel) as CefrLevel | ''
+                                                    }
+                                                    questionCount={sectionQs.length}
+                                                    onPatch={(patch) => updateSection(section.id, patch)}
+                                                    onContentChange={(html) => updateSectionContent(section.id, html)}
+                                                    onSaveToBank={() => saveSectionToBank(section)}
+                                                    onSeedDeck={(words) => seedDeckFromAboveLevelWords(section, words)}
+                                                    defaultPassageOpen={!!section.content}
+                                                />
                                                 <Droppable droppableId={section.id}>
                                                     {(provided) => (
                                                         <div

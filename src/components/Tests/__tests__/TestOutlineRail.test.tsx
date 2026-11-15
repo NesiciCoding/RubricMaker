@@ -87,4 +87,18 @@ describe('TestOutlineRail', () => {
         expect(screen.getByText('tests.no_questions')).toBeInTheDocument();
         expect(screen.queryByText('tests.no_section')).not.toBeInTheDocument();
     });
+    it('opens a section workspace from its heading', () => {
+        const onSelectSection = vi.fn();
+        renderRail({ onSelectSection, activeSectionId: 's1' });
+
+        const heading = screen.getByTestId('outline-section-s1');
+        expect(heading).toHaveAttribute('aria-current', 'true');
+        fireEvent.click(heading);
+        expect(onSelectSection).toHaveBeenCalledWith('s1');
+    });
+
+    it('leaves the uncategorised group without a section to open', () => {
+        renderRail({ onSelectSection: vi.fn() });
+        expect(screen.queryByTestId('outline-section-__none__')).not.toBeInTheDocument();
+    });
 });

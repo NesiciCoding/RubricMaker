@@ -68,6 +68,11 @@ At rail widths the outline is the only question list and the pane shows exactly 
   the end of the list).
 - The rail gained search (filters rows by prompt, type or part, keeping the full numbering), an
   add-question button, and the warning icon for questions the checks block on.
+- **Section workspace:** a section's heading in the rail is a button. Opening it puts that section's
+  workspace in the pane — passage with its CEFR verdict and deck seeding, section audio and listening
+  controls, save-to-question-bank and add-question — so nothing the stacked section card offers is lost
+  at rail widths. Both layouts render the same `TestSectionWorkspace` component, and choosing a question
+  returns the pane to that question.
 - Drag reordering moved to explicit up/down buttons in the pane header, scoped to the question's own
   part; the drag grip is hidden where dragging is impossible (`QuestionEditor.showGrip`), so no affordance
   promises something the pane can't do.

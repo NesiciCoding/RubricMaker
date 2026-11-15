@@ -1305,4 +1305,35 @@ describe('TestBuilderPage extended', () => {
             Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
         }
     });
+    it('gives a section the same workspace at rail widths', () => {
+        mockTests = [
+            {
+                id: 't1',
+                name: 'Sectioned',
+                questions: [{ ...q1, id: 'qa', sectionId: s1.id }],
+                sections: [{ ...s1, title: 'Part 1', content: '<p>Passage body</p>' }],
+                requireSEB: false,
+                shuffleQuestions: false,
+                createdAt: '2024-01-01T00:00:00Z',
+            },
+        ];
+        const originalWidth = window.innerWidth;
+        Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1500 });
+        try {
+            renderBuilder('/tests/t1');
+            fireEvent.click(screen.getByTestId(`outline-section-${s1.id}`));
+
+            const workspace = within(screen.getByTestId(`section-workspace-${s1.id}`));
+            expect(workspace.getByRole('heading', { name: 'Part 1' })).toBeInTheDocument();
+            expect(workspace.getByText('questionBank.save_section_to_bank')).toBeInTheDocument();
+            expect(workspace.getByLabelText('tests.section_passage_placeholder')).toHaveValue('<p>Passage body</p>');
+
+            // Choosing a question from the rail closes the workspace and opens that question.
+            fireEvent.click(screen.getByTestId('outline-question-qa'));
+            expect(screen.queryByTestId(`section-workspace-${s1.id}`)).not.toBeInTheDocument();
+            expect(screen.getByTestId('question-focus')).toBeInTheDocument();
+        } finally {
+            Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
+        }
+    });
 });
