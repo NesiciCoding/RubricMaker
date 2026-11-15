@@ -1088,6 +1088,17 @@ describe('TestBuilderPage extended', () => {
         expect(panel.getByText(/tests\.issue_no_numeric_answer/)).toBeInTheDocument();
     });
 
+    it('hides the blocker banner while the checks screen is open', () => {
+        renderBuilder();
+        fireEvent.change(screen.getByLabelText('tests.name_label'), { target: { value: 'Draft test' } });
+        fireEvent.click(screen.getAllByText(/tests.add_question/)[0]);
+        pickNewQuestionType();
+        expect(screen.getByTestId('checks-strip')).toBeInTheDocument();
+        fireEvent.click(screen.getByTestId('checks_review'));
+        expect(screen.getByTestId('checks-panel')).toBeInTheDocument();
+        expect(screen.queryByTestId('checks-strip')).not.toBeInTheDocument();
+    });
+
     it('blocks saving with an inline error for a zero or negative time limit (#702)', () => {
         renderBuilder();
         openSettings('basics');

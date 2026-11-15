@@ -71,3 +71,11 @@ supabase/.temp/
 
 # UD parser model (CC BY-NC-SA) is downloaded per deployment, see public/models/README.md
 public/models/*.udpipe
+
+# Mockups are design material, not source. Only the test-creator spec and the captures its plan links
+# to live in the repo; any other mockup or throwaway capture stays on the machine that made it.
+docs/mockups/*
+!docs/mockups/test-creator.html
+!docs/mockups/screenshots/
+docs/mockups/screenshots/*
+!docs/mockups/screenshots/test-creator-*.png

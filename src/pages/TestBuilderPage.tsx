@@ -1013,7 +1013,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                             }}
                         />
                     )}
-                    {draftBlockers && (
+                    {draftBlockers && !checksOpen && (
                         <div
                             role="status"
                             data-testid="checks-strip"

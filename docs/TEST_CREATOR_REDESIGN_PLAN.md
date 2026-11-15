@@ -123,7 +123,8 @@ The settings card is gone; `TestSettingsDrawer` holds the same fields in five ta
 
 - **Two entry points:** a Checks button next to Insert from bank (carrying the number of blocking
   questions, `aria-pressed` while open) and the short review strip that replaced the old banner. Below
-  1400px the screen renders above the questions; at rail widths it replaces the question pane.
+  1400px the screen renders above the questions; at rail widths it replaces the question pane. The strip
+  hides while the screen is open — it repeats the screen's heading — and returns when it closes.
 - **Blocking list:** one row per question — its number and a jump link straight into the question, the
   prompt (or its type when the prompt is empty), and each issue as its own sentence. Empty-test blocking
   is its own row. All of it comes from `testAssignBlockers`/`testQuestionIssues`; no rule was added.
@@ -159,9 +160,10 @@ The right column is now the inspector, always present at rail widths, with two t
 ## Screenshots
 
 Only captures of the shipped UI are committed. The exploratory screenshots taken while building the phases
-went stale within hours (two of them show the checks screen before it was reworded, one still has the
-test settings inline next to it), so they are gone; what is left is what a reader of this plan or of the PR
-needs to see the builder as it now stands. Re-capture in place rather than adding another file.
+went stale within hours (two of them show the checks screen before it was reworded), so they are gone.
+`docs/mockups/` is gitignored apart from the spec and the five captures below, so a new mockup or a
+throwaway capture now stays on the machine that made it — the allowlist lives in `.gitignore`. Re-capture
+in place rather than adding another file, and keep the table in step.
 
 | File                                                                                                     | Shows                                                                                   |
 | -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |

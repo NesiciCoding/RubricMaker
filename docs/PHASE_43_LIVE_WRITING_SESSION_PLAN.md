@@ -2,7 +2,7 @@
 
 **Status:** Research + mockup complete. **Design decisions signed off 10 Nov 2026. Implementation shipped through 43.6 in the Phase 43 stack (#1160–#1169); §6 records the shipped schema deltas.** This document is the design authority, not a build log.
 **Source:** [#851 — A we-will-write Like synchronous writing task](https://github.com/NesiciCoding/RubricMaker/issues/851) (`enhancement`, `priority: low`, `role:teacher`, `role:student`, `route:student`, `database`).
-**Mockup:** [`docs/mockups/live-writing-session.html`](mockups/live-writing-session.html) — self-contained, light/dark, screens for teacher setup, projector, finals, insights and the full student loop.
+**Mockup:** the self-contained HTML mockup (light/dark; teacher setup, projector, finals, insights and the full student loop) was used for review and is not committed — `docs/mockups/` is gitignored apart from the test-creator spec.
 **Tracking issues:** 43.1 [#1159](https://github.com/NesiciCoding/RubricMaker/issues/1159) · 43.2 [#1155](https://github.com/NesiciCoding/RubricMaker/issues/1155) · 43.3 [#1158](https://github.com/NesiciCoding/RubricMaker/issues/1158) · 43.4 [#1154](https://github.com/NesiciCoding/RubricMaker/issues/1154) · 43.5 [#1156](https://github.com/NesiciCoding/RubricMaker/issues/1156) · 43.6 [#1153](https://github.com/NesiciCoding/RubricMaker/issues/1153) · 43.7 [#1157](https://github.com/NesiciCoding/RubricMaker/issues/1157)
 **Why now:** WeWillWrite is not available in the Netherlands; the teacher who filed #851 wants the classroom loop, not a copy of the brand. RubricMaker already owns almost every underlying primitive (roster, essay editor, timer, live presence, CEFR profiling, grading, portals) — what is missing is the _session orchestration_ around them.
 
