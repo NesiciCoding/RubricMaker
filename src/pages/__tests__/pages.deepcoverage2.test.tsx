@@ -533,10 +533,8 @@ describe('ExportPage deep coverage', () => {
 
     it('student checkbox toggles selection', () => {
         renderPage(<ExportPage />);
-        expect(screen.queryAllByRole('checkbox')).toHaveLength(0);
-        fireEvent.click(screen.getByText('exportPage.rubric_section_title'));
-        fireEvent.click(screen.getByText('exportPage.rubric_students_section_title'));
         const checkboxes = screen.getAllByRole('checkbox');
+        expect(checkboxes.length).toBeGreaterThan(0);
         if (checkboxes.length > 0) {
             fireEvent.click(checkboxes[checkboxes.length - 1]);
             // No crash, selection state changes
@@ -546,10 +544,8 @@ describe('ExportPage deep coverage', () => {
 
     it('"select all" checkbox toggles all students', () => {
         renderPage(<ExportPage />);
-        expect(screen.queryAllByRole('checkbox')).toHaveLength(0);
-        fireEvent.click(screen.getByText('exportPage.rubric_section_title'));
-        fireEvent.click(screen.getByText('exportPage.rubric_students_section_title'));
         const checkboxes = screen.getAllByRole('checkbox');
+        expect(checkboxes.length).toBeGreaterThan(0);
         if (checkboxes.length > 0) {
             fireEvent.click(checkboxes[0]);
             fireEvent.click(checkboxes[0]);
@@ -559,10 +555,8 @@ describe('ExportPage deep coverage', () => {
 
     it('pad for double-sided checkbox toggles state', () => {
         renderPage(<ExportPage />);
-        expect(screen.queryAllByRole('checkbox')).toHaveLength(0);
-        fireEvent.click(screen.getByText('exportPage.rubric_section_title'));
-        fireEvent.click(screen.getByText('exportPage.rubric_students_section_title'));
         const checkboxes = screen.getAllByRole('checkbox');
+        expect(checkboxes.length).toBeGreaterThan(0);
         const padCheckbox = checkboxes.find((c) => c.id?.match(/pad|double/i));
         if (padCheckbox) {
             fireEvent.click(padCheckbox);
@@ -582,14 +576,10 @@ describe('ExportPage deep coverage', () => {
 
     it('rubric select change updates selected rubric', () => {
         renderPage(<ExportPage />);
-        // No comboboxes before a section is expanded: Export doesn't show the topbar class selector (#661).
-        expect(screen.queryAllByRole('combobox')).toHaveLength(0);
-        fireEvent.click(screen.getByText('exportPage.rubric_section_title'));
         const selects = screen.getAllByRole('combobox');
-        if (selects.length > 0) {
-            fireEvent.change(selects[0], { target: { value: 'r1' } });
-            expect(screen.getByText(/Essay Rubric/i)).toBeInTheDocument();
-        }
+        expect(selects.length).toBeGreaterThan(0);
+        fireEvent.change(selects[0], { target: { value: 'r1' } });
+        expect(selects[0]).toHaveValue('r1');
     });
 });
 

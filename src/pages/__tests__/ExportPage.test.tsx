@@ -255,9 +255,9 @@ describe('ExportPage', () => {
     it('selects a student and exports a CSV', async () => {
         renderPage();
         fireEvent.click(screen.getByText('exportPage.rubric_students_section_title'));
-        const aliceCell = screen.getAllByText('Alice').find((el) => el.tagName === 'TD');
-        expect(aliceCell).toBeInTheDocument();
-        fireEvent.click(aliceCell!);
+        const aliceCheckbox = screen.getByLabelText('Alice');
+        expect(aliceCheckbox).toBeInTheDocument();
+        fireEvent.click(aliceCheckbox);
         await act(async () => {
             fireEvent.click(screen.getByText(/exportPage.csv_export_count/));
         });
@@ -337,7 +337,8 @@ describe('ExportPage', () => {
         const aliceBtn2 = screen.getAllByText('Alice').find((el) => el.tagName === 'BUTTON');
         expect(aliceBtn2).toBeInTheDocument();
         fireEvent.click(aliceBtn2!);
-        fireEvent.click(screen.getByText('reportCard.title'));
+        fireEvent.click(screen.getByText('exportPage.report_output_card'));
+        expect(screen.getByText(/reportCard.generate_batch_btn/)).toBeVisible();
         await act(async () => {
             fireEvent.click(screen.getByText(/reportCard.generate_batch_btn/));
         });
