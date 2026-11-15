@@ -24,6 +24,21 @@ describe('QuestionTypePreview', () => {
         expect(innerStyle(container)).toContain('scale(0.6)');
     });
 
+    it('centres a control that is shorter than the card box', () => {
+        const clientWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth');
+        const offsetHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight');
+        Object.defineProperty(HTMLElement.prototype, 'clientWidth', { configurable: true, value: 320 });
+        Object.defineProperty(HTMLElement.prototype, 'offsetHeight', { configurable: true, value: 87 });
+        try {
+            const { container } = render(<QuestionTypePreview type="true-false" />);
+            // 320/520 ≈ 0.615 → 87px of control becomes ~54px, centred in the 150px card box.
+            expect(innerStyle(container)).toMatch(/translateY\(48px\) scale\(0\.615/);
+        } finally {
+            if (clientWidth) Object.defineProperty(HTMLElement.prototype, 'clientWidth', clientWidth);
+            if (offsetHeight) Object.defineProperty(HTMLElement.prototype, 'offsetHeight', offsetHeight);
+        }
+    });
+
     it('leaves the full variant unscaled until it can be measured', () => {
         const { container } = render(<QuestionTypePreview type="hot-text" variant="full" />);
         expect(container.querySelector('.qtype-preview-card')).toBeNull();

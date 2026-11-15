@@ -44,6 +44,7 @@ export default function HotTextAnswer({ question, value, onChange, lang }: Props
                             key={i}
                             role="button"
                             tabIndex={0}
+                            aria-pressed={isSelected}
                             onClick={() => toggle(segment.index)}
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter' || e.key === ' ') {

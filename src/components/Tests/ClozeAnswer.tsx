@@ -111,7 +111,11 @@ function ClozeBankAnswer({ question, value, onChange, code, lang }: Props) {
                         <button
                             key={i}
                             type="button"
-                            aria-label={t('tests.taking.cloze_bank_gap_label', { number: gapIndex + 1 })}
+                            aria-label={
+                                current
+                                    ? t('tests.taking.cloze_bank_gap_filled', { number: gapIndex + 1, answer: current })
+                                    : t('tests.taking.cloze_bank_gap_label', { number: gapIndex + 1 })
+                            }
                             onDragOver={(e) => e.preventDefault()}
                             onDrop={(e) => {
                                 e.preventDefault();
@@ -173,6 +177,7 @@ function ClozeInlineAnswer({ question, value, onChange, code, lang }: Props) {
                         <select
                             key={i}
                             value={current}
+                            aria-label={t('tests.taking.cloze_bank_gap_label', { number: gap.index + 1 })}
                             onChange={(e) => setGapAnswer(gap.index, e.target.value)}
                             style={{
                                 margin: '0 4px',

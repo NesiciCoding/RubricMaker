@@ -53,4 +53,14 @@ describe('questionTypeLabelKey', () => {
             }
         }
     );
+
+    it.each(Object.entries({ en, nl, fr, de, es }))(
+        'every question type has teacher guide copy in %s',
+        (_lang, dict) => {
+            for (const type of ALL_TYPES) {
+                expect(typeof lookup(dict, questionTypeHelpKey(type, 'teacher', 'title')), type).toBe('string');
+                expect(typeof lookup(dict, questionTypeHelpKey(type, 'teacher', 'body')), type).toBe('string');
+            }
+        }
+    );
 });

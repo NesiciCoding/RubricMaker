@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useId, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { seededShuffle } from '../../utils/seededShuffle';
 import { withAnswer } from '../../utils/answerMap';
@@ -16,6 +16,7 @@ interface Props {
 /** Put each shuffled item into one of the named categories. */
 export default function CategorizeAnswer({ question, value, onChange, code, lang }: Props) {
     const { t } = useTranslation();
+    const labelBase = useId();
     const items = question.categorizeItems ?? [];
     const categories = question.categories ?? [];
     const shuffledItems = useMemo(() => seededShuffle(items, `${code}-${question.id}`), [items, code, question.id]);
@@ -35,8 +36,11 @@ export default function CategorizeAnswer({ question, value, onChange, code, lang
         <div lang={lang ?? 'en'} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {shuffledItems.map((item) => (
                 <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ flex: 1, color: 'var(--text)' }}>{item.text}</span>
+                    <span id={`${labelBase}-${item.id}`} style={{ flex: 1, color: 'var(--text)' }}>
+                        {item.text}
+                    </span>
                     <select
+                        aria-labelledby={`${labelBase}-${item.id}`}
                         value={answers[item.id] ?? ''}
                         onChange={(e) => setAnswer(item.id, e.target.value)}
                         style={{
