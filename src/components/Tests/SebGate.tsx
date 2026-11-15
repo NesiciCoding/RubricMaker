@@ -40,9 +40,12 @@ export default function SebGate({ requireSEB, startUrl, fileName, configEndpoint
         preparedBlobRef.current = null;
         if (!startUrl) return;
         let cancelled = false;
-        void prepareSebConfigBlob({ endpoint: configEndpoint, startUrl }).then((blob) => {
-            if (!cancelled) preparedBlobRef.current = blob;
-        });
+        void prepareSebConfigBlob({ endpoint: configEndpoint, startUrl })
+            .then((blob) => {
+                if (!cancelled) preparedBlobRef.current = blob;
+            })
+            // A failed prefetch just leaves the ref empty, so the click falls back to fetch-then-save.
+            .catch(() => {});
         return () => {
             cancelled = true;
         };
