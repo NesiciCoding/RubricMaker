@@ -2707,6 +2707,12 @@
         "tag_group_other": "Schlagwörter"
     },
     "questionBank": {
+        "new_button": "Neue Frage",
+        "create_question_title": "Neue Frage",
+        "sort_label": "Sortieren",
+        "sort_newest": "Neueste",
+        "sort_prompt": "A–Z",
+        "duplicate_warning_toast": "Eine Frage mit derselben Aufgabenstellung ist bereits in der Bank",
         "title": "Fragenbank",
         "page_intro": "Wiederverwendbare Testfragen, die du in jeden Test einfügen kannst.",
         "search_placeholder": "Fragen durchsuchen...",
@@ -4920,6 +4926,7 @@
         "ce_news_flashes_item_read_receipts": "Jede Neuigkeit in der Lehreransicht zeigt, wie viele Schüler sie gelesen haben — auf die Zahl klicken, um zu sehen wer.",
         "ce_news_flashes_info": "Neuigkeiten werden an alle Schüler der erstellenden Lehrkraft gesendet — es gibt keine Zuweisung pro Schüler und keine E-Mail-Benachrichtigung.",
         "gr_question_bank_item_cefr": "Versehen Sie jedes Element in der Bank zusätzlich zu Freitext-Tags mit einem GER-Niveau für zuverlässiges Filtern.",
+        "gr_question_bank_item_author": "Mit der Schaltfläche „Neue Frage“ schreibst du eine Frage direkt in die Bank statt aus einem Test heraus. Der Export lädt nur die Zeilen, die zu deinen Filtern passen; bei einer bereits vorhandenen Aufgabenstellung erscheint ein Hinweis, ohne das Speichern zu blockieren.",
         "gr_question_bank_item_filter": "Grenzen Sie die Bank mit dem durchsuchbaren Tag-Filter sowie Filtern nach Art, Typ, GER und Fertigkeit ein — wählen Sie dann Elemente aus und legen Sie deren Tags, GER-Niveau oder Fertigkeit in einer Aktion per Sammelbearbeitung fest.",
         "gr_question_bank_item_bundle_save": "Bündeln Sie eine ganze Lese-/Hörpassage — den Abschnittsinhalt, das Audio und die zugehörigen Fragen — über „Diese Passage + Fragen in der Fragenbank speichern\" im Test-Builder zu einem wiederverwendbaren Bankeintrag.",
         "gr_question_bank_item_bundle_insert": "Fügen Sie ein gespeichertes Bündel als vollständig ausgearbeiteten Abschnitt wieder in einen beliebigen Test ein, bereit zur weiteren Bearbeitung.",

@@ -2707,6 +2707,12 @@
         "tag_group_other": "Tags"
     },
     "questionBank": {
+        "new_button": "New question",
+        "create_question_title": "New question",
+        "sort_label": "Sort",
+        "sort_newest": "Newest",
+        "sort_prompt": "A–Z",
+        "duplicate_warning_toast": "A question with the same prompt is already in the bank",
         "title": "Question Bank",
         "page_intro": "Reusable test questions you can insert into any test.",
         "search_placeholder": "Search questions...",
@@ -4918,6 +4924,7 @@
         "ce_news_flashes_item_read_receipts": "Each flash on the teacher-side list shows how many students have read it — click the count to see who.",
         "ce_news_flashes_info": "News flashes are broadcast to every student of the teacher who created them — there is no per-student assignment step, and no email notification is sent.",
         "gr_question_bank_item_cefr": "Tag any bank item with a CEFR level for reliable filtering, in addition to free-text tags.",
+        "gr_question_bank_item_author": "Use the New question button to write a question straight into the bank instead of starting from a test. Export downloads only the rows matching your current filters, and saving a prompt that already exists warns you without blocking the save.",
         "gr_question_bank_item_filter": "Narrow the bank with the searchable tag filter, plus kind, type, CEFR and skill filters — then select items and bulk-set their tags, CEFR level or skill in one action.",
         "gr_question_bank_item_bundle_save": "Bundle a whole reading/listening passage — the section content, audio, and its questions — into one reusable bank entry via \"Save this passage + questions to bank\" in the Test Builder.",
         "gr_question_bank_item_bundle_insert": "Insert a saved bundle back into any test as a fully-formed section, ready to edit further.",

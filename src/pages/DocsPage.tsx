@@ -1333,6 +1333,7 @@ function GradingTab() {
                 <FeatureList
                     items={[
                         t('docs.gr_question_bank_item_cefr'),
+                        t('docs.gr_question_bank_item_author'),
                         t('docs.gr_question_bank_item_filter'),
                         t('docs.gr_question_bank_item_bundle_save'),
                         t('docs.gr_question_bank_item_bundle_insert'),

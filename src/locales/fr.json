@@ -2707,6 +2707,12 @@
         "tag_group_other": "Étiquettes"
     },
     "questionBank": {
+        "new_button": "Nouvelle question",
+        "create_question_title": "Nouvelle question",
+        "sort_label": "Trier",
+        "sort_newest": "Plus récentes",
+        "sort_prompt": "A–Z",
+        "duplicate_warning_toast": "Une question avec le même énoncé figure déjà dans la banque",
         "title": "Banque de questions",
         "page_intro": "Questions de test réutilisables que vous pouvez insérer dans n'importe quel test.",
         "search_placeholder": "Rechercher des questions...",
@@ -4920,6 +4926,7 @@
         "ce_news_flashes_item_read_receipts": "Chaque actualité de la liste côté enseignant indique combien d'élèves l'ont lue — cliquez sur le nombre pour voir qui.",
         "ce_news_flashes_info": "Les actualités sont diffusées à tous les élèves de l’enseignant qui les a créées — il n’y a pas d’attribution par élève, et aucun e-mail n’est envoyé.",
         "gr_question_bank_item_cefr": "Attribuez un niveau CECRL à chaque élément de la banque pour un filtrage fiable, en plus des étiquettes libres.",
+        "gr_question_bank_item_author": "Le bouton Nouvelle question permet d'écrire une question directement dans la banque plutôt que depuis un test. L'export ne télécharge que les lignes correspondant à vos filtres, et un énoncé déjà présent affiche un avertissement sans bloquer l'enregistrement.",
         "gr_question_bank_item_filter": "Affinez la banque avec le filtre d'étiquettes cherchable, ainsi que les filtres par nature, type, CECRL et compétence — sélectionnez ensuite des éléments et définissez en masse leurs étiquettes, niveau CECRL ou compétence en une seule action.",
         "gr_question_bank_item_bundle_save": "Regroupez tout un passage de lecture/écoute — le contenu de la section, l'audio et ses questions — en une seule entrée réutilisable via « Enregistrer ce passage + questions dans la banque » dans le générateur de test.",
         "gr_question_bank_item_bundle_insert": "Réinsérez un ensemble enregistré dans n'importe quel test sous forme de section entièrement formée, prête à être modifiée.",
