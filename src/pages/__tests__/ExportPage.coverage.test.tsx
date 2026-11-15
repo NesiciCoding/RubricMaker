@@ -792,13 +792,14 @@ describe('ExportPage coverage', () => {
         expect(mockExportRubricToDocx).toHaveBeenCalled();
     });
 
-    it('re-collapses the rubric section after opening it', () => {
+    it('switches export types from the chooser', () => {
         renderPage();
-        const header = screen.getByText('exportPage.rubric_section_title');
-        fireEvent.click(header); // open (delete from the collapsed set)
-        fireEvent.click(header); // collapse again (add back)
-        // content stays mounted either way; both toggle branches now covered
-        expect(screen.getByText('exportPage.select_rubric')).toBeInTheDocument();
+        const rubricCard = screen.getByText('exportPage.rubric_section_title').closest('button')!;
+        const essaysCard = screen.getByText('exportPage.essays_title').closest('button')!;
+        expect(rubricCard).toHaveAttribute('aria-pressed', 'true');
+        fireEvent.click(essaysCard);
+        expect(essaysCard).toHaveAttribute('aria-pressed', 'true');
+        expect(rubricCard).toHaveAttribute('aria-pressed', 'false');
     });
 
     it('toggles essay students and the essay select-all', () => {

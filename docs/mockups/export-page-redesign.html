@@ -1,0 +1,2303 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Export page redesign — mockup — RubricMaker</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            /* ── Warm Scholar tokens (mirrors src/index.css) ────────────────────── */
+            :root {
+                --font: 'Hanken Grotesk', system-ui, sans-serif;
+                --font-display: 'Bricolage Grotesque', var(--font);
+                --bg: #f1ebe0;
+                --bg-raised: #ffffff;
+                --bg-elevated: #f6f1e8;
+                --bg-card: #ffffff;
+                --border: #e7decf;
+                --border-light: #d9ceba;
+                --text: #2b2722;
+                --text-muted: #4a443d;
+                --text-dim: #534d45;
+                --accent: #0b6356;
+                --accent-text: #08473e;
+                --accent-hover: #0a574c;
+                --accent-fg: #ffffff;
+                --accent-soft: #e2f0ed;
+                --green: #2e9e6b;
+                --green-text: #174f36;
+                --yellow: #c9851f;
+                --yellow-text: #62410f;
+                --red: #c9543c;
+                --red-text: #6e2e21;
+                --purple: #8b5cf6;
+                --purple-text: #4c3287;
+                --blue-text: #1d4d8f;
+                --radius: 10px;
+                --radius-lg: 14px;
+                --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+                --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+                --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                color-scheme: light;
+            }
+            [data-theme='dark'] {
+                --bg: #161410;
+                --bg-raised: #201d17;
+                --bg-elevated: #2a261f;
+                --bg-card: #201d17;
+                --border: #332e26;
+                --border-light: #433c31;
+                --text: #f1ebdf;
+                --text-muted: #c6bfb2;
+                --text-dim: #b7b1a8;
+                --accent: #37b49c;
+                --accent-text: #8fd5c8;
+                --accent-hover: #45bda6;
+                --accent-fg: #0e1512;
+                --accent-soft: #1c3a35;
+                --green: #46b783;
+                --green-text: #97d7ba;
+                --yellow: #e3a648;
+                --yellow-text: #edc68a;
+                --red: #e07a62;
+                --red-text: #eeb5a8;
+                --blue-text: #a4c5fb;
+                --purple-text: #cbb6fb;
+                --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+                --shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+                color-scheme: dark;
+            }
+            *,
+            *::before,
+            *::after {
+                box-sizing: border-box;
+            }
+            [hidden] {
+                display: none !important;
+            }
+            html {
+                scroll-behavior: smooth;
+            }
+            body {
+                margin: 0;
+                background: var(--bg);
+                color: var(--text);
+                font-family: var(--font);
+                font-size: 15px;
+                line-height: 1.55;
+                -webkit-font-smoothing: antialiased;
+            }
+            h1,
+            h2,
+            h3,
+            h4,
+            p {
+                margin: 0;
+            }
+            h1,
+            h2,
+            h3,
+            h4 {
+                font-family: var(--font-display);
+                line-height: 1.15;
+                letter-spacing: -0.01em;
+            }
+            button,
+            input,
+            select {
+                font: inherit;
+                color: inherit;
+            }
+            button {
+                cursor: pointer;
+            }
+            a {
+                color: var(--accent-text);
+            }
+            .icon {
+                width: 16px;
+                height: 16px;
+                flex: none;
+                stroke: currentColor;
+                fill: none;
+                stroke-width: 2;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+            }
+            .icon-sm {
+                width: 14px;
+                height: 14px;
+            }
+            .muted {
+                color: var(--text-muted);
+            }
+            .dim {
+                color: var(--text-dim);
+            }
+            .sm {
+                font-size: 0.82rem;
+            }
+            .xs {
+                font-size: 0.74rem;
+            }
+
+            /* ── Review chrome ──────────────────────────────────────────────────── */
+            .review-bar {
+                position: sticky;
+                top: 0;
+                z-index: 20;
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 12px;
+                padding: 14px 28px;
+                background: color-mix(in srgb, var(--bg) 88%, transparent);
+                backdrop-filter: blur(10px);
+                border-bottom: 1px solid var(--border);
+            }
+            .review-brand {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                font-weight: 700;
+                font-family: var(--font-display);
+            }
+            .review-mark {
+                width: 30px;
+                height: 30px;
+                border-radius: 8px;
+                display: grid;
+                place-items: center;
+                background: linear-gradient(135deg, var(--accent), var(--purple));
+                color: #fff;
+                font-size: 0.72rem;
+                letter-spacing: 0.02em;
+            }
+            .review-tag {
+                padding: 2px 8px;
+                border-radius: 999px;
+                background: var(--bg-elevated);
+                border: 1px solid var(--border);
+                color: var(--text-muted);
+                font-size: 0.7rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+            }
+            .review-actions {
+                margin-inline-start: auto;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+            .review-hint {
+                color: var(--text-muted);
+                font-size: 0.78rem;
+            }
+            .review-bar .btn {
+                background: var(--bg-raised);
+            }
+
+            /* ── Layout ─────────────────────────────────────────────────────────── */
+            .canvas {
+                max-width: 1420px;
+                margin: 0 auto;
+                padding: 28px 28px 80px;
+            }
+            .screen {
+                margin-bottom: 44px;
+            }
+            .screen-head {
+                display: flex;
+                align-items: baseline;
+                gap: 12px;
+                margin-bottom: 12px;
+                flex-wrap: wrap;
+            }
+            .screen-num {
+                font-family: var(--font-display);
+                font-size: 0.75rem;
+                font-weight: 800;
+                color: var(--accent-text);
+                border: 1px solid var(--border);
+                background: var(--bg-raised);
+                border-radius: 999px;
+                padding: 2px 8px;
+            }
+            .screen-head h2 {
+                font-size: 1.1rem;
+            }
+            .screen-head p {
+                color: var(--text-muted);
+                font-size: 0.82rem;
+            }
+
+            /* ── App shell ──────────────────────────────────────────────────────── */
+            .app {
+                display: flex;
+                min-height: 780px;
+                background: var(--bg);
+                border: 1px solid var(--border);
+                border-radius: var(--radius-lg);
+                overflow: hidden;
+                box-shadow: var(--shadow);
+            }
+            .rail {
+                width: 206px;
+                flex: none;
+                background: var(--bg-raised);
+                border-inline-end: 1px solid var(--border);
+                padding: 16px 12px;
+                display: flex;
+                flex-direction: column;
+                gap: 18px;
+            }
+            .brand {
+                display: flex;
+                align-items: center;
+                gap: 9px;
+                padding: 0 4px;
+            }
+            .brand-mark {
+                width: 32px;
+                height: 32px;
+                border-radius: 9px;
+                background: linear-gradient(135deg, var(--accent), var(--purple));
+                color: #fff;
+                display: grid;
+                place-items: center;
+                font-family: var(--font-display);
+                font-weight: 800;
+                font-size: 0.85rem;
+                flex: none;
+            }
+            .brand b {
+                display: block;
+                font-family: var(--font-display);
+                font-size: 0.9rem;
+            }
+            .brand small {
+                display: block;
+                font-size: 0.64rem;
+                color: var(--text-dim);
+                letter-spacing: 0.03em;
+            }
+            .nav-label {
+                font-size: 0.62rem;
+                font-weight: 700;
+                letter-spacing: 0.09em;
+                text-transform: uppercase;
+                color: var(--text-dim);
+                padding: 0 8px;
+                margin-bottom: 5px;
+            }
+            .nav {
+                display: flex;
+                flex-direction: column;
+                gap: 2px;
+            }
+            .nav-item {
+                display: flex;
+                align-items: center;
+                gap: 9px;
+                padding: 8px 9px;
+                border-radius: var(--radius);
+                color: var(--text-muted);
+                font-size: 0.83rem;
+                font-weight: 500;
+                border: none;
+                background: none;
+                text-align: left;
+            }
+            .nav-item:hover {
+                background: var(--bg-elevated);
+                color: var(--text);
+            }
+            .nav-item.active {
+                background: var(--accent-soft);
+                color: var(--accent-text);
+                font-weight: 700;
+            }
+            .nav-item .count {
+                margin-inline-start: auto;
+                font-size: 0.7rem;
+                color: var(--text-dim);
+            }
+            .rail-foot {
+                margin-top: auto;
+                padding: 10px;
+                border-radius: var(--radius);
+                border: 1px dashed var(--border-light);
+                color: var(--text-muted);
+                font-size: 0.74rem;
+                line-height: 1.4;
+            }
+            .app-main {
+                flex: 1;
+                min-width: 0;
+                display: flex;
+                flex-direction: column;
+            }
+            .topbar {
+                height: 60px;
+                flex: none;
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                padding: 0 24px;
+                border-bottom: 1px solid var(--border);
+                background: var(--bg);
+            }
+            .topbar h1 {
+                font-size: 1.08rem;
+                font-weight: 700;
+            }
+            .topbar-actions {
+                margin-inline-start: auto;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .avatar {
+                width: 30px;
+                height: 30px;
+                border-radius: 50%;
+                display: grid;
+                place-items: center;
+                background: var(--accent-soft);
+                color: var(--accent-text);
+                font-size: 0.72rem;
+                font-weight: 700;
+            }
+            .content {
+                padding: 24px;
+                display: flex;
+                flex-direction: column;
+                gap: 18px;
+                background: var(--bg);
+            }
+
+            /* ── Buttons, badges, controls ─────────────────────────────────────── */
+            .btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 7px;
+                padding: 8px 14px;
+                border-radius: var(--radius);
+                font-size: 0.84rem;
+                font-weight: 600;
+                border: 1px solid transparent;
+                background: none;
+                transition: all var(--transition);
+                white-space: nowrap;
+            }
+            .btn:disabled {
+                opacity: 0.42;
+                cursor: not-allowed;
+            }
+            .btn:focus-visible,
+            .chip:focus-visible,
+            .seg button:focus-visible,
+            .type-card:focus-visible,
+            .student-row:focus-within,
+            .nav-item:focus-visible {
+                outline: 2px solid var(--accent);
+                outline-offset: 2px;
+            }
+            .btn-primary {
+                background: var(--accent);
+                color: var(--accent-fg);
+                border-color: var(--accent);
+            }
+            .btn-primary:hover:not(:disabled) {
+                background: var(--accent-hover);
+                border-color: var(--accent-hover);
+            }
+            .btn-secondary {
+                background: var(--bg-elevated);
+                color: var(--text);
+                border-color: var(--border);
+            }
+            .btn-secondary:hover:not(:disabled) {
+                border-color: var(--accent);
+                color: var(--accent-text);
+            }
+            .btn-ghost {
+                background: transparent;
+                color: var(--text-muted);
+            }
+            .btn-ghost:hover:not(:disabled) {
+                background: var(--bg-elevated);
+                color: var(--text);
+            }
+            .btn-sm {
+                padding: 5px 10px;
+                font-size: 0.78rem;
+            }
+            .badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 5px;
+                padding: 2px 8px;
+                border-radius: 999px;
+                font-size: 0.7rem;
+                font-weight: 700;
+                white-space: nowrap;
+            }
+            .badge-green {
+                background: color-mix(in srgb, var(--green) 16%, transparent);
+                color: var(--green-text);
+            }
+            .badge-yellow {
+                background: color-mix(in srgb, var(--yellow) 16%, transparent);
+                color: var(--yellow-text);
+            }
+            .badge-blue {
+                background: color-mix(in srgb, #3b82f6 16%, transparent);
+                color: var(--blue-text);
+            }
+            .badge-purple {
+                background: color-mix(in srgb, var(--purple) 16%, transparent);
+                color: var(--purple-text);
+            }
+            .chip {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 5px 11px;
+                border-radius: 999px;
+                border: 1px solid var(--border);
+                background: var(--bg-raised);
+                color: var(--text-muted);
+                font-size: 0.78rem;
+                font-weight: 600;
+                white-space: nowrap;
+            }
+            .chip.active {
+                background: var(--accent);
+                border-color: var(--accent);
+                color: var(--accent-fg);
+            }
+            .chip .n {
+                font-size: 0.68rem;
+                opacity: 0.75;
+            }
+            .seg {
+                display: inline-flex;
+                gap: 2px;
+                padding: 2px;
+                border-radius: 999px;
+                background: var(--bg-raised);
+                border: 1px solid var(--border);
+            }
+            .seg button {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                border: none;
+                background: none;
+                color: var(--text-muted);
+                border-radius: 999px;
+                padding: 5px 11px;
+                font-size: 0.78rem;
+                font-weight: 600;
+            }
+            .seg button[aria-pressed='true'] {
+                background: var(--accent);
+                color: var(--accent-fg);
+            }
+            .field {
+                display: flex;
+                flex-direction: column;
+                gap: 5px;
+            }
+            .field > label {
+                font-size: 0.66rem;
+                font-weight: 700;
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+                color: var(--text-muted);
+            }
+            .field select,
+            .field input[type='text'],
+            .field input[type='date'],
+            .field input[type='search'] {
+                width: 100%;
+                padding: 8px 11px;
+                background: var(--bg-raised);
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                font-size: 0.84rem;
+                outline: none;
+            }
+            .field select:focus,
+            .field input:focus {
+                border-color: var(--accent);
+                box-shadow: 0 0 0 3px var(--accent-soft);
+            }
+            .switch {
+                display: inline-flex;
+                align-items: center;
+                gap: 7px;
+                font-size: 0.8rem;
+                color: var(--text-muted);
+                cursor: pointer;
+            }
+            .switch input {
+                accent-color: var(--accent);
+                width: 15px;
+                height: 15px;
+            }
+
+            /* ── Context strip ─────────────────────────────────────────────────── */
+            .context {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: flex-end;
+                justify-content: space-between;
+                gap: 16px;
+            }
+            .eyebrow {
+                font-size: 0.66rem;
+                font-weight: 800;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                color: var(--accent-text);
+                margin-bottom: 6px;
+            }
+            .context h2 {
+                font-size: 1.45rem;
+                margin-bottom: 6px;
+            }
+            .context .lede {
+                color: var(--text-muted);
+                font-size: 0.86rem;
+                max-width: 56ch;
+            }
+            .context-stats {
+                display: flex;
+                gap: 20px;
+                padding: 10px 16px;
+                border: 1px solid var(--border);
+                border-radius: var(--radius-lg);
+                background: var(--bg-raised);
+            }
+            .context-stat strong {
+                display: block;
+                font-size: 1.02rem;
+                font-family: var(--font-display);
+            }
+            .context-stat span {
+                font-size: 0.68rem;
+                color: var(--text-muted);
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                font-weight: 700;
+            }
+
+            /* ── Type chooser ──────────────────────────────────────────────────── */
+            .type-grid {
+                display: grid;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 10px;
+            }
+            .type-card {
+                position: relative;
+                display: flex;
+                align-items: stretch;
+                gap: 11px;
+                text-align: left;
+                padding: 14px;
+                border-radius: var(--radius-lg);
+                border: 1px solid var(--border);
+                background: var(--bg-card);
+                color: var(--text);
+                transition: all var(--transition);
+                min-height: 92px;
+            }
+            .type-card:hover {
+                border-color: var(--border-light);
+                background: var(--bg-raised);
+                transform: translateY(-1px);
+            }
+            .type-card.is-active {
+                border-color: var(--accent);
+                background: color-mix(in srgb, var(--accent-soft) 65%, var(--bg-card));
+                box-shadow: 0 0 0 1px var(--accent) inset;
+            }
+            .type-icon {
+                width: 34px;
+                height: 34px;
+                flex: none;
+                align-self: flex-start;
+                border-radius: 9px;
+                display: grid;
+                place-items: center;
+                background: var(--bg-elevated);
+                color: var(--text-muted);
+                border: 1px solid var(--border);
+            }
+            .type-card.is-active .type-icon {
+                background: var(--accent);
+                border-color: var(--accent);
+                color: var(--accent-fg);
+            }
+            .type-copy {
+                display: flex;
+                flex: 1;
+                flex-direction: column;
+                gap: 2px;
+                min-width: 0;
+            }
+            .type-copy strong {
+                font-size: 0.88rem;
+                font-weight: 700;
+            }
+            .type-copy small {
+                color: var(--text-muted);
+                font-size: 0.74rem;
+                line-height: 1.35;
+            }
+            .type-meta {
+                margin-top: auto;
+                padding-top: 6px;
+                font-size: 0.7rem;
+                font-weight: 700;
+                color: var(--text-dim);
+                display: inline-flex;
+                align-items: center;
+                gap: 5px;
+            }
+            .type-card.is-active .type-meta {
+                color: var(--accent-text);
+            }
+
+            /* ── Workbench ─────────────────────────────────────────────────────── */
+            .workbench {
+                border: 1px solid var(--border);
+                border-radius: var(--radius-lg);
+                background: var(--bg-card);
+                overflow: hidden;
+            }
+            .wb-head {
+                display: flex;
+                align-items: flex-start;
+                gap: 12px;
+                padding: 18px 22px;
+                border-bottom: 1px solid var(--border);
+                background: var(--bg-raised);
+            }
+            .wb-head .type-icon {
+                width: 38px;
+                height: 38px;
+                background: var(--accent-soft);
+                border-color: transparent;
+                color: var(--accent-text);
+            }
+            .wb-head h3 {
+                font-size: 1.02rem;
+                margin-bottom: 2px;
+            }
+            .wb-head p {
+                color: var(--text-muted);
+                font-size: 0.8rem;
+            }
+            .wb-head .badge {
+                margin-inline-start: auto;
+                flex: none;
+            }
+            .wb-body {
+                display: grid;
+                grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.9fr);
+                gap: 16px;
+                padding: 20px 22px;
+            }
+            .panel {
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                background: var(--bg-raised);
+                padding: 16px;
+                min-width: 0;
+            }
+            .panel-head {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-bottom: 12px;
+            }
+            .panel-head h4 {
+                font-size: 0.78rem;
+                font-weight: 800;
+                letter-spacing: 0.055em;
+                text-transform: uppercase;
+                color: var(--text-muted);
+                flex: 1;
+            }
+            .panel-head .badge {
+                flex: none;
+            }
+            .stack {
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+            }
+            .rule {
+                border: none;
+                border-top: 1px solid var(--border);
+                margin: 0;
+            }
+            .output-row {
+                display: flex;
+                align-items: flex-start;
+                gap: 11px;
+                padding: 13px;
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                background: var(--bg-card);
+            }
+            .output-row + .output-row {
+                margin-top: 10px;
+            }
+            .output-icon {
+                width: 30px;
+                height: 30px;
+                flex: none;
+                display: grid;
+                place-items: center;
+                border-radius: 8px;
+                background: var(--bg-elevated);
+                color: var(--text-muted);
+            }
+            .output-copy {
+                flex: 1;
+                min-width: 0;
+            }
+            .output-copy strong {
+                display: block;
+                font-size: 0.84rem;
+            }
+            .output-copy small {
+                display: block;
+                color: var(--text-muted);
+                font-size: 0.74rem;
+                margin-top: 1px;
+            }
+            .output-controls {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                align-items: flex-end;
+                margin-top: 10px;
+            }
+            .output-controls .field {
+                flex: 1 1 150px;
+                min-width: 0;
+            }
+            .output-controls .btn {
+                flex: none;
+            }
+            .inline-link {
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                background: none;
+                border: none;
+                padding: 0;
+                color: var(--accent-text);
+                font-size: 0.74rem;
+                font-weight: 600;
+                text-decoration: none;
+            }
+            .hint-line {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                color: var(--text-muted);
+                font-size: 0.74rem;
+            }
+
+            /* ── Student picker ────────────────────────────────────────────────── */
+            .students {
+                display: flex;
+                flex-direction: column;
+                min-height: 0;
+            }
+            .students-tools {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-bottom: 9px;
+            }
+            .students-tools .search {
+                position: relative;
+                flex: 1;
+                min-width: 0;
+            }
+            .students-tools .search .icon {
+                position: absolute;
+                inset-inline-start: 9px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: var(--text-dim);
+                width: 14px;
+                height: 14px;
+            }
+            .students-tools input {
+                padding-inline-start: 29px !important;
+                font-size: 0.8rem !important;
+            }
+            .student-list {
+                max-height: 306px;
+                overflow-y: auto;
+                scrollbar-gutter: stable;
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                background: var(--bg-card);
+                -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 22px), transparent);
+                mask-image: linear-gradient(to bottom, #000 calc(100% - 22px), transparent);
+            }
+            .student-row {
+                display: flex;
+                align-items: center;
+                gap: 9px;
+                padding: 8px 10px;
+                border-bottom: 1px solid var(--border);
+                cursor: pointer;
+                font-size: 0.82rem;
+            }
+            .student-row:last-child {
+                border-bottom: none;
+            }
+            .student-row:hover {
+                background: var(--bg-elevated);
+            }
+            .student-row:has(input:checked) {
+                background: var(--accent-soft);
+            }
+            .student-row input {
+                accent-color: var(--accent);
+                width: 15px;
+                height: 15px;
+                flex: none;
+            }
+            .student-main {
+                flex: 1;
+                min-width: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 1px;
+            }
+            .student-main strong {
+                font-weight: 600;
+                font-size: 0.83rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .student-main small {
+                font-size: 0.7rem;
+                color: var(--text-muted);
+                display: flex;
+                gap: 6px;
+                align-items: center;
+                flex-wrap: wrap;
+            }
+            .grade {
+                min-width: 30px;
+                height: 30px;
+                padding: 0 6px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 8px;
+                font-weight: 800;
+                font-size: 0.82rem;
+                border: 1px solid;
+                flex: none;
+            }
+            .grade.g9 {
+                color: var(--green-text);
+                border-color: var(--green);
+                background: color-mix(in srgb, var(--green) 14%, transparent);
+            }
+            .grade.g7 {
+                color: var(--yellow-text);
+                border-color: var(--yellow);
+                background: color-mix(in srgb, var(--yellow) 14%, transparent);
+            }
+            .grade.g5 {
+                color: var(--red-text);
+                border-color: var(--red);
+                background: color-mix(in srgb, var(--red) 14%, transparent);
+            }
+            .student-score {
+                font-size: 0.72rem;
+                color: var(--text-muted);
+                white-space: nowrap;
+                flex: none;
+            }
+            .students-foot {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-top: 9px;
+                font-size: 0.72rem;
+                color: var(--text-muted);
+                flex-wrap: wrap;
+            }
+            .students-foot .dot {
+                width: 3px;
+                height: 3px;
+                border-radius: 50%;
+                background: var(--text-dim);
+            }
+
+            /* ── Footer bar ────────────────────────────────────────────────────── */
+            .wb-footer {
+                position: sticky;
+                bottom: 0;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                flex-wrap: wrap;
+                padding: 14px 22px;
+                border-top: 1px solid var(--border);
+                background: var(--bg-elevated);
+            }
+            .bulk-actions {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                flex-wrap: wrap;
+            }
+            .selection-note {
+                display: flex;
+                align-items: center;
+                gap: 7px;
+                font-size: 0.78rem;
+                color: var(--text-muted);
+                font-weight: 600;
+            }
+            .selection-note strong {
+                color: var(--text);
+            }
+            .footer-actions {
+                margin-inline-start: auto;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+
+            /* ── Report options ────────────────────────────────────────────────── */
+            .section-checks {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 6px 12px;
+            }
+            .section-checks .switch {
+                padding: 7px 9px;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                background: var(--bg-card);
+                font-size: 0.77rem;
+            }
+            .range-grid {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 8px;
+            }
+            .student-chips {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+                max-height: 190px;
+                overflow-y: auto;
+            }
+            .student-chips .chip {
+                padding: 4px 10px;
+                font-size: 0.75rem;
+            }
+
+            /* ── Empty state ───────────────────────────────────────────────────── */
+            .empty {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                gap: 8px;
+                padding: 34px 22px;
+            }
+            .empty .empty-icon {
+                width: 46px;
+                height: 46px;
+                border-radius: 12px;
+                display: grid;
+                place-items: center;
+                background: var(--bg-elevated);
+                color: var(--text-muted);
+                border: 1px solid var(--border);
+            }
+            .empty strong {
+                font-size: 0.9rem;
+            }
+            .empty p {
+                color: var(--text-muted);
+                font-size: 0.78rem;
+                max-width: 38ch;
+            }
+
+            /* ── Notes / annotations ───────────────────────────────────────────── */
+            .notes {
+                max-width: 1080px;
+                margin: 0 auto;
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 16px;
+            }
+            .note-card {
+                border: 1px solid var(--border);
+                border-radius: var(--radius-lg);
+                background: var(--bg-card);
+                padding: 18px;
+            }
+            .note-card h3 {
+                font-size: 0.92rem;
+                margin-bottom: 8px;
+            }
+            .note-card ul {
+                margin: 0;
+                padding-inline-start: 18px;
+                color: var(--text-muted);
+                font-size: 0.82rem;
+                display: flex;
+                flex-direction: column;
+                gap: 5px;
+            }
+            .note-card li::marker {
+                color: var(--accent);
+            }
+            .note-card p {
+                color: var(--text-muted);
+                font-size: 0.82rem;
+            }
+            .note-wide {
+                grid-column: 1 / -1;
+            }
+            .flow {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 6px;
+                margin-top: 6px;
+            }
+            .flow span {
+                padding: 4px 9px;
+                border-radius: 999px;
+                border: 1px solid var(--border);
+                background: var(--bg-raised);
+                font-size: 0.72rem;
+                color: var(--text-muted);
+            }
+            .flow .icon {
+                width: 12px;
+                height: 12px;
+                color: var(--text-dim);
+            }
+
+            /* ── Phone mockup ──────────────────────────────────────────────────── */
+            .phone-frame {
+                width: 390px;
+                flex: none;
+                border: 1px solid var(--border);
+                border-radius: 24px;
+                background: var(--bg);
+                overflow: hidden;
+                box-shadow: var(--shadow);
+            }
+            .phone-top {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 14px 16px;
+                border-bottom: 1px solid var(--border);
+                background: var(--bg-raised);
+            }
+            .phone-top h3 {
+                font-size: 1rem;
+            }
+            .phone-top .btn {
+                margin-inline-start: auto;
+            }
+            .phone-content {
+                padding: 14px;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+            .phone-content .context h2 {
+                font-size: 1.12rem;
+            }
+            .phone-content .context .lede {
+                font-size: 0.78rem;
+            }
+            .phone-content .context-stats {
+                display: none;
+            }
+            .phone-content .type-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .phone-content .type-card {
+                min-height: 0;
+                padding: 10px;
+                gap: 8px;
+            }
+            .phone-content .type-copy small {
+                display: none;
+            }
+            .phone-content .type-icon {
+                width: 28px;
+                height: 28px;
+                border-radius: 8px;
+            }
+            .phone-content .wb-body {
+                grid-template-columns: 1fr;
+                padding: 12px;
+                gap: 12px;
+            }
+            .phone-content .wb-head {
+                padding: 12px 14px;
+            }
+            .phone-content .wb-head .badge {
+                display: none;
+            }
+            .phone-content .panel {
+                padding: 12px;
+            }
+            .phone-content .wb-footer {
+                padding: 10px 12px;
+                gap: 8px;
+            }
+            .phone-content .bulk-actions {
+                display: none;
+            }
+            .phone-content .footer-actions {
+                width: 100%;
+                margin-inline-start: 0;
+            }
+            .phone-content .footer-actions .btn {
+                flex: 1;
+            }
+            .phone-content .selection-note {
+                width: 100%;
+            }
+            .phone-content .student-list {
+                max-height: 232px;
+            }
+            .phone-content .student-score {
+                display: none;
+            }
+            .phone-content .output-row {
+                flex-direction: column;
+            }
+            .phone-content .output-icon {
+                display: none;
+            }
+            .phone-content .output-controls {
+                width: 100%;
+            }
+
+            @media (max-width: 1180px) {
+                .type-grid {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+                .rail {
+                    width: 178px;
+                }
+                .wb-body {
+                    grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.9fr);
+                }
+            }
+            @media (max-width: 900px) {
+                .canvas {
+                    padding-inline: 14px;
+                }
+                .rail {
+                    display: none;
+                }
+                .wb-body {
+                    grid-template-columns: 1fr;
+                }
+                .context-stats {
+                    width: 100%;
+                    justify-content: space-between;
+                }
+                .notes {
+                    grid-template-columns: 1fr;
+                }
+                .wb-footer {
+                    position: static;
+                }
+            }
+            @media (max-width: 640px) {
+                .type-grid {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+                .type-card {
+                    min-height: 0;
+                    padding: 11px;
+                    gap: 8px;
+                }
+                .type-icon {
+                    width: 28px;
+                    height: 28px;
+                    border-radius: 8px;
+                }
+                .type-copy small {
+                    display: none;
+                }
+                .wb-head {
+                    padding: 14px;
+                }
+                .wb-head .badge {
+                    display: none;
+                }
+                .wb-body {
+                    padding: 12px;
+                    gap: 12px;
+                }
+                .panel {
+                    padding: 12px;
+                }
+                .wb-footer {
+                    padding: 10px 12px;
+                }
+                .selection-note {
+                    width: 100%;
+                }
+                .footer-actions {
+                    width: 100%;
+                    margin-inline-start: 0;
+                }
+                .footer-actions .btn {
+                    flex: 1;
+                }
+                .output-row {
+                    flex-direction: column;
+                }
+                .output-icon {
+                    display: none;
+                }
+                .student-score {
+                    display: none;
+                }
+                .student-chips {
+                    max-height: none;
+                }
+                .section-checks {
+                    grid-template-columns: 1fr;
+                }
+                .range-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+            @media (prefers-reduced-motion: reduce) {
+                *,
+                *::before,
+                *::after {
+                    transition: none !important;
+                    scroll-behavior: auto !important;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <svg style="display: none" aria-hidden="true">
+            <symbol id="i-file" viewBox="0 0 24 24">
+                <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+                <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+                <path d="M10 9H8" />
+                <path d="M16 13H8" />
+                <path d="M16 17H8" />
+            </symbol>
+            <symbol id="i-users" viewBox="0 0 24 24">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </symbol>
+            <symbol id="i-clipboard" viewBox="0 0 24 24">
+                <rect width="8" height="4" x="8" y="2" rx="1" />
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                <path d="M8 11h8" />
+                <path d="M8 16h8" />
+            </symbol>
+            <symbol id="i-cap" viewBox="0 0 24 24">
+                <path d="M21.4 10.9a1 1 0 0 0 0-1.8l-8.6-3.9a2 2 0 0 0-1.6 0L2.6 9.1a1 1 0 0 0 0 1.8l8.6 3.9a2 2 0 0 0 1.6 0Z" />
+                <path d="M22 10v6" />
+                <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" />
+            </symbol>
+            <symbol id="i-download" viewBox="0 0 24 24">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <path d="m7 10 5 5 5-5" />
+                <path d="M12 15V3" />
+            </symbol>
+            <symbol id="i-layout" viewBox="0 0 24 24">
+                <rect width="18" height="7" x="3" y="3" rx="1" />
+                <rect width="9" height="7" x="3" y="14" rx="1" />
+                <rect width="5" height="7" x="16" y="14" rx="1" />
+            </symbol>
+            <symbol id="i-search" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="7" />
+                <path d="m21 21-4.3-4.3" />
+            </symbol>
+            <symbol id="i-check-square" viewBox="0 0 24 24">
+                <path d="m9 11 3 3L22 4" />
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+            </symbol>
+            <symbol id="i-calendar" viewBox="0 0 24 24">
+                <path d="M8 2v4" />
+                <path d="M16 2v4" />
+                <rect width="18" height="18" x="3" y="4" rx="2" />
+                <path d="M3 10h18" />
+            </symbol>
+            <symbol id="i-share" viewBox="0 0 24 24">
+                <circle cx="18" cy="5" r="3" />
+                <circle cx="6" cy="12" r="3" />
+                <circle cx="18" cy="19" r="3" />
+                <path d="m8.6 10.6 6.8-4.2" />
+                <path d="m8.6 13.4 6.8 4.2" />
+            </symbol>
+            <symbol id="i-x" viewBox="0 0 24 24">
+                <path d="M18 6 6 18" />
+                <path d="m6 6 12 12" />
+            </symbol>
+            <symbol id="i-home" viewBox="0 0 24 24">
+                <path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />
+                <path d="M9 22V12h6v10" />
+            </symbol>
+            <symbol id="i-chart" viewBox="0 0 24 24">
+                <path d="M3 3v18h18" />
+                <path d="M7 16v-3" />
+                <path d="M12 16V8" />
+                <path d="M17 16v-5" />
+            </symbol>
+            <symbol id="i-settings" viewBox="0 0 24 24">
+                <path d="M12.2 2h-.4a2 2 0 0 0-2 2v.2a2 2 0 0 1-1 1.7l-.4.2a2 2 0 0 1-2 0l-.2-.1a2 2 0 0 0-2.7.7l-.2.4a2 2 0 0 0 .7 2.7l.2.1a2 2 0 0 1 1 1.7v.5a2 2 0 0 1-1 1.7l-.2.1a2 2 0 0 0-.7 2.7l.2.4a2 2 0 0 0 2.7.7l.2-.1a2 2 0 0 1 2 0l.4.2a2 2 0 0 1 1 1.7v.2a2 2 0 0 0 2 2h.4a2 2 0 0 0 2-2v-.2a2 2 0 0 1 1-1.7l.4-.2a2 2 0 0 1 2 0l.2.1a2 2 0 0 0 2.7-.7l.2-.4a2 2 0 0 0-.7-2.7l-.2-.1a2 2 0 0 1-1-1.7v-.5a2 2 0 0 1 1-1.7l.2-.1a2 2 0 0 0 .7-2.7l-.2-.4a2 2 0 0 0-2.7-.7l-.2.1a2 2 0 0 1-2 0l-.4-.2a2 2 0 0 1-1-1.7V4a2 2 0 0 0-2-2Z" />
+                <circle cx="12" cy="12" r="3" />
+            </symbol>
+            <symbol id="i-arrow" viewBox="0 0 24 24">
+                <path d="M5 12h14" />
+                <path d="m12 5 7 7-7 7" />
+            </symbol>
+            <symbol id="i-printer" viewBox="0 0 24 24">
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                <path d="M6 9V3h12v6" />
+                <rect width="12" height="8" x="6" y="14" rx="1" />
+            </symbol>
+            <symbol id="i-spark" viewBox="0 0 24 24">
+                <path d="M12 3v4" />
+                <path d="M12 17v4" />
+                <path d="M3 12h4" />
+                <path d="M17 12h4" />
+                <path d="m5.6 5.6 2.8 2.8" />
+                <path d="m15.6 15.6 2.8 2.8" />
+                <path d="m18.4 5.6-2.8 2.8" />
+                <path d="m8.4 15.6-2.8 2.8" />
+            </symbol>
+        </svg>
+
+        <header class="review-bar">
+            <div class="review-brand">
+                <span class="review-mark">RM</span>
+                <span>Export page redesign</span>
+            </div>
+            <span class="review-tag">Mockup · review</span>
+            <span class="review-hint">Design only — nothing wired up yet</span>
+            <div class="review-actions">
+                <button class="btn btn-sm" id="demo-select">Select 3 students</button>
+                <button class="btn btn-sm" id="theme-toggle" aria-pressed="false">
+                    <svg class="icon icon-sm" aria-hidden="true"><use href="#i-spark" /></svg>
+                    Dark preview
+                </button>
+            </div>
+        </header>
+
+        <main class="canvas">
+            <section class="screen" id="desktop">
+                <div class="screen-head">
+                    <span class="screen-num">01</span>
+                    <h2>Export desk — interactive desktop view</h2>
+                    <p>Switch export type, select students, toggle report output. Width 1440px.</p>
+                </div>
+
+                <div class="app">
+                    <aside class="rail" aria-label="Main navigation (illustrative)">
+                        <div class="brand">
+                            <span class="brand-mark">RM</span>
+                            <span>
+                                <b>RubricMaker</b>
+                                <small>Warm Scholar</small>
+                            </span>
+                        </div>
+                        <div>
+                            <div class="nav-label">Overview</div>
+                            <nav class="nav">
+                                <button class="nav-item"><svg class="icon" aria-hidden="true"><use href="#i-home" /></svg> Dashboard</button>
+                            </nav>
+                        </div>
+                        <div>
+                            <div class="nav-label">Teach</div>
+                            <nav class="nav">
+                                <button class="nav-item"><svg class="icon" aria-hidden="true"><use href="#i-file" /></svg> Rubrics <span class="count">24</span></button>
+                                <button class="nav-item"><svg class="icon" aria-hidden="true"><use href="#i-check-square" /></svg> Grading <span class="count">6</span></button>
+                                <button class="nav-item"><svg class="icon" aria-hidden="true"><use href="#i-users" /></svg> Students <span class="count">94</span></button>
+                                <button class="nav-item active" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#i-download" /></svg> Export</button>
+                            </nav>
+                        </div>
+                        <div>
+                            <div class="nav-label">Review</div>
+                            <nav class="nav">
+                                <button class="nav-item"><svg class="icon" aria-hidden="true"><use href="#i-chart" /></svg> Statistics</button>
+                                <button class="nav-item"><svg class="icon" aria-hidden="true"><use href="#i-settings" /></svg> Settings</button>
+                            </nav>
+                        </div>
+                        <div class="rail-foot">Export moves files out of RubricMaker — it never changes a grade or a rubric.</div>
+                    </aside>
+
+                    <div class="app-main">
+                        <div class="topbar">
+                            <h1>Export</h1>
+                            <div class="topbar-actions">
+                                <button class="btn btn-secondary btn-sm">
+                                    <svg class="icon icon-sm" aria-hidden="true"><use href="#i-spark" /></svg>
+                                    Export guide
+                                </button>
+                                <span class="avatar" aria-hidden="true">WM</span>
+                            </div>
+                        </div>
+
+                        <div class="content">
+                            <div class="context">
+                                <div>
+                                    <p class="eyebrow">Export desk</p>
+                                    <h2>Turn this term’s work into files.</h2>
+                                    <p class="lede">
+                                        18 grades across 2 classes are ready. Choose an output — the options below keep the rubric, template and student picks you make.
+                                    </p>
+                                </div>
+                                <div class="context-stats" aria-label="Export summary">
+                                    <div class="context-stat"><strong>18</strong><span>Graded</span></div>
+                                    <div class="context-stat"><strong>2</strong><span>Classes</span></div>
+                                    <div class="context-stat"><strong>3</strong><span>Templates</span></div>
+                                </div>
+                            </div>
+
+                            <div class="type-grid" role="group" aria-label="What do you want to export?">
+                                <button class="type-card is-active" data-type="rubric" aria-pressed="true">
+                                    <span class="type-icon"><svg class="icon" aria-hidden="true"><use href="#i-file" /></svg></span>
+                                    <span class="type-copy">
+                                        <strong>Rubric grades</strong>
+                                        <small>PDF or DOCX per student, plus CSV</small>
+                                        <span class="type-meta">18 graded</span>
+                                    </span>
+                                </button>
+                                <button class="type-card" data-type="reports" aria-pressed="false">
+                                    <span class="type-icon"><svg class="icon" aria-hidden="true"><use href="#i-cap" /></svg></span>
+                                    <span class="type-copy">
+                                        <strong>Progress reports</strong>
+                                        <small>Period report or full report card</small>
+                                        <span class="type-meta">1 class ready</span>
+                                    </span>
+                                </button>
+                                <button class="type-card" data-type="exam" aria-pressed="false">
+                                    <span class="type-icon"><svg class="icon" aria-hidden="true"><use href="#i-clipboard" /></svg></span>
+                                    <span class="type-copy">
+                                        <strong>Exam booklets</strong>
+                                        <small>Paper, answer sheet and grading key</small>
+                                        <span class="type-meta">6 tests</span>
+                                    </span>
+                                </button>
+                                <button class="type-card" data-type="essays" aria-pressed="false">
+                                    <span class="type-icon"><svg class="icon" aria-hidden="true"><use href="#i-layout" /></svg></span>
+                                    <span class="type-copy">
+                                        <strong>Essays</strong>
+                                        <small>Submissions as PDF, DOCX or Markdown</small>
+                                        <span class="type-meta">14 submitted</span>
+                                    </span>
+                                </button>
+                            </div>
+
+                            <!-- ── Rubric grades ───────────────────────────────── -->
+                            <section class="workbench" data-panel="rubric" aria-labelledby="wb-rubric">
+                                <div class="wb-head">
+                                    <span class="type-icon"><svg class="icon" aria-hidden="true"><use href="#i-file" /></svg></span>
+                                    <div>
+                                        <h3 id="wb-rubric">Rubric grades</h3>
+                                        <p>One document per student, or a spreadsheet for your gradebook.</p>
+                                    </div>
+                                    <span class="badge badge-green">18 graded</span>
+                                </div>
+
+                                <div class="wb-body">
+                                    <div class="stack">
+                                        <div class="panel">
+                                            <div class="panel-head">
+                                                <h4>Source</h4>
+                                                <span class="badge badge-blue">4 criteria · 1–10</span>
+                                            </div>
+                                            <div class="stack">
+                                                <div class="field">
+                                                    <label for="mock-rubric">Rubric</label>
+                                                    <select id="mock-rubric">
+                                                        <option>Persuasive essay — argument &amp; structure</option>
+                                                        <option>Oral presentation — fluency</option>
+                                                        <option>Reading response — inference</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <div class="field"><label id="mock-class-label">Scope</label></div>
+                                                    <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 5px" role="group" aria-labelledby="mock-class-label">
+                                                        <button class="chip active" aria-pressed="true">All classes <span class="n">18</span></button>
+                                                        <button class="chip" aria-pressed="false">3HAVO-A <span class="n">11</span></button>
+                                                        <button class="chip" aria-pressed="false">3HAVO-B <span class="n">7</span></button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="panel">
+                                            <div class="panel-head"><h4>Output</h4></div>
+
+                                            <div class="output-row">
+                                                <span class="output-icon"><svg class="icon" aria-hidden="true"><use href="#i-layout" /></svg></span>
+                                                <div class="output-copy">
+                                                    <strong>Word document</strong>
+                                                    <small>Styled with a saved template, or the default layout.</small>
+                                                    <div class="output-controls">
+                                                        <div class="field">
+                                                            <label for="mock-template">Template</label>
+                                                            <select id="mock-template">
+                                                                <option>Default (no template)</option>
+                                                                <option>CITO-style table · 5 levels</option>
+                                                                <option>School report · 4 levels</option>
+                                                            </select>
+                                                        </div>
+                                                        <button class="btn btn-secondary btn-sm">
+                                                            <svg class="icon icon-sm" aria-hidden="true"><use href="#i-download" /></svg>
+                                                            Export Word
+                                                        </button>
+                                                    </div>
+                                                    <div style="margin-top: 7px">
+                                                        <a class="inline-link" href="#notes"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-download" /></svg> Download sample template</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="output-row">
+                                                <span class="output-icon"><svg class="icon" aria-hidden="true"><use href="#i-chart" /></svg></span>
+                                                <div class="output-copy">
+                                                    <strong>Spreadsheet (CSV)</strong>
+                                                    <small>Every criterion, comment and grade — one row per student.</small>
+                                                    <div class="output-controls">
+                                                        <div class="field">
+                                                            <label for="mock-preset">Gradebook format</label>
+                                                            <select id="mock-preset">
+                                                                <option>Generic (all columns)</option>
+                                                                <option>Magister</option>
+                                                                <option>SOMtoday</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="field">
+                                                            <label for="mock-decimal">Decimal</label>
+                                                            <select id="mock-decimal">
+                                                                <option>Comma (7,5)</option>
+                                                                <option>Point (7.5)</option>
+                                                            </select>
+                                                        </div>
+                                                        <button class="btn btn-secondary btn-sm" data-requires-selection disabled>
+                                                            <svg class="icon icon-sm" aria-hidden="true"><use href="#i-download" /></svg>
+                                                            Export <span data-selected-count>0</span> as CSV
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div style="display: flex; gap: 14px; flex-wrap: wrap; margin-top: 12px">
+                                                <label class="switch"><input type="checkbox" /> Pad for double-sided print</label>
+                                                <label class="switch" for="mock-orientation">Orientation</label>
+                                                <select id="mock-orientation" style="width: auto; padding: 4px 8px; font-size: 0.76rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-raised)">
+                                                    <option>Portrait</option>
+                                                    <option>Landscape</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="panel students">
+                                        <div class="panel-head">
+                                            <h4>Students</h4>
+                                            <span class="badge badge-blue"><span data-selected-count>0</span> of <span data-total-count>18</span></span>
+                                        </div>
+                                        <div class="students-tools">
+                                            <div class="search">
+                                                <svg class="icon" aria-hidden="true"><use href="#i-search" /></svg>
+                                                <input type="search" placeholder="Find a student…" aria-label="Find a student" data-student-search />
+                                            </div>
+                                            <button class="btn btn-ghost btn-sm" data-select-all>Select all</button>
+                                        </div>
+                                        <div class="student-list" data-student-list>
+                                            <label class="student-row"><input type="checkbox" data-student /><span class="student-main"><strong>Amina Haddad</strong><small>3HAVO-A · <span class="badge badge-purple">Anchor</span></small></span><span class="student-score">84%</span><span class="grade g9">8.4</span></label>
+                                            <label class="student-row"><input type="checkbox" data-student /><span class="student-main"><strong>Bram de Wit</strong><small>3HAVO-A</small></span><span class="student-score">71%</span><span class="grade g7">7.1</span></label>
+                                            <label class="student-row"><input type="checkbox" data-student /><span class="student-main"><strong>Chen Wei</strong><small>3HAVO-B</small></span><span class="student-score">92%</span><span class="grade g9">9.2</span></label>
+                                            <label class="student-row"><input type="checkbox" data-student /><span class="student-main"><strong>Daan Visser</strong><small>3HAVO-A · <span class="badge badge-yellow">Feedback only</span></small></span><span class="student-score">68%</span><span class="grade g7">6.8</span></label>
+                                            <label class="student-row"><input type="checkbox" data-student /><span class="student-main"><strong>Elif Kaya</strong><small>3HAVO-A</small></span><span class="student-score">80%</span><span class="grade g7">8.0</span></label>
+                                            <label class="student-row"><input type="checkbox" data-student /><span class="student-main"><strong>Fenna Smit</strong><small>3HAVO-B</small></span><span class="student-score">76%</span><span class="grade g7">7.6</span></label>
+                                            <label class="student-row"><input type="checkbox" data-student /><span class="student-main"><strong>Gijs Bakker</strong><small>3HAVO-A</small></span><span class="student-score">59%</span><span class="grade g5">5.9</span></label>
+                                            <label class="student-row"><input type="checkbox" data-student /><span class="student-main"><strong>Hana Yılmaz</strong><small>3HAVO-B</small></span><span class="student-score">88%</span><span class="grade g9">8.8</span></label>
+                                            <label class="student-row"><input type="checkbox" data-student /><span class="student-main"><strong>Iris Jansen</strong><small>3HAVO-A</small></span><span class="student-score">73%</span><span class="grade g7">7.3</span></label>
+                                            <label class="student-row"><input type="checkbox" data-student /><span class="student-main"><strong>Jonas Meijer</strong><small>3HAVO-A</small></span><span class="student-score">64%</span><span class="grade g7">6.4</span></label>
+                                            <label class="student-row"><input type="checkbox" data-student /><span class="student-main"><strong>Lotte van Dijk</strong><small>3HAVO-B</small></span><span class="student-score">90%</span><span class="grade g9">9.0</span></label>
+                                            <label class="student-row"><input type="checkbox" data-student /><span class="student-main"><strong>Malik Sow</strong><small>3HAVO-A</small></span><span class="student-score">79%</span><span class="grade g7">7.9</span></label>
+                                            <label class="student-row"><input type="checkbox" data-student /><span class="student-main"><strong>Noor Ahmadi</strong><small>3HAVO-B</small></span><span class="student-score">82%</span><span class="grade g9">8.2</span></label>
+                                            <label class="student-row"><input type="checkbox" data-student /><span class="student-main"><strong>Pieter Kok</strong><small>3HAVO-A</small></span><span class="student-score">61%</span><span class="grade g7">6.1</span></label>
+                                            <label class="student-row"><input type="checkbox" data-student /><span class="student-main"><strong>Rosa Mendes</strong><small>3HAVO-B</small></span><span class="student-score">87%</span><span class="grade g9">8.7</span></label>
+                                            <label class="student-row"><input type="checkbox" data-student /><span class="student-main"><strong>Samir Haddad</strong><small>3HAVO-A</small></span><span class="student-score">74%</span><span class="grade g7">7.4</span></label>
+                                            <label class="student-row"><input type="checkbox" data-student /><span class="student-main"><strong>Tess Vermeer</strong><small>3HAVO-B</small></span><span class="student-score">81%</span><span class="grade g9">8.1</span></label>
+                                            <label class="student-row"><input type="checkbox" data-student /><span class="student-main"><strong>Yara Öztürk</strong><small>3HAVO-A</small></span><span class="student-score">94%</span><span class="grade g9">9.4</span></label>
+                                        </div>
+                                        <div class="students-foot">
+                                            <span>Sorted by name</span>
+                                            <span class="dot"></span>
+                                            <button class="inline-link" style="font-size: 0.72rem"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-arrow" /></svg> Open grading queue</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="wb-footer">
+                                    <div class="bulk-actions" data-bulk hidden>
+                                        <button class="btn btn-secondary btn-sm"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-x" /></svg> Mark not handed in</button>
+                                        <button class="btn btn-secondary btn-sm"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-share" /></svg> Add comment</button>
+                                    </div>
+                                    <div class="selection-note"><strong><span data-selected-count>0</span> of 18</strong> selected</div>
+                                    <div class="footer-actions">
+                                        <button class="btn btn-secondary" data-requires-selection disabled>
+                                            <svg class="icon icon-sm" aria-hidden="true"><use href="#i-download" /></svg>
+                                            Export <span data-selected-count>0</span> as DOCX
+                                        </button>
+                                        <button class="btn btn-primary" data-requires-selection disabled>
+                                            <svg class="icon icon-sm" aria-hidden="true"><use href="#i-printer" /></svg>
+                                            Print <span data-selected-count>0</span> to PDF
+                                        </button>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- ── Progress reports ───────────────────────────── -->
+                            <section class="workbench" data-panel="reports" aria-labelledby="wb-reports" hidden>
+                                <div class="wb-head">
+                                    <span class="type-icon"><svg class="icon" aria-hidden="true"><use href="#i-cap" /></svg></span>
+                                    <div>
+                                        <h3 id="wb-reports">Progress reports</h3>
+                                        <p>Summarise a class over a date range, or build the full report card.</p>
+                                    </div>
+                                    <span class="badge badge-blue">3HAVO-A · 11 students</span>
+                                </div>
+
+                                <div class="wb-body">
+                                    <div class="stack">
+                                        <div class="panel">
+                                            <div class="panel-head">
+                                                <h4>Report</h4>
+                                                <div class="seg" role="group" aria-label="Report output">
+                                                    <button data-report-mode="period" aria-pressed="true">Period report</button>
+                                                    <button data-report-mode="card" aria-pressed="false">Report card</button>
+                                                </div>
+                                            </div>
+                                            <div class="stack">
+                                                <div>
+                                                    <div class="field"><label>Class</label></div>
+                                                    <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 5px">
+                                                        <button class="chip active" aria-pressed="true">3HAVO-A <span class="n">11</span></button>
+                                                        <button class="chip" aria-pressed="false">3HAVO-B <span class="n">7</span></button>
+                                                    </div>
+                                                </div>
+                                                <div class="range-grid">
+                                                    <div class="field">
+                                                        <label for="mock-from">From</label>
+                                                        <input id="mock-from" type="date" value="2026-09-01" />
+                                                    </div>
+                                                    <div class="field">
+                                                        <label for="mock-to">To</label>
+                                                        <input id="mock-to" type="date" value="2026-11-13" />
+                                                    </div>
+                                                </div>
+                                                <div class="field">
+                                                    <label for="mock-period">Period label</label>
+                                                    <input id="mock-period" type="text" value="Term 1" />
+                                                </div>
+                                                <div data-report-section hidden>
+                                                    <div class="field"><label>Include in the report card</label></div>
+                                                    <div class="section-checks" style="margin-top: 5px">
+                                                        <label class="switch"><input type="checkbox" checked /> Rubric grades</label>
+                                                        <label class="switch"><input type="checkbox" checked /> Standards coverage</label>
+                                                        <label class="switch"><input type="checkbox" checked /> Learning goals</label>
+                                                        <label class="switch"><input type="checkbox" checked /> CEFR overview</label>
+                                                        <label class="switch"><input type="checkbox" checked /> Test summary</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <p class="hint-line"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-file" /></svg> Generated as DOCX and zipped per class when more than one student is selected.</p>
+                                    </div>
+
+                                    <div class="panel students">
+                                        <div class="panel-head">
+                                            <h4>Students</h4>
+                                            <span class="badge badge-blue"><span data-selected-count>0</span> of <span data-total-count>11</span></span>
+                                        </div>
+                                        <div class="students-tools">
+                                            <button class="btn btn-ghost btn-sm" data-select-all>Select all</button>
+                                            <span class="xs muted" style="margin-inline-start: auto">Whole class</span>
+                                        </div>
+                                        <div class="student-chips">
+                                            <button class="chip" aria-pressed="false">Amina Haddad</button>
+                                            <button class="chip" aria-pressed="false">Bram de Wit</button>
+                                            <button class="chip" aria-pressed="false">Daan Visser</button>
+                                            <button class="chip" aria-pressed="false">Elif Kaya</button>
+                                            <button class="chip" aria-pressed="false">Gijs Bakker</button>
+                                            <button class="chip" aria-pressed="false">Iris Jansen</button>
+                                            <button class="chip" aria-pressed="false">Jonas Meijer</button>
+                                            <button class="chip" aria-pressed="false">Malik Sow</button>
+                                            <button class="chip" aria-pressed="false">Pieter Kok</button>
+                                            <button class="chip" aria-pressed="false">Samir Haddad</button>
+                                            <button class="chip" aria-pressed="false">Yara Öztürk</button>
+                                        </div>
+                                        <div class="students-foot"><span>Uses the class and date range on the left.</span></div>
+                                    </div>
+                                </div>
+
+                                <div class="wb-footer">
+                                    <div class="selection-note"><strong><span data-selected-count>0</span> of 11</strong> selected</div>
+                                    <div class="footer-actions">
+                                        <button class="btn btn-primary" data-requires-selection disabled data-report-primary>
+                                            Generate <span data-selected-count>0</span> period report(s)
+                                        </button>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- ── Exam booklets ──────────────────────────────── -->
+                            <section class="workbench" data-panel="exam" aria-labelledby="wb-exam" hidden>
+                                <div class="wb-head">
+                                    <span class="type-icon"><svg class="icon" aria-hidden="true"><use href="#i-clipboard" /></svg></span>
+                                    <div>
+                                        <h3 id="wb-exam">Exam booklets</h3>
+                                        <p>Print-ready paper, answer sheet and grading key.</p>
+                                    </div>
+                                    <span class="badge badge-yellow">Grading key stays separate</span>
+                                </div>
+
+                                <div class="wb-body">
+                                    <div class="stack">
+                                        <div class="panel">
+                                            <div class="panel-head"><h4>Test</h4><span class="badge badge-blue">24 questions · 38 points</span></div>
+                                            <div class="field">
+                                                <label for="mock-test">Test</label>
+                                                <select id="mock-test">
+                                                    <option>Unit 4 — Reading &amp; vocabulary</option>
+                                                    <option>Unit 3 — Listening</option>
+                                                    <option>Placement — Reading ladder</option>
+                                                </select>
+                                            </div>
+                                            <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px">
+                                                <label class="switch"><input type="checkbox" checked /> Include reading passage</label>
+                                                <label class="switch"><input type="checkbox" /> Scan markers</label>
+                                            </div>
+                                        </div>
+
+                                        <div class="panel">
+                                            <div class="panel-head"><h4>What you get</h4></div>
+                                            <div class="output-row">
+                                                <span class="output-icon"><svg class="icon" aria-hidden="true"><use href="#i-file" /></svg></span>
+                                                <div class="output-copy">
+                                                    <strong>Exam paper</strong>
+                                                    <small>Student-facing booklet, one copy per student.</small>
+                                                </div>
+                                                <button class="btn btn-secondary btn-sm">PDF</button>
+                                                <button class="btn btn-ghost btn-sm">DOCX</button>
+                                            </div>
+                                            <div class="output-row">
+                                                <span class="output-icon"><svg class="icon" aria-hidden="true"><use href="#i-layout" /></svg></span>
+                                                <div class="output-copy">
+                                                    <strong>Answer sheet</strong>
+                                                    <small>Separate sheet, keeps the paper reusable.</small>
+                                                </div>
+                                                <button class="btn btn-secondary btn-sm">PDF</button>
+                                            </div>
+                                            <div class="output-row">
+                                                <span class="output-icon"><svg class="icon" aria-hidden="true"><use href="#i-check-square" /></svg></span>
+                                                <div class="output-copy">
+                                                    <strong>Grading key</strong>
+                                                    <small>Never bundled with student-facing output.</small>
+                                                </div>
+                                                <button class="btn btn-secondary btn-sm">PDF</button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="panel students">
+                                        <div class="panel-head">
+                                            <h4>Students</h4>
+                                            <span class="badge badge-blue"><span data-selected-count>0</span> of <span data-total-count>27</span></span>
+                                        </div>
+                                        <div class="students-tools">
+                                            <button class="btn btn-ghost btn-sm" data-select-all>Select all</button>
+                                            <span class="xs muted" style="margin-inline-start: auto">3 classes</span>
+                                        </div>
+                                        <div class="student-list" style="max-height: 264px">
+                                            <label class="student-row"><input type="checkbox" data-student /><span class="student-main"><strong>3HAVO-A <span class="muted xs">· 11 students</span></strong><small class="xs">Print 11 booklets</small></span></label>
+                                            <label class="student-row"><input type="checkbox" data-student /><span class="student-main"><strong>3HAVO-B <span class="muted xs">· 7 students</span></strong><small class="xs">Print 7 booklets</small></span></label>
+                                            <label class="student-row"><input type="checkbox" data-student /><span class="student-main"><strong>3VWO-A <span class="muted xs">· 9 students</span></strong><small class="xs">Print 9 booklets</small></span></label>
+                                        </div>
+                                        <div class="students-foot"><span>Student names are printed from the roster.</span></div>
+                                    </div>
+                                </div>
+
+                                <div class="wb-footer">
+                                    <div class="selection-note"><strong><span data-selected-count>0</span> of 27</strong> booklets</div>
+                                    <div class="footer-actions">
+                                        <button class="btn btn-primary" data-requires-selection disabled>
+                                            <svg class="icon icon-sm" aria-hidden="true"><use href="#i-printer" /></svg>
+                                            Print booklets
+                                        </button>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- ── Essays ─────────────────────────────────────── -->
+                            <section class="workbench" data-panel="essays" aria-labelledby="wb-essays" hidden>
+                                <div class="wb-head">
+                                    <span class="type-icon"><svg class="icon" aria-hidden="true"><use href="#i-layout" /></svg></span>
+                                    <div>
+                                        <h3 id="wb-essays">Essays</h3>
+                                        <p>Collect submissions as documents, with or without the rubric.</p>
+                                    </div>
+                                    <button class="btn btn-secondary btn-sm" id="mock-ics">
+                                        <svg class="icon icon-sm" aria-hidden="true"><use href="#i-calendar" /></svg>
+                                        Deadlines (.ics)
+                                    </button>
+                                </div>
+
+                                <div class="wb-body">
+                                    <div class="stack">
+                                        <div class="panel">
+                                            <div class="panel-head"><h4>Assignment</h4><span class="badge badge-green">14 of 18 submitted</span></div>
+                                            <div class="field">
+                                                <label for="mock-essay">Assignment</label>
+                                                <select id="mock-essay">
+                                                    <option>Argumentative essay — social media</option>
+                                                    <option>Narrative writing — a turning point</option>
+                                                </select>
+                                            </div>
+
+                                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px">
+                                                <div class="field" style="flex: 1 1 120px">
+                                                    <label>Format</label>
+                                                    <div class="seg" role="group" aria-label="Essay format">
+                                                        <button aria-pressed="true">PDF</button>
+                                                        <button aria-pressed="false">DOCX</button>
+                                                        <button aria-pressed="false">Markdown</button>
+                                                    </div>
+                                                </div>
+                                                <div class="field" style="flex: 1 1 150px">
+                                                    <label for="mock-batch">When multiple</label>
+                                                    <select id="mock-batch">
+                                                        <option>Separate files</option>
+                                                        <option>Combine into one document</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div style="margin-top: 12px">
+                                                <label class="switch"><input type="checkbox" /> Include rubric grade + analysis</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="panel students">
+                                        <div class="panel-head">
+                                            <h4>Submissions</h4>
+                                            <span class="badge badge-blue"><span data-selected-count>0</span> of <span data-total-count>14</span></span>
+                                        </div>
+                                        <div class="students-tools">
+                                            <button class="btn btn-ghost btn-sm" data-select-all>Select all</button>
+                                        </div>
+                                        <div class="student-list" style="max-height: 318px">
+                                            <label class="student-row"><input type="checkbox" data-student /><span class="student-main"><strong>Amina Haddad</strong><small>Submitted 12 Nov · 642 words</small></span><span class="badge badge-green">Graded</span></label>
+                                            <label class="student-row"><input type="checkbox" data-student /><span class="student-main"><strong>Bram de Wit</strong><small>Submitted 12 Nov · 511 words</small></span><span class="badge badge-yellow">Ungraded</span></label>
+                                            <label class="student-row"><input type="checkbox" data-student /><span class="student-main"><strong>Chen Wei</strong><small>Submitted 11 Nov · 730 words</small></span><span class="badge badge-green">Graded</span></label>
+                                            <label class="student-row"><input type="checkbox" data-student /><span class="student-main"><strong>Daan Visser</strong><small>Submitted 12 Nov · 402 words</small></span><span class="badge badge-yellow">Ungraded</span></label>
+                                            <label class="student-row"><input type="checkbox" data-student /><span class="student-main"><strong>Elif Kaya</strong><small>Submitted 10 Nov · 688 words</small></span><span class="badge badge-green">Graded</span></label>
+                                            <label class="student-row"><input type="checkbox" data-student /><span class="student-main"><strong>Fenna Smit</strong><small>Submitted 12 Nov · 590 words</small></span><span class="badge badge-green">Graded</span></label>
+                                            <label class="student-row"><input type="checkbox" data-student /><span class="student-main"><strong>Gijs Bakker</strong><small>Submitted 9 Nov · 355 words</small></span><span class="badge badge-yellow">Ungraded</span></label>
+                                        </div>
+                                        <div class="students-foot"><span>Only submitted work is listed.</span></div>
+                                    </div>
+                                </div>
+
+                                <div class="wb-footer">
+                                    <div class="selection-note"><strong><span data-selected-count>0</span> of 14</strong> selected</div>
+                                    <div class="footer-actions">
+                                        <button class="btn btn-primary" data-requires-selection disabled>
+                                            <svg class="icon icon-sm" aria-hidden="true"><use href="#i-download" /></svg>
+                                            Export essays
+                                        </button>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="screen">
+                <div class="screen-head">
+                    <span class="screen-num">02</span>
+                    <h2>States</h2>
+                    <p>Selection, empty and narrow layouts — the three places the current page falls apart.</p>
+                </div>
+
+                <div style="display: flex; gap: 18px; flex-wrap: wrap; align-items: flex-start">
+                    <div style="flex: 1 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+                        <div class="panel" style="padding: 0; overflow: hidden; background: var(--bg-card)">
+                            <div style="padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--bg-raised); display: flex; align-items: center; gap: 8px">
+                                <span class="badge badge-green">State · 3 selected</span>
+                                <span class="xs muted">bulk actions join the footer instead of taking their own band</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 12px 16px; border-bottom: 1px solid var(--border)">
+                                <button class="btn btn-secondary btn-sm"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-x" /></svg> Mark not handed in</button>
+                                <button class="btn btn-secondary btn-sm"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-share" /></svg> Add comment</button>
+                                <span class="xs muted" style="margin-inline-start: auto">3 of 18 selected</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 14px 16px; background: var(--bg-elevated)">
+                                <span class="xs" style="font-weight: 700">Print 3 to PDF</span>
+                                <span class="xs muted">·</span>
+                                <span class="xs muted">Export 3 as DOCX</span>
+                                <span class="xs muted">·</span>
+                                <span class="xs muted">Export 3 as CSV</span>
+                                <span class="badge badge-blue" style="margin-inline-start: auto">primary stays visible</span>
+                            </div>
+                        </div>
+
+                        <div class="panel" style="padding: 0; overflow: hidden; background: var(--bg-card)">
+                            <div style="padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--bg-raised); display: flex; align-items: center; gap: 8px">
+                                <span class="badge badge-yellow">State · nothing to export</span>
+                                <span class="xs muted">empty state replaces a disabled button</span>
+                            </div>
+                            <div class="wb-body" style="grid-template-columns: 1fr; padding: 16px">
+                                <div class="empty">
+                                    <span class="empty-icon"><svg class="icon" aria-hidden="true"><use href="#i-users" /></svg></span>
+                                    <strong>No students graded with this rubric yet</strong>
+                                    <p>Open the grading queue to grade a student, or pick another rubric. Grades you finish show up here immediately.</p>
+                                    <button class="btn btn-secondary btn-sm"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-arrow" /></svg> Open grading queue</button>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); background: var(--bg-elevated)">
+                                <span class="xs muted">0 of 0 selected</span>
+                                <button class="btn btn-primary btn-sm" disabled style="margin-inline-start: auto">Print 0 to PDF</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="phone-frame">
+                        <div class="phone-top">
+                            <span class="brand-mark" style="width: 26px; height: 26px; font-size: 0.66rem">RM</span>
+                            <h3>Export</h3>
+                            <button class="btn btn-ghost btn-sm" aria-label="Export guide"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-spark" /></svg></button>
+                        </div>
+                        <div class="phone-content">
+                            <div class="context">
+                                <div>
+                                    <p class="eyebrow">Export desk</p>
+                                    <h2>Turn this term’s work into files.</h2>
+                                    <p class="lede">18 grades ready. Pick an output.</p>
+                                </div>
+                            </div>
+                            <div class="type-grid">
+                                <button class="type-card is-active" aria-pressed="true">
+                                    <span class="type-icon"><svg class="icon" aria-hidden="true"><use href="#i-file" /></svg></span>
+                                    <span class="type-copy"><strong>Rubric grades</strong><small>PDF, DOCX, CSV</small></span>
+                                </button>
+                                <button class="type-card" aria-pressed="false">
+                                    <span class="type-icon"><svg class="icon" aria-hidden="true"><use href="#i-cap" /></svg></span>
+                                    <span class="type-copy"><strong>Progress reports</strong><small>Reports</small></span>
+                                </button>
+                                <button class="type-card" aria-pressed="false">
+                                    <span class="type-icon"><svg class="icon" aria-hidden="true"><use href="#i-clipboard" /></svg></span>
+                                    <span class="type-copy"><strong>Exam booklets</strong><small>Booklets</small></span>
+                                </button>
+                                <button class="type-card" aria-pressed="false">
+                                    <span class="type-icon"><svg class="icon" aria-hidden="true"><use href="#i-layout" /></svg></span>
+                                    <span class="type-copy"><strong>Essays</strong><small>Submissions</small></span>
+                                </button>
+                            </div>
+                            <div class="workbench">
+                                <div class="wb-head">
+                                    <span class="type-icon"><svg class="icon" aria-hidden="true"><use href="#i-file" /></svg></span>
+                                    <div><h3 style="font-size: 0.94rem">Rubric grades</h3><p style="font-size: 0.74rem">PDF, DOCX or CSV per student.</p></div>
+                                </div>
+                                <div class="wb-body">
+                                    <div class="panel">
+                                        <div class="panel-head"><h4>Rubric</h4></div>
+                                        <select aria-label="Rubric" style="width: 100%; padding: 7px 9px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; font-size: 0.8rem">
+                                            <option>Persuasive essay — argument</option>
+                                        </select>
+                                        <div style="display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px">
+                                            <button class="chip active">All <span class="n">18</span></button>
+                                            <button class="chip">3HAVO-A</button>
+                                            <button class="chip">3HAVO-B</button>
+                                        </div>
+                                    </div>
+                                    <div class="panel students">
+                                        <div class="panel-head">
+                                            <h4>Students</h4>
+                                            <span class="badge badge-blue"><span>2</span> of <span>18</span></span>
+                                        </div>
+                                        <div class="student-list">
+                                            <label class="student-row"><input type="checkbox" checked /><span class="student-main"><strong>Amina Haddad</strong><small>3HAVO-A</small></span><span class="grade g9">8.4</span></label>
+                                            <label class="student-row"><input type="checkbox" checked /><span class="student-main"><strong>Bram de Wit</strong><small>3HAVO-A</small></span><span class="grade g7">7.1</span></label>
+                                            <label class="student-row"><input type="checkbox" /><span class="student-main"><strong>Chen Wei</strong><small>3HAVO-B</small></span><span class="grade g9">9.2</span></label>
+                                            <label class="student-row"><input type="checkbox" /><span class="student-main"><strong>Daan Visser</strong><small>3HAVO-A</small></span><span class="grade g7">6.8</span></label>
+                                            <label class="student-row"><input type="checkbox" /><span class="student-main"><strong>Elif Kaya</strong><small>3HAVO-A</small></span><span class="grade g7">8.0</span></label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="wb-footer">
+                                    <div class="selection-note"><strong>2 of 18</strong> selected</div>
+                                    <div class="footer-actions">
+                                        <button class="btn btn-secondary btn-sm">DOCX</button>
+                                        <button class="btn btn-primary btn-sm">PDF (2)</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="xs muted" style="text-align: center">390px · type cards stay two-up, footer actions stay reachable</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="screen" id="notes">
+                <div class="screen-head">
+                    <span class="screen-num">03</span>
+                    <h2>Design notes</h2>
+                    <p>What changes, what is kept, and the decisions to settle before wiring it up.</p>
+                </div>
+
+                <div class="notes">
+                    <div class="note-card">
+                        <h3>Problems this fixes</h3>
+                        <ul>
+                            <li>Page opens as six collapsed headers with no visible task.</li>
+                            <li>No choice between export types — you must already know which section to open.</li>
+                            <li>Two different student pickers for the same job (table vs. name buttons).</li>
+                            <li>Primary actions sit mid-form and scroll away; no single "what will be produced" bar.</li>
+                            <li>Period report and report card duplicate the class, date range and student picker.</li>
+                        </ul>
+                    </div>
+                    <div class="note-card">
+                        <h3>What is kept</h3>
+                        <ul>
+                            <li>Every export, option and handler: Word template + sample, CSV presets/decimal, class scope, per-row PDF, feedback link, dev preview, padding/orientation.</li>
+                            <li>Bulk mark-not-handed-in and bulk comment, with their confirmations and toasts.</li>
+                            <li>The existing exam booklet panel (its controls slot into the exam workbench unchanged), essay formats/batch/analysis and <code>.ics</code>.</li>
+                            <li>Tour, audit logging, and the offline/empty behaviour.</li>
+                        </ul>
+                    </div>
+                    <div class="note-card">
+                        <h3>Hierarchy</h3>
+                        <p>One screen, one question: <strong>what are you exporting?</strong> The type cards answer it, the workbench answers <em>what goes in it</em>, the footer answers <em>what comes out</em>. Nothing opens collapsed.</p>
+                        <div class="flow">
+                            <span>Choose type</span>
+                            <svg class="icon" aria-hidden="true"><use href="#i-arrow" /></svg>
+                            <span>Source &amp; options</span>
+                            <svg class="icon" aria-hidden="true"><use href="#i-arrow" /></svg>
+                            <span>Students</span>
+                            <svg class="icon" aria-hidden="true"><use href="#i-arrow" /></svg>
+                            <span>Export bar</span>
+                        </div>
+                    </div>
+                    <div class="note-card">
+                        <h3>Accessibility &amp; responsive</h3>
+                        <ul>
+                            <li>Type cards are toggle buttons with <code>aria-pressed</code>, not a fake tablist — same convention as <code>SegmentedToggle</code>.</li>
+                            <li>Student rows are real labels wrapping checkboxes; search has a label; counts are in the accessible name.</li>
+                            <li>Large touch targets on mobile — full-row checkboxes, cards and footer actions — with no horizontal scroll.</li>
+                            <li>Focus rings use the existing accent ring; reduced-motion disables the card lift.</li>
+                            <li>AAA contrast on every new surface via existing tokens.</li>
+                        </ul>
+                    </div>
+                    <div class="note-card note-wide">
+                        <h3>Decisions for the feedback round</h3>
+                        <ul>
+                            <li><strong>Chosen:</strong> one active workbench under the type cards. Alternative considered: a 260px left rail of export types.</li>
+                            <li><strong>Chosen:</strong> merge Period Report + Report Card into one workbench with a segmented output toggle. Alternative: keep two separate sections.</li>
+                            <li><strong>Chosen:</strong> students always visible as the workbench's right column. Alternative: a "Choose students" drawer that gives the source card full width.</li>
+                            <li><strong>Open:</strong> should the rubric and class scope sticky-strip across all four types, or stay inside each workbench as shown? (Exam and essay exports are not rubric-scoped.)</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <script>
+            (() => {
+                const root = document.documentElement;
+                const themeButton = document.getElementById('theme-toggle');
+                themeButton.addEventListener('click', () => {
+                    const dark = root.dataset.theme === 'dark';
+                    root.dataset.theme = dark ? 'light' : 'dark';
+                    themeButton.setAttribute('aria-pressed', String(!dark));
+                    themeButton.lastChild.textContent = dark ? ' Dark preview' : ' Light preview';
+                });
+
+                const typeButtons = [...document.querySelectorAll('.type-card[data-type]')];
+                const panels = [...document.querySelectorAll('.workbench[data-panel]')];
+
+                function selectType(type) {
+                    typeButtons.forEach((button) => {
+                        const active = button.dataset.type === type;
+                        button.classList.toggle('is-active', active);
+                        button.setAttribute('aria-pressed', String(active));
+                    });
+                    panels.forEach((panel) => {
+                        panel.hidden = panel.dataset.panel !== type;
+                    });
+                }
+                typeButtons.forEach((button) =>
+                    button.addEventListener('click', () => selectType(button.dataset.type))
+                );
+
+                function refresh(panel) {
+                    const boxes = [...panel.querySelectorAll('input[type="checkbox"][data-student]')];
+                    const selected = boxes.filter((box) => box.checked).length;
+                    panel.querySelectorAll('[data-selected-count]').forEach((el) => {
+                        el.textContent = String(selected);
+                    });
+                    panel.querySelectorAll('[data-total-count]').forEach((el) => {
+                        el.textContent = String(boxes.length);
+                    });
+                    panel.querySelectorAll('[data-requires-selection]').forEach((button) => {
+                        button.disabled = selected === 0;
+                    });
+                    const bulk = panel.querySelector('[data-bulk]');
+                    if (bulk) bulk.hidden = selected === 0;
+                    const selectAll = panel.querySelector('[data-select-all]');
+                    if (selectAll) {
+                        selectAll.textContent = selected === boxes.length && selected > 0 ? 'Clear all' : 'Select all';
+                    }
+                }
+
+                panels.forEach((panel) => {
+                    panel.addEventListener('change', (event) => {
+                        if (event.target.matches('input[type="checkbox"][data-student]')) refresh(panel);
+                    });
+
+                    const selectAll = panel.querySelector('[data-select-all]');
+                    if (selectAll) {
+                        selectAll.addEventListener('click', () => {
+                            const boxes = [...panel.querySelectorAll('input[type="checkbox"][data-student]')];
+                            const all = boxes.length > 0 && boxes.every((box) => box.checked);
+                            boxes.forEach((box) => {
+                                box.checked = !all;
+                            });
+                            refresh(panel);
+                        });
+                    }
+
+                    const reportPicker = panel.querySelector('.student-chips');
+                    if (reportPicker) {
+                        reportPicker.addEventListener('click', (event) => {
+                            const chip = event.target.closest('.chip');
+                            if (chip) {
+                                chip.classList.toggle('active');
+                                chip.setAttribute('aria-pressed', String(chip.classList.contains('active')));
+                            }
+                        });
+                    }
+                });
+
+                document.querySelectorAll('[data-report-mode]').forEach((button) => {
+                    button.addEventListener('click', () => {
+                        const mode = button.dataset.reportMode;
+                        document.querySelectorAll('[data-report-mode]').forEach((other) => {
+                            other.setAttribute('aria-pressed', String(other === button));
+                        });
+                        document.querySelectorAll('[data-report-section]').forEach((section) => {
+                            section.hidden = mode !== 'card';
+                        });
+                        const primary = document.querySelector('[data-report-primary]');
+                        const count = primary.querySelector('[data-selected-count]').textContent;
+                        primary.innerHTML =
+                            mode === 'card'
+                                ? 'Export ' + count + ' report card(s)'
+                                : 'Generate ' + count + ' period report(s)';
+                    });
+                });
+
+                // Report students are chips, not checkboxes: keep the count in step with the chips.
+                const reportPanel = document.querySelector('.workbench[data-panel="reports"]');
+                if (reportPanel) {
+                    const recount = () => {
+                        const chips = [...reportPanel.querySelectorAll('.student-chips .chip')];
+                        const selected = chips.filter((chip) => chip.classList.contains('active')).length;
+                        reportPanel.querySelectorAll('[data-selected-count]').forEach((el) => {
+                            el.textContent = String(selected);
+                        });
+                        reportPanel.querySelectorAll('[data-total-count]').forEach((el) => {
+                            el.textContent = String(chips.length);
+                        });
+                        reportPanel.querySelectorAll('[data-requires-selection]').forEach((button) => {
+                            button.disabled = selected === 0;
+                        });
+                    };
+                    reportPanel.querySelector('.student-chips').addEventListener('click', recount);
+                    const selectAll = reportPanel.querySelector('[data-select-all]');
+                    selectAll.addEventListener('click', () => {
+                        const chips = [...reportPanel.querySelectorAll('.student-chips .chip')];
+                        const all = chips.every((chip) => chip.classList.contains('active'));
+                        chips.forEach((chip) => {
+                            chip.classList.toggle('active', !all);
+                            chip.setAttribute('aria-pressed', String(!all));
+                        });
+                        recount();
+                    });
+                }
+
+                document.querySelector('[data-student-search]').addEventListener('input', (event) => {
+                    const query = event.target.value.trim().toLowerCase();
+                    document.querySelectorAll('[data-panel="rubric"] .student-row').forEach((row) => {
+                        row.hidden = query.length > 0 && !row.textContent.toLowerCase().includes(query);
+                    });
+                });
+
+                document.getElementById('demo-select').addEventListener('click', () => {
+                    const panel = document.querySelector('.workbench:not([hidden])');
+                    const boxes = [...panel.querySelectorAll('input[type="checkbox"][data-student]')].slice(0, 3);
+                    boxes.forEach((box) => {
+                        box.checked = true;
+                    });
+                    refresh(panel);
+                });
+
+                panels.forEach(refresh);
+            })();
+        </script>
+    </body>
+</html>
