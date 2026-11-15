@@ -4,6 +4,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import QuestionEditor from '../QuestionEditor';
 import type { TestQuestion, TestSection } from '../../../types';
 
+/** Open the type picker from the editor's field and choose the card for `type`. */
+function chooseType(type: string) {
+    fireEvent.click(screen.getByLabelText('tests.question_type_label'));
+    fireEvent.click(document.querySelector(`[data-question-type="${type}"]`) as HTMLElement);
+}
+
 const mockAddQuestionBankItem = vi.fn();
 const mockShowToast = vi.fn();
 
@@ -228,9 +234,7 @@ describe('QuestionEditor extended', () => {
             ];
             for (const [type, pick] of cases) {
                 const { onChange, view } = renderEditor(makeQuestion({ type: 'open' }));
-                fireEvent.change(screen.getByDisplayValue('tests.question_type_open'), {
-                    target: { value: type },
-                });
+                chooseType(type);
                 const updated = onChange.mock.calls.at(-1)![0] as TestQuestion;
                 expect(pick(updated)).toBeTruthy();
                 view.unmount();
@@ -239,9 +243,7 @@ describe('QuestionEditor extended', () => {
 
         it('preserves existing options when switching between choice types', () => {
             const { onChange } = renderEditor();
-            fireEvent.change(screen.getByDisplayValue('tests.question_type_multiple_choice'), {
-                target: { value: 'multiple-response' },
-            });
+            chooseType('multiple-response');
             const updated = onChange.mock.calls.at(-1)![0] as TestQuestion;
             expect(updated.options).toHaveLength(2);
             expect(updated.type).toBe('multiple-response');

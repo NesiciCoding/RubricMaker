@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import QuestionEditor from '../QuestionEditor';
 import type {
@@ -9,6 +9,12 @@ import type {
     LinkedCefrDescriptor,
     LinkedFrameworkDescriptor,
 } from '../../../types';
+
+/** Open the type picker from the editor's field and choose the card for `type`. */
+function chooseType(type: string) {
+    fireEvent.click(screen.getByLabelText('tests.question_type_label'));
+    fireEvent.click(document.querySelector(`[data-question-type="${type}"]`) as HTMLElement);
+}
 
 const { mockSettings, mockAddQuestionBankItem, mockShowToast } = vi.hoisted(() => ({
     mockSettings: {} as Record<string, unknown>,
@@ -219,24 +225,20 @@ describe('QuestionEditor coverage', () => {
 
     it('falls through to the plain update for unhandled types when switching', () => {
         const onChange = renderEditor();
-        fireEvent.change(screen.getByDisplayValue('tests.question_type_multiple_choice'), {
-            target: { value: 'short-answer' },
-        });
+        chooseType('short-answer');
         expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ type: 'short-answer' }));
     });
 
     it('initializes default options when switching into a choice type from a bare type', () => {
         const onChange = renderEditor(makeQuestion({ type: 'open', options: undefined }));
-        fireEvent.change(screen.getByDisplayValue('tests.question_type_open'), {
-            target: { value: 'multiple-choice' },
-        });
+        chooseType('multiple-choice');
         const updated = onChange.mock.calls.at(-1)![0] as TestQuestion;
         expect(updated.options).toHaveLength(2);
         expect(updated.options![0]).toMatchObject({ isCorrect: true });
     });
 
     it('preserves existing collections when re-selecting the same specialized type', () => {
-        const cases: Array<[TestQuestion, (q: TestQuestion) => unknown, string]> = [
+        const cases: Array<[TestQuestion, (q: TestQuestion) => unknown]> = [
             [
                 makeQuestion({
                     type: 'matching',
@@ -246,7 +248,6 @@ describe('QuestionEditor coverage', () => {
                     ],
                 }),
                 (q) => q.matchingPairs?.length,
-                'tests.question_type_matching',
             ],
             [
                 makeQuestion({
@@ -257,7 +258,6 @@ describe('QuestionEditor coverage', () => {
                     ],
                 }),
                 (q) => q.orderItems?.length,
-                'tests.question_type_ordering',
             ],
             [
                 makeQuestion({
@@ -269,14 +269,14 @@ describe('QuestionEditor coverage', () => {
                     categorizeItems: [{ id: 'ci1', text: 'Item', categoryId: 'c1' }],
                 }),
                 (q) => (q.categories?.length ?? 0) + (q.categorizeItems?.length ?? 0),
-                'tests.question_type_categorize',
             ],
         ];
-        for (const [question, pick, selectLabel] of cases) {
+        for (const [question, pick] of cases) {
             const onChange = renderEditor(question);
-            fireEvent.change(screen.getByDisplayValue(selectLabel), { target: { value: question.type } });
+            chooseType(question.type);
             const updated = onChange.mock.calls.at(-1)![0] as TestQuestion;
             expect(pick(updated)).toBeGreaterThan(0);
+            cleanup();
         }
     });
 

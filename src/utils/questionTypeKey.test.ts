@@ -5,7 +5,7 @@ import es from '../locales/es.json';
 import fr from '../locales/fr.json';
 import nl from '../locales/nl.json';
 import type { TestQuestionType } from '../types';
-import { questionTypeHelpKey, questionTypeLabelKey } from './questionTypeKey';
+import { questionTypeDescKey, questionTypeHelpKey, questionTypeLabelKey } from './questionTypeKey';
 
 const ALL_TYPES: TestQuestionType[] = [
     'multiple-choice',
@@ -35,6 +35,7 @@ const lookup = (dict: unknown, key: string): unknown =>
 describe('questionTypeLabelKey', () => {
     it('replaces every hyphen, not just the first', () => {
         expect(questionTypeLabelKey('key-word-transformation')).toBe('tests.question_type_key_word_transformation');
+        expect(questionTypeDescKey('key-word-transformation')).toBe('tests.question_type_key_word_transformation_desc');
         expect(questionTypeHelpKey('cloze-bank', 'student', 'body')).toBe('tests.help.cloze_bank_student_body');
     });
 
@@ -43,4 +44,13 @@ describe('questionTypeLabelKey', () => {
             expect(typeof lookup(dict, questionTypeLabelKey(type)), type).toBe('string');
         }
     });
+
+    it.each(Object.entries({ en, nl, fr, de, es }))(
+        'every question type has a picker description in %s',
+        (_lang, dict) => {
+            for (const type of ALL_TYPES) {
+                expect(typeof lookup(dict, questionTypeDescKey(type)), type).toBe('string');
+            }
+        }
+    );
 });
