@@ -1788,7 +1788,9 @@
                                     <div class="selection-note"><strong><span data-selected-count>0</span> of 11</strong> selected</div>
                                     <div class="footer-actions">
                                         <button class="btn btn-primary" data-requires-selection disabled data-report-primary>
-                                            Generate <span data-selected-count>0</span> period report(s)
+                                            <span data-report-primary-prefix>Generate</span>
+                                            <span data-selected-count>0</span>
+                                            <span data-report-primary-suffix>period report(s)</span>
                                         </button>
                                     </div>
                                 </div>
@@ -2243,11 +2245,10 @@
                             section.hidden = mode !== 'card';
                         });
                         const primary = document.querySelector('[data-report-primary]');
-                        const count = primary.querySelector('[data-selected-count]').textContent;
-                        primary.innerHTML =
-                            mode === 'card'
-                                ? 'Export ' + count + ' report card(s)'
-                                : 'Generate ' + count + ' period report(s)';
+                        const prefix = primary.querySelector('[data-report-primary-prefix]');
+                        const suffix = primary.querySelector('[data-report-primary-suffix]');
+                        prefix.textContent = mode === 'card' ? 'Export' : 'Generate';
+                        suffix.textContent = mode === 'card' ? 'report card(s)' : 'period report(s)';
                     });
                 });
 
