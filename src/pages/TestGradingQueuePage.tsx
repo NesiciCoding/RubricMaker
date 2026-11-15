@@ -27,6 +27,7 @@ import { SkeletonRow } from '../components/ui/Skeleton';
 import { pickLatestAttempt } from '../utils/testAnswerText';
 import { scoreTestAnswer } from '../utils/testCalc';
 import { scoreStudentTest } from '../utils/studentTestScore';
+import { answerReviewState, autoConfirmEnabled, type AnswerReviewState } from '../utils/testAutoConfirm';
 import { clamp } from '../utils/clamp';
 import { stripHtmlTags } from '../utils/exportDataPrep';
 import { useTranslation } from 'react-i18next';
@@ -50,6 +51,7 @@ interface QueueStep {
     autoScore: number | null;
     savedPoints: number | undefined;
     skipped: boolean;
+    review: AnswerReviewState;
 }
 
 function expectedAnswerText(q: TestQuestion): string {
@@ -140,7 +142,9 @@ export default function TestGradingQueuePage() {
             .sort((a, b) => a.studentId.localeCompare(b.studentId));
     }, [studentTests, testId]);
 
-    const steps: QueueStep[] = useMemo(() => {
+    const [showAutoConfirmed, setShowAutoConfirmed] = useState(false);
+
+    const allSteps: QueueStep[] = useMemo(() => {
         if (!test) return [];
         const out: QueueStep[] = [];
         const nameOf = (id: string) => students.find((s) => s.id === id)?.name ?? id;
@@ -161,6 +165,7 @@ export default function TestGradingQueuePage() {
                         autoScore: scoreTestAnswer(q, answer),
                         savedPoints: answer.pointsEarned,
                         skipped: skipped.has(`${st.id}:${q.id}`),
+                        review: answerReviewState(test, q, answer),
                     });
                 }
             });
@@ -181,12 +186,24 @@ export default function TestGradingQueuePage() {
                         autoScore: scoreTestAnswer(q, answer),
                         savedPoints: answer.pointsEarned,
                         skipped: skipped.has(`${st.id}:${q.id}`),
+                        review: answerReviewState(test, q, answer),
                     });
                 }
             }
         }
         return out;
     }, [test, attempts, students, view, skipped]);
+
+    // The matrix is the overview, so it keeps auto-confirmed cells; the walk-through views only
+    // queue what still needs a human unless the teacher asks to see everything.
+    const steps = useMemo(
+        () =>
+            view === 'matrix' || showAutoConfirmed
+                ? allSteps
+                : allSteps.filter((s) => s.review.state !== 'auto-confirmed'),
+        [allSteps, view, showAutoConfirmed]
+    );
+    const autoConfirmedCount = allSteps.filter((s) => s.review.state === 'auto-confirmed').length;
 
     // Groups: per question in question-mode, per student in student-mode. Question view is
     // seeded with every question so the nav (one button per test.questions) indexes into
@@ -229,7 +246,11 @@ export default function TestGradingQueuePage() {
     const detailCanNext = inMatrix ? matrixIdx < steps.length - 1 : stepIndex < visibleSteps.length - 1;
 
     const decided = steps.filter(
-        (s) => s.savedPoints !== undefined || draftPoints[s.key] !== undefined || skipped.has(s.key)
+        (s) =>
+            s.savedPoints !== undefined ||
+            draftPoints[s.key] !== undefined ||
+            skipped.has(s.key) ||
+            s.review.state === 'auto-confirmed'
     ).length;
 
     const attemptById = useMemo(() => new Map(attempts.map((st) => [st.id, st])), [attempts]);
@@ -472,7 +493,8 @@ export default function TestGradingQueuePage() {
     // red = zero, yellow = partial (theme yellow stands in for orange).
     const cellVisual = (step: QueueStep): { bg: string; label: string; sub: string } => {
         const draftVal = draftPoints[step.key];
-        const decidedCell = step.savedPoints !== undefined || draftVal !== undefined;
+        const autoConfirmed = step.review.state === 'auto-confirmed';
+        const decidedCell = step.savedPoints !== undefined || draftVal !== undefined || autoConfirmed;
         const earned = draftVal !== undefined ? Number(draftVal) || 0 : (step.savedPoints ?? step.autoScore);
         const max = step.question.points;
         if (step.skipped)
@@ -485,13 +507,20 @@ export default function TestGradingQueuePage() {
             return {
                 bg: MATRIX_GREY_BG,
                 label: earned !== undefined && earned !== null ? `${earned}/${max}` : `–/${max}`,
-                sub: t('tests.queue.sub_auto'),
+                sub:
+                    step.review.state === 'needs-review' && step.review.reason === 'near-miss'
+                        ? t('tests.queue.sub_unsure')
+                        : t('tests.queue.sub_auto'),
             };
         }
         const e = earned ?? 0;
-        if (e >= max) return { bg: MATRIX_GREEN_BG, label: `${e}/${max}`, sub: '' };
-        if (e <= 0) return { bg: MATRIX_RED_BG, label: `${e}/${max}`, sub: '' };
-        return { bg: MATRIX_YELLOW_BG, label: `${e}/${max}`, sub: '' };
+        const sub =
+            autoConfirmed && step.savedPoints === undefined && draftVal === undefined
+                ? t('tests.queue.sub_auto_confirmed')
+                : '';
+        if (e >= max) return { bg: MATRIX_GREEN_BG, label: `${e}/${max}`, sub };
+        if (e <= 0) return { bg: MATRIX_RED_BG, label: `${e}/${max}`, sub };
+        return { bg: MATRIX_YELLOW_BG, label: `${e}/${max}`, sub };
     };
 
     function renderDetailCard(showClose: boolean) {
@@ -508,9 +537,18 @@ export default function TestGradingQueuePage() {
                         <span className="badge badge-green">
                             {t('tests.queue.badge_decided', { points: detailStep.savedPoints })}
                         </span>
+                    ) : detailStep.review.state === 'auto-confirmed' ? (
+                        <span className="badge badge-green">
+                            {t('tests.queue.badge_auto_confirmed', { value: detailStep.autoScore ?? '—' })}
+                        </span>
                     ) : (
                         <span className="badge">
                             {t('tests.queue.badge_auto', { value: detailStep.autoScore ?? '—' })}
+                        </span>
+                    )}
+                    {detailStep.review.state === 'needs-review' && detailStep.review.reason !== 'auto-confirm-off' && (
+                        <span className="badge badge-yellow">
+                            {t(`tests.queue.reason_${detailStep.review.reason.replaceAll('-', '_')}`)}
                         </span>
                     )}
                     {skipped.has(detailStep.key) && (
@@ -688,6 +726,16 @@ export default function TestGradingQueuePage() {
                         ]}
                     />
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginLeft: 'auto' }}>
+                        {!inMatrix && autoConfirmEnabled(test) && autoConfirmedCount > 0 && (
+                            <label className="text-sm" style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={showAutoConfirmed}
+                                    onChange={(e) => setShowAutoConfirmed(e.target.checked)}
+                                />
+                                {t('tests.queue.show_auto_confirmed', { count: autoConfirmedCount })}
+                            </label>
+                        )}
                         <span className="text-muted text-sm" aria-live="polite">
                             {t('tests.queue.decided', { decided, total: steps.length })}
                         </span>
