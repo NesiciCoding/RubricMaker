@@ -1,3 +1,4 @@
+import { useRef, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertCircle, X } from 'lucide-react';
 import Modal from '../ui/Modal';
@@ -68,6 +69,22 @@ export default function TestSettingsDrawer({
 }: Props) {
     const { t, i18n } = useTranslation();
     const panelId = (id: TestSettingsTab) => `test-settings-panel-${id}`;
+    const tabRefs = useRef<Partial<Record<TestSettingsTab, HTMLButtonElement | null>>>({});
+
+    /** Arrow keys move between tabs, Home/End jump to the ends — the WAI-ARIA tabs keyboard pattern. */
+    const handleTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, id: TestSettingsTab) => {
+        const index = TEST_SETTINGS_TABS.findIndex((entry) => entry.id === id);
+        let next: TestSettingsTab | undefined;
+        if (event.key === 'ArrowRight') next = TEST_SETTINGS_TABS[(index + 1) % TEST_SETTINGS_TABS.length].id;
+        else if (event.key === 'ArrowLeft')
+            next = TEST_SETTINGS_TABS[(index - 1 + TEST_SETTINGS_TABS.length) % TEST_SETTINGS_TABS.length].id;
+        else if (event.key === 'Home') next = TEST_SETTINGS_TABS[0].id;
+        else if (event.key === 'End') next = TEST_SETTINGS_TABS[TEST_SETTINGS_TABS.length - 1].id;
+        if (!next) return;
+        event.preventDefault();
+        onTabChange(next);
+        tabRefs.current[next]?.focus();
+    };
 
     const pane = (id: TestSettingsTab, children: React.ReactNode) => (
         <div role="tabpanel" id={panelId(id)} aria-labelledby={`test-settings-tab-${id}`} hidden={tab !== id}>
@@ -86,6 +103,7 @@ export default function TestSettingsDrawer({
                 content={value[field] ?? ''}
                 onChange={(html) => onChange({ [field]: html === '<p></p>' ? undefined : html })}
                 placeholder={t(placeholderKey)}
+                editable={!readOnly}
             />
         </div>
     );
@@ -151,7 +169,11 @@ export default function TestSettingsDrawer({
                                 aria-selected={active}
                                 aria-controls={panelId(id)}
                                 tabIndex={active ? 0 : -1}
+                                ref={(element) => {
+                                    tabRefs.current[id] = element;
+                                }}
                                 onClick={() => onTabChange(id)}
+                                onKeyDown={(event) => handleTabKeyDown(event, id)}
                                 style={{
                                     padding: '5px 9px',
                                     borderRadius: 999,

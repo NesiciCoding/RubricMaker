@@ -12,16 +12,19 @@ interface TiptapEditorProps {
     content: string;
     onChange: (content: string) => void;
     placeholder?: string;
+    /** Writing is on by default; a read-only surface still shows the content, without the toolbar. */
+    editable?: boolean;
 }
 
 const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function TiptapEditor(
-    { content, onChange, placeholder },
+    { content, onChange, placeholder, editable = true },
     ref
 ) {
     const { t } = useTranslation();
     const editor = useEditor({
         extensions: [StarterKit],
         content: content,
+        editable,
         onUpdate: ({ editor }) => {
             onChange(editor.getHTML());
         },
@@ -32,6 +35,10 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
             },
         },
     });
+
+    React.useEffect(() => {
+        editor?.setEditable(editable);
+    }, [editor, editable]);
 
     useImperativeHandle(
         ref,
@@ -50,7 +57,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
 
     return (
         <div className="tiptap-editor">
-            <div className="tiptap-toolbar">
+            <div className="tiptap-toolbar" hidden={!editable}>
                 <button
                     onClick={() => editor.chain().focus().toggleBold().run()}
                     className={`toolbar-btn ${editor.isActive('bold') ? 'active' : ''}`}

@@ -3,7 +3,8 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
-import type { AppSettings, GradeScale, Test as RmTest, QuestionBankItem } from '../../types';
+import type { AppSettings, GradeScale, Test as RmTest, QuestionBankItem, TestQuestion } from '../../types';
+import { questionTypeLabelKey } from '../../utils/questionTypeKey';
 import { RemountOnParam } from '../../components/ui/RemountOnParam';
 
 function renderBuilder(TestBuilderPage: React.ComponentType, route = '/tests/new') {
@@ -19,10 +20,9 @@ function renderBuilder(TestBuilderPage: React.ComponentType, route = '/tests/new
 }
 
 /** Adding a question opens the #1210 type picker first; choose the type for the new question. */
-function pickNewQuestionType(type = 'multiple-choice') {
-    const card = document.querySelector(`[data-question-type="${type}"]`);
-    if (!card) throw new Error(`Question type card "${type}" not rendered`);
-    fireEvent.click(card);
+function pickNewQuestionType(type: TestQuestion['type'] = 'multiple-choice') {
+    // The card names itself from the type label, so the quiz can be asked the way a user asks it.
+    fireEvent.click(screen.getByRole('button', { name: questionTypeLabelKey(type) }));
 }
 
 // Mirrors the App.tsx wiring, which remounts the builder whenever the :id changes (#612).

@@ -3,6 +3,7 @@ import { render, screen, fireEvent, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
+import { questionTypeLabelKey } from '../../utils/questionTypeKey';
 import type { AppSettings, GradeScale, Test as RmTest, QuestionBankItem, TestQuestion, TestSection } from '../../types';
 
 // ---- Hoisted mocks ----
@@ -169,10 +170,9 @@ function renderBuilder(route = '/tests/new', state?: Record<string, unknown>) {
 }
 
 /** Adding a question opens the #1210 type picker first; choose the type for the new question. */
-function pickNewQuestionType(type = 'multiple-choice') {
-    const card = document.querySelector(`[data-question-type="${type}"]`);
-    if (!card) throw new Error(`Question type card "${type}" not rendered`);
-    fireEvent.click(card);
+function pickNewQuestionType(type: TestQuestion['type'] = 'multiple-choice') {
+    // The card names itself from the type label, so the quiz can be asked the way a user asks it.
+    fireEvent.click(screen.getByRole('button', { name: questionTypeLabelKey(type) }));
 }
 
 const sectionItem: QuestionBankItem = {
@@ -1099,6 +1099,18 @@ describe('TestBuilderPage extended', () => {
         expect(screen.queryByTestId('checks-strip')).not.toBeInTheDocument();
     });
 
+    it('stays on the page when Save and assign cannot save a draft yet', () => {
+        renderBuilder();
+        fireEvent.click(screen.getAllByText(/tests.add_question/)[0]);
+        pickNewQuestionType();
+        fireEvent.click(screen.getByTestId('checks_review'));
+        fireEvent.click(screen.getByTestId('checks-assign'));
+        expect(screen.getByText('tests.name_required')).toBeInTheDocument();
+        expect(mockAddTest).not.toHaveBeenCalled();
+        // The draft is still here to fix, not lost behind a navigation to the list.
+        expect(screen.getByLabelText('tests.name_label')).toBeInTheDocument();
+    });
+
     it('blocks saving with an inline error for a zero or negative time limit (#702)', () => {
         renderBuilder();
         openSettings('basics');
@@ -1282,7 +1294,13 @@ describe('TestBuilderPage extended', () => {
             fireEvent.click(inspector.getByRole('tab', { name: /tests.inspector_question/ }));
             const studentView = within(inspector.getByTestId('inspector-student-view'));
             expect(studentView.getByText('Alpha question')).toBeInTheDocument();
-            expect(studentView.getByPlaceholderText('tests.taking.short_answer_placeholder')).toBeInTheDocument();
+            const answer = studentView.getByPlaceholderText('tests.taking.short_answer_placeholder');
+            expect(answer).toBeInTheDocument();
+
+            // An answer typed into the preview stays in the preview, even across a save.
+            fireEvent.change(answer, { target: { value: 'went' } });
+            fireEvent.click(screen.getByText('common.save'));
+            expect(JSON.stringify(mockUpdateTest.mock.calls[0][0])).not.toContain('went');
         } finally {
             Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
         }

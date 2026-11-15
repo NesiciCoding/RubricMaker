@@ -218,12 +218,10 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
     /** The checks screen replaces the question pane until the teacher jumps back into a question. */
     const [checksOpen, setChecksOpen] = useState(false);
     const [showPreview, setShowPreview] = useState(() => window.innerWidth >= 1400);
-    const [isWide, setIsWide] = useState(() => window.innerWidth >= 1100);
     // The outline rail costs 248px of width, so it only appears where the editor still has room.
     const [isRailWide, setIsRailWide] = useState(() => window.innerWidth >= 1400);
     useEffect(() => {
         const onResize = () => {
-            setIsWide(window.innerWidth >= 1100);
             setIsRailWide(window.innerWidth >= 1400);
         };
         window.addEventListener('resize', onResize);
@@ -683,20 +681,26 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         };
     }
 
-    function handleSave() {
+    /**
+     * Validates and persists, reporting whether anything was saved. A shared test saves asynchronously,
+     * so its result is a promise; everything else resolves by the time handleSave returns.
+     */
+    function handleSave(): boolean | Promise<boolean> {
         /* v8 ignore next 1 -- the not-found view renders no save button */
-        if (notFound) return;
+        if (notFound) return false;
         if (!name.trim()) {
             setNameError(t('tests.name_required'));
-            return;
+            return false;
         }
         setNameError('');
 
         const trimmedDuration = durationMinutes.trim();
         const parsedDuration = trimmedDuration === '' ? undefined : Number(trimmedDuration);
         if (parsedDuration !== undefined && !(Number.isFinite(parsedDuration) && parsedDuration > 0)) {
+            // The field lives in the drawer's Delivery tab: open it, or the error is invisible.
+            openSettings('delivery');
             setDurationError(t('tests.duration_invalid'));
-            return;
+            return false;
         }
         setDurationError('');
 
@@ -712,17 +716,21 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
 
         if (shared) {
             /* v8 ignore next -- the Save button is disabled for a view-only share */
-            if (readOnly) return;
+            if (readOnly) return false;
             const submittedAtEdit = editCountRef.current;
-            void saveSharedTest({ ...shared.item, ...payload, updatedAt: new Date().toISOString() }).then((result) => {
+            return saveSharedTest({
+                ...shared.item,
+                ...payload,
+                updatedAt: new Date().toISOString(),
+            }).then((result) => {
                 if (!result.success) {
                     showToast(t('sharing.save_failed'), 'error');
-                    return;
+                    return false;
                 }
                 if (editCountRef.current === submittedAtEdit) setIsDirty(false);
                 showToast(t('sharing.saved_to_owner', { name: shared.ownerName }), 'success');
+                return true;
             });
-            return;
         }
         if (existing) {
             updateTest({ ...existing, ...payload, updatedAt: new Date().toISOString() });
@@ -736,12 +744,13 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
             notifySaved();
             navigate(`/tests/${created.id}`, { replace: true });
         }
+        return true;
     }
 
     // Ctrl/Cmd+S saves from anywhere in the builder, inputs included, as in the Rubric Builder.
     // A view-only share has its Save button disabled, so the shortcut must not run validation or save either.
     const saveFromShortcut = () => {
-        if (!readOnly) handleSave();
+        if (!readOnly) void handleSave();
     };
     const saveRef = useRef(saveFromShortcut);
     useEffect(() => {
@@ -799,10 +808,17 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
             verified={verifiedChecks}
             onJump={jumpToQuestion}
             onBack={() => setChecksOpen(false)}
-            onSave={handleSave}
+            onSave={() => void handleSave()}
             onAssign={() => {
-                handleSave();
-                navigate('/tests');
+                const saved = handleSave();
+                // Leave the draft only once it is actually saved: a failed name or duration check
+                // keeps the teacher on the page that holds the error.
+                if (saved === true) navigate('/tests');
+                else if (saved instanceof Promise) {
+                    void saved.then((ok) => {
+                        if (ok) navigate('/tests');
+                    });
+                }
             }}
             readOnly={readOnly}
         />
@@ -950,7 +966,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                         </button>
                         <button
                             className="btn btn-primary btn-sm"
-                            onClick={handleSave}
+                            onClick={() => void handleSave()}
                             disabled={readOnly}
                             title={readOnly ? t('sharing.view_only') : undefined}
                         >
@@ -962,14 +978,12 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
             <div
                 className="page-content fade-in"
                 style={
-                    isRailWide || (showPreview && isWide)
+                    // Only the rail layout has an in-flow inspector column; below 1400px the inspector
+                    // slides over the page, so a grid would just reserve an empty track.
+                    isRailWide
                         ? {
                               display: 'grid',
-                              gridTemplateColumns: [
-                                  ...(isRailWide ? ['240px'] : []),
-                                  'minmax(0, 1fr)',
-                                  ...(isRailWide || (showPreview && isWide) ? ['minmax(340px, 400px)'] : []),
-                              ].join(' '),
+                              gridTemplateColumns: '240px minmax(0, 1fr) minmax(340px, 400px)',
                               gap: 20,
                               alignItems: 'start',
                           }
@@ -983,7 +997,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                         totalPoints={totalPoints}
                         issuesByQuestion={issuesByQuestion}
                         activeId={selectedQuestionId}
-                        onSelect={setSelectedQuestionId}
+                        onSelect={jumpToQuestion}
                         onAdd={() => openTypePicker()}
                         onOpenSettings={() => openSettings('basics')}
                     />

@@ -38,7 +38,7 @@ const question: TestQuestion = {
 
 function renderInspector(overrides: Partial<React.ComponentProps<typeof TestInspector>> = {}) {
     const onPrintTextChange = vi.fn();
-    render(
+    const result = render(
         <TestInspector
             test={test}
             onPrintTextChange={onPrintTextChange}
@@ -48,7 +48,7 @@ function renderInspector(overrides: Partial<React.ComponentProps<typeof TestInsp
             {...overrides}
         />
     );
-    return { onPrintTextChange };
+    return { onPrintTextChange, rerender: result.rerender };
 }
 
 describe('TestInspector', () => {
@@ -124,6 +124,40 @@ describe('TestInspector', () => {
         fireEvent.change(input, { target: { value: 'went' } });
         expect(input.value).toBe('went');
         expect(onPrintTextChange).not.toHaveBeenCalled();
+    });
+
+    it('drops a preview answer that belonged to the previous question type', () => {
+        const onPrintTextChange = vi.fn();
+        const props = { test, onPrintTextChange, question, questionNumber: 1, questionCount: 3 };
+        const { rerender } = render(<TestInspector {...props} />);
+        fireEvent.click(screen.getByRole('tab', { name: /tests.inspector_question/ }));
+        const input = screen
+            .getByTestId('inspector-student-view')
+            .querySelector('input[type="text"]') as HTMLInputElement;
+        fireEvent.change(input, { target: { value: 'went' } });
+
+        // Same id, new type: `went` would make the multiple-response surface parse a non-JSON value.
+        rerender(
+            <TestInspector
+                {...props}
+                question={{
+                    ...question,
+                    type: 'multiple-response',
+                    options: [{ id: 'a', text: 'Option A', isCorrect: true }],
+                }}
+            />
+        );
+        const boxes = screen.getByTestId('inspector-student-view').querySelectorAll('input[type="checkbox"]');
+        expect(boxes).toHaveLength(1);
+        expect((boxes[0] as HTMLInputElement).checked).toBe(false);
+    });
+
+    it('shows the cloze instruction instead of the keyed prompt', () => {
+        renderInspector({ question: { ...question, type: 'cloze', prompt: '<p>He {{went}} home.</p>' } });
+        fireEvent.click(screen.getByRole('tab', { name: /tests.inspector_question/ }));
+        const view = screen.getByTestId('inspector-student-view');
+        expect(view).not.toHaveTextContent('{{went}}');
+        expect(view).toHaveTextContent('tests.taking.cloze_instruction');
     });
 
     it('moves between the tabs with the arrow keys, wrapping at the ends', () => {

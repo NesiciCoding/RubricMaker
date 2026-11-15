@@ -5,6 +5,7 @@ import RichContent from '../Editor/RichContent';
 import TestA4Preview, { type PrintTextFields } from './TestA4Preview';
 import StudentAnswerSurface from './StudentAnswerSurface';
 import QuestionStimulus from './QuestionStimulus';
+import { clozeInstructionKey } from '../../utils/questionTypeKey';
 import type { Test, TestQuestion } from '../../types';
 
 type InspectorTab = 'paper' | 'question';
@@ -37,9 +38,20 @@ export default function TestInspector({
 }: Props) {
     const { t } = useTranslation();
     const [tab, setTab] = useState<InspectorTab>('paper');
-    /** The preview answer is local to the inspector: clicking through a question never edits the test. */
-    const [previewAnswer, setPreviewAnswer] = useState<{ id: string; value: string }>({ id: '', value: '' });
-    const answer = previewAnswer.id === (question?.id ?? '') ? previewAnswer.value : '';
+    /**
+     * The preview answer and play count are local to the inspector: clicking through a question never
+     * edits the test. Both are keyed by the question's identity *and* its type, because a type change
+     * keeps the id but replaces the answer surface that would understand the old value.
+     */
+    const [previewAnswer, setPreviewAnswer] = useState<{
+        id: string;
+        type: TestQuestion['type'] | '';
+        value: string;
+    }>({ id: '', type: '', value: '' });
+    const [previewPlays, setPreviewPlays] = useState<{ id: string; count: number }>({ id: '', count: 0 });
+    const answer =
+        question && previewAnswer.id === question.id && previewAnswer.type === question.type ? previewAnswer.value : '';
+    const plays = question && previewPlays.id === question.id ? previewPlays.count : 0;
 
     const panelId = (id: InspectorTab) => `test-inspector-${id}`;
     const tabRefs = useRef<Partial<Record<InspectorTab, HTMLButtonElement | null>>>({});
@@ -146,12 +158,24 @@ export default function TestInspector({
                                 {t('tests.points_total', { count: question.points })}
                             </span>
                         </div>
-                        <RichContent html={question.prompt} className="rm-question-prompt" lang={lang ?? 'en'} />
-                        <QuestionStimulus question={question} lang={lang} />
+                        {question.type === 'cloze' ||
+                        question.type === 'cloze-dropdown' ||
+                        question.type === 'cloze-bank' ? (
+                            <p style={{ margin: 0 }}>{t(clozeInstructionKey(question.type))}</p>
+                        ) : (
+                            <RichContent html={question.prompt} className="rm-question-prompt" lang={lang ?? 'en'} />
+                        )}
+                        <QuestionStimulus
+                            question={question}
+                            lang={lang}
+                            plays={plays}
+                            onPlay={(count) => setPreviewPlays({ id: question.id, count })}
+                        />
                         <StudentAnswerSurface
+                            key={question.id}
                             question={question}
                             value={answer}
-                            onChange={(value) => setPreviewAnswer({ id: question.id, value })}
+                            onChange={(value) => setPreviewAnswer({ id: question.id, type: question.type, value })}
                             lang={lang}
                         />
                         <p className="text-muted text-xs" style={{ margin: 0 }}>

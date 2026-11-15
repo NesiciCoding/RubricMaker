@@ -123,6 +123,26 @@ describe('TestSettingsDrawer', () => {
         expect(onChange).toHaveBeenCalledWith({ mode: 'placement' });
     });
 
+    it('reaches every settings tab with the arrow keys', () => {
+        const { onTabChange } = renderDrawer();
+        const basics = screen.getByRole('tab', { name: 'tests.settings_tab_basics' });
+        fireEvent.keyDown(basics, { key: 'ArrowRight' });
+        expect(onTabChange).toHaveBeenLastCalledWith('delivery');
+        fireEvent.keyDown(basics, { key: 'ArrowLeft' });
+        expect(onTabChange).toHaveBeenLastCalledWith('print');
+        fireEvent.keyDown(basics, { key: 'End' });
+        expect(onTabChange).toHaveBeenLastCalledWith('print');
+        fireEvent.keyDown(basics, { key: 'Home' });
+        expect(onTabChange).toHaveBeenLastCalledWith('basics');
+    });
+
+    it('shows the paper fields without a toolbar for a read-only shared test', () => {
+        renderDrawer({ tab: 'print', readOnly: true });
+        const toolbar = screen.getByTestId('settings-printHeader').querySelector('.tiptap-toolbar');
+        expect(toolbar).not.toBeNull();
+        expect(toolbar).toHaveAttribute('hidden');
+    });
+
     it('keeps the paper fields on the print tab', () => {
         renderDrawer({ tab: 'print' });
         expect(screen.getByTestId('settings-printHeader')).toBeInTheDocument();
