@@ -36,21 +36,28 @@ export default function QuestionTypePicker({ selected, onSelect, onClose }: Prop
         const isSelected = type === selected;
         return (
             <div key={type} className={`qtype-card${isSelected ? ' is-selected' : ''}`}>
+                <QuestionTypePreview type={type} />
+                <div className="qtype-card-body">
+                    <span className="qtype-card-name" id={`qtype-card-name-${type}`}>
+                        {t(questionTypeLabelKey(type))}
+                        {isSelected && <span className="qtype-card-badge">{t('tests.type_picker_current')}</span>}
+                    </span>
+                    <span className="qtype-card-desc" id={`qtype-card-desc-${type}`}>
+                        {t(questionTypeDescKey(type))}
+                    </span>
+                </div>
+                {/* A card cannot be one <button>: the answer controls in the preview are
+                    interactive themselves, and buttons cannot nest. This layer sits over the
+                    card, under the ? that opens the guide. */}
                 <button
                     type="button"
-                    className="qtype-card-select"
+                    className="qtype-card-hit"
                     data-question-type={type}
+                    aria-labelledby={`qtype-card-name-${type}`}
+                    aria-describedby={`qtype-card-desc-${type}`}
+                    aria-current={isSelected ? 'true' : undefined}
                     onClick={() => onSelect(type)}
-                >
-                    <QuestionTypePreview type={type} />
-                    <span className="qtype-card-body">
-                        <span className="qtype-card-name">
-                            {t(questionTypeLabelKey(type))}
-                            {isSelected && <span className="qtype-card-badge">{t('tests.type_picker_current')}</span>}
-                        </span>
-                        <span className="qtype-card-desc">{t(questionTypeDescKey(type))}</span>
-                    </span>
-                </button>
+                />
                 <button
                     type="button"
                     className="qtype-card-help"

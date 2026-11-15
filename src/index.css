@@ -2372,12 +2372,21 @@ label.sub-item-check {
     box-shadow: 0 0 0 1px var(--accent);
 }
 
-.qtype-card-select {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    text-align: left;
-    color: var(--text);
+/* The card's click target. It is a layer instead of the card being one <button>, because the
+   answer controls inside the preview (radios, selects, record buttons) are interactive too. */
+.qtype-card-hit {
+    position: absolute;
+    inset: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    border-radius: inherit;
+    cursor: pointer;
+}
+
+.qtype-card-hit:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
 }
 
 .qtype-card-body {
@@ -2460,7 +2469,7 @@ label.sub-item-check {
     line-height: 1.55;
 }
 
-.qtype-preview-card::after {
+.qtype-preview-card.is-clipped::after {
     content: '';
     position: absolute;
     inset: auto 0 0 0;

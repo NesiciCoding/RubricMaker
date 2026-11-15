@@ -19,6 +19,13 @@ import type { TestQuestion, TestQuestionType } from '../../types';
 /** Width the student surface is designed at; everything is scaled down from here. */
 export const PREVIEW_WIDTH = 520;
 
+/**
+ * Used until the host can be measured. Deliberately below the card's usual width ratio: a preview
+ * that is briefly a little small is harmless, one rendered at 1:1 overflows the card and looks
+ * like a clipped screenshot.
+ */
+const UNMEASURED_SCALE = 0.6;
+
 const noop = () => {};
 
 type Renderer = (question: TestQuestion, value: string) => ReactNode;
@@ -77,8 +84,9 @@ interface Props {
 export default function QuestionTypePreview({ type, variant = 'card', maxHeight = 150 }: Props) {
     const hostRef = useRef<HTMLDivElement>(null);
     const innerRef = useRef<HTMLDivElement>(null);
-    const [scale, setScale] = useState(1);
+    const [scale, setScale] = useState(UNMEASURED_SCALE);
     const [height, setHeight] = useState<number | undefined>(variant === 'card' ? maxHeight : undefined);
+    const [clipped, setClipped] = useState(false);
 
     useLayoutEffect(() => {
         const host = hostRef.current;
@@ -86,18 +94,33 @@ export default function QuestionTypePreview({ type, variant = 'card', maxHeight 
         /* v8 ignore next -- refs are attached before the layout effect runs */
         if (!host || !inner) return;
         const measure = () => {
-            const next = Math.max(0.2, Math.min(1, host.clientWidth / PREVIEW_WIDTH));
+            const width = host.clientWidth;
+            /* v8 ignore next -- a hidden host measures 0; keep the last known scale rather than guess */
+            if (!Number.isFinite(width) || width <= 0) return;
+            const next = Math.max(0.2, Math.min(1, width / PREVIEW_WIDTH));
+            const contentHeight = inner.offsetHeight * next;
             setScale(next);
-            setHeight(variant === 'card' ? maxHeight : Math.round(inner.offsetHeight * next));
+            if (variant === 'card') {
+                setHeight(maxHeight);
+                setClipped(contentHeight > maxHeight);
+            } else {
+                setHeight(Math.round(contentHeight));
+                setClipped(false);
+            }
         };
         measure();
+        // A second pass after paint catches a first read taken before fonts and layout settled.
+        const frame = requestAnimationFrame(measure);
         const Observer = (globalThis as { ResizeObserver?: new (callback: () => void) => ResizeObserver })
             .ResizeObserver;
         /* v8 ignore next -- ResizeObserver is missing in the jsdom test environment */
-        if (!Observer) return;
+        if (!Observer) return () => cancelAnimationFrame(frame);
         const observer = new Observer(measure);
         observer.observe(host);
-        return () => observer.disconnect();
+        return () => {
+            cancelAnimationFrame(frame);
+            observer.disconnect();
+        };
     }, [type, variant, maxHeight]);
 
     const sample = QUESTION_TYPE_SAMPLES[type];
@@ -105,7 +128,7 @@ export default function QuestionTypePreview({ type, variant = 'card', maxHeight 
     return (
         <div
             ref={hostRef}
-            className={`qtype-preview${variant === 'card' ? ' qtype-preview-card' : ''}`}
+            className={`qtype-preview${variant === 'card' ? ' qtype-preview-card' : ''}${clipped ? ' is-clipped' : ''}`}
             style={height === undefined ? undefined : { height }}
             aria-hidden="true"
         >
