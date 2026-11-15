@@ -36,8 +36,10 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
         },
     });
 
+    // Only touch the instance when the prop actually differs: a mount-time setEditable on every
+    // editor in the app re-emits a transaction and breaks pages that mount several editors.
     React.useEffect(() => {
-        editor?.setEditable(editable);
+        if (editor && editor.isEditable !== editable) editor.setEditable(editable);
     }, [editor, editable]);
 
     useImperativeHandle(
