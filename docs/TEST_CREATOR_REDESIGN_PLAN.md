@@ -51,7 +51,7 @@ inspector when it is open.
 - No state moved: `TestBuilderPage` still owns `questions`, `sections`, saving and assignment.
 
 Done when: the builder suites, the a11y suite and the locale gates pass, and a real 1520px window shows
-rail + editor + inspector without squeezing the editor. All true — see the phase's screenshot.
+rail + editor + inspector without squeezing the editor. All true — see [`test-creator-inspector-paper.png`](mockups/screenshots/test-creator-inspector-paper.png).
 
 Still to come in this area (Phase 3): the rail selecting a single question instead of scrolling a stack,
 search in the rail, and add actions moved into it.
@@ -153,7 +153,24 @@ The right column is now the inspector, always present at rail widths, with two t
 
 - Narrow artboard: rail collapses to a switcher, inspector becomes a sheet.
 - Every new string in all five locales, checked against the long German/French labels used in the mockup.
-- In-app docs tab, README and screenshots updated; mockup screenshots regenerated against the built app.
+- In-app docs tab, README and screenshots updated; the [screenshots](#screenshots) below regenerated against
+  the built app.
+
+## Screenshots
+
+Only captures of the shipped UI are committed. The exploratory screenshots taken while building the phases
+went stale within hours (two of them show the checks screen before it was reworded, one still has the
+test settings inline next to it), so they are gone; what is left is what a reader of this plan or of the PR
+needs to see the builder as it now stands. Re-capture in place rather than adding another file.
+
+| File                                                                                                     | Shows                                                                                   |
+| -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| [`mockups/test-creator.html`](mockups/test-creator.html)                                                 | the design itself — the spec every phase is measured against                            |
+| [`test-creator-inspector-paper.png`](mockups/screenshots/test-creator-inspector-paper.png)               | the full shell at 1520px: outline rail, one editor, the inspector's Paper tab           |
+| [`test-creator-inspector-student-view.png`](mockups/screenshots/test-creator-inspector-student-view.png) | the Student view tab: image and audio stimulus, play limit, hint toggle, answer surface |
+| [`test-creator-settings-drawer.png`](mockups/screenshots/test-creator-settings-drawer.png)               | the settings drawer (Phase 5) and its five tabs                                         |
+| [`test-creator-more-options-open.png`](mockups/screenshots/test-creator-more-options-open.png)           | one chip open at a time (Phase 4), with every field still there                         |
+| [`test-creator-checks-screen.png`](mockups/screenshots/test-creator-checks-screen.png)                   | the checks screen (Phase 6): blockers first, "What already passes" below                |
 
 ## Conventions for every phase
 
