@@ -14,6 +14,7 @@ export default function TrueFalseAnswer({ value, onChange }: Props) {
                 <button
                     key={option}
                     type="button"
+                    aria-pressed={value === option}
                     onClick={() => onChange(option)}
                     style={{
                         flex: 1,

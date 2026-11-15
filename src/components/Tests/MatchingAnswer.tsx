@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useId, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { seededShuffle } from '../../utils/seededShuffle';
 import { withAnswer } from '../../utils/answerMap';
@@ -16,6 +16,7 @@ interface Props {
 /** Pick the right-hand partner for each left-hand item from a shuffled dropdown. */
 export default function MatchingAnswer({ question, value, onChange, code, lang }: Props) {
     const { t } = useTranslation();
+    const labelBase = useId();
     const pairs = question.matchingPairs ?? [];
     const shuffledPairs = useMemo(() => seededShuffle(pairs, `${code}-${question.id}`), [pairs, code, question.id]);
     const answers: Record<string, string> = useMemo(() => {
@@ -34,8 +35,11 @@ export default function MatchingAnswer({ question, value, onChange, code, lang }
         <div lang={lang ?? 'en'} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {pairs.map((pair) => (
                 <div key={pair.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ flex: 1, color: 'var(--text)' }}>{pair.left}</span>
+                    <span id={`${labelBase}-${pair.id}`} style={{ flex: 1, color: 'var(--text)' }}>
+                        {pair.left}
+                    </span>
                     <select
+                        aria-labelledby={`${labelBase}-${pair.id}`}
                         value={answers[pair.id] ?? ''}
                         onChange={(e) => setAnswer(pair.id, e.target.value)}
                         style={{

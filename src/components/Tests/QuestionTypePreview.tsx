@@ -136,6 +136,7 @@ export default function QuestionTypePreview({ type, variant = 'card', maxHeight 
             className={`qtype-preview${variant === 'card' ? ' qtype-preview-card' : ''}${clipped ? ' is-clipped' : ''}`}
             style={height === undefined ? undefined : { height }}
             aria-hidden="true"
+            inert
         >
             <div
                 ref={innerRef}

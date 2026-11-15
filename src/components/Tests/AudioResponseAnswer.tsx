@@ -41,11 +41,13 @@ export default function AudioResponseAnswer({
     const [prepRemaining, setPrepRemaining] = useState<number | null>(null);
     const prepTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const startingRef = useRef(false);
+    const mountedRef = useRef(true);
+    const [encoding, setEncoding] = useState(false);
     const existing = parseAudioResponse(value);
 
     useEffect(() => {
-        onRecordingChange?.(status === 'recording' || prepRemaining !== null);
-    }, [status, prepRemaining, onRecordingChange]);
+        onRecordingChange?.(status === 'recording' || prepRemaining !== null || encoding);
+    }, [status, prepRemaining, encoding, onRecordingChange]);
 
     useEffect(
         () => () => {
@@ -57,15 +59,21 @@ export default function AudioResponseAnswer({
     const stopRecording = useCallback(async () => {
         /* v8 ignore next -- the interval is always set while recording */
         if (timerRef.current) clearInterval(timerRef.current);
-        const result = await stop();
-        /* v8 ignore next -- stop() only returns null when no session exists (never while recording) */
-        if (result) {
-            try {
-                const dataUri = await fileToDataUrl(result.blob);
-                onChange(encodeAudioResponse({ dataUri, mimeType: result.mimeType, durationSec: elapsedRef.current }));
-            } catch (err) {
-                console.error('Failed to encode audio response', err);
+        const durationSec = elapsedRef.current;
+        setEncoding(true);
+        try {
+            const result = await stop();
+            /* v8 ignore next -- stop() only returns null when no session exists (never while recording) */
+            if (result) {
+                try {
+                    const dataUri = await fileToDataUrl(result.blob);
+                    onChange(encodeAudioResponse({ dataUri, mimeType: result.mimeType, durationSec }));
+                } catch (err) {
+                    console.error('Failed to encode audio response', err);
+                }
             }
+        } finally {
+            if (mountedRef.current) setEncoding(false);
         }
     }, [stop, onChange]);
 
@@ -83,6 +91,10 @@ export default function AudioResponseAnswer({
         } finally {
             startingRef.current = false;
         }
+        if (!mountedRef.current) {
+            if (ok) void stop();
+            return;
+        }
         if (!ok) {
             setMicError(true);
             return;
@@ -95,7 +107,9 @@ export default function AudioResponseAnswer({
     }
 
     useEffect(() => {
+        mountedRef.current = true;
         return () => {
+            mountedRef.current = false;
             if (timerRef.current) clearInterval(timerRef.current);
         };
     }, []);
