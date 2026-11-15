@@ -4274,6 +4274,9 @@
         "show_formatting_marks": "Opmaaktekens tonen"
     },
     "docs": {
+        "rb_import_export_item_preview_import": "Open een gedeelde voorbeeldlink en kies \"Deze rubric importeren\" om een kopie aan je eigen rubrics toe te voegen en te bewerken.",
+        "route_rubric_import_label": "Gedeelde rubric importeren",
+        "route_rubric_import_desc": "Toont de rubric uit een deellink en voegt na je bevestiging een kopie toe aan je werkruimte, die in de builder wordt geopend.",
         "section_title": "Documentatie",
         "sections_nav_label": "Documentatieonderdelen",
         "filter_empty": "No sections match.",
@@ -5613,6 +5616,19 @@
         "reload": "Pagina herladen"
     },
     "importRubric": {
+        "page_title": "Gedeelde rubric importeren",
+        "confirm_title": "Deze rubric toevoegen aan je rubrics?",
+        "confirm_body": "Er wordt een kopie aan je eigen rubrics toegevoegd en geopend in de builder, waar je die kunt bewerken. Voeg alleen rubrics toe van mensen die je vertrouwt.",
+        "confirm_name": "Naam",
+        "confirm_subject": "Vak",
+        "confirm_criteria_label": "Criteria",
+        "confirm_criteria_one": "{{count}} criterium",
+        "confirm_criteria_other": "{{count}} criteria",
+        "confirm_add": "Toevoegen aan mijn rubrics",
+        "confirm_view_preview": "Volledig voorbeeld bekijken",
+        "failed_title": "Deze rubric-link kan niet worden geïmporteerd",
+        "failed_body": "De link is onvolledig of beschadigd. Vraag een nieuwe link of plak de code op de pagina Rubrics.",
+        "back_to_rubrics": "Naar mijn rubrics",
         "title": "Rubric importeren",
         "stage_upload": "Uploaden",
         "stage_parsing": "Verwerken",
@@ -5806,6 +5822,8 @@
         "sub_item_points": "{{score}}/{{max}} ptn"
     },
     "rubricPreview": {
+        "import_cta": "Deze rubric importeren",
+        "import_hint": "Voegt een kopie toe aan je eigen rubrics.",
         "invalid_title": "Deze rubrieklink kan niet worden geopend",
         "invalid_body": "De link is onvolledig of beschadigd. Vraag je docent om hem opnieuw te sturen.",
         "badge": "Beoordelingsrubriek",

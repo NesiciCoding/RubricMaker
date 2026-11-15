@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { Printer } from 'lucide-react';
+import { Link, useParams } from 'react-router-dom';
+import { Plus, Printer } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { decodeRubricShareCode } from '../utils/rubricImport';
 import { orderedLevels } from '../utils/gradeCalc';
@@ -79,6 +79,23 @@ export default function RubricPreviewPage() {
                         {rubric.description}
                     </p>
                 )}
+                <div
+                    className="no-print"
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        flexWrap: 'wrap',
+                        marginTop: 16,
+                    }}
+                >
+                    <Link to={`/rubrics/import/${code}`} className="btn btn-primary btn-sm">
+                        <Plus size={14} aria-hidden="true" /> {t('rubricPreview.import_cta')}
+                    </Link>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                        {t('rubricPreview.import_hint')}
+                    </span>
+                </div>
             </header>
 
             {rubric.tiered && (

@@ -311,6 +311,14 @@ describe('RubricPreviewPage — valid rubric code', () => {
         expect(screen.getByText('A test rubric description')).toBeInTheDocument();
     });
 
+    it('links to the import route so a shared rubric can be adopted', () => {
+        renderPage(<RubricPreviewPage />, `/preview/${validCode}`, '/preview/:code');
+        expect(screen.getByRole('link', { name: /rubricPreview\.import_cta/ })).toHaveAttribute(
+            'href',
+            `/rubrics/import/${validCode}`
+        );
+    });
+
     it('renders in a main landmark with the rubric name as the tab title (#659)', async () => {
         renderPage(<RubricPreviewPage />, `/preview/${encodeRubricShareCode(mockRubric)}`, '/preview/:code');
         expect(screen.getByRole('main')).toBeInTheDocument();

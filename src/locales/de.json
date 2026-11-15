@@ -4274,6 +4274,9 @@
         "show_formatting_marks": "Formatierungszeichen anzeigen"
     },
     "docs": {
+        "rb_import_export_item_preview_import": "Öffne einen geteilten Vorschau-Link und wähle „Diese Rubrik importieren“, um eine Kopie zu deinen Rubriken hinzuzufügen und zu bearbeiten.",
+        "route_rubric_import_label": "Geteilte Rubrik importieren",
+        "route_rubric_import_desc": "Zeigt die Rubrik aus einem Freigabe-Link und fügt nach deiner Bestätigung eine Kopie zu deinem Arbeitsbereich hinzu, die im Editor geöffnet wird.",
         "section_title": "Dokumentation",
         "sections_nav_label": "Dokumentationsbereiche",
         "filter_empty": "No sections match.",
@@ -5613,6 +5616,19 @@
         "reload": "Seite neu laden"
     },
     "importRubric": {
+        "page_title": "Geteilte Rubrik importieren",
+        "confirm_title": "Diese Rubrik zu deinen Rubriken hinzufügen?",
+        "confirm_body": "Eine Kopie wird zu deinen eigenen Rubriken hinzugefügt und im Editor geöffnet, wo du sie bearbeiten kannst. Füge nur Rubriken von Personen hinzu, denen du vertraust.",
+        "confirm_name": "Name",
+        "confirm_subject": "Fach",
+        "confirm_criteria_label": "Kriterien",
+        "confirm_criteria_one": "{{count}} Kriterium",
+        "confirm_criteria_other": "{{count}} Kriterien",
+        "confirm_add": "Zu meinen Rubriken hinzufügen",
+        "confirm_view_preview": "Vollständige Vorschau ansehen",
+        "failed_title": "Dieser Rubrik-Link kann nicht importiert werden",
+        "failed_body": "Der Link ist unvollständig oder beschädigt. Bitte einen neuen Link anfordern oder den Code auf der Seite Rubriken einfügen.",
+        "back_to_rubrics": "Zu meinen Rubriken",
         "title": "Rubric importieren",
         "stage_upload": "Hochladen",
         "stage_parsing": "Verarbeiten",
@@ -5806,6 +5822,8 @@
         "sub_item_points": "{{score}}/{{max}} Pkt."
     },
     "rubricPreview": {
+        "import_cta": "Diese Rubrik importieren",
+        "import_hint": "Fügt eine Kopie deinen eigenen Rubriken hinzu.",
         "invalid_title": "Dieser Rubrik-Link kann nicht geöffnet werden",
         "invalid_body": "Der Link ist unvollständig oder beschädigt. Bitte deine Lehrkraft, ihn erneut zu senden.",
         "badge": "Bewertungsrubrik",
