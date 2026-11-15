@@ -87,6 +87,7 @@ export default function QuestionTypePreview({ type, variant = 'card', maxHeight 
     const [scale, setScale] = useState(UNMEASURED_SCALE);
     const [height, setHeight] = useState<number | undefined>(variant === 'card' ? maxHeight : undefined);
     const [clipped, setClipped] = useState(false);
+    const [offsetY, setOffsetY] = useState(0);
 
     useLayoutEffect(() => {
         const host = hostRef.current;
@@ -101,11 +102,15 @@ export default function QuestionTypePreview({ type, variant = 'card', maxHeight 
             const contentHeight = inner.offsetHeight * next;
             setScale(next);
             if (variant === 'card') {
+                // Cards reserve one height so the grid keeps its rhythm; a short control would
+                // otherwise sit against the top edge with a band of empty space below it.
                 setHeight(maxHeight);
                 setClipped(contentHeight > maxHeight);
+                setOffsetY(Math.max(0, Math.round((maxHeight - contentHeight) / 2)));
             } else {
                 setHeight(Math.round(contentHeight));
                 setClipped(false);
+                setOffsetY(0);
             }
         };
         measure();
@@ -132,7 +137,11 @@ export default function QuestionTypePreview({ type, variant = 'card', maxHeight 
             style={height === undefined ? undefined : { height }}
             aria-hidden="true"
         >
-            <div ref={innerRef} className="qtype-preview-inner" style={{ transform: `scale(${scale})` }}>
+            <div
+                ref={innerRef}
+                className="qtype-preview-inner"
+                style={{ transform: `translateY(${offsetY}px) scale(${scale})` }}
+            >
                 <div className="qtype-preview-surface">{RENDERERS[type](sample.question, sample.value)}</div>
             </div>
         </div>
