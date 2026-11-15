@@ -2827,3 +2827,317 @@ label.sub-item-check {
     text-transform: none;
     letter-spacing: normal;
 }
+
+/* ─── Question type picker ──────────────────────────────────────────────────── */
+.qtype-header {
+    align-items: flex-start;
+}
+
+.qtype-header h3 {
+    font-family: var(--font-display);
+    font-size: 1.22rem;
+    letter-spacing: -0.01em;
+}
+
+.qtype-intro {
+    margin-top: 3px;
+    max-width: 80ch;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.qtype-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 11px 24px;
+    border-bottom: 1px solid var(--border);
+}
+
+.qtype-chip {
+    padding: 4px 11px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 0.79rem;
+    transition: all var(--transition);
+}
+
+.qtype-chip:hover {
+    border-color: var(--border-light);
+    color: var(--text);
+}
+
+.qtype-chip[aria-pressed='true'] {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent-text);
+    font-weight: 600;
+}
+
+.qtype-scroll {
+    overflow-y: auto;
+    padding: 0 24px 24px;
+}
+
+/* One ruled divider per family inside a single scrolling grid. */
+.qtype-group + .qtype-group {
+    margin-top: 20px;
+    border-top: 1px solid var(--border);
+}
+
+.qtype-group-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 16px 0 2px;
+}
+
+.qtype-group + .qtype-group .qtype-group-head {
+    padding-top: 18px;
+}
+
+.qtype-group-title {
+    font-family: var(--font-display);
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.qtype-group-count {
+    padding: 0 7px;
+    border: 1px solid var(--border-light);
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.qtype-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+    padding-top: 14px;
+}
+
+.qtype-card {
+    position: relative;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition:
+        border-color var(--transition),
+        box-shadow var(--transition);
+}
+
+.qtype-card:hover {
+    border-color: var(--border-light);
+    box-shadow: var(--shadow);
+}
+
+.qtype-card.is-selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+}
+
+/* The card's click target. It is a layer instead of the card being one <button>, because the
+   answer controls inside the preview (radios, selects, record buttons) are interactive too. */
+.qtype-card-hit {
+    position: absolute;
+    inset: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    border-radius: inherit;
+    cursor: pointer;
+}
+
+.qtype-card-hit:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+}
+
+.qtype-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 11px 13px 13px;
+    padding-right: 40px;
+}
+
+.qtype-card-name {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.93rem;
+    font-weight: 600;
+}
+
+.qtype-card-desc {
+    font-size: 0.82rem;
+    line-height: 1.4;
+    color: var(--text-muted);
+}
+
+.qtype-card-badge {
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent-text);
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.qtype-card-help {
+    position: absolute;
+    right: 10px;
+    bottom: 11px;
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1px solid var(--border-light);
+    background: var(--bg-card);
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    transition: all var(--transition);
+}
+
+.qtype-card-help:hover {
+    border-color: var(--accent);
+    color: var(--accent-text);
+    background: var(--accent-soft);
+}
+
+/* The real student surface, rendered at its design width and scaled to fit. */
+.qtype-preview {
+    position: relative;
+    overflow: hidden;
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border);
+    pointer-events: none;
+}
+
+.qtype-preview-inner {
+    width: 520px;
+    transform-origin: top left;
+}
+
+.qtype-preview-surface {
+    width: 520px;
+    min-height: 64px;
+    padding: 20px;
+    background: var(--bg-elevated);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.55;
+}
+
+.qtype-preview-card.is-clipped::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 34px;
+    background: linear-gradient(180deg, transparent, var(--bg-elevated));
+}
+
+/* ─── Question type picker: the ? guide ─────────────────────────────────────── */
+.qtype-guide {
+    display: grid;
+    grid-template-columns: 520px minmax(0, 1fr);
+    gap: 28px;
+    padding: 20px 24px 28px;
+    overflow-y: auto;
+}
+
+.qtype-guide-main {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.qtype-eyebrow {
+    margin: 14px 0 0;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+}
+
+.qtype-guide-title {
+    margin: 4px 0 0;
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.qtype-guide-desc {
+    margin: 6px 0 16px;
+    font-size: 0.92rem;
+    color: var(--text-muted);
+}
+
+.qtype-guide .qtype-preview {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+}
+
+.qtype-note {
+    margin-top: 8px;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+}
+
+.qtype-actions {
+    margin-top: 18px;
+}
+
+.qtype-guide-copy {
+    padding-left: 18px;
+    border-left: 2px solid var(--border);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--text);
+}
+
+/* The field in the question editor that opens the picker. */
+.qtype-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--bg-elevated);
+    color: var(--text);
+    font-size: 0.9rem;
+    text-align: left;
+    transition: border-color var(--transition);
+}
+
+.qtype-trigger:hover {
+    border-color: var(--accent);
+}
+
+@media (max-width: 900px) {
+    .qtype-guide {
+        grid-template-columns: 1fr;
+        gap: 18px;
+    }
+
+    .qtype-intro {
+        display: none;
+    }
+}

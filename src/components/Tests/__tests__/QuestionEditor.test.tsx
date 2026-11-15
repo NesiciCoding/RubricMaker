@@ -15,6 +15,12 @@ vi.mock('react-i18next', () => ({
 }));
 
 const makeAppContextMock = () => ({ settings: {} });
+
+/** Open the type picker from the editor's field and choose the card for `type`. */
+function chooseType(type: string) {
+    fireEvent.click(screen.getByLabelText('tests.question_type_label'));
+    fireEvent.click(document.querySelector(`[data-question-type="${type}"]`) as HTMLElement);
+}
 vi.mock('../../../context/AppContext', () => ({
     useRoster: () => makeAppContextMock(),
     useStudents: () => makeAppContextMock(),
@@ -129,7 +135,7 @@ describe('QuestionEditor', () => {
         );
         expect(screen.getByDisplayValue('Sample question')).toBeInTheDocument();
         // select displays the translated key for the selected option
-        expect(screen.getByDisplayValue('tests.question_type_cloze')).toBeInTheDocument();
+        expect(screen.getByText('tests.question_type_cloze')).toBeInTheDocument();
     });
 
     it('calls onRemove when remove button clicked', () => {
@@ -314,7 +320,7 @@ describe('QuestionEditor', () => {
         expect(screen.getByText('Section One')).toBeInTheDocument();
     });
 
-    it('changes question type via type selector', () => {
+    it('changes question type through the type picker', () => {
         const onChange = vi.fn();
         render(
             <QuestionEditor
@@ -326,9 +332,7 @@ describe('QuestionEditor', () => {
                 onRemove={vi.fn()}
             />
         );
-        fireEvent.change(screen.getByDisplayValue('tests.question_type_multiple_choice'), {
-            target: { value: 'true-false' },
-        });
+        chooseType('true-false');
         expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ type: 'true-false' }));
     });
 
@@ -344,9 +348,7 @@ describe('QuestionEditor', () => {
                 onRemove={vi.fn()}
             />
         );
-        fireEvent.change(screen.getByDisplayValue('tests.question_type_matching'), {
-            target: { value: 'true-false' },
-        });
+        chooseType('true-false');
         expect(onChange).toHaveBeenCalledWith(
             expect.objectContaining({ type: 'true-false', linkedGrammarItemId: undefined })
         );
@@ -364,9 +366,7 @@ describe('QuestionEditor', () => {
                 onRemove={vi.fn()}
             />
         );
-        fireEvent.change(screen.getByDisplayValue('tests.question_type_matching'), {
-            target: { value: 'hot-text' },
-        });
+        chooseType('hot-text');
         expect(onChange).toHaveBeenCalledWith(
             expect.objectContaining({ type: 'hot-text', linkedGrammarItemId: 'gr-past-simple-irregular' })
         );
