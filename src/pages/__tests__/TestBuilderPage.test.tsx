@@ -3,7 +3,8 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
-import type { AppSettings, GradeScale, Test as RmTest, QuestionBankItem } from '../../types';
+import type { AppSettings, GradeScale, Test as RmTest, QuestionBankItem, TestQuestion } from '../../types';
+import { questionTypeLabelKey } from '../../utils/questionTypeKey';
 import { RemountOnParam } from '../../components/ui/RemountOnParam';
 
 function renderBuilder(TestBuilderPage: React.ComponentType, route = '/tests/new') {
@@ -11,10 +12,17 @@ function renderBuilder(TestBuilderPage: React.ComponentType, route = '/tests/new
         [
             { path: '/tests/new', element: <TestBuilderPage /> },
             { path: '/tests/:id', element: <TestBuilderPage /> },
+            { path: '/tests', element: <div data-testid="tests-list" /> },
         ],
         { initialEntries: [route] }
     );
     return { router, ...render(<RouterProvider router={router} />) };
+}
+
+/** Adding a question opens the #1210 type picker first; choose the type for the new question. */
+function pickNewQuestionType(type: TestQuestion['type'] = 'multiple-choice') {
+    // The card names itself from the type label, so the quiz can be asked the way a user asks it.
+    fireEvent.click(screen.getByRole('button', { name: questionTypeLabelKey(type) }));
 }
 
 // Mirrors the App.tsx wiring, which remounts the builder whenever the :id changes (#612).
@@ -28,6 +36,7 @@ function renderKeyedBuilder(TestBuilderPage: React.ComponentType, route: string)
         [
             { path: '/tests/new', element },
             { path: '/tests/:id', element },
+            { path: '/tests', element: <div data-testid="tests-list" /> },
         ],
         { initialEntries: [route] }
     );
@@ -176,6 +185,17 @@ const mockBankItem: QuestionBankItem = {
     createdAt: '2026-01-01T00:00:00.000Z',
 };
 
+function closeSettings() {
+    fireEvent.click(screen.getByText('tests.settings_done'));
+}
+
+/**
+ * The test settings are a tabbed drawer now: open the tab that holds the field before touching it.
+ */
+function openSettings(tab: 'basics' | 'delivery' | 'scoring' | 'placement' | 'print' = 'basics') {
+    fireEvent.click(screen.getByTestId(`settings-tile-${tab}`));
+}
+
 describe('TestBuilderPage', () => {
     beforeEach(() => {
         mockTests = [];
@@ -191,8 +211,11 @@ describe('TestBuilderPage', () => {
         renderBuilder(TestBuilderPage);
 
         fireEvent.change(screen.getByLabelText('tests.name_label'), { target: { value: 'Generator Test' } });
+        openSettings('basics');
         fireEvent.change(screen.getByLabelText('tests.mode_label'), { target: { value: 'placement' } });
+        openSettings('placement');
         fireEvent.change(screen.getByLabelText('tests.placement_engine_label'), { target: { value: 'generator' } });
+        closeSettings();
 
         fireEvent.change(screen.getByLabelText('tests.generator_min_level_label'), { target: { value: 'B1' } });
         fireEvent.change(screen.getByLabelText('tests.generator_max_level_label'), { target: { value: 'C1' } });
@@ -239,6 +262,7 @@ describe('TestBuilderPage', () => {
         fireEvent.change(screen.getByLabelText('tests.name_label'), { target: { value: 'My New Test' } });
 
         fireEvent.click(screen.getAllByText(/tests.add_question/)[0]);
+        pickNewQuestionType();
 
         const promptInputs = screen.getAllByLabelText('tests.question_prompt_label');
         fireEvent.change(promptInputs[0], { target: { value: 'What is the capital of France?' } });
@@ -263,6 +287,7 @@ describe('TestBuilderPage', () => {
         renderBuilder(TestBuilderPage);
         fireEvent.change(screen.getByLabelText('tests.name_label'), { target: { value: 'Normed' } });
         expect(screen.queryByLabelText('tests.norm.scale_label')).not.toBeInTheDocument();
+        openSettings('scoring');
         fireEvent.change(document.getElementById('builder-norm-type')!, { target: { value: 'nterm' } });
         fireEvent.change(screen.getByLabelText('tests.norm.n_label'), { target: { value: '1.3' } });
         fireEvent.change(screen.getByLabelText('tests.norm.decimals_label'), { target: { value: '2' } });
@@ -362,6 +387,7 @@ describe('TestBuilderPage', () => {
         const { default: TestBuilderPage } = await import('../TestBuilderPage');
         renderBuilder(TestBuilderPage, '/tests/t1');
 
+        fireEvent.click(screen.getByTestId('checks_open'));
         fireEvent.click(screen.getByRole('button', { name: 'tests.issue_question:{"number":2}' }));
         expect(document.activeElement?.id).toBe('question-card-qs');
         expect(document.activeElement).toHaveTextContent('tests.question_number:{"number":2}');
@@ -381,6 +407,7 @@ describe('TestBuilderPage', () => {
         expect(screen.queryAllByLabelText('tests.question_type_label')).toHaveLength(0);
         expect(screen.getByText('tests.question_incomplete')).toBeInTheDocument();
 
+        fireEvent.click(screen.getByTestId('checks_open'));
         fireEvent.click(screen.getByRole('button', { name: 'tests.issue_question:{"number":2}' }));
         expect(screen.getAllByLabelText('tests.question_type_label')).toHaveLength(1);
         expect(document.activeElement?.id).toBe('question-card-qb');
@@ -419,5 +446,40 @@ describe('TestBuilderPage', () => {
 
         fireEvent.click(screen.getByText('common.save'));
         expect(mockUpdateTest.mock.calls.at(-1)![0].printHeader).toBe('<p>Springfield</p>');
+    });
+
+    it('saves a new test from the checks screen and lands on the Tests list', async () => {
+        const { default: TestBuilderPage } = await import('../TestBuilderPage');
+        const { router } = renderBuilder(TestBuilderPage);
+        fireEvent.change(screen.getByLabelText('tests.name_label'), { target: { value: 'Assignable' } });
+        fireEvent.click(screen.getAllByText(/tests.add_question/)[0]);
+        pickNewQuestionType();
+
+        fireEvent.click(screen.getByTestId('checks_open'));
+        fireEvent.click(screen.getByTestId('checks-assign'));
+
+        expect(mockAddTest).toHaveBeenCalledTimes(1);
+        // handleSave creates the test, then hands over to the list where assigning happens.
+        await waitFor(() => expect(screen.getByTestId('tests-list')).toBeInTheDocument());
+        expect(router.state.location.pathname).toBe('/tests');
+    });
+
+    it('saves an existing test from the checks screen and lands on the Tests list', async () => {
+        mockTests = [
+            {
+                ...mockExistingTest,
+                questions: [{ id: 'q1', prompt: '', type: 'short-answer', points: 1 }],
+            },
+        ];
+        const { default: TestBuilderPage } = await import('../TestBuilderPage');
+        const { router } = renderBuilder(TestBuilderPage, '/tests/t1');
+
+        fireEvent.click(screen.getByTestId('checks_open'));
+        expect(screen.getByTestId('checks-row-q1')).toBeInTheDocument();
+        fireEvent.click(screen.getByTestId('checks-assign'));
+
+        expect(mockUpdateTest).toHaveBeenCalledWith(expect.objectContaining({ id: 't1' }));
+        await waitFor(() => expect(screen.getByTestId('tests-list')).toBeInTheDocument());
+        expect(router.state.location.pathname).toBe('/tests');
     });
 });

@@ -3,6 +3,7 @@ import { render, screen, fireEvent, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
+import { questionTypeLabelKey } from '../../utils/questionTypeKey';
 import type { AppSettings, GradeScale, Test as RmTest, QuestionBankItem, TestQuestion, TestSection } from '../../types';
 
 // ---- Hoisted mocks ----
@@ -168,6 +169,12 @@ function renderBuilder(route = '/tests/new', state?: Record<string, unknown>) {
     return { router, ...render(<RouterProvider router={router} />) };
 }
 
+/** Adding a question opens the #1210 type picker first; choose the type for the new question. */
+function pickNewQuestionType(type: TestQuestion['type'] = 'multiple-choice') {
+    // The card names itself from the type label, so the quiz can be asked the way a user asks it.
+    fireEvent.click(screen.getByRole('button', { name: questionTypeLabelKey(type) }));
+}
+
 const sectionItem: QuestionBankItem = {
     id: 'bank-section',
     kind: 'section',
@@ -250,6 +257,17 @@ const q2: TestQuestion = {
     ],
 };
 
+function closeSettings() {
+    fireEvent.click(screen.getByText('tests.settings_done'));
+}
+
+/**
+ * The test settings are a tabbed drawer now: open the tab that holds the field before touching it.
+ */
+function openSettings(tab: 'basics' | 'delivery' | 'scoring' | 'placement' | 'print' = 'basics') {
+    fireEvent.click(screen.getByTestId(`settings-tile-${tab}`));
+}
+
 describe('TestBuilderPage extended', () => {
     beforeEach(async () => {
         mockTests = [];
@@ -288,8 +306,11 @@ describe('TestBuilderPage extended', () => {
     it('renders generator pool warnings from mixed bank items', () => {
         mockQuestionBank = [sectionItem, questionItem, nonAutoItem];
         renderBuilder();
+        openSettings('basics');
         fireEvent.change(screen.getByLabelText('tests.mode_label'), { target: { value: 'placement' } });
+        openSettings('placement');
         fireEvent.change(screen.getByLabelText('tests.placement_engine_label'), { target: { value: 'generator' } });
+        closeSettings();
         // A1 has 1 autoscore (questionItem), B1 has 1 (sectionItem counts its section question),
         // C2 has 0 (non-auto open question) — all below MIN_QUESTIONS_PER_LEVEL (3).
         expect(screen.getAllByText(/tests.generator_pool_warning/).length).toBeGreaterThan(0);
@@ -298,8 +319,11 @@ describe('TestBuilderPage extended', () => {
     it('labels a section-kind starter item with its title', () => {
         mockQuestionBank = [sectionItem];
         renderBuilder();
+        openSettings('basics');
         fireEvent.change(screen.getByLabelText('tests.mode_label'), { target: { value: 'placement' } });
+        openSettings('placement');
         fireEvent.change(screen.getByLabelText('tests.placement_engine_label'), { target: { value: 'generator' } });
+        closeSettings();
         fireEvent.click(screen.getByRole('button', { name: /tests.generator_pick_starter_button/ }));
         fireEvent.click(screen.getByText('questionBank.section_bundle_title:{"title":"Bank Passage"}'));
         // The modal closes and the starter label resolves to the section title.
@@ -366,6 +390,7 @@ describe('TestBuilderPage extended', () => {
             },
         ];
         renderBuilder('/tests/t1');
+        openSettings('basics');
         fireEvent.change(screen.getByLabelText('tests.mode_label'), { target: { value: 'placement' } });
 
         // enable routing on the first section
@@ -397,8 +422,11 @@ describe('TestBuilderPage extended', () => {
             },
         ];
         renderBuilder('/tests/t1');
+        openSettings('basics');
         fireEvent.change(screen.getByLabelText('tests.mode_label'), { target: { value: 'placement' } });
+        openSettings('placement');
         fireEvent.change(screen.getByLabelText('tests.placement_engine_label'), { target: { value: 'staircase' } });
+        closeSettings();
         expect(screen.getAllByText('tests.section_level_pool_untagged').length).toBeGreaterThan(0);
         // tag the first section
         const selects = screen.getAllByRole('combobox');
@@ -409,15 +437,20 @@ describe('TestBuilderPage extended', () => {
 
     it('saves practice-mode extras and invalid durations', () => {
         renderBuilder();
+        openSettings('basics');
         fireEvent.change(screen.getByLabelText('tests.mode_label'), { target: { value: 'practice' } });
         fireEvent.change(screen.getByLabelText('tests.name_label'), { target: { value: 'Practice Test' } });
         fireEvent.change(screen.getByLabelText('tests.content_area_label'), { target: { value: 'reading' } });
+        openSettings('delivery');
         fireEvent.click(screen.getByText('tests.allow_multiple_attempts_label'));
         fireEvent.click(screen.getByText('tests.shuffle_questions_label'));
         fireEvent.click(screen.getByText('tests.require_seb_label'));
         fireEvent.change(screen.getByLabelText('tests.duration_label'), { target: { value: 'not-a-number' } });
+        openSettings('scoring');
         fireEvent.change(screen.getByLabelText('tests.grade_scale_label'), { target: { value: '' } });
+        openSettings('delivery');
         fireEvent.change(screen.getByLabelText('tests.due_date_label'), { target: { value: '2025-01-15T10:00' } });
+        openSettings('basics');
         fireEvent.change(screen.getByLabelText('cefr.target_level_label'), { target: { value: 'B2' } });
         fireEvent.change(screen.getByLabelText('cefr.skill_label'), { target: { value: 'writing' } });
         fireEvent.change(screen.getByLabelText(/tests.description_label/), { target: { value: 'A description' } });
@@ -446,6 +479,7 @@ describe('TestBuilderPage extended', () => {
         expect(screen.getByText('tests.name_required')).toBeInTheDocument();
         fireEvent.change(screen.getByLabelText('tests.name_label'), { target: { value: 'Named' } });
         expect(screen.queryByText('tests.name_required')).not.toBeInTheDocument();
+        openSettings('delivery');
         fireEvent.change(screen.getByLabelText('tests.duration_label'), { target: { value: '45' } });
         fireEvent.click(screen.getByText('common.save'));
         expect(mockAddTest.mock.calls[0][0].durationMinutes).toBe(45);
@@ -464,7 +498,9 @@ describe('TestBuilderPage extended', () => {
         renderBuilder();
         fireEvent.change(screen.getByLabelText('tests.name_label'), { target: { value: 'Two Questions' } });
         fireEvent.click(screen.getAllByText(/tests.add_question/)[0]);
+        pickNewQuestionType();
         fireEvent.click(screen.getAllByText(/tests.add_question/)[1]);
+        pickNewQuestionType();
         const prompts = screen.getAllByLabelText('tests.question_prompt_label');
         fireEvent.change(prompts[0], { target: { value: 'Edited first' } });
         fireEvent.click(screen.getAllByLabelText('tests.remove_question')[0]);
@@ -574,6 +610,7 @@ describe('TestBuilderPage extended', () => {
         expect(screen.getByText('tests.section_empty_hint')).toBeInTheDocument();
         // add a question to the section via the section's add button (header, pool, then section)
         fireEvent.click(screen.getAllByText(/tests.add_question/)[2]);
+        pickNewQuestionType();
         fireEvent.click(screen.getByText('common.save'));
         expect(mockUpdateTest.mock.calls[0][0].questions[1].sectionId).toBe('s1');
     });
@@ -613,6 +650,7 @@ describe('TestBuilderPage extended', () => {
             },
         ];
         renderBuilder('/tests/t1');
+        openSettings('delivery');
         expect((screen.getByLabelText('tests.duration_label') as HTMLInputElement).value).toBe('45');
         expect((screen.getByLabelText('tests.due_date_label') as HTMLInputElement).value).not.toBe('');
     });
@@ -660,11 +698,129 @@ describe('TestBuilderPage extended', () => {
         expect(screen.getByDisplayValue('Bank question prompt')).toBeInTheDocument();
     });
 
+    it('creates the new question with the type picked in the picker', () => {
+        renderBuilder();
+        fireEvent.change(screen.getByLabelText('tests.name_label'), { target: { value: 'Matching test' } });
+        fireEvent.click(screen.getAllByText(/tests.add_question/)[0]);
+        pickNewQuestionType('matching');
+        // The matching editor only renders for a matching question, so this proves the pick was applied.
+        expect(screen.getByText('tests.matching_pairs_label', { exact: false })).toBeInTheDocument();
+        expect(screen.getAllByLabelText('tests.matching_left_placeholder').length).toBe(2);
+        fireEvent.click(screen.getByText('common.save'));
+        expect(mockAddTest.mock.calls[0][0].questions[0].type).toBe('matching');
+    });
+
+    it('shows one question at a time in the focus pane and switches from the rail', () => {
+        mockTests = [
+            {
+                id: 't1',
+                name: 'Two questions',
+                questions: [
+                    { ...q1, id: 'qa', prompt: 'Alpha question', points: 2 },
+                    { ...q1, id: 'qb', prompt: 'Beta question', type: 'short-answer', points: 3 },
+                ],
+                sections: [],
+                requireSEB: false,
+                shuffleQuestions: false,
+                createdAt: '2024-01-01T00:00:00Z',
+            },
+        ];
+        const originalWidth = window.innerWidth;
+        Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1500 });
+        try {
+            renderBuilder('/tests/t1');
+            const rail = screen.getByText('tests.outline_title').closest('nav') as HTMLElement;
+            const focus = () => within(screen.getByTestId('question-focus'));
+            // The stacked list is gone: only the open question's editor is mounted.
+            expect(screen.getAllByLabelText('tests.question_prompt_label')).toHaveLength(1);
+            expect(focus().getByText('tests.question_type_multiple_choice')).toBeInTheDocument();
+
+            fireEvent.click(within(rail).getByText('Beta question'));
+            expect(screen.getAllByLabelText('tests.question_prompt_label')).toHaveLength(1);
+            expect(focus().getByText('tests.question_type_short_answer')).toBeInTheDocument();
+            expect(within(rail).getByText('Beta question').closest('button')).toHaveAttribute('aria-current', 'true');
+        } finally {
+            Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
+        }
+    });
+
+    it('reorders the open question with the focus pane move buttons', () => {
+        mockTests = [
+            {
+                id: 't1',
+                name: 'Two questions',
+                questions: [
+                    { ...q1, id: 'qa', prompt: 'Alpha question' },
+                    { ...q1, id: 'qb', prompt: 'Beta question' },
+                ],
+                sections: [],
+                requireSEB: false,
+                shuffleQuestions: false,
+                createdAt: '2024-01-01T00:00:00Z',
+            },
+        ];
+        const originalWidth = window.innerWidth;
+        Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1500 });
+        try {
+            renderBuilder('/tests/t1');
+            const rail = screen.getByText('tests.outline_title').closest('nav') as HTMLElement;
+            const rowTexts = () =>
+                within(rail)
+                    .getAllByRole('button')
+                    .map((b) => b.textContent ?? '');
+            expect(rowTexts()[0]).toContain('Alpha question');
+
+            fireEvent.click(screen.getByLabelText('tests.move_question_down'));
+
+            expect(rowTexts()[0]).toContain('Beta question');
+            expect(rowTexts()[1]).toContain('Alpha question');
+        } finally {
+            Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
+        }
+    });
+
+    it('adds a question from the rail and opens it in the focus pane', () => {
+        const originalWidth = window.innerWidth;
+        Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1500 });
+        try {
+            renderBuilder();
+            const rail = screen.getByText('tests.outline_title').closest('nav') as HTMLElement;
+            fireEvent.click(within(rail).getByText('tests.add_question'));
+            pickNewQuestionType('true-false');
+            expect(
+                within(screen.getByTestId('question-focus')).getByText('tests.question_type_true_false')
+            ).toBeInTheDocument();
+            expect(screen.getAllByLabelText('tests.question_prompt_label')).toHaveLength(1);
+            const railRow = within(rail).getByText('tests.question_type_true_false').closest('button');
+            expect(railRow).toHaveAttribute('aria-current', 'true');
+        } finally {
+            Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
+        }
+    });
+
+    it('shows the outline rail on a wide screen and jumps to a question from it', () => {
+        const originalWidth = window.innerWidth;
+        Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1500 });
+        try {
+            renderBuilder();
+            fireEvent.click(screen.getAllByText(/tests.add_question/)[0]);
+            pickNewQuestionType();
+            expect(screen.getByText('tests.outline_title')).toBeInTheDocument();
+            const rail = screen.getByText('tests.outline_title').closest('nav');
+            const row = rail?.querySelector('button');
+            expect(row).not.toBeNull();
+            fireEvent.click(row as HTMLElement);
+        } finally {
+            Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
+        }
+    });
+
     it('adds a question from the empty state', () => {
         renderBuilder();
         fireEvent.change(screen.getByLabelText('tests.name_label'), { target: { value: 'Fresh' } });
         // empty state renders its own primary add button (header button + empty-state button)
         fireEvent.click(screen.getAllByText('tests.add_question')[1]);
+        pickNewQuestionType();
         expect(screen.getAllByLabelText('tests.question_prompt_label').length).toBe(1);
         fireEvent.click(screen.getByText('common.save'));
         expect(mockAddTest.mock.calls[0][0].questions.length).toBe(1);
@@ -841,8 +997,11 @@ describe('TestBuilderPage extended', () => {
 
     it('clamps generator level ranges and question counts', () => {
         renderBuilder();
+        openSettings('basics');
         fireEvent.change(screen.getByLabelText('tests.mode_label'), { target: { value: 'placement' } });
+        openSettings('placement');
         fireEvent.change(screen.getByLabelText('tests.placement_engine_label'), { target: { value: 'generator' } });
+        closeSettings();
         // raise the min above the max → the max follows
         fireEvent.change(screen.getByLabelText('tests.generator_max_level_label'), { target: { value: 'B1' } });
         fireEvent.change(screen.getByLabelText('tests.generator_min_level_label'), { target: { value: 'C1' } });
@@ -861,8 +1020,11 @@ describe('TestBuilderPage extended', () => {
     it('renders generator skill labels in Dutch', () => {
         mockLangState.value = 'nl';
         renderBuilder();
+        openSettings('basics');
         fireEvent.change(screen.getByLabelText('tests.mode_label'), { target: { value: 'placement' } });
+        openSettings('placement');
         fireEvent.change(screen.getByLabelText('tests.placement_engine_label'), { target: { value: 'generator' } });
+        closeSettings();
         expect(screen.getAllByText('Lezen').length).toBeGreaterThan(0);
         expect(screen.getAllByText('Schrijven').length).toBeGreaterThan(0);
     });
@@ -881,8 +1043,11 @@ describe('TestBuilderPage extended', () => {
     it('closes the starter modal without selecting', () => {
         mockQuestionBank = [questionItem];
         renderBuilder();
+        openSettings('basics');
         fireEvent.change(screen.getByLabelText('tests.mode_label'), { target: { value: 'placement' } });
+        openSettings('placement');
         fireEvent.change(screen.getByLabelText('tests.placement_engine_label'), { target: { value: 'generator' } });
+        closeSettings();
         fireEvent.click(screen.getByRole('button', { name: /tests.generator_pick_starter_button/ }));
         expect(screen.getByText('questionBank.insert_title')).toBeInTheDocument();
         fireEvent.click(screen.getByLabelText('common.close'));
@@ -894,9 +1059,11 @@ describe('TestBuilderPage extended', () => {
         expect(screen.queryByText('tests.issues_title')).not.toBeInTheDocument();
         fireEvent.change(screen.getByLabelText('tests.name_label'), { target: { value: 'Draft test' } });
         fireEvent.click(screen.getAllByText(/tests.add_question/)[0]);
+        pickNewQuestionType();
         expect(screen.getByText('tests.issues_title')).toBeInTheDocument();
-        expect(screen.getByText(/tests\.issue_question.*"number":1/)).toBeInTheDocument();
-        fireEvent.click(screen.getByText('common.save'));
+        fireEvent.click(screen.getByTestId('checks_review'));
+        expect(screen.getByRole('button', { name: 'tests.issue_question:{"number":1}' })).toBeInTheDocument();
+        fireEvent.click(screen.getByTestId('checks-save'));
         expect(mockAddTest).toHaveBeenCalled();
         expect(mockShowToast).toHaveBeenCalledWith(expect.stringMatching(/^tests\.saved_with_issues/), 'warning');
     });
@@ -915,22 +1082,50 @@ describe('TestBuilderPage extended', () => {
             } as RmTest,
         ];
         renderBuilder('/tests/incomplete');
-        const panel = within(screen.getByText('tests.issues_title').closest('[role="status"]') as HTMLElement);
-        expect(panel.getByText(/tests\.issue_question.*"number":2/)).toBeInTheDocument();
+        fireEvent.click(screen.getByTestId('checks_review'));
+        const panel = within(screen.getByTestId('checks-row-q2'));
+        expect(panel.getByRole('button', { name: 'tests.issue_question:{"number":2}' })).toBeInTheDocument();
         expect(panel.getByText(/tests\.issue_no_numeric_answer/)).toBeInTheDocument();
+    });
+
+    it('hides the blocker banner while the checks screen is open', () => {
+        renderBuilder();
+        fireEvent.change(screen.getByLabelText('tests.name_label'), { target: { value: 'Draft test' } });
+        fireEvent.click(screen.getAllByText(/tests.add_question/)[0]);
+        pickNewQuestionType();
+        expect(screen.getByTestId('checks-strip')).toBeInTheDocument();
+        fireEvent.click(screen.getByTestId('checks_review'));
+        expect(screen.getByTestId('checks-panel')).toBeInTheDocument();
+        expect(screen.queryByTestId('checks-strip')).not.toBeInTheDocument();
+    });
+
+    it('stays on the page when Save and assign cannot save a draft yet', () => {
+        renderBuilder();
+        fireEvent.click(screen.getAllByText(/tests.add_question/)[0]);
+        pickNewQuestionType();
+        fireEvent.click(screen.getByTestId('checks_review'));
+        fireEvent.click(screen.getByTestId('checks-assign'));
+        expect(screen.getByText('tests.name_required')).toBeInTheDocument();
+        expect(mockAddTest).not.toHaveBeenCalled();
+        // The draft is still here to fix, not lost behind a navigation to the list.
+        expect(screen.getByLabelText('tests.name_label')).toBeInTheDocument();
     });
 
     it('blocks saving with an inline error for a zero or negative time limit (#702)', () => {
         renderBuilder();
+        openSettings('basics');
         fireEvent.change(screen.getByLabelText('tests.mode_label'), { target: { value: 'practice' } });
         fireEvent.change(screen.getByLabelText('tests.name_label'), { target: { value: 'Dur' } });
         for (const value of ['0', '-5']) {
+            openSettings('delivery');
             fireEvent.change(screen.getByLabelText('tests.duration_label'), { target: { value } });
             fireEvent.click(screen.getByText('common.save'));
             expect(mockAddTest).not.toHaveBeenCalled();
             expect(screen.getByText('tests.duration_invalid')).toBeInTheDocument();
+            openSettings('delivery');
             expect(screen.getByLabelText('tests.duration_label')).toHaveAttribute('aria-invalid', 'true');
         }
+        openSettings('delivery');
         fireEvent.change(screen.getByLabelText('tests.duration_label'), { target: { value: '' } });
         expect(screen.queryByText('tests.duration_invalid')).not.toBeInTheDocument();
         fireEvent.click(screen.getByText('common.save'));
@@ -945,8 +1140,11 @@ describe('TestBuilderPage extended', () => {
             { ...questionItem, id: 'reading-item', cefrLevel: 'A1', cefrSkill: 'reading' },
         ];
         renderBuilder();
+        openSettings('basics');
         fireEvent.change(screen.getByLabelText('tests.mode_label'), { target: { value: 'placement' } });
+        openSettings('placement');
         fireEvent.change(screen.getByLabelText('tests.placement_engine_label'), { target: { value: 'generator' } });
+        closeSettings();
         // pick the Reading skill — sectionItem has no skill facet, reading-item matches
         fireEvent.click(screen.getByLabelText('Reading'));
         expect(screen.getAllByText(/tests.generator_pool_warning/).length).toBeGreaterThan(0);
@@ -956,8 +1154,11 @@ describe('TestBuilderPage extended', () => {
         mockQuestionBank = [{ ...questionItem, id: 'grammar-item', cefrLevel: 'A1', cefrSkill: 'grammar' }];
         renderBuilder();
         fireEvent.change(screen.getByLabelText('tests.name_label'), { target: { value: 'Grammar Gen' } });
+        openSettings('basics');
         fireEvent.change(screen.getByLabelText('tests.mode_label'), { target: { value: 'placement' } });
+        openSettings('placement');
         fireEvent.change(screen.getByLabelText('tests.placement_engine_label'), { target: { value: 'generator' } });
+        closeSettings();
         fireEvent.click(screen.getByLabelText('Grammar'));
         fireEvent.click(screen.getByText('common.save'));
         const payload = mockAddTest.mock.calls[0][0];
@@ -971,8 +1172,11 @@ describe('TestBuilderPage extended', () => {
         ];
         renderBuilder();
         fireEvent.change(screen.getByLabelText('tests.name_label'), { target: { value: 'Tagged Gen' } });
+        openSettings('basics');
         fireEvent.change(screen.getByLabelText('tests.mode_label'), { target: { value: 'placement' } });
+        openSettings('placement');
         fireEvent.change(screen.getByLabelText('tests.placement_engine_label'), { target: { value: 'generator' } });
+        closeSettings();
         // Distinct bank tags render as toggle chips.
         fireEvent.click(screen.getByRole('button', { name: 'travel', pressed: false }));
         fireEvent.click(screen.getByText('common.save'));
@@ -983,8 +1187,11 @@ describe('TestBuilderPage extended', () => {
     it('shows the empty-tags hint when the bank has no tags', () => {
         mockQuestionBank = [{ ...questionItem, id: 'untagged', cefrLevel: 'A1', tags: [] }];
         renderBuilder();
+        openSettings('basics');
         fireEvent.change(screen.getByLabelText('tests.mode_label'), { target: { value: 'placement' } });
+        openSettings('placement');
         fireEvent.change(screen.getByLabelText('tests.placement_engine_label'), { target: { value: 'generator' } });
+        closeSettings();
         expect(screen.getByText('tests.generator_tags_none')).toBeInTheDocument();
     });
 
@@ -1017,8 +1224,11 @@ describe('TestBuilderPage extended', () => {
             { id: 'mal-q', kind: 'question', tags: [], createdAt: '2026-01-01T00:00:00.000Z' },
         ];
         renderBuilder();
+        openSettings('basics');
         fireEvent.change(screen.getByLabelText('tests.mode_label'), { target: { value: 'placement' } });
+        openSettings('placement');
         fireEvent.change(screen.getByLabelText('tests.placement_engine_label'), { target: { value: 'generator' } });
+        closeSettings();
         fireEvent.click(screen.getByRole('button', { name: /tests.generator_pick_starter_button/ }));
         // both malformed items render with the untitled-prompt fallback
         const untitled = screen.getAllByText('questionBank.untitled_prompt');
@@ -1054,5 +1264,45 @@ describe('TestBuilderPage extended', () => {
         // remove the section question
         fireEvent.click(screen.getByLabelText('tests.remove_question'));
         expect(screen.queryByDisplayValue('Edited prompt')).not.toBeInTheDocument();
+    });
+
+    it('keeps the inspector beside the rail and previews the open question as a student sees it', () => {
+        mockTests = [
+            {
+                id: 't1',
+                name: 'Inspector test',
+                questions: [{ ...q1, id: 'qa', prompt: 'Alpha question', type: 'short-answer' }],
+                sections: [],
+                requireSEB: false,
+                shuffleQuestions: false,
+                createdAt: '2024-01-01T00:00:00Z',
+            },
+        ];
+        const originalWidth = window.innerWidth;
+        Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1500 });
+        try {
+            renderBuilder('/tests/t1');
+            const inspector = within(screen.getByTestId('inspector'));
+            // The paper is part of the layout, so there is no preview to toggle on a wide screen.
+            expect(screen.queryByText('tests.a4_preview_toggle')).not.toBeInTheDocument();
+            expect(inspector.getByRole('tab', { name: /tests.inspector_paper/ })).toHaveAttribute(
+                'aria-selected',
+                'true'
+            );
+            expect(inspector.getByTestId('a4-pane')).toBeInTheDocument();
+
+            fireEvent.click(inspector.getByRole('tab', { name: /tests.inspector_question/ }));
+            const studentView = within(inspector.getByTestId('inspector-student-view'));
+            expect(studentView.getByText('Alpha question')).toBeInTheDocument();
+            const answer = studentView.getByPlaceholderText('tests.taking.short_answer_placeholder');
+            expect(answer).toBeInTheDocument();
+
+            // An answer typed into the preview stays in the preview, even across a save.
+            fireEvent.change(answer, { target: { value: 'went' } });
+            fireEvent.click(screen.getByText('common.save'));
+            expect(JSON.stringify(mockUpdateTest.mock.calls[0][0])).not.toContain('went');
+        } finally {
+            Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
+        }
     });
 });

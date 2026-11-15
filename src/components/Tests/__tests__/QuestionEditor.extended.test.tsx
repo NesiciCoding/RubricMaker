@@ -598,7 +598,7 @@ describe('QuestionEditor extended', () => {
             fireEvent.change(screen.getByLabelText('tests.question_points_label'), { target: { value: '5' } });
             expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ points: 5 }));
 
-            fireEvent.click(screen.getByText('tests.attach_media'));
+            fireEvent.click(screen.getByText('tests.more_media'));
             fireEvent.change(screen.getByLabelText(/tests\.question_image_label/), {
                 target: { value: 'https://img.example/x.png' },
             });
@@ -609,7 +609,7 @@ describe('QuestionEditor extended', () => {
             });
             expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ audioUrl: 'https://audio.example/x.mp3' }));
 
-            fireEvent.click(screen.getByText('tests.advanced_options'));
+            fireEvent.click(screen.getByText('tests.more_hint'));
             fireEvent.change(screen.getByLabelText(/tests\.question_hint_label/), {
                 target: { value: 'A hint' },
             });
@@ -642,6 +642,7 @@ describe('QuestionEditor extended', () => {
                     ],
                 })
             );
+            fireEvent.click(screen.getByText('tests.more_tags'));
             fireEvent.click(screen.getByLabelText('rubricBuilder.action_unlink_standard'));
             expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ linkedStandards: [] }));
         });
@@ -660,7 +661,7 @@ describe('QuestionEditor extended', () => {
     describe('elo rating', () => {
         it('shows the no-level hint when the section has no CEFR level', () => {
             renderEditor();
-            fireEvent.click(screen.getByText('tests.advanced_options'));
+            fireEvent.click(screen.getByText('tests.more_scoring'));
             expect(screen.getByText('tests.elo_rating_no_level')).toBeInTheDocument();
         });
 
@@ -676,7 +677,7 @@ describe('QuestionEditor extended', () => {
                     onRemove={vi.fn()}
                 />
             );
-            fireEvent.click(screen.getByText('tests.advanced_options'));
+            fireEvent.click(screen.getByText('tests.more_scoring'));
             expect(screen.getByLabelText(/tests\.elo_rating_label/)).toBeInTheDocument();
         });
     });

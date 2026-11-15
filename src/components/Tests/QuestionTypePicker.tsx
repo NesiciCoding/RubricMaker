@@ -8,8 +8,11 @@ import { questionTypeDescKey, questionTypeHelpKey, questionTypeLabelKey } from '
 import type { TestQuestionType } from '../../types';
 
 interface Props {
-    /** The question's current type, marked in the grid. */
-    selected: TestQuestionType;
+    /**
+     * The question's current type, marked in the grid. Omitted when the picker is choosing the
+     * type of a question that doesn't exist yet, where there is no current type to mark.
+     */
+    selected?: TestQuestionType;
     onSelect: (type: TestQuestionType) => void;
     onClose: () => void;
 }
