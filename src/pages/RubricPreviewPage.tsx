@@ -80,6 +80,7 @@ export default function RubricPreviewPage() {
                     </p>
                 )}
                 <div
+                    className="no-print"
                     style={{
                         display: 'flex',
                         alignItems: 'center',
