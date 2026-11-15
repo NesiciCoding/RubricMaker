@@ -58,6 +58,52 @@ describe('autoGradeVerdict', () => {
     });
 });
 
+describe('typed cloze and key-word transformation', () => {
+    const cloze: TestQuestion = {
+        id: 'c',
+        type: 'cloze',
+        prompt: 'A {{cat|kitten}} sat on the {{carpet}}.',
+        points: 2,
+    };
+    const kwt: TestQuestion = {
+        id: 'k',
+        type: 'key-word-transformation',
+        prompt: 'She started learning',
+        keyWord: 'SINCE',
+        points: 2,
+        expectedAnswers: ['has been learning // since'],
+    };
+
+    it('confirms cloze answers that are all right or clearly wrong', () => {
+        expect(autoGradeVerdict(cloze, JSON.stringify({ 0: 'cat', 1: 'carpet' }))).toEqual({
+            score: 2,
+            confident: true,
+        });
+        expect(autoGradeVerdict(cloze, JSON.stringify({ 0: 'dog', 1: '' })).confident).toBe(true);
+    });
+
+    it('flags a cloze gap that is a near miss', () => {
+        expect(autoGradeVerdict(cloze, JSON.stringify({ 0: 'cat', 1: 'carpett' }))).toMatchObject({
+            confident: false,
+            reason: 'near-miss',
+        });
+    });
+
+    it('needs manual grading for a cloze gap without alternatives', () => {
+        expect(autoGradeVerdict({ ...cloze, prompt: 'A {{}} sat' }, '{}').reason).toBe('no-answer-model');
+    });
+
+    it('confirms a full key-word answer and a clearly wrong one', () => {
+        expect(autoGradeVerdict(kwt, 'has been learning since').confident).toBe(true);
+        expect(autoGradeVerdict(kwt, 'is fond of tea').confident).toBe(true);
+    });
+
+    it('flags partial and near-miss key-word answers', () => {
+        expect(autoGradeVerdict(kwt, 'has been learning').confident).toBe(false);
+        expect(autoGradeVerdict(kwt, 'has been learnin since').reason).toBe('near-miss');
+    });
+});
+
 describe('answerReviewState / attemptNeedsReview', () => {
     const test = { questions: [mc, sa, { ...sa, id: 'essay', type: 'open' as const }] } as Test;
     const attempt = (answers: StudentTest['answers']) => ({ answers }) as StudentTest;

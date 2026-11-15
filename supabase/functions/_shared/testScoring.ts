@@ -727,6 +727,11 @@ const OPTION_TYPES = new Set([
     'cloze-bank',
 ]);
 
+function acceptedAnswers(question: ScorableQuestion): string[] {
+    if (question.expectedAnswers?.length) return question.expectedAnswers;
+    return question.expectedAnswer ? [question.expectedAnswer] : [];
+}
+
 function hasAnswerModel(question: ScorableQuestion): boolean {
     switch (question.type) {
         case 'multiple-choice':
@@ -751,6 +756,12 @@ function hasAnswerModel(question: ScorableQuestion): boolean {
             return question.expectedNumericValue !== undefined;
         case 'short-answer':
             return !!(question.expectedAnswers?.length || question.expectedAnswer);
+        case 'cloze': {
+            const gaps = parseClozeGaps(question.prompt);
+            return gaps.length > 0 && gaps.every((g) => g.alternatives.length > 0);
+        }
+        case 'key-word-transformation':
+            return acceptedAnswers(question).some((a) => keyWordChunks(a).length > 0);
         default:
             return false;
     }
@@ -764,14 +775,30 @@ function hasAnswerModel(question: ScorableQuestion): boolean {
 export function autoGradeVerdict(question: ScorableQuestion, response: string): AutoGradeVerdict {
     const score = autoScoreResponse(question, response);
     const isOption = OPTION_TYPES.has(question.type);
-    if (!isOption && question.type !== 'short-answer' && question.type !== 'numeric') {
+    const typed = ['short-answer', 'numeric', 'cloze', 'key-word-transformation'].includes(question.type);
+    if (!isOption && !typed) {
         return { score, confident: false, reason: 'manual-type' };
     }
     if (!hasAnswerModel(question)) return { score, confident: false, reason: 'no-answer-model' };
 
     if (question.type === 'short-answer' && score < question.points) {
-        const accepted = question.expectedAnswers?.length ? question.expectedAnswers : [question.expectedAnswer ?? ''];
-        if (isNearMiss(accepted, response)) return { score, confident: false, reason: 'near-miss' };
+        if (isNearMiss(acceptedAnswers(question), response)) return { score, confident: false, reason: 'near-miss' };
+    }
+    if (question.type === 'cloze') {
+        const answers = parseJsonRecord(response);
+        const correct = clozeGapCorrectness(question, response);
+        const unsure = parseClozeGaps(question.prompt).some((gap) => {
+            const raw = answers[gap.index];
+            const given = typeof raw === 'string' ? raw.trim() : '';
+            return !!given && !correct[gap.index] && isNearMiss(gap.alternatives, given);
+        });
+        if (unsure) return { score, confident: false, reason: 'near-miss' };
+    }
+    if (question.type === 'key-word-transformation' && score < question.points) {
+        // Chunk-based partial credit is exactly the case a teacher wants to eyeball.
+        const partial = score > 0;
+        const accepted = acceptedAnswers(question).map((a) => keyWordChunks(a).join(' '));
+        if (partial || isNearMiss(accepted, response)) return { score, confident: false, reason: 'near-miss' };
     }
     if (question.type === 'numeric' && response.trim() !== '' && Number.isNaN(Number(response.trim()))) {
         return { score, confident: false, reason: 'unparseable' };
