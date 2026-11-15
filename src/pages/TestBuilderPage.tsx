@@ -166,6 +166,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
     const [dueDate, setDueDate] = useState(existing?.dueDate ? toLocalDatetimeInput(existing.dueDate) : '');
     const [shuffleQuestions, setShuffleQuestions] = useState(existing?.shuffleQuestions ?? false);
     const [requireSEB, setRequireSEB] = useState(existing?.requireSEB ?? false);
+    const [autoConfirmScores, setAutoConfirmScores] = useState(existing?.autoConfirmScores !== false);
     const [normSettings, setNormSettings] = useState<Pick<Test, 'gradingNorm' | 'gradeDecimals' | 'passGrade'>>({
         gradingNorm: existing?.gradingNorm,
         gradeDecimals: existing?.gradeDecimals,
@@ -251,6 +252,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         dueDate,
         shuffleQuestions,
         requireSEB,
+        autoConfirmScores,
         gradeScaleId,
         normSettings,
         mode,
@@ -653,6 +655,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
             dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
             shuffleQuestions,
             requireSEB,
+            autoConfirmScores: autoConfirmScores ? undefined : false,
             gradeScaleId,
             ...(mode === 'placement' ? { gradingNorm: undefined } : normSettings),
             mode,
@@ -813,6 +816,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         durationMinutes,
         dueDate,
         shuffleQuestions,
+        autoConfirmScores,
         requireSEB,
         allowMultipleAttempts,
         gradeScaleId,
@@ -835,6 +839,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         }
         if (patch.dueDate !== undefined) setDueDate(patch.dueDate);
         if (patch.shuffleQuestions !== undefined) setShuffleQuestions(patch.shuffleQuestions);
+        if (patch.autoConfirmScores !== undefined) setAutoConfirmScores(patch.autoConfirmScores);
         if (patch.requireSEB !== undefined) setRequireSEB(patch.requireSEB);
         if (patch.allowMultipleAttempts !== undefined) setAllowMultipleAttempts(patch.allowMultipleAttempts);
         if ('gradeScaleId' in patch) setGradeScaleId(patch.gradeScaleId);

@@ -308,7 +308,7 @@ export class SupabaseAdapter {
         if (!this.client) return { error: 'Supabase not initialised' };
         const { error } = await this.client.auth.signInWithOAuth({
             provider: 'google',
-            options: { redirectTo: window.location.origin },
+            options: { redirectTo: window.location.href },
         });
         return error ? { error: error.message } : {};
     }
@@ -318,7 +318,7 @@ export class SupabaseAdapter {
         const { error } = await this.client.auth.signInWithOAuth({
             provider: 'azure',
             options: {
-                redirectTo: window.location.origin,
+                redirectTo: window.location.href,
                 scopes: 'openid profile email',
                 queryParams: { domain_hint: 'consumers' },
             },
@@ -331,7 +331,7 @@ export class SupabaseAdapter {
         const { error } = await this.client.auth.signInWithOAuth({
             provider: 'azure',
             options: {
-                redirectTo: window.location.origin,
+                redirectTo: window.location.href,
                 scopes: 'openid profile email',
                 queryParams: { domain_hint: 'organizations' },
             },

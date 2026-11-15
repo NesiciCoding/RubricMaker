@@ -65,6 +65,7 @@ const moderationItem: ModerationPendingNotification = {
 const mockDismiss = vi.fn();
 const mockDismissAll = vi.fn();
 const mockMarkThreadRead = vi.fn();
+const mockMarkAllMessagesRead = vi.fn();
 const mockNavigate = vi.fn();
 
 let mockFeed: {
@@ -82,7 +83,7 @@ vi.mock('../../hooks/useNotificationFeed', () => ({
         dismiss: mockDismiss,
         dismissAll: mockDismissAll,
         markThreadRead: mockMarkThreadRead,
-        markAllMessagesRead: vi.fn(),
+        markAllMessagesRead: mockMarkAllMessagesRead,
     }),
 }));
 
@@ -123,6 +124,7 @@ describe('NotificationsPage', () => {
         mockDismiss.mockClear();
         mockDismissAll.mockClear();
         mockMarkThreadRead.mockClear();
+        mockMarkAllMessagesRead.mockClear();
         mockNavigate.mockClear();
     });
 
@@ -177,6 +179,22 @@ describe('NotificationsPage', () => {
         expect(mockDismiss).toHaveBeenCalledWith(overdueItem);
     });
 
+    it('marks every unread thread read from the messages filter', async () => {
+        mockFeed = { items: [messageItem], overdueItems: [], messageItems: [messageItem], moderationItems: [] };
+        const { default: NotificationsPage } = await import('../NotificationsPage');
+        renderWithRouter(<NotificationsPage />);
+        fireEvent.click(screen.getByText('notifications.filter_unread_message'));
+        fireEvent.click(screen.getByRole('button', { name: 'notifications.mark_all_read' }));
+        expect(mockMarkAllMessagesRead).toHaveBeenCalledTimes(1);
+    });
+
+    it('renders notification titles as headings so they can be navigated', async () => {
+        mockFeed = { items: [overdueItem], overdueItems: [overdueItem], messageItems: [], moderationItems: [] };
+        const { default: NotificationsPage } = await import('../NotificationsPage');
+        renderWithRouter(<NotificationsPage />);
+        expect(screen.getByRole('heading', { level: 2, name: 'Alice' })).toBeInTheDocument();
+    });
+
     it('marks a message thread read instead of dismissing it', async () => {
         mockFeed = { items: [messageItem], overdueItems: [], messageItems: [messageItem], moderationItems: [] };
         const { default: NotificationsPage } = await import('../NotificationsPage');
@@ -196,7 +214,7 @@ describe('NotificationsPage', () => {
         const { default: NotificationsPage } = await import('../NotificationsPage');
         renderWithRouter(<NotificationsPage />);
         fireEvent.click(screen.getByText('notifications.filter_overdue_grading'));
-        fireEvent.click(screen.getByText('notifications.clear_all'));
+        fireEvent.click(screen.getByRole('button', { name: /clear_type.*filter_overdue_grading/ }));
         expect(mockDismissAll).toHaveBeenCalledWith('overdue_grading');
         expect(mockDismissAll).not.toHaveBeenCalledWith('moderation_pending');
         expect(mockMarkThreadRead).not.toHaveBeenCalled();
@@ -211,7 +229,8 @@ describe('NotificationsPage', () => {
         };
         const { default: NotificationsPage } = await import('../NotificationsPage');
         renderWithRouter(<NotificationsPage />);
-        fireEvent.click(screen.getByText('notifications.clear_all'));
+        fireEvent.click(screen.getByRole('button', { name: /clear_type.*filter_overdue_grading/ }));
+        fireEvent.click(screen.getByRole('button', { name: /clear_type.*filter_moderation_pending/ }));
         expect(mockDismissAll).toHaveBeenCalledWith('overdue_grading');
         expect(mockDismissAll).toHaveBeenCalledWith('moderation_pending');
         expect(mockMarkThreadRead).not.toHaveBeenCalled();
@@ -222,7 +241,7 @@ describe('NotificationsPage', () => {
         const { default: NotificationsPage } = await import('../NotificationsPage');
         renderWithRouter(<NotificationsPage />);
         fireEvent.click(screen.getByText('notifications.filter_unread_message'));
-        expect(screen.queryByText('notifications.clear_all')).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /clear_type/ })).not.toBeInTheDocument();
     });
 
     it('navigates to messages and moderation from their item views', async () => {
@@ -259,7 +278,7 @@ describe('NotificationsPage', () => {
         const { default: NotificationsPage } = await import('../NotificationsPage');
         renderWithRouter(<NotificationsPage />);
         fireEvent.click(screen.getByText('notifications.filter_moderation_pending'));
-        fireEvent.click(screen.getByText('notifications.clear_all'));
+        fireEvent.click(screen.getByRole('button', { name: /clear_type.*filter_moderation_pending/ }));
         expect(mockDismissAll).toHaveBeenCalledWith('moderation_pending');
         expect(mockDismissAll).not.toHaveBeenCalledWith('overdue_grading');
     });

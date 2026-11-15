@@ -25,6 +25,7 @@ export interface TestSettingsValues {
     durationMinutes: string;
     dueDate: string;
     shuffleQuestions: boolean;
+    autoConfirmScores: boolean;
     requireSEB: boolean;
     allowMultipleAttempts: boolean;
     gradeScaleId?: string;
@@ -337,6 +338,28 @@ export default function TestSettingsDrawer({
                                         />
                                         {t('tests.shuffle_questions_label')}
                                     </label>
+                                    <div>
+                                        <label
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 8,
+                                                cursor: 'pointer',
+                                                fontSize: '0.875rem',
+                                            }}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={value.autoConfirmScores}
+                                                onChange={(e) => onChange({ autoConfirmScores: e.target.checked })}
+                                                style={{ accentColor: 'var(--accent)' }}
+                                            />
+                                            {t('tests.auto_confirm_label')}
+                                        </label>
+                                        <p className={labelClass} style={{ marginTop: 4, marginBottom: 0 }}>
+                                            {t('tests.auto_confirm_hint')}
+                                        </p>
+                                    </div>
                                     <div>
                                         <label
                                             style={{

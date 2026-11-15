@@ -1070,6 +1070,12 @@ export interface AppSettings {
     /** Days since last grading before a student is considered overdue (default 7). */
     overdueReminderThreshold?: number;
     /**
+     * Percentage gap between a baseline grade and its second marker that sends the submission to
+     * the moderation queue (default 10, `DEFAULT_MODERATION_THRESHOLD_PERCENT`). Shared by the
+     * moderation page and the notification feed so both report the same queue.
+     */
+    moderationThresholdPercent?: number;
+    /**
      * Password required to switch back to admin from a lower-privilege role.
      * Stored as plain text; this is UI access control, not cryptographic security.
      * If undefined, no password is required.
@@ -1609,6 +1615,8 @@ export interface Test {
     passGrade?: number;
     /** Created from the score sheet for a paper test: questions are only labels + max points, and the test can't be assigned or taken online. */
     scoreOnly?: boolean;
+    /** Treat confident auto-scores (option questions, numeric and short answers with an answer model) as final, so only the rest reaches the grading queue. Absent means on. */
+    autoConfirmScores?: boolean;
 }
 
 /** One row of a points → grade norm table: the grade per tier column for scores of at least `minPoints`. */

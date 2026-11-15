@@ -24,6 +24,7 @@ const mocks = vi.hoisted(() => ({
     fetchSchoolMembers: vi.fn(),
     saveStudentRubric: vi.fn(),
     savePeerReview: vi.fn(),
+    updateSettings: vi.fn(),
 }));
 
 const state = vi.hoisted(() => ({
@@ -43,6 +44,7 @@ const makeAppContextMock = () => ({
     gradeScales: [],
     saveStudentRubric: mocks.saveStudentRubric,
     savePeerReview: mocks.savePeerReview,
+    updateSettings: mocks.updateSettings,
     fetchSchoolMembers: mocks.fetchSchoolMembers,
 });
 vi.mock('../../context/AppContext', () => ({

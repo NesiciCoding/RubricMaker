@@ -1,4 +1,5 @@
 import type { EssayAssignment, EssaySubmission, Student, StudentRubric, StudentTest, Test } from '../types';
+import { attemptNeedsReview } from './testAutoConfirm';
 
 export interface PendingGradingGroup {
     /** `test:<testId>` or `essay:<teacherKey>` */
@@ -15,8 +16,9 @@ export interface PendingGradingGroup {
 
 interface Input {
     students: Pick<Student, 'id' | 'archivedAt'>[];
-    tests: Pick<Test, 'id' | 'name' | 'mode'>[];
-    studentTests: Pick<StudentTest, 'id' | 'testId' | 'studentId' | 'status' | 'submittedAt'>[];
+    tests: (Pick<Test, 'id' | 'name' | 'mode'> & Partial<Pick<Test, 'questions' | 'autoConfirmScores'>>)[];
+    studentTests: (Pick<StudentTest, 'id' | 'testId' | 'studentId' | 'status' | 'submittedAt'> &
+        Partial<Pick<StudentTest, 'answers'>>)[];
     essayAssignments: Pick<EssayAssignment, 'teacherKey' | 'title'>[];
     essaySubmissions: Pick<
         EssaySubmission,
@@ -84,6 +86,13 @@ export function findPendingGrading({
         const test = tests.find((t) => t.id === st.testId);
         // Practice attempts are self-checked and never move to 'graded', so they'd sit here forever.
         if (test?.mode === 'practice') continue;
+        // Everything in it was auto-confirmed, so there is nothing left for a teacher to grade.
+        if (
+            test?.questions &&
+            st.answers &&
+            !attemptNeedsReview({ ...test, questions: test.questions }, st as StudentTest)
+        )
+            continue;
         const title = test?.name ?? st.testId;
         add(
             `test:${st.testId}`,

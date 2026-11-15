@@ -15,6 +15,7 @@ const values: TestSettingsValues = {
     durationMinutes: '60',
     dueDate: '',
     shuffleQuestions: false,
+    autoConfirmScores: true,
     requireSEB: false,
     allowMultipleAttempts: false,
     gradeScaleId: 'gs1',
@@ -135,5 +136,25 @@ describe('TestSettingsDrawer', () => {
         expect(screen.getByLabelText('tests.mode_label')).toBeDisabled();
         fireEvent.keyDown(document.body, { key: 'Escape' });
         expect(onClose).toHaveBeenCalled();
+    });
+
+    it('keeps the auto-confirm setting in the delivery tab', () => {
+        const onChange = vi.fn();
+        render(
+            <TestSettingsDrawer
+                open
+                tab="delivery"
+                onTabChange={() => undefined}
+                onClose={() => undefined}
+                value={values}
+                onChange={onChange}
+                onNormChange={() => undefined}
+                gradeScales={[]}
+                maxPoints={10}
+            />
+        );
+        expect(screen.getByText('tests.auto_confirm_hint')).toBeInTheDocument();
+        fireEvent.click(screen.getByLabelText('tests.auto_confirm_label'));
+        expect(onChange).toHaveBeenCalledWith({ autoConfirmScores: false });
     });
 });

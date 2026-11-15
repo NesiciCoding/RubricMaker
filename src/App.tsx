@@ -28,6 +28,7 @@ const PageTour = lazy(() => import('./components/Tour/PageTour'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const RubricList = lazy(() => import('./pages/RubricList'));
 const RubricBuilder = lazy(() => import('./pages/RubricBuilder'));
+const RubricImportPage = lazy(() => import('./pages/RubricImportPage'));
 const GradeStudent = lazy(() => import('./pages/GradeStudent'));
 const RubricGradingQueuePage = lazy(() => import('./pages/RubricGradingQueuePage'));
 const PeerReviewRosterPage = lazy(() => import('./pages/PeerReviewRosterPage'));
@@ -285,6 +286,7 @@ export default function App() {
                                     <Route path="/" element={<Dashboard />} />
                                     <Route path="/rubrics" element={<RubricList />} />
                                     <Route path="/rubrics/new" element={<RubricBuilder />} />
+                                    <Route path="/rubrics/import/:code" element={<RubricImportPage />} />
                                     <Route path="/rubrics/:id" element={<RubricBuilder />} />
                                     <Route path="/rubrics/:rubricId/grade" element={<RubricGradingQueuePage />} />
                                     <Route path="/rubrics/:rubricId/grade/:studentId" element={<GradeStudentRoute />} />

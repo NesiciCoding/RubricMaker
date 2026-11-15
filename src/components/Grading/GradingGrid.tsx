@@ -10,6 +10,7 @@ import type {
 } from '../../types';
 import type { TiptapEditorHandle } from '../Editor/TiptapEditor';
 import CriterionDetailPanel from './CriterionDetailPanel';
+import type { PreviousFeedback } from './criterionMenuItems';
 import { storageSync } from '../../services/database';
 import { subItemMode, tickCount } from '../../utils/subItems';
 
@@ -35,6 +36,10 @@ interface Props {
     recordingKey: string | null;
     onStartAudio: (criterionId: string) => void;
     onStopAudio: (criterionId: string) => void;
+    /** Feedback the previous student in the roster left on this criterion, when there is any. */
+    previousFeedbackFor?: (criterionId: string) => PreviousFeedback | undefined;
+    /** Put the previous student's feedback at the caret in the open comment editor. */
+    onInsertPreviousFeedback?: (criterionId: string, text: string) => void;
 }
 
 /**
@@ -59,6 +64,8 @@ export default function GradingGrid({
     recordingKey,
     onStartAudio,
     onStopAudio,
+    previousFeedbackFor,
+    onInsertPreviousFeedback,
 }: Props) {
     const { t } = useTranslation();
     const maxLevels = criteria.reduce((m, c) => Math.max(m, orderedLevels(c).length), 0);
@@ -235,6 +242,12 @@ export default function GradingGrid({
                                                 audioDataUrl={entry.audioDataUrl}
                                                 onStartAudio={() => onStartAudio(c.id)}
                                                 onStopAudio={() => onStopAudio(c.id)}
+                                                previousFeedback={previousFeedbackFor?.(c.id)}
+                                                onInsertPreviousFeedback={
+                                                    onInsertPreviousFeedback
+                                                        ? (text) => onInsertPreviousFeedback(c.id, text)
+                                                        : undefined
+                                                }
                                                 onRemoveAudio={() => {
                                                     if (entry.audioStoragePath)
                                                         void storageSync.feedbackAudioSync.deleteByPath(
