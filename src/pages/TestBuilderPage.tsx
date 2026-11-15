@@ -145,6 +145,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
     const [dueDate, setDueDate] = useState(existing?.dueDate ? toLocalDatetimeInput(existing.dueDate) : '');
     const [shuffleQuestions, setShuffleQuestions] = useState(existing?.shuffleQuestions ?? false);
     const [requireSEB, setRequireSEB] = useState(existing?.requireSEB ?? false);
+    const [autoConfirmScores, setAutoConfirmScores] = useState(existing?.autoConfirmScores !== false);
     const [normSettings, setNormSettings] = useState<Pick<Test, 'gradingNorm' | 'gradeDecimals' | 'passGrade'>>({
         gradingNorm: existing?.gradingNorm,
         gradeDecimals: existing?.gradeDecimals,
@@ -216,6 +217,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         dueDate,
         shuffleQuestions,
         requireSEB,
+        autoConfirmScores,
         gradeScaleId,
         normSettings,
         mode,
@@ -577,6 +579,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
             dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
             shuffleQuestions,
             requireSEB,
+            autoConfirmScores: autoConfirmScores ? undefined : false,
             gradeScaleId,
             ...(mode === 'placement' ? { gradingNorm: undefined } : normSettings),
             mode,
@@ -1030,6 +1033,24 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                                     style={{ accentColor: 'var(--accent)' }}
                                 />
                                 {t('tests.shuffle_questions_label')}
+                            </label>
+                            <label
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 8,
+                                    cursor: 'pointer',
+                                    fontSize: '0.875rem',
+                                }}
+                                title={t('tests.auto_confirm_hint')}
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={autoConfirmScores}
+                                    onChange={(e) => setAutoConfirmScores(e.target.checked)}
+                                    style={{ accentColor: 'var(--accent)' }}
+                                />
+                                {t('tests.auto_confirm_label')}
                             </label>
                             <div>
                                 <label

@@ -1312,6 +1312,7 @@ function GradingTab() {
                     items={[
                         t('docs.gr_test_results_item_completeness'),
                         t('docs.gr_test_results_item_autoscore'),
+                        t('docs.gr_test_results_item_autoconfirm'),
                         t('docs.gr_test_results_item_open'),
                         t('docs.gr_test_results_item_grade'),
                         t('docs.gr_test_results_item_comment_bank'),

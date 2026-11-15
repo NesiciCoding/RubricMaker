@@ -664,6 +664,121 @@ export function scoreHotText(question: ScorableQuestion, response: string): numb
     return question.points * (matches / fragments.length);
 }
 
+// ── Auto-confirm verdict ────────────────────────────────────────────────────
+
+export type AutoGradeReason =
+    /** Type has no deterministic scorer (open, audio-response) or is only loosely matchable */
+    | 'manual-type'
+    /** The question carries no answer model to score against */
+    | 'no-answer-model'
+    /** Typed answer failed the exact match but is close to an accepted one — a human should look */
+    | 'near-miss'
+    /** Numeric response that is not a plain number (e.g. "3,5") */
+    | 'unparseable';
+
+export interface AutoGradeVerdict {
+    score: number;
+    /** true = safe to treat the auto-score as the final mark without a teacher looking at it */
+    confident: boolean;
+    reason?: AutoGradeReason;
+}
+
+const LENIENT: AnswerTolerance = { punctuation: true, contractions: true, spelling: true, slips: true };
+
+function levenshtein(a: string, b: string): number {
+    let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+    for (let i = 1; i <= a.length; i++) {
+        const row = [i];
+        for (let j = 1; j <= b.length; j++) {
+            row[j] = Math.min(prev[j] + 1, row[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+        }
+        prev = row;
+    }
+    return prev[b.length];
+}
+
+/** True when a response that failed exact matching still looks like it was meant to be one of the accepted answers. */
+function isNearMiss(accepted: string[], response: string): boolean {
+    const given = answerTokens(response, { punctuation: true });
+    if (given.length === 0) return false;
+    const givenText = given.join(' ');
+    return accepted.some((answer) => {
+        if (answersMatch(answer, response, LENIENT)) return true;
+        const target = answerTokens(answer, { punctuation: true });
+        if (target.length === 0) return false;
+        const targetText = target.join(' ');
+        if (Math.min(givenText.length, targetText.length) >= 4 && levenshtein(givenText, targetText) <= 2) return true;
+        // "the cat" for "cat", or a whole sentence that contains the accepted answer
+        const contains = (hay: string[], needle: string[]) => indexOfTokens(hay, needle, 0, {}) >= 0;
+        return contains(given, target) || contains(target, given);
+    });
+}
+
+const OPTION_TYPES = new Set([
+    'multiple-choice',
+    'multiple-response',
+    'true-false',
+    'matrix',
+    'matching',
+    'ordering',
+    'categorize',
+    'hot-text',
+    'cloze-dropdown',
+    'cloze-bank',
+]);
+
+function hasAnswerModel(question: ScorableQuestion): boolean {
+    switch (question.type) {
+        case 'multiple-choice':
+        case 'multiple-response':
+            return !!question.options?.some((o) => o.isCorrect);
+        case 'true-false':
+            return question.correctBoolean !== undefined;
+        case 'matrix':
+            return !!question.matrixRows?.length;
+        case 'matching':
+            return !!question.matchingPairs?.length;
+        case 'ordering':
+            return !!question.orderItems?.length;
+        case 'categorize':
+            return !!question.categorizeItems?.length;
+        case 'hot-text':
+            return question.hotTextCorrectIndices !== undefined && !!question.hotTextPassage;
+        case 'cloze-dropdown':
+        case 'cloze-bank':
+            return parseClozeGaps(question.prompt).length > 0;
+        case 'numeric':
+            return question.expectedNumericValue !== undefined;
+        case 'short-answer':
+            return !!(question.expectedAnswers?.length || question.expectedAnswer);
+        default:
+            return false;
+    }
+}
+
+/**
+ * Whether an auto-score can stand as the final mark. Confident for option-style questions and numeric
+ * answers that have an answer model, and for short answers that match it or are clearly wrong; not
+ * confident when there is no model, the type needs human judgement, or a typed answer is a near miss.
+ */
+export function autoGradeVerdict(question: ScorableQuestion, response: string): AutoGradeVerdict {
+    const score = autoScoreResponse(question, response);
+    const isOption = OPTION_TYPES.has(question.type);
+    if (!isOption && question.type !== 'short-answer' && question.type !== 'numeric') {
+        return { score, confident: false, reason: 'manual-type' };
+    }
+    if (!hasAnswerModel(question)) return { score, confident: false, reason: 'no-answer-model' };
+
+    if (question.type === 'short-answer' && score < question.points) {
+        const accepted = question.expectedAnswers?.length ? question.expectedAnswers : [question.expectedAnswer ?? ''];
+        if (isNearMiss(accepted, response)) return { score, confident: false, reason: 'near-miss' };
+    }
+    if (question.type === 'numeric' && response.trim() !== '' && Number.isNaN(Number(response.trim()))) {
+        return { score, confident: false, reason: 'unparseable' };
+    }
+    return { score, confident: true };
+}
+
 /** Open questions need manual points, so routing/staircase/generator logic must skip them. */
 export function isAutoScorable<Q extends { type: string }>(question: Q): boolean {
     return question.type !== 'open';
