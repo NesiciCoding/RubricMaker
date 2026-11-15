@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Check } from 'lucide-react';
+import { Check, Printer } from 'lucide-react';
 import { decodeFeedbackCode } from '../utils/shareCode';
 import { calcGradeSummary } from '../utils/gradeCalc';
 import { criteriaForTier } from '../utils/tieredRubric';
@@ -9,6 +9,7 @@ import { safeAudioDataUrl } from '../utils/safeUrl';
 import { SharedPageShell, SharedPageInvalid, sharedCardStyle } from '../components/ui/SharedPageShell';
 import PassageReadAloud from '../components/Tests/PassageReadAloud';
 import SubItemFeedback from '../components/Students/SubItemFeedback';
+import RichContent from '../components/Editor/RichContent';
 
 export default function StudentFeedbackPage() {
     const { code } = useParams<{ code: string }>();
@@ -39,6 +40,11 @@ export default function StudentFeedbackPage() {
 
     return (
         <SharedPageShell fontFamily={fmt?.fontFamily} maxWidth={760} footer={t('sharedFeedback.footer')}>
+            <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+                <button type="button" className="btn btn-secondary btn-sm" onClick={() => window.print()}>
+                    <Printer size={14} /> {t('common.print')}
+                </button>
+            </div>
             <header style={sharedCardStyle}>
                 <div
                     style={{
@@ -128,7 +134,12 @@ export default function StudentFeedbackPage() {
                 const headingId = `feedback-criterion-${criterion.id}`;
 
                 return (
-                    <section key={criterion.id} aria-labelledby={headingId} style={{ ...sharedCardStyle, padding: 20 }}>
+                    <section
+                        key={criterion.id}
+                        aria-labelledby={headingId}
+                        className="print-criterion"
+                        style={{ ...sharedCardStyle, padding: 20 }}
+                    >
                         <div
                             style={{
                                 display: 'flex',
@@ -248,7 +259,7 @@ export default function StudentFeedbackPage() {
                                         lineHeight: 1.6,
                                     }}
                                 >
-                                    {entry.comment}
+                                    <RichContent html={entry.comment} lang={i18n.language} />
                                 </div>
                             </>
                         )}
@@ -278,9 +289,7 @@ export default function StudentFeedbackPage() {
                         {t('sharedFeedback.overall_feedback')}
                     </h2>
                     <PassageReadAloud contentHtml={sr.overallComment} lang={i18n.language} />
-                    <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text)', lineHeight: 1.6 }}>
-                        {sr.overallComment}
-                    </p>
+                    <RichContent html={sr.overallComment} lang={i18n.language} />
                 </section>
             )}
         </SharedPageShell>
