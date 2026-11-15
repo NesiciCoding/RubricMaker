@@ -1,24 +1,17 @@
 import { Plus, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { nanoid } from '../../utils/nanoid';
-import type { MatrixColumn, MatrixRow, TestQuestion } from '../../types';
+import { defaultMatrixColumns, defaultMatrixRows } from '../../utils/questionTypeDefaults';
+import type { MatrixRow, TestQuestion } from '../../types';
 import HelpPopover from './HelpPopover';
+
+export { defaultMatrixColumns, defaultMatrixRows };
 
 interface Props {
     question: TestQuestion;
     update: (patch: Partial<TestQuestion>) => void;
     partialCreditToggle: React.ReactNode;
 }
-
-export const defaultMatrixColumns = (): MatrixColumn[] => [
-    { id: nanoid(), text: '' },
-    { id: nanoid(), text: '' },
-];
-
-export const defaultMatrixRows = (columns: MatrixColumn[]): MatrixRow[] => [
-    { id: nanoid(), text: '', correctColumnId: columns[0].id },
-    { id: nanoid(), text: '', correctColumnId: columns[0].id },
-];
 
 export default function MatrixEditor({ question, update, partialCreditToggle }: Props) {
     const { t } = useTranslation();

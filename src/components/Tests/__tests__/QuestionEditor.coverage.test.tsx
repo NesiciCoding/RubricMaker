@@ -10,6 +10,11 @@ import type {
     LinkedFrameworkDescriptor,
 } from '../../../types';
 
+/** Open one of the question's "More options" panels. */
+function openMore(panel: 'media' | 'hint' | 'tags' | 'scoring' | 'tuning') {
+    fireEvent.click(screen.getByText(`tests.more_${panel}`));
+}
+
 /** Open the type picker from the editor's field and choose the card for `type`. */
 function chooseType(type: string) {
     fireEvent.click(screen.getByLabelText('tests.question_type_label'));
@@ -456,6 +461,7 @@ describe('QuestionEditor coverage', () => {
     it('links a standard through the picker and closes it', () => {
         mockSettings.standardsApiKey = 'api-key';
         const onChange = renderEditor();
+        openMore('tags');
         fireEvent.click(screen.getByText('tests.link_standard'));
         expect(screen.getByTestId('std-picker')).toBeInTheDocument();
         fireEvent.click(screen.getByText('Pick std'));
@@ -471,6 +477,7 @@ describe('QuestionEditor coverage', () => {
 
     it('closes the no-api-key dialog via Escape and the header close button', () => {
         renderEditor();
+        openMore('tags');
         fireEvent.click(screen.getByText('tests.link_standard'));
         expect(screen.getByText('tests.standards_api_key_required')).toBeInTheDocument();
         // The dialog is the shared Radix-backed Modal, so Escape closes it.
@@ -484,6 +491,7 @@ describe('QuestionEditor coverage', () => {
 
     it('adds a CEFR descriptor through the picker', () => {
         const onChange = renderEditor();
+        openMore('tags');
         fireEvent.click(screen.getByText('tests.link_cefr'));
         expect(screen.getByTestId('cefr-picker')).toBeInTheDocument();
         fireEvent.click(screen.getByText('Add CEFR'));
@@ -507,6 +515,7 @@ describe('QuestionEditor coverage', () => {
                 onRemove={vi.fn()}
             />
         );
+        openMore('tags');
         fireEvent.click(screen.getByText('tests.link_cefr'));
         fireEvent.click(screen.getByText('Add framework'));
         expect(onChange).toHaveBeenCalledWith(
@@ -550,6 +559,7 @@ describe('QuestionEditor coverage', () => {
                 ],
             })
         );
+        openMore('tags');
         expect(screen.getByText('Framework item')).toBeInTheDocument();
         fireEvent.click(screen.getByLabelText('rubricBuilder.action_remove_descriptor'));
         expect(onChange).toHaveBeenCalledWith(
@@ -564,6 +574,7 @@ describe('QuestionEditor coverage', () => {
         // Merely viewing a legacy question must not call onChange — that would spuriously flag the
         // test builder's unsaved-changes guard on a load that made no real edit.
         expect(onChange).not.toHaveBeenCalled();
+        openMore('tags');
         expect(screen.getByText('Irregular verbs')).toBeInTheDocument();
     });
 
@@ -571,24 +582,25 @@ describe('QuestionEditor coverage', () => {
         const onChange = renderEditor(
             makeQuestion({ type: 'matching', linkedGrammarItemId: 'gr-past-simple-irregular' })
         );
+        openMore('tags');
         fireEvent.click(screen.getByLabelText('rubricBuilder.action_remove_descriptor'));
         expect(onChange).toHaveBeenCalledWith(
             expect.objectContaining({ frameworkDescriptors: [], linkedGrammarItemId: undefined })
         );
     });
 
-    it('toggles the attach-media and advanced-options panels open and closed', () => {
+    it('opens one more-options panel at a time and closes it again', () => {
         renderEditor();
         expect(screen.queryByLabelText(/tests\.question_image_label/)).not.toBeInTheDocument();
-        fireEvent.click(screen.getByText('tests.attach_media'));
+        fireEvent.click(screen.getByText('tests.more_media'));
         expect(screen.getByLabelText(/tests\.question_image_label/)).toBeInTheDocument();
-        fireEvent.click(screen.getByText('tests.attach_media'));
+
+        // Opening another chip replaces the panel rather than stacking a second one.
+        fireEvent.click(screen.getByText('tests.more_hint'));
+        expect(screen.getByLabelText(/tests\.question_hint_label/)).toBeInTheDocument();
         expect(screen.queryByLabelText(/tests\.question_image_label/)).not.toBeInTheDocument();
 
-        expect(screen.queryByLabelText(/tests\.question_hint_label/)).not.toBeInTheDocument();
-        fireEvent.click(screen.getByText('tests.advanced_options'));
-        expect(screen.getByLabelText(/tests\.question_hint_label/)).toBeInTheDocument();
-        fireEvent.click(screen.getByText('tests.advanced_options'));
+        fireEvent.click(screen.getByText('tests.more_hint'));
         expect(screen.queryByLabelText(/tests\.question_hint_label/)).not.toBeInTheDocument();
     });
 
@@ -606,6 +618,7 @@ describe('QuestionEditor coverage', () => {
 
     it('handles question image error and load events', () => {
         renderEditor(makeQuestion({ imageUrl: 'https://img.example/x.png' }));
+        openMore('media');
         const img = screen.getByAltText('tests.question_image_preview_alt');
         fireEvent.error(img);
         expect(img.style.display).toBe('none');
@@ -615,7 +628,7 @@ describe('QuestionEditor coverage', () => {
 
     it('expands, fills, and collapses option image fields', () => {
         const onChange = renderEditor();
-        fireEvent.click(screen.getByText('tests.attach_media'));
+        openMore('media');
         fireEvent.click(screen.getAllByLabelText('tests.option_image_label')[0]);
         const urlInputs = document.querySelectorAll('input[type="url"]');
         expect(urlInputs.length).toBe(3); // expanded option image + question image + question audio
@@ -644,7 +657,7 @@ describe('QuestionEditor coverage', () => {
                 ],
             })
         );
-        fireEvent.click(screen.getByText('tests.attach_media'));
+        openMore('media');
         const optionImageInput = document.querySelector(
             'input[type="url"][aria-label="tests.option_image_label"]'
         ) as HTMLInputElement;
@@ -682,10 +695,12 @@ describe('QuestionEditor coverage', () => {
             vi.fn(),
             { sections: withSections }
         );
+        openMore('media');
         fireEvent.change(screen.getByLabelText(/tests\.question_image_label/), { target: { value: '' } });
         expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ imageUrl: undefined }));
         fireEvent.change(screen.getByLabelText(/tests\.question_audio_label/), { target: { value: '' } });
         expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ audioUrl: undefined }));
+        openMore('hint');
         fireEvent.change(screen.getByLabelText(/tests\.question_hint_label/), { target: { value: '' } });
         expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ hint: undefined }));
         fireEvent.change(screen.getByLabelText(/tests\.question_explanation_label/), { target: { value: '' } });
@@ -698,6 +713,7 @@ describe('QuestionEditor coverage', () => {
 
     it('renders the question image and audio previews', () => {
         renderEditor(makeQuestion({ imageUrl: 'https://img.example/x.png', audioUrl: 'https://audio.example/x.mp3' }));
+        openMore('media');
         expect(screen.getByAltText('tests.question_image_preview_alt')).toBeInTheDocument();
         expect(screen.getByLabelText('tests.question_audio_preview_alt')).toBeInTheDocument();
     });
@@ -798,6 +814,7 @@ describe('QuestionEditor coverage', () => {
         const onChange = renderEditor(makeQuestion({ sectionId: 's1', eloRating: 900 }), vi.fn(), {
             sections: withLevel,
         });
+        openMore('scoring');
         fireEvent.change(screen.getByLabelText(/tests\.elo_rating_label/), { target: { value: '950' } });
         expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ eloRating: 950 }));
         fireEvent.change(screen.getByLabelText(/tests\.elo_rating_label/), { target: { value: '' } });
@@ -817,6 +834,7 @@ describe('QuestionEditor coverage', () => {
                 ],
             })
         );
+        openMore('tags');
         expect(screen.getByText('std-raw')).toBeInTheDocument();
     });
 

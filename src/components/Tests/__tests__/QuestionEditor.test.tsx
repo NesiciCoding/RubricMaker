@@ -383,6 +383,7 @@ describe('QuestionEditor', () => {
                 onRemove={vi.fn()}
             />
         );
+        fireEvent.click(screen.getByText('tests.more_tags'));
         fireEvent.click(screen.getByText('tests.link_cefr'));
         expect(screen.getByTestId('cefr-picker')).toBeInTheDocument();
     });
@@ -398,6 +399,7 @@ describe('QuestionEditor', () => {
                 onRemove={vi.fn()}
             />
         );
+        fireEvent.click(screen.getByText('tests.more_tags'));
         fireEvent.click(screen.getByText('tests.link_cefr'));
         fireEvent.click(screen.getByText('Close CEFR'));
         expect(screen.queryByTestId('cefr-picker')).not.toBeInTheDocument();
@@ -425,6 +427,7 @@ describe('QuestionEditor', () => {
                 onRemove={vi.fn()}
             />
         );
+        fireEvent.click(screen.getByText('tests.more_tags'));
         fireEvent.click(screen.getByLabelText('rubricBuilder.action_remove_descriptor'));
         expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ linkedCefrDescriptors: [] }));
     });
@@ -440,6 +443,7 @@ describe('QuestionEditor', () => {
                 onRemove={vi.fn()}
             />
         );
+        fireEvent.click(screen.getByText('tests.more_tags'));
         fireEvent.click(screen.getByText('tests.link_standard'));
         // Dialog is shown
         expect(screen.getByText('tests.standards_api_key_required')).toBeInTheDocument();
@@ -571,6 +575,7 @@ describe('QuestionEditor', () => {
                 onRemove={vi.fn()}
             />
         );
+        fireEvent.click(screen.getByText('tests.more_tags'));
         expect(screen.getByText('tests.link_standard')).toBeInTheDocument();
         expect(screen.getByText('tests.link_cefr')).toBeInTheDocument();
     });
@@ -586,6 +591,7 @@ describe('QuestionEditor', () => {
                 onRemove={vi.fn()}
             />
         );
+        fireEvent.click(screen.getByText('tests.more_tags'));
         fireEvent.click(screen.getByText('tests.link_standard'));
         expect(screen.getByText('tests.standards_api_key_required')).toBeInTheDocument();
     });
@@ -611,6 +617,7 @@ describe('QuestionEditor', () => {
                 onRemove={vi.fn()}
             />
         );
+        fireEvent.click(screen.getByText('tests.more_tags'));
         expect(screen.getByText('CC.1')).toBeInTheDocument();
         expect(screen.getByText('Standard one')).toBeInTheDocument();
     });
@@ -636,6 +643,7 @@ describe('QuestionEditor', () => {
                 onRemove={vi.fn()}
             />
         );
+        fireEvent.click(screen.getByText('tests.more_tags'));
         expect(screen.getByText('B1')).toBeInTheDocument();
         expect(screen.getByText('Can read texts')).toBeInTheDocument();
     });

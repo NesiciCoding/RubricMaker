@@ -8,12 +8,18 @@ import {
     AlertCircle,
     ChevronDown,
     ChevronRight,
+    ChevronUp,
     Trash2,
     FileText,
     BookMarked,
     Music,
     Layers,
     Eye,
+    Settings2,
+    Timer,
+    Calculator,
+    Compass,
+    ClipboardCheck,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import PageTour from '../components/Tour/PageTour';
@@ -29,8 +35,8 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { nanoid } from '../utils/nanoid';
 import { toLocalDatetimeInput } from '../utils/dateInput';
 import QuestionEditor from '../components/Tests/QuestionEditor';
-import NormConfig from '../components/Tests/ScoreSheet/NormConfig';
-import TestA4Preview, { type PrintTextFields } from '../components/Tests/TestA4Preview';
+import { type PrintTextFields } from '../components/Tests/TestA4Preview';
+import TestInspector from '../components/Tests/TestInspector';
 import ListeningControlsFields from '../components/Tests/ListeningControlsFields';
 import AudioUrlStatus from '../components/Tests/AudioUrlStatus';
 import EssayEditor from '../components/Editor/EssayEditor';
@@ -41,6 +47,7 @@ import { testAssignBlockers } from '../utils/testQuestionIssues';
 import type {
     Test,
     TestQuestion,
+    TestQuestionType,
     TestSection,
     CefrLevel,
     CefrSkill,
@@ -49,8 +56,6 @@ import type {
 } from '../types';
 import {
     CEFR_LEVELS,
-    CEFR_SKILLS,
-    CEFR_SKILL_LABELS,
     QUESTION_BANK_SKILLS,
     QUESTION_BANK_SKILL_LABELS,
     CEFR_LEVEL_COLORS,
@@ -59,6 +64,14 @@ import { sectionQuestions, isAutoScorable, hasRoutingCycle } from '../utils/plac
 import { clamp } from '../utils/clamp';
 import { plainQuestionPromptText } from '../utils/clozeParse';
 import { EmptyState } from '../components/ui/EmptyState';
+import QuestionTypePicker from '../components/Tests/QuestionTypePicker';
+import TestOutlineRail from '../components/Tests/TestOutlineRail';
+import TestSettingsDrawer, {
+    type TestSettingsTab,
+    type TestSettingsValues,
+} from '../components/Tests/TestSettingsDrawer';
+import TestChecksPanel, { type TestCheckRow, type VerifiedCheck } from '../components/Tests/TestChecksPanel';
+import { questionTypeLabelKey } from '../utils/questionTypeKey';
 import { SkeletonRow } from '../components/ui/Skeleton';
 import { useSharedMaterials } from '../hooks/useSharedMaterials';
 import type { SharedEntry } from '../utils/materialSharing';
@@ -132,6 +145,14 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
     const [description, setDescription] = useState(existing?.description ?? '');
     const [questions, setQuestions] = useState<TestQuestion[]>(existing?.questions ?? generated?.questions ?? []);
     const [showBankModal, setShowBankModal] = useState(false);
+    /** Section the question being created belongs to; null while the type picker is closed. */
+    const [newQuestionFor, setNewQuestionFor] = useState<{ sectionId?: string } | null>(null);
+    /** Question open in the focus pane. At rail widths this is the only editor on screen. */
+    const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null);
+    useEffect(() => {
+        if (selectedQuestionId && questions.some((q) => q.id === selectedQuestionId)) return;
+        setSelectedQuestionId(questions[0]?.id ?? null);
+    }, [questions, selectedQuestionId]);
     const [sections, setSections] = useState<TestSection[]>(existing?.sections ?? generated?.sections ?? []);
     const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
     const [collapsedQuestions, setCollapsedQuestions] = useState<Set<string>>(new Set());
@@ -186,10 +207,24 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         printIntro: existing?.printIntro,
         printFooter: existing?.printFooter,
     });
+    /** Settings drawer: which tab is open, and whether it is open at all. */
+    const [settingsTab, setSettingsTab] = useState<TestSettingsTab>('basics');
+    const [settingsOpen, setSettingsOpen] = useState(false);
+    const openSettings = (tab: TestSettingsTab = 'basics') => {
+        setSettingsTab(tab);
+        setSettingsOpen(true);
+    };
+    /** The checks screen replaces the question pane until the teacher jumps back into a question. */
+    const [checksOpen, setChecksOpen] = useState(false);
     const [showPreview, setShowPreview] = useState(() => window.innerWidth >= 1400);
     const [isWide, setIsWide] = useState(() => window.innerWidth >= 1100);
+    // The outline rail costs 248px of width, so it only appears where the editor still has room.
+    const [isRailWide, setIsRailWide] = useState(() => window.innerWidth >= 1400);
     useEffect(() => {
-        const onResize = () => setIsWide(window.innerWidth >= 1100);
+        const onResize = () => {
+            setIsWide(window.innerWidth >= 1100);
+            setIsRailWide(window.innerWidth >= 1400);
+        };
         window.addEventListener('resize', onResize);
         return () => window.removeEventListener('resize', onResize);
     }, []);
@@ -399,8 +434,40 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         }
     }
 
-    function addQuestion(sectionId?: string) {
-        setQuestions((prev) => [...prev, newQuestion(sectionId)]);
+    /**
+     * Adding a question starts with its type. The picker from #1210 decides which answer control
+     * the student gets, and the new question opens holding that type's first options/rows, so the
+     * choice is applied rather than merely recorded.
+     */
+    function openTypePicker(sectionId?: string) {
+        setNewQuestionFor({ sectionId });
+    }
+
+    function createQuestionOfType(type: TestQuestionType) {
+        const sectionId = newQuestionFor?.sectionId;
+        const question = newQuestion(sectionId, type);
+        setNewQuestionFor(null);
+        setQuestions((prev) => [...prev, question]);
+        setSelectedQuestionId(question.id);
+    }
+
+    /** Reorders inside the question's own part; moving between parts is a section change. */
+    function moveQuestion(qid: string, delta: -1 | 1) {
+        const question = questions.find((q) => q.id === qid);
+        /* v8 ignore next -- the move buttons only render for a selected question */
+        if (!question) return;
+        const siblings = questionsFor(question.sectionId ?? null);
+        const from = siblings.findIndex((q) => q.id === qid);
+        const to = from + delta;
+        if (to < 0 || to >= siblings.length) return;
+        const target = siblings[to];
+        setQuestions((prev) => {
+            const next = [...prev];
+            const a = next.findIndex((q) => q.id === qid);
+            const b = next.findIndex((q) => q.id === target.id);
+            [next[a], next[b]] = [next[b], next[a]];
+            return next;
+        });
     }
 
     function insertFromBank(item: QuestionBankItem) {
@@ -453,6 +520,11 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
 
     /** Opens the question (and its section) and moves focus to it, from the issue list. */
     function jumpToQuestion(qid: string) {
+        setChecksOpen(false);
+        if (isRailWide) {
+            setSelectedQuestionId(qid);
+            return;
+        }
         const sectionId = questions.find((q) => q.id === qid)?.sectionId;
         flushSync(() => {
             setCollapsedQuestions((prev) => {
@@ -474,12 +546,12 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
     }
 
     function copyQuestion(qid: string) {
-        setQuestions((prev) => {
-            const index = prev.findIndex((q) => q.id === qid);
-            /* v8 ignore next -- the duplicate button only renders for existing questions */
-            if (index < 0) return prev;
-            return [...prev.slice(0, index + 1), duplicateQuestion(prev[index]), ...prev.slice(index + 1)];
-        });
+        const index = questions.findIndex((q) => q.id === qid);
+        /* v8 ignore next -- the duplicate button only renders for existing questions */
+        if (index < 0) return;
+        const copy = duplicateQuestion(questions[index]);
+        setQuestions((prev) => [...prev.slice(0, index + 1), copy, ...prev.slice(index + 1)]);
+        setSelectedQuestionId(copy.id);
     }
 
     function removeQuestion(qid: string) {
@@ -487,6 +559,10 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         /* v8 ignore next -- remove buttons only render for existing questions */
         if (index < 0) return;
         const removed = questions[index];
+        if (selectedQuestionId === qid) {
+            const neighbour = questions[index + 1] ?? questions[index - 1];
+            setSelectedQuestionId(neighbour?.id ?? null);
+        }
         setQuestions((prev) => prev.filter((q) => q.id !== qid));
         showToast(t('tests.question_removed', { number: index + 1 }), 'info', {
             action: {
@@ -682,6 +758,136 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
     const totalPoints = questions.reduce((sum, q) => sum + (q.points || 0), 0);
     const allQuestionsCollapsed = questions.length > 0 && questions.every((q) => collapsedQuestions.has(q.id));
     const uncategorised = questionsFor(null);
+    const focusQuestion = questions.find((q) => q.id === selectedQuestionId) ?? null;
+
+    const checkRows: TestCheckRow[] = (draftBlockers?.entries ?? []).map((entry) => {
+        const question = displayOrderedQuestions.find((q) => q.id === entry.questionId);
+        const label = question ? htmlToPlainText(plainQuestionPromptText(question)).trim() : '';
+        return {
+            questionId: entry.questionId,
+            number: entry.number,
+            label: label || (question ? t(questionTypeLabelKey(question.type)) : ''),
+            issues: entry.issues,
+        };
+    });
+
+    const verifiedChecks: VerifiedCheck[] = [];
+    if (displayOrderedQuestions.length > 0 && checkRows.length === 0) {
+        verifiedChecks.push({ id: 'answers', labelKey: 'tests.checks_ok_answers' });
+    }
+    if (totalPoints > 0) {
+        verifiedChecks.push({ id: 'points', labelKey: 'tests.checks_ok_points', values: { points: totalPoints } });
+    }
+    if (
+        mode === 'placement' &&
+        placementEngine !== 'generator' &&
+        sections.length > 0 &&
+        !hasRoutingCycle({ sections })
+    ) {
+        verifiedChecks.push({ id: 'routing', labelKey: 'tests.checks_ok_routing' });
+    }
+
+    const checksPanel = (
+        <TestChecksPanel
+            rows={checkRows}
+            noQuestions={!!draftBlockers?.noQuestions}
+            questionCount={displayOrderedQuestions.length}
+            totalPoints={totalPoints}
+            verified={verifiedChecks}
+            onJump={jumpToQuestion}
+            onBack={() => setChecksOpen(false)}
+            onSave={handleSave}
+            onAssign={() => {
+                handleSave();
+                navigate('/tests');
+            }}
+            readOnly={readOnly}
+        />
+    );
+
+    const settingsValue: TestSettingsValues = {
+        mode,
+        placementEngine,
+        contentArea,
+        contentLanguage,
+        durationMinutes,
+        dueDate,
+        shuffleQuestions,
+        requireSEB,
+        allowMultipleAttempts,
+        gradeScaleId,
+        norm: normSettings,
+        cefrTargetLevel,
+        cefrSkill,
+        printHeader: printText.printHeader,
+        printIntro: printText.printIntro,
+        printFooter: printText.printFooter,
+    };
+
+    const updateSettingsValue = (patch: Partial<TestSettingsValues>) => {
+        if (patch.mode !== undefined) setMode(patch.mode);
+        if (patch.placementEngine !== undefined) setPlacementEngine(patch.placementEngine);
+        if (patch.contentArea !== undefined) setContentArea(patch.contentArea);
+        if (patch.contentLanguage !== undefined) setContentLanguage(patch.contentLanguage);
+        if (patch.durationMinutes !== undefined) {
+            setDurationMinutes(patch.durationMinutes);
+            if (durationError) setDurationError('');
+        }
+        if (patch.dueDate !== undefined) setDueDate(patch.dueDate);
+        if (patch.shuffleQuestions !== undefined) setShuffleQuestions(patch.shuffleQuestions);
+        if (patch.requireSEB !== undefined) setRequireSEB(patch.requireSEB);
+        if (patch.allowMultipleAttempts !== undefined) setAllowMultipleAttempts(patch.allowMultipleAttempts);
+        if ('gradeScaleId' in patch) setGradeScaleId(patch.gradeScaleId);
+        if (patch.cefrTargetLevel !== undefined) setCefrTargetLevel(patch.cefrTargetLevel);
+        if (patch.cefrSkill !== undefined) setCefrSkill(patch.cefrSkill);
+        if ('printHeader' in patch || 'printIntro' in patch || 'printFooter' in patch) {
+            setPrintText((prev) => ({
+                printHeader: 'printHeader' in patch ? patch.printHeader : prev.printHeader,
+                printIntro: 'printIntro' in patch ? patch.printIntro : prev.printIntro,
+                printFooter: 'printFooter' in patch ? patch.printFooter : prev.printFooter,
+            }));
+        }
+    };
+
+    const updateSettingsNorm = (patch: Partial<TestSettingsValues['norm']>) =>
+        setNormSettings((prev) => ({ ...prev, ...patch }));
+
+    const settingsTiles: { tab: TestSettingsTab; labelKey: string; Icon: typeof Settings2; valueText: string }[] = [
+        {
+            tab: 'basics',
+            labelKey: 'tests.settings_tile_mode',
+            Icon: Settings2,
+            valueText: t(`tests.mode_${mode}`),
+        },
+        {
+            tab: 'delivery',
+            labelKey: 'tests.settings_tile_delivery',
+            Icon: Timer,
+            valueText: durationMinutes
+                ? t('tests.settings_summary_minutes', { minutes: durationMinutes })
+                : t('tests.settings_summary_no_limit'),
+        },
+        {
+            tab: 'scoring',
+            labelKey: 'tests.settings_tile_scoring',
+            Icon: Calculator,
+            valueText: t('tests.settings_summary_points', { points: totalPoints }),
+        },
+        {
+            tab: 'placement',
+            labelKey: 'tests.settings_tile_placement',
+            Icon: Compass,
+            valueText: t(`tests.placement_engine_${placementEngine}`),
+        },
+        {
+            tab: 'print',
+            labelKey: 'tests.settings_tile_paper',
+            Icon: FileText,
+            valueText: printText.printHeader
+                ? t('tests.settings_summary_paper_set')
+                : t('tests.settings_summary_paper_empty'),
+        },
+    ];
 
     if (notFound) {
         return (
@@ -698,6 +904,18 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         );
     }
 
+    // The same element serves the rail column and the narrow slide-over, so the two cannot drift.
+    const inspector = (
+        <TestInspector
+            test={previewTest}
+            onPrintTextChange={(patch) => setPrintText((prev) => ({ ...prev, ...patch }))}
+            question={focusQuestion}
+            questionNumber={focusQuestion ? displayOrderedQuestions.indexOf(focusQuestion) + 1 : undefined}
+            questionCount={questions.length}
+            lang={contentLanguage || undefined}
+        />
+    );
+
     return (
         <>
             <PageTour
@@ -713,13 +931,15 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                         <button className="btn btn-ghost btn-sm" onClick={() => setTourRun(true)}>
                             {t('tutorial.tb_tour_button')}
                         </button>
-                        <button
-                            className={`btn btn-sm ${showPreview ? 'btn-primary' : 'btn-secondary'}`}
-                            aria-pressed={showPreview}
-                            onClick={() => setShowPreview((v) => !v)}
-                        >
-                            <Eye size={15} /> {t('tests.a4_preview_toggle')}
-                        </button>
+                        {!isRailWide && (
+                            <button
+                                className={`btn btn-sm ${showPreview ? 'btn-primary' : 'btn-secondary'}`}
+                                aria-pressed={showPreview}
+                                onClick={() => setShowPreview((v) => !v)}
+                            >
+                                <Eye size={15} /> {t('tests.a4_preview_toggle')}
+                            </button>
+                        )}
                         <button className="btn btn-secondary btn-sm" onClick={() => navigate('/tests')}>
                             <ArrowLeft size={15} /> {t('tests.back_to_list')}
                         </button>
@@ -737,17 +957,33 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
             <div
                 className="page-content fade-in"
                 style={
-                    showPreview && isWide
+                    isRailWide || (showPreview && isWide)
                         ? {
                               display: 'grid',
-                              gridTemplateColumns: 'minmax(0, 1fr) minmax(380px, 46%)',
+                              gridTemplateColumns: [
+                                  ...(isRailWide ? ['240px'] : []),
+                                  'minmax(0, 1fr)',
+                                  ...(isRailWide || (showPreview && isWide) ? ['minmax(340px, 400px)'] : []),
+                              ].join(' '),
                               gap: 20,
                               alignItems: 'start',
                           }
                         : undefined
                 }
             >
-                <div style={{ minWidth: 0 }}>
+                {isRailWide && (
+                    <TestOutlineRail
+                        sections={sections}
+                        questions={displayOrderedQuestions}
+                        totalPoints={totalPoints}
+                        issuesByQuestion={issuesByQuestion}
+                        activeId={selectedQuestionId}
+                        onSelect={setSelectedQuestionId}
+                        onAdd={() => openTypePicker()}
+                        onOpenSettings={() => openSettings('basics')}
+                    />
+                )}
+                <div style={isRailWide ? { minWidth: 0, display: 'flex', flexDirection: 'column' } : { minWidth: 0 }}>
                     {shared && (
                         <SharedMaterialBanner
                             ownerName={shared.ownerName}
@@ -775,39 +1011,34 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                     {draftBlockers && (
                         <div
                             role="status"
+                            data-testid="checks-strip"
                             className="card"
-                            style={{ marginBottom: 20, borderColor: 'var(--yellow)', background: 'var(--bg-elevated)' }}
+                            style={{
+                                marginBottom: 20,
+                                borderColor: 'var(--yellow)',
+                                background: 'var(--bg-elevated)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 8,
+                                flexWrap: 'wrap',
+                                // Above the open question: it is what stops the test being assigned.
+                                order: isRailWide ? -2 : undefined,
+                            }}
                         >
-                            <p style={{ margin: 0, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <AlertCircle size={15} style={{ color: 'var(--yellow-text)' }} aria-hidden="true" />
-                                {t('tests.issues_title')}
-                            </p>
-                            <ul style={{ margin: '8px 0 0', paddingLeft: 20, fontSize: '0.85rem' }}>
-                                {draftBlockers.noQuestions && <li>{t('tests.issue_no_questions')}</li>}
-                                {draftBlockers.entries.map((entry) => (
-                                    <li key={entry.questionId}>
-                                        <button
-                                            type="button"
-                                            style={{
-                                                padding: 0,
-                                                border: 'none',
-                                                background: 'none',
-                                                color: 'inherit',
-                                                font: 'inherit',
-                                                fontWeight: 700,
-                                                textDecoration: 'underline',
-                                                cursor: 'pointer',
-                                            }}
-                                            onClick={() => jumpToQuestion(entry.questionId)}
-                                        >
-                                            {t('tests.issue_question', { number: entry.number })}
-                                        </button>
-                                        : {entry.issues.map((issue) => t(`tests.issue_${issue}`)).join(' ')}
-                                    </li>
-                                ))}
-                            </ul>
+                            <AlertCircle size={15} style={{ color: 'var(--yellow-text)' }} aria-hidden="true" />
+                            <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{t('tests.issues_title')}</span>
+                            <button
+                                type="button"
+                                className="btn btn-secondary btn-sm"
+                                data-testid="checks_review"
+                                onClick={() => setChecksOpen(true)}
+                                style={{ marginLeft: 'auto' }}
+                            >
+                                {t('tests.checks_review')}
+                            </button>
                         </div>
                     )}
+                    {!isRailWide && checksOpen && <div style={{ order: -2, marginBottom: 20 }}>{checksPanel}</div>}
                     <div
                         className="card"
                         data-tour="tb-details"
@@ -854,256 +1085,66 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                         </div>
                     </div>
 
-                    {/* Settings panel */}
+                    {/* Settings entry points — the fields themselves live in the drawer. */}
                     <div className="card" data-tour="tb-settings" style={{ marginBottom: 20 }}>
-                        <h2 className="card-heading" style={{ marginTop: 0, marginBottom: 14, fontSize: '0.95rem' }}>
-                            {t('tests.settings_title')}
-                        </h2>
-                        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
-                            <div className="form-group" style={{ marginBottom: 0, flex: '1 1 200px' }}>
-                                <label htmlFor="test-mode">{t('tests.mode_label')}</label>
-                                <select
-                                    id="test-mode"
-                                    value={mode}
-                                    onChange={(e) => setMode(e.target.value as NonNullable<Test['mode']>)}
-                                >
-                                    <option value="assessment">{t('tests.mode_assessment')}</option>
-                                    <option value="practice">{t('tests.mode_practice')}</option>
-                                    <option value="placement">{t('tests.mode_placement')}</option>
-                                </select>
-                                <p className="text-muted text-xs" style={{ marginTop: 4, marginBottom: 0 }}>
-                                    {mode === 'practice'
-                                        ? t('tests.mode_practice_help')
-                                        : mode === 'placement'
-                                          ? t('tests.mode_placement_help')
-                                          : t('tests.mode_assessment_help')}
-                                </p>
-                            </div>
-                            {mode === 'placement' && (
-                                <div className="form-group" style={{ marginBottom: 0, flex: '1 1 220px' }}>
-                                    <label htmlFor="test-placement-engine">{t('tests.placement_engine_label')}</label>
-                                    <select
-                                        id="test-placement-engine"
-                                        value={placementEngine}
-                                        onChange={(e) =>
-                                            setPlacementEngine(e.target.value as NonNullable<Test['placementEngine']>)
-                                        }
-                                    >
-                                        <option value="mst">{t('tests.placement_engine_mst')}</option>
-                                        <option value="staircase">{t('tests.placement_engine_staircase')}</option>
-                                        <option value="generator">{t('tests.placement_engine_generator')}</option>
-                                    </select>
-                                    <p className="text-muted text-xs" style={{ marginTop: 4, marginBottom: 0 }}>
-                                        {placementEngine === 'staircase'
-                                            ? t('tests.placement_engine_staircase_help')
-                                            : placementEngine === 'generator'
-                                              ? t('tests.placement_engine_generator_help')
-                                              : t('tests.placement_engine_mst_help')}
-                                    </p>
-                                </div>
-                            )}
-                            {mode === 'practice' && (
-                                <div className="form-group" style={{ marginBottom: 0, flex: '1 1 200px' }}>
-                                    <label htmlFor="test-content-area">{t('tests.content_area_label')}</label>
-                                    <select
-                                        id="test-content-area"
-                                        value={contentArea}
-                                        onChange={(e) =>
-                                            setContentArea(e.target.value as 'listening' | 'reading' | 'grammar' | '')
-                                        }
-                                    >
-                                        <option value="">{t('tests.content_area_none')}</option>
-                                        <option value="listening">{t('tests.content_area_listening')}</option>
-                                        <option value="reading">{t('tests.content_area_reading')}</option>
-                                        <option value="grammar">{t('tests.content_area_grammar')}</option>
-                                    </select>
-                                </div>
-                            )}
-                            <div className="form-group" style={{ marginBottom: 0, flex: '1 1 200px' }}>
-                                <label htmlFor="test-content-language">{t('tests.content_language_label')}</label>
-                                <select
-                                    id="test-content-language"
-                                    value={contentLanguage}
-                                    onChange={(e) => setContentLanguage(e.target.value)}
-                                >
-                                    <option value="">{t('tests.content_language_default')}</option>
-                                    <option value="en">{t('settings.language_en')}</option>
-                                    <option value="nl">{t('settings.language_nl')}</option>
-                                    <option value="fr">{t('settings.language_fr')}</option>
-                                    <option value="de">{t('settings.language_de')}</option>
-                                    <option value="es">{t('settings.language_es')}</option>
-                                </select>
-                                <p className="text-muted text-xs" style={{ marginTop: 4, marginBottom: 0 }}>
-                                    {t('tests.content_language_help')}
-                                </p>
-                            </div>
-                            <div className="form-group" style={{ marginBottom: 0, flex: '1 1 160px' }}>
-                                <label htmlFor="test-duration">{t('tests.duration_label')}</label>
-                                <input
-                                    id="test-duration"
-                                    type="number"
-                                    min={1}
-                                    value={durationMinutes}
-                                    onChange={(e) => {
-                                        setDurationMinutes(e.target.value);
-                                        if (durationError) setDurationError('');
-                                    }}
-                                    aria-invalid={durationError ? true : undefined}
-                                    aria-describedby={durationError ? 'test-duration-error' : undefined}
-                                    placeholder={t('tests.duration_placeholder')}
-                                />
-                                {durationError && (
-                                    <p
-                                        id="test-duration-error"
-                                        style={{ color: 'var(--red-text)', fontSize: '0.8rem', marginTop: 4 }}
-                                    >
-                                        <AlertCircle size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
-                                        {durationError}
-                                    </p>
-                                )}
-                            </div>
-                            <div className="form-group" style={{ marginBottom: 0, flex: '1 1 200px' }}>
-                                <label htmlFor="test-grade-scale">{t('tests.grade_scale_label')}</label>
-                                <select
-                                    id="test-grade-scale"
-                                    value={gradeScaleId ?? ''}
-                                    onChange={(e) => setGradeScaleId(e.target.value || undefined)}
-                                >
-                                    <option value="">{t('tests.grade_scale_none')}</option>
-                                    {gradeScales.map((gs) => (
-                                        <option key={gs.id} value={gs.id}>
-                                            {gs.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="form-group" style={{ marginBottom: 0, flex: '1 1 200px' }}>
-                                <label htmlFor="test-due-date">{t('tests.due_date_label')}</label>
-                                <input
-                                    id="test-due-date"
-                                    type="datetime-local"
-                                    value={dueDate}
-                                    onChange={(e) => setDueDate(e.target.value)}
-                                />
-                            </div>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 10 }}>
+                            <h2 className="card-heading" style={{ margin: 0, fontSize: '0.95rem' }}>
+                                {t('tests.settings_title')}
+                            </h2>
+                            <span className="text-muted text-xs">{t('tests.settings_strip_note')}</span>
                         </div>
-                        {mode !== 'placement' && (
-                            <fieldset
-                                style={{
-                                    border: '1px solid var(--border)',
-                                    borderRadius: 8,
-                                    padding: '10px 12px',
-                                    margin: 0,
-                                }}
-                            >
-                                <legend style={{ fontSize: '0.85rem', fontWeight: 600, padding: '0 4px' }}>
-                                    {t('tests.norm.section_title')}
-                                </legend>
-                                <NormConfig
-                                    idPrefix="builder-norm"
-                                    hideScaleSelect
-                                    value={{ ...normSettings, gradeScaleId }}
-                                    maxPoints={questions.reduce((sum, q) => sum + (q.points || 0), 0)}
-                                    gradeScales={gradeScales}
-                                    onChange={(patch) => {
-                                        const rest = { ...patch };
-                                        delete rest.gradeScaleId;
-                                        setNormSettings((prev) => ({ ...prev, ...rest }));
-                                    }}
-                                />
-                            </fieldset>
-                        )}
-                        <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-                            <label
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 8,
-                                    cursor: 'pointer',
-                                    fontSize: '0.875rem',
-                                }}
-                            >
-                                <input
-                                    type="checkbox"
-                                    checked={shuffleQuestions}
-                                    onChange={(e) => setShuffleQuestions(e.target.checked)}
-                                    style={{ accentColor: 'var(--accent)' }}
-                                />
-                                {t('tests.shuffle_questions_label')}
-                            </label>
-                            <div>
-                                <label
+                        <div
+                            style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
+                                gap: 8,
+                            }}
+                        >
+                            {settingsTiles.map(({ tab, labelKey, Icon, valueText }) => (
+                                <button
+                                    key={tab}
+                                    type="button"
+                                    data-testid={`settings-tile-${tab}`}
+                                    onClick={() => openSettings(tab)}
                                     style={{
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: 8,
+                                        padding: '9px 10px',
+                                        border: '1px solid var(--border)',
+                                        borderRadius: 8,
+                                        background: 'var(--bg-elevated)',
+                                        color: 'var(--text)',
+                                        font: 'inherit',
+                                        textAlign: 'left',
                                         cursor: 'pointer',
-                                        fontSize: '0.875rem',
+                                        minWidth: 0,
                                     }}
                                 >
-                                    <input
-                                        type="checkbox"
-                                        checked={requireSEB}
-                                        onChange={(e) => setRequireSEB(e.target.checked)}
-                                        style={{ accentColor: 'var(--accent)' }}
-                                    />
-                                    {t('tests.require_seb_label')}
-                                </label>
-                                <p className="text-muted text-xs" style={{ marginTop: 4, marginBottom: 0 }}>
-                                    {t('tests.require_seb_help')}
-                                </p>
-                            </div>
-                            {mode === 'practice' && (
-                                <label
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 8,
-                                        cursor: 'pointer',
-                                        fontSize: '0.875rem',
-                                    }}
-                                >
-                                    <input
-                                        type="checkbox"
-                                        checked={allowMultipleAttempts}
-                                        onChange={(e) => setAllowMultipleAttempts(e.target.checked)}
-                                        style={{ accentColor: 'var(--accent)' }}
-                                    />
-                                    {t('tests.allow_multiple_attempts_label')}
-                                </label>
-                            )}
-                        </div>
-                        <div className="grid-2" style={{ gap: 12, marginTop: 14 }}>
-                            <div className="form-group" style={{ marginBottom: 0 }}>
-                                <label htmlFor="test-cefr-level">{t('cefr.target_level_label')}</label>
-                                <select
-                                    id="test-cefr-level"
-                                    value={cefrTargetLevel}
-                                    onChange={(e) => setCefrTargetLevel(e.target.value as CefrLevel | '')}
-                                >
-                                    <option value="">{t('cefr.no_level')}</option>
-                                    {CEFR_LEVELS.map((lvl) => (
-                                        <option key={lvl} value={lvl}>
-                                            {lvl} – {t(`cefr.level_${lvl}`)}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="form-group" style={{ marginBottom: 0 }}>
-                                <label htmlFor="test-cefr-skill">{t('cefr.skill_label')}</label>
-                                <select
-                                    id="test-cefr-skill"
-                                    value={cefrSkill}
-                                    onChange={(e) => setCefrSkill(e.target.value as CefrSkill | '')}
-                                >
-                                    <option value="">{t('cefr.no_skill')}</option>
-                                    {CEFR_SKILLS.map((skill) => (
-                                        <option key={skill} value={skill}>
-                                            {CEFR_SKILL_LABELS[skill][i18n.language.startsWith('nl') ? 'nl' : 'en']}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+                                    <Icon size={15} style={{ color: 'var(--accent-text)', flexShrink: 0 }} />
+                                    <span style={{ display: 'grid', gap: 2, minWidth: 0 }}>
+                                        <span className="text-xs" style={{ fontWeight: 600 }}>
+                                            {t(labelKey)}
+                                        </span>
+                                        <span
+                                            className="text-muted text-xs"
+                                            style={{
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap',
+                                            }}
+                                        >
+                                            {valueText}
+                                        </span>
+                                    </span>
+                                    <span
+                                        className="text-xs"
+                                        style={{ marginLeft: 'auto', color: 'var(--accent-text)', flexShrink: 0 }}
+                                    >
+                                        {t('tests.settings_edit')}
+                                    </span>
+                                </button>
+                            ))}
                         </div>
                     </div>
 
@@ -1668,6 +1709,9 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                             alignItems: 'center',
                             justifyContent: 'space-between',
                             marginBottom: 14,
+                            // With the rail open the question being edited is the point of the pane,
+                            // so it moves above the test-wide setup cards.
+                            order: isRailWide ? -1 : undefined,
                         }}
                     >
                         <h2 style={{ margin: 0, fontSize: '0.95rem' }}>
@@ -1697,22 +1741,112 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                             )}
                             <button
                                 type="button"
+                                className="btn btn-ghost btn-sm"
+                                data-testid="checks_open"
+                                aria-pressed={checksOpen}
+                                onClick={() => setChecksOpen((open) => !open)}
+                            >
+                                <ClipboardCheck size={14} /> {t('tests.checks_title')}
+                                {(draftBlockers?.entries.length ?? 0) > 0 && (
+                                    <span
+                                        className="text-xs"
+                                        style={{
+                                            minWidth: 16,
+                                            padding: '0 4px',
+                                            borderRadius: 999,
+                                            background: 'var(--yellow)',
+                                            color: 'var(--yellow-fg)',
+                                            fontVariantNumeric: 'tabular-nums',
+                                        }}
+                                    >
+                                        {draftBlockers?.entries.length}
+                                    </span>
+                                )}
+                            </button>
+                            <button
+                                type="button"
                                 className="btn btn-secondary btn-sm"
                                 onClick={() => setShowBankModal(true)}
                             >
                                 <Plus size={14} /> {t('questionBank.insert_button')}
                             </button>
-                            <button type="button" className="btn btn-secondary btn-sm" onClick={() => addQuestion()}>
+                            <button type="button" className="btn btn-secondary btn-sm" onClick={() => openTypePicker()}>
                                 <Plus size={14} /> {t('tests.add_question')}
                             </button>
                         </div>
                     </div>
 
-                    {questions.length === 0 ? (
+                    {isRailWide ? (
+                        checksOpen ? (
+                            <div style={{ order: -1 }}>{checksPanel}</div>
+                        ) : focusQuestion ? (
+                            <div data-testid="question-focus" style={{ order: -1, marginBottom: 20 }}>
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        gap: 8,
+                                        marginBottom: 10,
+                                    }}
+                                >
+                                    <span className="text-muted text-sm">
+                                        {t('tests.question_number', {
+                                            number: displayOrderedQuestions.indexOf(focusQuestion) + 1,
+                                        })}{' '}
+                                        / {questions.length}
+                                    </span>
+                                    <div style={{ display: 'flex', gap: 4 }}>
+                                        <button
+                                            type="button"
+                                            className="btn btn-ghost btn-sm"
+                                            aria-label={t('tests.move_question_up')}
+                                            onClick={() => moveQuestion(focusQuestion.id, -1)}
+                                        >
+                                            <ChevronUp size={15} />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn btn-ghost btn-sm"
+                                            aria-label={t('tests.move_question_down')}
+                                            onClick={() => moveQuestion(focusQuestion.id, 1)}
+                                        >
+                                            <ChevronDown size={15} />
+                                        </button>
+                                    </div>
+                                </div>
+                                <QuestionEditor
+                                    question={focusQuestion}
+                                    index={displayOrderedQuestions.indexOf(focusQuestion)}
+                                    total={questions.length}
+                                    sections={sections}
+                                    onChange={(q) => updateQuestion(focusQuestion.id, q)}
+                                    onRemove={() => removeQuestion(focusQuestion.id)}
+                                    onDuplicate={() => copyQuestion(focusQuestion.id)}
+                                    collapsed={collapsedQuestions.has(focusQuestion.id)}
+                                    onToggleCollapsed={() => toggleQuestionCollapsed(focusQuestion.id)}
+                                    issues={issuesByQuestion.get(focusQuestion.id)}
+                                    showGrip={false}
+                                />
+                            </div>
+                        ) : (
+                            <div style={{ order: -1, marginBottom: 20 }}>
+                                <EmptyState
+                                    title={t('tests.no_questions')}
+                                    description={t('tests.no_questions_instruction')}
+                                    action={{
+                                        label: t('tests.add_question'),
+                                        icon: Plus,
+                                        onClick: () => openTypePicker(),
+                                    }}
+                                />
+                            </div>
+                        )
+                    ) : questions.length === 0 ? (
                         <EmptyState
                             title={t('tests.no_questions')}
                             description={t('tests.no_questions_instruction')}
-                            action={{ label: t('tests.add_question'), icon: Plus, onClick: () => addQuestion() }}
+                            action={{ label: t('tests.add_question'), icon: Plus, onClick: () => openTypePicker() }}
                         />
                     ) : (
                         <DragDropContext onDragEnd={onDragEnd}>
@@ -1763,7 +1897,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                                             <button
                                                 className="btn btn-secondary btn-sm"
                                                 style={{ alignSelf: 'flex-start' }}
-                                                onClick={() => addQuestion()}
+                                                onClick={() => openTypePicker()}
                                             >
                                                 <Plus size={14} /> {t('tests.add_question')}
                                             </button>
@@ -2076,7 +2210,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                                                 <button
                                                     className="btn btn-secondary btn-sm"
                                                     style={{ marginTop: 12 }}
-                                                    onClick={() => addQuestion(section.id)}
+                                                    onClick={() => openTypePicker(section.id)}
                                                 >
                                                     <Plus size={14} /> {t('tests.add_question')}
                                                 </button>
@@ -2088,34 +2222,48 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                         </DragDropContext>
                     )}
                 </div>
-                {showPreview && (
-                    <aside
-                        data-testid="a4-pane"
-                        style={
-                            isWide
-                                ? { position: 'sticky', top: 12, minWidth: 0 }
-                                : {
-                                      position: 'fixed',
-                                      top: 56,
-                                      right: 0,
-                                      bottom: 0,
-                                      width: 'min(100%, 560px)',
-                                      zIndex: 60,
-                                      padding: 12,
-                                      overflow: 'auto',
-                                      background: 'var(--bg-panel)',
-                                      borderLeft: '1px solid var(--border)',
-                                  }
-                        }
-                    >
-                        <TestA4Preview
-                            test={previewTest}
-                            onChange={(patch) => setPrintText((prev) => ({ ...prev, ...patch }))}
-                        />
+                {isRailWide ? (
+                    <aside style={{ position: 'sticky', top: 12, minWidth: 0 }} data-testid="inspector-column">
+                        {inspector}
                     </aside>
+                ) : (
+                    showPreview && (
+                        <aside
+                            style={{
+                                position: 'fixed',
+                                top: 56,
+                                right: 0,
+                                bottom: 0,
+                                width: 'min(100%, 560px)',
+                                zIndex: 60,
+                                padding: 12,
+                                overflow: 'auto',
+                                background: 'var(--bg-panel)',
+                                borderLeft: '1px solid var(--border)',
+                            }}
+                        >
+                            {inspector}
+                        </aside>
+                    )
                 )}
             </div>
+            <TestSettingsDrawer
+                open={settingsOpen}
+                tab={settingsTab}
+                onTabChange={setSettingsTab}
+                onClose={() => setSettingsOpen(false)}
+                value={settingsValue}
+                onChange={updateSettingsValue}
+                onNormChange={updateSettingsNorm}
+                gradeScales={gradeScales}
+                maxPoints={totalPoints}
+                durationError={durationError}
+                readOnly={readOnly}
+            />
             {showBankModal && <QuestionBankModal onClose={() => setShowBankModal(false)} onSelect={insertFromBank} />}
+            {newQuestionFor && (
+                <QuestionTypePicker onSelect={createQuestionOfType} onClose={() => setNewQuestionFor(null)} />
+            )}
             <ConfirmDialog {...unsavedDialogProps} />
         </>
     );
