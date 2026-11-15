@@ -76,6 +76,7 @@ const mockGradeScale: GradeScale = {
 
 const mockSaveStudentRubric = vi.fn();
 const mockSavePeerReview = vi.fn();
+const mockUpdateSettings = vi.fn();
 const mockFetchSchoolMembers = vi.fn().mockResolvedValue([]);
 
 let appOverrides: Record<string, unknown> = {};
@@ -89,6 +90,7 @@ const makeAppContextMock = () => ({
     settings: mockSettings,
     saveStudentRubric: mockSaveStudentRubric,
     savePeerReview: mockSavePeerReview,
+    updateSettings: mockUpdateSettings,
     fetchSchoolMembers: mockFetchSchoolMembers,
     ...appOverrides,
 });
@@ -242,6 +244,22 @@ describe('ModerationQueuePage', () => {
         const input = screen.getByLabelText('coGrading.threshold_label');
         fireEvent.change(input, { target: { value: '5' } });
         expect(input).toHaveValue(5);
+    });
+
+    it('persists the threshold to settings when the input loses focus', async () => {
+        const { default: ModerationQueuePage } = await import('../ModerationQueuePage');
+        renderWithRouter(<ModerationQueuePage />);
+        const input = screen.getByLabelText('coGrading.threshold_label');
+        fireEvent.change(input, { target: { value: '25' } });
+        fireEvent.blur(input);
+        expect(mockUpdateSettings).toHaveBeenCalledWith({ moderationThresholdPercent: 25 });
+    });
+
+    it('starts from the persisted threshold', async () => {
+        appOverrides = { settings: { ...mockSettings, moderationThresholdPercent: 40 } };
+        const { default: ModerationQueuePage } = await import('../ModerationQueuePage');
+        renderWithRouter(<ModerationQueuePage />);
+        expect(screen.getByLabelText('coGrading.threshold_label')).toHaveValue(40);
     });
 
     it('resolves via accept second marker', async () => {

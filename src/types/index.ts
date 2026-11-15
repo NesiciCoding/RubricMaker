@@ -1070,6 +1070,12 @@ export interface AppSettings {
     /** Days since last grading before a student is considered overdue (default 7). */
     overdueReminderThreshold?: number;
     /**
+     * Percentage gap between a baseline grade and its second marker that sends the submission to
+     * the moderation queue (default 10, `DEFAULT_MODERATION_THRESHOLD_PERCENT`). Shared by the
+     * moderation page and the notification feed so both report the same queue.
+     */
+    moderationThresholdPercent?: number;
+    /**
      * Password required to switch back to admin from a lower-privilege role.
      * Stored as plain text; this is UI access control, not cryptographic security.
      * If undefined, no password is required.
