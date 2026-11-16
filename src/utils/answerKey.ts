@@ -168,16 +168,13 @@ export function markClozeAnswersCorrect(
     if (!question) return { attempts: [], matched: 0 };
     const dropdown = question.type === 'cloze-dropdown';
     const gaps = parseClozeGaps(question.prompt);
-    const expects = Object.entries(parseClozeAnswers(response))
-        .map(([gap, text]) => ({ gap: gaps[Number(gap)], answer: text }))
-        .filter(
-            (expect): expect is { gap: NonNullable<typeof expect.gap>; answer: string } =>
-                !!expect.gap && expect.answer.trim() !== ''
-        );
-    if (expects.length === 0) return { attempts: [], matched: 0 };
+    // The whole question has to match, not just the gaps the adopted answer happened to fill: a blank
+    // source gap would otherwise let a wrong answer elsewhere earn full marks.
+    const adopted = Object.values(parseClozeAnswers(response)).some((text) => text.trim() !== '');
+    if (gaps.length === 0 || !adopted) return { attempts: [], matched: 0 };
     return markMatchingAttempts(test, question, attempts, excludeStudentTestId, (given) => {
         const typed = parseClozeAnswers(given.response);
-        return expects.every((expect) => gapAccepts(expect.gap, typed[String(expect.gap.index)] ?? '', dropdown));
+        return gaps.every((gap) => gapAccepts(gap, typed[String(gap.index)] ?? '', dropdown));
     });
 }
 

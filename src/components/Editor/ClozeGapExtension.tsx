@@ -4,6 +4,7 @@ import {
     clozeGapToSyntax,
     gapCorrectAnswers,
     renderClozeSegments,
+    splitClozeOptions,
     type ClozeGap as ClozeGapSyntax,
     type ClozeOptionRole,
 } from '../../utils/clozeParse';
@@ -203,8 +204,11 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
             const optionSection = (labelText: string, values: string[]) => {
                 const section = document.createElement('div');
                 section.className = 'cloze-gap-popover-section';
+                section.setAttribute('role', 'group');
+                section.setAttribute('aria-label', labelText);
                 const label = document.createElement('div');
                 label.className = 'cloze-gap-popover-label';
+                label.setAttribute('aria-hidden', 'true');
                 label.textContent = labelText;
                 const chips = document.createElement('div');
                 chips.className = 'cloze-gap-popover-chips';
@@ -215,6 +219,8 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
                 const input = document.createElement('input');
                 input.type = 'text';
                 input.className = 'cloze-gap-popover-input';
+                // The headings are not form labels, so name each input explicitly for screen readers.
+                input.setAttribute('aria-label', labelText);
                 const add = document.createElement('button');
                 add.type = 'button';
                 add.textContent = addLabel;
@@ -292,7 +298,17 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
                         const input = document.createElement('input');
                         input.type = 'text';
                         input.className = 'cloze-gap-popover-input';
-                        input.value = alternatives().join('|');
+                        // Markers stay visible, so opening and saving a marked gap round-trips unchanged.
+                        input.value = alternatives()
+                            .map((alternative, i) => {
+                                const role = roles()?.[i];
+                                return role === 'wrong'
+                                    ? `~${alternative}`
+                                    : role === 'correct'
+                                      ? `=${alternative}`
+                                      : alternative;
+                            })
+                            .join('|');
                         input.addEventListener('keydown', (ke) => {
                             if (ke.key === 'Enter') {
                                 ke.preventDefault();
@@ -305,17 +321,14 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
                         popover.append(label, input);
                         const stem = stemInput(popover);
                         const saveAlternatives = () => {
-                            const next = input.value
-                                .split('|')
-                                .map((alt) => alt.trim())
-                                .filter((alt) => alt.length > 0);
-                            if (next.length === 0) {
+                            const parsed = splitClozeOptions(input.value);
+                            if (parsed.alternatives.length === 0) {
                                 close();
                                 return;
                             }
                             applyNode(
-                                next,
-                                null,
+                                parsed.alternatives,
+                                parsed.roles.some(Boolean) ? parsed.roles : null,
                                 stem ? cleanStem(stem.value) || null : (node.attrs.stem as string | null)
                             );
                             close();

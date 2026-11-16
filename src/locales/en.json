@@ -1492,6 +1492,7 @@
             "answer_key_applied_other": "Answer added to the answer key · {{count}} other answers marked correct",
             "undo_last_save": "Undo last save",            "points_label": "Points (max {{max}})",
             "session_restored": "Resumed your grading session",
+            "session_save_failed": "Grading progress could not be saved in this browser; your drafts will not be restored.",
             "points_aria": "Points for {{name}}, question {{number}}",
             "save_score": "Save score",
             "skip": "Skip (S)",

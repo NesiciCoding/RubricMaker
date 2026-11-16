@@ -6,6 +6,7 @@ import {
     matchClozeGaps,
     parseClozeGaps,
     type ClozeGap,
+    type ClozeOptionRole,
 } from '../../supabase/functions/_shared/testScoring.ts';
 
 export {
@@ -13,6 +14,7 @@ export {
     parseHotTextFragments,
     gapCorrectAnswers,
     clozeGapToSyntax,
+    splitClozeOptions,
 } from '../../supabase/functions/_shared/testScoring.ts';
 export type {
     ClozeGap,
@@ -81,6 +83,16 @@ export function addGapAlternative(prompt: string, gapIndex: number, word: string
  * rewritten with explicit roles, so the options it already had keep their meaning: the first stays
  * correct, the rest stay distractors.
  */
+/**
+ * A gap's roles with every hole filled: once any option is marked, unmarked options count as correct
+ * (`gapCorrectAnswers` accepts them); only a fully unmarked legacy gap uses position — first correct,
+ * the rest wrong.
+ */
+function resolvedGapRoles(gap: ClozeGap): ClozeOptionRole[] {
+    const marked = gap.roles?.some((role) => role !== null) ?? false;
+    return gap.alternatives.map((_, i) => gap.roles?.[i] ?? (marked || i === 0 ? 'correct' : 'wrong'));
+}
+
 export function addDropdownCorrectAnswer(prompt: string, gapIndex: number, word: string): string {
     const target = parseClozeGaps(prompt)[gapIndex];
     const text = word.trim();
@@ -88,11 +100,10 @@ export function addDropdownCorrectAnswer(prompt: string, gapIndex: number, word:
     if (gapCorrectAnswers(target, true).some((answer) => answer.toLowerCase() === text.toLowerCase())) {
         return prompt;
     }
-    const roles = target.alternatives.map((_, i) => target.roles?.[i] ?? (i === 0 ? 'correct' : 'wrong'));
     const serialised = clozeGapToSyntax({
         index: gapIndex,
         alternatives: [...target.alternatives, text],
-        roles: [...roles, 'correct'],
+        roles: [...resolvedGapRoles(target), 'correct'],
     });
     return replaceGap(prompt, gapIndex, serialised);
 }
@@ -102,14 +113,13 @@ export function addDropdownDistractor(prompt: string, gapIndex: number, word: st
     const target = parseClozeGaps(prompt)[gapIndex];
     const text = word.trim();
     if (!target || !text) return prompt;
-    const roles = target.alternatives.map((_, i) => target.roles?.[i] ?? (i === 0 ? 'correct' : 'wrong'));
     return replaceGap(
         prompt,
         gapIndex,
         clozeGapToSyntax({
             index: gapIndex,
             alternatives: [...target.alternatives, text],
-            roles: [...roles, 'wrong'],
+            roles: [...resolvedGapRoles(target), 'wrong'],
         })
     );
 }

@@ -2088,6 +2088,7 @@
             "answer_key_applied_other": "Antwort zum Lösungsschlüssel hinzugefügt · {{count}} weitere Antworten als richtig bewertet",
             "undo_last_save": "Letzte Speicherung rückgängig",            "points_label": "Punkte (max. {{max}})",
             "session_restored": "Deine Bewertungssitzung wurde fortgesetzt",
+            "session_save_failed": "Der Fortschritt konnte in diesem Browser nicht gespeichert werden; deine Entwürfe werden nicht wiederhergestellt.",
             "points_aria": "Punkte für {{name}}, Frage {{number}}",
             "save_score": "Punkte speichern",
             "skip": "Überspringen (S)",

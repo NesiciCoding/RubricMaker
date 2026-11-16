@@ -2088,6 +2088,7 @@
             "answer_key_applied_other": "Antwoord toegevoegd aan de antwoordsleutel · {{count}} andere antwoorden goed gerekend",
             "undo_last_save": "Laatste opslag ongedaan maken",            "points_label": "Punten (max. {{max}})",
             "session_restored": "Je beoordelingssessie is hervat",
+            "session_save_failed": "De voortgang kon niet in deze browser worden opgeslagen; je concepten worden niet hersteld.",
             "points_aria": "Punten voor {{name}}, vraag {{number}}",
             "save_score": "Cijfer opslaan",
             "skip": "Overslaan (S)",

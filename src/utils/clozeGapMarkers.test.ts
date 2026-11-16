@@ -136,3 +136,42 @@ describe('dropdown prompt text and validation', () => {
         expect(testQuestionIssues({ ...dropdown, prompt: 'She {{a|b}} it.' })).toEqual([]);
     });
 });
+
+describe('review follow-ups', () => {
+    it('keeps an unmarked accepted option correct when a distractor is added', () => {
+        const prompt = addDropdownDistractor('Pick {{=one|two}}', 0, 'three');
+        expect(prompt).toBe('Pick {{=one|=two|~three}}');
+        expect(gapCorrectAnswers(parseClozeGaps(prompt)[0], true)).toEqual(['one', 'two']);
+    });
+
+    it('does not apply typed-answer tolerance to dropdown options', () => {
+        const question = {
+            type: 'cloze-dropdown',
+            points: 1,
+            prompt: 'Pick {{=house|~horse}}',
+            answerTolerance: { slips: true },
+        };
+        expect(scoreCloze(question, JSON.stringify({ 0: 'horse' }))).toBe(0);
+        expect(scoreCloze(question, JSON.stringify({ 0: 'house' }))).toBe(1);
+    });
+
+    it('requires every gap to match before propagating a partially filled adoption', () => {
+        const question: TestQuestion = {
+            id: 'c9',
+            type: 'cloze',
+            prompt: 'She {{has}} a {{cat|kitten}}.',
+            points: 2,
+        };
+        const test: Test = { ...dropdownTest, questions: [question] };
+        const other: StudentTest = {
+            id: 'st9',
+            testId: 'test',
+            studentId: 's9',
+            answers: [{ questionId: 'c9', response: JSON.stringify({ 0: 'had', 1: 'dog' }) }],
+            status: 'submitted',
+            startedAt: '2026-01-01T09:00:00.000Z',
+        };
+        const next = withAdoptedAnswer(test, 'c9', JSON.stringify({ 0: 'had', 1: '' }));
+        expect(markAdoptedAnswersCorrect(next, 'c9', '{"0":"had","1":""}', [other]).matched).toBe(0);
+    });
+});

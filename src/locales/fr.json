@@ -2088,6 +2088,7 @@
             "answer_key_applied_other": "Réponse ajoutée à la clé de réponses · {{count}} autres réponses marquées correctes",
             "undo_last_save": "Annuler le dernier enregistrement",            "points_label": "Points (max. {{max}})",
             "session_restored": "Votre session de notation a été reprise",
+            "session_save_failed": "La progression n'a pas pu être enregistrée dans ce navigateur ; vos brouillons ne seront pas restaurés.",
             "points_aria": "Points pour {{name}}, question {{number}}",
             "save_score": "Enregistrer la note",
             "skip": "Ignorer (S)",

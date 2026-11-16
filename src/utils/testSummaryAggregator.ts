@@ -271,7 +271,7 @@ function partCorrectness(question: Test['questions'][number], response: string):
 function partLabels(question: Test['questions'][number]): string[] {
     if (question.type === 'matrix') return (question.matrixRows ?? []).map((r) => r.text);
     return parseClozeGaps(question.prompt).map(
-        (g) => `#${g.index + 1} ${gapCorrectAnswers(g, question.type === 'cloze-dropdown')[0] ?? ''}`
+        (g) => `#${g.index + 1} ${gapCorrectAnswers(g, question.type === 'cloze-dropdown').join(' / ')}`
     );
 }
 

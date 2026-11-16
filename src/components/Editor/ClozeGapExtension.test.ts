@@ -99,3 +99,13 @@ describe('ClozeGap word-formation stems', () => {
         editor.destroy();
     });
 });
+
+describe('ClozeGap marked typed gaps', () => {
+    it('round-trips an explicitly marked typed gap unchanged', () => {
+        const make = (prompt: string) =>
+            new Editor({ extensions: [MINIMAL_KIT, ClozeGap], content: promptToClozeContent(prompt) });
+        const editor = make('Pick {{=cat|~dog}} now');
+        expect(clozeContentToPrompt(editor)).toBe('Pick {{=cat|~dog}} now');
+        editor.destroy();
+    });
+});

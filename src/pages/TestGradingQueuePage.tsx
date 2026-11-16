@@ -138,6 +138,7 @@ export default function TestGradingQueuePage() {
     const queueSessionKey = useMemo(() => gradeQueueSessionKey(testId, dbStatus.userId), [testId, dbStatus.userId]);
     const restoredPositionRef = useRef<GradeQueueSession | null>(null);
     const sessionKeyRef = useRef<string | null>(null);
+    const pendingSessionRef = useRef<{ state: GradeQueueSessionState; settled: boolean } | null>(null);
 
     const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
 
@@ -338,17 +339,20 @@ export default function TestGradingQueuePage() {
         [steps, draftPoints, skipped]
     );
 
-    function advanceToNextUndecided() {
+    function advanceToNextUndecided(extraDecided?: ReadonlySet<string>) {
+        // Adoption decides answers in the same pass, so those steps must count as decided here —
+        // otherwise the queue lands straight back on the answer it just marked.
+        const decided = (key: string) => extraDecided?.has(key) || decidedByStep.get(key) === true;
         if (inMatrix) {
             const next = findNextUndecided(
-                steps.map((s) => decidedByStep.get(s.key) === true),
+                steps.map((s) => decided(s.key)),
                 matrixIdx
             );
             if (next >= 0) setSelectedIdx(next);
             return;
         }
         const nextInGroup = findNextUndecided(
-            visibleSteps.map((global) => decidedByStep.get(steps[global]?.key ?? '') === true),
+            visibleSteps.map((global) => decided(steps[global]?.key ?? '')),
             stepIndex
         );
         if (nextInGroup >= 0) {
@@ -357,7 +361,7 @@ export default function TestGradingQueuePage() {
         }
         for (let gi = groupIndex + 1; gi < groups.length; gi++) {
             const groupSteps = groups[gi]?.steps ?? [];
-            const next = groupSteps.findIndex((global) => decidedByStep.get(steps[global]?.key ?? '') !== true);
+            const next = groupSteps.findIndex((global) => !decided(steps[global]?.key ?? ''));
             if (next >= 0) {
                 setGroupIndex(gi);
                 setStepIndex(next);
@@ -366,7 +370,7 @@ export default function TestGradingQueuePage() {
         }
     }
 
-    function handleSaveCurrent(options: { advance?: boolean } = {}) {
+    function handleSaveCurrent(options: { advance?: boolean; extraDecided?: ReadonlySet<string> } = {}) {
         const step = detailStep;
         if (!step || readOnly || !test) return;
         const st = attemptById.get(step.studentTestId);
@@ -423,7 +427,7 @@ export default function TestGradingQueuePage() {
             return next;
         });
         setLastSave({ stepKey: step.key, previousAttempts: [previousAttempt] });
-        if (options.advance) advanceToNextUndecided();
+        if (options.advance) advanceToNextUndecided(options.extraDecided);
     }
 
     function handleUndoSave() {
@@ -441,16 +445,23 @@ export default function TestGradingQueuePage() {
         if (!answer) return;
         const nextTest = withAdoptedAnswer(test, step.questionId, answer);
         if (nextTest !== test) updateTest(nextTest);
+        // Propagation writes locally before the server agrees, so only touch students this teacher may grade.
+        const editableAttempts = attempts.filter((a) =>
+            canEditStudentWork(students.find((s) => s.id === a.studentId)?.classId)
+        );
         const { attempts: propagated, matched } = markAdoptedAnswersCorrect(
             nextTest,
             step.questionId,
             answer,
-            attempts,
+            editableAttempts,
             step.studentTestId
         );
-        const previousPropagated = attempts.filter((a) => propagated.some((p) => p.id === a.id));
+        const previousPropagated = editableAttempts.filter((a) => propagated.some((p) => p.id === a.id));
         propagated.forEach((attempt) => saveStudentTest(attempt));
-        handleSaveCurrent({ advance: true });
+        handleSaveCurrent({
+            advance: true,
+            extraDecided: new Set(propagated.map((attempt) => `${attempt.id}:${step.questionId}`)),
+        });
         // Undo reverses the whole adoption: the marks it filled in, the current save and the key edit.
         setLastSave((current) =>
             current
@@ -524,7 +535,9 @@ export default function TestGradingQueuePage() {
         const workInProgress =
             Object.keys(draftPoints).length > 0 || Object.keys(feedbackDrafts).length > 0 || skipped.size > 0;
         // The signed-in account can resolve after mount: re-key that work instead of wiping it.
-        if (sameTest && workInProgress) {
+        // Only then — work begun under one known account must never move to another.
+        const accountUnresolved = sessionKeyRef.current === gradeQueueSessionKey(testId, null);
+        if (sameTest && workInProgress && accountUnresolved) {
             sessionKeyRef.current = queueSessionKey;
             return;
         }
@@ -549,14 +562,15 @@ export default function TestGradingQueuePage() {
             restoredPositionRef.current = null;
             return;
         }
-        if (groups.length === 0) return;
+        // Question view has a group per question before any attempt loads, so wait for answers.
+        if (groups.length === 0 || attempts.length === 0) return;
         restoredPositionRef.current = null;
         const group = Math.min(stored.groupIndex, groups.length - 1);
         const insideGroup = groups[group]?.steps.length ?? 0;
         setGroupIndex(group);
         setStepIndex(Math.min(stored.stepIndex, Math.max(insideGroup - 1, 0)));
         setSelectedIdx(Math.min(stored.selectedIdx, Math.max(steps.length - 1, 0)));
-    }, [groups, steps.length, view]);
+    }, [groups, steps.length, view, attempts.length]);
 
     // Persist as the teacher works, and drop the session once the queue is finished.
     useEffect(() => {
@@ -570,17 +584,22 @@ export default function TestGradingQueuePage() {
             feedbackDrafts,
             skipped: [...skipped],
         };
+        // Every answer settled with no draft or feedback left in the box: nothing to resume.
+        const allSettled =
+            steps.length > 0 &&
+            Object.keys(draftPoints).length === 0 &&
+            Object.keys(feedbackDrafts).length === 0 &&
+            steps.every((s) => s.savedPoints !== undefined || s.review.state === 'auto-confirmed');
+        pendingSessionRef.current = { state: next, settled: allSettled };
         const timer = setTimeout(() => {
-            // Every answer settled with no draft left in the box: there is nothing to resume.
-            const allSettled =
-                steps.length > 0 &&
-                Object.keys(draftPoints).length === 0 &&
-                steps.every((s) => s.savedPoints !== undefined || s.review.state === 'auto-confirmed');
+            pendingSessionRef.current = null;
             if (allSettled || !hasSessionContent(next)) {
                 clearGradeQueueSession(queueSessionKey);
                 return;
             }
-            saveGradeQueueSession(queueSessionKey, next);
+            if (!saveGradeQueueSession(queueSessionKey, next)) {
+                showToast(t('tests.queue.session_save_failed'), 'warning');
+            }
         }, 400);
         return () => clearTimeout(timer);
     }, [
@@ -594,7 +613,20 @@ export default function TestGradingQueuePage() {
         feedbackDrafts,
         skipped,
         steps,
+        showToast,
+        t,
     ]);
+
+    // Leaving within the 400 ms debounce must not drop the latest drafts: flush the pending write.
+    useEffect(
+        () => () => {
+            const pending = pendingSessionRef.current;
+            const key = sessionKeyRef.current;
+            if (!pending || pending.settled || !key || !hasSessionContent(pending.state)) return;
+            saveGradeQueueSession(key, pending.state);
+        },
+        []
+    );
 
     // The key listener needs this render's drafts, but must not re-subscribe on every keystroke.
     const handleSaveRef = useRef(handleSaveCurrent);

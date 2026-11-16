@@ -160,7 +160,9 @@ export function gapAccepts(
 ): boolean {
     const given = answer.trim();
     if (!given) return false;
-    return gapCorrectAnswers(gap, legacyFirstOnly).some((correct) => answersMatch(correct, given, tolerance));
+    // A dropdown is clicked, not typed: typo leniency there could let an explicit distractor win.
+    const leniency = legacyFirstOnly ? undefined : tolerance;
+    return gapCorrectAnswers(gap, legacyFirstOnly).some((correct) => answersMatch(correct, given, leniency));
 }
 
 /** Serialises a gap back to `{{…}}`, writing `=`/`~` markers only for a gap that carries roles. */
@@ -638,6 +640,21 @@ export function sentenceBuilderText(sentence: string): string {
     return sentenceBuilderChunks(sentence).join(' ');
 }
 
+/** True when the placed tiles reproduce one accepted target word for word, in order. */
+export function isExactSentenceOrder(question: ScorableQuestion, response: string): boolean {
+    const words = (texts: string[]) =>
+        texts
+            .flatMap((text) => text.trim().split(/\s+/))
+            .map(normaliseWord)
+            .filter(Boolean);
+    const placed = words(parseJsonArray(response).filter((w): w is string => typeof w === 'string'));
+    if (placed.length === 0) return false;
+    return (question.sentenceTargets ?? []).some((target) => {
+        const accepted = words(sentenceBuilderChunks(target));
+        return accepted.length === placed.length && accepted.every((word, i) => word === placed[i]);
+    });
+}
+
 function sentenceWords(sentence: string): string[] {
     return sentenceBuilderChunks(sentence).flatMap((chunk) => chunk.split(' '));
 }
@@ -885,8 +902,9 @@ export function autoGradeVerdict(question: ScorableQuestion, response: string): 
     if (question.type === 'numeric' && response.trim() !== '' && Number.isNaN(Number(response.trim()))) {
         return { score, confident: false, reason: 'unparseable' };
     }
-    if (isTileOrder && score > 0 && score < question.points) {
-        // Only an exactly ordered sentence settles itself; partial ordering credit is a teacher's call.
+    if (isTileOrder && score > 0 && !isExactSentenceOrder(question, response)) {
+        // Only an exactly ordered sentence settles itself; partial ordering credit — and full marks
+        // assembled from a shorter accepted target — are a teacher's call.
         return { score, confident: false, reason: 'near-miss' };
     }
     return { score, confident: true };

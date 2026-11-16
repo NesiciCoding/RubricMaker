@@ -2088,6 +2088,7 @@
             "answer_key_applied_other": "Respuesta añadida a la clave de respuestas · {{count}} respuestas más marcadas como correctas",
             "undo_last_save": "Deshacer el último guardado",            "points_label": "Puntos (máx. {{max}})",
             "session_restored": "Se ha reanudado tu sesión de calificación",
+            "session_save_failed": "No se pudo guardar el progreso en este navegador; tus borradores no se restaurarán.",
             "points_aria": "Puntos para {{name}}, pregunta {{number}}",
             "save_score": "Guardar nota",
             "skip": "Omitir (S)",
