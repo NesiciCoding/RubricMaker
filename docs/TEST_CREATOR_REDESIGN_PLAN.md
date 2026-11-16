@@ -201,6 +201,30 @@ without losing the layout — covered by `ColumnResizer.test.tsx`, a builder sui
 See [`test-creator-columns.png`](mockups/screenshots/test-creator-columns.png) and
 [`test-creator-columns-expanded.png`](mockups/screenshots/test-creator-columns-expanded.png).
 
+## Phase 10 — Undo/redo and draft autosave (done)
+
+Builder edits went straight into page state: deleting a question, changing a question's type or
+reordering it was irreversible, and a crash or a closed tab lost everything since the last manual Save.
+
+- `src/hooks/useBuilderHistory.ts` keeps up to 50 snapshots of the form. Steps merge by signature
+  (question ids and types, section ids), so typing a prompt is one undo rather than one per keystroke,
+  while adding, deleting, retyping or reordering a question is always its own step.
+- Undo (Ctrl+Z) and redo (Ctrl+Shift+Z) work from the topbar buttons and the keyboard; the shortcuts skip
+  fields and rich-text editors, so the browser's own undo keeps working there. Restoring a deleted
+  question reopens it, so the recovered work is what the teacher sees.
+- `src/utils/testBuilderDraft.ts` defines the form snapshot and the device-local draft;
+  `src/store/storage.ts` stays the only write point (`saveBuilderDraft`, `loadBuilderDraft`,
+  `clearBuilderDraft`). Edits autosave 700ms after the last change, plus on tab hide, page unload and
+  route change, and a quiet "Saved just now" sits next to Save.
+- On open, a draft written on top of the stored version of the test is offered in a banner (restore or
+  discard). A draft whose base no longer matches the stored `updatedAt` is dropped rather than
+  overwriting newer work, and saving the test clears the draft.
+
+Done when: undo restores a deleted question, a type change and a reorder; a reopen offers the draft and
+restores questions plus settings; a newer stored version is never overwritten. Covered by
+`useBuilderHistory.test.tsx`, `testBuilderDraft.test.ts`, the builder's history suite and the narrow e2e
+spec.
+
 ## Screenshots
 
 Only captures of the shipped UI are committed. The exploratory screenshots taken while building the phases

@@ -17,6 +17,8 @@ import {
     Calculator,
     Compass,
     ClipboardCheck,
+    Undo2,
+    Redo2,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import PageTour from '../components/Tour/PageTour';
@@ -67,9 +69,34 @@ import { useSharedMaterials } from '../hooks/useSharedMaterials';
 import type { SharedEntry } from '../utils/materialSharing';
 import { cloneTestForCopy } from '../utils/testClone';
 import SharedMaterialBanner from '../components/Sharing/SharedMaterialBanner';
+import BuilderDraftBanner from '../components/Tests/BuilderDraftBanner';
+import { useBuilderHistory } from '../hooks/useBuilderHistory';
+import {
+    builderDraftKey,
+    builderFormSignature,
+    shouldOfferBuilderDraft,
+    type BuilderDraft,
+    type TestBuilderForm,
+} from '../utils/testBuilderDraft';
+import { clearBuilderDraft, loadBuilderDraft, saveBuilderDraft } from '../store/storage';
 
 /** Soft heuristic for a staircase level pool's builder warning — enough headroom for a couple of up/down moves without exhausting the pool. */
 const MIN_QUESTIONS_PER_LEVEL = 3;
+
+/** Quiet period before an edit is written to the device-local draft. */
+const DRAFT_AUTOSAVE_MS = 700;
+
+/** Undo/redo must leave the native undo of a field or a rich-text editor alone. */
+function isTypingTarget(target: EventTarget | null): boolean {
+    const element = target as HTMLElement | null;
+    if (!element?.tagName) return false;
+    return (
+        element.tagName === 'INPUT' ||
+        element.tagName === 'TEXTAREA' ||
+        element.tagName === 'SELECT' ||
+        element.isContentEditable
+    );
+}
 
 function clampThresholdPct(value: number): number {
     /* v8 ignore next 2 -- number inputs sanitise to '' so NaN is unreachable */
@@ -275,6 +302,182 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         contentLanguage,
     ]);
     const { dialogProps: unsavedDialogProps } = useUnsavedChangesGuard(isDirty && !readOnly);
+
+    /** The form as one value: undo snapshots it and autosave writes it to this device. */
+    const form: TestBuilderForm = React.useMemo(
+        () => ({
+            name,
+            description,
+            questions,
+            sections,
+            durationMinutes,
+            dueDate,
+            shuffleQuestions,
+            requireSEB,
+            autoConfirmScores,
+            gradeScaleId,
+            normSettings,
+            mode,
+            placementEngine,
+            generatorMinLevel,
+            generatorMaxLevel,
+            generatorSkills,
+            generatorTags,
+            generatorMinQuestions,
+            generatorMaxQuestions,
+            generatorStarterBankItemId,
+            allowMultipleAttempts,
+            cefrTargetLevel,
+            cefrSkill,
+            contentArea,
+            contentLanguage,
+            printText,
+        }),
+        [
+            name,
+            description,
+            questions,
+            sections,
+            durationMinutes,
+            dueDate,
+            shuffleQuestions,
+            requireSEB,
+            autoConfirmScores,
+            gradeScaleId,
+            normSettings,
+            mode,
+            placementEngine,
+            generatorMinLevel,
+            generatorMaxLevel,
+            generatorSkills,
+            generatorTags,
+            generatorMinQuestions,
+            generatorMaxQuestions,
+            generatorStarterBankItemId,
+            allowMultipleAttempts,
+            cefrTargetLevel,
+            cefrSkill,
+            contentArea,
+            contentLanguage,
+            printText,
+        ]
+    );
+
+    const questionsRef = useRef<TestQuestion[]>(questions);
+    useEffect(() => {
+        questionsRef.current = questions;
+    });
+
+    /** Puts a form snapshot back; undo, redo and a restored draft all land here. */
+    const applyForm = React.useCallback((next: TestBuilderForm) => {
+        setName(next.name);
+        setDescription(next.description ?? '');
+        setQuestions(next.questions);
+        setSections(next.sections);
+        setDurationMinutes(next.durationMinutes);
+        setDueDate(next.dueDate);
+        setShuffleQuestions(next.shuffleQuestions);
+        setRequireSEB(next.requireSEB);
+        setAutoConfirmScores(next.autoConfirmScores);
+        setGradeScaleId(next.gradeScaleId);
+        setNormSettings(next.normSettings);
+        setMode(next.mode);
+        setPlacementEngine(next.placementEngine);
+        setGeneratorMinLevel(next.generatorMinLevel);
+        setGeneratorMaxLevel(next.generatorMaxLevel);
+        setGeneratorSkills(next.generatorSkills);
+        setGeneratorTags(next.generatorTags);
+        setGeneratorMinQuestions(next.generatorMinQuestions);
+        setGeneratorMaxQuestions(next.generatorMaxQuestions);
+        setGeneratorStarterBankItemId(next.generatorStarterBankItemId);
+        setAllowMultipleAttempts(next.allowMultipleAttempts);
+        setCefrTargetLevel(next.cefrTargetLevel);
+        setCefrSkill(next.cefrSkill);
+        setContentArea(next.contentArea);
+        setContentLanguage(next.contentLanguage);
+        setPrintText(next.printText);
+        // An undo that brings a question back opens it, so the restored work is what the teacher sees.
+        const presentIds = new Set(questionsRef.current.map((q) => q.id));
+        const restored = next.questions.find((q) => !presentIds.has(q.id));
+        setSelectedQuestionId((current) =>
+            restored
+                ? restored.id
+                : current && next.questions.some((q) => q.id === current)
+                  ? current
+                  : (next.questions[0]?.id ?? null)
+        );
+        if (restored) {
+            setCollapsedQuestions((prev) => {
+                if (!prev.has(restored.id)) return prev;
+                const nextCollapsed = new Set(prev);
+                nextCollapsed.delete(restored.id);
+                return nextCollapsed;
+            });
+        }
+    }, []);
+
+    const { canUndo, canRedo, undo, redo } = useBuilderHistory({
+        snapshot: form,
+        signature: builderFormSignature(form),
+        onRestore: applyForm,
+    });
+
+    const draftKey = builderDraftKey(existing?.id);
+    const draftEnabled = !shared && !readOnly && !notFound;
+    const [draftStatus, setDraftStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+    const [draftOffer, setDraftOffer] = useState<BuilderDraft | null>(null);
+    const draftBaseRef = useRef(existing?.updatedAt ?? null);
+
+    const writeDraft = React.useCallback(
+        (next: TestBuilderForm) => {
+            saveBuilderDraft(draftKey, {
+                baseUpdatedAt: draftBaseRef.current,
+                savedAt: new Date().toISOString(),
+                form: next,
+            });
+            setDraftStatus('saved');
+        },
+        [draftKey]
+    );
+
+    useEffect(() => {
+        if (!draftEnabled || !isDirty) return;
+        setDraftStatus('saving');
+        const timer = setTimeout(() => writeDraft(form), DRAFT_AUTOSAVE_MS);
+        return () => clearTimeout(timer);
+    }, [form, isDirty, draftEnabled, writeDraft]);
+
+    // A closed tab, a hidden tab or a route change must keep the last edit even when it lands inside
+    // the autosave's quiet period.
+    const flushDraftRef = useRef<() => void>(() => {});
+    useEffect(() => {
+        flushDraftRef.current = () => {
+            if (draftEnabled && isDirty) writeDraft(form);
+        };
+    });
+    useEffect(() => {
+        const flush = () => flushDraftRef.current();
+        const onVisibilityChange = () => {
+            if (document.visibilityState === 'hidden') flush();
+        };
+        window.addEventListener('pagehide', flush);
+        document.addEventListener('visibilitychange', onVisibilityChange);
+        return () => {
+            window.removeEventListener('pagehide', flush);
+            document.removeEventListener('visibilitychange', onVisibilityChange);
+            flush();
+        };
+    }, []);
+
+    // Offer a draft from this device unless the stored test moved on since it was written.
+    useEffect(() => {
+        if (!draftEnabled) return;
+        const stored = loadBuilderDraft(draftKey);
+        if (shouldOfferBuilderDraft(stored, existing?.updatedAt)) setDraftOffer(stored);
+        else if (stored) clearBuilderDraft(draftKey);
+        // Mount only: the offer is about what was on disk when the page opened.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
         const shortfalls = generatedState?.generatedShortfalls;
@@ -674,11 +877,18 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
             });
         }
         if (existing) {
-            updateTest({ ...existing, ...payload, updatedAt: new Date().toISOString() });
+            const savedAt = new Date().toISOString();
+            updateTest({ ...existing, ...payload, updatedAt: savedAt });
+            // The draft exists only to outlive an unsaved session; a save supersedes it.
+            draftBaseRef.current = savedAt;
+            clearBuilderDraft(draftKey);
+            setDraftStatus('idle');
             notifySaved();
             flushSync(() => setIsDirty(false));
         } else {
             const created = addTest(payload);
+            clearBuilderDraft(draftKey);
+            setDraftStatus('idle');
             // Flush only after the create succeeds, and before navigate so
             // useBlocker doesn't see stale isDirty=true.
             flushSync(() => setIsDirty(false));
@@ -697,16 +907,31 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
     useEffect(() => {
         saveRef.current = saveFromShortcut;
     });
+    // Undo/redo share the shortcut, but only outside fields and rich-text editors, where the browser's
+    // own undo must keep working.
+    const undoRef = useRef(undo);
+    const redoRef = useRef(redo);
+    useEffect(() => {
+        undoRef.current = undo;
+        redoRef.current = redo;
+    });
     useEffect(() => {
         function handleKeyDown(e: KeyboardEvent) {
-            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+            if (!(e.ctrlKey || e.metaKey)) return;
+            const key = e.key.toLowerCase();
+            if (key === 's') {
                 e.preventDefault();
                 saveRef.current();
+                return;
             }
+            if (key !== 'z' || readOnly || isTypingTarget(e.target)) return;
+            e.preventDefault();
+            if (e.shiftKey) redoRef.current();
+            else undoRef.current();
         }
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, []);
+    }, [readOnly]);
 
     const totalPoints = questions.reduce((sum, q) => sum + (q.points || 0), 0);
     const allQuestionsCollapsed = questions.length > 0 && questions.every((q) => collapsedQuestions.has(q.id));
@@ -895,6 +1120,42 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                 title={existing ? t('tests.edit_test_title') : t('tests.new_test_title')}
                 actions={
                     <>
+                        {!readOnly && (
+                            <div style={{ display: 'flex', gap: 4 }}>
+                                <button
+                                    type="button"
+                                    className="btn btn-ghost btn-icon btn-sm"
+                                    onClick={undo}
+                                    disabled={!canUndo}
+                                    aria-label={t('common.undo')}
+                                    title={`${t('common.undo')} (Ctrl+Z)`}
+                                    data-testid="builder_undo"
+                                >
+                                    <Undo2 size={15} />
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn btn-ghost btn-icon btn-sm"
+                                    onClick={redo}
+                                    disabled={!canRedo}
+                                    aria-label={t('common.redo')}
+                                    title={`${t('common.redo')} (Ctrl+Shift+Z)`}
+                                    data-testid="builder_redo"
+                                >
+                                    <Redo2 size={15} />
+                                </button>
+                            </div>
+                        )}
+                        {!readOnly && draftStatus !== 'idle' && (
+                            <span
+                                role="status"
+                                aria-live="polite"
+                                data-testid="draft_status"
+                                style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}
+                            >
+                                {draftStatus === 'saving' ? t('tests.draft_saving') : t('tests.draft_saved')}
+                            </span>
+                        )}
                         <button className="btn btn-ghost btn-sm" onClick={() => setTourRun(true)}>
                             {t('tutorial.tb_tour_button')}
                         </button>
@@ -983,6 +1244,19 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                               : { minWidth: 0 }
                     }
                 >
+                    {draftOffer && (
+                        <BuilderDraftBanner
+                            savedAt={draftOffer.savedAt}
+                            onRestore={() => {
+                                applyForm(draftOffer.form);
+                                setDraftOffer(null);
+                            }}
+                            onDiscard={() => {
+                                clearBuilderDraft(draftKey);
+                                setDraftOffer(null);
+                            }}
+                        />
+                    )}
                     {shared && (
                         <SharedMaterialBanner
                             ownerName={shared.ownerName}

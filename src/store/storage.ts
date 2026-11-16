@@ -42,6 +42,7 @@ import { nanoid } from '../utils/nanoid';
 import { mergeRestoredSettings, withoutProtectedSettings } from '../utils/backupSettings';
 import { SCHOOL_YEARS } from '../data/schoolYears';
 import { putSnapshot, getSnapshot, clearSnapshots, isCloudHydrated } from '../services/snapshotCache';
+import type { BuilderDraft } from '../utils/testBuilderDraft';
 
 export { DEFAULT_SETTINGS, withSettingsDefaults };
 
@@ -2072,6 +2073,25 @@ export function saveTestDraft(draftKey: string, data: TestDraft): void {
 }
 
 export function clearTestDraft(draftKey: string): void {
+    try {
+        localStorage.removeItem(draftKey);
+    } catch {
+        // ignore
+    }
+}
+
+// ─── Test builder drafts (per-device, not synced) ─────────────────────────────
+
+/** The builder's own autosave: the unsaved form of a test, kept so a closed tab cannot lose it. */
+export function loadBuilderDraft(draftKey: string): BuilderDraft | null {
+    return load<BuilderDraft | null>(draftKey, null);
+}
+
+export function saveBuilderDraft(draftKey: string, draft: BuilderDraft): void {
+    save(draftKey, draft);
+}
+
+export function clearBuilderDraft(draftKey: string): void {
     try {
         localStorage.removeItem(draftKey);
     } catch {
