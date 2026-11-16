@@ -97,3 +97,22 @@ describe('QuestionSwitcher', () => {
         expect(select.querySelector('option')?.textContent).toBe('1. tests.question_type_short_answer');
     });
 });
+
+describe('QuestionSwitcher placeholder', () => {
+    it('shows what is open instead of a question, and keeps prev/next on the remembered one', () => {
+        renderSwitcher({ activeQuestionId: 'q2', activeSectionId: 'sec-1', placeholderLabel: 'Section workspace' });
+        const select = screen.getByTestId('switcher-select') as HTMLSelectElement;
+        expect(select.value).toBe('');
+        expect(select.options[0].textContent).toBe('Section workspace');
+        expect(select.options[0].disabled).toBe(true);
+        // The arrows still walk from the remembered question, so leaving the workspace is one click.
+        expect(screen.getByTestId('switcher-next')).toBeEnabled();
+        fireEvent.click(screen.getByTestId('switcher-next'));
+        expect(screen.getByTestId('switcher-select')).toHaveValue('');
+    });
+
+    it('keeps the question selected when nothing else is open', () => {
+        renderSwitcher({ activeQuestionId: 'q2' });
+        expect(screen.getByTestId('switcher-select')).toHaveValue('q2');
+    });
+});
