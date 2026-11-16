@@ -65,4 +65,14 @@ describe('DocsPage', () => {
         fireEvent.click(screen.getByText(tabKey));
         expect(screen.getAllByText(tabKey).length).toBeGreaterThan(before);
     });
+
+    it('renders the builder shortcut list instead of only describing it', () => {
+        renderWithRouter(<DocsPage />);
+        fireEvent.click(screen.getByText('docs.tab_rubrics'));
+        const list = screen.getByTestId('docs-shortcuts');
+        expect(list).toHaveTextContent('tests.shortcut_next_question');
+        expect(list).toHaveTextContent('Alt+↓');
+        expect(list).toHaveTextContent('Ctrl+K');
+        expect(list).toHaveTextContent('tests.shortcut_quick_jump');
+    });
 });

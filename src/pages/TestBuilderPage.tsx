@@ -59,6 +59,7 @@ import TestOutlineRail from '../components/Tests/TestOutlineRail';
 import QuestionSwitcher from '../components/Tests/QuestionSwitcher';
 import ColumnResizer from '../components/Tests/ColumnResizer';
 import TestSettingsDrawer, {
+    TEST_SETTINGS_TABS,
     type TestSettingsTab,
     type TestSettingsValues,
 } from '../components/Tests/TestSettingsDrawer';
@@ -69,6 +70,9 @@ import { useSharedMaterials } from '../hooks/useSharedMaterials';
 import type { SharedEntry } from '../utils/materialSharing';
 import { cloneTestForCopy } from '../utils/testClone';
 import SharedMaterialBanner from '../components/Sharing/SharedMaterialBanner';
+import BuilderShortcutsOverlay from '../components/Tests/BuilderShortcutsOverlay';
+import BuilderQuickJump from '../components/Tests/BuilderQuickJump';
+import { builderCommandFor, isTypingTarget, type BuilderCommand } from '../utils/builderShortcuts';
 import BuilderDraftBanner from '../components/Tests/BuilderDraftBanner';
 import { useBuilderHistory } from '../hooks/useBuilderHistory';
 import {
@@ -87,18 +91,6 @@ const MIN_QUESTIONS_PER_LEVEL = 3;
 
 /** Quiet period before an edit is written to the device-local draft. */
 const DRAFT_AUTOSAVE_MS = 700;
-
-/** Undo/redo must leave the native undo of a field or a rich-text editor alone. */
-function isTypingTarget(target: EventTarget | null): boolean {
-    const element = target as HTMLElement | null;
-    if (!element?.tagName) return false;
-    return (
-        element.tagName === 'INPUT' ||
-        element.tagName === 'TEXTAREA' ||
-        element.tagName === 'SELECT' ||
-        element.isContentEditable
-    );
-}
 
 function clampThresholdPct(value: number): number {
     /* v8 ignore next 2 -- number inputs sanitise to '' so NaN is unreachable */
@@ -230,8 +222,17 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
     const [settingsTab, setSettingsTab] = useState<TestSettingsTab>('basics');
     const [settingsOpen, setSettingsOpen] = useState(false);
     const openSettings = (tab: TestSettingsTab = 'basics') => {
+        rememberOpener();
         setSettingsTab(tab);
         setSettingsOpen(true);
+    };
+    /** The checks screen is a panel too: remember what opened it so Escape can go back there. */
+    const toggleChecks = (next?: boolean) => {
+        setChecksOpen((open) => {
+            const target = next ?? !open;
+            if (target) rememberOpener();
+            return target;
+        });
     };
     /** The checks screen replaces the question pane until the teacher jumps back into a question. */
     const [checksOpen, setChecksOpen] = useState(false);
@@ -245,16 +246,70 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         window.addEventListener('resize', onResize);
         return () => window.removeEventListener('resize', onResize);
     }, []);
-    // The narrow inspector is a sheet over the page; Escape dismisses it like the old slide-over.
+    const [quickJumpOpen, setQuickJumpOpen] = useState(false);
+    const [shortcutsOpen, setShortcutsOpen] = useState(false);
+    /** Whatever opened the drawer, the checks screen or a focused pane, so Escape can hand focus back. */
+    const panelOpenerRef = useRef<HTMLElement | null>(null);
+    const rememberOpener = () => {
+        const active = document.activeElement;
+        panelOpenerRef.current = active instanceof HTMLElement && active !== document.body ? active : null;
+    };
+    const selectedQuestionIdRef = useRef<string | null>(null);
+    useEffect(() => {
+        selectedQuestionIdRef.current = selectedQuestionId;
+    }, [selectedQuestionId]);
+    const restoreOpener = () => {
+        const opener = panelOpenerRef.current;
+        panelOpenerRef.current = null;
+        if (opener?.isConnected) {
+            opener.focus();
+            return;
+        }
+        // Opened by a keyboard command with nothing focused: land on the open question instead of <body>.
+        if (selectedQuestionIdRef.current) {
+            document
+                .getElementById(`question-heading-${selectedQuestionIdRef.current}`)
+                ?.focus({ preventScroll: true });
+        }
+    };
+    /**
+     * Column widths and the one-pane "focus" mode for the wide layout. Session-only on purpose: the
+     * project keeps UI preferences in settings, and a column width is not worth a stored setting.
+     */
+    const [railWidth, setRailWidth] = useState(240);
+    const [inspectorWidth, setInspectorWidth] = useState(400);
+    const [wideExpandedPane, setExpandedPane] = useState<'rail' | 'inspector' | null>(null);
+    const expandedPane = isRailWide ? wideExpandedPane : null;
+    // Escape closes the topmost panel and returns focus to what opened it: the drawer, then the
+    // checks screen, then a focused pane, then the narrow sheet.
+    useEffect(() => {
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key !== 'Escape') return;
+            if (settingsOpen) {
+                setSettingsOpen(false);
+                return;
+            }
+            if (checksOpen) {
+                setChecksOpen(false);
+                return;
+            }
+            if (expandedPane) {
+                setExpandedPane(null);
+                return;
+            }
+            if (!isRailWide && showPreview) setShowPreview(false);
+        };
+        document.addEventListener('keydown', onKeyDown);
+        return () => document.removeEventListener('keydown', onKeyDown);
+    }, [settingsOpen, checksOpen, expandedPane, isRailWide, showPreview]);
+
+    // The narrow sheet takes focus when it opens, keeps Tab inside it, and hands focus back to the
+    // preview toggle however it closes (button, Escape or toggle).
     useEffect(() => {
         if (isRailWide || !showPreview) return;
         const sheet = () => document.querySelector<HTMLElement>('[data-testid="inspector-sheet"]');
         document.querySelector<HTMLElement>('[data-testid="inspector-sheet-close"]')?.focus();
         const onKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') {
-                setShowPreview(false);
-                return;
-            }
             if (event.key !== 'Tab') return;
             const focusable = Array.from(
                 sheet()?.querySelectorAll<HTMLElement>(
@@ -282,14 +337,15 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
             document.querySelector<HTMLElement>('[data-testid="a4-preview-toggle"]')?.focus();
         };
     }, [isRailWide, showPreview]);
-    /**
-     * Column widths and the one-pane "focus" mode for the wide layout. Session-only on purpose: the
-     * project keeps UI preferences in settings, and a column width is not worth a stored setting.
-     */
-    const [railWidth, setRailWidth] = useState(240);
-    const [inspectorWidth, setInspectorWidth] = useState(400);
-    const [wideExpandedPane, setExpandedPane] = useState<'rail' | 'inspector' | null>(null);
-    const expandedPane = isRailWide ? wideExpandedPane : null;
+
+    // Panels hand focus back after they close: a dialog's own close focus runs during the commit, so
+    // focusing from an effect is the only way to land on the opener every time.
+    const panelOpen = Boolean(settingsOpen || checksOpen || expandedPane);
+    const wasPanelOpen = useRef(false);
+    useEffect(() => {
+        if (wasPanelOpen.current && !panelOpen) restoreOpener();
+        wasPanelOpen.current = panelOpen;
+    }, [panelOpen]);
     const [tourRun, setTourRun] = useState(false);
     const testTourSteps = React.useMemo(() => getTestBuilderTourSteps(t), [t]);
 
@@ -403,55 +459,58 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
     const [editorRevision, setEditorRevision] = useState(0);
 
     /** Puts a form snapshot back; undo, redo and a restored draft all land here. */
-    const applyForm = React.useCallback((next: TestBuilderForm) => {
-        setName(next.name);
-        setDescription(next.description ?? '');
-        setQuestions(next.questions);
-        setSections(next.sections);
-        setDurationMinutes(next.durationMinutes);
-        setDueDate(next.dueDate);
-        setShuffleQuestions(next.shuffleQuestions);
-        setRequireSEB(next.requireSEB);
-        setAutoConfirmScores(next.autoConfirmScores);
-        setGradeScaleId(next.gradeScaleId);
-        setNormSettings(next.normSettings);
-        setMode(next.mode);
-        setPlacementEngine(next.placementEngine);
-        setGeneratorMinLevel(next.generatorMinLevel);
-        setGeneratorMaxLevel(next.generatorMaxLevel);
-        setGeneratorSkills(next.generatorSkills);
-        setGeneratorTags(next.generatorTags);
-        setGeneratorMinQuestions(next.generatorMinQuestions);
-        setGeneratorMaxQuestions(next.generatorMaxQuestions);
-        setGeneratorStarterBankItemId(next.generatorStarterBankItemId);
-        setAllowMultipleAttempts(next.allowMultipleAttempts);
-        setCefrTargetLevel(next.cefrTargetLevel);
-        setCefrSkill(next.cefrSkill);
-        setContentArea(next.contentArea);
-        setContentLanguage(next.contentLanguage);
-        setPrintText(next.printText);
-        // An undo that brings a question back opens it, so the restored work is what the teacher sees.
-        const presentIds = new Set(questionsRef.current.map((q) => q.id));
-        const restored = next.questions.find((q) => !presentIds.has(q.id));
-        setSelectedQuestionId((current) =>
-            restored
-                ? restored.id
-                : current && next.questions.some((q) => q.id === current)
-                  ? current
-                  : (next.questions[0]?.id ?? null)
-        );
-        setEditorRevision((revision) => revision + 1);
-        if (restored) {
-            setChecksOpen(false);
-            setSelectedSectionId(null);
-            setCollapsedQuestions((prev) => {
-                if (!prev.has(restored.id)) return prev;
-                const nextCollapsed = new Set(prev);
-                nextCollapsed.delete(restored.id);
-                return nextCollapsed;
-            });
-        }
-    }, []);
+    const applyForm = React.useCallback(
+        (next: TestBuilderForm) => {
+            setName(next.name);
+            setDescription(next.description ?? '');
+            setQuestions(next.questions);
+            setSections(next.sections);
+            setDurationMinutes(next.durationMinutes);
+            setDueDate(next.dueDate);
+            setShuffleQuestions(next.shuffleQuestions);
+            setRequireSEB(next.requireSEB);
+            setAutoConfirmScores(next.autoConfirmScores);
+            setGradeScaleId(next.gradeScaleId);
+            setNormSettings(next.normSettings);
+            setMode(next.mode);
+            setPlacementEngine(next.placementEngine);
+            setGeneratorMinLevel(next.generatorMinLevel);
+            setGeneratorMaxLevel(next.generatorMaxLevel);
+            setGeneratorSkills(next.generatorSkills);
+            setGeneratorTags(next.generatorTags);
+            setGeneratorMinQuestions(next.generatorMinQuestions);
+            setGeneratorMaxQuestions(next.generatorMaxQuestions);
+            setGeneratorStarterBankItemId(next.generatorStarterBankItemId);
+            setAllowMultipleAttempts(next.allowMultipleAttempts);
+            setCefrTargetLevel(next.cefrTargetLevel);
+            setCefrSkill(next.cefrSkill);
+            setContentArea(next.contentArea);
+            setContentLanguage(next.contentLanguage);
+            setPrintText(next.printText);
+            // An undo that brings a question back opens it, so the restored work is what the teacher sees.
+            const presentIds = new Set(questionsRef.current.map((q) => q.id));
+            const restored = next.questions.find((q) => !presentIds.has(q.id));
+            setSelectedQuestionId((current) =>
+                restored
+                    ? restored.id
+                    : current && next.questions.some((q) => q.id === current)
+                      ? current
+                      : (next.questions[0]?.id ?? null)
+            );
+            setEditorRevision((revision) => revision + 1);
+            if (restored) {
+                setChecksOpen(false);
+                setSelectedSectionId(null);
+                setCollapsedQuestions((prev) => {
+                    if (!prev.has(restored.id)) return prev;
+                    const nextCollapsed = new Set(prev);
+                    nextCollapsed.delete(restored.id);
+                    return nextCollapsed;
+                });
+            }
+        },
+        [setChecksOpen]
+    );
 
     const { canUndo, canRedo, undo, redo } = useBuilderHistory({
         snapshot: form,
@@ -762,9 +821,11 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                 return next;
             });
         });
+        // Land on the question's heading, so the jump is announced instead of silently swapping panes.
+        const heading = document.getElementById(`question-heading-${qid}`);
         const card = document.getElementById(`question-card-${qid}`);
-        card?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
-        card?.focus({ preventScroll: true });
+        (card ?? heading)?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+        heading?.focus({ preventScroll: true });
     }
 
     function copyQuestion(qid: string) {
@@ -1002,6 +1063,85 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [readOnly]);
+
+    // Keyboard authoring: navigation, new/duplicate/delete, reorder and the quick jump. None of it
+    // fires while a field or a rich-text editor has focus, so typing stays typing.
+    const commandRef = useRef<(command: BuilderCommand) => void>(() => {});
+    useEffect(() => {
+        commandRef.current = (command) => {
+            if (readOnly) return;
+            // A panel, the checks screen or a picker owns the page while it is open.
+            if (
+                settingsOpen ||
+                checksOpen ||
+                quickJumpOpen ||
+                shortcutsOpen ||
+                newQuestionFor ||
+                showBankModal ||
+                showGeneratorStarterModal
+            ) {
+                return;
+            }
+            // With a section workspace open the pane shows the section, so the question commands would
+            // change a question the teacher cannot see.
+            const questionCommand = [
+                'duplicate-question',
+                'remove-question',
+                'move-question-up',
+                'move-question-down',
+            ].includes(command);
+            if (selectedSectionId && questionCommand) return;
+            const openIndex = selectedQuestionId
+                ? displayOrderedQuestions.findIndex((q) => q.id === selectedQuestionId)
+                : -1;
+            switch (command) {
+                case 'next-question': {
+                    const next = displayOrderedQuestions[openIndex + 1];
+                    if (next) jumpToQuestion(next.id);
+                    break;
+                }
+                case 'prev-question': {
+                    const prev = displayOrderedQuestions[openIndex - 1];
+                    if (prev) jumpToQuestion(prev.id);
+                    break;
+                }
+                case 'new-question':
+                    openTypePicker();
+                    break;
+                case 'duplicate-question':
+                    if (selectedQuestionId) copyQuestion(selectedQuestionId);
+                    break;
+                case 'remove-question':
+                    if (selectedQuestionId) removeQuestion(selectedQuestionId);
+                    break;
+                case 'move-question-up':
+                    if (selectedQuestionId) moveQuestion(selectedQuestionId, -1);
+                    break;
+                case 'move-question-down':
+                    if (selectedQuestionId) moveQuestion(selectedQuestionId, 1);
+                    break;
+                case 'quick-jump':
+                    setQuickJumpOpen(true);
+                    break;
+                case 'shortcuts':
+                    setShortcutsOpen(true);
+                    break;
+            }
+        };
+    });
+    useEffect(() => {
+        function handleKeyDown(event: KeyboardEvent) {
+            if (isTypingTarget(event.target)) return;
+            const command = builderCommandFor(event);
+            if (!command) return;
+            event.preventDefault();
+            // The topbar search also claims Ctrl+K; inside the builder the question jump goes first.
+            if (command === 'quick-jump') event.stopPropagation();
+            commandRef.current(command);
+        }
+        window.addEventListener('keydown', handleKeyDown, true);
+        return () => window.removeEventListener('keydown', handleKeyDown, true);
+    }, []);
 
     const totalPoints = questions.reduce((sum, q) => sum + (q.points || 0), 0);
     const allQuestionsCollapsed = questions.length > 0 && questions.every((q) => collapsedQuestions.has(q.id));
@@ -1381,7 +1521,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                                 type="button"
                                 className="btn btn-secondary btn-sm"
                                 data-testid="checks_review"
-                                onClick={() => setChecksOpen(true)}
+                                onClick={() => toggleChecks(true)}
                                 style={{ marginLeft: 'auto' }}
                             >
                                 {t('tests.checks_review')}
@@ -2103,7 +2243,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                                 className="btn btn-ghost btn-sm"
                                 data-testid="checks_open"
                                 aria-pressed={checksOpen}
-                                onClick={() => setChecksOpen((open) => !open)}
+                                onClick={() => toggleChecks()}
                             >
                                 <ClipboardCheck size={14} /> {t('tests.checks_title')}
                                 {(draftBlockers?.entries.length ?? 0) > 0 && (
@@ -2142,10 +2282,10 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                             activeQuestionId={selectedQuestionId}
                             activeSectionId={selectedSectionId}
                             placeholderLabel={
-                                selectedSectionId
-                                    ? t('tests.switcher_section_open')
-                                    : checksOpen
-                                      ? t('tests.checks_title')
+                                checksOpen
+                                    ? t('tests.checks_title')
+                                    : selectedSectionId
+                                      ? t('tests.switcher_section_open')
                                       : undefined
                             }
                             onSelectQuestion={jumpToQuestion}
@@ -2334,6 +2474,37 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
             {newQuestionFor && (
                 <QuestionTypePicker onSelect={createQuestionOfType} onClose={() => setNewQuestionFor(null)} />
             )}
+            {quickJumpOpen && (
+                <BuilderQuickJump
+                    questions={displayOrderedQuestions.map((question) => ({
+                        id: question.id,
+                        number: displayOrderedQuestions.indexOf(question) + 1,
+                        label:
+                            htmlToPlainText(plainQuestionPromptText(question)).trim() ||
+                            t(questionTypeLabelKey(question.type)),
+                        sectionTitle: sections.find((section) => section.id === question.sectionId)?.title,
+                    }))}
+                    settingsTabs={TEST_SETTINGS_TABS.map(({ id, labelKey }) => ({ tab: id, label: t(labelKey) }))}
+                    sections={sections.map((section) => ({ id: section.id, title: section.title }))}
+                    // The dialog hands focus back to its opener as it unmounts, so close it first and move
+                    // focus afterwards or the jump's focus is immediately overwritten.
+                    onPickQuestion={(questionId) => {
+                        flushSync(() => setQuickJumpOpen(false));
+                        jumpToQuestion(questionId);
+                    }}
+                    onPickSection={(sectionId) => {
+                        flushSync(() => setQuickJumpOpen(false));
+                        setChecksOpen(false);
+                        setSelectedSectionId(sectionId);
+                    }}
+                    onPickSettings={(tab) => {
+                        flushSync(() => setQuickJumpOpen(false));
+                        openSettings(tab);
+                    }}
+                    onClose={() => setQuickJumpOpen(false)}
+                />
+            )}
+            {shortcutsOpen && <BuilderShortcutsOverlay open onClose={() => setShortcutsOpen(false)} />}
             <ConfirmDialog {...unsavedDialogProps} />
         </>
     );

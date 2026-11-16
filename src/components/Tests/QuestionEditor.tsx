@@ -579,7 +579,15 @@ export default function QuestionEditor({
                         {!dragHandleProps && <span className="sr-only">{t('tests.drag_question')}</span>}
                     </CardGrip>
                 )}
-                <span className="badge badge-blue">{t('tests.question_number', { number: index + 1 })}</span>
+                {/* The rail and the quick jump hand focus here, so a jump is announced. */}
+                <h2
+                    id={`question-heading-${question.id}`}
+                    tabIndex={-1}
+                    className="badge badge-blue"
+                    style={{ margin: 0 }}
+                >
+                    {t('tests.question_number', { number: index + 1 })}
+                </h2>
                 {issues && issues.length > 0 && (
                     <span
                         className="badge badge-yellow"

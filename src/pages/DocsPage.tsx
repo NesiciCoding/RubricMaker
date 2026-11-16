@@ -30,6 +30,8 @@ import {
     BarChart2,
 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
+import ShortcutList from '../components/ui/ShortcutList';
+import { BUILDER_SHORTCUTS } from '../utils/builderShortcuts';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 
@@ -1023,6 +1025,10 @@ function RubricsTab() {
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     {t('docs.rb_tests_undo')}
                 </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
+                    {t('docs.rb_tests_shortcuts')}
+                </p>
+                <ShortcutList shortcuts={BUILDER_SHORTCUTS} testId="docs-shortcuts" />
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     {t('docs.rb_tests_more_options')}
                 </p>
