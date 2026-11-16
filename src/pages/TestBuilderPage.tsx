@@ -246,39 +246,6 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         window.addEventListener('resize', onResize);
         return () => window.removeEventListener('resize', onResize);
     }, []);
-    // The narrow inspector sheet takes focus, keeps Tab inside it and hands focus back to its toggle; Escape is handled with the other panels.
-    useEffect(() => {
-        if (isRailWide || !showPreview) return;
-        const sheet = () => document.querySelector<HTMLElement>('[data-testid="inspector-sheet"]');
-        document.querySelector<HTMLElement>('[data-testid="inspector-sheet-close"]')?.focus();
-        const onKeyDown = (event: KeyboardEvent) => {
-            if (event.key !== 'Tab') return;
-            const focusable = Array.from(
-                sheet()?.querySelectorAll<HTMLElement>(
-                    'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-                ) ?? []
-            );
-            if (focusable.length === 0) return;
-            const first = focusable[0];
-            const last = focusable[focusable.length - 1];
-            const active = document.activeElement;
-            if (!sheet()?.contains(active)) {
-                event.preventDefault();
-                first.focus();
-            } else if (event.shiftKey && active === first) {
-                event.preventDefault();
-                last.focus();
-            } else if (!event.shiftKey && active === last) {
-                event.preventDefault();
-                first.focus();
-            }
-        };
-        document.addEventListener('keydown', onKeyDown);
-        return () => {
-            document.removeEventListener('keydown', onKeyDown);
-            document.querySelector<HTMLElement>('[data-testid="a4-preview-toggle"]')?.focus();
-        };
-    }, [isRailWide, showPreview]);
     const [quickJumpOpen, setQuickJumpOpen] = useState(false);
     const [shortcutsOpen, setShortcutsOpen] = useState(false);
     /** Whatever opened the drawer, the checks screen or a focused pane, so Escape can hand focus back. */
@@ -540,7 +507,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                 return nextCollapsed;
             });
         }
-    }, []);
+    }, [setChecksOpen]);
 
     const { canUndo, canRedo, undo, redo } = useBuilderHistory({
         snapshot: form,
