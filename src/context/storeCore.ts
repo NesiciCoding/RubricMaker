@@ -1,4 +1,5 @@
 import React, { useContext } from 'react';
+import type { TFunction } from 'i18next';
 import { markCloudHydrated } from '../services/snapshotCache';
 import type {
     AppSettings,
@@ -105,7 +106,7 @@ export type BootPhase = 'session' | 'hydrate';
 
 export interface PlatformCtx extends StoreActionsCtx {
     showToast: (message: string, type?: 'success' | 'error' | 'info' | 'warning') => void;
-    t: (key: string, options?: Record<string, unknown>) => string;
+    t: TFunction<'translation', undefined>;
     setLandingState: (s: 'checking' | 'show' | 'hide') => void;
     setBootPhase: (phase: BootPhase) => void;
     setShowMigrationPrompt: (b: boolean) => void;

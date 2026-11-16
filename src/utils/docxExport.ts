@@ -53,7 +53,8 @@ import { yieldToMain } from './yieldToMain';
  *  so a large class export doesn't freeze the tab for the whole build. */
 const BATCH_YIELD_EVERY = 10;
 
-const docLabel = (key: string, opts?: Record<string, unknown>): string => i18n.t(`exportDoc.${key}`, opts);
+const docLabel = (key: string, opts?: Record<string, unknown>): string =>
+    opts ? i18n.t(`exportDoc.${key}`, opts) : i18n.t(`exportDoc.${key}`);
 
 // Re-exported for existing call sites that import stripHtmlTags from here.
 export { stripHtmlTags } from './exportDataPrep';
@@ -585,7 +586,8 @@ function buildTestSummaryChildren(
     student?: Student,
     achieveThreshold?: number
 ) {
-    const tx = (key: string, opts?: Record<string, unknown>) => i18n.t(`tests.export.summary.${key}`, opts);
+    const tx = (key: string, opts?: Record<string, unknown>) =>
+        opts ? i18n.t(`tests.export.summary.${key}`, opts) : i18n.t(`tests.export.summary.${key}`);
     const questions = calcQuestionBreakdowns(studentId, studentTests, test);
     const skills = calcSkillBreakdowns(studentId, studentTests, test);
     const questionsById = new Map(effectiveTestQuestions(studentId, studentTests, test).map((q) => [q.id, q]));

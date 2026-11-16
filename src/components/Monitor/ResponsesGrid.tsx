@@ -11,6 +11,7 @@ import Modal from '../ui/Modal';
 import CompletionBar from './CompletionBar';
 import type { PaceTrend } from '../../utils/monitorSignals';
 import type { Test, TestAnswer, TestQuestion } from '../../types';
+import type { TFunction } from 'i18next';
 
 export interface ResponsesGridStudentRow {
     studentId: string;
@@ -69,7 +70,7 @@ function formatPct(p: number | undefined): string {
 function answerDisplayText(
     question: TestQuestion,
     answer: TestAnswer | undefined,
-    t: (key: string, options?: Record<string, unknown>) => string
+    t: TFunction<'translation', undefined>
 ): string {
     if (!answer || answer.response.trim() === '') return '';
     if (question.type === 'multiple-choice') {

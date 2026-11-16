@@ -31,7 +31,8 @@ import { subItemMode, subItemRange } from './subItems';
 import { orderedLevels } from './gradeCalc';
 import { contrastRatio } from './contrastCheck';
 
-const docLabel = (key: string, opts?: Record<string, unknown>): string => i18n.t(`exportDoc.${key}`, opts);
+const docLabel = (key: string, opts?: Record<string, unknown>): string =>
+    opts ? i18n.t(`exportDoc.${key}`, opts) : i18n.t(`exportDoc.${key}`);
 
 // ─── Template parsing (mammoth extracts the HTML table header) ────────────────
 
