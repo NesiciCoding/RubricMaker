@@ -57,7 +57,7 @@ const TEACHER_FEATURES = [
         icon: Users,
         key: 'smart_grading',
         title: 'Smart Grading',
-        desc: 'Grade quickly with a comment bank, voice dictation, keyboard shortcuts, anchored inline comments on submissions, audio feedback, and a card or grid view — plus side-by-side and group grading. The rubric grading queue switches between cards and a list, filters by class, and remembers that choice for you.',
+        desc: 'Grade quickly with a comment bank, voice dictation, keyboard shortcuts, anchored inline comments on submissions, audio feedback, and a card or grid view — plus side-by-side and group grading. The rubric grading queue switches between cards and a list, filters by class, and remembers that choice for you. Search by name, class or group, filter by status or group, and mark several students as not handed in at once.',
         color: '#8b5cf6',
     },
     {

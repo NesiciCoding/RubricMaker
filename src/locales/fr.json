@@ -2431,7 +2431,8 @@
         "last_edited_by": "Dernière modification par {{name}}",
         "last_edited_by_at": "Dernière modification par {{name}} · {{when}}",
         "last_edited_you": "vous",
-        "view_only_class": "Cette classe est partagée avec vous en « Peut consulter » : vous voyez ces notes et résultats sans pouvoir les modifier."
+        "view_only_class": "Cette classe est partagée avec vous en « Peut consulter » : vous voyez ces notes et résultats sans pouvoir les modifier.",
+        "next_not_handed_in_title": "L'élève suivant n'a rien rendu : il ne reste aucun autre travail dans cette vue"
     },
     "gradingQueue": {
         "title": "Noter les élèves",
@@ -2761,7 +2762,29 @@
         "action_grade_for": "Noter {{name}}",
         "action_open_for": "Ouvrir {{name}}",
         "not_found_title": "Grille introuvable",
-        "not_found_hint": "Cette grille a peut-être été supprimée."
+        "not_found_hint": "Cette grille a peut-être été supprimée.",
+        "in_progress": "En cours",
+        "criteria_progress": "{{scored}} critères notés sur {{total}}",
+        "group_progress": "{{graded}}/{{members}} notés",
+        "filter_group": "Filtrer par groupe",
+        "group_all": "Tous les groupes",
+        "select_mode": "Sélectionner des élèves",
+        "select_all_visible": "Tout sélectionner",
+        "selected_count_one": "{{count}} élève sélectionné",
+        "selected_count_other": "{{count}} élèves sélectionnés",
+        "select_student": "Sélectionner {{name}}",
+        "bulk_bar": "Actions groupées",
+        "bulk_mark_nhi": "Marquer comme non rendu",
+        "bulk_restore": "Restaurer",
+        "bulk_nhi_confirm_title": "Marquer comme non rendu ?",
+        "bulk_nhi_confirm_message_one": "Marquer {{count}} élève sélectionné comme non rendu ? Il est exclu des statistiques, du tableau de bord et du portail élève.",
+        "bulk_nhi_confirm_message_other": "Marquer {{count}} élèves sélectionnés comme non rendu ? Ils sont exclus des statistiques, du tableau de bord et du portail élève.",
+        "bulk_nhi_done_one": "{{count}} élève marqué comme non rendu",
+        "bulk_nhi_done_other": "{{count}} élèves marqués comme non rendu",
+        "bulk_restore_done_one": "{{count}} élève restauré",
+        "bulk_restore_done_other": "{{count}} élèves restaurés",
+        "next_not_handed_in_hint": "Il ne reste que des élèves n'ayant rien rendu",
+        "no_next_in_view": "Rien à noter dans cette vue"
     },
     "peerReviewRoster": {
         "title": "{{name}} — évaluation par les pairs",
@@ -5287,7 +5310,9 @@
         "route_join_entry_label": "Rejoindre une session en direct",
         "route_join_entry_desc": "Saisissez un code d’écriture en direct sans compte.",
         "route_live_new_label": "Nouvelle session d’écriture en direct",
-        "route_live_new_desc": "Créer une session en direct brouillon."
+        "route_live_new_desc": "Créer une session en direct brouillon.",
+        "gr_queue_filters": "Affinez la file avec la recherche (elle ignore majuscules, accents et ordre des mots, et couvre aussi les noms de classe et de groupe), les puces d'état (Noté, En cours, Non noté, Non rendu) et les puces de groupe, qui indiquent combien de membres de chaque groupe sont notés. Les filtres sont dans l'adresse de la page : actualiser, ajouter aux favoris ou revenir depuis un élève ramène à la même vue et à la même position. Un élève n'est Noté que lorsque tous les critères sont notés ; un élève partiellement noté est En cours et affiche le nombre de critères faits. « Noter le suivant » et « Enregistrer et suivant » restent dans la vue filtrée et ne proposent les élèves n'ayant rien rendu que s'il ne reste rien d'autre.",
+        "gr_queue_bulk": "Choisissez Sélectionner des élèves pour cocher plusieurs élèves (ou Tout sélectionner) et les marquer comme non rendu ou les restaurer en une fois. Seuls les élèves affichés sont modifiés, la restauration conserve notes et historique, et la sélection est effacée dès que les filtres changent."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",
@@ -6211,7 +6236,7 @@
             "folders_title": "Folders",
             "folders_desc": "Sort rubrics, tests, essays and flashcard decks into nested folders.",
             "smart_grading_title": "Smart Grading",
-            "smart_grading_desc": "Notez rapidement avec une banque de commentaires, la dictée vocale, des raccourcis clavier, des commentaires en ligne sur les copies, un retour audio et une vue cartes ou grille — plus la notation côte à côte et en groupe. La file de correction d'une grille bascule entre cartes et liste, filtre par classe et mémorise ce choix.",
+            "smart_grading_desc": "Notez rapidement avec une banque de commentaires, la dictée vocale, des raccourcis clavier, des commentaires en ligne sur les copies, un retour audio et une vue cartes ou grille — plus la notation côte à côte et en groupe. La file de correction d'une grille bascule entre cartes et liste, filtre par classe et mémorise ce choix. Recherchez par nom, classe ou groupe, filtrez par état ou groupe et marquez plusieurs élèves comme non rendu en une fois.",
             "scan_handwritten_work_title": "Scan handwritten work",
             "scan_handwritten_work_desc": "Photograph or import a handwritten answer while grading; the text is recognised on your device, you correct it, and it drops into your feedback — the image is used only for recognition and isn’t stored.",
             "analytics_export_title": "Analytics & Export",

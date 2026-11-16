@@ -2431,7 +2431,8 @@
         "last_edited_by": "Zuletzt geändert von {{name}}",
         "last_edited_by_at": "Zuletzt geändert von {{name}} · {{when}}",
         "last_edited_you": "dir",
-        "view_only_class": "Diese Klasse ist mit dir als „Kann ansehen“ geteilt: Du siehst diese Noten und Ergebnisse, kannst sie aber nicht ändern."
+        "view_only_class": "Diese Klasse ist mit dir als „Kann ansehen“ geteilt: Du siehst diese Noten und Ergebnisse, kannst sie aber nicht ändern.",
+        "next_not_handed_in_title": "Nächste Person hat nicht abgegeben: In dieser Ansicht ist keine andere Arbeit übrig"
     },
     "gradingQueue": {
         "title": "Schüler benoten",
@@ -2761,7 +2762,29 @@
         "action_grade_for": "{{name}} bewerten",
         "action_open_for": "{{name}} öffnen",
         "not_found_title": "Rubrik nicht gefunden",
-        "not_found_hint": "Diese Rubrik wurde möglicherweise gelöscht."
+        "not_found_hint": "Diese Rubrik wurde möglicherweise gelöscht.",
+        "in_progress": "In Bearbeitung",
+        "criteria_progress": "{{scored}} von {{total}} Kriterien bewertet",
+        "group_progress": "{{graded}}/{{members}} bewertet",
+        "filter_group": "Nach Gruppe filtern",
+        "group_all": "Alle Gruppen",
+        "select_mode": "Lernende auswählen",
+        "select_all_visible": "Alle angezeigten auswählen",
+        "selected_count_one": "{{count}} Lernende:r ausgewählt",
+        "selected_count_other": "{{count}} Lernende ausgewählt",
+        "select_student": "{{name}} auswählen",
+        "bulk_bar": "Sammelaktionen",
+        "bulk_mark_nhi": "Als nicht abgegeben markieren",
+        "bulk_restore": "Wiederherstellen",
+        "bulk_nhi_confirm_title": "Als nicht abgegeben markieren?",
+        "bulk_nhi_confirm_message_one": "{{count}} ausgewählte:n Lernende:n als nicht abgegeben markieren? Sie werden in Statistiken, Dashboard und Schülerportal nicht berücksichtigt.",
+        "bulk_nhi_confirm_message_other": "{{count}} ausgewählte Lernende als nicht abgegeben markieren? Sie werden in Statistiken, Dashboard und Schülerportal nicht berücksichtigt.",
+        "bulk_nhi_done_one": "{{count}} Lernende:r als nicht abgegeben markiert",
+        "bulk_nhi_done_other": "{{count}} Lernende als nicht abgegeben markiert",
+        "bulk_restore_done_one": "{{count}} Lernende:r wiederhergestellt",
+        "bulk_restore_done_other": "{{count}} Lernende wiederhergestellt",
+        "next_not_handed_in_hint": "Nur noch nicht abgegebene Arbeiten übrig",
+        "no_next_in_view": "In dieser Ansicht gibt es nichts zu bewerten"
     },
     "peerReviewRoster": {
         "title": "{{name}} — Peer-Feedback",
@@ -5287,7 +5310,9 @@
         "route_join_entry_label": "Einer Live-Sitzung beitreten",
         "route_join_entry_desc": "Gib einen Live-Schreibcode ohne Konto ein.",
         "route_live_new_label": "Neue Live-Schreibsitzung",
-        "route_live_new_desc": "Eine Live-Sitzung als Entwurf erstellen."
+        "route_live_new_desc": "Eine Live-Sitzung als Entwurf erstellen.",
+        "gr_queue_filters": "Grenze die Warteschlange mit dem Suchfeld (ignoriert Groß-/Kleinschreibung, Akzente und Wortreihenfolge und durchsucht auch Klassen- und Gruppennamen), den Status-Chips (Bewertet, In Bearbeitung, Nicht bewertet, Nicht abgegeben) und den Gruppen-Chips ein, die zeigen, wie viele Mitglieder jeder Gruppe bewertet sind. Die Filter stehen in der Seitenadresse: Neuladen, ein Lesezeichen oder die Rückkehr von einer Person führen zur selben Ansicht und Scrollposition. Eine Person gilt erst als Bewertet, wenn jedes Kriterium bewertet ist; teilweise Bewertete sind In Bearbeitung und zeigen, wie viele Kriterien fertig sind. „Nächste bewerten“ und „Speichern & weiter“ bleiben in der gefilterten Ansicht und bieten nicht abgegebene Arbeiten nur an, wenn sonst nichts übrig ist.",
+        "gr_queue_bulk": "Wähle Lernende auswählen, um mehrere Personen anzuhaken (oder Alle angezeigten auswählen) und sie in einem Schritt als nicht abgegeben zu markieren oder wiederherzustellen. Nur aktuell angezeigte Personen werden geändert, Wiederherstellen behält Bewertungen und Verlauf, und die Auswahl wird bei jeder Filteränderung geleert."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",
@@ -6211,7 +6236,7 @@
             "folders_title": "Folders",
             "folders_desc": "Sort rubrics, tests, essays and flashcard decks into nested folders.",
             "smart_grading_title": "Smart Grading",
-            "smart_grading_desc": "Bewerte schnell mit Kommentarbank, Sprachdiktat, Tastenkürzeln, Inline-Kommentaren zu Abgaben, Audio-Feedback und Karten- oder Rasteransicht — dazu Side-by-Side- und Gruppenbewertung. Die Bewertungsliste einer Rubrik wechselt zwischen Karten und Liste, filtert nach Klasse und merkt sich diese Auswahl.",
+            "smart_grading_desc": "Bewerte schnell mit Kommentarbank, Sprachdiktat, Tastenkürzeln, Inline-Kommentaren zu Abgaben, Audio-Feedback und Karten- oder Rasteransicht — dazu Side-by-Side- und Gruppenbewertung. Die Bewertungsliste einer Rubrik wechselt zwischen Karten und Liste, filtert nach Klasse und merkt sich diese Auswahl. Suche nach Name, Klasse oder Gruppe, filtere nach Status oder Gruppe und markiere mehrere Lernende gleichzeitig als nicht abgegeben.",
             "scan_handwritten_work_title": "Scan handwritten work",
             "scan_handwritten_work_desc": "Photograph or import a handwritten answer while grading; the text is recognised on your device, you correct it, and it drops into your feedback — the image is used only for recognition and isn’t stored.",
             "analytics_export_title": "Analytics & Export",

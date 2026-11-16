@@ -72,6 +72,9 @@ import {
 import { useConfirm } from '../hooks/useConfirm';
 import { isLeftSwipe, isSwipeSafeTarget } from '../utils/swipeGesture';
 import { clearNotHandedIn, clearNotHandedInIfScored, hasAnyScore, markNotHandedIn } from '../utils/notHandedIn';
+import { gradeLinkSearch, useGradingQueueView } from '../hooks/useGradingQueueView';
+import { pickNextStudent } from '../utils/gradingQueue';
+import { queueStatus } from '../components/Rubric/gradingQueueStatus';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import TiptapEditor, { type TiptapEditorHandle } from '../components/Editor/TiptapEditor';
 import type { ScoreEntry, Modifier, EssayAssignment, CommentBankItem } from '../types';
@@ -432,29 +435,52 @@ function GradeStudentEditor() {
 
     // Find next student; scope is configurable: stay in current class or span all rubric-linked classes
     const navScope = settings.gradeNavigationScope ?? 'rubric-classes';
-    const { nextStudent, hasOtherUngraded } = useMemo(() => {
-        if (!student) return { nextStudent: null, hasOtherUngraded: false };
-        let eligible: typeof students;
-        if (navScope === 'current-class') {
-            eligible = students.filter((s) => s.classId === student.classId);
+    const queueCtx = useGradingQueueView(rubricId);
+    const { nextStudent, hasOtherUngraded, nextReason } = useMemo(() => {
+        if (!student) return { nextStudent: null, hasOtherUngraded: false, nextReason: null };
+        const statusOf = (id: string) =>
+            queueStatus(
+                studentRubrics.find((x) => x.rubricId === rubricId && x.studentId === id && !x.isPeerReview),
+                queueCtx.totalCriteria
+            );
+        let ordered: typeof students;
+        if (queueCtx.fromQueue) {
+            // Opened from the queue: walk the queue's own visible list, in the order it shows.
+            ordered = queueCtx.view.visible;
+        } else if (navScope === 'current-class') {
+            ordered = students.filter((s) => s.classId === student.classId);
         } else {
             /* v8 ignore next -- this page only renders with a rubricId from the route */
             const linkedClassIds = classes.filter((c) => c.rubricIds?.includes(rubricId ?? '')).map((c) => c.id);
-            eligible =
+            ordered =
                 linkedClassIds.length > 0
                     ? students.filter((s) => linkedClassIds.includes(s.classId))
                     : students.filter((s) => s.classId === student.classId);
         }
-        const sorted = [...eligible].sort((a, b) => a.name.localeCompare(b.name));
-        const currentIndex = sorted.findIndex((s) => s.id === studentId);
-        const after = sorted.slice(currentIndex + 1).concat(sorted.slice(0, currentIndex));
-        const nextUngraded = after.find(
-            (s) => !studentRubrics.find((sr) => sr.rubricId === rubricId && sr.studentId === s.id)
-        );
+        if (!queueCtx.fromQueue) ordered = [...ordered].sort((a, b) => a.name.localeCompare(b.name));
         // Wrapping round to graded students is for a review pass; the last ungraded student ends the loop.
-        const nextStudent = nextUngraded ?? (existingSR ? (after[0] ?? null) : null);
-        return { nextStudent, hasOtherUngraded: !!nextUngraded };
-    }, [student, students, classes, studentId, studentRubrics, rubricId, navScope, existingSR]);
+        const next = pickNextStudent(ordered, studentId, statusOf, {
+            allowReview: statusOf(studentId ?? '') === 'graded',
+        });
+        return {
+            nextStudent: next?.student ?? null,
+            hasOtherUngraded: next?.reason === 'work',
+            nextReason: next?.reason ?? null,
+        };
+    }, [
+        student,
+        students,
+        classes,
+        studentId,
+        studentRubrics,
+        rubricId,
+        navScope,
+        existingSR,
+        queueCtx,
+        queueCtx.totalCriteria,
+    ]);
+    const queueSearch = queueCtx.fromQueue ? gradeLinkSearch(queueCtx.filterQuery()) : '';
+    const queueBackPath = `/rubrics/${rubricId}/grade${queueCtx.fromQueue ? `?${queueCtx.filterQuery()}` : ''}`;
 
     const handleSave = useCallback(async () => {
         /* v8 ignore next -- the not-found render above gates on sr/rubric */
@@ -515,7 +541,7 @@ function GradeStudentEditor() {
             if (!existingSR) {
                 showToast(t('gradeStudent.skipped_nothing_scored', { name: student?.name ?? '' }), 'info');
                 allowNavigation();
-                navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}`, { replace: true });
+                navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}${queueSearch}`, { replace: true });
                 return;
             }
             if (!(await confirmSaveNothingScored())) return;
@@ -532,9 +558,10 @@ function GradeStudentEditor() {
         setIsDirty(false);
         allowNavigation();
         // Replace rather than push history so the topbar Back returns to where grading started.
-        navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}`, { replace: true });
+        navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}${queueSearch}`, { replace: true });
     }, [
         readOnly,
+        queueSearch,
         sr,
         tierId,
         rubric,
@@ -587,12 +614,14 @@ function GradeStudentEditor() {
         setIsDirty(false);
         allowNavigation();
         if (nextStudent) {
-            navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}`, { replace: true });
+            navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}${queueSearch}`, { replace: true });
         } else {
-            navigate(`/rubrics/${rubricId}/grade`);
+            navigate(queueBackPath);
         }
     }, [
         readOnly,
+        queueSearch,
+        queueBackPath,
         showToast,
         sr,
         tierId,
@@ -1090,7 +1119,7 @@ function GradeStudentEditor() {
                     <>
                         {/* Always the rubric's grading queue: one named destination that survives a
                             bookmark, a shared link or a refreshed tab, where navigate(-1) did not. */}
-                        <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/rubrics/${rubricId}/grade`)}>
+                        <button className="btn btn-ghost btn-sm" onClick={() => navigate(queueBackPath)}>
                             <ArrowLeft size={15} /> {t('gradeStudent.action_back')}
                         </button>
                         {voice.isListening && (
@@ -1110,7 +1139,11 @@ function GradeStudentEditor() {
                             <button
                                 className="btn btn-primary btn-sm"
                                 onClick={handleSaveAndNext}
-                                title={`Next: ${nextStudent.name}`}
+                                title={
+                                    nextReason === 'notHandedIn'
+                                        ? t('gradeStudent.next_not_handed_in_title')
+                                        : `Next: ${nextStudent.name}`
+                                }
                             >
                                 <Save size={15} />
                                 <ChevronRight size={14} />
@@ -2392,7 +2425,7 @@ function GradeStudentEditor() {
                         deleteStudentRubric(existingSR.id, 'student');
                         setShowDeleteGrade(false);
                         allowNavigation();
-                        navigate(`/rubrics/${rubricId}/grade`);
+                        navigate(queueBackPath);
                     }}
                 />
             )}
@@ -2436,7 +2469,7 @@ function GradeStudentEditor() {
                                     deleteStudentRubric(existingSR.id, deleteGradeScope);
                                     setShowDeleteGrade(false);
                                     allowNavigation();
-                                    navigate(`/rubrics/${rubricId}/grade`);
+                                    navigate(queueBackPath);
                                 }}
                             >
                                 {t('common.delete')}

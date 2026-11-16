@@ -2431,7 +2431,8 @@
         "last_edited_by": "Last changed by {{name}}",
         "last_edited_by_at": "Last changed by {{name}} · {{when}}",
         "last_edited_you": "you",
-        "view_only_class": "This class is shared with you as “Can view”: you can see these grades and results, but not change them."
+        "view_only_class": "This class is shared with you as “Can view”: you can see these grades and results, but not change them.",
+        "next_not_handed_in_title": "Next student is one marked not handed in: no other work is left in this view"
     },
     "gradingQueue": {
         "title": "Grade students",
@@ -2761,7 +2762,29 @@
         "action_grade_for": "Grade {{name}}",
         "action_open_for": "Open {{name}}",
         "not_found_title": "Rubric not found",
-        "not_found_hint": "This rubric may have been deleted."
+        "not_found_hint": "This rubric may have been deleted.",
+        "in_progress": "In progress",
+        "criteria_progress": "{{scored}} of {{total}} criteria scored",
+        "group_progress": "{{graded}}/{{members}} graded",
+        "filter_group": "Filter by group",
+        "group_all": "All groups",
+        "select_mode": "Select students",
+        "select_all_visible": "Select all shown",
+        "selected_count_one": "{{count}} student selected",
+        "selected_count_other": "{{count}} students selected",
+        "select_student": "Select {{name}}",
+        "bulk_bar": "Bulk actions",
+        "bulk_mark_nhi": "Mark not handed in",
+        "bulk_restore": "Restore",
+        "bulk_nhi_confirm_title": "Mark as not handed in?",
+        "bulk_nhi_confirm_message_one": "Mark {{count}} selected student as not handed in? They are left out of statistics, the dashboard and the student portal.",
+        "bulk_nhi_confirm_message_other": "Mark {{count}} selected students as not handed in? They are left out of statistics, the dashboard and the student portal.",
+        "bulk_nhi_done_one": "Marked {{count}} student as not handed in",
+        "bulk_nhi_done_other": "Marked {{count}} students as not handed in",
+        "bulk_restore_done_one": "Restored {{count}} student",
+        "bulk_restore_done_other": "Restored {{count}} students",
+        "next_not_handed_in_hint": "Only not-handed-in students are left",
+        "no_next_in_view": "Nothing to grade in this view"
     },
     "peerReviewRoster": {
         "title": "{{name}} — peer review",
@@ -5287,7 +5310,9 @@
         "route_join_entry_label": "Join a live session",
         "route_join_entry_desc": "Enter a live writing code without an account.",
         "route_live_new_label": "New live writing session",
-        "route_live_new_desc": "Create a draft live writing session."
+        "route_live_new_desc": "Create a draft live writing session.",
+        "gr_queue_filters": "Narrow the queue with the search box (it ignores capitals, accents and word order, and also matches class and group names), the status chips (Graded, In progress, Not graded, Not handed in) and the group chips, which show how many members of each group are graded. The filters live in the page address, so refreshing, bookmarking or coming back from a student returns to the same view and scroll position. A student counts as Graded only when every criterion is scored; a partly scored one is In progress and shows how many criteria are done. Grade next and Save & Next stay inside the filtered view and only offer not-handed-in students when nothing else is left.",
+        "gr_queue_bulk": "Choose Select students to tick several students (or Select all shown) and mark them not handed in or restore them in one step. Only students currently shown are changed, restoring keeps their scores and history, and the selection clears whenever the filters change."
     },
     "studentProfile": {
         "tab_overview": "Overview",
@@ -6211,7 +6236,7 @@
             "folders_title": "Folders",
             "folders_desc": "Sort rubrics, tests, essays and flashcard decks into nested folders.",
             "smart_grading_title": "Smart Grading",
-            "smart_grading_desc": "Grade quickly with a comment bank, voice dictation, keyboard shortcuts, anchored inline comments on submissions, audio feedback, and a card or grid view — plus side-by-side and group grading. The rubric grading queue switches between cards and a list, filters by class, and remembers that choice for you.",
+            "smart_grading_desc": "Grade quickly with a comment bank, voice dictation, keyboard shortcuts, anchored inline comments on submissions, audio feedback, and a card or grid view — plus side-by-side and group grading. The rubric grading queue switches between cards and a list, filters by class, and remembers that choice for you. Search by name, class or group, filter by status or group, and mark several students as not handed in at once.",
             "scan_handwritten_work_title": "Scan handwritten work",
             "scan_handwritten_work_desc": "Photograph or import a handwritten answer while grading; the text is recognised on your device, you correct it, and it drops into your feedback — the image is used only for recognition and isn’t stored.",
             "analytics_export_title": "Analytics & Export",

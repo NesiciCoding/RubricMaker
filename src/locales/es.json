@@ -2431,7 +2431,8 @@
         "last_edited_by": "Último cambio por {{name}}",
         "last_edited_by_at": "Último cambio por {{name}} · {{when}}",
         "last_edited_you": "ti",
-        "view_only_class": "Esta clase está compartida contigo como «Puede ver»: puedes ver estas notas y resultados, pero no cambiarlos."
+        "view_only_class": "Esta clase está compartida contigo como «Puede ver»: puedes ver estas notas y resultados, pero no cambiarlos.",
+        "next_not_handed_in_title": "El siguiente estudiante no entregó: no queda otro trabajo en esta vista"
     },
     "gradingQueue": {
         "title": "Calificar estudiantes",
@@ -2761,7 +2762,29 @@
         "action_grade_for": "Calificar a {{name}}",
         "action_open_for": "Abrir {{name}}",
         "not_found_title": "Rúbrica no encontrada",
-        "not_found_hint": "Puede que esta rúbrica se haya eliminado."
+        "not_found_hint": "Puede que esta rúbrica se haya eliminado.",
+        "in_progress": "En curso",
+        "criteria_progress": "{{scored}} de {{total}} criterios puntuados",
+        "group_progress": "{{graded}}/{{members}} calificados",
+        "filter_group": "Filtrar por grupo",
+        "group_all": "Todos los grupos",
+        "select_mode": "Seleccionar estudiantes",
+        "select_all_visible": "Seleccionar todo lo mostrado",
+        "selected_count_one": "{{count}} estudiante seleccionado",
+        "selected_count_other": "{{count}} estudiantes seleccionados",
+        "select_student": "Seleccionar a {{name}}",
+        "bulk_bar": "Acciones en bloque",
+        "bulk_mark_nhi": "Marcar como no entregado",
+        "bulk_restore": "Restaurar",
+        "bulk_nhi_confirm_title": "¿Marcar como no entregado?",
+        "bulk_nhi_confirm_message_one": "¿Marcar {{count}} estudiante seleccionado como no entregado? Se excluye de las estadísticas, el panel y el portal del estudiante.",
+        "bulk_nhi_confirm_message_other": "¿Marcar {{count}} estudiantes seleccionados como no entregado? Se excluyen de las estadísticas, el panel y el portal del estudiante.",
+        "bulk_nhi_done_one": "{{count}} estudiante marcado como no entregado",
+        "bulk_nhi_done_other": "{{count}} estudiantes marcados como no entregado",
+        "bulk_restore_done_one": "{{count}} estudiante restaurado",
+        "bulk_restore_done_other": "{{count}} estudiantes restaurados",
+        "next_not_handed_in_hint": "Solo quedan estudiantes sin entrega",
+        "no_next_in_view": "Nada que calificar en esta vista"
     },
     "peerReviewRoster": {
         "title": "{{name}} — evaluación entre iguales",
@@ -5287,7 +5310,9 @@
         "route_join_entry_label": "Entrar en una sesión en vivo",
         "route_join_entry_desc": "Introduce un código de escritura en vivo sin cuenta.",
         "route_live_new_label": "Nueva sesión de escritura en vivo",
-        "route_live_new_desc": "Crear una sesión en vivo en borrador."
+        "route_live_new_desc": "Crear una sesión en vivo en borrador.",
+        "gr_queue_filters": "Acota la cola con el cuadro de búsqueda (ignora mayúsculas, acentos y orden de las palabras, y también busca en nombres de clase y de grupo), los chips de estado (Calificado, En curso, Sin calificar, No entregado) y los chips de grupo, que muestran cuántos miembros de cada grupo están calificados. Los filtros viven en la dirección de la página, así que actualizar, guardar un marcador o volver desde un estudiante te devuelve a la misma vista y posición. Un estudiante cuenta como Calificado solo cuando todos los criterios están puntuados; uno parcialmente puntuado está En curso y muestra cuántos criterios lleva. «Calificar siguiente» y «Guardar y siguiente» se quedan en la vista filtrada y solo ofrecen estudiantes sin entrega cuando no queda nada más.",
+        "gr_queue_bulk": "Elige Seleccionar estudiantes para marcar varios (o Seleccionar todo lo mostrado) y marcarlos como no entregado o restaurarlos de una vez. Solo se cambian los estudiantes mostrados, restaurar conserva puntuaciones e historial, y la selección se borra cuando cambian los filtros."
     },
     "studentProfile": {
         "tab_overview": "Resumen",
@@ -6211,7 +6236,7 @@
             "folders_title": "Folders",
             "folders_desc": "Sort rubrics, tests, essays and flashcard decks into nested folders.",
             "smart_grading_title": "Smart Grading",
-            "smart_grading_desc": "Califica rápido con un banco de comentarios, dictado por voz, atajos de teclado, comentarios en línea sobre las entregas, feedback de audio y una vista de tarjetas o cuadrícula, además de calificación en paralelo y en grupo. La cola de corrección de una rúbrica alterna entre tarjetas y lista, filtra por clase y recuerda esa elección.",
+            "smart_grading_desc": "Califica rápido con un banco de comentarios, dictado por voz, atajos de teclado, comentarios en línea sobre las entregas, feedback de audio y una vista de tarjetas o cuadrícula, además de calificación en paralelo y en grupo. La cola de corrección de una rúbrica alterna entre tarjetas y lista, filtra por clase y recuerda esa elección. Busca por nombre, clase o grupo, filtra por estado o grupo y marca a varios estudiantes como no entregado a la vez.",
             "scan_handwritten_work_title": "Scan handwritten work",
             "scan_handwritten_work_desc": "Photograph or import a handwritten answer while grading; the text is recognised on your device, you correct it, and it drops into your feedback — the image is used only for recognition and isn’t stored.",
             "analytics_export_title": "Analytics & Export",

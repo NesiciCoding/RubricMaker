@@ -370,6 +370,30 @@ describe('AppContext reducer — rubrics, students, classes', () => {
         expect(nextSibling.overallComment).toBe('Team');
     });
 
+    it('leaves group siblings untouched when a save opts out of the group fan-out', () => {
+        const lead: StudentRubric = {
+            id: 'srA',
+            rubricId: 'r1',
+            studentId: 's1',
+            entries: [{ criterionId: 'shared', levelId: null, checkedSubItems: [], comment: '' }],
+            overallComment: 'Not handed in',
+            groupId: 'g1',
+            isPeerReview: false,
+        };
+        const sibling: StudentRubric = {
+            ...lead,
+            id: 'srB',
+            studentId: 's2',
+            entries: [{ criterionId: 'shared', levelId: 'l1', checkedSubItems: [], comment: '' }],
+            overallComment: 'Own comment',
+        };
+        let state = makeState({ studentRubrics: [lead, sibling] });
+        state = run(state, { type: 'SAVE_STUDENT_RUBRIC', payload: lead, skipGroupFanOut: true });
+        const untouched = state.studentRubrics.find((sr) => sr.id === 'srB')!;
+        expect(untouched.overallComment).toBe('Own comment');
+        expect(untouched.entries[0].levelId).toBe('l1');
+    });
+
     it("fans out by the grade's saved rubric version when its collaborative flags differ from the live rubric", () => {
         // The live rubric marks both criteria collaborative...
         const liveRubric: Rubric = {

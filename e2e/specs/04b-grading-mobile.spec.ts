@@ -122,7 +122,7 @@ test.describe('Mobile rubric grading queue', () => {
 
         for (const action of actions) {
             const link = appPage.getByRole('link', { name: action.name });
-            await expect(link).toHaveAttribute('href', `#${action.href}`);
+            await expect(link).toHaveAttribute('href', new RegExp(`^#${action.href}(\\?|$)`));
             await link.scrollIntoViewIfNeeded();
             await expect(link).toBeInViewport();
             const box = await link.boundingBox();
@@ -142,5 +142,46 @@ test.describe('Mobile rubric grading queue', () => {
         });
         expect(overflow.page, 'the queue page scrolls horizontally').toBeLessThanOrEqual(1);
         expect(overflow.content, 'the queue list scrolls horizontally').toBeLessThanOrEqual(1);
+    });
+    test('bulk action bar keeps its actions on screen and only touches the visible students', async ({ appPage }) => {
+        await appPage.goto(`/#/rubrics/${rubric.id}/grade`);
+        await appPage.reload();
+        await appPage.waitForSelector('.main-area', { timeout: 20_000 });
+
+        await appPage.getByLabel('Search students').fill('bram');
+        await appPage.getByRole('button', { name: 'Select students' }).click();
+        await appPage.getByLabel('Select all shown').check();
+        await expect(appPage.getByText('1 student selected')).toBeVisible();
+
+        const bar = appPage.getByRole('region', { name: 'Bulk actions' });
+        for (const name of ['Mark not handed in', 'Restore', 'Cancel']) {
+            const button = bar.getByRole('button', { name });
+            await expect(button).toBeInViewport();
+        }
+
+        await bar.getByRole('button', { name: 'Mark not handed in' }).click();
+        await appPage.getByRole('dialog').getByRole('button', { name: 'Mark not handed in' }).click();
+        await expect(appPage.getByText('Marked 1 student as not handed in')).toBeVisible();
+
+        await appPage.getByLabel('Search students').fill('');
+        await appPage.getByRole('button', { name: /^Not handed in/ }).click();
+        await expect(appPage.getByRole('link', { name: 'Grade Bram de Vries' })).toBeVisible();
+        await expect(appPage.getByRole('link', { name: 'Grade Cara Martin' })).toBeVisible();
+        await expect(appPage.getByRole('link', { name: 'Open Amara Okafor' })).toHaveCount(0);
+        await expect(appPage.getByRole('link', { name: 'Grade Amara Okafor' })).toHaveCount(0);
+    });
+
+    test('Grade next follows the filtered view and the URL keeps it', async ({ appPage }) => {
+        await appPage.goto(`/#/rubrics/${rubric.id}/grade?status=notHandedIn&q=cara`);
+        await appPage.reload();
+        await appPage.waitForSelector('.main-area', { timeout: 20_000 });
+        await expect(appPage.getByLabel('Search students')).toHaveValue('cara');
+
+        await appPage.getByRole('link', { name: /Grade next: Cara Martin/ }).click();
+        await expect(appPage).toHaveURL(new RegExp(`/grade/${notHandedIn.id}\\?.*from=queue`));
+
+        await appPage.getByRole('button', { name: 'Back' }).click();
+        await expect(appPage).toHaveURL(/status=notHandedIn/);
+        await expect(appPage.getByLabel('Search students')).toHaveValue('cara');
     });
 });

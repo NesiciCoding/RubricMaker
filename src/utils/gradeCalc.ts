@@ -238,6 +238,12 @@ export interface GradeSummary {
     verdict?: TieredVerdict;
 }
 
+/** Legacy entries can lack levelId entirely; undefined is as ungraded as null. */
+export function countScoredEntries(sr: Pick<StudentRubric, 'entries'>): number {
+    return sr.entries.filter((e) => !!e.levelId || e.overridePoints !== undefined || e.singlePointOutcome !== undefined)
+        .length;
+}
+
 export function calcGradeSummary(
     sr: StudentRubric,
     criteria: RubricCriterion[],
@@ -272,10 +278,7 @@ export function calcGradeSummary(
         sr.globalModifier?.type === 'points' && configuredMax > 0
             ? Math.min(configuredMax, Math.max(0, raw + sr.globalModifier.value))
             : raw;
-    const gradedCount = sr.entries.filter(
-        // Legacy entries can lack levelId entirely; undefined is as ungraded as null.
-        (e) => !!e.levelId || e.overridePoints !== undefined || e.singlePointOutcome !== undefined
-    ).length;
+    const gradedCount = countScoredEntries(sr);
 
     // A tiered rubric's verdict is one of its bands, not a grade-scale letter. A caller's rubric is
     // authoritative (a grade moved onto a standard rubric has no verdict); only callers that pass
