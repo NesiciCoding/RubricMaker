@@ -9,7 +9,11 @@ import type {
     TestStrongWeakSummary,
 } from '../types';
 import { autoScoreResponse, calcStudentTestRawPoints } from './testCalc';
-import { clozeGapCorrectness, matrixRowCorrectness } from '../../supabase/functions/_shared/testScoring';
+import {
+    clozeGapCorrectness,
+    gapCorrectAnswers,
+    matrixRowCorrectness,
+} from '../../supabase/functions/_shared/testScoring';
 import { parseClozeGaps } from './clozeParse';
 import { clamp } from './clamp';
 
@@ -266,7 +270,9 @@ function partCorrectness(question: Test['questions'][number], response: string):
 
 function partLabels(question: Test['questions'][number]): string[] {
     if (question.type === 'matrix') return (question.matrixRows ?? []).map((r) => r.text);
-    return parseClozeGaps(question.prompt).map((g) => `#${g.index + 1} ${g.alternatives[0] ?? ''}`);
+    return parseClozeGaps(question.prompt).map(
+        (g) => `#${g.index + 1} ${gapCorrectAnswers(g, question.type === 'cloze-dropdown').join(' / ')}`
+    );
 }
 
 // ponytail: classic upper/lower-27% split, needs at least this many submissions per

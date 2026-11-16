@@ -37,7 +37,9 @@ import CefrPickerModal from '../CEFR/CefrPickerModal';
 import HelpPopover from './HelpPopover';
 import AudioUrlStatus from './AudioUrlStatus';
 import {
+    addDropdownDistractor,
     addGapAlternative,
+    gapCorrectAnswers,
     parseClozeGaps,
     plainQuestionPromptText,
     renderClozeSegments,
@@ -1097,7 +1099,11 @@ export default function QuestionEditor({
                         return (
                             <p className="text-muted text-xs" style={{ margin: 0 }}>
                                 {t('tests.cloze_gap_preview', { count: gaps.length })}{' '}
-                                {gaps.map((gap) => gap.alternatives[0]).join(', ')}
+                                {gaps
+                                    .map((gap) =>
+                                        gapCorrectAnswers(gap, question.type === 'cloze-dropdown').join(' / ')
+                                    )
+                                    .join(', ')}
                             </p>
                         );
                     })()}
@@ -1147,10 +1153,10 @@ export default function QuestionEditor({
                         parseClozeGaps(question.prompt).map((gap) => (
                             <DistractorSuggestions
                                 key={gap.index}
-                                answer={gap.alternatives[0] ?? ''}
+                                answer={gapCorrectAnswers(gap, true)[0] ?? ''}
                                 exclude={gap.alternatives}
                                 onPick={(word) =>
-                                    update({ prompt: addGapAlternative(question.prompt, gap.index, word) })
+                                    update({ prompt: addDropdownDistractor(question.prompt, gap.index, word) })
                                 }
                             />
                         ))}

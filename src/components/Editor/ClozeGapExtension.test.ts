@@ -63,11 +63,20 @@ describe('ClozeGapExtension prompt <-> doc conversion', () => {
                     type: 'paragraph',
                     content: [
                         { type: 'text', text: 'Say ' },
-                        { type: 'clozeGap', attrs: { alternatives: ['hi'] } },
+                        { type: 'clozeGap', attrs: { alternatives: ['hi'], roles: null } },
                     ],
                 },
             ],
         });
+    });
+
+    it('keeps per-option roles for a marked dropdown gap', () => {
+        const doc = promptToClozeContent("Say {{=don't|=do not|~doesn't}} now");
+        expect(doc.content?.[0].content?.[1]).toEqual({
+            type: 'clozeGap',
+            attrs: { alternatives: ["don't", 'do not', "doesn't"], roles: ['correct', 'correct', 'wrong'] },
+        });
+        expect(roundTrip("Say {{=don't|=do not|~doesn't}} now")).toBe("Say {{=don't|=do not|~doesn't}} now");
     });
 });
 
@@ -87,6 +96,16 @@ describe('ClozeGap word-formation stems', () => {
         const editor = make('A {{b}}(c) d', false);
         expect(editor.state.doc.firstChild!.child(1).attrs.stem).toBeNull();
         expect(clozeContentToPrompt(editor)).toBe('A {{b}}(c) d');
+        editor.destroy();
+    });
+});
+
+describe('ClozeGap marked typed gaps', () => {
+    it('round-trips an explicitly marked typed gap unchanged', () => {
+        const make = (prompt: string) =>
+            new Editor({ extensions: [MINIMAL_KIT, ClozeGap], content: promptToClozeContent(prompt) });
+        const editor = make('Pick {{=cat|~dog}} now');
+        expect(clozeContentToPrompt(editor)).toBe('Pick {{=cat|~dog}} now');
         editor.destroy();
     });
 });

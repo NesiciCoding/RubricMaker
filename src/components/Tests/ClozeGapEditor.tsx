@@ -61,6 +61,10 @@ export default function ClozeGapEditor({
                 saveLabel: t('tests.cloze_gap_save'),
                 cancelLabel: t('tests.cloze_gap_cancel'),
                 stemLabel: t('tests.cloze_gap_stem_label'),
+                correctLabel: t('tests.cloze_gap_correct_label'),
+                wrongLabel: t('tests.cloze_gap_wrong_label'),
+                addLabel: t('tests.cloze_gap_add'),
+                removeLabel: t('tests.cloze_gap_remove'),
             }),
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -72,7 +76,11 @@ export default function ClozeGapEditor({
         content: promptToClozeContent(value, wordFormation),
         onUpdate: ({ editor }) => onChange(clozeContentToPrompt(editor)),
         editorProps: {
-            attributes: { class: 'cloze-gap-editor-content', 'data-word-formation': String(wordFormation) },
+            attributes: {
+                class: 'cloze-gap-editor-content',
+                'data-word-formation': String(wordFormation),
+                'data-cloze-dropdown': String(allowDropdown),
+            },
         },
     });
 
@@ -83,14 +91,18 @@ export default function ClozeGapEditor({
         if (!editor) return;
         editor.setOptions({
             editorProps: {
-                attributes: { class: 'cloze-gap-editor-content', 'data-word-formation': String(wordFormation) },
+                attributes: {
+                    class: 'cloze-gap-editor-content',
+                    'data-word-formation': String(wordFormation),
+                    'data-cloze-dropdown': String(allowDropdown),
+                },
             },
         });
         const modeChanged = appliedMode.current !== wordFormation;
         appliedMode.current = wordFormation;
         if (!modeChanged && clozeContentToPrompt(editor) === value) return;
         editor.commands.setContent(promptToClozeContent(value, wordFormation));
-    }, [editor, value, wordFormation]);
+    }, [editor, value, wordFormation, allowDropdown]);
 
     /* v8 ignore next -- useEditor initializes synchronously in this environment */
     if (!editor) return null;
@@ -122,7 +134,13 @@ export default function ClozeGapEditor({
                         type="button"
                         className="btn btn-secondary btn-sm"
                         onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => editor.chain().focus().insertClozeGap(['correct', 'wrong1', 'wrong2']).run()}
+                        onClick={() =>
+                            editor
+                                .chain()
+                                .focus()
+                                .insertClozeGap(['correct', 'wrong1', 'wrong2'], ['correct', 'wrong', 'wrong'])
+                                .run()
+                        }
                     >
                         <Plus size={14} /> {insertDropdownGapLabel}
                     </button>
@@ -149,6 +167,40 @@ export default function ClozeGapEditor({
                 .cloze-gap-stem { font-weight: 500; font-size: 0.8em; opacity: 0.8; margin-left: 4px; }
                 .cloze-gap-pill sup { font-size: 0.7em; opacity: 0.75; margin-left: 1px; }
                 .cloze-gap-popover-label { font-size: 0.75rem; color: var(--text-muted); }
+                .cloze-gap-popover-section { display: flex; flex-direction: column; gap: 4px; }
+                .cloze-gap-popover-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+                .cloze-gap-popover-chip {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 4px;
+                    padding: 2px 4px 2px 8px;
+                    font-size: 0.8rem;
+                    color: var(--text);
+                    background: var(--bg-panel);
+                    border: 1px solid var(--border);
+                    border-radius: 999px;
+                }
+                .cloze-gap-popover-chip-remove {
+                    padding: 0 4px;
+                    font-size: 0.9rem;
+                    line-height: 1;
+                    color: var(--text-muted);
+                    background: none;
+                    border: none;
+                    border-radius: 999px;
+                    cursor: pointer;
+                }
+                .cloze-gap-popover-chip-remove:hover { color: var(--red-text); }
+                .cloze-gap-popover-add { display: flex; gap: 4px; }
+                .cloze-gap-popover-add button {
+                    padding: 4px 10px;
+                    font-size: 0.8rem;
+                    color: var(--text);
+                    background: var(--bg-panel);
+                    border: 1px solid var(--border);
+                    border-radius: 6px;
+                    cursor: pointer;
+                }
                 .cloze-gap-popover-input {
                     box-sizing: border-box;
                     width: 100%;

@@ -6,7 +6,7 @@
  */
 import type { Test, TestQuestion, TestSection } from '../types';
 import { parseErrorPassage, sentenceBuilderTiles } from '../../supabase/functions/_shared/testScoring';
-import { renderClozeSegments, parseHotTextFragments } from './clozeParse';
+import { gapCorrectAnswers, renderClozeSegments, parseHotTextFragments } from './clozeParse';
 import { stripHtmlKeepLineBreaks, stripHtmlTags } from './exportDataPrep';
 import { seededShuffle } from './seededShuffle';
 import { formatCorrectAnswer } from './testAnswerText';
@@ -196,10 +196,10 @@ export function matrixBookletData(question: TestQuestion): MatrixBookletData {
     };
 }
 
-/** Cloze-bank tiles (every gap's answer plus the distractors) as a shuffled, lettered word box for the booklet. */
+/** Cloze-bank tiles (every accepted alternative of every gap plus the distractors) as a shuffled, lettered word box for the booklet. */
 export function bankBookletTiles(question: TestQuestion): { letter: string; text: string }[] {
     const answers = renderClozeSegments(stripHtmlKeepLineBreaks(question.prompt)).flatMap((s) =>
-        s.type === 'gap' ? [s.gap.alternatives[0] ?? ''] : []
+        s.type === 'gap' ? s.gap.alternatives : []
     );
     const tiles = nonIdentityShuffle([...answers, ...(question.bankDistractors ?? [])].filter(Boolean), question.id);
     return tiles.map((text, i) => ({ letter: optionLetter(i), text }));
@@ -212,14 +212,20 @@ function matrixCorrectLetterKey(question: TestQuestion): string {
 
 function bankCorrectLetterKey(question: TestQuestion): string {
     const unused = bankBookletTiles(question);
-    return renderClozeSegments(stripHtmlKeepLineBreaks(question.prompt))
-        .flatMap((s) => (s.type === 'gap' ? [s.gap.alternatives[0] ?? ''] : []))
-        .map((answer, i) => {
-            const at = unused.findIndex((t) => t.text === answer);
-            const letter = at >= 0 ? unused.splice(at, 1)[0].letter : '?';
-            return `${i + 1}→${letter}`;
-        })
-        .join('; ');
+    return (
+        renderClozeSegments(stripHtmlKeepLineBreaks(question.prompt))
+            // Only accepted answers belong in the key; a `~` option can still be a word-box tile.
+            .flatMap((s) => (s.type === 'gap' ? [gapCorrectAnswers(s.gap, false)] : []))
+            .map((alternatives, i) => {
+                const letters = alternatives.map((answer) => {
+                    const at = unused.findIndex((t) => t.text === answer);
+                    return at >= 0 ? unused.splice(at, 1)[0].letter : '?';
+                });
+                // Any of a gap's alternatives earns the mark, so the key lists every tile that would.
+                return `${i + 1}→${[...new Set(letters)].join('/')}`;
+            })
+            .join('; ')
+    );
 }
 
 /** Ordering items shuffled for booklet display — the stored array order IS the correct order, so printing it as-is would leak the answer. */

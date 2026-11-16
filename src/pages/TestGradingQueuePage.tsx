@@ -7,8 +7,10 @@ import {
     ChevronLeft,
     ChevronRight,
     Keyboard,
+    KeyRound,
     LayoutGrid,
     ListChecks,
+    Undo2,
     User,
     Users,
     X,
@@ -24,14 +26,27 @@ import { useOwnOrSharedItem } from '../hooks/useSharedMaterials';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { useCanEditStudentWork } from '../hooks/useClassRoles';
 import { SkeletonRow } from '../components/ui/Skeleton';
-import { pickLatestAttempt } from '../utils/testAnswerText';
+import { formatCorrectAnswer, pickLatestAttempt } from '../utils/testAnswerText';
+import QueueAnswer from '../components/Tests/QueueAnswer';
+import { useToast } from '../hooks/useToast';
+import { canAdoptAnswer, markAdoptedAnswersCorrect, withAdoptedAnswer } from '../utils/answerKey';
+import { findNextUndecided } from '../utils/gradingQueueNavigation';
+import {
+    clearGradeQueueSession,
+    gradeQueueSessionKey,
+    hasSessionContent,
+    loadGradeQueueSession,
+    saveGradeQueueSession,
+    type GradeQueueSession,
+    type GradeQueueSessionState,
+} from '../utils/gradeQueueSession';
 import { scoreTestAnswer } from '../utils/testCalc';
 import { scoreStudentTest } from '../utils/studentTestScore';
 import { answerReviewState, autoConfirmEnabled, type AnswerReviewState } from '../utils/testAutoConfirm';
 import { clamp } from '../utils/clamp';
 import { stripHtmlTags } from '../utils/exportDataPrep';
 import { useTranslation } from 'react-i18next';
-import type { CommentBankItem, StudentTest, TestAnswer, TestQuestion } from '../types';
+import type { CommentBankItem, StudentTest, Test, TestAnswer, TestQuestion } from '../types';
 type ViewMode = 'question' | 'student' | 'matrix';
 
 const MATRIX_GREY_BG = 'color-mix(in srgb, var(--text-muted) 18%, transparent)';
@@ -54,26 +69,8 @@ interface QueueStep {
     review: AnswerReviewState;
 }
 
-function expectedAnswerText(q: TestQuestion): string {
-    if (q.expectedAnswer) return stripHtmlTags(q.expectedAnswer);
-    if (q.expectedAnswers?.length) return q.expectedAnswers.map((a) => stripHtmlTags(a)).join(' / ');
-    if (q.type === 'numeric' && q.expectedNumericValue !== undefined) return String(q.expectedNumericValue);
-    return '';
-}
-
-function answerDisplayText(q: TestQuestion, response: string): string {
-    if (q.type === 'multiple-choice') {
-        return q.options?.find((o) => o.id === response)?.text ?? response;
-    }
-    if (q.type === 'multiple-response') {
-        try {
-            const ids = JSON.parse(response) as string[];
-            return ids.map((id) => q.options?.find((o) => o.id === id)?.text ?? id).join(', ');
-        } catch {
-            return response;
-        }
-    }
-    return response;
+function hasExpectedAnswer(q: TestQuestion): boolean {
+    return formatCorrectAnswer(q).trim() !== '' || !!q.expectedAnswer || !!q.expectedAnswers?.length;
 }
 
 function shortPrompt(q: TestQuestion, index: number): string {
@@ -95,7 +92,11 @@ export default function TestGradingQueuePage() {
         studentTests: s.studentTests,
         students: s.students,
     }));
-    const { item: test, loading: sharedLoading } = useOwnOrSharedItem(
+    const {
+        item: test,
+        entry: sharedEntry,
+        loading: sharedLoading,
+    } = useOwnOrSharedItem(
         'test',
         testId,
         tests.find((x) => x.id === testId)
@@ -125,9 +126,19 @@ export default function TestGradingQueuePage() {
     const [skipped, setSkipped] = useState<Set<string>>(new Set());
     const [commentBankFor, setCommentBankFor] = useState<string | null>(null);
     const [savedCommentFor, setSavedCommentFor] = useState<string | null>(null);
-    const { saveStudentTest, recordCommentBankUsage, addCommentBankItem } = useStoreActions();
+    const [lastSave, setLastSave] = useState<{
+        stepKey: string;
+        previousAttempts: StudentTest[];
+        previousTest?: Test;
+    } | null>(null);
+    const { saveStudentTest, updateTest, recordCommentBankUsage, addCommentBankItem } = useStoreActions();
+    const { showToast } = useToast();
     const dbStatus = useDbStatus();
     const canEditStudentWork = useCanEditStudentWork();
+    const queueSessionKey = useMemo(() => gradeQueueSessionKey(testId, dbStatus.userId), [testId, dbStatus.userId]);
+    const restoredPositionRef = useRef<GradeQueueSession | null>(null);
+    const sessionKeyRef = useRef<string | null>(null);
+    const pendingSessionRef = useRef<{ state: GradeQueueSessionState; settled: boolean } | null>(null);
 
     const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
 
@@ -204,6 +215,10 @@ export default function TestGradingQueuePage() {
         [allSteps, view, showAutoConfirmed]
     );
     const autoConfirmedCount = allSteps.filter((s) => s.review.state === 'auto-confirmed').length;
+    const stepIndexByCell = useMemo(
+        () => new Map(steps.map((s, i) => [`${s.studentTestId}:${s.questionId}`, i])),
+        [steps]
+    );
 
     // Groups: per question in question-mode, per student in student-mode. Question view is
     // seeded with every question so the nav (one button per test.questions) indexes into
@@ -234,16 +249,49 @@ export default function TestGradingQueuePage() {
     const matrixIdx = Math.min(selectedIdx, Math.max(steps.length - 1, 0));
     const detailStep = inMatrix ? steps[matrixIdx] : current;
 
+    // Moving past the last answer of a group continues into the neighbouring group, so a full pass
+    // over a test does not stop at every question/student boundary.
     const detailPrev = useCallback(() => {
-        if (inMatrix) setSelectedIdx((i) => Math.max(i - 1, 0));
-        else setStepIndex((i) => Math.max(i - 1, 0));
-    }, [inMatrix]);
+        if (inMatrix) {
+            setSelectedIdx(Math.max(matrixIdx - 1, 0));
+            return;
+        }
+        if (stepIndex > 0) {
+            setStepIndex(stepIndex - 1);
+            return;
+        }
+        for (let gi = groupIndex - 1; gi >= 0; gi--) {
+            const inGroup = groups[gi]?.steps.length ?? 0;
+            if (inGroup > 0) {
+                setGroupIndex(gi);
+                setStepIndex(inGroup - 1);
+                return;
+            }
+        }
+    }, [inMatrix, matrixIdx, stepIndex, groupIndex, groups]);
     const detailNext = useCallback(() => {
-        if (inMatrix) setSelectedIdx((i) => Math.min(i + 1, steps.length - 1));
-        else setStepIndex((i) => Math.min(i + 1, visibleSteps.length - 1));
-    }, [inMatrix, steps.length, visibleSteps.length]);
-    const detailCanPrev = inMatrix ? matrixIdx > 0 : stepIndex > 0;
-    const detailCanNext = inMatrix ? matrixIdx < steps.length - 1 : stepIndex < visibleSteps.length - 1;
+        if (inMatrix) {
+            setSelectedIdx(Math.min(matrixIdx + 1, steps.length - 1));
+            return;
+        }
+        if (stepIndex < visibleSteps.length - 1) {
+            setStepIndex(stepIndex + 1);
+            return;
+        }
+        for (let gi = groupIndex + 1; gi < groups.length; gi++) {
+            if ((groups[gi]?.steps.length ?? 0) > 0) {
+                setGroupIndex(gi);
+                setStepIndex(0);
+                return;
+            }
+        }
+    }, [inMatrix, matrixIdx, steps.length, stepIndex, visibleSteps.length, groupIndex, groups]);
+    const detailCanPrev = inMatrix
+        ? matrixIdx > 0
+        : stepIndex > 0 || groups.slice(0, groupIndex).some((g) => g.steps.length > 0);
+    const detailCanNext = inMatrix
+        ? matrixIdx < steps.length - 1
+        : stepIndex < visibleSteps.length - 1 || groups.slice(groupIndex + 1).some((g) => g.steps.length > 0);
 
     const decided = steps.filter(
         (s) =>
@@ -277,11 +325,57 @@ export default function TestGradingQueuePage() {
         );
     }).length;
 
-    function handleSaveCurrent() {
+    const decidedByStep = useMemo(
+        () =>
+            new Map(
+                steps.map((s) => [
+                    s.key,
+                    s.savedPoints !== undefined ||
+                        draftPoints[s.key] !== undefined ||
+                        skipped.has(s.key) ||
+                        s.review.state === 'auto-confirmed',
+                ])
+            ),
+        [steps, draftPoints, skipped]
+    );
+
+    function advanceToNextUndecided(extraDecided?: ReadonlySet<string>) {
+        // Adoption decides answers in the same pass, so those steps must count as decided here —
+        // otherwise the queue lands straight back on the answer it just marked.
+        const decided = (key: string) => extraDecided?.has(key) || decidedByStep.get(key) === true;
+        if (inMatrix) {
+            const next = findNextUndecided(
+                steps.map((s) => decided(s.key)),
+                matrixIdx
+            );
+            if (next >= 0) setSelectedIdx(next);
+            return;
+        }
+        const nextInGroup = findNextUndecided(
+            visibleSteps.map((global) => decided(steps[global]?.key ?? '')),
+            stepIndex
+        );
+        if (nextInGroup >= 0) {
+            setStepIndex(nextInGroup);
+            return;
+        }
+        for (let gi = groupIndex + 1; gi < groups.length; gi++) {
+            const groupSteps = groups[gi]?.steps ?? [];
+            const next = groupSteps.findIndex((global) => !decided(steps[global]?.key ?? ''));
+            if (next >= 0) {
+                setGroupIndex(gi);
+                setStepIndex(next);
+                return;
+            }
+        }
+    }
+
+    function handleSaveCurrent(options: { advance?: boolean; extraDecided?: ReadonlySet<string> } = {}) {
         const step = detailStep;
         if (!step || readOnly || !test) return;
         const st = attemptById.get(step.studentTestId);
         if (!st) return;
+        const previousAttempt = st;
         const existingAnswers = st.answers;
         let idx = -1;
         for (let i = existingAnswers.length - 1; i >= 0; i--) {
@@ -332,6 +426,53 @@ export default function TestGradingQueuePage() {
             next.delete(step.key);
             return next;
         });
+        setLastSave({ stepKey: step.key, previousAttempts: [previousAttempt] });
+        if (options.advance) advanceToNextUndecided(options.extraDecided);
+    }
+
+    function handleUndoSave() {
+        if (!lastSave) return;
+        lastSave.previousAttempts.forEach((attempt) => saveStudentTest(attempt));
+        if (lastSave.previousTest) updateTest(lastSave.previousTest);
+        setLastSave(null);
+    }
+
+    /** Accepts the given answer as the question's model answer and marks identical answers correct. */
+    function handleAdoptAnswer() {
+        const step = detailStep;
+        if (!step || readOnly || !test || !answerKeyEditable) return;
+        const answer = step.response.trim();
+        if (!answer) return;
+        const nextTest = withAdoptedAnswer(test, step.questionId, answer);
+        if (nextTest !== test) updateTest(nextTest);
+        // Propagation writes locally before the server agrees, so only touch students this teacher may grade.
+        const editableAttempts = attempts.filter((a) =>
+            canEditStudentWork(students.find((s) => s.id === a.studentId)?.classId)
+        );
+        const { attempts: propagated, matched } = markAdoptedAnswersCorrect(
+            nextTest,
+            step.questionId,
+            answer,
+            editableAttempts,
+            step.studentTestId
+        );
+        const previousPropagated = editableAttempts.filter((a) => propagated.some((p) => p.id === a.id));
+        propagated.forEach((attempt) => saveStudentTest(attempt));
+        handleSaveCurrent({
+            advance: true,
+            extraDecided: new Set(propagated.map((attempt) => `${attempt.id}:${step.questionId}`)),
+        });
+        // Undo reverses the whole adoption: the marks it filled in, the current save and the key edit.
+        setLastSave((current) =>
+            current
+                ? {
+                      ...current,
+                      previousAttempts: [...current.previousAttempts, ...previousPropagated],
+                      ...(nextTest !== test ? { previousTest: test } : {}),
+                  }
+                : current
+        );
+        showToast(t('tests.queue.answer_key_applied', { count: matched }), 'success');
     }
 
     function handleInsertComment(item: CommentBankItem) {
@@ -384,7 +525,114 @@ export default function TestGradingQueuePage() {
         setStepIndex(0);
         setSelectedIdx(0);
         setPopoverOpen(false);
+        setLastSave(null);
     }, [view, testId]);
+
+    // Resume an interrupted session once per test + account: drafts, skips and the cursor come back.
+    useEffect(() => {
+        if (!testId || sessionKeyRef.current === queueSessionKey) return;
+        const sameTest = sessionKeyRef.current?.startsWith(`rm_grade_queue_session:${testId}:`) ?? false;
+        const workInProgress =
+            Object.keys(draftPoints).length > 0 || Object.keys(feedbackDrafts).length > 0 || skipped.size > 0;
+        // The signed-in account can resolve after mount: re-key that work instead of wiping it.
+        // Only then — work begun under one known account must never move to another.
+        const accountUnresolved = sessionKeyRef.current === gradeQueueSessionKey(testId, null);
+        if (sameTest && workInProgress && accountUnresolved) {
+            sessionKeyRef.current = queueSessionKey;
+            return;
+        }
+        const stored = loadGradeQueueSession(queueSessionKey);
+        sessionKeyRef.current = queueSessionKey;
+        restoredPositionRef.current = stored;
+        setDraftPoints(stored?.draftPoints ?? {});
+        setFeedbackDrafts(stored?.feedbackDrafts ?? {});
+        setSkipped(new Set(stored?.skipped ?? []));
+        const restoredWork =
+            Object.keys(stored?.draftPoints ?? {}).length > 0 ||
+            Object.keys(stored?.feedbackDrafts ?? {}).length > 0 ||
+            (stored?.skipped.length ?? 0) > 0;
+        if (restoredWork) showToast(t('tests.queue.session_restored'), 'info');
+    }, [testId, queueSessionKey, showToast, t, draftPoints, feedbackDrafts, skipped]);
+
+    // The queue is built from attempts that arrive after mount, so the cursor waits for the groups.
+    useEffect(() => {
+        const stored = restoredPositionRef.current;
+        if (!stored) return;
+        if (stored.view !== view) {
+            restoredPositionRef.current = null;
+            return;
+        }
+        // Question view has a group per question before any attempt loads, so wait for answers.
+        if (groups.length === 0 || attempts.length === 0) return;
+        restoredPositionRef.current = null;
+        const group = Math.min(stored.groupIndex, groups.length - 1);
+        const insideGroup = groups[group]?.steps.length ?? 0;
+        setGroupIndex(group);
+        setStepIndex(Math.min(stored.stepIndex, Math.max(insideGroup - 1, 0)));
+        setSelectedIdx(Math.min(stored.selectedIdx, Math.max(steps.length - 1, 0)));
+    }, [groups, steps.length, view, attempts.length]);
+
+    // Persist as the teacher works, and drop the session once the queue is finished.
+    useEffect(() => {
+        if (!testId || sessionKeyRef.current !== queueSessionKey) return;
+        const next: GradeQueueSessionState = {
+            view,
+            groupIndex,
+            stepIndex,
+            selectedIdx,
+            draftPoints,
+            feedbackDrafts,
+            skipped: [...skipped],
+        };
+        // Every answer settled with no draft or feedback left in the box: nothing to resume.
+        const allSettled =
+            steps.length > 0 &&
+            Object.keys(draftPoints).length === 0 &&
+            Object.keys(feedbackDrafts).length === 0 &&
+            steps.every((s) => s.savedPoints !== undefined || s.review.state === 'auto-confirmed');
+        pendingSessionRef.current = { state: next, settled: allSettled };
+        const timer = setTimeout(() => {
+            pendingSessionRef.current = null;
+            if (allSettled || !hasSessionContent(next)) {
+                clearGradeQueueSession(queueSessionKey);
+                return;
+            }
+            if (!saveGradeQueueSession(queueSessionKey, next)) {
+                showToast(t('tests.queue.session_save_failed'), 'warning');
+            }
+        }, 400);
+        return () => clearTimeout(timer);
+    }, [
+        testId,
+        queueSessionKey,
+        view,
+        groupIndex,
+        stepIndex,
+        selectedIdx,
+        draftPoints,
+        feedbackDrafts,
+        skipped,
+        steps,
+        showToast,
+        t,
+    ]);
+
+    // Leaving within the 400 ms debounce must not drop the latest drafts: flush the pending write.
+    useEffect(
+        () => () => {
+            const pending = pendingSessionRef.current;
+            const key = sessionKeyRef.current;
+            if (!pending || pending.settled || !key || !hasSessionContent(pending.state)) return;
+            saveGradeQueueSession(key, pending.state);
+        },
+        []
+    );
+
+    // The key listener needs this render's drafts, but must not re-subscribe on every keystroke.
+    const handleSaveRef = useRef(handleSaveCurrent);
+    useEffect(() => {
+        handleSaveRef.current = handleSaveCurrent;
+    });
 
     useEffect(() => {
         function onKey(e: KeyboardEvent) {
@@ -392,9 +640,19 @@ export default function TestGradingQueuePage() {
             // digits) — never queue shortcuts. While the comment bank is open, J/K/S/digits
             // must edit the modal, not the underlying queue. (Escape is handled by Radix.)
             if (e.ctrlKey || e.metaKey || e.altKey || commentBankFor) return;
-            const target = e.target as HTMLElement;
-            if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
+            const target = e.target as HTMLElement | null;
+            // The points field is auto-focused when the matrix dialog opens, and a number input cannot
+            // type letters, so it belongs to the queue shortcuts rather than to text entry.
+            const inPointsField = !!target && target === pointsInputRef.current;
+            const isTextEntry =
+                !!target &&
+                (target.tagName === 'TEXTAREA' ||
+                    target.tagName === 'SELECT' ||
+                    (target.tagName === 'INPUT' && !inPointsField));
+            if (isTextEntry) return;
             if (!detailStep) return;
+            // Arrow keys step the number while the field is focused, so they keep their native meaning.
+            if (inPointsField && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) return;
             if (readOnly) {
                 if (e.key === 'j' || e.key === 'ArrowDown') {
                     e.preventDefault();
@@ -405,7 +663,11 @@ export default function TestGradingQueuePage() {
                 }
                 return;
             }
-            if (e.key === 'j' || e.key === 'ArrowDown') {
+            const onControl = !!target && (target.tagName === 'BUTTON' || target.tagName === 'A');
+            if (e.key === 'Enter' && !onControl) {
+                e.preventDefault();
+                handleSaveRef.current({ advance: true });
+            } else if (e.key === 'j' || e.key === 'ArrowDown') {
                 e.preventDefault();
                 detailNext();
             } else if (e.key === 'k' || e.key === 'ArrowUp') {
@@ -415,13 +677,13 @@ export default function TestGradingQueuePage() {
                 e.preventDefault();
                 setSkipped((prev) => new Set(prev).add(detailStep.key));
                 detailNext();
-            } else if (/^[0-9]$/.test(e.key) && detailStep.question.points <= 9) {
+            } else if (!inPointsField && /^[0-9]$/.test(e.key) && detailStep.question.points <= 9) {
                 setDraftPoints((prev) => ({ ...prev, [detailStep.key]: e.key }));
             }
         }
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
-    }, [detailStep, detailNext, detailPrev, inMatrix, readOnly, commentBankFor]);
+    }, [detailStep, detailNext, detailPrev, readOnly, commentBankFor]);
 
     if (!test && sharedLoading) {
         return (
@@ -488,6 +750,10 @@ export default function TestGradingQueuePage() {
     const feedbackDraft = detailStep
         ? (feedbackDrafts[detailStep.key] ?? latestAnswerFor(detailStep)?.feedback ?? '')
         : '';
+    const draftIsFullMarks =
+        !!detailStep && detailStep.question.points > 0 && (Number(draft) || 0) >= detailStep.question.points;
+    // Adopting an answer rewrites the test itself, which a view-only shared copy must not allow.
+    const answerKeyEditable = !sharedEntry || sharedEntry.access === 'edit';
 
     // Matrix cell presentation: grey = no decision yet, green = full points,
     // red = zero, yellow = partial (theme yellow stands in for orange).
@@ -586,20 +852,19 @@ export default function TestGradingQueuePage() {
                 <div>
                     <div className="text-muted text-xs">{t('tests.queue.question_label')}</div>
                     <p style={{ margin: '4px 0' }}>{stripHtmlTags(detailStep.question.prompt)}</p>
-                    {expectedAnswerText(detailStep.question) && (
-                        <p className="text-muted text-sm" style={{ margin: 0 }}>
-                            {t('tests.queue.expected_prefix', {
-                                text: expectedAnswerText(detailStep.question),
-                            })}
-                        </p>
+                    {hasExpectedAnswer(detailStep.question) && (
+                        <div className="text-muted text-sm" style={{ margin: 0 }}>
+                            <span className="text-xs">{t('tests.queue.expected_label')}</span>
+                            <QueueAnswer question={detailStep.question} />
+                        </div>
                     )}
                 </div>
 
                 <div>
                     <div className="text-muted text-xs">{t('tests.queue.student_answer_label')}</div>
-                    <p style={{ margin: '4px 0', whiteSpace: 'pre-wrap' }}>
-                        {stripHtmlTags(answerDisplayText(detailStep.question, detailStep.response))}
-                    </p>
+                    <div style={{ margin: '4px 0', whiteSpace: 'pre-wrap' }}>
+                        <QueueAnswer question={detailStep.question} response={detailStep.response} />
+                    </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
@@ -626,10 +891,32 @@ export default function TestGradingQueuePage() {
                         className="btn btn-primary btn-sm"
                         disabled={readOnly}
                         title={readOnly ? t('tests.queue.view_only_short') : undefined}
-                        onClick={handleSaveCurrent}
+                        onClick={() => handleSaveCurrent({ advance: true })}
                     >
-                        <Check size={13} /> {t('tests.queue.save_score')}
+                        <Check size={13} /> {t('tests.queue.save_and_next')}
                     </button>
+                    {canAdoptAnswer(detailStep.question) && (
+                        <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            disabled={readOnly || !answerKeyEditable || !draftIsFullMarks}
+                            title={
+                                !answerKeyEditable
+                                    ? t('tests.queue.answer_key_no_permission')
+                                    : !draftIsFullMarks
+                                      ? t('tests.queue.answer_key_needs_full')
+                                      : undefined
+                            }
+                            onClick={handleAdoptAnswer}
+                        >
+                            <KeyRound size={13} /> {t('tests.queue.accept_answer')}
+                        </button>
+                    )}
+                    {lastSave && (
+                        <button type="button" className="btn btn-ghost btn-sm" onClick={handleUndoSave}>
+                            <Undo2 size={13} /> {t('tests.queue.undo_last_save')}
+                        </button>
+                    )}
                     <button
                         className="btn btn-ghost btn-sm"
                         onClick={() => setSkipped((prev) => new Set(prev).add(detailStep.key))}
@@ -854,10 +1141,8 @@ export default function TestGradingQueuePage() {
                                                     {name}
                                                 </td>
                                                 {test.questions.map((q, qi) => {
-                                                    const step = steps.find(
-                                                        (s) => s.studentTestId === st.id && s.questionId === q.id
-                                                    );
-                                                    if (!step) {
+                                                    const cellIndex = stepIndexByCell.get(`${st.id}:${q.id}`);
+                                                    if (cellIndex === undefined) {
                                                         return (
                                                             <td key={q.id} style={{ padding: 2 }}>
                                                                 <div
@@ -874,6 +1159,7 @@ export default function TestGradingQueuePage() {
                                                             </td>
                                                         );
                                                     }
+                                                    const step = steps[cellIndex];
                                                     const v = cellVisual(step);
                                                     const selected = detailStep?.key === step.key;
                                                     return (
@@ -881,10 +1167,7 @@ export default function TestGradingQueuePage() {
                                                             <button
                                                                 type="button"
                                                                 onClick={(e) =>
-                                                                    openCellPopover(
-                                                                        steps.indexOf(step),
-                                                                        e.currentTarget
-                                                                    )
+                                                                    openCellPopover(cellIndex, e.currentTarget)
                                                                 }
                                                                 title={t('tests.queue.cell_open_title', {
                                                                     name,

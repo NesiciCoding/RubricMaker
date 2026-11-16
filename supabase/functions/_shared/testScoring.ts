@@ -54,9 +54,17 @@ export interface AnswerTolerance {
 
 // ── Cloze / hot-text markup ─────────────────────────────────────────────────
 
+export type ClozeOptionRole = 'correct' | 'wrong';
+
 export interface ClozeGap {
     index: number;
+    /** Every option in authored order, with any `=`/`~` role marker stripped. */
     alternatives: string[];
+    /**
+     * Role per alternative, parallel to `alternatives`. Absent when the gap uses no markers, where the
+     * question type decides: typed gaps accept every alternative, a dropdown only the first.
+     */
+    roles?: (ClozeOptionRole | null)[];
 }
 
 export interface HotTextTextSegment {
@@ -82,16 +90,91 @@ export function splitClozeAlternatives(raw: string): string[] {
         .filter((alt) => alt.length > 0);
 }
 
-export function parseClozeGaps(prompt: string): ClozeGap[] {
-    const gaps: ClozeGap[] = [];
+/**
+ * Splits a gap's pipe-separated options and reads the optional role markers: `=` marks a correct
+ * answer, `~` a wrong option (a dropdown distractor). Unmarked entries keep `null`, so a prompt
+ * written before markers existed is unchanged.
+ */
+export function splitClozeOptions(raw: string): { alternatives: string[]; roles: (ClozeOptionRole | null)[] } {
+    const alternatives: string[] = [];
+    const roles: (ClozeOptionRole | null)[] = [];
+    for (const entry of raw.split('|')) {
+        const trimmed = entry.trim();
+        if (!trimmed) continue;
+        const marker = trimmed[0] === '=' || trimmed[0] === '~' ? trimmed[0] : null;
+        const text = marker ? trimmed.slice(1).trim() : trimmed;
+        if (!text) continue;
+        alternatives.push(text);
+        roles.push(marker === '=' ? 'correct' : marker === '~' ? 'wrong' : null);
+    }
+    return { alternatives, roles };
+}
+
+function gapFromSyntax(index: number, inner: string): ClozeGap {
+    const { alternatives, roles } = splitClozeOptions(inner);
+    return { index, alternatives, ...(roles.some(Boolean) ? { roles } : {}) };
+}
+
+export interface ClozeGapMatch {
+    gap: ClozeGap;
+    start: number;
+    end: number;
+}
+
+/** Every `{{…}}` gap with its prompt offsets, for callers that rebuild the text around it. */
+export function matchClozeGaps(prompt: string): ClozeGapMatch[] {
+    const matches: ClozeGapMatch[] = [];
     const pattern = new RegExp(CLOZE_GAP_PATTERN.source, 'g');
     let match: RegExpExecArray | null;
-    let index = 0;
     while ((match = pattern.exec(prompt)) !== null) {
-        gaps.push({ index, alternatives: splitClozeAlternatives(match[1]) });
-        index += 1;
+        matches.push({
+            gap: gapFromSyntax(matches.length, match[1]),
+            start: match.index,
+            end: match.index + match[0].length,
+        });
     }
-    return gaps;
+    return matches;
+}
+
+export function parseClozeGaps(prompt: string): ClozeGap[] {
+    return matchClozeGaps(prompt).map((match) => match.gap);
+}
+
+/**
+ * Every answer a gap accepts. An explicit marker decides (`=` accepted, `~` not); without markers the
+ * legacy rule applies — typed gaps accept any alternative, a dropdown only its first.
+ */
+export function gapCorrectAnswers(gap: ClozeGap, legacyFirstOnly: boolean): string[] {
+    if (gap.roles?.some((role) => role !== null)) {
+        return gap.alternatives.filter((_, i) => gap.roles?.[i] !== 'wrong');
+    }
+    return legacyFirstOnly ? gap.alternatives.slice(0, 1) : gap.alternatives;
+}
+
+/** Whether a student's answer earns the gap's mark. */
+export function gapAccepts(
+    gap: ClozeGap,
+    answer: string,
+    legacyFirstOnly: boolean,
+    tolerance?: AnswerTolerance
+): boolean {
+    const given = answer.trim();
+    if (!given) return false;
+    // A dropdown is clicked, not typed: typo leniency there could let an explicit distractor win.
+    const leniency = legacyFirstOnly ? undefined : tolerance;
+    return gapCorrectAnswers(gap, legacyFirstOnly).some((correct) => answersMatch(correct, given, leniency));
+}
+
+/** Serialises a gap back to `{{…}}`, writing `=`/`~` markers only for a gap that carries roles. */
+export function clozeGapToSyntax(gap: ClozeGap): string {
+    const marked = gap.roles?.some((role) => role !== null);
+    const inner = gap.alternatives
+        .map((alternative, i) => {
+            if (!marked) return alternative;
+            return `${gap.roles?.[i] === 'wrong' ? '~' : '='}${alternative}`;
+        })
+        .join('|');
+    return `{{${inner}}}`;
 }
 
 export function parseHotTextFragments(passage: string): HotTextSegment[] {
@@ -330,10 +413,9 @@ export function scoreMultipleResponse(question: ScorableQuestion, response: stri
 }
 
 /**
- * Auto-score a cloze (fill-the-gap) or cloze-dropdown question. Each gap's
- * answer is matched independently — `cloze` accepts any pipe-separated
- * alternative (case-insensitive, trimmed); `cloze-dropdown` requires the
- * first alternative (the correct option). Supports partial credit.
+ * Auto-score a cloze (fill-the-gap) or cloze-dropdown question. Each gap's answer is matched
+ * independently against the gap's accepted answers — typed gaps accept every alternative, a dropdown
+ * accepts its first alternative unless the author marked several with `=`. Supports partial credit.
  */
 export function scoreCloze(question: ScorableQuestion, response: string): number {
     const correct = clozeGapCorrectness(question, response);
@@ -343,13 +425,10 @@ export function scoreCloze(question: ScorableQuestion, response: string): number
 /** Per-gap correctness of a cloze response, in gap order — also feeds per-gap item analysis. */
 export function clozeGapCorrectness(question: ScorableQuestion, response: string): boolean[] {
     const answers = parseJsonRecord(response);
-    const exactTile = question.type === 'cloze-dropdown';
+    const legacyFirstOnly = question.type === 'cloze-dropdown';
     return parseClozeGaps(question.prompt).map((gap) => {
         const raw = answers[gap.index];
-        const studentAnswer = typeof raw === 'string' ? raw.trim() : '';
-        if (!studentAnswer) return false;
-        if (exactTile) return studentAnswer === gap.alternatives[0];
-        return gap.alternatives.some((alt) => answersMatch(alt, studentAnswer, question.answerTolerance));
+        return gapAccepts(gap, typeof raw === 'string' ? raw : '', legacyFirstOnly, question.answerTolerance);
     });
 }
 
@@ -561,6 +640,21 @@ export function sentenceBuilderText(sentence: string): string {
     return sentenceBuilderChunks(sentence).join(' ');
 }
 
+/** True when the placed tiles reproduce one accepted target word for word, in order. */
+export function isExactSentenceOrder(question: ScorableQuestion, response: string): boolean {
+    const words = (texts: string[]) =>
+        texts
+            .flatMap((text) => text.trim().split(/\s+/))
+            .map(normaliseWord)
+            .filter(Boolean);
+    const placed = words(parseJsonArray(response).filter((w): w is string => typeof w === 'string'));
+    if (placed.length === 0) return false;
+    return (question.sentenceTargets ?? []).some((target) => {
+        const accepted = words(sentenceBuilderChunks(target));
+        return accepted.length === placed.length && accepted.every((word, i) => word === placed[i]);
+    });
+}
+
 function sentenceWords(sentence: string): string[] {
     return sentenceBuilderChunks(sentence).flatMap((chunk) => chunk.split(' '));
 }
@@ -762,6 +856,8 @@ function hasAnswerModel(question: ScorableQuestion): boolean {
         }
         case 'key-word-transformation':
             return acceptedAnswers(question).some((a) => keyWordChunks(a).length > 0);
+        case 'sentence-builder':
+            return !!question.sentenceTargets?.length;
         default:
             return false;
     }
@@ -769,14 +865,17 @@ function hasAnswerModel(question: ScorableQuestion): boolean {
 
 /**
  * Whether an auto-score can stand as the final mark. Confident for option-style questions and numeric
- * answers that have an answer model, and for short answers that match it or are clearly wrong; not
- * confident when there is no model, the type needs human judgement, or a typed answer is a near miss.
+ * answers that have an answer model, for short answers that match it or are clearly wrong, and for a
+ * sentence builder in exactly the target order; not confident when there is no model, the type needs
+ * human judgement, a typed answer is a near miss, or a sentence is only partly ordered.
  */
 export function autoGradeVerdict(question: ScorableQuestion, response: string): AutoGradeVerdict {
     const score = autoScoreResponse(question, response);
     const isOption = OPTION_TYPES.has(question.type);
     const typed = ['short-answer', 'numeric', 'cloze', 'key-word-transformation'].includes(question.type);
-    if (!isOption && !typed) {
+    // Tile order is a deterministic check like an option pick, but a partial order is still a wrong sentence.
+    const isTileOrder = question.type === 'sentence-builder';
+    if (!isOption && !typed && !isTileOrder) {
         return { score, confident: false, reason: 'manual-type' };
     }
     if (!hasAnswerModel(question)) return { score, confident: false, reason: 'no-answer-model' };
@@ -802,6 +901,11 @@ export function autoGradeVerdict(question: ScorableQuestion, response: string): 
     }
     if (question.type === 'numeric' && response.trim() !== '' && Number.isNaN(Number(response.trim()))) {
         return { score, confident: false, reason: 'unparseable' };
+    }
+    if (isTileOrder && score > 0 && !isExactSentenceOrder(question, response)) {
+        // Only an exactly ordered sentence settles itself; partial ordering credit — and full marks
+        // assembled from a shorter accepted target — are a teacher's call.
+        return { score, confident: false, reason: 'near-miss' };
     }
     return { score, confident: true };
 }
