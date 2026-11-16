@@ -245,13 +245,6 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         window.addEventListener('resize', onResize);
         return () => window.removeEventListener('resize', onResize);
     }, []);
-    /**
-     * Column widths and the one-pane "focus" mode for the wide layout. Session-only on purpose: the
-     * project keeps UI preferences in settings, and a column width is not worth a stored setting.
-     */
-    const [railWidth, setRailWidth] = useState(240);
-    const [inspectorWidth, setInspectorWidth] = useState(400);
-    const [expandedPane, setExpandedPane] = useState<'rail' | 'inspector' | null>(null);
     // The narrow inspector is a sheet over the page; Escape dismisses it like the old slide-over.
     useEffect(() => {
         if (isRailWide || !showPreview) return;
