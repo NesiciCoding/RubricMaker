@@ -632,6 +632,8 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         setQuestions((prev) => [...prev, question]);
         setSelectedSectionId(null);
         setSelectedQuestionId(question.id);
+        // The new question is what the teacher wants to see, even from the checks screen.
+        setChecksOpen(false);
     }
 
     /** Reorders inside the question's own part; moving between parts is a section change. */
@@ -2092,6 +2094,13 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                             sections={sections}
                             activeQuestionId={selectedQuestionId}
                             activeSectionId={selectedSectionId}
+                            placeholderLabel={
+                                selectedSectionId
+                                    ? t('tests.switcher_section_open')
+                                    : checksOpen
+                                      ? t('tests.checks_title')
+                                      : undefined
+                            }
                             onSelectQuestion={jumpToQuestion}
                             onSelectSection={(sectionId) => {
                                 setChecksOpen(false);

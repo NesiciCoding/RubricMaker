@@ -926,6 +926,7 @@
         "switcher_previous": "Previous question",
         "switcher_next": "Next question",
         "switcher_sections": "Sections",
+        "switcher_section_open": "Section workspace",
         "inspector_sheet_title": "Preview",
         "inspector_sheet_close": "Close preview",
         "rail_resize": "Resize the outline",

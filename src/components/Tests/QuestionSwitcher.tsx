@@ -12,6 +12,8 @@ interface Props {
     activeQuestionId?: string | null;
     /** Section whose workspace is open, so its chip can show as current. */
     activeSectionId?: string | null;
+    /** What the select shows while a section workspace or the checks screen occupies the pane. */
+    placeholderLabel?: string;
     onSelectQuestion: (questionId: string) => void;
     onSelectSection: (sectionId: string) => void;
     onAdd: () => void;
@@ -27,6 +29,7 @@ export default function QuestionSwitcher({
     sections,
     activeQuestionId,
     activeSectionId,
+    placeholderLabel,
     onSelectQuestion,
     onSelectSection,
     onAdd,
@@ -75,10 +78,15 @@ export default function QuestionSwitcher({
                 id="builder-question-switcher"
                 data-testid="switcher-select"
                 aria-label={t('tests.switcher_label')}
-                value={activeQuestionId ?? ''}
+                value={placeholderLabel ? '' : (activeQuestionId ?? '')}
                 onChange={(event) => onSelectQuestion(event.target.value)}
                 style={{ flex: '1 1 220px', minWidth: 0, maxWidth: '100%' }}
             >
+                {placeholderLabel && (
+                    <option value="" disabled>
+                        {placeholderLabel}
+                    </option>
+                )}
                 {groups.map((group) => (
                     <optgroup key={group.id} label={group.title}>
                         {group.questions.map((question) => (

@@ -926,6 +926,7 @@
         "switcher_previous": "Question précédente",
         "switcher_next": "Question suivante",
         "switcher_sections": "Sections",
+        "switcher_section_open": "Espace de section",
         "inspector_sheet_title": "Aperçu",
         "inspector_sheet_close": "Fermer l’aperçu",
         "rail_resize": "Redimensionner la structure",
