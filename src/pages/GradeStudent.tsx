@@ -436,13 +436,12 @@ function GradeStudentEditor() {
     // Find next student; scope is configurable: stay in current class or span all rubric-linked classes
     const navScope = settings.gradeNavigationScope ?? 'rubric-classes';
     const queueCtx = useGradingQueueView(rubricId);
-    const nextTotalCriteria = rubric?.criteria.length ?? 0;
     const { nextStudent, hasOtherUngraded, nextReason } = useMemo(() => {
         if (!student) return { nextStudent: null, hasOtherUngraded: false, nextReason: null };
         const statusOf = (id: string) =>
             queueStatus(
                 studentRubrics.find((x) => x.rubricId === rubricId && x.studentId === id && !x.isPeerReview),
-                nextTotalCriteria
+                queueCtx.totalCriteria
             );
         let ordered: typeof students;
         if (queueCtx.fromQueue) {
@@ -478,7 +477,7 @@ function GradeStudentEditor() {
         navScope,
         existingSR,
         queueCtx,
-        nextTotalCriteria,
+        queueCtx.totalCriteria,
     ]);
     const queueSearch = queueCtx.fromQueue ? gradeLinkSearch(queueCtx.filterQuery()) : '';
     const queueBackPath = `/rubrics/${rubricId}/grade${queueCtx.fromQueue ? `?${queueCtx.filterQuery()}` : ''}`;

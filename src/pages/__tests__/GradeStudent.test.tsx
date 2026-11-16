@@ -173,6 +173,36 @@ describe('GradeStudent', () => {
             expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2?q=bob&from=queue', { replace: true });
         });
 
+        it("judges a record without a snapshot by the live rubric, not the open record's snapshot", () => {
+            const liveRubric = {
+                ...mockRubric,
+                criteria: [...mockRubric.criteria, { ...mockRubric.criteria[0], id: 'c2' }],
+            };
+            const carol: Student = { id: 's3', name: 'Carol', classId: 'c1' };
+            const entry = (criterionId: string, levelId: string | null) => ({
+                criterionId,
+                levelId,
+                comment: '',
+                checkedSubItems: [],
+            });
+            const base = { rubricId: 'r1', overallComment: '', isPeerReview: false };
+            // Alice was graded on a one-criterion version; Bob has no snapshot and one of two live criteria scored.
+            const records: StudentRubric[] = [
+                { ...base, id: 'sa', studentId: 's1', entries: [entry('c1', 'l1')], rubricSnapshot: mockRubric },
+                { ...base, id: 'sb', studentId: 's2', entries: [entry('c1', 'l1'), entry('c2', null)] },
+            ];
+            mockStudentsArr.push(carol);
+            mockAppValue.rubrics = [liveRubric];
+            mockAppValue.studentRubrics = records;
+            try {
+                renderPage('?from=queue');
+                expect(screen.getAllByTitle('Next: Bob').length).toBeGreaterThan(0);
+            } finally {
+                mockStudentsArr.pop();
+                mockAppValue.rubrics = mockRubricsArr;
+            }
+        });
+
         it('offers no next student when the queue view holds nobody else', () => {
             renderPage('?from=queue&q=alice');
             expect(screen.queryByTitle('Next: Bob')).not.toBeInTheDocument();
