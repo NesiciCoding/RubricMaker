@@ -7,28 +7,8 @@ import { questionTypeLabelKey } from '../../utils/questionTypeKey';
 import type { AppSettings, GradeScale, Test as RmTest, QuestionBankItem, TestQuestion, TestSection } from '../../types';
 
 // ---- Hoisted mocks ----
-const dndState = vi.hoisted(() => ({ onDragEnd: null as null | ((r: unknown) => void) }));
 const mockLangState = vi.hoisted(() => ({ value: 'en' }));
 const joyrideState = vi.hoisted(() => ({ onEvent: null as null | ((d: { status: string }) => void) }));
-
-vi.mock('@hello-pangea/dnd', () => ({
-    DragDropContext: ({ onDragEnd, children }: { onDragEnd: (r: unknown) => void; children: React.ReactNode }) => {
-        dndState.onDragEnd = onDragEnd;
-        return React.createElement(React.Fragment, null, children);
-    },
-    Droppable: ({ children }: { children: (p: unknown) => React.ReactNode }) =>
-        React.createElement(
-            React.Fragment,
-            null,
-            children({ innerRef: { current: null }, droppableProps: {}, placeholder: null })
-        ),
-    Draggable: ({ children }: { children: (p: unknown) => React.ReactNode }) =>
-        React.createElement(
-            React.Fragment,
-            null,
-            children({ innerRef: { current: null }, draggableProps: {}, dragHandleProps: {} })
-        ),
-}));
 
 vi.mock('react-joyride', () => {
     const STATUS = { FINISHED: 'finished', SKIPPED: 'skipped', RUNNING: 'running' };
@@ -276,7 +256,6 @@ describe('TestBuilderPage extended', () => {
         mockUpdateTest.mockClear();
         mockShowToast.mockClear();
         mockAddSectionBankItem.mockClear();
-        dndState.onDragEnd = null;
         joyrideState.onEvent = null;
         mockLangState.value = 'en';
         const mod = await import('../TestBuilderPage');
@@ -299,7 +278,8 @@ describe('TestBuilderPage extended', () => {
             generatedShortfalls: ['Missing A2 items', 'Missing B1 items'],
         });
         expect(mockShowToast).toHaveBeenCalledWith('Missing A2 items Missing B1 items', 'info');
-        // The generated passage section is expanded, so its editor renders.
+        // The generated section opens from the switcher, and its passage is the first thing it shows.
+        fireEvent.click(screen.getByTestId('switcher-section-gs1'));
         expect(screen.getByLabelText('tests.section_passage_placeholder')).toBeInTheDocument();
     });
 
@@ -509,12 +489,15 @@ describe('TestBuilderPage extended', () => {
         expect(mockAddTest.mock.calls[0][0].questions).toHaveLength(1);
     });
 
-    it('moves questions between the uncategorised pool and sections via drag and drop', () => {
+    it('reorders a question inside its part and moves it between parts from the editor', () => {
         mockTests = [
             {
                 id: 't1',
-                name: 'Drag',
-                questions: [{ ...q1, sectionId: 's1' }, { ...q2 }],
+                name: 'Order',
+                questions: [
+                    { ...q1, sectionId: 's1' },
+                    { ...q2, sectionId: 's1' },
+                ],
                 sections: [s1, s2],
                 requireSEB: false,
                 shuffleQuestions: false,
@@ -523,25 +506,19 @@ describe('TestBuilderPage extended', () => {
         ];
         renderBuilder('/tests/t1');
 
-        const drag = (result: unknown) => dndState.onDragEnd!(result);
-
-        // no destination → no-op
-        drag({ source: { droppableId: '__none__', index: 0 } });
-        // same position → no-op
-        drag({ source: { droppableId: '__none__', index: 0 }, destination: { droppableId: '__none__', index: 0 } });
-        // reorder within __none__
-        drag({ source: { droppableId: '__none__', index: 0 }, destination: { droppableId: '__none__', index: 1 } });
-        // move __none__ → section
-        drag({ source: { droppableId: '__none__', index: 0 }, destination: { droppableId: 's2', index: 0 } });
-        // move section → __none__
-        drag({ source: { droppableId: 's1', index: 0 }, destination: { droppableId: '__none__', index: 0 } });
-        // move section → other section
-        drag({ source: { droppableId: 's1', index: 0 }, destination: { droppableId: 's2', index: 0 } });
-        // reorder within a section
-        drag({ source: { droppableId: 's2', index: 0 }, destination: { droppableId: 's2', index: 1 } });
-
+        // The pane header reorders inside the question's own part; the ends of the part are no-ops.
+        fireEvent.click(screen.getByLabelText('tests.move_question_up'));
+        fireEvent.click(screen.getByLabelText('tests.move_question_down'));
         fireEvent.click(screen.getByText('common.save'));
         expect(mockUpdateTest).toHaveBeenCalledTimes(1);
+        const reordered = mockUpdateTest.mock.calls[0][0].questions as TestQuestion[];
+        expect(reordered.filter((q) => q.sectionId === 's1').map((q) => q.id)).toEqual(['qq2', 'qq1']);
+
+        // Moving to another part is the editor's section field, not a drag.
+        fireEvent.change(screen.getByLabelText('tests.question_section_label'), { target: { value: 's2' } });
+        fireEvent.click(screen.getByText('common.save'));
+        const moved = mockUpdateTest.mock.calls.at(-1)![0].questions as TestQuestion[];
+        expect(moved.find((q) => q.id === 'qq1')?.sectionId).toBe('s2');
     });
 
     it('inserts a section bundle from the bank and saves it to the bank', () => {
@@ -558,7 +535,8 @@ describe('TestBuilderPage extended', () => {
         fireEvent.click(screen.getByText('questionBank.insert_button'));
         fireEvent.click(screen.getByLabelText('common.close'));
 
-        // save the section back to the bank
+        // the section's own workspace is where it is saved back to the bank
+        fireEvent.click(screen.getByRole('button', { name: 'Bank Passage' }));
         fireEvent.click(screen.getByText('questionBank.save_section_to_bank'));
         expect(mockAddSectionBankItem).toHaveBeenCalled();
         expect(mockShowToast).toHaveBeenCalledWith('questionBank.saved_toast', 'success');
@@ -577,12 +555,10 @@ describe('TestBuilderPage extended', () => {
             },
         ];
         renderBuilder('/tests/t1');
-        // section passage is expanded by default (has content)
+        // The section opens from the switcher and its passage is expanded by default.
+        fireEvent.click(screen.getByRole('button', { name: 'Reading' }));
         const passageEditor = screen.getByLabelText('tests.section_passage_placeholder');
         fireEvent.change(passageEditor, { target: { value: '<p>New body</p>' } });
-        // collapse then re-expand
-        fireEvent.click(screen.getAllByText('Reading')[0]);
-        fireEvent.click(screen.getAllByText('Reading')[0]);
         // set an audio url
         fireEvent.change(screen.getByLabelText(/tests.section_audio_label/), {
             target: { value: 'https://example.com/audio.mp3' },
@@ -594,7 +570,7 @@ describe('TestBuilderPage extended', () => {
         expect(payload.sections[0].audioUrl).toBe('https://example.com/audio.mp3');
     });
 
-    it('shows the empty-section hint and adds a question to a section', () => {
+    it('adds a question to a section from its workspace', () => {
         mockTests = [
             {
                 id: 't1',
@@ -607,9 +583,11 @@ describe('TestBuilderPage extended', () => {
             },
         ];
         renderBuilder('/tests/t1');
-        expect(screen.getByText('tests.section_empty_hint')).toBeInTheDocument();
-        // add a question to the section via the section's add button (header, pool, then section)
-        fireEvent.click(screen.getAllByText(/tests.add_question/)[2]);
+        fireEvent.click(screen.getByRole('button', { name: 'Reading' }));
+        const workspace = screen.getByTestId('section-workspace-s1');
+        expect(within(workspace).getByText('tests.section_question_count:{"count":0}')).toBeInTheDocument();
+        // add a question from the section workspace, which opens holding it
+        fireEvent.click(within(workspace).getByText(/tests.add_question/));
         pickNewQuestionType();
         fireEvent.click(screen.getByText('common.save'));
         expect(mockUpdateTest.mock.calls[0][0].questions[1].sectionId).toBe('s1');
@@ -975,21 +953,19 @@ describe('TestBuilderPage extended', () => {
             },
         ];
         renderBuilder('/tests/t1');
-        // s1 has content → expanded by default; s2 has none → collapsed
+        // The workspace opens with the passage showing and can collapse it again.
+        fireEvent.click(screen.getByRole('button', { name: 'Reading' }));
         expect(screen.getAllByLabelText('tests.section_passage_placeholder').length).toBe(1);
-        fireEvent.click(screen.getAllByText('tests.section_passage_label')[0]);
+        fireEvent.click(screen.getByText('tests.section_passage_label'));
         expect(screen.queryAllByLabelText('tests.section_passage_placeholder').length).toBe(0);
-        fireEvent.click(screen.getAllByText('tests.section_passage_label')[0]);
+        fireEvent.click(screen.getByText('tests.section_passage_label'));
         expect(screen.getAllByLabelText('tests.section_passage_placeholder').length).toBe(1);
-        // expand the content-less section → content ?? '' fallback
-        fireEvent.click(screen.getAllByText('tests.section_passage_label')[1]);
-        expect(screen.getAllByLabelText('tests.section_passage_placeholder').length).toBe(2);
-        // set then clear an audio url (first section's field)
-        fireEvent.change(screen.getAllByLabelText(/tests.section_audio_label/)[0], {
+        // set then clear an audio url
+        fireEvent.change(screen.getByLabelText(/tests.section_audio_label/), {
             target: { value: 'https://example.com/a.mp3' },
         });
         expect(screen.getByLabelText('tests.question_audio_preview_alt')).toBeInTheDocument();
-        fireEvent.change(screen.getAllByLabelText(/tests.section_audio_label/)[0], { target: { value: '' } });
+        fireEvent.change(screen.getByLabelText(/tests.section_audio_label/), { target: { value: '' } });
         fireEvent.click(screen.getByText('common.save'));
         const payload = mockUpdateTest.mock.calls[0][0];
         expect(payload.sections[0].audioUrl).toBeUndefined();
