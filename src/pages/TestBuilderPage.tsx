@@ -7,7 +7,6 @@ import {
     ArrowLeft,
     AlertCircle,
     ChevronDown,
-    ChevronRight,
     ChevronUp,
     Trash2,
     FileText,
@@ -22,7 +21,6 @@ import {
 import { useTranslation } from 'react-i18next';
 import PageTour from '../components/Tour/PageTour';
 import { getTestBuilderTourSteps } from '../data/TutorialSteps';
-import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import Topbar from '../components/Layout/Topbar';
 import { useAssessment, useAuthoring, useFlashcards, useSettings } from '../context/AppContext';
 import { htmlToPlainText } from '../hooks/useTTS';
@@ -56,6 +54,7 @@ import { plainQuestionPromptText } from '../utils/clozeParse';
 import { EmptyState } from '../components/ui/EmptyState';
 import QuestionTypePicker from '../components/Tests/QuestionTypePicker';
 import TestOutlineRail from '../components/Tests/TestOutlineRail';
+import QuestionSwitcher from '../components/Tests/QuestionSwitcher';
 import TestSettingsDrawer, {
     type TestSettingsTab,
     type TestSettingsValues,
@@ -147,7 +146,6 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
     /** Section workspace open in the focus pane at rail widths; null means a question is showing. */
     const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
     const selectedSection = sections.find((s) => s.id === selectedSectionId) ?? null;
-    const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
     const [collapsedQuestions, setCollapsedQuestions] = useState<Set<string>>(new Set());
     const [newSectionTitle, setNewSectionTitle] = useState('');
     const [durationMinutes, setDurationMinutes] = useState(
@@ -217,6 +215,43 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         window.addEventListener('resize', onResize);
         return () => window.removeEventListener('resize', onResize);
     }, []);
+    // The narrow inspector is a sheet over the page; Escape dismisses it like the old slide-over.
+    useEffect(() => {
+        if (isRailWide || !showPreview) return;
+        const sheet = () => document.querySelector<HTMLElement>('[data-testid="inspector-sheet"]');
+        document.querySelector<HTMLElement>('[data-testid="inspector-sheet-close"]')?.focus();
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                setShowPreview(false);
+                return;
+            }
+            if (event.key !== 'Tab') return;
+            const focusable = Array.from(
+                sheet()?.querySelectorAll<HTMLElement>(
+                    'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+                ) ?? []
+            );
+            if (focusable.length === 0) return;
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            const active = document.activeElement;
+            if (!sheet()?.contains(active)) {
+                event.preventDefault();
+                first.focus();
+            } else if (event.shiftKey && active === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && active === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        };
+        document.addEventListener('keydown', onKeyDown);
+        return () => {
+            document.removeEventListener('keydown', onKeyDown);
+            document.querySelector<HTMLElement>('[data-testid="a4-preview-toggle"]')?.focus();
+        };
+    }, [isRailWide, showPreview]);
     const [tourRun, setTourRun] = useState(false);
     const testTourSteps = React.useMemo(() => getTestBuilderTourSteps(t), [t]);
 
@@ -377,53 +412,6 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         ...printText,
     };
 
-    function onDragEnd(result: DropResult) {
-        if (!result.destination) return;
-        const { source, destination } = result;
-        if (source.droppableId === destination.droppableId && source.index === destination.index) return;
-
-        const sectionGroups: Record<string, TestQuestion[]> = {};
-        sections.forEach((s) => {
-            sectionGroups[s.id] = questionsFor(s.id);
-        });
-        const uncategorised = questionsFor(null);
-
-        const srcId = source.droppableId;
-        const dstId = destination.droppableId;
-        /* v8 ignore start -- droppable ids always exist in sectionGroups */
-        const srcList = srcId === '__none__' ? [...uncategorised] : [...(sectionGroups[srcId] ?? [])];
-        /* v8 ignore stop */
-        const [moved] = srcList.splice(source.index, 1);
-
-        if (srcId === dstId) {
-            srcList.splice(destination.index, 0, moved);
-            if (srcId === '__none__') {
-                setQuestions(flattenGroups(srcList, sectionGroups));
-            } else {
-                sectionGroups[srcId] = srcList;
-                setQuestions(flattenGroups(uncategorised, sectionGroups));
-            }
-        } else {
-            const newSectionId = dstId === '__none__' ? undefined : dstId;
-            const updatedMoved = { ...moved, sectionId: newSectionId };
-            /* v8 ignore start -- droppable ids always exist in sectionGroups */
-            const dstList = dstId === '__none__' ? [...uncategorised] : [...(sectionGroups[dstId] ?? [])];
-            /* v8 ignore stop */
-            dstList.splice(destination.index, 0, updatedMoved);
-            if (srcId === '__none__') {
-                sectionGroups[dstId] = dstList;
-                setQuestions(flattenGroups(srcList, sectionGroups));
-            } else if (dstId === '__none__') {
-                sectionGroups[srcId] = srcList;
-                setQuestions(flattenGroups(dstList, sectionGroups));
-            } else {
-                sectionGroups[srcId] = srcList;
-                sectionGroups[dstId] = dstList;
-                setQuestions(flattenGroups(uncategorised, sectionGroups));
-            }
-        }
-    }
-
     /**
      * Adding a question starts with its type. The picker from #1210 decides which answer control
      * the student gets, and the new question opens holding that type's first options/rows, so the
@@ -440,6 +428,8 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         setQuestions((prev) => [...prev, question]);
         setSelectedSectionId(null);
         setSelectedQuestionId(question.id);
+        // The new question is what the teacher wants to see, even from the checks screen.
+        setChecksOpen(false);
     }
 
     /** Reorders inside the question's own part; moving between parts is a section change. */
@@ -513,24 +503,13 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
     function jumpToQuestion(qid: string) {
         setChecksOpen(false);
         setSelectedSectionId(null);
-        if (isRailWide) {
-            setSelectedQuestionId(qid);
-            return;
-        }
-        const sectionId = questions.find((q) => q.id === qid)?.sectionId;
         flushSync(() => {
+            setSelectedQuestionId(qid);
             setCollapsedQuestions((prev) => {
                 const next = new Set(prev);
                 next.delete(qid);
                 return next;
             });
-            if (sectionId) {
-                setCollapsedSections((prev) => {
-                    const next = new Set(prev);
-                    next.delete(sectionId);
-                    return next;
-                });
-            }
         });
         const card = document.getElementById(`question-card-${qid}`);
         card?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
@@ -619,15 +598,6 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         const otherSectionId = sections.find((s) => s.id !== sectionId)?.id ?? '';
         updateSection(sectionId, {
             routing: { thresholdPct: 60, passSectionId: otherSectionId, failSectionId: otherSectionId },
-        });
-    }
-
-    function toggleSection(sectionId: string) {
-        setCollapsedSections((prev) => {
-            const next = new Set(prev);
-            if (next.has(sectionId)) next.delete(sectionId);
-            else next.add(sectionId);
-            return next;
         });
     }
 
@@ -762,7 +732,6 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
 
     const totalPoints = questions.reduce((sum, q) => sum + (q.points || 0), 0);
     const allQuestionsCollapsed = questions.length > 0 && questions.every((q) => collapsedQuestions.has(q.id));
-    const uncategorised = questionsFor(null);
     const focusQuestion = questions.find((q) => q.id === selectedQuestionId) ?? null;
 
     const checkRows: TestCheckRow[] = (draftBlockers?.entries ?? []).map((entry) => {
@@ -950,6 +919,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                         {!isRailWide && (
                             <button
                                 className={`btn btn-sm ${showPreview ? 'btn-primary' : 'btn-secondary'}`}
+                                data-testid="a4-preview-toggle"
                                 aria-pressed={showPreview}
                                 onClick={() => setShowPreview((v) => !v)}
                             >
@@ -1057,7 +1027,6 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                             </button>
                         </div>
                     )}
-                    {!isRailWide && checksOpen && <div style={{ order: -2, marginBottom: 20 }}>{checksPanel}</div>}
                     <div
                         className="card"
                         data-tour="tb-details"
@@ -1795,297 +1764,112 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                         </div>
                     </div>
 
-                    {isRailWide ? (
-                        checksOpen ? (
-                            <div style={{ order: -1 }}>{checksPanel}</div>
-                        ) : selectedSection ? (
-                            <div style={{ order: -1, marginBottom: 20 }}>
-                                <TestSectionWorkspace
-                                    key={selectedSection.id}
-                                    section={selectedSection}
-                                    targetLevel={(cefrTargetLevel || selectedSection.cefrLevel) as CefrLevel | ''}
-                                    questionCount={questionsFor(selectedSection.id).length}
-                                    onPatch={(patch) => updateSection(selectedSection.id, patch)}
-                                    onContentChange={(html) => updateSectionContent(selectedSection.id, html)}
-                                    onSaveToBank={() => saveSectionToBank(selectedSection)}
-                                    onSeedDeck={(words) => seedDeckFromAboveLevelWords(selectedSection, words)}
-                                    onAddQuestion={() => openTypePicker(selectedSection.id)}
-                                    onClose={() => setSelectedSectionId(null)}
-                                    defaultPassageOpen
-                                />
-                            </div>
-                        ) : focusQuestion ? (
-                            <div data-testid="question-focus" style={{ order: -1, marginBottom: 20 }}>
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        gap: 8,
-                                        marginBottom: 10,
-                                    }}
-                                >
-                                    <span className="text-muted text-sm">
-                                        {t('tests.question_number', {
-                                            number: displayOrderedQuestions.indexOf(focusQuestion) + 1,
-                                        })}{' '}
-                                        / {questions.length}
-                                    </span>
-                                    <div style={{ display: 'flex', gap: 4 }}>
-                                        <button
-                                            type="button"
-                                            className="btn btn-ghost btn-sm"
-                                            aria-label={t('tests.move_question_up')}
-                                            onClick={() => moveQuestion(focusQuestion.id, -1)}
-                                        >
-                                            <ChevronUp size={15} />
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="btn btn-ghost btn-sm"
-                                            aria-label={t('tests.move_question_down')}
-                                            onClick={() => moveQuestion(focusQuestion.id, 1)}
-                                        >
-                                            <ChevronDown size={15} />
-                                        </button>
-                                    </div>
-                                </div>
-                                <QuestionEditor
-                                    // The focus pane reuses one editor for every question; EssayEditor only
-                                    // reads `content` at mount, so without a key the previous question's
-                                    // prompt stays on screen after a rail jump.
-                                    key={focusQuestion.id}
-                                    question={focusQuestion}
-                                    index={displayOrderedQuestions.indexOf(focusQuestion)}
-                                    total={questions.length}
-                                    sections={sections}
-                                    onChange={(q) => updateQuestion(focusQuestion.id, q)}
-                                    onRemove={() => removeQuestion(focusQuestion.id)}
-                                    onDuplicate={() => copyQuestion(focusQuestion.id)}
-                                    collapsed={collapsedQuestions.has(focusQuestion.id)}
-                                    onToggleCollapsed={() => toggleQuestionCollapsed(focusQuestion.id)}
-                                    issues={issuesByQuestion.get(focusQuestion.id)}
-                                    showGrip={false}
-                                />
-                            </div>
-                        ) : (
-                            <div style={{ order: -1, marginBottom: 20 }}>
-                                <EmptyState
-                                    title={t('tests.no_questions')}
-                                    description={t('tests.no_questions_instruction')}
-                                    action={{
-                                        label: t('tests.add_question'),
-                                        icon: Plus,
-                                        onClick: () => openTypePicker(),
-                                    }}
-                                />
-                            </div>
-                        )
-                    ) : questions.length === 0 ? (
-                        <EmptyState
-                            title={t('tests.no_questions')}
-                            description={t('tests.no_questions_instruction')}
-                            action={{ label: t('tests.add_question'), icon: Plus, onClick: () => openTypePicker() }}
+                    {!isRailWide && (questions.length > 0 || sections.length > 0) && (
+                        <QuestionSwitcher
+                            questions={displayOrderedQuestions}
+                            sections={sections}
+                            activeQuestionId={selectedQuestionId}
+                            activeSectionId={selectedSectionId}
+                            placeholderLabel={
+                                selectedSectionId
+                                    ? t('tests.switcher_section_open')
+                                    : checksOpen
+                                      ? t('tests.checks_title')
+                                      : undefined
+                            }
+                            onSelectQuestion={jumpToQuestion}
+                            onSelectSection={(sectionId) => {
+                                setChecksOpen(false);
+                                setSelectedSectionId(sectionId);
+                            }}
+                            onAdd={() => openTypePicker()}
                         />
-                    ) : (
-                        <DragDropContext onDragEnd={onDragEnd}>
-                            {/* Uncategorised questions */}
-                            {(uncategorised.length > 0 || sections.length === 0) && (
-                                <Droppable droppableId="__none__">
-                                    {(provided) => (
-                                        <div
-                                            ref={provided.innerRef}
-                                            {...provided.droppableProps}
-                                            style={{
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                gap: 16,
-                                                marginBottom: sections.length > 0 ? 20 : 0,
-                                            }}
-                                        >
-                                            {uncategorised.map((question, index) => (
-                                                <Draggable key={question.id} draggableId={question.id} index={index}>
-                                                    {(draggable) => (
-                                                        <div
-                                                            ref={draggable.innerRef}
-                                                            {...draggable.draggableProps}
-                                                            style={
-                                                                draggable.draggableProps.style as React.CSSProperties
-                                                            }
-                                                        >
-                                                            <QuestionEditor
-                                                                question={question}
-                                                                index={displayOrderedQuestions.indexOf(question)}
-                                                                total={questions.length}
-                                                                sections={sections}
-                                                                dragHandleProps={draggable.dragHandleProps}
-                                                                onChange={(q) => updateQuestion(question.id, q)}
-                                                                onRemove={() => removeQuestion(question.id)}
-                                                                onDuplicate={() => copyQuestion(question.id)}
-                                                                collapsed={collapsedQuestions.has(question.id)}
-                                                                onToggleCollapsed={() =>
-                                                                    toggleQuestionCollapsed(question.id)
-                                                                }
-                                                                issues={issuesByQuestion.get(question.id)}
-                                                            />
-                                                        </div>
-                                                    )}
-                                                </Draggable>
-                                            ))}
-                                            {provided.placeholder}
-                                            <button
-                                                className="btn btn-secondary btn-sm"
-                                                style={{ alignSelf: 'flex-start' }}
-                                                onClick={() => openTypePicker()}
-                                            >
-                                                <Plus size={14} /> {t('tests.add_question')}
-                                            </button>
-                                        </div>
-                                    )}
-                                </Droppable>
-                            )}
+                    )}
 
-                            {/* Sections */}
-                            {sections.map((section) => {
-                                const sectionQs = questionsFor(section.id);
-                                const collapsed = collapsedSections.has(section.id);
-                                return (
-                                    <div
-                                        key={section.id}
-                                        style={{
-                                            marginBottom: 20,
-                                            border: '1px solid var(--border)',
-                                            borderRadius: 10,
-                                            overflow: 'hidden',
-                                        }}
+                    {checksOpen ? (
+                        <div style={{ order: -1 }}>{checksPanel}</div>
+                    ) : selectedSection ? (
+                        <div style={{ order: -1, marginBottom: 20 }}>
+                            <TestSectionWorkspace
+                                key={selectedSection.id}
+                                section={selectedSection}
+                                targetLevel={(cefrTargetLevel || selectedSection.cefrLevel) as CefrLevel | ''}
+                                questionCount={questionsFor(selectedSection.id).length}
+                                onPatch={(patch) => updateSection(selectedSection.id, patch)}
+                                onContentChange={(html) => updateSectionContent(selectedSection.id, html)}
+                                onSaveToBank={() => saveSectionToBank(selectedSection)}
+                                onSeedDeck={(words) => seedDeckFromAboveLevelWords(selectedSection, words)}
+                                onAddQuestion={() => openTypePicker(selectedSection.id)}
+                                onClose={() => setSelectedSectionId(null)}
+                                defaultPassageOpen
+                            />
+                        </div>
+                    ) : focusQuestion ? (
+                        <div data-testid="question-focus" style={{ order: -1, marginBottom: 20 }}>
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    gap: 8,
+                                    marginBottom: 10,
+                                }}
+                            >
+                                <span className="text-muted text-sm">
+                                    {t('tests.question_number', {
+                                        number: displayOrderedQuestions.indexOf(focusQuestion) + 1,
+                                    })}{' '}
+                                    / {questions.length}
+                                </span>
+                                <div style={{ display: 'flex', gap: 4 }}>
+                                    <button
+                                        type="button"
+                                        className="btn btn-ghost btn-sm"
+                                        aria-label={t('tests.move_question_up')}
+                                        onClick={() => moveQuestion(focusQuestion.id, -1)}
                                     >
-                                        <button
-                                            onClick={() => toggleSection(section.id)}
-                                            style={{
-                                                width: '100%',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: 8,
-                                                padding: '10px 14px',
-                                                background: 'color-mix(in srgb, var(--accent) 8%, var(--bg-elevated))',
-                                                border: 'none',
-                                                borderBottom: collapsed ? 'none' : '1px solid var(--border)',
-                                                cursor: 'pointer',
-                                                textAlign: 'left',
-                                                fontWeight: 600,
-                                                fontSize: '0.9rem',
-                                                color: 'var(--text)',
-                                            }}
-                                        >
-                                            {collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
-                                            {section.title}
-                                            <span
-                                                className="text-muted text-sm"
-                                                style={{ fontWeight: 400, marginLeft: 4 }}
-                                            >
-                                                ({t('tests.section_question_count', { count: sectionQs.length })})
-                                            </span>
-                                        </button>
-
-                                        {!collapsed && (
-                                            <div style={{ padding: '16px 14px' }}>
-                                                <TestSectionWorkspace
-                                                    section={section}
-                                                    targetLevel={
-                                                        (cefrTargetLevel || section.cefrLevel) as CefrLevel | ''
-                                                    }
-                                                    questionCount={sectionQs.length}
-                                                    onPatch={(patch) => updateSection(section.id, patch)}
-                                                    onContentChange={(html) => updateSectionContent(section.id, html)}
-                                                    onSaveToBank={() => saveSectionToBank(section)}
-                                                    onSeedDeck={(words) => seedDeckFromAboveLevelWords(section, words)}
-                                                    defaultPassageOpen={!!section.content}
-                                                />
-                                                <Droppable droppableId={section.id}>
-                                                    {(provided) => (
-                                                        <div
-                                                            ref={provided.innerRef}
-                                                            {...provided.droppableProps}
-                                                            style={{
-                                                                display: 'flex',
-                                                                flexDirection: 'column',
-                                                                gap: 16,
-                                                                minHeight: 40,
-                                                            }}
-                                                        >
-                                                            {sectionQs.map((question, index) => (
-                                                                <Draggable
-                                                                    key={question.id}
-                                                                    draggableId={question.id}
-                                                                    index={index}
-                                                                >
-                                                                    {(draggable) => (
-                                                                        <div
-                                                                            ref={draggable.innerRef}
-                                                                            {...draggable.draggableProps}
-                                                                            style={
-                                                                                draggable.draggableProps
-                                                                                    .style as React.CSSProperties
-                                                                            }
-                                                                        >
-                                                                            <QuestionEditor
-                                                                                question={question}
-                                                                                index={displayOrderedQuestions.indexOf(
-                                                                                    question
-                                                                                )}
-                                                                                total={questions.length}
-                                                                                sections={sections}
-                                                                                dragHandleProps={
-                                                                                    draggable.dragHandleProps
-                                                                                }
-                                                                                onChange={(q) =>
-                                                                                    updateQuestion(question.id, q)
-                                                                                }
-                                                                                onRemove={() =>
-                                                                                    removeQuestion(question.id)
-                                                                                }
-                                                                                onDuplicate={() =>
-                                                                                    copyQuestion(question.id)
-                                                                                }
-                                                                                collapsed={collapsedQuestions.has(
-                                                                                    question.id
-                                                                                )}
-                                                                                onToggleCollapsed={() =>
-                                                                                    toggleQuestionCollapsed(question.id)
-                                                                                }
-                                                                                issues={issuesByQuestion.get(
-                                                                                    question.id
-                                                                                )}
-                                                                            />
-                                                                        </div>
-                                                                    )}
-                                                                </Draggable>
-                                                            ))}
-                                                            {provided.placeholder}
-                                                            {sectionQs.length === 0 && (
-                                                                <p
-                                                                    className="text-muted text-sm"
-                                                                    style={{ margin: '8px 0' }}
-                                                                >
-                                                                    {t('tests.section_empty_hint')}
-                                                                </p>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </Droppable>
-                                                <button
-                                                    className="btn btn-secondary btn-sm"
-                                                    style={{ marginTop: 12 }}
-                                                    onClick={() => openTypePicker(section.id)}
-                                                >
-                                                    <Plus size={14} /> {t('tests.add_question')}
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </DragDropContext>
+                                        <ChevronUp size={15} />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-ghost btn-sm"
+                                        aria-label={t('tests.move_question_down')}
+                                        onClick={() => moveQuestion(focusQuestion.id, 1)}
+                                    >
+                                        <ChevronDown size={15} />
+                                    </button>
+                                </div>
+                            </div>
+                            <QuestionEditor
+                                // The focus pane reuses one editor for every question; EssayEditor only
+                                // reads `content` at mount, so without a key the previous question's
+                                // prompt stays on screen after a switcher or rail jump.
+                                key={focusQuestion.id}
+                                question={focusQuestion}
+                                index={displayOrderedQuestions.indexOf(focusQuestion)}
+                                total={questions.length}
+                                sections={sections}
+                                onChange={(q) => updateQuestion(focusQuestion.id, q)}
+                                onRemove={() => removeQuestion(focusQuestion.id)}
+                                onDuplicate={() => copyQuestion(focusQuestion.id)}
+                                collapsed={collapsedQuestions.has(focusQuestion.id)}
+                                onToggleCollapsed={() => toggleQuestionCollapsed(focusQuestion.id)}
+                                issues={issuesByQuestion.get(focusQuestion.id)}
+                                showGrip={false}
+                            />
+                        </div>
+                    ) : (
+                        <div style={{ order: -1, marginBottom: 20 }}>
+                            <EmptyState
+                                title={t('tests.no_questions')}
+                                description={t('tests.no_questions_instruction')}
+                                action={{
+                                    label: t('tests.add_question'),
+                                    icon: Plus,
+                                    onClick: () => openTypePicker(),
+                                }}
+                            />
+                        </div>
                     )}
                 </div>
                 {isRailWide ? (
@@ -2094,22 +1878,59 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                     </aside>
                 ) : (
                     showPreview && (
-                        <aside
+                        <section
+                            data-testid="inspector-sheet"
+                            role="region"
+                            aria-label={t('tests.inspector_sheet_title')}
                             style={{
                                 position: 'fixed',
-                                top: 56,
+                                left: 0,
                                 right: 0,
                                 bottom: 0,
-                                width: 'min(100%, 560px)',
+                                maxHeight: '85vh',
                                 zIndex: 60,
-                                padding: 12,
-                                overflow: 'auto',
-                                background: 'var(--bg-panel)',
-                                borderLeft: '1px solid var(--border)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                overflow: 'hidden',
+                                background: 'var(--bg-elevated)',
+                                borderTop: '1px solid var(--border)',
+                                borderRadius: '14px 14px 0 0',
+                                boxShadow: '0 -10px 30px rgba(0, 0, 0, 0.28)',
                             }}
                         >
-                            {inspector}
-                        </aside>
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 8,
+                                    padding: '8px 12px',
+                                    borderBottom: '1px solid var(--border)',
+                                }}
+                            >
+                                <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                                    {t('tests.inspector_sheet_title')}
+                                </span>
+                                <span
+                                    aria-hidden="true"
+                                    style={{
+                                        width: 36,
+                                        height: 4,
+                                        borderRadius: 999,
+                                        background: 'var(--border)',
+                                        margin: '0 auto',
+                                    }}
+                                />
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary btn-sm"
+                                    data-testid="inspector-sheet-close"
+                                    onClick={() => setShowPreview(false)}
+                                >
+                                    {t('tests.inspector_sheet_close')}
+                                </button>
+                            </div>
+                            <div style={{ padding: 12, overflow: 'auto' }}>{inspector}</div>
+                        </section>
                     )
                 )}
             </div>
