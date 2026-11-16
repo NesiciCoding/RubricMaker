@@ -11,21 +11,17 @@ import { encodeTestSubmission } from '../utils/shareCode';
 import { nanoid } from '../utils/nanoid';
 import { loadTestDraft, saveTestDraft, clearTestDraft, clearTestTimer } from '../store/storage';
 import SebGate from '../components/Tests/SebGate';
-import HelpPopover from '../components/Tests/HelpPopover';
 import RichContent from '../components/Editor/RichContent';
 import PassageReadAloud from '../components/Tests/PassageReadAloud';
-import StudentAnswerSurface from '../components/Tests/StudentAnswerSurface';
-import QuestionStimulus from '../components/Tests/QuestionStimulus';
+import StudentQuestionCard from '../components/Tests/StudentQuestionCard';
 import { safeAudioSrc } from '../utils/safeMediaSrc';
 import LimitedAudio from '../components/Tests/LimitedAudio';
-import { htmlToPlainText } from '../hooks/useTTS';
 import CountdownTimer from '../components/ui/CountdownTimer';
 import { useLiveSessionTelemetry } from '../hooks/useLiveSessionTelemetry';
 import { StudentTaskSkeleton } from '../components/ui/Skeleton';
 import { isStagedTest, entrySectionId, sectionQuestions, resolveNextSection } from '../utils/placementRouting';
 import { isStaircaseTest, resolveNextStaircaseQuestion } from '../utils/placementStaircase';
 import { isGeneratorTest, type NextPlacementQuestionResult } from '../utils/placementGenerator';
-import { renderClozeSegments } from '../utils/clozeParse';
 import { seededShuffle } from '../utils/seededShuffle';
 import { resolveContentLanguage, resolveQuestionContentLanguage } from '../utils/contentLanguage';
 import { initClientLogger, logEvent } from '../services/logging/clientLogger';
@@ -34,7 +30,7 @@ import { authErrorKey } from '../utils/authErrors';
 import { isAllowedSupabaseUrl } from '../services/database/trustedSupabaseUrl';
 import { autoScoreResponse } from '../utils/testCalc';
 import { enqueueSubmission, removeSubmission, pendingSubmissions, isAlreadySubmitted } from '../utils/testSubmitOutbox';
-import { clozeInstructionKey, questionTypeHelpKey } from '../utils/questionTypeKey';
+import { clozeInstructionKey } from '../utils/questionTypeKey';
 import SubmitReviewDialog from '../components/Tests/SubmitReviewDialog';
 import type {
     TestAnswer,
@@ -73,18 +69,6 @@ function copyText(text: string): boolean {
 // authenticating. Mirrors StudentEssayPage's isShortCode/short-code handling.
 function isShortCode(code: string): boolean {
     return /^[A-Za-z0-9_-]{10,40}$/.test(code);
-}
-
-/** Plain read-aloud text for a question's prompt + options — cloze gaps become `blankWord` rather
- * than their answer, so a graded cloze's read-aloud accommodation can't hand out the answer. */
-function speakableQuestionText(question: TestQuestion, blankWord: string): string {
-    const promptText = ['cloze', 'cloze-dropdown', 'cloze-bank'].includes(question.type)
-        ? renderClozeSegments(question.prompt)
-              .map((s) => (s.type === 'gap' ? blankWord : s.text))
-              .join('')
-        : htmlToPlainText(question.prompt);
-    const optionsText = (question.options ?? []).map((o) => o.text).join('. ');
-    return [promptText, optionsText].filter(Boolean).join('. ');
 }
 
 export default function StudentTestPage() {
@@ -1221,7 +1205,7 @@ export default function StudentTestPage() {
                             )}
 
                             {question && (
-                                <QuestionCard
+                                <StudentQuestionCard
                                     key={question.id}
                                     question={question}
                                     index={isStaircase ? levelPath.length : isGenerator ? answeredCount : currentIndex}
@@ -1608,115 +1592,6 @@ function CenteredMessage({ children }: { children: React.ReactNode }) {
             }}
         >
             <div style={{ maxWidth: 480, textAlign: 'center' }}>{children}</div>
-        </div>
-    );
-}
-
-// ── Question Card ─────────────────────────────────────────────────────────────
-
-interface QuestionCardProps {
-    question: TestQuestion;
-    index: number;
-    total: number;
-    value: string;
-    onChange: (value: string) => void;
-    code: string;
-    onRecordingChange?: (recording: boolean) => void;
-    /** True for an adaptive (staircase) run, where the total question count isn't known ahead of time */
-    hideTotal?: boolean;
-    /** Per-student read-aloud accommodation gate (roadmap Phase 44, §6.2) — practice mode is always allowed regardless. */
-    readAloudAllowed?: boolean;
-    /** BCP-47 base language code for read-aloud voice selection. */
-    lang?: string;
-    audioPlays?: number;
-    onAudioPlay?: (count: number) => void;
-}
-
-function QuestionCard({
-    question,
-    index,
-    total,
-    value,
-    onChange,
-    code,
-    onRecordingChange,
-    hideTotal,
-    readAloudAllowed,
-    lang,
-    audioPlays = 0,
-    onAudioPlay,
-}: QuestionCardProps) {
-    const { t } = useTranslation();
-    const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown' || question.type === 'cloze-bank';
-    return (
-        <div
-            style={{
-                background: 'var(--bg-elevated)',
-                border: '1px solid var(--border)',
-                borderRadius: 12,
-                padding: 20,
-            }}
-        >
-            {readAloudAllowed && (
-                <PassageReadAloud
-                    contentHtml={speakableQuestionText(question, t('tests.taking.cloze_blank_spoken'))}
-                    lang={lang ?? 'en'}
-                />
-            )}
-            <div
-                style={{
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    color: 'var(--accent-text)',
-                    marginBottom: 8,
-                    letterSpacing: '0.05em',
-                }}
-            >
-                {hideTotal
-                    ? t('tests.taking.question_label_no_total', { current: index + 1 })
-                    : t('tests.taking.question_label', { current: index + 1, total })}
-            </div>
-            <div
-                style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: 6,
-                    margin: '0 0 16px',
-                    fontSize: '1rem',
-                    lineHeight: 1.6,
-                    color: 'var(--text)',
-                }}
-            >
-                {isCloze ? (
-                    <p style={{ margin: 0 }}>{t(clozeInstructionKey(question.type))}</p>
-                ) : (
-                    <RichContent html={question.prompt} className="rm-question-prompt" lang={lang ?? 'en'} />
-                )}
-                {(question.type === 'true-false' ||
-                    question.type === 'multiple-response' ||
-                    question.type === 'matching' ||
-                    question.type === 'ordering' ||
-                    question.type === 'categorize' ||
-                    question.type === 'hot-text' ||
-                    question.type === 'matrix' ||
-                    isCloze) && (
-                    <HelpPopover title={t(questionTypeHelpKey(question.type, 'student', 'title'))}>
-                        {t(questionTypeHelpKey(question.type, 'student', 'body'))}
-                    </HelpPopover>
-                )}
-            </div>
-
-            <QuestionStimulus question={question} lang={lang} plays={audioPlays} onPlay={onAudioPlay} />
-
-            <StudentAnswerSurface
-                question={question}
-                value={value}
-                onChange={onChange}
-                code={code}
-                lang={lang}
-                onRecordingChange={onRecordingChange}
-            />
         </div>
     );
 }

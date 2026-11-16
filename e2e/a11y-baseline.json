@@ -541,12 +541,22 @@
     {
       "route": "/tests/new",
       "theme": "dark",
-      "violations": []
+      "violations": [
+        {
+          "rule": "target-size",
+          "nodes": 12
+        }
+      ]
     },
     {
       "route": "/tests/new",
       "theme": "light",
-      "violations": []
+      "violations": [
+        {
+          "rule": "target-size",
+          "nodes": 12
+        }
+      ]
     },
     {
       "route": "/tests/test-a11y-1",

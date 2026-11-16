@@ -158,7 +158,7 @@ describe('Playwright project wiring', () => {
     it('npm scripts only reference existing projects', () => {
         const pkg = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
         const names = projects.map((p) => p.name);
-        for (const scriptName of ['e2e:chromium', 'e2e:supabase', 'e2e:a11y']) {
+        for (const scriptName of ['e2e:chromium', 'e2e:supabase', 'e2e:a11y', 'e2e:wide']) {
             const cmd: string = pkg.scripts?.[scriptName];
             expect(cmd, `missing npm script ${scriptName}`).toBeDefined();
             // Project names may contain digits (e.g. `a11y`).
