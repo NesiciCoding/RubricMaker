@@ -234,6 +234,29 @@ the failure state rather than a false success. Covered by
 `useBuilderHistory.test.tsx`, `testBuilderDraft.test.ts`, the builder's history suite and the narrow e2e
 spec.
 
+## Phase 11 — Keyboard-first authoring (#1214) (done)
+
+Everything in the builder wanted a mouse: the outline was a column of buttons, adding, duplicating,
+deleting and reordering a question meant finding a small icon, the settings drawer could only be opened
+from a tile, and nothing told a teacher which keys worked.
+
+- The outline is a `tree` of `treeitem`s with one roving tab stop: Up/Down/Home/End move, Enter opens,
+  Left/Right collapse and expand a section (or step out of a question to its section), and a chevron on
+  every section header does the same for the mouse.
+- Page-level commands, all refused while an input or a rich-text editor has focus:
+  Alt+↑/↓ previous/next question (which also reopens it and moves focus to its heading, so the jump is
+  announced), N new, D duplicate, Delete remove, Alt+Shift+↑/↓ reorder without dragging.
+- Ctrl/Cmd+K opens a quick jump: type a question number, a prompt, a section or a settings tab's name and
+  Enter goes there. `?` opens the shortcut overlay, built from the same `BUILDER_SHORTCUTS` list the docs
+  describe, so the two cannot drift.
+- Escape closes the topmost panel — settings drawer, checks screen, focused pane, narrow sheet — and puts
+  focus back on whatever opened it.
+- A teacher can author an empty test through a whole assignment without touching the mouse.
+
+Done when: every command above works from the keyboard, none of them fires while typing, Escape restores
+focus, and the shortcut list is translated in all five locales. Covered by `builderShortcuts.test.ts`,
+the rail's tree suite, the builder's keyboard suite and the narrow e2e spec.
+
 ## Screenshots
 
 Only captures of the shipped UI are committed. The exploratory screenshots taken while building the phases

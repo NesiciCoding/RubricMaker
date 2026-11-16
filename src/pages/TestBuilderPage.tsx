@@ -59,6 +59,7 @@ import TestOutlineRail from '../components/Tests/TestOutlineRail';
 import QuestionSwitcher from '../components/Tests/QuestionSwitcher';
 import ColumnResizer from '../components/Tests/ColumnResizer';
 import TestSettingsDrawer, {
+    TEST_SETTINGS_TABS,
     type TestSettingsTab,
     type TestSettingsValues,
 } from '../components/Tests/TestSettingsDrawer';
@@ -69,6 +70,9 @@ import { useSharedMaterials } from '../hooks/useSharedMaterials';
 import type { SharedEntry } from '../utils/materialSharing';
 import { cloneTestForCopy } from '../utils/testClone';
 import SharedMaterialBanner from '../components/Sharing/SharedMaterialBanner';
+import BuilderShortcutsOverlay from '../components/Tests/BuilderShortcutsOverlay';
+import BuilderQuickJump from '../components/Tests/BuilderQuickJump';
+import { builderCommandFor, isTypingTarget, type BuilderCommand } from '../utils/builderShortcuts';
 import BuilderDraftBanner from '../components/Tests/BuilderDraftBanner';
 import { useBuilderHistory } from '../hooks/useBuilderHistory';
 import {
@@ -87,18 +91,6 @@ const MIN_QUESTIONS_PER_LEVEL = 3;
 
 /** Quiet period before an edit is written to the device-local draft. */
 const DRAFT_AUTOSAVE_MS = 700;
-
-/** Undo/redo must leave the native undo of a field or a rich-text editor alone. */
-function isTypingTarget(target: EventTarget | null): boolean {
-    const element = target as HTMLElement | null;
-    if (!element?.tagName) return false;
-    return (
-        element.tagName === 'INPUT' ||
-        element.tagName === 'TEXTAREA' ||
-        element.tagName === 'SELECT' ||
-        element.isContentEditable
-    );
-}
 
 function clampThresholdPct(value: number): number {
     /* v8 ignore next 2 -- number inputs sanitise to '' so NaN is unreachable */
@@ -230,8 +222,17 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
     const [settingsTab, setSettingsTab] = useState<TestSettingsTab>('basics');
     const [settingsOpen, setSettingsOpen] = useState(false);
     const openSettings = (tab: TestSettingsTab = 'basics') => {
+        rememberOpener();
         setSettingsTab(tab);
         setSettingsOpen(true);
+    };
+    /** The checks screen is a panel too: remember what opened it so Escape can go back there. */
+    const toggleChecks = (next?: boolean) => {
+        setChecksOpen((open) => {
+            const target = next ?? !open;
+            if (target) rememberOpener();
+            return target;
+        });
     };
     /** The checks screen replaces the question pane until the teacher jumps back into a question. */
     const [checksOpen, setChecksOpen] = useState(false);
@@ -245,6 +246,18 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         window.addEventListener('resize', onResize);
         return () => window.removeEventListener('resize', onResize);
     }, []);
+    const [quickJumpOpen, setQuickJumpOpen] = useState(false);
+    const [shortcutsOpen, setShortcutsOpen] = useState(false);
+    /** Whatever opened the drawer, the checks screen or a focused pane, so Escape can hand focus back. */
+    const panelOpenerRef = useRef<HTMLElement | null>(null);
+    const rememberOpener = () => {
+        panelOpenerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    };
+    const restoreOpener = () => {
+        const opener = panelOpenerRef.current;
+        panelOpenerRef.current = null;
+        if (opener?.isConnected) opener.focus();
+    };
     /**
      * Column widths and the one-pane "focus" mode for the wide layout. Session-only on purpose: the
      * project keeps UI preferences in settings, and a column width is not worth a stored setting.
@@ -252,16 +265,37 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
     const [railWidth, setRailWidth] = useState(240);
     const [inspectorWidth, setInspectorWidth] = useState(400);
     const [expandedPane, setExpandedPane] = useState<'rail' | 'inspector' | null>(null);
-    // The narrow inspector is a sheet over the page; Escape dismisses it like the old slide-over.
+    // Escape closes the topmost panel and returns focus to what opened it: the drawer, then the
+    // checks screen, then a focused pane, then the narrow sheet.
     useEffect(() => {
-        if (isRailWide || !showPreview) return;
         const onKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') setShowPreview(false);
+            if (event.key !== 'Escape') return;
+            if (settingsOpen) {
+                setSettingsOpen(false);
+                return;
+            }
+            if (checksOpen) {
+                setChecksOpen(false);
+                return;
+            }
+            if (expandedPane) {
+                setExpandedPane(null);
+                return;
+            }
+            if (!isRailWide && showPreview) setShowPreview(false);
         };
         document.addEventListener('keydown', onKeyDown);
         return () => document.removeEventListener('keydown', onKeyDown);
-    }, [isRailWide, showPreview]);
+    }, [settingsOpen, checksOpen, expandedPane, isRailWide, showPreview]);
 
+    // Panels hand focus back after they close: a dialog's own close focus runs during the commit, so
+    // focusing from an effect is the only way to land on the opener every time.
+    const panelOpen = Boolean(settingsOpen || checksOpen || expandedPane);
+    const wasPanelOpen = useRef(false);
+    useEffect(() => {
+        if (wasPanelOpen.current && !panelOpen) restoreOpener();
+        wasPanelOpen.current = panelOpen;
+    }, [panelOpen]);
     const [tourRun, setTourRun] = useState(false);
     const testTourSteps = React.useMemo(() => getTestBuilderTourSteps(t), [t]);
 
@@ -713,9 +747,11 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                 return next;
             });
         });
+        // Land on the question's heading, so the jump is announced instead of silently swapping panes.
+        const heading = document.getElementById(`question-heading-${qid}`);
         const card = document.getElementById(`question-card-${qid}`);
-        card?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
-        card?.focus({ preventScroll: true });
+        (card ?? heading)?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+        heading?.focus({ preventScroll: true });
     }
 
     function copyQuestion(qid: string) {
@@ -953,6 +989,68 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [readOnly]);
+
+    // Keyboard authoring: navigation, new/duplicate/delete, reorder and the quick jump. None of it
+    // fires while a field or a rich-text editor has focus, so typing stays typing.
+    const commandRef = useRef<(command: BuilderCommand) => void>(() => {});
+    useEffect(() => {
+        commandRef.current = (command) => {
+            if (readOnly) return;
+            // A panel, the checks screen or a picker owns the page while it is open.
+            if (settingsOpen || checksOpen || quickJumpOpen || shortcutsOpen || newQuestionFor || showBankModal) {
+                return;
+            }
+            const openIndex = selectedQuestionId
+                ? displayOrderedQuestions.findIndex((q) => q.id === selectedQuestionId)
+                : -1;
+            switch (command) {
+                case 'next-question': {
+                    const next = displayOrderedQuestions[openIndex + 1];
+                    if (next) jumpToQuestion(next.id);
+                    break;
+                }
+                case 'prev-question': {
+                    const prev = displayOrderedQuestions[openIndex - 1];
+                    if (prev) jumpToQuestion(prev.id);
+                    break;
+                }
+                case 'new-question':
+                    openTypePicker();
+                    break;
+                case 'duplicate-question':
+                    if (selectedQuestionId) copyQuestion(selectedQuestionId);
+                    break;
+                case 'remove-question':
+                    if (selectedQuestionId) removeQuestion(selectedQuestionId);
+                    break;
+                case 'move-question-up':
+                    if (selectedQuestionId) moveQuestion(selectedQuestionId, -1);
+                    break;
+                case 'move-question-down':
+                    if (selectedQuestionId) moveQuestion(selectedQuestionId, 1);
+                    break;
+                case 'quick-jump':
+                    setQuickJumpOpen(true);
+                    break;
+                case 'shortcuts':
+                    setShortcutsOpen(true);
+                    break;
+            }
+        };
+    });
+    useEffect(() => {
+        function handleKeyDown(event: KeyboardEvent) {
+            if (isTypingTarget(event.target)) return;
+            const command = builderCommandFor(event);
+            if (!command) return;
+            event.preventDefault();
+            // The topbar search also claims Ctrl+K; inside the builder the question jump goes first.
+            if (command === 'quick-jump') event.stopPropagation();
+            commandRef.current(command);
+        }
+        window.addEventListener('keydown', handleKeyDown, true);
+        return () => window.removeEventListener('keydown', handleKeyDown, true);
+    }, []);
 
     const totalPoints = questions.reduce((sum, q) => sum + (q.points || 0), 0);
     const allQuestionsCollapsed = questions.length > 0 && questions.every((q) => collapsedQuestions.has(q.id));
@@ -1332,7 +1430,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                                 type="button"
                                 className="btn btn-secondary btn-sm"
                                 data-testid="checks_review"
-                                onClick={() => setChecksOpen(true)}
+                                onClick={() => toggleChecks(true)}
                                 style={{ marginLeft: 'auto' }}
                             >
                                 {t('tests.checks_review')}
@@ -2054,7 +2152,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                                 className="btn btn-ghost btn-sm"
                                 data-testid="checks_open"
                                 aria-pressed={checksOpen}
-                                onClick={() => setChecksOpen((open) => !open)}
+                                onClick={() => toggleChecks()}
                             >
                                 <ClipboardCheck size={14} /> {t('tests.checks_title')}
                                 {(draftBlockers?.entries.length ?? 0) > 0 && (
@@ -2278,6 +2376,29 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
             {newQuestionFor && (
                 <QuestionTypePicker onSelect={createQuestionOfType} onClose={() => setNewQuestionFor(null)} />
             )}
+            {quickJumpOpen && (
+                <BuilderQuickJump
+                    questions={displayOrderedQuestions.map((question) => ({
+                        id: question.id,
+                        number: displayOrderedQuestions.indexOf(question) + 1,
+                        label:
+                            htmlToPlainText(plainQuestionPromptText(question)).trim() ||
+                            t(questionTypeLabelKey(question.type)),
+                        sectionTitle: sections.find((section) => section.id === question.sectionId)?.title,
+                    }))}
+                    settingsTabs={TEST_SETTINGS_TABS.map(({ id, labelKey }) => ({ tab: id, label: t(labelKey) }))}
+                    onPickQuestion={(questionId) => {
+                        setQuickJumpOpen(false);
+                        jumpToQuestion(questionId);
+                    }}
+                    onPickSettings={(tab) => {
+                        setQuickJumpOpen(false);
+                        openSettings(tab);
+                    }}
+                    onClose={() => setQuickJumpOpen(false)}
+                />
+            )}
+            {shortcutsOpen && <BuilderShortcutsOverlay open onClose={() => setShortcutsOpen(false)} />}
             <ConfirmDialog {...unsavedDialogProps} />
         </>
     );
