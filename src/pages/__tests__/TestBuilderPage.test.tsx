@@ -390,8 +390,7 @@ describe('TestBuilderPage', () => {
 
         fireEvent.click(screen.getByTestId('checks_open'));
         fireEvent.click(screen.getByRole('button', { name: 'tests.issue_question:{"number":2}' }));
-        // A jump lands on the question's heading, so the move is announced rather than silent.
-        expect(document.activeElement?.id).toBe('question-heading-qs');
+        expect(document.activeElement?.id).toBe('question-card-qs');
         expect(document.activeElement).toHaveTextContent('tests.question_number:{"number":2}');
     });
 
@@ -412,7 +411,7 @@ describe('TestBuilderPage', () => {
         fireEvent.click(screen.getByTestId('checks_open'));
         fireEvent.click(screen.getByRole('button', { name: 'tests.issue_question:{"number":2}' }));
         expect(screen.getAllByLabelText('tests.question_type_label')).toHaveLength(1);
-        expect(document.activeElement?.id).toBe('question-heading-qb');
+        expect(document.activeElement?.id).toBe('question-card-qb');
         expect(screen.getByText('tests.question_incomplete')).toBeInTheDocument();
 
         fireEvent.click(screen.getByRole('button', { name: 'tests.collapse_all_questions' }));

@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlertCircle, ChevronDown, ChevronRight, Maximize2, Minimize2, Plus, Settings } from 'lucide-react';
+import { AlertCircle, Maximize2, Minimize2, Plus, Settings } from 'lucide-react';
 import { plainQuestionPromptText } from '../../utils/clozeParse';
 import { htmlToPlainText } from '../../utils/essayUtils';
 import { questionTypeLabelKey } from '../../utils/questionTypeKey';
@@ -49,8 +49,6 @@ export default function TestOutlineRail({
 }: Props) {
     const { t } = useTranslation();
     const [query, setQuery] = useState('');
-    const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
-    const treeRef = useRef<HTMLDivElement | null>(null);
     const needle = query.trim().toLowerCase();
 
     const labelFor = (question: TestQuestion) =>
@@ -82,72 +80,6 @@ export default function TestOutlineRail({
         .filter((group) => group.questions.length > 0 || (!needle && group.id !== '__none__'));
 
     const numberOf = (question: TestQuestion) => questions.indexOf(question) + 1;
-
-    // A collapsed section unmounts its rows, so the mounted rows are exactly the walkable ones.
-    const treeRows = () => Array.from(treeRef.current?.querySelectorAll<HTMLElement>('[data-tree-row]') ?? []);
-
-    function focusRow(offset: number) {
-        const rows = treeRows();
-        if (rows.length === 0) return;
-        const next = Math.min(Math.max(offset, 0), rows.length - 1);
-        rows[next]?.focus();
-    }
-
-    function setSectionCollapsed(sectionId: string, collapsed: boolean, header?: HTMLElement | null) {
-        setCollapsedSections((prev) => {
-            const had = prev.has(sectionId);
-            if (had === collapsed) return prev;
-            const next = new Set(prev);
-            if (collapsed) next.add(sectionId);
-            else next.delete(sectionId);
-            return next;
-        });
-        if (collapsed) header?.focus({ preventScroll: true });
-    }
-
-    /** Arrow keys walk the outline; Enter opens, and Left/Right collapse or expand a section. */
-    function handleTreeKeyDown(event: React.KeyboardEvent) {
-        const row = (event.target as HTMLElement).closest<HTMLElement>('[data-tree-row]');
-        if (!row) return;
-        const rows = treeRows();
-        const index = rows.indexOf(row);
-        if (event.key === 'ArrowDown') {
-            event.preventDefault();
-            focusRow(index + 1);
-            return;
-        }
-        if (event.key === 'ArrowUp') {
-            event.preventDefault();
-            focusRow(index - 1);
-            return;
-        }
-        if (event.key === 'Home') {
-            event.preventDefault();
-            focusRow(0);
-            return;
-        }
-        if (event.key === 'End') {
-            event.preventDefault();
-            focusRow(rows.length - 1);
-            return;
-        }
-        if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            row.click();
-            return;
-        }
-        if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
-        event.preventDefault();
-        const sectionId = row.dataset.sectionId;
-        if (row.dataset.rowKind === 'section') {
-            if (sectionId) setSectionCollapsed(sectionId, event.key === 'ArrowLeft', row);
-            return;
-        }
-        if (event.key === 'ArrowLeft') {
-            const header = row.closest('[data-tree-group]')?.querySelector<HTMLElement>('[data-row-kind="section"]');
-            header?.focus({ preventScroll: true });
-        }
-    }
 
     return (
         <nav
@@ -225,194 +157,133 @@ export default function TestOutlineRail({
                 </p>
             )}
 
-            {(() => {
-                const firstQuestionId = groups.flatMap((group) => group.questions)[0]?.id;
-                const tabbableQuestionId = questions.some((q) => q.id === activeId) ? activeId : firstQuestionId;
+            {groups.map((group) => {
+                const sectionActive = group.id === activeSectionId;
+                const sectionLabel = (
+                    <span
+                        style={{
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            fontWeight: 600,
+                            color: sectionActive ? 'var(--text)' : 'var(--text-muted)',
+                        }}
+                    >
+                        {group.title}
+                    </span>
+                );
                 return (
-                    <div role="tree" aria-labelledby="test-outline-heading" ref={treeRef} onKeyDown={handleTreeKeyDown}>
-                        {groups.map((group) => {
-                            const sectionActive = group.id === activeSectionId;
-                            const collapsible = !!onSelectSection && group.id !== '__none__';
-                            const collapsed = collapsedSections.has(group.id);
-                            const sectionLabel = (
-                                <span
+                    <div key={group.id} style={{ marginBottom: 10 }}>
+                        {onSelectSection && group.id !== '__none__' ? (
+                            <button
+                                type="button"
+                                onClick={() => onSelectSection(group.id)}
+                                aria-current={sectionActive ? 'true' : undefined}
+                                title={group.title}
+                                data-testid={`outline-section-${group.id}`}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 4,
+                                    width: '100%',
+                                    margin: '0 0 4px',
+                                    padding: '3px 6px',
+                                    border: 'none',
+                                    borderRadius: 6,
+                                    background: sectionActive
+                                        ? 'color-mix(in srgb, var(--accent) 10%, transparent)'
+                                        : 'none',
+                                    font: 'inherit',
+                                    fontSize: '0.75rem',
+                                    textAlign: 'left',
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                {sectionLabel}
+                            </button>
+                        ) : (
+                            <p
+                                className="text-xs"
+                                style={{
+                                    margin: '0 0 4px 6px',
+                                    fontWeight: 600,
+                                    color: 'var(--text-muted)',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                }}
+                                title={group.title}
+                            >
+                                {group.title}
+                            </p>
+                        )}
+                        {group.questions.map((question) => {
+                            const active = question.id === activeId;
+                            const issues = issuesByQuestion.get(question.id) ?? [];
+                            return (
+                                <button
+                                    key={question.id}
+                                    type="button"
+                                    onClick={() => onSelect(question.id)}
+                                    title={labelFor(question)}
+                                    data-testid={`outline-question-${question.id}`}
+                                    aria-current={active ? 'true' : undefined}
                                     style={{
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                        whiteSpace: 'nowrap',
-                                        fontWeight: 600,
-                                        color: sectionActive ? 'var(--text)' : 'var(--text-muted)',
+                                        display: 'grid',
+                                        gridTemplateColumns: '22px minmax(0, 1fr) auto',
+                                        alignItems: 'center',
+                                        gap: 6,
+                                        width: '100%',
+                                        padding: '5px 6px',
+                                        border: 'none',
+                                        borderRadius: 6,
+                                        background: active
+                                            ? 'color-mix(in srgb, var(--accent) 14%, transparent)'
+                                            : 'none',
+                                        color: 'var(--text)',
+                                        font: 'inherit',
+                                        fontSize: '0.8rem',
+                                        fontWeight: active ? 600 : 400,
+                                        textAlign: 'left',
+                                        cursor: 'pointer',
                                     }}
                                 >
-                                    {group.title}
-                                </span>
-                            );
-                            return (
-                                <div key={group.id} data-tree-group={group.id} style={{ marginBottom: 10 }}>
-                                    {collapsible ? (
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                            <button
-                                                type="button"
-                                                role="treeitem"
-                                                aria-expanded={!collapsed}
-                                                aria-selected={sectionActive}
-                                                aria-current={sectionActive ? 'true' : undefined}
-                                                tabIndex={sectionActive ? 0 : -1}
-                                                data-tree-row="true"
-                                                data-row-kind="section"
-                                                data-section-id={group.id}
-                                                onClick={() => onSelectSection?.(group.id)}
-                                                title={group.title}
-                                                data-testid={`outline-section-${group.id}`}
-                                                style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: 4,
-                                                    flex: 1,
-                                                    minWidth: 0,
-                                                    margin: 0,
-                                                    padding: '3px 6px',
-                                                    border: 'none',
-                                                    borderRadius: 6,
-                                                    background: sectionActive
-                                                        ? 'color-mix(in srgb, var(--accent) 10%, transparent)'
-                                                        : 'none',
-                                                    font: 'inherit',
-                                                    fontSize: '0.75rem',
-                                                    textAlign: 'left',
-                                                    cursor: 'pointer',
-                                                }}
-                                            >
-                                                {sectionLabel}
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className="btn btn-ghost btn-icon btn-sm"
-                                                tabIndex={-1}
-                                                aria-label={t(
-                                                    collapsed
-                                                        ? 'tests.outline_expand_section'
-                                                        : 'tests.outline_collapse_section',
-                                                    { name: group.title }
-                                                )}
-                                                title={t(
-                                                    collapsed
-                                                        ? 'tests.outline_expand_section'
-                                                        : 'tests.outline_collapse_section',
-                                                    { name: group.title }
-                                                )}
-                                                data-testid={`outline-section-toggle-${group.id}`}
-                                                onClick={() => setSectionCollapsed(group.id, !collapsed)}
-                                                style={{ padding: 2, minHeight: 20, minWidth: 20 }}
-                                            >
-                                                {collapsed ? (
-                                                    <ChevronRight size={12} aria-hidden="true" />
-                                                ) : (
-                                                    <ChevronDown size={12} aria-hidden="true" />
-                                                )}
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <p
-                                            className="text-xs"
-                                            style={{
-                                                margin: '0 0 4px 6px',
-                                                fontWeight: 600,
-                                                color: 'var(--text-muted)',
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap',
-                                            }}
-                                            title={group.title}
-                                        >
-                                            {group.title}
-                                        </p>
-                                    )}
-                                    {!collapsed && (
-                                        <div role="group">
-                                            {group.questions.map((question) => {
-                                                const active = question.id === activeId;
-                                                const issues = issuesByQuestion.get(question.id) ?? [];
-                                                return (
-                                                    <button
-                                                        key={question.id}
-                                                        type="button"
-                                                        role="treeitem"
-                                                        aria-selected={active}
-                                                        aria-current={active ? 'true' : undefined}
-                                                        tabIndex={question.id === tabbableQuestionId ? 0 : -1}
-                                                        data-tree-row="true"
-                                                        data-row-kind="question"
-                                                        data-section-id={group.id}
-                                                        onClick={() => onSelect(question.id)}
-                                                        title={labelFor(question)}
-                                                        data-testid={`outline-question-${question.id}`}
-                                                        style={{
-                                                            display: 'grid',
-                                                            gridTemplateColumns: '22px minmax(0, 1fr) auto',
-                                                            alignItems: 'center',
-                                                            gap: 6,
-                                                            width: '100%',
-                                                            padding: '5px 6px',
-                                                            border: 'none',
-                                                            borderRadius: 6,
-                                                            background: active
-                                                                ? 'color-mix(in srgb, var(--accent) 14%, transparent)'
-                                                                : 'none',
-                                                            color: 'var(--text)',
-                                                            font: 'inherit',
-                                                            fontSize: '0.8rem',
-                                                            fontWeight: active ? 600 : 400,
-                                                            textAlign: 'left',
-                                                            cursor: 'pointer',
-                                                        }}
-                                                    >
-                                                        <span
-                                                            style={{
-                                                                fontVariantNumeric: 'tabular-nums',
-                                                                color: 'var(--text-muted)',
-                                                            }}
-                                                        >
-                                                            {numberOf(question)}
-                                                        </span>
-                                                        <span
-                                                            style={{
-                                                                overflow: 'hidden',
-                                                                textOverflow: 'ellipsis',
-                                                                whiteSpace: 'nowrap',
-                                                            }}
-                                                        >
-                                                            {labelFor(question)}
-                                                        </span>
-                                                        <span
-                                                            style={{
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                gap: 4,
-                                                                color: 'var(--text-muted)',
-                                                                fontVariantNumeric: 'tabular-nums',
-                                                            }}
-                                                        >
-                                                            {issues.length > 0 && (
-                                                                <AlertCircle
-                                                                    size={12}
-                                                                    style={{ color: 'var(--yellow-text)' }}
-                                                                    aria-label={t('tests.issues_title')}
-                                                                />
-                                                            )}
-                                                            {question.points}
-                                                        </span>
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
-                                </div>
+                                    <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--text-muted)' }}>
+                                        {numberOf(question)}
+                                    </span>
+                                    <span
+                                        style={{
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap',
+                                        }}
+                                    >
+                                        {labelFor(question)}
+                                    </span>
+                                    <span
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 4,
+                                            color: 'var(--text-muted)',
+                                            fontVariantNumeric: 'tabular-nums',
+                                        }}
+                                    >
+                                        {issues.length > 0 && (
+                                            <AlertCircle
+                                                size={12}
+                                                style={{ color: 'var(--yellow-text)' }}
+                                                aria-label={t('tests.issues_title')}
+                                            />
+                                        )}
+                                        {question.points}
+                                    </span>
+                                </button>
                             );
                         })}
                     </div>
                 );
-            })()}
+            })}
 
             <button
                 type="button"
