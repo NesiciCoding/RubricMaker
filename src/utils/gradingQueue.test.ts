@@ -36,6 +36,14 @@ describe('queueStatus', () => {
         expect(queueStatus(sr('s', ['l', 'l'], { notHandedIn: true }), 2)).toBe('notHandedIn');
         expect(queueStatus(sr('s', ['l', 'l'], { feedbackOnly: true }), 2)).toBe('inProgress');
     });
+    it('judges a record against its own rubric snapshot, not the live criteria count', () => {
+        const snapshot = { criteria: [{ id: 'c0' }, { id: 'c1' }] } as unknown as StudentRubric['rubricSnapshot'];
+        expect(queueStatus(sr('s', ['l', 'l'], { rubricSnapshot: snapshot }), 3)).toBe('graded');
+        expect(queueStatus(sr('s', ['l', null], { rubricSnapshot: snapshot }), 1)).toBe('inProgress');
+    });
+    it('does not call a record with extra scored entries graded', () => {
+        expect(queueStatus(sr('s', ['l', 'l', 'l']), 2)).toBe('inProgress');
+    });
     it('treats a rubric without criteria as graded only once saved', () => {
         expect(queueStatus(sr('s', []), 0)).toBe('ungraded');
         expect(queueStatus(sr('s', [], { gradedAt: '2024-01-01' }), 0)).toBe('graded');
@@ -92,6 +100,17 @@ describe('buildQueueView', () => {
         expect(view({ status: 'all', search: '3b' })).toEqual(['3']);
         expect(view({ status: 'inProgress', search: '', groupId: 'g1' })).toEqual(['2']);
         expect(view({ classId: 'a', status: 'ungraded', search: '', groupId: 'g1' })).toEqual([]);
+    });
+
+    it('keeps a selected group with no member in the class scope empty', () => {
+        const v = buildQueueView({ ...base, filters: { classId: 'a', status: 'all', search: '', groupId: 'g2' } });
+        expect(v.visible).toEqual([]);
+        const gone = buildQueueView({
+            ...base,
+            groups: [{ groupId: 'g2', memberIds: ['3'] }],
+            filters: { classId: 'a', status: 'all', search: '', groupId: 'g2' },
+        });
+        expect(gone.visible).toEqual([]);
     });
 
     it('hides groups with no member in the class scope and drops out-of-scope members', () => {

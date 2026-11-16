@@ -25,10 +25,12 @@ export interface QueueProgress {
 }
 
 export function queueProgress(
-    studentRubric: Pick<StudentRubric, 'entries'> | undefined,
+    studentRubric: Pick<StudentRubric, 'entries' | 'rubricSnapshot'> | undefined,
     totalCriteria: number
 ): QueueProgress {
-    return { scored: studentRubric ? countScoredEntries(studentRubric) : 0, total: totalCriteria };
+    // A record is graded against the rubric version saved with it, so it is judged against that.
+    const snapshotTotal = studentRubric?.rubricSnapshot?.criteria.length;
+    return { scored: studentRubric ? countScoredEntries(studentRubric) : 0, total: snapshotTotal ?? totalCriteria };
 }
 
 /**
@@ -41,7 +43,7 @@ export function queueStatus(studentRubric: StudentRubric | undefined, totalCrite
     if (!studentRubric) return 'ungraded';
     if (studentRubric.notHandedIn) return 'notHandedIn';
     const { scored, total } = queueProgress(studentRubric, totalCriteria);
-    if (total > 0 && scored >= total && !studentRubric.feedbackOnly) return 'graded';
+    if (total > 0 && scored === total && !studentRubric.feedbackOnly) return 'graded';
     if (total === 0 && studentRubric.gradedAt) return 'graded';
     if (scored > 0 || studentRubric.gradedAt) return 'inProgress';
     return 'ungraded';

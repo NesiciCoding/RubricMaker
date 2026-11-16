@@ -168,6 +168,7 @@ test.describe('Mobile rubric grading queue', () => {
         await expect(appPage.getByRole('link', { name: 'Grade Bram de Vries' })).toBeVisible();
         await expect(appPage.getByRole('link', { name: 'Grade Cara Martin' })).toBeVisible();
         await expect(appPage.getByRole('link', { name: 'Open Amara Okafor' })).toHaveCount(0);
+        await expect(appPage.getByRole('link', { name: 'Grade Amara Okafor' })).toHaveCount(0);
     });
 
     test('Grade next follows the filtered view and the URL keeps it', async ({ appPage }) => {

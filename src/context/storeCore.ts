@@ -130,7 +130,7 @@ export type Action =
     | { type: 'ADD_CLASS'; payload: Class }
     | { type: 'UPDATE_CLASS'; payload: Class }
     | { type: 'DELETE_CLASS'; id: string }
-    | { type: 'SAVE_STUDENT_RUBRIC'; payload: StudentRubric }
+    | { type: 'SAVE_STUDENT_RUBRIC'; payload: StudentRubric; skipGroupFanOut?: boolean }
     | { type: 'GROUP_STUDENT_RUBRICS'; payload: StudentRubric[] }
     | { type: 'DELETE_STUDENT_RUBRIC'; id: string; scope: 'student' | 'group' }
     | { type: 'RESTORE_STUDENT_RUBRIC'; id: string }
@@ -428,7 +428,7 @@ export function reducer(state: StoreData, action: Action): StoreData {
             // Group grading: saving any member of a group fans its entries out to every sibling
             // sharing groupId, scoped per criterion by RubricCriterion.collaborative (unset/true =
             // fan out, false = stays individually scored per student).
-            if (payload.groupId) {
+            if (payload.groupId && !action.skipGroupFanOut) {
                 // Fan-out follows the rubric version the grade is saved against, not the live one: a
                 // criterion's collaborative flag may have changed since this grade was taken.
                 const criteria =
@@ -1101,7 +1101,7 @@ export interface AppContextValue extends StoreData {
     updateClass: (c: Class) => void;
     deleteClass: (id: string, deleteStudents?: boolean) => void;
     mergeClasses: (sourceClassId: string, targetClassId: string) => void;
-    saveStudentRubric: (sr: StudentRubric) => void;
+    saveStudentRubric: (sr: StudentRubric, options?: { skipGroupFanOut?: boolean }) => void;
     saveRubricSelfAssessment: (id: string, levels: Record<string, string | null>, reflection: string) => void;
     createStudentRubric: (rubricId: string, studentId: string) => StudentRubric;
     /** `criteria` carries a shared rubric's criteria when it isn't in the local collection. */

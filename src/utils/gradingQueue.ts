@@ -81,8 +81,9 @@ export function buildQueueView(input: QueueViewInput): QueueView {
         .map((g) => ({ ...g, memberIds: g.memberIds.filter((id) => scopedIds.has(id)) }))
         .filter((g) => g.memberIds.length > 0);
 
-    const group = filters.groupId ? scopedGroups.find((g) => g.groupId === filters.groupId) : undefined;
-    const groupMembers = group ? new Set(group.memberIds) : undefined;
+    const groupMembers = filters.groupId
+        ? new Set(scopedGroups.find((g) => g.groupId === filters.groupId)?.memberIds ?? [])
+        : undefined;
     const groupNameOf = (id: string) => {
         const sr = gradeByStudent.get(id);
         return sr?.groupId ? sr.groupName : undefined;

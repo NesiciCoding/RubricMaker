@@ -315,6 +315,26 @@ describe('rubric grading queue and peer-review roster', () => {
         expect(saved).toMatchObject({ studentId: 's2', rubricId: 'r1', notHandedIn: true });
         expect(saved.gradedAt).toBeTruthy();
         expect(saved.entries).toHaveLength(1);
+        expect(mockAppValue.saveStudentRubric.mock.calls[0][1]).toEqual({ skipGroupFanOut: true });
+    });
+
+    it('keeps members outside the class filter when a group is edited from a filtered queue', () => {
+        mockAppValue.classes = [classA, classB];
+        mockAppValue.students = [alice, bob, cara, dan];
+        mockAppValue.studentRubrics = [
+            { ...gradedSr, groupId: 'g1', groupName: 'Mixed' },
+            { ...notHandedInSr, groupId: 'g1', groupName: 'Mixed' },
+            { ...gradedSr, id: 'sr4', studentId: 's4', groupId: 'g1', groupName: 'Mixed' },
+        ];
+        renderAt('/rubrics/r1/grade?class=c1', <QueuePage />, '/rubrics/:rubricId/grade');
+        fireEvent.click(screen.getByRole('button', { name: 'rubricQueue.group_edit' }));
+        const dialog = screen.getByRole('dialog');
+        fireEvent.click(within(dialog).getByText(/group_grade_update_btn/));
+        expect(mockAppValue.updateStudentGroup).toHaveBeenCalledWith(
+            'g1',
+            expect.arrayContaining(['s1', 's3', 's4']),
+            'Mixed'
+        );
     });
 
     it('does not write anything when the confirmation is cancelled', async () => {

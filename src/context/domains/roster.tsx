@@ -176,12 +176,12 @@ export function createRosterActions(ctx: StoreActionsCtx): RosterActions {
         }
         deleteClass(sourceClassId, false);
     };
-    const saveStudentRubricFn = (sr: StudentRubric) => {
+    const saveStudentRubricFn = (sr: StudentRubric, options?: { skipGroupFanOut?: boolean }) => {
         logAuditEvent('grade', 'grade_save', 'student_rubric', sr.id, {
             rubricId: sr.rubricId,
             studentId: sr.studentId,
         });
-        dispatch({ type: 'SAVE_STUDENT_RUBRIC', payload: sr });
+        dispatch({ type: 'SAVE_STUDENT_RUBRIC', payload: sr, skipGroupFanOut: options?.skipGroupFanOut });
     };
     const saveRubricSelfAssessment = (id: string, levels: Record<string, string | null>, reflection: string) => {
         dispatch({ type: 'SAVE_RUBRIC_SELF_ASSESSMENT', id, levels, reflection });

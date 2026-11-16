@@ -97,6 +97,7 @@ export default function RubricGradingQueuePage() {
     const [editingGroup, setEditingGroup] = useState<{
         groupId: string;
         memberIds: string[];
+        allMemberIds: string[];
         name: string;
     } | null>(null);
     const [selecting, setSelecting] = useState(false);
@@ -203,7 +204,11 @@ export default function RubricGradingQueuePage() {
     // Restore scroll and focus when coming back from grading to the same view (#1179).
     const scrollRef = useRef<HTMLDivElement>(null);
     const stateKey = scrollKey(rubricId ?? '', query);
+    const restoredRef = useRef(false);
     useLayoutEffect(() => {
+        // Once per visit: later filter edits must not pull focus away from the search box.
+        if (restoredRef.current || visible.length === 0) return;
+        restoredRef.current = true;
         const saved = readScroll(stateKey);
         if (!saved) return;
         const container = scrollRef.current?.closest('.page-content') as HTMLElement | null;
@@ -219,22 +224,31 @@ export default function RubricGradingQueuePage() {
         writeScroll(stateKey, { top: container?.scrollTop ?? 0, focus: studentId });
     };
 
+    const latestGrades = useRef(gradeByStudent);
+    useEffect(() => {
+        latestGrades.current = gradeByStudent;
+    }, [gradeByStudent]);
+    const pickTargets = (ids: string[], direction: 'mark' | 'restore') =>
+        ids
+            .map((id) => ({ id, sr: latestGrades.current.get(id) }))
+            .filter(({ sr }) => (direction === 'mark' ? !sr?.notHandedIn : !!sr?.notHandedIn));
+
     const bulkWrite = async (direction: 'mark' | 'restore') => {
         if (!rubric) return;
-        const targets = selectedVisible
-            .map((id) => ({ id, sr: gradeByStudent.get(id) }))
-            .filter(({ sr }) => (direction === 'mark' ? !sr?.notHandedIn : !!sr?.notHandedIn));
-        if (targets.length === 0) return;
+        const confirmedCount = pickTargets(selectedVisible, direction).length;
+        if (confirmedCount === 0) return;
         if (direction === 'mark') {
             const ok = await confirm({
                 title: t('rubricQueue.bulk_nhi_confirm_title'),
-                message: t('rubricQueue.bulk_nhi_confirm_message', { count: targets.length }),
+                message: t('rubricQueue.bulk_nhi_confirm_message', { count: confirmedCount }),
                 confirmLabel: t('rubricQueue.bulk_mark_nhi'),
                 cancelLabel: t('common.cancel'),
                 danger: true,
             });
             if (!ok) return;
         }
+        // Re-read after the dialog: a sync or another tab may have changed a record while it was open.
+        const targets = pickTargets(selectedVisible, direction);
         const canned = t('gradeStudent.not_handed_in_comment');
         const now = new Date().toISOString();
         for (const { id, sr } of targets) {
@@ -257,11 +271,17 @@ export default function RubricGradingQueuePage() {
                         gradeScaleSnapshot: rubricGradeScale ? structuredClone(rubricGradeScale) : undefined,
                     } satisfies StudentRubric);
                 // Keep the original grade date: it drives "Date graded", period reports and recent activity.
-                saveStudentRubric({ ...markNotHandedIn(base, canned), gradedAt: base.gradedAt ?? now });
+                // Hidden group members must not receive this student's comment, scores or date.
+                saveStudentRubric(
+                    { ...markNotHandedIn(base, canned), gradedAt: base.gradedAt ?? now },
+                    { skipGroupFanOut: true }
+                );
             } else if (sr) {
                 const cleared = clearNotHandedIn(sr, canned);
                 // A record that only existed to carry the mark goes back to untouched, not "in progress".
-                saveStudentRubric(hasAnyScore(cleared) ? cleared : { ...cleared, gradedAt: undefined });
+                saveStudentRubric(hasAnyScore(cleared) ? cleared : { ...cleared, gradedAt: undefined }, {
+                    skipGroupFanOut: true,
+                });
             }
         }
         showToast(
@@ -538,6 +558,11 @@ export default function RubricGradingQueuePage() {
                                                 setEditingGroup({
                                                     groupId: group.groupId,
                                                     memberIds: group.memberIds,
+                                                    allMemberIds: studentRubrics
+                                                        .filter(
+                                                            (sr) => sr.groupId === group.groupId && !sr.isPeerReview
+                                                        )
+                                                        .map((sr) => sr.studentId),
                                                     name: group.name ?? '',
                                                 })
                                             }
@@ -689,9 +714,8 @@ export default function RubricGradingQueuePage() {
                         aria-label={t('rubricQueue.bulk_bar')}
                         style={{
                             position: 'sticky',
-                            bottom: 8,
+                            top: 8,
                             zIndex: 20,
-                            order: 99,
                             display: 'flex',
                             flexWrap: 'wrap',
                             alignItems: 'center',
@@ -853,7 +877,10 @@ export default function RubricGradingQueuePage() {
                     mode="edit"
                     onClose={() => setEditingGroup(null)}
                     onStart={(studentIds, groupName) => {
-                        updateStudentGroup(editingGroup.groupId, studentIds, groupName);
+                        // Members outside the class filter are not offered in the modal; keep them in the group.
+                        const inScope = new Set(scopedRoster.map((s) => s.id));
+                        const hiddenIds = editingGroup.allMemberIds.filter((id) => !inScope.has(id));
+                        updateStudentGroup(editingGroup.groupId, [...studentIds, ...hiddenIds], groupName);
                         setEditingGroup(null);
                     }}
                 />

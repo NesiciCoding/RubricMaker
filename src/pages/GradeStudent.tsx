@@ -460,7 +460,9 @@ function GradeStudentEditor() {
         }
         if (!queueCtx.fromQueue) ordered = [...ordered].sort((a, b) => a.name.localeCompare(b.name));
         // Wrapping round to graded students is for a review pass; the last ungraded student ends the loop.
-        const next = pickNextStudent(ordered, studentId, statusOf, { allowReview: !!existingSR });
+        const next = pickNextStudent(ordered, studentId, statusOf, {
+            allowReview: statusOf(studentId ?? '') === 'graded',
+        });
         return {
             nextStudent: next?.student ?? null,
             hasOtherUngraded: next?.reason === 'work',
