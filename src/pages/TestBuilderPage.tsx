@@ -1851,6 +1851,10 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                                     </div>
                                 </div>
                                 <QuestionEditor
+                                    // The focus pane reuses one editor for every question; EssayEditor only
+                                    // reads `content` at mount, so without a key the previous question's
+                                    // prompt stays on screen after a rail jump.
+                                    key={focusQuestion.id}
                                     question={focusQuestion}
                                     index={displayOrderedQuestions.indexOf(focusQuestion)}
                                     total={questions.length}

@@ -33,7 +33,7 @@ export default function StudentAnswerSurface({ question, value, onChange, code, 
     const answer = { question, value, onChange, code: code ?? '', lang };
 
     return (
-        <div>
+        <div data-testid="answer-surface">
             {question.type === 'multiple-choice' && <MultipleChoiceAnswer {...answer} />}
             {question.type === 'multiple-response' && <MultipleResponseAnswer {...answer} />}
             {question.type === 'true-false' && <TrueFalseAnswer value={value} onChange={onChange} />}

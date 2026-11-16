@@ -55,6 +55,13 @@ export const AXE_TAGS = [
 export const A11Y_THEMES = ['light', 'dark'] as const;
 export type A11yTheme = (typeof A11Y_THEMES)[number];
 
+/**
+ * The test builder's rail + focus pane + inspector layout only exists at ≥1400px, so the gate's
+ * 1280 viewport never sees it. These routes are scanned again at this width by the `wide` project
+ * (`e2e/specs/61-test-builder-wide.spec.ts`), against the same baseline entries.
+ */
+export const A11Y_WIDE_VIEWPORT = { width: 1500, height: 1000 } as const;
+
 export type A11yRoute = { path: string; label: string };
 
 const now = new Date('2026-10-18T09:00:00.000Z').toISOString();
@@ -375,6 +382,8 @@ export const A11Y_ROUTES: readonly A11yRoute[] = [
     { path: '/privacy', label: 'Privacy' },
     { path: '/this-route-does-not-exist', label: 'Not found' },
 ];
+
+export const A11Y_WIDE_ROUTES: readonly A11yRoute[] = [{ path: '/tests/new', label: 'Test builder (new, wide)' }];
 
 export type A11yBaselineViolation = { rule: string; nodes: number };
 export type A11yBaselineEntry = {
