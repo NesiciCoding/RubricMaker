@@ -11,11 +11,13 @@ import {
 
 export {
     parseClozeGaps,
+    matchClozeGaps,
     parseHotTextFragments,
     gapCorrectAnswers,
     clozeGapToSyntax,
     splitClozeOptions,
 } from '../../supabase/functions/_shared/testScoring.ts';
+export type { ClozeGapMatch } from '../../supabase/functions/_shared/testScoring.ts';
 export type {
     ClozeGap,
     ClozeOptionRole,

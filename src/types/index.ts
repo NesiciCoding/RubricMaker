@@ -1501,6 +1501,8 @@ export interface TestQuestion {
     partialCredit?: boolean;
     /** Opt-in leniencies for typed answers on short-answer and cloze (see AnswerTolerance in testScoring.ts) */
     answerTolerance?: AnswerTolerance;
+    /** Set on an auto-generated easier copy of another question (e.g. a cloze variant), so the builder can trace it back */
+    variantOfQuestionId?: string;
     linkedStandards?: LinkedStandard[];
     /** CEFR Can-Do statements linked to this question */
     linkedCefrDescriptors?: LinkedCefrDescriptor[];

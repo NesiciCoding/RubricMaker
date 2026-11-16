@@ -374,7 +374,15 @@ vi.mock('../../hooks/useToast', () => ({
 
 vi.mock('../../services/database', () => ({
     loadSupabaseConfig: () => ({ supabaseUrl: 'https://example.supabase.co', supabaseAnonKey: 'anon' }),
-    storageSync: { adapter: {} },
+    storageSync: {
+        adapter: {},
+        subscribe: () => () => {},
+        onAuthChange: () => () => {},
+        isConnected: () => false,
+        getStatus: () => 'disconnected',
+        getLastSyncAt: () => null,
+        getCurrentUserId: () => null,
+    },
 }));
 
 const mockEncodeEssay = vi.fn((..._args: unknown[]) => 'essay-code');

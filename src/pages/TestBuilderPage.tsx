@@ -38,6 +38,7 @@ import TestSectionWorkspace from '../components/Tests/TestSectionWorkspace';
 import QuestionBankModal from '../components/Tests/QuestionBankModal';
 import TagFilterChips from '../components/Tests/TagFilterChips';
 import { cloneBankItemIntoTest, duplicateQuestion, newQuestion } from '../utils/testQuestionClone';
+import { buildEasierClozeVariant, type ClozeVariantKind } from '../utils/clozeVariant';
 import { testAssignBlockers } from '../utils/testQuestionIssues';
 import type {
     Test,
@@ -835,6 +836,20 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         const copy = duplicateQuestion(questions[index]);
         setQuestions((prev) => [...prev.slice(0, index + 1), copy, ...prev.slice(index + 1)]);
         setSelectedQuestionId(copy.id);
+    }
+
+    function createClozeVariant(qid: string, kind: ClozeVariantKind) {
+        const index = questions.findIndex((q) => q.id === qid);
+        /* v8 ignore next -- variant buttons only render for existing questions */
+        if (index < 0) return;
+        const variant = buildEasierClozeVariant(questions[index], kind);
+        if (!variant) {
+            showToast(t('tests.cloze_variant_none'), 'info');
+            return;
+        }
+        setQuestions((prev) => [...prev.slice(0, index + 1), variant, ...prev.slice(index + 1)]);
+        setSelectedQuestionId(variant.id);
+        showToast(t('tests.cloze_variant_created'), 'success');
     }
 
     function removeQuestion(qid: string) {
@@ -2363,6 +2378,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                                 onChange={(q) => updateQuestion(focusQuestion.id, q)}
                                 onRemove={() => removeQuestion(focusQuestion.id)}
                                 onDuplicate={() => copyQuestion(focusQuestion.id)}
+                                onCreateVariant={(kind) => createClozeVariant(focusQuestion.id, kind)}
                                 collapsed={collapsedQuestions.has(focusQuestion.id)}
                                 onToggleCollapsed={() => toggleQuestionCollapsed(focusQuestion.id)}
                                 issues={issuesByQuestion.get(focusQuestion.id)}

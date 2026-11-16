@@ -249,7 +249,15 @@ vi.mock('react-joyride', () => ({
 
 vi.mock('../../services/database', () => ({
     loadSupabaseConfig: () => null,
-    storageSync: { adapter: {} },
+    storageSync: {
+        adapter: {},
+        subscribe: () => () => {},
+        onAuthChange: () => () => {},
+        isConnected: () => false,
+        getStatus: () => 'disconnected',
+        getLastSyncAt: () => null,
+        getCurrentUserId: () => null,
+    },
 }));
 
 vi.mock('../../utils/shareCode', () => ({

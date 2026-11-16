@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import HelpPopover from '../components/ui/HelpPopover';
 import { useStoreActions, useStoreSelector } from '../context/useStore';
+import { useToast } from '../hooks/useToast';
 import { useOwnOrSharedItem } from '../hooks/useSharedMaterials';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { useCanEditStudentWork } from '../hooks/useClassRoles';
@@ -34,6 +35,7 @@ import RubricTaskScorer from '../components/Tests/RubricTaskScorer';
 import OpenAnswerInsightsPanel from '../components/Tests/OpenAnswerInsightsPanel';
 import { blankRubricEntries, rubricAnswerPoints } from '../utils/rubricTaskScoring';
 import { questionTypeLabelKey } from '../utils/questionTypeKey';
+import { buildReviewDeck } from '../utils/questionsToDeck';
 import CommentBankModal from '../components/Comments/CommentBankModal';
 import type { TestAnswer, TestQuestion, ProctorEventType, CommentBankItem, Rubric, ScoreEntry } from '../types';
 
@@ -456,7 +458,8 @@ export default function TestResultsPage() {
     // The roster domain hooks filtered soft-deleted rows; archived students must not
     // resolve from a results route.
     const students = React.useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
-    const { saveStudentTest, recordCommentBankUsage, addCommentBankItem } = useStoreActions();
+    const { saveStudentTest, recordCommentBankUsage, addCommentBankItem, addFlashcardDeck } = useStoreActions();
+    const { showToast } = useToast();
     const dbStatus = useDbStatus();
     const canEditStudentWork = useCanEditStudentWork();
 
@@ -494,6 +497,25 @@ export default function TestResultsPage() {
         question,
         answer: answersById.get(question.id),
     }));
+    const missedEntries = effectiveAnswers.map(({ question, answer }) => ({
+        question,
+        pointsEarned: answer?.pointsEarned ?? autoScore(question, answer),
+    }));
+
+    function createReviewDeck() {
+        const deck = buildReviewDeck(
+            `${test?.name ?? ''} — ${student?.name ?? studentTest?.studentId ?? ''}`.trim(),
+            missedEntries
+        );
+        if (!deck) {
+            showToast(t('tests.review_deck_none'), 'info');
+            return;
+        }
+        addFlashcardDeck(deck);
+        showToast(t('tests.review_deck_created'), 'success', {
+            action: { label: t('tests.review_deck_open'), onClick: () => navigate('/flashcards') },
+        });
+    }
 
     const rawPoints = score?.rawPoints ?? 0;
     const adjustmentPoints = score?.adjustmentPoints ?? 0;
@@ -701,6 +723,13 @@ export default function TestResultsPage() {
                     <>
                         <button className="btn btn-ghost btn-sm" onClick={tour.start}>
                             {t('tutorial.page_tour_button')}
+                        </button>
+                        <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={createReviewDeck}
+                            disabled={missedEntries.every((entry) => entry.pointsEarned >= entry.question.points)}
+                        >
+                            <BookOpen size={14} /> {t('tests.review_deck_button')}
                         </button>
                         <button
                             className="btn btn-secondary btn-sm"
