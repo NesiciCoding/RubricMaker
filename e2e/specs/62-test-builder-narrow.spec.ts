@@ -121,3 +121,37 @@ test.describe('test builder — narrow layout at 1024px', () => {
         await expect(appPage.getByTestId('inspector-sheet')).toHaveCount(0);
     });
 });
+
+test.describe('test builder — undo and the autosaved draft', () => {
+    test('undoes a delete and offers the draft back after a reload', async ({ appPage }) => {
+        const builder = new TestBuilderPage(appPage);
+        await builder.gotoNew();
+        await builder.addQuestion('multiple-choice');
+        await builder.addQuestion('short-answer');
+
+        const focus = appPage.getByTestId('question-focus');
+        const select = appPage.getByTestId('question-switcher').getByTestId('switcher-select');
+        await expect(select.locator('option')).toHaveCount(2);
+
+        // Delete the open question, then put it back from the topbar.
+        await focus.getByRole('button', { name: /remove question/i }).click();
+        await expect(select.locator('option')).toHaveCount(1);
+        await appPage.getByTestId('builder_undo').click();
+        await expect(select.locator('option')).toHaveCount(2);
+        await expect(appPage.getByTestId('builder_redo')).toBeEnabled();
+
+        // Type into the first question, let the draft save, then lose the tab.
+        const firstOption = await select.locator('option').nth(0).getAttribute('value');
+        await select.selectOption(firstOption!);
+        await expect(focus).toContainText('Question 1');
+        await focus.locator('.essay-editor-content').first().fill('Draft that must survive');
+        await expect(appPage.getByTestId('draft_status')).toHaveText(/draft saved/i);
+
+        await appPage.reload();
+        const banner = appPage.getByTestId('draft-banner');
+        await expect(banner).toBeVisible();
+        await banner.getByRole('button', { name: /restore draft/i }).click();
+        await expect(banner).toHaveCount(0);
+        await expect(focus.locator('.essay-editor-content').first()).toContainText('Draft that must survive');
+    });
+});

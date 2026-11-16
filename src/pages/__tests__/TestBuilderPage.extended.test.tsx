@@ -1,9 +1,11 @@
 import React from 'react';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
 import { questionTypeLabelKey } from '../../utils/questionTypeKey';
+import { builderDraftKey } from '../../utils/testBuilderDraft';
+import { loadBuilderDraft } from '../../store/storage';
 import type { AppSettings, GradeScale, Test as RmTest, QuestionBankItem, TestQuestion, TestSection } from '../../types';
 
 // ---- Hoisted mocks ----
@@ -250,6 +252,7 @@ function openSettings(tab: 'basics' | 'delivery' | 'scoring' | 'placement' | 'pr
 
 describe('TestBuilderPage extended', () => {
     beforeEach(async () => {
+        localStorage.clear();
         mockTests = [];
         mockQuestionBank = [];
         mockAddTest.mockClear();
@@ -1377,5 +1380,189 @@ describe('TestBuilderPage extended', () => {
         } finally {
             Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
         }
+    });
+});
+
+describe('TestBuilderPage undo, redo and draft autosave', () => {
+    beforeEach(async () => {
+        localStorage.clear();
+        mockTests = [];
+        mockQuestionBank = [];
+        mockAddTest.mockClear();
+        mockUpdateTest.mockClear();
+        mockShowToast.mockClear();
+        const mod = await import('../TestBuilderPage');
+        TestBuilderPageComp = mod.default;
+        Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1500 });
+    });
+
+    function twoQuestionTest(): RmTest {
+        return {
+            id: 't1',
+            name: 'Two questions',
+            questions: [
+                { ...q1, id: 'qa', prompt: 'Alpha question' },
+                { ...q2, id: 'qb', prompt: 'Beta question' },
+            ],
+            sections: [],
+            requireSEB: false,
+            shuffleQuestions: false,
+            createdAt: '2024-01-01T00:00:00Z',
+            updatedAt: '2024-01-01T00:00:00Z',
+        };
+    }
+
+    function promptValue(): string {
+        return (screen.getByLabelText('tests.question_prompt_label') as HTMLTextAreaElement).value;
+    }
+
+    function outlineRows(): string[] {
+        const rail = screen.getByText('tests.outline_title').closest('nav') as HTMLElement;
+        return within(rail)
+            .getAllByTestId(/^outline-question-/)
+            .map((row) => row.textContent ?? '');
+    }
+
+    it('undoes a delete and reopens the question it brought back', () => {
+        mockTests = [twoQuestionTest()];
+        renderBuilder('/tests/t1');
+        expect(promptValue()).toBe('Alpha question');
+
+        fireEvent.click(screen.getByLabelText('tests.remove_question'));
+        expect(promptValue()).toBe('Beta question');
+
+        // The shortcut works anywhere outside a field, and redo puts the delete back.
+        fireEvent.keyDown(window, { key: 'z', ctrlKey: true });
+        expect(promptValue()).toBe('Alpha question');
+        expect(outlineRows()).toHaveLength(2);
+        expect(screen.getByTestId('builder_redo')).toBeEnabled();
+
+        fireEvent.keyDown(window, { key: 'z', ctrlKey: true, shiftKey: true });
+        expect(promptValue()).toBe('Beta question');
+
+        // The buttons do the same as the keys.
+        fireEvent.click(screen.getByTestId('builder_undo'));
+        expect(promptValue()).toBe('Alpha question');
+    });
+
+    it('undoes a type change and a reorder', () => {
+        mockTests = [twoQuestionTest()];
+        renderBuilder('/tests/t1');
+
+        fireEvent.click(document.getElementById('question-type-qa') as HTMLButtonElement);
+        fireEvent.click(screen.getByRole('button', { name: questionTypeLabelKey('true-false') }));
+        expect(screen.getByTestId('question-focus').textContent).toContain(questionTypeLabelKey('true-false'));
+
+        fireEvent.click(screen.getByTestId('builder_undo'));
+        expect(screen.getByTestId('question-focus').textContent).toContain(questionTypeLabelKey('multiple-choice'));
+
+        fireEvent.click(screen.getByLabelText('tests.move_question_down'));
+        expect(outlineRows()[0]).toContain('Beta question');
+        fireEvent.click(screen.getByTestId('builder_undo'));
+        expect(outlineRows()[0]).toContain('Alpha question');
+    });
+
+    it('leaves the native undo of a text field alone', () => {
+        mockTests = [twoQuestionTest()];
+        renderBuilder('/tests/t1');
+
+        fireEvent.change(screen.getByLabelText('tests.question_prompt_label'), {
+            target: { value: 'Alpha question, edited' },
+        });
+        const field = screen.getByLabelText('tests.question_prompt_label');
+        fireEvent.keyDown(field, { key: 'z', ctrlKey: true });
+
+        expect(promptValue()).toBe('Alpha question, edited');
+    });
+
+    it('autosaves a draft and offers it back on the next visit', async () => {
+        mockTests = [twoQuestionTest()];
+        const first = renderBuilder('/tests/t1');
+
+        fireEvent.change(screen.getByLabelText('tests.question_prompt_label'), {
+            target: { value: 'Edited prompt' },
+        });
+        const key = builderDraftKey('t1');
+        await waitFor(() => expect(loadBuilderDraft(key)).not.toBeNull());
+        expect(loadBuilderDraft(key)?.form.questions[0].prompt).toBe('Edited prompt');
+        first.unmount();
+
+        renderBuilder('/tests/t1');
+        const banner = screen.getByTestId('draft-banner');
+        expect(promptValue()).toBe('Alpha question');
+
+        fireEvent.click(within(banner).getByText('tests.draft_restore'));
+        expect(promptValue()).toBe('Edited prompt');
+        expect(screen.queryByTestId('draft-banner')).not.toBeInTheDocument();
+    });
+
+    it('drops a draft when the stored test moved on', async () => {
+        mockTests = [twoQuestionTest()];
+        const first = renderBuilder('/tests/t1');
+        fireEvent.change(screen.getByLabelText('tests.question_prompt_label'), {
+            target: { value: 'Edited prompt' },
+        });
+        const key = builderDraftKey('t1');
+        await waitFor(() => expect(loadBuilderDraft(key)).not.toBeNull());
+        first.unmount();
+
+        // The test was changed somewhere else after the draft was written.
+        mockTests = [{ ...twoQuestionTest(), updatedAt: '2024-02-01T00:00:00Z' }];
+        renderBuilder('/tests/t1');
+        expect(screen.queryByTestId('draft-banner')).not.toBeInTheDocument();
+        expect(loadBuilderDraft(key)).toBeNull();
+    });
+
+    it('keeps the "saved" claim back when the device refuses the draft', async () => {
+        mockTests = [twoQuestionTest()];
+        renderBuilder('/tests/t1');
+        const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+            throw new Error('QuotaExceededError');
+        });
+        try {
+            fireEvent.change(screen.getByLabelText('tests.question_prompt_label'), {
+                target: { value: 'A test too big for this browser' },
+            });
+            await waitFor(() => expect(screen.getByTestId('draft_status')).toHaveTextContent('tests.draft_failed'));
+            expect(screen.getByTestId('draft_status').textContent).not.toContain('tests.draft_saved');
+        } finally {
+            setItem.mockRestore();
+        }
+    });
+
+    it('never offers one new test the draft of another, while a reload keeps its own', async () => {
+        const first = renderBuilder('/tests/new');
+        fireEvent.click(screen.getAllByText('tests.add_question')[0]);
+        pickNewQuestionType();
+        fireEvent.change(screen.getByLabelText('tests.question_prompt_label'), {
+            target: { value: 'New test A' },
+        });
+        await waitFor(() => expect(screen.getByTestId('draft_status')).toHaveTextContent('tests.draft_saved'));
+        const ownUrl = first.router.state.location.pathname + first.router.state.location.search;
+        expect(ownUrl).toContain('draft=');
+        first.unmount();
+
+        // A different new test starts clean, even though the first one's draft is still on the device.
+        const other = renderBuilder('/tests/new');
+        expect(screen.queryByTestId('draft-banner')).not.toBeInTheDocument();
+        other.unmount();
+
+        // Reopening the same URL (the reload case) finds its own draft again.
+        renderBuilder(ownUrl);
+        expect(screen.getByTestId('draft-banner')).toBeInTheDocument();
+    });
+
+    it('clears the draft once the test is saved', async () => {
+        mockTests = [twoQuestionTest()];
+        renderBuilder('/tests/t1');
+        fireEvent.change(screen.getByLabelText('tests.question_prompt_label'), {
+            target: { value: 'Saved prompt' },
+        });
+        const key = builderDraftKey('t1');
+        await waitFor(() => expect(loadBuilderDraft(key)).not.toBeNull());
+
+        fireEvent.click(screen.getByRole('button', { name: 'common.save' }));
+        expect(mockUpdateTest).toHaveBeenCalled();
+        expect(loadBuilderDraft(key)).toBeNull();
     });
 });

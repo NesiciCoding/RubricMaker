@@ -42,6 +42,7 @@ import { nanoid } from '../utils/nanoid';
 import { mergeRestoredSettings, withoutProtectedSettings } from '../utils/backupSettings';
 import { SCHOOL_YEARS } from '../data/schoolYears';
 import { putSnapshot, getSnapshot, clearSnapshots, isCloudHydrated } from '../services/snapshotCache';
+import { BUILDER_DRAFT_KEY_PREFIX, type BuilderDraft } from '../utils/testBuilderDraft';
 
 export { DEFAULT_SETTINGS, withSettingsDefaults };
 
@@ -2072,6 +2073,59 @@ export function saveTestDraft(draftKey: string, data: TestDraft): void {
 }
 
 export function clearTestDraft(draftKey: string): void {
+    try {
+        localStorage.removeItem(draftKey);
+    } catch {
+        // ignore
+    }
+}
+
+// ─── Test builder drafts (per-device, not synced) ─────────────────────────────
+
+/** The builder's own autosave: the unsaved form of a test, kept so a closed tab cannot lose it. */
+export function loadBuilderDraft(draftKey: string): BuilderDraft | null {
+    return load<BuilderDraft | null>(draftKey, null);
+}
+
+/** Returns false when the device refused the write (full or blocked storage), so a caller never has to guess. */
+export function saveBuilderDraft(draftKey: string, draft: BuilderDraft): boolean {
+    try {
+        // Written directly rather than through `save()`: a builder draft must never evict the
+        // studentRubrics offline copy to make room, and the caller needs to know it failed.
+        localStorage.setItem(draftKey, JSON.stringify(draft));
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Drops drafts of abandoned new-test sessions and old drafts of tests that no longer exist: nothing
+ * can offer them again, and they would otherwise take the space the builder's own autosave needs.
+ */
+export function pruneBuilderDrafts(keepKey: string, maxAgeMs: number): void {
+    try {
+        const cutoff = Date.now() - maxAgeMs;
+        const stale: string[] = [];
+        for (let index = 0; index < localStorage.length; index += 1) {
+            const key = localStorage.key(index);
+            if (!key || key === keepKey || !key.startsWith(BUILDER_DRAFT_KEY_PREFIX)) continue;
+            let savedAt: string | undefined;
+            try {
+                savedAt = (JSON.parse(localStorage.getItem(key) ?? 'null') as { savedAt?: string } | null)?.savedAt;
+            } catch {
+                savedAt = undefined;
+            }
+            const savedTime = savedAt ? Date.parse(savedAt) : Number.NaN;
+            if (!Number.isFinite(savedTime) || savedTime < cutoff) stale.push(key);
+        }
+        for (const key of stale) localStorage.removeItem(key);
+    } catch {
+        // Blocked storage must not stop the builder from opening.
+    }
+}
+
+export function clearBuilderDraft(draftKey: string): void {
     try {
         localStorage.removeItem(draftKey);
     } catch {
