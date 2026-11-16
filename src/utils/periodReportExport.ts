@@ -30,7 +30,8 @@ import { sanitizeFilename, stripCommentHtml } from './exportDataPrep';
 import { saveZippedFiles } from './zipExport';
 import type { LearningGoalAggregate } from './learningGoalsAggregator';
 
-const docLabel = (key: string, opts?: Record<string, unknown>): string => i18n.t(`exportDoc.${key}`, opts);
+const docLabel = (key: string, opts?: Record<string, unknown>): string =>
+    opts ? i18n.t(`exportDoc.${key}`, opts) : i18n.t(`exportDoc.${key}`);
 
 export interface PeriodReportEntry {
     sr: StudentRubric;

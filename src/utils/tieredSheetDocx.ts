@@ -20,7 +20,8 @@ import i18n from 'i18next';
 import type { RubricFormat } from '../types';
 import { SHEET_PANEL, SHEET_PANEL_ALT, requirementMark, type SheetBand, type TieredSheet } from './tieredSheet';
 
-const docLabel = (key: string, opts?: Record<string, unknown>): string => i18n.t(`exportDoc.${key}`, opts) ?? key;
+const docLabel = (key: string, opts?: Record<string, unknown>): string =>
+    (opts ? i18n.t(`exportDoc.${key}`, opts) : i18n.t(`exportDoc.${key}`)) ?? key;
 
 // docx only accepts 6-digit hex; a rubric colour that isn't one falls back to a neutral tone.
 const fill = (color: string | undefined, fallback = 'E5E7EB') => {

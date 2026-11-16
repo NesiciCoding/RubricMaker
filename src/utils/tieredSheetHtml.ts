@@ -3,7 +3,8 @@ import type { RubricFormat } from '../types';
 import { escapeHtml } from './exportDataPrep';
 import { SHEET_PANEL, SHEET_PANEL_ALT, requirementMark, type SheetBand, type TieredSheet } from './tieredSheet';
 
-const docLabel = (key: string, opts?: Record<string, unknown>): string => i18n.t(`exportDoc.${key}`, opts) ?? key;
+const docLabel = (key: string, opts?: Record<string, unknown>): string =>
+    (opts ? i18n.t(`exportDoc.${key}`, opts) : i18n.t(`exportDoc.${key}`)) ?? key;
 
 const INK = '#1f2937';
 

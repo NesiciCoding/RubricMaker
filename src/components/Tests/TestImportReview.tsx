@@ -91,7 +91,13 @@ export default function TestImportReview({ review }: { review: DocumentReview })
 
             {review.readNotes.length > 0 && (
                 <div className="text-xs text-muted">
-                    {review.readNotes.map((note) => t(`importTest.read_note_${note.key}`, note.params)).join(' ')}
+                    {review.readNotes
+                        .map((note) =>
+                            note.params
+                                ? t(`importTest.read_note_${note.key}`, note.params)
+                                : t(`importTest.read_note_${note.key}`)
+                        )
+                        .join(' ')}
                 </div>
             )}
         </div>
