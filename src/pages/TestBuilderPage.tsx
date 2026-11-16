@@ -284,12 +284,26 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
     /** Whatever opened the drawer, the checks screen or a focused pane, so Escape can hand focus back. */
     const panelOpenerRef = useRef<HTMLElement | null>(null);
     const rememberOpener = () => {
-        panelOpenerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        const active = document.activeElement;
+        panelOpenerRef.current = active instanceof HTMLElement && active !== document.body ? active : null;
     };
+    const selectedQuestionIdRef = useRef<string | null>(null);
+    useEffect(() => {
+        selectedQuestionIdRef.current = selectedQuestionId;
+    }, [selectedQuestionId]);
     const restoreOpener = () => {
         const opener = panelOpenerRef.current;
         panelOpenerRef.current = null;
-        if (opener?.isConnected) opener.focus();
+        if (opener?.isConnected) {
+            opener.focus();
+            return;
+        }
+        // Opened by a keyboard command with nothing focused: land on the open question instead of <body>.
+        if (selectedQuestionIdRef.current) {
+            document
+                .getElementById(`question-heading-${selectedQuestionIdRef.current}`)
+                ?.focus({ preventScroll: true });
+        }
     };
     /**
      * Column widths and the one-pane "focus" mode for the wide layout. Session-only on purpose: the
@@ -321,6 +335,41 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         document.addEventListener('keydown', onKeyDown);
         return () => document.removeEventListener('keydown', onKeyDown);
     }, [settingsOpen, checksOpen, expandedPane, isRailWide, showPreview]);
+
+    // The narrow sheet takes focus when it opens, keeps Tab inside it, and hands focus back to the
+    // preview toggle however it closes (button, Escape or toggle).
+    useEffect(() => {
+        if (isRailWide || !showPreview) return;
+        const sheet = () => document.querySelector<HTMLElement>('[data-testid="inspector-sheet"]');
+        document.querySelector<HTMLElement>('[data-testid="inspector-sheet-close"]')?.focus();
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key !== 'Tab') return;
+            const focusable = Array.from(
+                sheet()?.querySelectorAll<HTMLElement>(
+                    'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+                ) ?? []
+            );
+            if (focusable.length === 0) return;
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            const active = document.activeElement;
+            if (!sheet()?.contains(active)) {
+                event.preventDefault();
+                first.focus();
+            } else if (event.shiftKey && active === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && active === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        };
+        document.addEventListener('keydown', onKeyDown);
+        return () => {
+            document.removeEventListener('keydown', onKeyDown);
+            document.querySelector<HTMLElement>('[data-testid="a4-preview-toggle"]')?.focus();
+        };
+    }, [isRailWide, showPreview]);
 
     // Panels hand focus back after they close: a dialog's own close focus runs during the commit, so
     // focusing from an effect is the only way to land on the opener every time.
@@ -1052,9 +1101,26 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         commandRef.current = (command) => {
             if (readOnly) return;
             // A panel, the checks screen or a picker owns the page while it is open.
-            if (settingsOpen || checksOpen || quickJumpOpen || shortcutsOpen || newQuestionFor || showBankModal) {
+            if (
+                settingsOpen ||
+                checksOpen ||
+                quickJumpOpen ||
+                shortcutsOpen ||
+                newQuestionFor ||
+                showBankModal ||
+                showGeneratorStarterModal
+            ) {
                 return;
             }
+            // With a section workspace open the pane shows the section, so the question commands would
+            // change a question the teacher cannot see.
+            const questionCommand = [
+                'duplicate-question',
+                'remove-question',
+                'move-question-up',
+                'move-question-down',
+            ].includes(command);
+            if (selectedSectionId && questionCommand) return;
             const openIndex = selectedQuestionId
                 ? displayOrderedQuestions.findIndex((q) => q.id === selectedQuestionId)
                 : -1;
@@ -2246,10 +2312,10 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                             activeQuestionId={selectedQuestionId}
                             activeSectionId={selectedSectionId}
                             placeholderLabel={
-                                selectedSectionId
-                                    ? t('tests.switcher_section_open')
-                                    : checksOpen
-                                      ? t('tests.checks_title')
+                                checksOpen
+                                    ? t('tests.checks_title')
+                                    : selectedSectionId
+                                      ? t('tests.switcher_section_open')
                                       : undefined
                             }
                             onSelectQuestion={jumpToQuestion}
@@ -2449,12 +2515,20 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                         sectionTitle: sections.find((section) => section.id === question.sectionId)?.title,
                     }))}
                     settingsTabs={TEST_SETTINGS_TABS.map(({ id, labelKey }) => ({ tab: id, label: t(labelKey) }))}
+                    sections={sections.map((section) => ({ id: section.id, title: section.title }))}
+                    // The dialog hands focus back to its opener as it unmounts, so close it first and move
+                    // focus afterwards or the jump's focus is immediately overwritten.
                     onPickQuestion={(questionId) => {
-                        setQuickJumpOpen(false);
+                        flushSync(() => setQuickJumpOpen(false));
                         jumpToQuestion(questionId);
                     }}
+                    onPickSection={(sectionId) => {
+                        flushSync(() => setQuickJumpOpen(false));
+                        setChecksOpen(false);
+                        setSelectedSectionId(sectionId);
+                    }}
                     onPickSettings={(tab) => {
-                        setQuickJumpOpen(false);
+                        flushSync(() => setQuickJumpOpen(false));
                         openSettings(tab);
                     }}
                     onClose={() => setQuickJumpOpen(false)}

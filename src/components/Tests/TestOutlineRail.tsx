@@ -229,7 +229,9 @@ export default function TestOutlineRail({
                 const collapsibleGroupIds = groups
                     .filter((group) => !!onSelectSection && group.id !== '__none__')
                     .map((group) => group.id);
-                const visibleQuestionIds = groups.flatMap((group) => group.questions.map((question) => question.id));
+                const visibleQuestionIds = groups
+                    .filter((group) => !collapsedSections.has(group.id))
+                    .flatMap((group) => group.questions.map((question) => question.id));
                 // Exactly one row holds the tab stop — the open question, else the open section, else the
                 // first row — so Tab enters the outline once and the arrow keys take over from there.
                 const treeTabStop =

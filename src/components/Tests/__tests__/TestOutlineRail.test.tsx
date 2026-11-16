@@ -183,4 +183,12 @@ describe('TestOutlineRail tab stop', () => {
         expect(tabbable).toHaveLength(1);
         expect(tabbable[0]).toBe(screen.getByTestId('outline-question-q1'));
     });
+
+    it('moves the tab stop to a mounted row when the open question is hidden by a collapsed section', () => {
+        renderRail({ activeId: 'q2', activeSectionId: null, onSelectSection: vi.fn() });
+        fireEvent.click(screen.getByTestId('outline-section-toggle-s1'));
+        const tabbable = screen.getByRole('tree').querySelectorAll('[tabindex="0"]');
+        expect(tabbable).toHaveLength(1);
+        expect(screen.queryByTestId('outline-question-q2')).not.toBeInTheDocument();
+    });
 });

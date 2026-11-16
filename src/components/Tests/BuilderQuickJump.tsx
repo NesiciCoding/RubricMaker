@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Modal from '../ui/Modal';
 import type { TestSettingsTab } from './TestSettingsDrawer';
@@ -13,6 +13,8 @@ export interface QuickJumpQuestion {
 
 interface Props {
     questions: QuickJumpQuestion[];
+    sections: { id: string; title: string }[];
+    onPickSection: (id: string) => void;
     settingsTabs: { tab: TestSettingsTab; label: string }[];
     onPickQuestion: (id: string) => void;
     onPickSettings: (tab: TestSettingsTab) => void;
@@ -27,7 +29,15 @@ interface Row {
 }
 
 /** Ctrl+K: type a number, a prompt or a section, or a settings tab, and go there. */
-export default function BuilderQuickJump({ questions, settingsTabs, onPickQuestion, onPickSettings, onClose }: Props) {
+export default function BuilderQuickJump({
+    questions,
+    sections,
+    settingsTabs,
+    onPickQuestion,
+    onPickSection,
+    onPickSettings,
+    onClose,
+}: Props) {
     const { t } = useTranslation();
     const [query, setQuery] = useState('');
     const [active, setActive] = useState(0);
@@ -48,6 +58,14 @@ export default function BuilderQuickJump({ questions, settingsTabs, onPickQuesti
                 hint: question.sectionTitle ?? '',
                 pick: () => onPickQuestion(question.id),
             }));
+        const sectionRows = sections
+            .filter((section) => matches(section.title))
+            .map<Row>((section) => ({
+                key: `section-${section.id}`,
+                label: section.title,
+                hint: t('tests.quick_jump_section'),
+                pick: () => onPickSection(section.id),
+            }));
         const settingsRows = settingsTabs
             .filter((tab) => matches(tab.label) || matches(t('tests.settings_title')))
             .map<Row>((tab) => ({
@@ -56,10 +74,15 @@ export default function BuilderQuickJump({ questions, settingsTabs, onPickQuesti
                 hint: t('tests.settings_title'),
                 pick: () => onPickSettings(tab.tab),
             }));
-        return [...questionRows, ...settingsRows];
-    }, [questions, settingsTabs, needle, onPickQuestion, onPickSettings, t]);
+        return [...questionRows, ...sectionRows, ...settingsRows];
+    }, [questions, sections, settingsTabs, needle, onPickQuestion, onPickSection, onPickSettings, t]);
 
     const bounded = Math.min(active, Math.max(rows.length - 1, 0));
+    const listRef = useRef<HTMLUListElement>(null);
+    // Focus stays in the search box while the arrows move the highlight, so keep it on screen.
+    useEffect(() => {
+        listRef.current?.querySelector<HTMLElement>('[aria-selected="true"]')?.scrollIntoView?.({ block: 'nearest' });
+    }, [bounded, rows.length]);
 
     function handleKeyDown(event: React.KeyboardEvent) {
         if (event.key === 'ArrowDown') {
@@ -72,7 +95,8 @@ export default function BuilderQuickJump({ questions, settingsTabs, onPickQuesti
             setActive((current) => (rows.length === 0 ? 0 : (current - 1 + rows.length) % rows.length));
             return;
         }
-        if (event.key === 'Enter') {
+        // On a focused result Enter is that button's own click; only the search box needs the highlighted row.
+        if (event.key === 'Enter' && event.target instanceof HTMLInputElement) {
             event.preventDefault();
             const row = rows[bounded];
             if (row) row.pick();
@@ -107,6 +131,7 @@ export default function BuilderQuickJump({ questions, settingsTabs, onPickQuesti
                     </p>
                 ) : (
                     <ul
+                        ref={listRef}
                         role="listbox"
                         aria-label={t('tests.quick_jump_title')}
                         style={{ listStyle: 'none', margin: 0, padding: 0, maxHeight: '50vh', overflowY: 'auto' }}
