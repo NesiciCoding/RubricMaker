@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import Modal from '../ui/Modal';
+import ShortcutList from '../ui/ShortcutList';
 import { BUILDER_SHORTCUTS } from '../../utils/builderShortcuts';
 
 interface Props {
@@ -23,32 +24,7 @@ export default function BuilderShortcutsOverlay({ open, onClose }: Props) {
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '0 0 12px' }}>
                     {t('tests.shortcuts_intro')}
                 </p>
-                <dl
-                    data-testid="shortcuts-list"
-                    style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: '8px 16px', margin: 0 }}
-                >
-                    {BUILDER_SHORTCUTS.map((shortcut) => (
-                        <div key={shortcut.id} style={{ display: 'contents' }}>
-                            <dt style={{ fontSize: '0.85rem' }}>{t(shortcut.labelKey)}</dt>
-                            <dd style={{ margin: 0, textAlign: 'right' }}>
-                                <kbd
-                                    style={{
-                                        font: 'inherit',
-                                        fontSize: '0.78rem',
-                                        padding: '1px 6px',
-                                        border: '1px solid var(--border)',
-                                        borderRadius: 4,
-                                        background: 'var(--bg-elevated)',
-                                        color: 'var(--text)',
-                                        whiteSpace: 'nowrap',
-                                    }}
-                                >
-                                    {shortcut.keys}
-                                </kbd>
-                            </dd>
-                        </div>
-                    ))}
-                </dl>
+                <ShortcutList shortcuts={BUILDER_SHORTCUTS} testId="shortcuts-list" />
             </div>
         </Modal>
     );

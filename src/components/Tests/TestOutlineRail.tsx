@@ -226,8 +226,19 @@ export default function TestOutlineRail({
             )}
 
             {(() => {
-                const firstQuestionId = groups.flatMap((group) => group.questions)[0]?.id;
-                const tabbableQuestionId = questions.some((q) => q.id === activeId) ? activeId : firstQuestionId;
+                const collapsibleGroupIds = groups
+                    .filter((group) => !!onSelectSection && group.id !== '__none__')
+                    .map((group) => group.id);
+                const visibleQuestionIds = groups.flatMap((group) => group.questions.map((question) => question.id));
+                // Exactly one row holds the tab stop — the open question, else the open section, else the
+                // first row — so Tab enters the outline once and the arrow keys take over from there.
+                const treeTabStop =
+                    (activeId && visibleQuestionIds.includes(activeId) ? `q:${activeId}` : undefined) ??
+                    (activeSectionId && collapsibleGroupIds.includes(activeSectionId)
+                        ? `s:${activeSectionId}`
+                        : undefined) ??
+                    (visibleQuestionIds[0] ? `q:${visibleQuestionIds[0]}` : undefined) ??
+                    (collapsibleGroupIds[0] ? `s:${collapsibleGroupIds[0]}` : undefined);
                 return (
                     <div role="tree" aria-labelledby="test-outline-heading" ref={treeRef} onKeyDown={handleTreeKeyDown}>
                         {groups.map((group) => {
@@ -257,7 +268,7 @@ export default function TestOutlineRail({
                                                 aria-expanded={!collapsed}
                                                 aria-selected={sectionActive}
                                                 aria-current={sectionActive ? 'true' : undefined}
-                                                tabIndex={sectionActive ? 0 : -1}
+                                                tabIndex={treeTabStop === `s:${group.id}` ? 0 : -1}
                                                 data-tree-row="true"
                                                 data-row-kind="section"
                                                 data-section-id={group.id}
@@ -340,7 +351,7 @@ export default function TestOutlineRail({
                                                         role="treeitem"
                                                         aria-selected={active}
                                                         aria-current={active ? 'true' : undefined}
-                                                        tabIndex={question.id === tabbableQuestionId ? 0 : -1}
+                                                        tabIndex={treeTabStop === `q:${question.id}` ? 0 : -1}
                                                         data-tree-row="true"
                                                         data-row-kind="question"
                                                         data-section-id={group.id}

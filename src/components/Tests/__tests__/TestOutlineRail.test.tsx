@@ -160,3 +160,27 @@ describe('TestOutlineRail as a tree', () => {
         expect(screen.queryByTestId('outline-question-q3')).not.toBeInTheDocument();
     });
 });
+
+describe('TestOutlineRail tab stop', () => {
+    it('keeps exactly one tab stop when a section and a question are both open', () => {
+        renderRail({ activeId: 'q2', activeSectionId: 's1', onSelectSection: vi.fn() });
+        const tabbable = screen.getByRole('tree').querySelectorAll('[tabindex="0"]');
+        expect(tabbable).toHaveLength(1);
+        // The open question wins over its section.
+        expect(tabbable[0]).toBe(screen.getByTestId('outline-question-q2'));
+    });
+
+    it('falls back to the selected section when no question is open', () => {
+        renderRail({ activeId: null, activeSectionId: 's1', onSelectSection: vi.fn() });
+        const tabbable = screen.getByRole('tree').querySelectorAll('[tabindex="0"]');
+        expect(tabbable).toHaveLength(1);
+        expect(tabbable[0]).toBe(screen.getByTestId('outline-section-s1'));
+    });
+
+    it('falls back to the first row when nothing is selected', () => {
+        renderRail();
+        const tabbable = screen.getByRole('tree').querySelectorAll('[tabindex="0"]');
+        expect(tabbable).toHaveLength(1);
+        expect(tabbable[0]).toBe(screen.getByTestId('outline-question-q1'));
+    });
+});
