@@ -940,7 +940,7 @@
         "no_questions_instruction": "Add your first question to get started.",
         "draft_saving": "Saving draft…",
         "draft_saved": "Draft saved just now",
-        "draft_failed": "Draft not saved — this browser's storage is full",
+        "draft_failed": "Draft not saved — this browser blocked or ran out of storage",
         "draft_found_title": "Unsaved draft found.",
         "draft_found_body": "This device kept your work from {{time}}.",
         "draft_restore": "Restore draft",

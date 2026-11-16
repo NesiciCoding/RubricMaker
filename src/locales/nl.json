@@ -940,7 +940,7 @@
         "no_questions_instruction": "Voeg je eerste vraag toe om te beginnen.",
         "draft_saving": "Concept opslaan…",
         "draft_saved": "Concept zojuist opgeslagen",
-        "draft_failed": "Concept niet opgeslagen — de opslag van deze browser is vol",
+        "draft_failed": "Concept niet opgeslagen — deze browser blokkeerde de opslag of heeft geen ruimte meer",
         "draft_found_title": "Onopgeslagen concept gevonden.",
         "draft_found_body": "Dit apparaat bewaarde je werk van {{time}}.",
         "draft_restore": "Concept herstellen",

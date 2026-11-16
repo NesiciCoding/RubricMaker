@@ -940,7 +940,7 @@
         "no_questions_instruction": "Añade tu primera pregunta para empezar.",
         "draft_saving": "Guardando borrador…",
         "draft_saved": "Borrador guardado ahora mismo",
-        "draft_failed": "Borrador sin guardar — el almacenamiento del navegador está lleno",
+        "draft_failed": "Borrador no guardado — este navegador bloqueó el almacenamiento o se quedó sin espacio",
         "draft_found_title": "Se encontró un borrador sin guardar.",
         "draft_found_body": "Este dispositivo conservó tu trabajo de {{time}}.",
         "draft_restore": "Restaurar borrador",

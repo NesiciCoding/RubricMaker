@@ -940,7 +940,7 @@
         "no_questions_instruction": "Füge deine erste Frage hinzu, um zu beginnen.",
         "draft_saving": "Entwurf wird gespeichert…",
         "draft_saved": "Entwurf gerade gespeichert",
-        "draft_failed": "Entwurf nicht gespeichert — der Speicher des Browsers ist voll",
+        "draft_failed": "Entwurf nicht gespeichert — dieser Browser hat den Speicher blockiert oder ist voll",
         "draft_found_title": "Ungespeicherter Entwurf gefunden.",
         "draft_found_body": "Dieses Gerät hat Ihre Arbeit von {{time}} behalten.",
         "draft_restore": "Entwurf wiederherstellen",

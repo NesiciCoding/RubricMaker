@@ -940,7 +940,7 @@
         "no_questions_instruction": "Ajoutez votre première question pour commencer.",
         "draft_saving": "Enregistrement du brouillon…",
         "draft_saved": "Brouillon enregistré à l'instant",
-        "draft_failed": "Brouillon non enregistré — le stockage du navigateur est plein",
+        "draft_failed": "Brouillon non enregistré — ce navigateur a bloqué le stockage ou n'a plus de place",
         "draft_found_title": "Brouillon non enregistré trouvé.",
         "draft_found_body": "Cet appareil a conservé votre travail de {{time}}.",
         "draft_restore": "Restaurer le brouillon",

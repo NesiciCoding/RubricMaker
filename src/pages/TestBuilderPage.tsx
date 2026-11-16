@@ -399,6 +399,9 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         questionsRef.current = questions;
     });
 
+    // EssayEditor reads its content only at mount, so a restored snapshot has to remount the editor.
+    const [editorRevision, setEditorRevision] = useState(0);
+
     /** Puts a form snapshot back; undo, redo and a restored draft all land here. */
     const applyForm = React.useCallback((next: TestBuilderForm) => {
         setName(next.name);
@@ -437,7 +440,10 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                   ? current
                   : (next.questions[0]?.id ?? null)
         );
+        setEditorRevision((revision) => revision + 1);
         if (restored) {
+            setChecksOpen(false);
+            setSelectedSectionId(null);
             setCollapsedQuestions((prev) => {
                 if (!prev.has(restored.id)) return prev;
                 const nextCollapsed = new Set(prev);
@@ -462,6 +468,19 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
     const [draftStatus, setDraftStatus] = useState<'idle' | 'saving' | 'saved' | 'failed'>('idle');
     const [draftOffer, setDraftOffer] = useState<BuilderDraft | null>(null);
     const draftBaseRef = useRef(existing?.updatedAt ?? null);
+    // The offered draft stays on disk until the teacher decides; autosaving the untouched form over it would destroy it.
+    const draftOfferRef = useRef<BuilderDraft | null>(null);
+    useEffect(() => {
+        draftOfferRef.current = draftOffer;
+    }, [draftOffer]);
+    // A newer stored version arriving while the banner is open makes the draft stale.
+    useEffect(() => {
+        if (!draftOffer) return;
+        if (!shouldOfferBuilderDraft(draftOffer, existing?.updatedAt)) {
+            clearBuilderDraft(draftKey);
+            setDraftOffer(null);
+        }
+    }, [draftOffer, existing?.updatedAt, draftKey]);
 
     const writeDraft = React.useCallback(
         (next: TestBuilderForm) => {
@@ -478,18 +497,18 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
     );
 
     useEffect(() => {
-        if (!draftEnabled || !isDirty) return;
+        if (!draftEnabled || !isDirty || draftOfferRef.current) return;
         setDraftStatus('saving');
         const timer = setTimeout(() => writeDraft(form), DRAFT_AUTOSAVE_MS);
         return () => clearTimeout(timer);
-    }, [form, isDirty, draftEnabled, writeDraft]);
+    }, [form, isDirty, draftEnabled, writeDraft, draftOffer]);
 
     // A closed tab, a hidden tab or a route change must keep the last edit even when it lands inside
     // the autosave's quiet period.
     const flushDraftRef = useRef<() => void>(() => {});
     useEffect(() => {
         flushDraftRef.current = () => {
-            if (draftEnabled && isDirty) writeDraft(form);
+            if (draftEnabled && isDirty && !draftOfferRef.current) writeDraft(form);
         };
     });
     useEffect(() => {
@@ -2196,7 +2215,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                                 // The focus pane reuses one editor for every question; EssayEditor only
                                 // reads `content` at mount, so without a key the previous question's
                                 // prompt stays on screen after a switcher or rail jump.
-                                key={focusQuestion.id}
+                                key={`${focusQuestion.id}:${editorRevision}`}
                                 question={focusQuestion}
                                 index={displayOrderedQuestions.indexOf(focusQuestion)}
                                 total={questions.length}
