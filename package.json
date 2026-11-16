@@ -82,7 +82,7 @@
     "jszip": "^3.10.2",
     "lucide-react": "^1.70.0",
     "mammoth": "^1.13.0",
-    "papaparse": "^5.7.0",
+    "papaparse": "^5.7.1",
     "pdfjs-dist": "^6.5.438",
     "qrcode": "^1.5.4",
     "react": "^19.3.1",
