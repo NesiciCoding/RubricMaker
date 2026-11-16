@@ -97,6 +97,17 @@ test.describe('test builder — narrow layout at 1024px', () => {
         await expect(sections).toBeVisible();
         await expect(sections.getByRole('button', { name: 'Part A' })).toBeVisible();
 
+        // Opening the section workspace shows it in the switcher instead of a stale question,
+        // and picking a question leaves the workspace again.
+        await sections.getByRole('button', { name: 'Part A' }).click();
+        const select = switcher.getByTestId('switcher-select');
+        await expect(select.locator('option')).toHaveCount(2);
+        await expect(select).toHaveValue('');
+        await expect(select).toContainText('Section workspace');
+        await select.selectOption({ index: 1 });
+        await expect(select).not.toHaveValue('');
+        await expect(select.locator('option')).toHaveCount(1);
+
         const overflow = await appPage.evaluate(
             () => document.documentElement.scrollWidth - document.documentElement.clientWidth
         );
