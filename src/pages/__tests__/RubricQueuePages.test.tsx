@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
@@ -76,6 +76,7 @@ const mockAppValue = {
     updateSettings: vi.fn(),
     createGroupStudentRubrics: vi.fn(),
     updateStudentGroup: vi.fn(),
+    saveStudentRubric: vi.fn(),
 };
 
 vi.mock('../../context/AppContext', () => ({
@@ -121,6 +122,7 @@ describe('rubric grading queue and peer-review roster', () => {
         mockAppValue.classes = [classA];
         mockAppValue.studentRubrics = [gradedSr, notHandedInSr];
         mockAppValue.updateStudentGroup.mockClear();
+        mockAppValue.saveStudentRubric.mockClear();
         mockAppValue.updateSettings.mockClear();
         delete settings.gradeQueueClassId;
         delete settings.gradeQueueLayout;
@@ -137,15 +139,15 @@ describe('rubric grading queue and peer-review roster', () => {
         expect(screen.getAllByText('Class 4A').length).toBeGreaterThanOrEqual(3);
 
         const open = screen.getByRole('link', { name: 'rubricQueue.action_open_for:{"name":"Alice"}' });
-        expect(open).toHaveAttribute('href', '/rubrics/r1/grade/s1');
+        expect(open).toHaveAttribute('href', '/rubrics/r1/grade/s1?from=queue');
         expect(open).toHaveTextContent('rubricQueue.action_open');
         const grade = screen.getByRole('link', { name: 'rubricQueue.action_grade_for:{"name":"Bob"}' });
-        expect(grade).toHaveAttribute('href', '/rubrics/r1/grade/s2');
+        expect(grade).toHaveAttribute('href', '/rubrics/r1/grade/s2?from=queue');
         expect(grade).toHaveTextContent('rubricQueue.action_grade');
         // Repeated actions must still be distinguishable to screen readers.
         expect(screen.getByRole('link', { name: 'rubricQueue.action_grade_for:{"name":"Cara"}' })).toHaveAttribute(
             'href',
-            '/rubrics/r1/grade/s3'
+            '/rubrics/r1/grade/s3?from=queue'
         );
     });
 
@@ -231,6 +233,144 @@ describe('rubric grading queue and peer-review roster', () => {
         expect(screen.getAllByText('Group 3').length).toBeGreaterThan(0);
         // A named group shows its name instead of the generic badge.
         expect(screen.queryAllByText('rubricQueue.in_group')).toHaveLength(0);
+    });
+
+    it('counts a partially scored student as in progress, not graded', () => {
+        mockAppValue.rubrics = [
+            {
+                ...rubric,
+                criteria: [...rubric.criteria, { id: 'c2', title: 'Style', description: '', weight: 0, levels: [] }],
+            },
+        ];
+        mockAppValue.studentRubrics = [
+            {
+                ...gradedSr,
+                entries: [
+                    { criterionId: 'c1', levelId: 'l1', comment: '', checkedSubItems: [] },
+                    { criterionId: 'c2', levelId: null, comment: '', checkedSubItems: [] },
+                ],
+            },
+        ];
+        renderAt('/rubrics/r1/grade', <QueuePage />, '/rubrics/:rubricId/grade');
+
+        expect(screen.getByText('rubricQueue.summary_title:{"graded":0,"total":3}')).toBeInTheDocument();
+        expect(screen.getByText('rubricQueue.criteria_progress:{"scored":1,"total":2}')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: /rubricQueue\.in_progress/ }));
+        expect(screen.getByText('Alice')).toBeInTheDocument();
+        expect(screen.queryByText('Bob')).not.toBeInTheDocument();
+    });
+
+    it('restores class, status and search from the URL and ignores invalid params', () => {
+        renderAt('/rubrics/r1/grade?status=ungraded&q=bob', <QueuePage />, '/rubrics/:rubricId/grade');
+        expect(screen.getByLabelText('rubricQueue.search')).toHaveValue('bob');
+        expect(screen.getByText('Bob')).toBeInTheDocument();
+        expect(screen.queryByText('Cara')).not.toBeInTheDocument();
+    });
+
+    it('falls back to the full queue for unknown params', () => {
+        renderAt('/rubrics/r1/grade?status=bogus&class=nope&group=x', <QueuePage />, '/rubrics/:rubricId/grade');
+        expect(screen.getByText('Alice')).toBeInTheDocument();
+        expect(screen.getByText('Cara')).toBeInTheDocument();
+    });
+
+    it('finds students by accent-free, reordered name and by class label', () => {
+        mockAppValue.students = [{ id: 's9', name: 'José Díaz', classId: 'c1' }, bob];
+        renderAt('/rubrics/r1/grade', <QueuePage />, '/rubrics/:rubricId/grade');
+        fireEvent.change(screen.getByLabelText('rubricQueue.search'), { target: { value: 'diaz jose' } });
+        expect(screen.getByText('José Díaz')).toBeInTheDocument();
+        expect(screen.queryByText('Bob')).not.toBeInTheDocument();
+        fireEvent.change(screen.getByLabelText('rubricQueue.search'), { target: { value: '4a' } });
+        expect(screen.getByText('Bob')).toBeInTheDocument();
+    });
+
+    it('filters by group, shows group progress and clears the filter again', () => {
+        mockAppValue.studentRubrics = [
+            { ...gradedSr, groupId: 'g1', groupName: 'Group 3' },
+            { ...notHandedInSr, groupId: 'g1', groupName: 'Group 3' },
+        ];
+        renderAt('/rubrics/r1/grade', <QueuePage />, '/rubrics/:rubricId/grade');
+        const chips = screen.getByRole('group', { name: 'rubricQueue.filter_group' });
+        expect(within(chips).getByText('rubricQueue.group_progress:{"graded":1,"members":2}')).toBeInTheDocument();
+
+        fireEvent.click(within(chips).getByRole('button', { name: /Group 3/ }));
+        expect(screen.getByText('Alice')).toBeInTheDocument();
+        expect(screen.queryByText('Bob')).not.toBeInTheDocument();
+
+        fireEvent.click(within(chips).getByRole('button', { name: 'rubricQueue.group_all' }));
+        expect(screen.getByText('Bob')).toBeInTheDocument();
+    });
+
+    it('marks only the selected visible students not handed in after confirming', async () => {
+        renderAt('/rubrics/r1/grade?q=b', <QueuePage />, '/rubrics/:rubricId/grade');
+        fireEvent.click(screen.getByRole('button', { name: /rubricQueue\.select_mode/ }));
+        fireEvent.click(screen.getByLabelText('rubricQueue.select_all_visible'));
+        expect(screen.getByText('rubricQueue.selected_count:{"count":1}')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: 'rubricQueue.bulk_mark_nhi' }));
+        const dialog = await screen.findByRole('dialog');
+        fireEvent.click(within(dialog).getByRole('button', { name: 'rubricQueue.bulk_mark_nhi' }));
+
+        await waitFor(() => expect(mockAppValue.saveStudentRubric).toHaveBeenCalledTimes(1));
+        const saved = mockAppValue.saveStudentRubric.mock.calls[0][0];
+        expect(saved).toMatchObject({ studentId: 's2', rubricId: 'r1', notHandedIn: true });
+        expect(saved.gradedAt).toBeTruthy();
+        expect(saved.entries).toHaveLength(1);
+    });
+
+    it('does not write anything when the confirmation is cancelled', async () => {
+        renderAt('/rubrics/r1/grade', <QueuePage />, '/rubrics/:rubricId/grade');
+        fireEvent.click(screen.getByRole('button', { name: /rubricQueue\.select_mode/ }));
+        fireEvent.click(screen.getByLabelText('rubricQueue.select_student:{"name":"Bob"}'));
+        fireEvent.click(screen.getByRole('button', { name: 'rubricQueue.bulk_mark_nhi' }));
+        fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'common.cancel' }));
+        expect(mockAppValue.saveStudentRubric).not.toHaveBeenCalled();
+    });
+
+    it('restores not-handed-in students without touching their scores', () => {
+        mockAppValue.studentRubrics = [
+            {
+                ...notHandedInSr,
+                overallComment: 'gradeStudent.not_handed_in_comment',
+                entries: [{ criterionId: 'c1', levelId: 'l1', comment: '', checkedSubItems: [] }],
+                gradedAt: '2024-02-01T00:00:00Z',
+            },
+        ];
+        renderAt('/rubrics/r1/grade', <QueuePage />, '/rubrics/:rubricId/grade');
+        fireEvent.click(screen.getByRole('button', { name: /rubricQueue\.select_mode/ }));
+        fireEvent.click(screen.getByLabelText('rubricQueue.select_student:{"name":"Cara"}'));
+        fireEvent.click(screen.getByRole('button', { name: 'rubricQueue.bulk_restore' }));
+
+        expect(mockAppValue.saveStudentRubric).toHaveBeenCalledTimes(1);
+        const saved = mockAppValue.saveStudentRubric.mock.calls[0][0];
+        expect(saved.notHandedIn).toBe(false);
+        expect(saved.entries[0].levelId).toBe('l1');
+        expect(saved.gradedAt).toBe('2024-02-01T00:00:00Z');
+        expect(saved.overallComment).toBe('');
+    });
+
+    it('clears the selection when a filter changes', () => {
+        renderAt('/rubrics/r1/grade', <QueuePage />, '/rubrics/:rubricId/grade');
+        fireEvent.click(screen.getByRole('button', { name: /rubricQueue\.select_mode/ }));
+        fireEvent.click(screen.getByLabelText('rubricQueue.select_student:{"name":"Bob"}'));
+        expect(screen.getByText('rubricQueue.selected_count:{"count":1}')).toBeInTheDocument();
+        fireEvent.change(screen.getByLabelText('rubricQueue.search'), { target: { value: 'a' } });
+        expect(screen.getByText('rubricQueue.selected_count:{"count":0}')).toBeInTheDocument();
+    });
+
+    it('sends Grade next to the next student in the filtered view and carries the view along', () => {
+        renderAt('/rubrics/r1/grade?q=cara&status=notHandedIn', <QueuePage />, '/rubrics/:rubricId/grade');
+        const next = screen.getByRole('link', { name: /rubricQueue\.grade_next/ });
+        expect(next).toHaveAttribute('href', expect.stringContaining('/rubrics/r1/grade/s3?'));
+        expect(next.getAttribute('href')).toContain('from=queue');
+        expect(next.getAttribute('href')).toContain('q=cara');
+    });
+
+    it('does not offer a not-handed-in student as next while other work remains', () => {
+        renderAt('/rubrics/r1/grade', <QueuePage />, '/rubrics/:rubricId/grade');
+        expect(screen.getByRole('link', { name: /rubricQueue\.grade_next/ })).toHaveAttribute(
+            'href',
+            expect.stringContaining('/grade/s2?')
+        );
     });
 
     it('shows a not-found state for a rubric that no longer exists', () => {

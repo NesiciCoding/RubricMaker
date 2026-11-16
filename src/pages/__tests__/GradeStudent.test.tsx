@@ -145,10 +145,10 @@ vi.mock('react-i18next', () => ({
 
 let GradeStudentComp: React.ComponentType;
 
-function renderPage() {
+function renderPage(search = '') {
     const router = createMemoryRouter(
         [{ path: '/rubrics/:rubricId/grade/:studentId', element: <GradeStudentComp /> }],
-        { initialEntries: ['/rubrics/r1/grade/s1'] }
+        { initialEntries: [`/rubrics/r1/grade/s1${search}`] }
     );
     return render(<RouterProvider router={router} />);
 }
@@ -164,6 +164,33 @@ describe('GradeStudent', () => {
         mockNavigate.mockClear();
         const mod = await import('../GradeStudent');
         GradeStudentComp = mod.default;
+    });
+
+    describe('queue view navigation', () => {
+        it('moves Save & Next along the queue view the teacher came from', () => {
+            renderPage('?from=queue&q=bob');
+            fireEvent.click(screen.getAllByTitle('Next: Bob')[0]);
+            expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2?q=bob&from=queue', { replace: true });
+        });
+
+        it('offers no next student when the queue view holds nobody else', () => {
+            renderPage('?from=queue&q=alice');
+            expect(screen.queryByTitle('Next: Bob')).not.toBeInTheDocument();
+        });
+
+        it('returns to the same filtered queue from the Back button', () => {
+            renderPage('?from=queue&status=ungraded&q=bob');
+            fireEvent.click(screen.getByText('gradeStudent.action_back'));
+            expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade?status=ungraded&q=bob');
+        });
+
+        it('keeps the plain queue path for a direct link without queue context', () => {
+            renderPage();
+            fireEvent.click(screen.getByText('gradeStudent.action_back'));
+            expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade');
+            fireEvent.click(screen.getAllByTitle('Next: Bob')[0]);
+            expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2', { replace: true });
+        });
     });
 
     describe('unsaved-changes guard (#658)', () => {

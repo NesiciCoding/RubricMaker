@@ -4,7 +4,12 @@ import Avatar from '../ui/Avatar';
 import CardTile from '../ui/CardTile';
 import type { GradeSummary } from '../../utils/gradeCalc';
 import type { Student } from '../../types';
-import { QUEUE_STATUS_BADGE, QUEUE_STATUS_LABEL, type QueueStudentStatus } from './gradingQueueStatus';
+import {
+    QUEUE_STATUS_BADGE,
+    QUEUE_STATUS_LABEL,
+    type QueueProgress,
+    type QueueStudentStatus,
+} from './gradingQueueStatus';
 
 interface Props {
     student: Student;
@@ -12,25 +17,61 @@ interface Props {
     groupName?: string;
     status: QueueStudentStatus;
     summary?: GradeSummary;
+    progress?: QueueProgress;
     href: string;
+    onOpen?: () => void;
+    selectable?: boolean;
+    selected?: boolean;
+    onToggleSelected?: () => void;
 }
 
 /**
  * One student tile in the rubric grading queue. The score is the rubric's own summary, so a
  * partially graded student shows the same percentage they will see on the grading screen.
  */
-export default function GradingQueueCard({ student, classLabel, groupName, status, summary, href }: Props) {
+export default function GradingQueueCard({
+    student,
+    classLabel,
+    groupName,
+    status,
+    summary,
+    progress,
+    href,
+    onOpen,
+    selectable,
+    selected,
+    onToggleSelected,
+}: Props) {
     const { t } = useTranslation();
     const actionLabel = status === 'graded' ? t('rubricQueue.action_open') : t('rubricQueue.action_grade');
     const actionLabelForStudent =
         status === 'graded'
             ? t('rubricQueue.action_open_for', { name: student.name })
             : t('rubricQueue.action_grade_for', { name: student.name });
-    const percentage = summary ? Math.max(0, Math.min(100, Math.round(summary.modifiedPercentage))) : 0;
+    const percentage = progress
+        ? progress.total > 0
+            ? Math.round((progress.scored / progress.total) * 100)
+            : 0
+        : summary
+          ? Math.max(0, Math.min(100, Math.round(summary.modifiedPercentage)))
+          : 0;
 
     return (
-        <CardTile width={292} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <CardTile
+            width={292}
+            data-queue-student={student.id}
+            style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
+        >
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                {selectable && (
+                    <input
+                        type="checkbox"
+                        checked={!!selected}
+                        onChange={onToggleSelected}
+                        aria-label={t('rubricQueue.select_student', { name: student.name })}
+                        style={{ marginTop: 10, width: 18, height: 18 }}
+                    />
+                )}
                 <Avatar name={student.name} size={38} fontSize="0.95rem" />
                 <div style={{ flex: 1, minWidth: 0 }}>
                     <div
@@ -62,7 +103,11 @@ export default function GradingQueueCard({ student, classLabel, groupName, statu
             </div>
 
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                {summary ? (
+                {progress ? (
+                    <span className="text-muted text-sm">
+                        {t('rubricQueue.criteria_progress', { scored: progress.scored, total: progress.total })}
+                    </span>
+                ) : summary ? (
                     <>
                         <span style={{ fontSize: '1.35rem', fontWeight: 700, lineHeight: 1.1 }}>
                             {summary.letterGrade || '—'}
@@ -97,6 +142,7 @@ export default function GradingQueueCard({ student, classLabel, groupName, statu
 
             <Link
                 to={href}
+                onClick={onOpen}
                 aria-label={actionLabelForStudent}
                 className={`btn ${status === 'graded' ? 'btn-secondary' : 'btn-primary'} btn-sm`}
                 style={{ justifyContent: 'center' }}
