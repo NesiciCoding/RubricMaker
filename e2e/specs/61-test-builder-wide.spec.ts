@@ -103,6 +103,33 @@ test.describe('test builder — wide layout', () => {
         await appPage.getByTestId('inspector-tab-paper').click();
         await expect(appPage.getByTestId('a4-pane')).toBeVisible();
         await expect(appPage.getByTestId('inspector-column')).toBeVisible();
+
+        // The columns are resizable: drag the rail's seam wider.
+        const outline = appPage.locator('nav[aria-labelledby="test-outline-heading"]');
+        const railWidth = (await outline.boundingBox())!.width;
+        const seamBox = (await appPage.getByTestId('rail-resizer').boundingBox())!;
+        await appPage.mouse.move(seamBox.x + seamBox.width / 2, seamBox.y + 60);
+        await appPage.mouse.down();
+        await appPage.mouse.move(seamBox.x + seamBox.width / 2 + 60, seamBox.y + 60, { steps: 4 });
+        await appPage.mouse.up();
+        await expect.poll(async () => (await outline.boundingBox())!.width).toBeGreaterThan(railWidth + 40);
+
+        // The same handle works from the keyboard (Shift for a bigger step).
+        const inspector = appPage.getByTestId('inspector-column');
+        const inspectorWidth = (await inspector.boundingBox())!.width;
+        await appPage.getByTestId('inspector-resizer').focus();
+        await appPage.keyboard.press('Shift+ArrowLeft');
+        await expect.poll(async () => (await inspector.boundingBox())!.width).toBeGreaterThan(inspectorWidth + 30);
+
+        // Either side pane can take the whole pane and hand it back.
+        await appPage.getByTestId('inspector_expand').click();
+        await expect(outline).toHaveCount(0);
+        await expect(appPage.getByTestId('question-focus')).toBeHidden();
+        await expect(appPage.getByTestId('rail-resizer')).toHaveCount(0);
+        expect((await inspector.boundingBox())!.width).toBeGreaterThan(inspectorWidth + 200);
+        await appPage.getByTestId('inspector_expand').click();
+        await expect(outline).toBeVisible();
+        await expect(appPage.getByTestId('inspector-resizer')).toBeVisible();
     });
 });
 

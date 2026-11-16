@@ -115,7 +115,7 @@ export default function TestSettingsDrawer({
             titleId="test-settings-title"
             onClose={onClose}
             className="modal-sheet"
-            maxWidth={420}
+            maxWidth={560}
             style={{ padding: 0 }}
         >
             <div
