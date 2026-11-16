@@ -935,7 +935,7 @@
         "rail_restore": "Restore the layout",
         "inspector_expand": "Expand the inspector",
         "inspector_restore": "Restore the layout",
-        "resize_hint": "Drag to resize; arrow keys also work",
+        "resize_hint": "Drag to resize; arrow keys also work; Enter resets",
         "no_questions": "No questions yet",
         "no_questions_instruction": "Add your first question to get started.",
         "draft_saving": "Saving draft…",

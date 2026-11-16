@@ -935,7 +935,7 @@
         "rail_restore": "Indeling herstellen",
         "inspector_expand": "Inspector uitvouwen",
         "inspector_restore": "Indeling herstellen",
-        "resize_hint": "Sleep om te wijzigen; pijltjestoetsen werken ook",
+        "resize_hint": "Sleep om te wijzigen; pijltjestoetsen werken ook; Enter herstelt",
         "no_questions": "Nog geen vragen",
         "no_questions_instruction": "Voeg je eerste vraag toe om te beginnen.",
         "draft_saving": "Concept opslaan…",
