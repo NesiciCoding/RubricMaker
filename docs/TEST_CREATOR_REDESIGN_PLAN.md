@@ -220,8 +220,17 @@ reordering it was irreversible, and a crash or a closed tab lost everything sinc
   discard). A draft whose base no longer matches the stored `updatedAt` is dropped rather than
   overwriting newer work, and saving the test clears the draft.
 
+- The claim is honest: `saveBuilderDraft` writes localStorage directly (never through the generic
+  `save()`, so it cannot evict the offline student copy) and returns whether the write landed. A refused
+  write — quota exceeded, a test too large — turns the indicator red with "Draft not saved", so the
+  builder never says "Draft saved" about a draft that is not there.
+- A brand-new test mints a draft id and carries it in the URL (`?draft=<id>`), so two new tests have two
+  draft keys and neither offers the other's work; a reload keeps the same key, and drafts older than a
+  week (or belonging to another draft id) are pruned on open.
+
 Done when: undo restores a deleted question, a type change and a reorder; a reopen offers the draft and
-restores questions plus settings; a newer stored version is never overwritten. Covered by
+restores questions plus settings; a newer stored version is never overwritten; and a refused write shows
+the failure state rather than a false success. Covered by
 `useBuilderHistory.test.tsx`, `testBuilderDraft.test.ts`, the builder's history suite and the narrow e2e
 spec.
 

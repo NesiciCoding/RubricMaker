@@ -24,6 +24,9 @@ import {
     loadTestDraft,
     saveTestDraft,
     clearTestDraft,
+    loadBuilderDraft,
+    saveBuilderDraft,
+    pruneBuilderDrafts,
     saveExportTemplates,
     savePeerReviews,
     saveSelfAssessments,
@@ -1416,6 +1419,38 @@ describe('clipboard, user templates, and test drafts', () => {
         expect(loadTestDraft('draft:1')?.answers.q1).toBe('a');
         clearTestDraft('draft:1');
         expect(loadTestDraft('draft:1')).toBeNull();
+    });
+
+    it('saveBuilderDraft reports a refused write instead of pretending it saved', () => {
+        const draft = { baseUpdatedAt: null, savedAt: '2024-01-01T10:00:00.000Z', form: { name: 'Draft' } } as never;
+        const key = 'rm_test_builder_draft:t1';
+        const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+            throw new Error('QuotaExceededError');
+        });
+        try {
+            expect(saveBuilderDraft(key, draft)).toBe(false);
+            expect(loadBuilderDraft(key)).toBeNull();
+        } finally {
+            setItem.mockRestore();
+        }
+
+        expect(saveBuilderDraft(key, draft)).toBe(true);
+        expect(loadBuilderDraft(key)).not.toBeNull();
+    });
+
+    it('pruneBuilderDrafts drops abandoned drafts and keeps the one in use', () => {
+        const keep = 'rm_test_builder_draft:t1';
+        const old = 'rm_test_builder_draft:new-old';
+        const other = 'rm_unrelated_key';
+        localStorage.setItem(keep, JSON.stringify({ savedAt: '2020-01-01T00:00:00.000Z' }));
+        localStorage.setItem(old, JSON.stringify({ savedAt: '2020-01-01T00:00:00.000Z' }));
+        localStorage.setItem(other, 'keep me');
+
+        pruneBuilderDrafts(keep, 7 * 24 * 60 * 60 * 1000);
+
+        expect(loadBuilderDraft(keep)).not.toBeNull();
+        expect(localStorage.getItem(old)).toBeNull();
+        expect(localStorage.getItem(other)).toBe('keep me');
     });
 
     it('loadTestTimer returns null when sessionStorage throws or holds garbage', () => {

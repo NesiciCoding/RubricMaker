@@ -42,11 +42,23 @@ export interface BuilderDraft {
     form: TestBuilderForm;
 }
 
-const DRAFT_KEY_PREFIX = 'rm_test_builder_draft:';
+export const BUILDER_DRAFT_KEY_PREFIX = 'rm_test_builder_draft:';
 
-/** One device-local draft per test, plus one for a test that has not been saved yet. */
-export function builderDraftKey(testId?: string): string {
-    return `${DRAFT_KEY_PREFIX}${testId ?? 'new'}`;
+/** Drafts of abandoned new-test sessions are unofferable, so they are dropped after this long. */
+export const BUILDER_DRAFT_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** One device-local draft per stored test: nothing else can ever land on that test's work. */
+export function builderDraftKey(testId: string): string {
+    return `${BUILDER_DRAFT_KEY_PREFIX}${testId}`;
+}
+
+/**
+ * An unsaved test has no id, so its draft is keyed by the id this editing session minted for it —
+ * two new tests never offer each other's work, while a reload keeps its own draft (the id rides in
+ * the URL).
+ */
+export function newBuilderDraftKey(draftId: string): string {
+    return builderDraftKey(`new-${draftId}`);
 }
 
 /**

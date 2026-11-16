@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { flushSync } from 'react-dom';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom';
 import {
     Plus,
     Save,
@@ -72,13 +72,15 @@ import SharedMaterialBanner from '../components/Sharing/SharedMaterialBanner';
 import BuilderDraftBanner from '../components/Tests/BuilderDraftBanner';
 import { useBuilderHistory } from '../hooks/useBuilderHistory';
 import {
+    BUILDER_DRAFT_MAX_AGE_MS,
     builderDraftKey,
     builderFormSignature,
+    newBuilderDraftKey,
     shouldOfferBuilderDraft,
     type BuilderDraft,
     type TestBuilderForm,
 } from '../utils/testBuilderDraft';
-import { clearBuilderDraft, loadBuilderDraft, saveBuilderDraft } from '../store/storage';
+import { clearBuilderDraft, loadBuilderDraft, pruneBuilderDrafts, saveBuilderDraft } from '../store/storage';
 
 /** Soft heuristic for a staircase level pool's builder warning — enough headroom for a couple of up/down moves without exhausting the pool. */
 const MIN_QUESTIONS_PER_LEVEL = 3;
@@ -243,6 +245,13 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         window.addEventListener('resize', onResize);
         return () => window.removeEventListener('resize', onResize);
     }, []);
+    /**
+     * Column widths and the one-pane "focus" mode for the wide layout. Session-only on purpose: the
+     * project keeps UI preferences in settings, and a column width is not worth a stored setting.
+     */
+    const [railWidth, setRailWidth] = useState(240);
+    const [inspectorWidth, setInspectorWidth] = useState(400);
+    const [expandedPane, setExpandedPane] = useState<'rail' | 'inspector' | null>(null);
     // The narrow inspector is a sheet over the page; Escape dismisses it like the old slide-over.
     useEffect(() => {
         if (isRailWide || !showPreview) return;
@@ -252,13 +261,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         document.addEventListener('keydown', onKeyDown);
         return () => document.removeEventListener('keydown', onKeyDown);
     }, [isRailWide, showPreview]);
-    /**
-     * Column widths and the one-pane "focus" mode for the wide layout. Session-only on purpose: the
-     * project keeps UI preferences in settings, and a column width is not worth a stored setting.
-     */
-    const [railWidth, setRailWidth] = useState(240);
-    const [inspectorWidth, setInspectorWidth] = useState(400);
-    const [expandedPane, setExpandedPane] = useState<'rail' | 'inspector' | null>(null);
+
     const [tourRun, setTourRun] = useState(false);
     const testTourSteps = React.useMemo(() => getTestBuilderTourSteps(t), [t]);
 
@@ -422,20 +425,26 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         onRestore: applyForm,
     });
 
-    const draftKey = builderDraftKey(existing?.id);
+    // A saved test's draft is keyed by its id; an unsaved one by an id this session mints and puts
+    // in the URL, so two new tests never see each other's draft while a reload keeps its own.
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [newDraftId] = useState(() => searchParams.get('draft') ?? nanoid());
+    const draftKey = existing?.id ? builderDraftKey(existing.id) : newBuilderDraftKey(newDraftId);
     const draftEnabled = !shared && !readOnly && !notFound;
-    const [draftStatus, setDraftStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+    const [draftStatus, setDraftStatus] = useState<'idle' | 'saving' | 'saved' | 'failed'>('idle');
     const [draftOffer, setDraftOffer] = useState<BuilderDraft | null>(null);
     const draftBaseRef = useRef(existing?.updatedAt ?? null);
 
     const writeDraft = React.useCallback(
         (next: TestBuilderForm) => {
-            saveBuilderDraft(draftKey, {
+            const saved = saveBuilderDraft(draftKey, {
                 baseUpdatedAt: draftBaseRef.current,
                 savedAt: new Date().toISOString(),
                 form: next,
             });
-            setDraftStatus('saved');
+            // A refused write must never read as "saved": the teacher would close the tab believing
+            // the draft is on the device when it is not.
+            setDraftStatus(saved ? 'saved' : 'failed');
         },
         [draftKey]
     );
@@ -469,13 +478,25 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         };
     }, []);
 
-    // Offer a draft from this device unless the stored test moved on since it was written.
+    // Offer a draft from this device unless the stored test moved on since it was written. Drafts
+    // nothing can offer again (an abandoned new test, a deleted test) are pruned in the same pass so
+    // they cannot take the space this test's autosave needs.
     useEffect(() => {
         if (!draftEnabled) return;
+        pruneBuilderDrafts(draftKey, BUILDER_DRAFT_MAX_AGE_MS);
         const stored = loadBuilderDraft(draftKey);
         if (shouldOfferBuilderDraft(stored, existing?.updatedAt)) setDraftOffer(stored);
         else if (stored) clearBuilderDraft(draftKey);
         // Mount only: the offer is about what was on disk when the page opened.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Keep the new test's draft id in the URL, so a reload comes back to the same draft.
+    useEffect(() => {
+        if (!draftEnabled || existing || searchParams.get('draft')) return;
+        const next = new URLSearchParams(searchParams);
+        next.set('draft', newDraftId);
+        setSearchParams(next, { replace: true });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -1151,9 +1172,16 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                                 role="status"
                                 aria-live="polite"
                                 data-testid="draft_status"
-                                style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}
+                                style={{
+                                    fontSize: '0.75rem',
+                                    color: draftStatus === 'failed' ? 'var(--red-text)' : 'var(--text-muted)',
+                                }}
                             >
-                                {draftStatus === 'saving' ? t('tests.draft_saving') : t('tests.draft_saved')}
+                                {draftStatus === 'saving'
+                                    ? t('tests.draft_saving')
+                                    : draftStatus === 'failed'
+                                      ? t('tests.draft_failed')
+                                      : t('tests.draft_saved')}
                             </span>
                         )}
                         <button className="btn btn-ghost btn-sm" onClick={() => setTourRun(true)}>

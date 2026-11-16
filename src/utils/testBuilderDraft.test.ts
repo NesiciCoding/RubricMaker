@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
     builderDraftKey,
     builderFormSignature,
+    newBuilderDraftKey,
     shouldOfferBuilderDraft,
     type BuilderDraft,
     type TestBuilderForm,
@@ -52,10 +53,14 @@ function draft(overrides: Partial<BuilderDraft> = {}): BuilderDraft {
 }
 
 describe('builderDraftKey', () => {
-    it('is per test, with one key for a test that was never saved', () => {
+    it('is per stored test', () => {
         expect(builderDraftKey('t1')).not.toBe(builderDraftKey('t2'));
-        expect(builderDraftKey()).toBe(builderDraftKey(undefined));
         expect(builderDraftKey('t1')).toContain('t1');
+    });
+
+    it('gives every unsaved test its own draft, so two new tests never share one', () => {
+        expect(newBuilderDraftKey('session-a')).not.toBe(newBuilderDraftKey('session-b'));
+        expect(newBuilderDraftKey('session-a')).not.toBe(builderDraftKey('session-a'));
     });
 });
 

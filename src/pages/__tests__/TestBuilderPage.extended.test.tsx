@@ -1513,6 +1513,45 @@ describe('TestBuilderPage undo, redo and draft autosave', () => {
         expect(loadBuilderDraft(key)).toBeNull();
     });
 
+    it('keeps the "saved" claim back when the device refuses the draft', async () => {
+        mockTests = [twoQuestionTest()];
+        renderBuilder('/tests/t1');
+        const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+            throw new Error('QuotaExceededError');
+        });
+        try {
+            fireEvent.change(screen.getByLabelText('tests.question_prompt_label'), {
+                target: { value: 'A test too big for this browser' },
+            });
+            await waitFor(() => expect(screen.getByTestId('draft_status')).toHaveTextContent('tests.draft_failed'));
+            expect(screen.getByTestId('draft_status').textContent).not.toContain('tests.draft_saved');
+        } finally {
+            setItem.mockRestore();
+        }
+    });
+
+    it('never offers one new test the draft of another, while a reload keeps its own', async () => {
+        const first = renderBuilder('/tests/new');
+        fireEvent.click(screen.getAllByText('tests.add_question')[0]);
+        pickNewQuestionType();
+        fireEvent.change(screen.getByLabelText('tests.question_prompt_label'), {
+            target: { value: 'New test A' },
+        });
+        await waitFor(() => expect(screen.getByTestId('draft_status')).toHaveTextContent('tests.draft_saved'));
+        const ownUrl = first.router.state.location.pathname + first.router.state.location.search;
+        expect(ownUrl).toContain('draft=');
+        first.unmount();
+
+        // A different new test starts clean, even though the first one's draft is still on the device.
+        const other = renderBuilder('/tests/new');
+        expect(screen.queryByTestId('draft-banner')).not.toBeInTheDocument();
+        other.unmount();
+
+        // Reopening the same URL (the reload case) finds its own draft again.
+        renderBuilder(ownUrl);
+        expect(screen.getByTestId('draft-banner')).toBeInTheDocument();
+    });
+
     it('clears the draft once the test is saved', async () => {
         mockTests = [twoQuestionTest()];
         renderBuilder('/tests/t1');
