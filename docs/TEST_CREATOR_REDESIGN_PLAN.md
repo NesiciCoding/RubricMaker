@@ -176,6 +176,31 @@ most of them, get the same pane as a 27" monitor.
 - The docs tab (`rb_tests_outline`, `rb_tests_inspector`) and the README describe the narrow layout, and the
   [screenshot](#screenshots) below is a capture of the shipped 1280px UI.
 
+## Phase 9 — Resizable columns and one-pane focus (done)
+
+Every column used to be a fixed width: 240px of outline, a flexible editor and a 400px inspector, with no way
+to give the printed paper more room or to work on one pane alone.
+
+- `src/components/Tests/ColumnResizer.tsx` draws the seam between the rail and the editor and between the
+  editor and the inspector. It is a `role="separator"` with the pane width as its value, so it drags with the
+  pointer, moves 16px per arrow key (48px with Shift), jumps to the limits with Home/End, resets to the
+  layout's own width on double-click, and shows the current width to a screen reader. The seam sticks with
+  the columns it separates, so the handle is reachable at any scroll position.
+- The rail stays between 180 and 360px and the inspector between 320 and 760px; the editor keeps the rest
+  and the A4 preview's fit scale grows with the inspector, so a wider inspector shows a larger page.
+- Each side pane has an expand button: it hides the other two columns and gives that pane the whole page,
+  and restore brings the layout back. The maximised outline stops at a readable 760px instead of stretching
+  a prompt and its points to opposite edges.
+- The test settings drawer widened from 420px to 560px, because its five tabs were the most cramped surface
+  in the builder.
+- Widths and the focus state are session-only: they are not a stored setting, and the project keeps UI
+  preferences in settings rather than writing them to storage from a component.
+
+Done when: the seams drag, resize from the keyboard, reset on double-click, and both panes can take the page
+without losing the layout — covered by `ColumnResizer.test.tsx`, a builder suite case and the wide spec.
+See [`test-creator-columns.png`](mockups/screenshots/test-creator-columns.png) and
+[`test-creator-columns-expanded.png`](mockups/screenshots/test-creator-columns-expanded.png).
+
 ## Screenshots
 
 Only captures of the shipped UI are committed. The exploratory screenshots taken while building the phases
@@ -194,6 +219,8 @@ in place rather than adding another file, and keep the table in step.
 | [`test-creator-checks-screen.png`](mockups/screenshots/test-creator-checks-screen.png)                   | the checks screen (Phase 6): blockers first, "What already passes" below                |
 | [`test-creator-narrow-switcher.png`](mockups/screenshots/test-creator-narrow-switcher.png)               | 1280px (Phase 8): the question switcher over one editor, with section chips             |
 | [`test-creator-narrow-sheet.png`](mockups/screenshots/test-creator-narrow-sheet.png)                     | 1280px (Phase 8): the inspector as a bottom sheet, Paper tab and close button           |
+| [`test-creator-columns.png`](mockups/screenshots/test-creator-columns.png)                               | 1500px (Phase 9): the two resize seams between rail, editor and inspector               |
+| [`test-creator-columns-expanded.png`](mockups/screenshots/test-creator-columns-expanded.png)             | 1500px (Phase 9): the inspector expanded to the whole page, at the paper's own size     |
 
 ## Conventions for every phase
 

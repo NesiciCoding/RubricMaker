@@ -55,6 +55,7 @@ import { EmptyState } from '../components/ui/EmptyState';
 import QuestionTypePicker from '../components/Tests/QuestionTypePicker';
 import TestOutlineRail from '../components/Tests/TestOutlineRail';
 import QuestionSwitcher from '../components/Tests/QuestionSwitcher';
+import ColumnResizer from '../components/Tests/ColumnResizer';
 import TestSettingsDrawer, {
     type TestSettingsTab,
     type TestSettingsValues,
@@ -224,6 +225,13 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         document.addEventListener('keydown', onKeyDown);
         return () => document.removeEventListener('keydown', onKeyDown);
     }, [isRailWide, showPreview]);
+    /**
+     * Column widths and the one-pane "focus" mode for the wide layout. Session-only on purpose: the
+     * project keeps UI preferences in settings, and a column width is not worth a stored setting.
+     */
+    const [railWidth, setRailWidth] = useState(240);
+    const [inspectorWidth, setInspectorWidth] = useState(400);
+    const [expandedPane, setExpandedPane] = useState<'rail' | 'inspector' | null>(null);
     const [tourRun, setTourRun] = useState(false);
     const testTourSteps = React.useMemo(() => getTestBuilderTourSteps(t), [t]);
 
@@ -868,6 +876,10 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
             }
             questionCount={questions.length}
             lang={contentLanguage || undefined}
+            expanded={isRailWide ? expandedPane === 'inspector' : undefined}
+            onToggleExpand={
+                isRailWide ? () => setExpandedPane((pane) => (pane === 'inspector' ? null : 'inspector')) : undefined
+            }
         />
     );
 
@@ -913,19 +925,23 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
             <div
                 className="page-content fade-in"
                 style={
-                    // Only the rail layout has an in-flow inspector column; below 1400px the inspector
-                    // slides over the page, so a grid would just reserve an empty track.
+                    // Only the rail layout has in-flow side columns; below 1400px the inspector is a
+                    // sheet, so a grid would just reserve an empty track. The 10px tracks are the
+                    // drag seams that resize the rail and the inspector, and a focused pane owns the
+                    // whole grid.
                     isRailWide
                         ? {
                               display: 'grid',
-                              gridTemplateColumns: '240px minmax(0, 1fr) minmax(340px, 400px)',
-                              gap: 20,
+                              gridTemplateColumns: expandedPane
+                                  ? 'minmax(0, 1fr)'
+                                  : `${railWidth}px 10px minmax(0, 1fr) 10px ${inspectorWidth}px`,
+                              gap: expandedPane ? 20 : 6,
                               alignItems: 'start',
                           }
                         : undefined
                 }
             >
-                {isRailWide && (
+                {isRailWide && expandedPane !== 'inspector' && (
                     <TestOutlineRail
                         sections={sections}
                         questions={displayOrderedQuestions}
@@ -940,9 +956,33 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                         }}
                         onAdd={() => openTypePicker()}
                         onOpenSettings={() => openSettings('basics')}
+                        expanded={expandedPane === 'rail'}
+                        onToggleExpand={() => setExpandedPane((pane) => (pane === 'rail' ? null : 'rail'))}
                     />
                 )}
-                <div style={isRailWide ? { minWidth: 0, display: 'flex', flexDirection: 'column' } : { minWidth: 0 }}>
+                {isRailWide && !expandedPane && (
+                    <ColumnResizer
+                        testId="rail-resizer"
+                        label={t('tests.rail_resize')}
+                        side="end"
+                        value={railWidth}
+                        min={180}
+                        max={360}
+                        defaultValue={240}
+                        onChange={setRailWidth}
+                    />
+                )}
+                <div
+                    style={
+                        // Focused on the outline or the paper, the editor keeps its state but leaves the page
+                        // instead of sharing it with the focused pane.
+                        expandedPane
+                            ? { display: 'none' }
+                            : isRailWide
+                              ? { minWidth: 0, display: 'flex', flexDirection: 'column' }
+                              : { minWidth: 0 }
+                    }
+                >
                     {shared && (
                         <SharedMaterialBanner
                             ownerName={shared.ownerName}
@@ -1257,7 +1297,11 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                                     {generatorLevelPoolWarnings.map(({ level, count }) => (
                                         <p
                                             key={level}
-                                            style={{ color: 'var(--yellow-text)', fontSize: '0.8125rem', margin: 0 }}
+                                            style={{
+                                                color: 'var(--yellow-text)',
+                                                fontSize: '0.8125rem',
+                                                margin: 0,
+                                            }}
                                         >
                                             <AlertCircle
                                                 size={13}
@@ -1324,7 +1368,13 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                             ) : (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
                                     {routingCycleWarning && (
-                                        <p style={{ color: 'var(--yellow-text)', fontSize: '0.8125rem', margin: 0 }}>
+                                        <p
+                                            style={{
+                                                color: 'var(--yellow-text)',
+                                                fontSize: '0.8125rem',
+                                                margin: 0,
+                                            }}
+                                        >
                                             <AlertCircle
                                                 size={13}
                                                 style={{ verticalAlign: 'middle', marginRight: 4 }}
@@ -1835,67 +1885,79 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                         </div>
                     )}
                 </div>
-                {isRailWide ? (
-                    <aside style={{ position: 'sticky', top: 12, minWidth: 0 }} data-testid="inspector-column">
-                        {inspector}
-                    </aside>
-                ) : (
-                    showPreview && (
-                        <section
-                            data-testid="inspector-sheet"
-                            role="region"
-                            aria-label={t('tests.inspector_sheet_title')}
-                            style={{
-                                position: 'fixed',
-                                left: 0,
-                                right: 0,
-                                bottom: 0,
-                                maxHeight: '85vh',
-                                zIndex: 60,
-                                display: 'flex',
-                                flexDirection: 'column',
-                                overflow: 'hidden',
-                                background: 'var(--bg-elevated)',
-                                borderTop: '1px solid var(--border)',
-                                borderRadius: '14px 14px 0 0',
-                                boxShadow: '0 -10px 30px rgba(0, 0, 0, 0.28)',
-                            }}
-                        >
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 8,
-                                    padding: '8px 12px',
-                                    borderBottom: '1px solid var(--border)',
-                                }}
-                            >
-                                <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>
-                                    {t('tests.inspector_sheet_title')}
-                                </span>
-                                <span
-                                    aria-hidden="true"
-                                    style={{
-                                        width: 36,
-                                        height: 4,
-                                        borderRadius: 999,
-                                        background: 'var(--border)',
-                                        margin: '0 auto',
-                                    }}
-                                />
-                                <button
-                                    type="button"
-                                    className="btn btn-secondary btn-sm"
-                                    data-testid="inspector-sheet-close"
-                                    onClick={() => setShowPreview(false)}
-                                >
-                                    {t('tests.inspector_sheet_close')}
-                                </button>
-                            </div>
-                            <div style={{ padding: 12, overflow: 'auto' }}>{inspector}</div>
-                        </section>
-                    )
+                {isRailWide && !expandedPane && (
+                    <ColumnResizer
+                        testId="inspector-resizer"
+                        label={t('tests.inspector_resize')}
+                        side="start"
+                        value={inspectorWidth}
+                        min={320}
+                        max={760}
+                        defaultValue={400}
+                        onChange={setInspectorWidth}
+                    />
                 )}
+                {isRailWide
+                    ? expandedPane !== 'rail' && (
+                          <aside style={{ position: 'sticky', top: 12, minWidth: 0 }} data-testid="inspector-column">
+                              {inspector}
+                          </aside>
+                      )
+                    : showPreview && (
+                          <section
+                              data-testid="inspector-sheet"
+                              role="region"
+                              aria-label={t('tests.inspector_sheet_title')}
+                              style={{
+                                  position: 'fixed',
+                                  left: 0,
+                                  right: 0,
+                                  bottom: 0,
+                                  maxHeight: '85vh',
+                                  zIndex: 60,
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  overflow: 'hidden',
+                                  background: 'var(--bg-elevated)',
+                                  borderTop: '1px solid var(--border)',
+                                  borderRadius: '14px 14px 0 0',
+                                  boxShadow: '0 -10px 30px rgba(0, 0, 0, 0.28)',
+                              }}
+                          >
+                              <div
+                                  style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 8,
+                                      padding: '8px 12px',
+                                      borderBottom: '1px solid var(--border)',
+                                  }}
+                              >
+                                  <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                                      {t('tests.inspector_sheet_title')}
+                                  </span>
+                                  <span
+                                      aria-hidden="true"
+                                      style={{
+                                          width: 36,
+                                          height: 4,
+                                          borderRadius: 999,
+                                          background: 'var(--border)',
+                                          margin: '0 auto',
+                                      }}
+                                  />
+                                  <button
+                                      type="button"
+                                      className="btn btn-secondary btn-sm"
+                                      data-testid="inspector-sheet-close"
+                                      onClick={() => setShowPreview(false)}
+                                  >
+                                      {t('tests.inspector_sheet_close')}
+                                  </button>
+                              </div>
+                              <div style={{ padding: 12, overflow: 'auto' }}>{inspector}</div>
+                          </section>
+                      )}
             </div>
             <TestSettingsDrawer
                 open={settingsOpen}

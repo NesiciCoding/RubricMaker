@@ -1,6 +1,6 @@
 import { useRef, useState, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FileText, GraduationCap } from 'lucide-react';
+import { FileText, GraduationCap, Maximize2, Minimize2 } from 'lucide-react';
 import RichContent from '../Editor/RichContent';
 import TestA4Preview, { type PrintTextFields } from './TestA4Preview';
 import StudentAnswerSurface from './StudentAnswerSurface';
@@ -21,6 +21,10 @@ interface Props {
     questionCount: number;
     /** Effective content language of the question being previewed. */
     lang?: string;
+    /** True when the inspector already has the whole pane. */
+    expanded?: boolean;
+    /** Only present in the wide layout: the sheet has its own close button. */
+    onToggleExpand?: () => void;
 }
 
 /**
@@ -35,6 +39,8 @@ export default function TestInspector({
     questionNumber,
     questionCount,
     lang,
+    expanded = false,
+    onToggleExpand,
 }: Props) {
     const { t } = useTranslation();
     const [tab, setTab] = useState<InspectorTab>('paper');
@@ -73,51 +79,74 @@ export default function TestInspector({
     return (
         <div data-testid="inspector" style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
             <div
-                role="tablist"
-                aria-label={t('tests.inspector_title')}
-                style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--border)', paddingBottom: 6 }}
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    borderBottom: '1px solid var(--border)',
+                    paddingBottom: 6,
+                }}
             >
-                {[
-                    { id: 'paper' as const, labelKey: 'tests.inspector_paper', Icon: FileText },
-                    { id: 'question' as const, labelKey: 'tests.inspector_question', Icon: GraduationCap },
-                ].map(({ id, labelKey, Icon }) => {
-                    const active = tab === id;
-                    return (
-                        <button
-                            key={id}
-                            type="button"
-                            role="tab"
-                            id={`test-inspector-tab-${id}`}
-                            aria-selected={active}
-                            aria-controls={panelId(id)}
-                            tabIndex={active ? 0 : -1}
-                            data-testid={`inspector-tab-${id}`}
-                            ref={(element) => {
-                                tabRefs.current[id] = element;
-                            }}
-                            onClick={() => setTab(id)}
-                            onKeyDown={(event) => handleTabKeyDown(event, id)}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 5,
-                                padding: '5px 9px',
-                                borderRadius: 999,
-                                border: '1px solid ' + (active ? 'var(--accent)' : 'var(--border)'),
-                                background: active ? 'color-mix(in srgb, var(--accent) 14%, transparent)' : 'none',
-                                color: 'var(--text)',
-                                font: 'inherit',
-                                fontSize: '0.8rem',
-                                fontWeight: active ? 600 : 400,
-                                cursor: 'pointer',
-                                whiteSpace: 'nowrap',
-                            }}
-                        >
-                            <Icon size={13} />
-                            {t(labelKey)}
-                        </button>
-                    );
-                })}
+                <div
+                    role="tablist"
+                    aria-label={t('tests.inspector_title')}
+                    style={{ display: 'flex', flexWrap: 'wrap', gap: 4, minWidth: 0 }}
+                >
+                    {[
+                        { id: 'paper' as const, labelKey: 'tests.inspector_paper', Icon: FileText },
+                        { id: 'question' as const, labelKey: 'tests.inspector_question', Icon: GraduationCap },
+                    ].map(({ id, labelKey, Icon }) => {
+                        const active = tab === id;
+                        return (
+                            <button
+                                key={id}
+                                type="button"
+                                role="tab"
+                                id={`test-inspector-tab-${id}`}
+                                aria-selected={active}
+                                aria-controls={panelId(id)}
+                                tabIndex={active ? 0 : -1}
+                                data-testid={`inspector-tab-${id}`}
+                                ref={(element) => {
+                                    tabRefs.current[id] = element;
+                                }}
+                                onClick={() => setTab(id)}
+                                onKeyDown={(event) => handleTabKeyDown(event, id)}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 5,
+                                    padding: '5px 9px',
+                                    borderRadius: 999,
+                                    border: '1px solid ' + (active ? 'var(--accent)' : 'var(--border)'),
+                                    background: active ? 'color-mix(in srgb, var(--accent) 14%, transparent)' : 'none',
+                                    color: 'var(--text)',
+                                    font: 'inherit',
+                                    fontSize: '0.8rem',
+                                    fontWeight: active ? 600 : 400,
+                                    cursor: 'pointer',
+                                    whiteSpace: 'nowrap',
+                                }}
+                            >
+                                <Icon size={13} />
+                                {t(labelKey)}
+                            </button>
+                        );
+                    })}
+                </div>
+                {onToggleExpand && (
+                    <button
+                        type="button"
+                        className="btn btn-ghost btn-icon btn-sm"
+                        onClick={onToggleExpand}
+                        aria-label={expanded ? t('tests.inspector_restore') : t('tests.inspector_expand')}
+                        title={expanded ? t('tests.inspector_restore') : t('tests.inspector_expand')}
+                        data-testid="inspector_expand"
+                        style={{ marginLeft: 'auto' }}
+                    >
+                        {expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                    </button>
+                )}
             </div>
 
             <div

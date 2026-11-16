@@ -742,9 +742,10 @@ describe('TestBuilderPage extended', () => {
         try {
             renderBuilder('/tests/t1');
             const rail = screen.getByText('tests.outline_title').closest('nav') as HTMLElement;
+            // Question rows only: the rail header also holds the expand button.
             const rowTexts = () =>
                 within(rail)
-                    .getAllByRole('button')
+                    .getAllByTestId(/^outline-question-/)
                     .map((b) => b.textContent ?? '');
             expect(rowTexts()[0]).toContain('Alpha question');
 
@@ -788,6 +789,57 @@ describe('TestBuilderPage extended', () => {
             const row = rail?.querySelector('button');
             expect(row).not.toBeNull();
             fireEvent.click(row as HTMLElement);
+        } finally {
+            Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
+        }
+    });
+
+    it('resizes the side columns and gives either of them the whole pane', () => {
+        const originalWidth = window.innerWidth;
+        Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1500 });
+        try {
+            renderBuilder();
+            fireEvent.click(screen.getAllByText(/tests.add_question/)[0]);
+            pickNewQuestionType();
+
+            const railResizer = screen.getByTestId('rail-resizer');
+            const inspectorResizer = screen.getByTestId('inspector-resizer');
+            const grid = document.querySelector('.page-content') as HTMLElement;
+            expect(grid.style.gridTemplateColumns).toContain('240px');
+            expect(grid.style.gridTemplateColumns).toContain('400px');
+
+            // The rail sits left of its seam, the inspector right of its own.
+            fireEvent.keyDown(railResizer, { key: 'ArrowRight' });
+            expect(railResizer).toHaveAttribute('aria-valuenow', '256');
+            expect(grid.style.gridTemplateColumns).toContain('256px');
+            fireEvent.keyDown(inspectorResizer, { key: 'ArrowLeft', shiftKey: true });
+            expect(inspectorResizer).toHaveAttribute('aria-valuenow', '448');
+            expect(grid.style.gridTemplateColumns).toContain('448px');
+
+            // Doubling back on the handle restores the layout's own width.
+            fireEvent.doubleClick(inspectorResizer);
+            expect(inspectorResizer).toHaveAttribute('aria-valuenow', '400');
+
+            // Expanding one pane hides the other two and drops the seams.
+            fireEvent.click(screen.getByTestId('inspector_expand'));
+            expect(screen.getByTestId('inspector')).toBeInTheDocument();
+            expect(screen.queryByText('tests.outline_title')).not.toBeInTheDocument();
+            expect(screen.getByTestId('question-focus')).not.toBeVisible();
+            expect(screen.queryByTestId('rail-resizer')).not.toBeInTheDocument();
+            expect(grid.style.gridTemplateColumns).toBe('minmax(0px, 1fr)');
+
+            fireEvent.click(screen.getByTestId('inspector_expand'));
+            expect(screen.getByText('tests.outline_title')).toBeInTheDocument();
+            expect(screen.getByTestId('rail-resizer')).toBeInTheDocument();
+            expect(grid.style.gridTemplateColumns).toContain('256px');
+
+            // The rail can take the pane too, and the inspector goes away while it does.
+            fireEvent.click(screen.getByTestId('outline_expand'));
+            expect(screen.queryByTestId('inspector')).not.toBeInTheDocument();
+            expect(screen.getByTestId('question-focus')).not.toBeVisible();
+            expect(screen.queryByTestId('inspector-resizer')).not.toBeInTheDocument();
+            fireEvent.click(screen.getByTestId('outline_expand'));
+            expect(screen.getByTestId('inspector')).toBeInTheDocument();
         } finally {
             Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
         }

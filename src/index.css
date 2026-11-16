@@ -3171,3 +3171,43 @@ label.sub-item-check {
         display: none;
     }
 }
+
+/* ─── Builder column resizer — the seam between the rail, editor and inspector ─────────── */
+.column-resizer {
+    position: sticky;
+    top: 12px;
+    align-self: start;
+    height: calc(100vh - 40px);
+    min-height: 240px;
+    cursor: col-resize;
+    touch-action: none;
+    border-radius: 999px;
+}
+
+.column-resizer-grip {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 4px;
+    height: 40px;
+    transform: translate(-50%, -50%);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text-muted) 38%, transparent);
+    transition:
+        background var(--transition),
+        height var(--transition),
+        width var(--transition);
+}
+
+.column-resizer:hover .column-resizer-grip,
+.column-resizer:focus-visible .column-resizer-grip,
+.column-resizer.is-dragging .column-resizer-grip {
+    width: 5px;
+    height: 64px;
+    background: var(--accent);
+}
+
+.column-resizer:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
