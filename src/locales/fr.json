@@ -934,7 +934,7 @@
         "rail_restore": "Rétablir la disposition",
         "inspector_expand": "Développer l’inspecteur",
         "inspector_restore": "Rétablir la disposition",
-        "resize_hint": "Faites glisser pour redimensionner ; les flèches fonctionnent aussi",
+        "resize_hint": "Faites glisser pour redimensionner ; les flèches fonctionnent aussi ; Entrée réinitialise",
         "no_questions": "Aucune question pour le moment",
         "no_questions_instruction": "Ajoutez votre première question pour commencer.",
         "save_success": "Test enregistré",

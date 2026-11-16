@@ -934,7 +934,7 @@
         "rail_restore": "Layout zurücksetzen",
         "inspector_expand": "Inspektor auf volle Breite",
         "inspector_restore": "Layout zurücksetzen",
-        "resize_hint": "Ziehen zum Ändern; Pfeiltasten funktionieren auch",
+        "resize_hint": "Ziehen zum Ändern; Pfeiltasten funktionieren auch; Eingabe setzt zurück",
         "no_questions": "Noch keine Fragen",
         "no_questions_instruction": "Füge deine erste Frage hinzu, um zu beginnen.",
         "save_success": "Test gespeichert",

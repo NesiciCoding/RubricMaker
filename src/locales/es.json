@@ -934,7 +934,7 @@
         "rail_restore": "Restaurar el diseño",
         "inspector_expand": "Ampliar el inspector",
         "inspector_restore": "Restaurar el diseño",
-        "resize_hint": "Arrastra para cambiar el ancho; las flechas también funcionan",
+        "resize_hint": "Arrastra para cambiar el ancho; las flechas también funcionan; Intro restablece",
         "no_questions": "Aún no hay preguntas",
         "no_questions_instruction": "Añade tu primera pregunta para empezar.",
         "save_success": "Prueba guardada",

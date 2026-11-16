@@ -259,7 +259,8 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
      */
     const [railWidth, setRailWidth] = useState(240);
     const [inspectorWidth, setInspectorWidth] = useState(400);
-    const [expandedPane, setExpandedPane] = useState<'rail' | 'inspector' | null>(null);
+    const [wideExpandedPane, setExpandedPane] = useState<'rail' | 'inspector' | null>(null);
+    const expandedPane = isRailWide ? wideExpandedPane : null;
     const [tourRun, setTourRun] = useState(false);
     const testTourSteps = React.useMemo(() => getTestBuilderTourSteps(t), [t]);
 

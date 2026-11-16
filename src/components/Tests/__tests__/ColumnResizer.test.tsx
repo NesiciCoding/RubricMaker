@@ -56,9 +56,14 @@ describe('ColumnResizer', () => {
 
     it('ignores keys that are not its own', () => {
         const { onChange, seam } = setup();
-        fireEvent.keyDown(seam, { key: 'Enter' });
         fireEvent.keyDown(seam, { key: 'Tab' });
         expect(onChange).not.toHaveBeenCalled();
+    });
+
+    it('resets to the default width on Enter', () => {
+        const { onChange, seam } = setup();
+        fireEvent.keyDown(seam, { key: 'Enter' });
+        expect(onChange).toHaveBeenLastCalledWith(240);
     });
 
     it('drags the seam to grow a pane on its left', () => {

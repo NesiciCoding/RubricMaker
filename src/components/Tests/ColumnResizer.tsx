@@ -8,7 +8,7 @@ interface Props {
     value: number;
     min: number;
     max: number;
-    /** Width restored by double-click (the layout's default). */
+    /** Width restored by double-click or Enter (the layout's default). */
     defaultValue: number;
     /** Which side of the handle the pane sits on: 'end' = to the left, 'start' = to the right. */
     side: 'start' | 'end';
@@ -20,7 +20,7 @@ const clamp = (value: number, min: number, max: number) => Math.min(max, Math.ma
 
 /**
  * Draggable seam between two builder columns. Pointer drag, arrow keys (Shift for a bigger step),
- * Home/End for the limits, double-click to reset, and `role="separator"` with the width as its value,
+ * Home/End for the limits, Enter or double-click to reset, and `role="separator"` with the width as its value,
  * so the pane widths are reachable without a mouse.
  */
 export default function ColumnResizer({ label, value, min, max, defaultValue, side, onChange, testId }: Props) {
@@ -59,6 +59,7 @@ export default function ColumnResizer({ label, value, min, max, defaultValue, si
         else if (event.key === 'ArrowRight') next = value + delta(step);
         else if (event.key === 'Home') next = min;
         else if (event.key === 'End') next = max;
+        else if (event.key === 'Enter') next = defaultValue;
         if (next === null) return;
         event.preventDefault();
         onChange(clamp(next, min, max));
