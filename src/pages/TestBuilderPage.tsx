@@ -459,55 +459,58 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
     const [editorRevision, setEditorRevision] = useState(0);
 
     /** Puts a form snapshot back; undo, redo and a restored draft all land here. */
-    const applyForm = React.useCallback((next: TestBuilderForm) => {
-        setName(next.name);
-        setDescription(next.description ?? '');
-        setQuestions(next.questions);
-        setSections(next.sections);
-        setDurationMinutes(next.durationMinutes);
-        setDueDate(next.dueDate);
-        setShuffleQuestions(next.shuffleQuestions);
-        setRequireSEB(next.requireSEB);
-        setAutoConfirmScores(next.autoConfirmScores);
-        setGradeScaleId(next.gradeScaleId);
-        setNormSettings(next.normSettings);
-        setMode(next.mode);
-        setPlacementEngine(next.placementEngine);
-        setGeneratorMinLevel(next.generatorMinLevel);
-        setGeneratorMaxLevel(next.generatorMaxLevel);
-        setGeneratorSkills(next.generatorSkills);
-        setGeneratorTags(next.generatorTags);
-        setGeneratorMinQuestions(next.generatorMinQuestions);
-        setGeneratorMaxQuestions(next.generatorMaxQuestions);
-        setGeneratorStarterBankItemId(next.generatorStarterBankItemId);
-        setAllowMultipleAttempts(next.allowMultipleAttempts);
-        setCefrTargetLevel(next.cefrTargetLevel);
-        setCefrSkill(next.cefrSkill);
-        setContentArea(next.contentArea);
-        setContentLanguage(next.contentLanguage);
-        setPrintText(next.printText);
-        // An undo that brings a question back opens it, so the restored work is what the teacher sees.
-        const presentIds = new Set(questionsRef.current.map((q) => q.id));
-        const restored = next.questions.find((q) => !presentIds.has(q.id));
-        setSelectedQuestionId((current) =>
-            restored
-                ? restored.id
-                : current && next.questions.some((q) => q.id === current)
-                  ? current
-                  : (next.questions[0]?.id ?? null)
-        );
-        setEditorRevision((revision) => revision + 1);
-        if (restored) {
-            setChecksOpen(false);
-            setSelectedSectionId(null);
-            setCollapsedQuestions((prev) => {
-                if (!prev.has(restored.id)) return prev;
-                const nextCollapsed = new Set(prev);
-                nextCollapsed.delete(restored.id);
-                return nextCollapsed;
-            });
-        }
-    }, [setChecksOpen]);
+    const applyForm = React.useCallback(
+        (next: TestBuilderForm) => {
+            setName(next.name);
+            setDescription(next.description ?? '');
+            setQuestions(next.questions);
+            setSections(next.sections);
+            setDurationMinutes(next.durationMinutes);
+            setDueDate(next.dueDate);
+            setShuffleQuestions(next.shuffleQuestions);
+            setRequireSEB(next.requireSEB);
+            setAutoConfirmScores(next.autoConfirmScores);
+            setGradeScaleId(next.gradeScaleId);
+            setNormSettings(next.normSettings);
+            setMode(next.mode);
+            setPlacementEngine(next.placementEngine);
+            setGeneratorMinLevel(next.generatorMinLevel);
+            setGeneratorMaxLevel(next.generatorMaxLevel);
+            setGeneratorSkills(next.generatorSkills);
+            setGeneratorTags(next.generatorTags);
+            setGeneratorMinQuestions(next.generatorMinQuestions);
+            setGeneratorMaxQuestions(next.generatorMaxQuestions);
+            setGeneratorStarterBankItemId(next.generatorStarterBankItemId);
+            setAllowMultipleAttempts(next.allowMultipleAttempts);
+            setCefrTargetLevel(next.cefrTargetLevel);
+            setCefrSkill(next.cefrSkill);
+            setContentArea(next.contentArea);
+            setContentLanguage(next.contentLanguage);
+            setPrintText(next.printText);
+            // An undo that brings a question back opens it, so the restored work is what the teacher sees.
+            const presentIds = new Set(questionsRef.current.map((q) => q.id));
+            const restored = next.questions.find((q) => !presentIds.has(q.id));
+            setSelectedQuestionId((current) =>
+                restored
+                    ? restored.id
+                    : current && next.questions.some((q) => q.id === current)
+                      ? current
+                      : (next.questions[0]?.id ?? null)
+            );
+            setEditorRevision((revision) => revision + 1);
+            if (restored) {
+                setChecksOpen(false);
+                setSelectedSectionId(null);
+                setCollapsedQuestions((prev) => {
+                    if (!prev.has(restored.id)) return prev;
+                    const nextCollapsed = new Set(prev);
+                    nextCollapsed.delete(restored.id);
+                    return nextCollapsed;
+                });
+            }
+        },
+        [setChecksOpen]
+    );
 
     const { canUndo, canRedo, undo, redo } = useBuilderHistory({
         snapshot: form,
