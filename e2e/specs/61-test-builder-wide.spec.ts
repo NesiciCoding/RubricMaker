@@ -75,14 +75,23 @@ test.describe('test builder — wide layout', () => {
         await expect(appPage.getByTestId('settings-drawer')).toBeVisible();
         await appPage.getByTestId('settings-done').click();
 
-        // Checks screen lists the blocker and jumps back to that question.
+        // Checks screen lists the blocker and its jump really changes the open question: open the
+        // second question first, then jump to the blocker, which belongs to the first one.
+        await rows.nth(1).click();
+        await expect(focus).toContainText('Wide layout question two');
         await appPage.getByTestId('checks_open').click();
         const checks = appPage.getByTestId('checks-panel');
         await expect(checks).toBeVisible();
-        await expect(checks.locator('[data-testid^="checks-row-"]').first()).toBeVisible();
-        await checks.locator('[data-testid^="checks-jump-"]').first().click();
+        const blockerRow = checks.locator('[data-testid^="checks-row-"]').first();
+        await expect(blockerRow, 'the unfinished first question has to be a blocker').toBeVisible();
+        const blockerId = ((await blockerRow.getAttribute('data-testid')) ?? '').replace('checks-row-', '');
+        await checks.getByTestId(`checks-jump-${blockerId}`).click();
         await expect(appPage.getByTestId('checks-panel')).toHaveCount(0);
-        await expect(appPage.getByTestId('question-focus')).toBeVisible();
+        await expect(focus).toBeVisible();
+        await expect(focus).toContainText('Wide layout question one');
+        await expect(focus).not.toContainText('Wide layout question two');
+        // The rail marks the same question as current, so the jump opened the blocker, not just any pane.
+        await expect(rail.getByTestId(`outline-question-${blockerId}`)).toHaveAttribute('aria-current', 'true');
 
         // Inspector: the student view previews the open question, the paper tab still renders.
         await appPage.getByTestId('inspector-tab-question').click();
