@@ -61,8 +61,8 @@ search in the rail, and add actions moved into it.
 At rail widths the outline is the only question list and the pane shows exactly one editor.
 
 - `selectedQuestionId` in `TestBuilderPage` drives the pane; the rail marks it with `aria-current` and
-  selecting a row swaps the editor. Below 1400px the stacked list is unchanged (Phase 8 gives narrow
-  screens their own switcher).
+  selecting a row swaps the editor. Below 1400px the switcher from Phase 8 takes the rail's place, and
+  the pane is the same one.
 - Selection follows the work: a new question (from the rail, the toolbar or the empty state) opens
   immediately, duplicating opens the copy, and deleting opens the next question (or the previous one at
   the end of the list).
@@ -157,12 +157,24 @@ The right column is now the inspector, always present at rail widths, with two t
   as before, so narrow screens lose nothing.
 - The inspector follows the focus pane: selecting another question in the rail re-renders the student view.
 
-## Phase 8 — Narrow layout, i18n and docs pass
+## Phase 8 — Narrow layout, i18n and docs pass (done)
 
-- Narrow artboard: rail collapses to a switcher, inspector becomes a sheet.
-- Every new string in all five locales, checked against the long German/French labels used in the mockup.
-- In-app docs tab, README and screenshots updated; the [screenshots](#screenshots) below regenerated against
-  the built app.
+Below 1400px the builder is the redesigned layout, not the old stacked column: 1280–1366 laptops, which is
+most of them, get the same pane as a 27" monitor.
+
+- `src/components/Tests/QuestionSwitcher.tsx` stands in for the rail: previous/next buttons, a select of
+  every question grouped by section (numbered as the cards are, showing the prompt or the type name when
+  there is no prompt), the section names as chips that open a section workspace, and add — one wrapping row
+  whose labels truncate inside their controls (`title` keeps the full text) instead of widening the page.
+  The switcher is only there when there is something to switch to.
+- Both widths render the same checks / section workspace / question pane. The stacked drag-and-drop list,
+  its droppables and `onDragEnd` are gone; reordering is the pane header's up/down buttons (inside the
+  question's own part) and moving a question between parts is the editor's section field.
+- The inspector becomes a bottom sheet from the A4 preview button: the same Paper and Student view tabs, a
+  close button and <kbd>Escape</kbd>, at most 85vh tall with its own scroll.
+- Every new string is in all five locales, read against the long German and French labels.
+- The docs tab (`rb_tests_outline`, `rb_tests_inspector`) and the README describe the narrow layout, and the
+  [screenshot](#screenshots) below is a capture of the shipped 1280px UI.
 
 ## Screenshots
 
@@ -180,6 +192,8 @@ in place rather than adding another file, and keep the table in step.
 | [`test-creator-settings-drawer.png`](mockups/screenshots/test-creator-settings-drawer.png)               | the settings drawer (Phase 5) and its five tabs                                         |
 | [`test-creator-more-options-open.png`](mockups/screenshots/test-creator-more-options-open.png)           | one chip open at a time (Phase 4), with every field still there                         |
 | [`test-creator-checks-screen.png`](mockups/screenshots/test-creator-checks-screen.png)                   | the checks screen (Phase 6): blockers first, "What already passes" below                |
+| [`test-creator-narrow-switcher.png`](mockups/screenshots/test-creator-narrow-switcher.png)               | 1280px (Phase 8): the question switcher over one editor, with section chips             |
+| [`test-creator-narrow-sheet.png`](mockups/screenshots/test-creator-narrow-sheet.png)                     | 1280px (Phase 8): the inspector as a bottom sheet, Paper tab and close button           |
 
 ## Conventions for every phase
 

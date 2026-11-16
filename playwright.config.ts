@@ -57,6 +57,7 @@ export default defineConfig({
                 '**/49-retention-anonymization.spec.ts',
                 '**/50-owner-data-backup.spec.ts',
                 '**/51-a11y.spec.ts',
+                '**/61-test-builder-wide.spec.ts',
                 '**/57-coteaching-live-sync.spec.ts',
                 '**/58-coteaching-shared-export.spec.ts',
                 ...quarantinePatterns,
@@ -84,6 +85,7 @@ export default defineConfig({
                 '**/49-retention-anonymization.spec.ts',
                 '**/50-owner-data-backup.spec.ts',
                 '**/51-a11y.spec.ts',
+                '**/61-test-builder-wide.spec.ts',
                 '**/57-coteaching-live-sync.spec.ts',
                 '**/58-coteaching-shared-export.spec.ts',
                 ...quarantinePatterns,
@@ -111,6 +113,7 @@ export default defineConfig({
                 '**/49-retention-anonymization.spec.ts',
                 '**/50-owner-data-backup.spec.ts',
                 '**/51-a11y.spec.ts',
+                '**/61-test-builder-wide.spec.ts',
                 '**/57-coteaching-live-sync.spec.ts',
                 '**/58-coteaching-shared-export.spec.ts',
                 ...quarantinePatterns,
@@ -124,6 +127,14 @@ export default defineConfig({
             name: 'a11y',
             use: { ...devices['Desktop Chrome'], reducedMotion: 'reduce' },
             testMatch: ['**/51-a11y.spec.ts'],
+            testIgnore: [...quarantinePatterns],
+        },
+        // Wide layout — the builder's rail + focus pane + inspector only exists at ≥1400px, so the
+        // 1280 projects ignore its spec and this project runs it at a teacher-laptop width (#1217).
+        {
+            name: 'wide',
+            use: { ...devices['Desktop Chrome'], viewport: { width: 1500, height: 1000 } },
+            testMatch: ['**/61-test-builder-wide.spec.ts'],
             testIgnore: [...quarantinePatterns],
         },
         // Speaking session recording — needs a fake camera/mic so MediaRecorder

@@ -357,7 +357,7 @@ describe('TestBuilderPage', () => {
         const { default: TestBuilderPage } = await import('../TestBuilderPage');
         renderBuilder(TestBuilderPage, '/tests/t1');
 
-        fireEvent.click(screen.getAllByRole('button', { name: 'tests.duplicate_question' })[0]);
+        fireEvent.click(screen.getByRole('button', { name: 'tests.duplicate_question' }));
         fireEvent.click(screen.getByText('common.save'));
         const saved = mockUpdateTest.mock.calls.at(-1)![0].questions as RmTest['questions'];
         expect(saved.map((q) => q.points)).toEqual([1, 1, 2]);
@@ -365,9 +365,10 @@ describe('TestBuilderPage', () => {
         expect(saved[1].expectedAnswers).toEqual(['a']);
 
         mockShowToast.mockClear();
-        fireEvent.click(screen.getAllByRole('button', { name: 'tests.remove_question' })[2]);
+        // Duplicating opens the copy in the pane, so the remove button is the copy's.
+        fireEvent.click(screen.getByRole('button', { name: 'tests.remove_question' }));
         const [message, , options] = mockShowToast.mock.calls.at(-1)!;
-        expect(message).toBe('tests.question_removed:{"number":3}');
+        expect(message).toBe('tests.question_removed:{"number":2}');
         fireEvent.click(screen.getByText('common.save'));
         expect(mockUpdateTest.mock.calls.at(-1)![0].questions).toHaveLength(2);
 
@@ -402,20 +403,21 @@ describe('TestBuilderPage', () => {
         const { default: TestBuilderPage } = await import('../TestBuilderPage');
         renderBuilder(TestBuilderPage, '/tests/t1');
 
-        expect(screen.getAllByLabelText('tests.question_type_label')).toHaveLength(2);
+        // One editor at a time: the pane shows the first question.
+        expect(screen.getAllByLabelText('tests.question_type_label')).toHaveLength(1);
         fireEvent.click(screen.getByRole('button', { name: 'tests.collapse_all_questions' }));
         expect(screen.queryAllByLabelText('tests.question_type_label')).toHaveLength(0);
-        expect(screen.getByText('tests.question_incomplete')).toBeInTheDocument();
 
         fireEvent.click(screen.getByTestId('checks_open'));
         fireEvent.click(screen.getByRole('button', { name: 'tests.issue_question:{"number":2}' }));
         expect(screen.getAllByLabelText('tests.question_type_label')).toHaveLength(1);
         expect(document.activeElement?.id).toBe('question-card-qb');
+        expect(screen.getByText('tests.question_incomplete')).toBeInTheDocument();
 
         fireEvent.click(screen.getByRole('button', { name: 'tests.collapse_all_questions' }));
         expect(screen.getByRole('button', { name: 'tests.expand_all_questions' })).toBeInTheDocument();
         fireEvent.click(screen.getByRole('button', { name: 'tests.expand_all_questions' }));
-        expect(screen.getAllByLabelText('tests.question_type_label')).toHaveLength(2);
+        expect(screen.getAllByLabelText('tests.question_type_label')).toHaveLength(1);
     });
 
     it('reloads the form when navigating between tests and to /tests/new (#612)', async () => {
