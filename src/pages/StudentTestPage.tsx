@@ -1,7 +1,7 @@
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { ToastContext } from '../context/ToastContext';
-import { CheckCircle, XCircle, Copy, AlertTriangle, Loader2, Eye, Lightbulb, Flag, LogOut } from 'lucide-react';
+import { CheckCircle, XCircle, Copy, AlertTriangle, Loader2, Eye, Flag, LogOut } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { decodeTestAssignment } from '../utils/shareCode';
@@ -14,20 +14,9 @@ import SebGate from '../components/Tests/SebGate';
 import HelpPopover from '../components/Tests/HelpPopover';
 import RichContent from '../components/Editor/RichContent';
 import PassageReadAloud from '../components/Tests/PassageReadAloud';
-import ErrorCorrectionAnswer from '../components/Tests/ErrorCorrectionAnswer';
-import SentenceBuilderAnswer from '../components/Tests/SentenceBuilderAnswer';
-import KeyWordAnswer from '../components/Tests/KeyWordAnswer';
-import AudioResponseAnswer, { DEFAULT_MAX_RECORDING_SECONDS } from '../components/Tests/AudioResponseAnswer';
-import ClozeAnswer from '../components/Tests/ClozeAnswer';
-import MatrixAnswer from '../components/Tests/MatrixAnswer';
-import MatchingAnswer from '../components/Tests/MatchingAnswer';
-import OrderingAnswer from '../components/Tests/OrderingAnswer';
-import CategorizeAnswer from '../components/Tests/CategorizeAnswer';
-import HotTextAnswer from '../components/Tests/HotTextAnswer';
-import { MultipleChoiceAnswer, MultipleResponseAnswer } from '../components/Tests/ChoiceAnswer';
-import TrueFalseAnswer from '../components/Tests/TrueFalseAnswer';
-import { DictationAnswer, NumericInput, OpenAnswer, ShortAnswerInput } from '../components/Tests/TextAnswer';
-import { safeAudioSrc, safeImgSrc } from '../utils/safeMediaSrc';
+import StudentAnswerSurface from '../components/Tests/StudentAnswerSurface';
+import QuestionStimulus from '../components/Tests/QuestionStimulus';
+import { safeAudioSrc } from '../utils/safeMediaSrc';
 import LimitedAudio from '../components/Tests/LimitedAudio';
 import { htmlToPlainText } from '../hooks/useTTS';
 import CountdownTimer from '../components/ui/CountdownTimer';
@@ -1659,7 +1648,6 @@ function QuestionCard({
 }: QuestionCardProps) {
     const { t } = useTranslation();
     const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown' || question.type === 'cloze-bank';
-    const [hintVisible, setHintVisible] = useState(false);
     return (
         <div
             style={{
@@ -1719,158 +1707,16 @@ function QuestionCard({
                 )}
             </div>
 
-            {/* Image stimulus */}
-            {safeImgSrc(question.imageUrl) && (
-                <img
-                    src={safeImgSrc(question.imageUrl)}
-                    alt={t('tests.taking.question_image_alt')}
-                    style={{
-                        display: 'block',
-                        maxWidth: '100%',
-                        maxHeight: 320,
-                        borderRadius: 8,
-                        objectFit: 'contain',
-                        border: '1px solid var(--border)',
-                        marginBottom: 16,
-                    }}
-                />
-            )}
+            <QuestionStimulus question={question} lang={lang} plays={audioPlays} onPlay={onAudioPlay} />
 
-            {/* Audio stimulus */}
-            {question.type !== 'dictation' && (safeAudioSrc(question.audioUrl) || question.spokenText) && (
-                <div style={{ marginBottom: 16 }}>
-                    <LimitedAudio
-                        src={safeAudioSrc(question.audioUrl)}
-                        spokenText={question.spokenText}
-                        maxPlays={question.maxPlays}
-                        plays={audioPlays}
-                        onPlay={(count) => onAudioPlay?.(count)}
-                        lang={lang ?? 'en'}
-                        label={t('tests.taking.question_audio_alt')}
-                    />
-                </div>
-            )}
-
-            {question.type === 'dictation' && (
-                <div style={{ marginBottom: 16 }}>
-                    <LimitedAudio
-                        src={safeAudioSrc(question.audioUrl)}
-                        spokenText={safeAudioSrc(question.audioUrl) ? undefined : question.dictationText}
-                        maxPlays={question.maxPlays}
-                        plays={audioPlays}
-                        onPlay={(count) => onAudioPlay?.(count)}
-                        lang={lang ?? 'en'}
-                        label={t('tests.taking.dictation_play')}
-                    />
-                </div>
-            )}
-
-            {/* Hint toggle */}
-            {question.hint && (
-                <div style={{ marginBottom: 16 }}>
-                    <button
-                        type="button"
-                        onClick={() => setHintVisible((v) => !v)}
-                        style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 6,
-                            background: 'none',
-                            border: '1px solid color-mix(in srgb, var(--accent) 40%, transparent)',
-                            borderRadius: 6,
-                            padding: '4px 10px',
-                            fontSize: '0.8rem',
-                            fontWeight: 600,
-                            color: 'var(--accent-text)',
-                            cursor: 'pointer',
-                        }}
-                    >
-                        <Lightbulb size={13} />
-                        {hintVisible ? t('tests.taking.hint_hide') : t('tests.taking.hint_show')}
-                    </button>
-                    {hintVisible && (
-                        <div
-                            lang={lang ?? 'en'}
-                            style={{
-                                marginTop: 8,
-                                padding: '10px 14px',
-                                background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
-                                border: '1px solid color-mix(in srgb, var(--accent) 25%, transparent)',
-                                borderRadius: 8,
-                                fontSize: '0.9rem',
-                                color: 'var(--text)',
-                                lineHeight: 1.55,
-                            }}
-                        >
-                            {question.hint}
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {question.type === 'multiple-choice' && (
-                <MultipleChoiceAnswer question={question} value={value} onChange={onChange} lang={lang} />
-            )}
-
-            {question.type === 'multiple-response' && (
-                <MultipleResponseAnswer question={question} value={value} onChange={onChange} lang={lang} />
-            )}
-
-            {question.type === 'true-false' && <TrueFalseAnswer value={value} onChange={onChange} />}
-
-            {isCloze && <ClozeAnswer question={question} value={value} onChange={onChange} code={code} lang={lang} />}
-
-            {question.type === 'matrix' && (
-                <MatrixAnswer question={question} value={value} onChange={onChange} lang={lang} />
-            )}
-
-            {question.type === 'matching' && (
-                <MatchingAnswer question={question} value={value} onChange={onChange} code={code} lang={lang} />
-            )}
-
-            {question.type === 'categorize' && (
-                <CategorizeAnswer question={question} value={value} onChange={onChange} code={code} lang={lang} />
-            )}
-
-            {question.type === 'hot-text' && (
-                <HotTextAnswer question={question} value={value} onChange={onChange} lang={lang} />
-            )}
-
-            {question.type === 'dictation' && <DictationAnswer value={value} onChange={onChange} lang={lang} />}
-
-            {question.type === 'error-correction' && (
-                <ErrorCorrectionAnswer question={question} value={value} onChange={onChange} lang={lang} />
-            )}
-
-            {question.type === 'sentence-builder' && (
-                <SentenceBuilderAnswer question={question} value={value} onChange={onChange} lang={lang} />
-            )}
-
-            {question.type === 'key-word-transformation' && (
-                <KeyWordAnswer question={question} value={value} onChange={onChange} lang={lang} />
-            )}
-
-            {question.type === 'short-answer' && <ShortAnswerInput value={value} onChange={onChange} lang={lang} />}
-
-            {question.type === 'numeric' && <NumericInput value={value} onChange={onChange} lang={lang} />}
-
-            {question.type === 'open' && <OpenAnswer value={value} onChange={onChange} lang={lang} />}
-
-            {question.type === 'ordering' && (
-                <OrderingAnswer question={question} value={value} onChange={onChange} code={code} lang={lang} />
-            )}
-
-            {question.type === 'audio-response' && (
-                <AudioResponseAnswer
-                    value={value}
-                    lang={lang}
-                    onChange={onChange}
-                    maxRecordingSeconds={question.maxRecordingSeconds ?? DEFAULT_MAX_RECORDING_SECONDS}
-                    prepSeconds={question.prepSeconds}
-                    cueBullets={question.cueBullets}
-                    onRecordingChange={onRecordingChange}
-                />
-            )}
+            <StudentAnswerSurface
+                question={question}
+                value={value}
+                onChange={onChange}
+                code={code}
+                lang={lang}
+                onRecordingChange={onRecordingChange}
+            />
         </div>
     );
 }

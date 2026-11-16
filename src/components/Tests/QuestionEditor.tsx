@@ -17,11 +17,12 @@ import {
     ChevronUp,
     ChevronDown,
     ChevronRight,
-    Settings2,
     BookmarkPlus,
     Copy,
     Gauge,
     Sparkles,
+    Tags,
+    Languages,
 } from 'lucide-react';
 import type { DraggableProvidedDragHandleProps } from '@hello-pangea/dnd';
 import { useAuthoring, useSettings } from '../../context/AppContext';
@@ -53,7 +54,17 @@ import SentenceBuilderFields from './SentenceBuilderFields';
 import KeyWordTransformationFields from './KeyWordTransformationFields';
 import ListeningControlsFields from './ListeningControlsFields';
 import ClozeBankFields from './ClozeBankFields';
-import MatrixEditor, { defaultMatrixColumns, defaultMatrixRows } from './MatrixEditor';
+import MatrixEditor from './MatrixEditor';
+import {
+    DEFAULT_MAX_RECORDING_SECONDS,
+    defaultCategorizeItems,
+    defaultCategories,
+    defaultMatchingPairs,
+    defaultMatrixColumns,
+    defaultMatrixRows,
+    defaultOptions,
+    defaultOrderItems,
+} from '../../utils/questionTypeDefaults';
 import AnswerToleranceFields from './AnswerToleranceFields';
 import DistractorSuggestions from './DistractorSuggestions';
 import { generateCloze, type ClozeStrategy } from '../../utils/clozeGenerators';
@@ -68,8 +79,6 @@ import type {
     TestQuestionType,
     TestOption,
     MatchingPair,
-    OrderItem,
-    TestCategory,
     CategorizeItem,
     TestSection,
     LinkedStandard,
@@ -78,6 +87,8 @@ import type {
     CefrLevel,
 } from '../../types';
 import CardGrip from '../ui/CardGrip';
+
+type MorePanelId = 'media' | 'hint' | 'tags' | 'scoring' | 'tuning';
 
 interface Props {
     question: TestQuestion;
@@ -99,9 +110,9 @@ interface Props {
     showRemove?: boolean;
     /** Hide the "save to bank" button — set false when already editing a bank item, where saving-to-bank is confusing. Defaults to true. */
     showSaveToBank?: boolean;
+    /** Hide the drag grip where the card cannot be dragged (the builder's focus pane, which moves with buttons). Defaults to true. */
+    showGrip?: boolean;
 }
-
-const DEFAULT_MAX_RECORDING_SECONDS = 60;
 
 export default function QuestionEditor({
     question,
@@ -117,6 +128,7 @@ export default function QuestionEditor({
     issues,
     showRemove = true,
     showSaveToBank = true,
+    showGrip = true,
 }: Props) {
     const { t, i18n } = useTranslation();
     const { addQuestionBankItem, rubrics = [] } = useAuthoring();
@@ -127,10 +139,8 @@ export default function QuestionEditor({
     const [pickingCefr, setPickingCefr] = React.useState(false);
     const [expandedOptionImages, setExpandedOptionImages] = React.useState<Set<string>>(new Set());
     const [expandedOptionAudio, setExpandedOptionAudio] = React.useState<Set<string>>(new Set());
-    const [attachOpen, setAttachOpen] = React.useState(() => !!(question.imageUrl || question.audioUrl));
-    const [advancedOpen, setAdvancedOpen] = React.useState(
-        () => !!(question.hint || question.explanation || question.eloRating)
-    );
+    // Every panel starts closed: nothing here is needed to write the question itself.
+    const [morePanel, setMorePanel] = React.useState<MorePanelId | null>(null);
     const [typePickerOpen, setTypePickerOpen] = React.useState(false);
     const [clozeStrategy, setClozeStrategy] = React.useState<ClozeStrategy>('fixedRatio');
     const [clozeEveryNth, setClozeEveryNth] = React.useState(7);
@@ -307,43 +317,6 @@ export default function QuestionEditor({
         } else {
             update({ type, linkedGrammarItemId, linkedGrammarItemIds, frameworkDescriptors });
         }
-    }
-
-    function defaultOptions(): TestOption[] {
-        return [
-            { id: nanoid(), text: '', isCorrect: true },
-            { id: nanoid(), text: '', isCorrect: false },
-        ];
-    }
-
-    function defaultMatchingPairs(): MatchingPair[] {
-        return [
-            { id: nanoid(), left: '', right: '' },
-            { id: nanoid(), left: '', right: '' },
-        ];
-    }
-
-    function defaultOrderItems(): OrderItem[] {
-        return [
-            { id: nanoid(), text: '' },
-            { id: nanoid(), text: '' },
-        ];
-    }
-
-    function defaultCategories(): TestCategory[] {
-        return [
-            { id: nanoid(), label: '' },
-            { id: nanoid(), label: '' },
-        ];
-    }
-
-    function defaultCategorizeItems(categories: TestCategory[]): CategorizeItem[] {
-        return [
-            /* v8 ignore next -- defaultCategories always yields at least one category */
-            { id: nanoid(), text: '', categoryId: categories[0]?.id ?? '' },
-            /* v8 ignore next -- defaultCategories always yields at least one category */
-            { id: nanoid(), text: '', categoryId: categories[0]?.id ?? '' },
-        ];
     }
 
     function addOption() {
@@ -553,30 +526,59 @@ export default function QuestionEditor({
     const sectionLevel = sections.find((s) => s.id === question.sectionId)?.cefrLevel;
     const eloRange = sectionLevel ? cefrEloRange(sectionLevel) : null;
 
+    const moreChips: { id: MorePanelId; Icon: typeof Paperclip; labelKey: string; hasValue: boolean }[] = [
+        {
+            id: 'media',
+            Icon: Paperclip,
+            labelKey: 'tests.more_media',
+            hasValue: !!(question.imageUrl || question.audioUrl),
+        },
+        {
+            id: 'hint',
+            Icon: Lightbulb,
+            labelKey: 'tests.more_hint',
+            hasValue: !!(question.hint || question.explanation),
+        },
+        {
+            id: 'tags',
+            Icon: Tags,
+            labelKey: 'tests.more_tags',
+            hasValue:
+                (question.linkedStandards?.length ?? 0) +
+                    (question.linkedCefrDescriptors?.length ?? 0) +
+                    effectiveFrameworkDescriptors.length >
+                0,
+        },
+        { id: 'scoring', Icon: Gauge, labelKey: 'tests.more_scoring', hasValue: question.eloRating !== undefined },
+        { id: 'tuning', Icon: Languages, labelKey: 'tests.more_tuning', hasValue: !!question.contentLanguage },
+    ];
+
     const header = (
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 {/* Drag handle. Outside a Droppable (the question-bank modal) it has no role,
                     and a name on a role-less element is invalid (#697) — so the name is only
                     an aria-label when dnd supplied the role, and is text otherwise. */}
-                <CardGrip
-                    {...(dragHandleProps ?? {})}
-                    label={dragHandleProps ? t('tests.drag_question') : undefined}
-                    size={16}
-                    // The glyph is 16px and the padding only grows the box vertically, so pin
-                    // the 25px touch target from the other side too.
-                    style={{
-                        padding: '2px 0',
-                        margin: 0,
-                        color: 'var(--text-muted)',
-                        minWidth: 25,
-                        minHeight: 25,
-                        justifyContent: 'center',
-                    }}
-                >
-                    <GripVertical size={16} aria-hidden="true" />
-                    {!dragHandleProps && <span className="sr-only">{t('tests.drag_question')}</span>}
-                </CardGrip>
+                {showGrip && (
+                    <CardGrip
+                        {...(dragHandleProps ?? {})}
+                        label={dragHandleProps ? t('tests.drag_question') : undefined}
+                        size={16}
+                        // The glyph is 16px and the padding only grows the box vertically, so pin
+                        // the 25px touch target from the other side too.
+                        style={{
+                            padding: '2px 0',
+                            margin: 0,
+                            color: 'var(--text-muted)',
+                            minWidth: 25,
+                            minHeight: 25,
+                            justifyContent: 'center',
+                        }}
+                    >
+                        <GripVertical size={16} aria-hidden="true" />
+                        {!dragHandleProps && <span className="sr-only">{t('tests.drag_question')}</span>}
+                    </CardGrip>
+                )}
                 <span className="badge badge-blue">{t('tests.question_number', { number: index + 1 })}</span>
                 {issues && issues.length > 0 && (
                     <span
@@ -722,23 +724,6 @@ export default function QuestionEditor({
                         </select>
                     </div>
                 )}
-                <div className="form-group" style={{ marginBottom: 0, flex: '0 0 150px' }}>
-                    <label htmlFor={`question-language-${question.id}`}>
-                        {t('tests.question_content_language_label')}
-                    </label>
-                    <select
-                        id={`question-language-${question.id}`}
-                        value={question.contentLanguage ?? ''}
-                        onChange={(e) => update({ contentLanguage: e.target.value || undefined })}
-                    >
-                        <option value="">{t('tests.content_language_inherit')}</option>
-                        <option value="en">{t('settings.language_en')}</option>
-                        <option value="nl">{t('settings.language_nl')}</option>
-                        <option value="fr">{t('settings.language_fr')}</option>
-                        <option value="de">{t('settings.language_de')}</option>
-                        <option value="es">{t('settings.language_es')}</option>
-                    </select>
-                </div>
             </div>
 
             <div className="form-group" style={{ marginBottom: 0 }}>
@@ -1598,138 +1583,94 @@ export default function QuestionEditor({
                 </div>
             )}
 
+            {/* Everything that is not needed to write the question sits behind one chip row. */}
             <div className="form-group" style={{ marginBottom: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <button
-                        type="button"
-                        className="btn btn-secondary btn-sm"
-                        aria-expanded={attachOpen}
-                        onClick={() => setAttachOpen((v) => !v)}
-                    >
-                        <Paperclip size={14} /> {t('tests.attach_media')}
-                    </button>
-                    {question.imageUrl && (
-                        <span className="badge" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                            <Image size={12} /> {t('tests.question_image_label')}
-                            <button
-                                type="button"
-                                className="btn btn-ghost btn-icon btn-sm"
-                                aria-label={t('tests.remove_attachment', { name: t('tests.question_image_label') })}
-                                style={{ padding: 0, color: 'inherit' }}
-                                onClick={() => update({ imageUrl: undefined })}
-                            >
-                                <X size={11} />
-                            </button>
-                        </span>
-                    )}
-                    {question.audioUrl && (
-                        <span className="badge" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                            <Music size={12} /> {t('tests.question_audio_label')}
-                            <button
-                                type="button"
-                                className="btn btn-ghost btn-icon btn-sm"
-                                aria-label={t('tests.remove_attachment', { name: t('tests.question_audio_label') })}
-                                style={{ padding: 0, color: 'inherit' }}
-                                onClick={() => update({ audioUrl: undefined })}
-                            >
-                                <X size={11} />
-                            </button>
-                        </span>
-                    )}
-                </div>
-                {attachOpen && (
+                {(question.imageUrl || question.audioUrl) && (
                     <div
                         style={{
                             display: 'flex',
-                            flexDirection: 'column',
-                            gap: 12,
-                            marginTop: 8,
-                            padding: 10,
-                            border: '1px solid var(--border)',
-                            borderRadius: 8,
+                            alignItems: 'center',
+                            gap: 8,
+                            flexWrap: 'wrap',
+                            marginBottom: 8,
                         }}
                     >
-                        <div>
-                            <label
-                                htmlFor={`question-image-${question.id}`}
-                                style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-                            >
-                                <Image size={14} /> {t('tests.question_image_label')}
-                            </label>
-                            <input
-                                id={`question-image-${question.id}`}
-                                type="url"
-                                value={question.imageUrl ?? ''}
-                                onChange={(e) => update({ imageUrl: e.target.value || undefined })}
-                                placeholder={t('tests.question_image_placeholder')}
-                            />
-                            {question.imageUrl && (
-                                <img
-                                    src={question.imageUrl}
-                                    alt={t('tests.question_image_preview_alt')}
-                                    style={{
-                                        marginTop: 8,
-                                        maxWidth: '100%',
-                                        maxHeight: 200,
-                                        borderRadius: 6,
-                                        objectFit: 'contain',
-                                        border: '1px solid var(--border)',
-                                    }}
-                                    onError={(e) => {
-                                        (e.target as HTMLImageElement).style.display = 'none';
-                                    }}
-                                    onLoad={(e) => {
-                                        (e.target as HTMLImageElement).style.display = '';
-                                    }}
-                                />
-                            )}
-                        </div>
-                        <div>
-                            <label
-                                htmlFor={`question-audio-${question.id}`}
-                                style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-                            >
-                                <Music size={14} /> {t('tests.question_audio_label')}
-                            </label>
-                            <input
-                                id={`question-audio-${question.id}`}
-                                type="url"
-                                value={question.audioUrl ?? ''}
-                                onChange={(e) => update({ audioUrl: e.target.value || undefined })}
-                                placeholder={t('tests.question_audio_placeholder')}
-                            />
-                            <AudioUrlStatus url={question.audioUrl} />
-                            {question.audioUrl && (
-                                <audio
-                                    controls
-                                    src={question.audioUrl}
-                                    aria-label={t('tests.question_audio_preview_alt')}
-                                    style={{ marginTop: 8, width: '100%' }}
-                                />
-                            )}
-                        </div>
-                        <ListeningControlsFields
-                            id={`question-${question.id}`}
-                            value={question}
-                            onChange={(patch) => update(patch)}
-                            showSpokenText={question.type !== 'dictation'}
-                        />
+                        {question.imageUrl && (
+                            <span className="badge" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                <Image size={12} /> {t('tests.question_image_label')}
+                                <button
+                                    type="button"
+                                    className="btn btn-ghost btn-icon btn-sm"
+                                    aria-label={t('tests.remove_attachment', { name: t('tests.question_image_label') })}
+                                    style={{ padding: 0, color: 'inherit' }}
+                                    onClick={() => update({ imageUrl: undefined })}
+                                >
+                                    <X size={11} />
+                                </button>
+                            </span>
+                        )}
+                        {question.audioUrl && (
+                            <span className="badge" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                <Music size={12} /> {t('tests.question_audio_label')}
+                                <button
+                                    type="button"
+                                    className="btn btn-ghost btn-icon btn-sm"
+                                    aria-label={t('tests.remove_attachment', { name: t('tests.question_audio_label') })}
+                                    style={{ padding: 0, color: 'inherit' }}
+                                    onClick={() => update({ audioUrl: undefined })}
+                                >
+                                    <X size={11} />
+                                </button>
+                            </span>
+                        )}
                     </div>
                 )}
-            </div>
 
-            {/* Advanced/optional: hint, practice explanation, staircase Elo rating */}
-            <div className="form-group" style={{ marginBottom: 0 }}>
-                <button
-                    type="button"
-                    className="btn btn-secondary btn-sm"
-                    aria-expanded={advancedOpen}
-                    onClick={() => setAdvancedOpen((v) => !v)}
-                >
-                    <Settings2 size={14} /> {t('tests.advanced_options')}
-                </button>
-                {advancedOpen && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <span
+                        className="text-muted"
+                        style={{
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            letterSpacing: '0.05em',
+                            textTransform: 'uppercase',
+                        }}
+                    >
+                        {t('tests.more_options')}
+                    </span>
+                    {moreChips.map(({ id, Icon, labelKey, hasValue }) => {
+                        const expanded = morePanel === id;
+                        return (
+                            <button
+                                key={id}
+                                type="button"
+                                className={`btn btn-sm ${expanded ? 'btn-primary' : 'btn-secondary'}`}
+                                aria-expanded={expanded}
+                                aria-controls={expanded ? `question-more-${question.id}-${id}` : undefined}
+                                onClick={() => setMorePanel(expanded ? null : id)}
+                            >
+                                <Icon size={14} /> {t(labelKey)}
+                                {hasValue && (
+                                    <span
+                                        aria-hidden="true"
+                                        title={t('tests.more_has_value')}
+                                        style={{
+                                            width: 6,
+                                            height: 6,
+                                            borderRadius: 3,
+                                            marginLeft: 2,
+                                            background: expanded ? 'var(--bg-panel)' : 'var(--accent)',
+                                        }}
+                                    />
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {morePanel && (
                     <div
+                        id={`question-more-${question.id}-${morePanel}`}
                         style={{
                             display: 'flex',
                             flexDirection: 'column',
@@ -1740,217 +1681,327 @@ export default function QuestionEditor({
                             borderRadius: 8,
                         }}
                     >
-                        <div>
-                            <label
-                                htmlFor={`question-hint-${question.id}`}
-                                style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-                            >
-                                <Lightbulb size={14} /> {t('tests.question_hint_label')}
-                            </label>
-                            <input
-                                id={`question-hint-${question.id}`}
-                                type="text"
-                                value={question.hint ?? ''}
-                                onChange={(e) => update({ hint: e.target.value || undefined })}
-                                placeholder={t('tests.question_hint_placeholder')}
-                            />
-                        </div>
-                        <div>
-                            <label
-                                htmlFor={`question-explanation-${question.id}`}
-                                style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-                            >
-                                <MessageCircle size={14} /> {t('tests.question_explanation_label')}
-                            </label>
-                            <textarea
-                                id={`question-explanation-${question.id}`}
-                                value={question.explanation ?? ''}
-                                onChange={(e) => update({ explanation: e.target.value || undefined })}
-                                placeholder={t('tests.question_explanation_placeholder')}
-                                rows={2}
-                            />
-                            <p className="text-muted text-xs" style={{ marginTop: 4 }}>
-                                {t('tests.question_explanation_help')}
-                            </p>
-                        </div>
-                        {sectionLevel && eloRange ? (
-                            <div>
-                                <label
-                                    htmlFor={`question-elo-${question.id}`}
-                                    style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-                                >
-                                    <Gauge size={14} /> {t('tests.elo_rating_label')}{' '}
-                                    <HelpPopover title={t('tests.elo_rating_label')}>
-                                        {t('tests.elo_rating_help')}
-                                    </HelpPopover>
-                                </label>
-                                <input
-                                    id={`question-elo-${question.id}`}
-                                    type="number"
-                                    min={eloRange.min}
-                                    max={eloRange.max}
-                                    value={question.eloRating ?? ''}
-                                    onChange={(e) =>
-                                        update({
-                                            eloRating: e.target.value === '' ? undefined : Number(e.target.value),
-                                        })
-                                    }
-                                    placeholder={String(LEVEL_TO_ELO[sectionLevel])}
-                                    style={{ width: 140 }}
+                        {morePanel === 'media' && (
+                            <>
+                                <div>
+                                    <label
+                                        htmlFor={`question-image-${question.id}`}
+                                        style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                                    >
+                                        <Image size={14} /> {t('tests.question_image_label')}
+                                    </label>
+                                    <input
+                                        id={`question-image-${question.id}`}
+                                        type="url"
+                                        value={question.imageUrl ?? ''}
+                                        onChange={(e) => update({ imageUrl: e.target.value || undefined })}
+                                        placeholder={t('tests.question_image_placeholder')}
+                                    />
+                                    {question.imageUrl && (
+                                        <img
+                                            src={question.imageUrl}
+                                            alt={t('tests.question_image_preview_alt')}
+                                            style={{
+                                                marginTop: 8,
+                                                maxWidth: '100%',
+                                                maxHeight: 200,
+                                                borderRadius: 6,
+                                                objectFit: 'contain',
+                                                border: '1px solid var(--border)',
+                                            }}
+                                            onError={(e) => {
+                                                (e.target as HTMLImageElement).style.display = 'none';
+                                            }}
+                                            onLoad={(e) => {
+                                                (e.target as HTMLImageElement).style.display = '';
+                                            }}
+                                        />
+                                    )}
+                                </div>
+                                <div>
+                                    <label
+                                        htmlFor={`question-audio-${question.id}`}
+                                        style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                                    >
+                                        <Music size={14} /> {t('tests.question_audio_label')}
+                                    </label>
+                                    <input
+                                        id={`question-audio-${question.id}`}
+                                        type="url"
+                                        value={question.audioUrl ?? ''}
+                                        onChange={(e) => update({ audioUrl: e.target.value || undefined })}
+                                        placeholder={t('tests.question_audio_placeholder')}
+                                    />
+                                    <AudioUrlStatus url={question.audioUrl} />
+                                    {question.audioUrl && (
+                                        <audio
+                                            controls
+                                            src={question.audioUrl}
+                                            aria-label={t('tests.question_audio_preview_alt')}
+                                            style={{ marginTop: 8, width: '100%' }}
+                                        />
+                                    )}
+                                </div>
+                                <ListeningControlsFields
+                                    id={`question-${question.id}`}
+                                    value={question}
+                                    onChange={(patch) => update(patch)}
+                                    showSpokenText={question.type !== 'dictation'}
                                 />
-                                <p className="text-muted text-xs" style={{ marginTop: 4 }}>
-                                    {t('tests.elo_rating_range_hint', { min: eloRange.min, max: eloRange.max })}
-                                </p>
+                            </>
+                        )}
+
+                        {morePanel === 'hint' && (
+                            <>
+                                <div>
+                                    <label
+                                        htmlFor={`question-hint-${question.id}`}
+                                        style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                                    >
+                                        <Lightbulb size={14} /> {t('tests.question_hint_label')}
+                                    </label>
+                                    <input
+                                        id={`question-hint-${question.id}`}
+                                        type="text"
+                                        value={question.hint ?? ''}
+                                        onChange={(e) => update({ hint: e.target.value || undefined })}
+                                        placeholder={t('tests.question_hint_placeholder')}
+                                    />
+                                </div>
+                                <div>
+                                    <label
+                                        htmlFor={`question-explanation-${question.id}`}
+                                        style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                                    >
+                                        <MessageCircle size={14} /> {t('tests.question_explanation_label')}
+                                    </label>
+                                    <textarea
+                                        id={`question-explanation-${question.id}`}
+                                        value={question.explanation ?? ''}
+                                        onChange={(e) => update({ explanation: e.target.value || undefined })}
+                                        placeholder={t('tests.question_explanation_placeholder')}
+                                        rows={2}
+                                    />
+                                    <p className="text-muted text-xs" style={{ marginTop: 4 }}>
+                                        {t('tests.question_explanation_help')}
+                                    </p>
+                                </div>
+                            </>
+                        )}
+
+                        {morePanel === 'tags' && (
+                            <>
+                                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                    {(question.linkedStandards ?? []).map((std, idx) => (
+                                        <div
+                                            key={std.guid + idx}
+                                            style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: 8,
+                                                background: 'var(--accent-soft)',
+                                                border: '1px solid var(--accent)',
+                                                borderRadius: 8,
+                                                padding: '6px 12px',
+                                                fontSize: '0.8rem',
+                                            }}
+                                        >
+                                            <BookOpen size={13} style={{ color: 'var(--accent-text)' }} />
+                                            <span style={{ color: 'var(--accent-text)', fontWeight: 600 }}>
+                                                {std.statementNotation ?? std.guid}
+                                            </span>
+                                            <span
+                                                style={{
+                                                    color: 'var(--text)',
+                                                    maxWidth: 280,
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap',
+                                                }}
+                                            >
+                                                {std.description}
+                                            </span>
+                                            <button
+                                                className="btn btn-ghost btn-icon btn-sm"
+                                                aria-label={t('rubricBuilder.action_unlink_standard')}
+                                                style={{ color: 'var(--text-muted)', padding: 2 }}
+                                                onClick={() => unlinkStandard(idx)}
+                                            >
+                                                <X size={12} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                    {(question.linkedCefrDescriptors ?? []).map((descriptor) => (
+                                        <div
+                                            key={descriptor.descriptorId}
+                                            style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: 8,
+                                                background: 'var(--accent-soft)',
+                                                border: '1px solid var(--accent)',
+                                                borderRadius: 8,
+                                                padding: '6px 12px',
+                                                fontSize: '0.8rem',
+                                            }}
+                                        >
+                                            <GraduationCap size={13} style={{ color: 'var(--accent-text)' }} />
+                                            <span style={{ color: 'var(--accent-text)', fontWeight: 600 }}>
+                                                {descriptor.level}
+                                            </span>
+                                            <span
+                                                style={{
+                                                    color: 'var(--text)',
+                                                    maxWidth: 280,
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap',
+                                                }}
+                                            >
+                                                {descriptor.descriptionEn}
+                                            </span>
+                                            <button
+                                                className="btn btn-ghost btn-icon btn-sm"
+                                                aria-label={t('rubricBuilder.action_remove_descriptor')}
+                                                style={{ color: 'var(--text-muted)', padding: 2 }}
+                                                onClick={() => removeCefrDescriptor(descriptor.descriptorId)}
+                                            >
+                                                <X size={12} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                    {effectiveFrameworkDescriptors.map((descriptor) => (
+                                        <div
+                                            key={descriptor.descriptorId}
+                                            style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: 8,
+                                                background: `color-mix(in srgb, ${descriptor.categoryColor} 8%, transparent)`,
+                                                border: `1px solid color-mix(in srgb, ${descriptor.categoryColor} 25%, transparent)`,
+                                                borderRadius: 8,
+                                                padding: '6px 12px',
+                                                fontSize: '0.8rem',
+                                            }}
+                                        >
+                                            <span
+                                                style={{
+                                                    background: descriptor.categoryColor,
+                                                    color: '#fff',
+                                                    borderRadius: 4,
+                                                    padding: '1px 5px',
+                                                    fontSize: 10,
+                                                    fontWeight: 700,
+                                                    whiteSpace: 'nowrap',
+                                                }}
+                                            >
+                                                {i18n.language.startsWith('nl')
+                                                    ? descriptor.categoryLabelNl
+                                                    : descriptor.categoryLabelEn}
+                                            </span>
+                                            <span
+                                                style={{
+                                                    color: 'var(--text)',
+                                                    maxWidth: 280,
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap',
+                                                }}
+                                            >
+                                                {i18n.language.startsWith('nl')
+                                                    ? descriptor.descriptionNl
+                                                    : descriptor.descriptionEn}
+                                            </span>
+                                            <button
+                                                className="btn btn-ghost btn-icon btn-sm"
+                                                aria-label={t('rubricBuilder.action_remove_descriptor')}
+                                                style={{ color: 'var(--text-muted)', padding: 2 }}
+                                                onClick={() => removeFrameworkDescriptor(descriptor.descriptorId)}
+                                            >
+                                                <X size={12} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div style={{ display: 'flex', gap: 8 }}>
+                                    <button
+                                        className="btn btn-secondary btn-sm"
+                                        onClick={() => setPickingStandard(true)}
+                                    >
+                                        <BookOpen size={14} /> {t('tests.link_standard')}
+                                    </button>
+                                    <button className="btn btn-secondary btn-sm" onClick={() => setPickingCefr(true)}>
+                                        <GraduationCap size={14} /> {t('tests.link_cefr')}
+                                    </button>
+                                </div>
+                            </>
+                        )}
+
+                        {morePanel === 'scoring' && (
+                            <>
+                                {sectionLevel && eloRange ? (
+                                    <div>
+                                        <label
+                                            htmlFor={`question-elo-${question.id}`}
+                                            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                                        >
+                                            <Gauge size={14} /> {t('tests.elo_rating_label')}{' '}
+                                            <HelpPopover title={t('tests.elo_rating_label')}>
+                                                {t('tests.elo_rating_help')}
+                                            </HelpPopover>
+                                        </label>
+                                        <input
+                                            id={`question-elo-${question.id}`}
+                                            type="number"
+                                            min={eloRange.min}
+                                            max={eloRange.max}
+                                            value={question.eloRating ?? ''}
+                                            onChange={(e) =>
+                                                update({
+                                                    eloRating:
+                                                        e.target.value === '' ? undefined : Number(e.target.value),
+                                                })
+                                            }
+                                            placeholder={String(LEVEL_TO_ELO[sectionLevel])}
+                                            style={{ width: 140 }}
+                                        />
+                                        <p className="text-muted text-xs" style={{ marginTop: 4 }}>
+                                            {t('tests.elo_rating_range_hint', {
+                                                min: eloRange.min,
+                                                max: eloRange.max,
+                                            })}
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <p className="text-muted text-xs" style={{ margin: 0 }}>
+                                        {t('tests.elo_rating_no_level')}
+                                    </p>
+                                )}
+                            </>
+                        )}
+
+                        {morePanel === 'tuning' && (
+                            <div>
+                                <label htmlFor={`question-language-${question.id}`}>
+                                    {t('tests.question_content_language_label')}
+                                </label>
+                                <select
+                                    id={`question-language-${question.id}`}
+                                    value={question.contentLanguage ?? ''}
+                                    onChange={(e) => update({ contentLanguage: e.target.value || undefined })}
+                                >
+                                    <option value="">{t('tests.content_language_inherit')}</option>
+                                    <option value="en">{t('settings.language_en')}</option>
+                                    <option value="nl">{t('settings.language_nl')}</option>
+                                    <option value="fr">{t('settings.language_fr')}</option>
+                                    <option value="de">{t('settings.language_de')}</option>
+                                    <option value="es">{t('settings.language_es')}</option>
+                                </select>
                             </div>
-                        ) : (
-                            <p className="text-muted text-xs" style={{ margin: 0 }}>
-                                {t('tests.elo_rating_no_level')}
-                            </p>
                         )}
                     </div>
                 )}
             </div>
-
-            {/* Standards + CEFR linking */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    {(question.linkedStandards ?? []).map((std, idx) => (
-                        <div
-                            key={std.guid + idx}
-                            style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 8,
-                                background: 'var(--accent-soft)',
-                                border: '1px solid var(--accent)',
-                                borderRadius: 8,
-                                padding: '6px 12px',
-                                fontSize: '0.8rem',
-                            }}
-                        >
-                            <BookOpen size={13} style={{ color: 'var(--accent-text)' }} />
-                            <span style={{ color: 'var(--accent-text)', fontWeight: 600 }}>
-                                {std.statementNotation ?? std.guid}
-                            </span>
-                            <span
-                                style={{
-                                    color: 'var(--text)',
-                                    maxWidth: 280,
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                }}
-                            >
-                                {std.description}
-                            </span>
-                            <button
-                                className="btn btn-ghost btn-icon btn-sm"
-                                aria-label={t('rubricBuilder.action_unlink_standard')}
-                                style={{ color: 'var(--text-muted)', padding: 2 }}
-                                onClick={() => unlinkStandard(idx)}
-                            >
-                                <X size={12} />
-                            </button>
-                        </div>
-                    ))}
-                    {(question.linkedCefrDescriptors ?? []).map((descriptor) => (
-                        <div
-                            key={descriptor.descriptorId}
-                            style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 8,
-                                background: 'var(--accent-soft)',
-                                border: '1px solid var(--accent)',
-                                borderRadius: 8,
-                                padding: '6px 12px',
-                                fontSize: '0.8rem',
-                            }}
-                        >
-                            <GraduationCap size={13} style={{ color: 'var(--accent-text)' }} />
-                            <span style={{ color: 'var(--accent-text)', fontWeight: 600 }}>{descriptor.level}</span>
-                            <span
-                                style={{
-                                    color: 'var(--text)',
-                                    maxWidth: 280,
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                }}
-                            >
-                                {descriptor.descriptionEn}
-                            </span>
-                            <button
-                                className="btn btn-ghost btn-icon btn-sm"
-                                aria-label={t('rubricBuilder.action_remove_descriptor')}
-                                style={{ color: 'var(--text-muted)', padding: 2 }}
-                                onClick={() => removeCefrDescriptor(descriptor.descriptorId)}
-                            >
-                                <X size={12} />
-                            </button>
-                        </div>
-                    ))}
-                    {effectiveFrameworkDescriptors.map((descriptor) => (
-                        <div
-                            key={descriptor.descriptorId}
-                            style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 8,
-                                background: `color-mix(in srgb, ${descriptor.categoryColor} 8%, transparent)`,
-                                border: `1px solid color-mix(in srgb, ${descriptor.categoryColor} 25%, transparent)`,
-                                borderRadius: 8,
-                                padding: '6px 12px',
-                                fontSize: '0.8rem',
-                            }}
-                        >
-                            <span
-                                style={{
-                                    background: descriptor.categoryColor,
-                                    color: '#fff',
-                                    borderRadius: 4,
-                                    padding: '1px 5px',
-                                    fontSize: 10,
-                                    fontWeight: 700,
-                                    whiteSpace: 'nowrap',
-                                }}
-                            >
-                                {i18n.language.startsWith('nl')
-                                    ? descriptor.categoryLabelNl
-                                    : descriptor.categoryLabelEn}
-                            </span>
-                            <span
-                                style={{
-                                    color: 'var(--text)',
-                                    maxWidth: 280,
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                }}
-                            >
-                                {i18n.language.startsWith('nl') ? descriptor.descriptionNl : descriptor.descriptionEn}
-                            </span>
-                            <button
-                                className="btn btn-ghost btn-icon btn-sm"
-                                aria-label={t('rubricBuilder.action_remove_descriptor')}
-                                style={{ color: 'var(--text-muted)', padding: 2 }}
-                                onClick={() => removeFrameworkDescriptor(descriptor.descriptorId)}
-                            >
-                                <X size={12} />
-                            </button>
-                        </div>
-                    ))}
-                </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                    <button className="btn btn-secondary btn-sm" onClick={() => setPickingStandard(true)}>
-                        <BookOpen size={14} /> {t('tests.link_standard')}
-                    </button>
-                    <button className="btn btn-secondary btn-sm" onClick={() => setPickingCefr(true)}>
-                        <GraduationCap size={14} /> {t('tests.link_cefr')}
-                    </button>
-                </div>
-            </div>
-
             {pickingStandard && settings.standardsApiKey ? (
                 <StandardsPickerModal
                     apiKey={settings.standardsApiKey}

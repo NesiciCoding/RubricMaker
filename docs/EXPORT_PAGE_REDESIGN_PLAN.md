@@ -1,7 +1,7 @@
 # Export page redesign
 
 **Status:** Mockup for review. Nothing wired up yet.
-**Mockup:** [`docs/mockups/export-page-redesign.html`](mockups/export-page-redesign.html) — self-contained, light/dark, desktop and phone.
+**Mockup:** the exploratory HTML mockup (self-contained, light/dark, desktop and phone) was used for review and is not committed — `docs/mockups/` is gitignored apart from the test-creator spec.
 **Route:** `/export` (`src/pages/ExportPage.tsx`)
 
 ## Why

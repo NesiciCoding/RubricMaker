@@ -26,24 +26,41 @@ export class TestBuilderPage extends BasePage {
         await input.fill(description);
     }
 
+    /** The settings card is a tabbed drawer now: open the tab that holds the field first. */
+    async openSettings(tab: 'basics' | 'delivery' | 'scoring' | 'placement' | 'print' = 'basics'): Promise<void> {
+        await this.page.getByTestId(`settings-tile-${tab}`).click();
+        await this.page.getByTestId('settings-drawer').waitFor({ state: 'visible' });
+    }
+
+    async closeSettings(): Promise<void> {
+        await this.page.getByTestId('settings-done').click();
+        await this.page.getByTestId('settings-drawer').waitFor({ state: 'detached' });
+    }
+
     async setDuration(minutes: number): Promise<void> {
+        await this.openSettings('delivery');
         const input = this.page.locator('#test-duration');
         await input.clear();
         await input.fill(String(minutes));
+        await this.closeSettings();
     }
 
     async setRequireSEB(checked: boolean): Promise<void> {
+        await this.openSettings('delivery');
         const checkbox = this.page.getByLabel(/require safe exam browser/i);
         if ((await checkbox.isChecked()) !== checked) {
             await checkbox.click();
         }
+        await this.closeSettings();
     }
 
-    async addQuestion(): Promise<void> {
+    /** Adding a question opens the type picker; pick the type the new question should have. */
+    async addQuestion(type = 'multiple-choice'): Promise<void> {
         await this.page
             .getByRole('button', { name: /add question/i })
             .first()
             .click();
+        await this.page.locator(`[data-question-type="${type}"]`).click();
     }
 
     questionCard(index: number): Locator {

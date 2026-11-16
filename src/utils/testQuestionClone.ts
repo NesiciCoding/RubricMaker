@@ -1,19 +1,14 @@
 import { nanoid } from './nanoid';
-import type { TestQuestion, TestSection, QuestionBankItem } from '../types';
+import { questionDefaultsFor } from './questionTypeDefaults';
+import type { TestQuestion, TestQuestionType, TestSection, QuestionBankItem } from '../types';
 
-/** Default shape for a freshly-added question — shared by the Test Builder and the Question Bank's section editor. */
-export function newQuestion(sectionId?: string): TestQuestion {
-    return {
-        id: nanoid(),
-        prompt: '',
-        type: 'multiple-choice',
-        points: 1,
-        sectionId,
-        options: [
-            { id: nanoid(), text: '', isCorrect: true },
-            { id: nanoid(), text: '', isCorrect: false },
-        ],
-    };
+/**
+ * Default shape for a freshly-added question — shared by the Test Builder and the Question Bank's
+ * section editor. `type` defaults to multiple-choice so the quick-add paths that don't ask for a
+ * type keep the shape they always had.
+ */
+export function newQuestion(sectionId?: string, type: TestQuestionType = 'multiple-choice'): TestQuestion {
+    return { id: nanoid(), prompt: '', type, points: 1, sectionId, ...questionDefaultsFor(type) };
 }
 
 /**
