@@ -47,6 +47,13 @@ const TEACHER_FEATURES = [
         color: '#3b82f6',
     },
     {
+        icon: ListChecks,
+        key: 'grammar_overview',
+        title: 'Grammar Standards Overview',
+        desc: 'See class and student scores for every grammar standard, built from tagged test questions and linked rubric criteria — with the standards that need reteaching and exactly which students missed them.',
+        color: '#0ea5e9',
+    },
+    {
         icon: Layers,
         key: 'folders',
         title: 'Folders',

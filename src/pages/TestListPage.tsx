@@ -48,6 +48,7 @@ import ExamScanBatchModal from '../components/Tests/ExamScanBatchModal';
 import ClassAverageAdjuster from '../components/Tests/ClassAverageAdjuster';
 import ItemAnalysisPanel from '../components/Tests/ItemAnalysisPanel';
 import PlacementAnalysisPanel from '../components/Tests/PlacementAnalysisPanel';
+import GrammarStandardsPanel from '../components/Grammar/GrammarStandardsPanel';
 import GenerateTestModal from '../components/Tests/GenerateTestModal';
 import TestImportModal from '../components/Tests/TestImportModal';
 import type { ImportedTest } from '../utils/testImport';
@@ -78,7 +79,8 @@ import { defaultScoreOnlyQuestions } from '../utils/scoreSheet';
 import { resolveTestScale } from '../utils/testGradingNorm';
 
 export default function TestListPage() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
     const tour = usePageTourState('tests');
     const navigate = useNavigate();
     const {
@@ -1164,6 +1166,14 @@ export default function TestListPage() {
                                                                             studentTests={studentTests.filter(
                                                                                 (st) => st.testId === test.id
                                                                             )}
+                                                                        />
+                                                                        <GrammarStandardsPanel
+                                                                            test={test}
+                                                                            studentTests={studentTests.filter(
+                                                                                (st) => st.testId === test.id
+                                                                            )}
+                                                                            students={students}
+                                                                            lang={lang}
                                                                         />
                                                                         <button
                                                                             type="button"

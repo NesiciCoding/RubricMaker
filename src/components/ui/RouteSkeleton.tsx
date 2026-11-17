@@ -39,9 +39,11 @@ export const ROUTE_SKELETON_RULES: ReadonlyArray<readonly [RegExp, SkeletonShape
 
     [/^\/students$/, TablePageSkeleton],
     [/^\/students\/[^/]+\/learning-path/, ListPageSkeleton],
+    [/^\/students\/[^/]+\/grammar-overview/, ProfilePageSkeleton],
     [/^\/students\/[^/]+/, ProfilePageSkeleton],
 
     [/^\/cefr-overview/, DashboardSkeleton],
+    [/^\/grammar-overview/, DashboardSkeleton],
     [/^\/vocabulary/, DashboardSkeleton],
 
     [/^\/tests$/, TablePageSkeleton],
