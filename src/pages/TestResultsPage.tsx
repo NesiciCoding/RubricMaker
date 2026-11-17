@@ -36,6 +36,7 @@ import OpenAnswerInsightsPanel from '../components/Tests/OpenAnswerInsightsPanel
 import { blankRubricEntries, rubricAnswerPoints } from '../utils/rubricTaskScoring';
 import { questionTypeLabelKey } from '../utils/questionTypeKey';
 import { buildReviewDeck } from '../utils/questionsToDeck';
+import { versionForStudent } from '../utils/testVersions';
 import CommentBankModal from '../components/Comments/CommentBankModal';
 import type { TestAnswer, TestQuestion, ProctorEventType, CommentBankItem, Rubric, ScoreEntry } from '../types';
 
@@ -470,6 +471,7 @@ export default function TestResultsPage() {
     );
     const studentTest = studentTests.find((st) => st.id === studentTestId && st.testId === testId);
     const student = students.find((s) => s.id === studentTest?.studentId);
+    const testVersion = versionForStudent(studentTest?.studentId ?? '', test?.versionCount);
     // A class shared with me as "Can view": results are readable, but the server refuses changes.
     const readOnly = !canEditStudentWork(student?.classId);
     const isLateSubmission = !!test?.dueDate && !!studentTest?.submittedAt && studentTest.submittedAt > test.dueDate;
@@ -760,6 +762,11 @@ export default function TestResultsPage() {
                     )}
                     <p className="text-muted text-sm" style={{ margin: '0 0 14px' }}>
                         {t('tests.results.student_label')}: {student?.name ?? studentTest.studentId}
+                        {testVersion && (
+                            <span className="badge" style={{ marginLeft: 8 }}>
+                                {t('tests.versioning_badge', { version: testVersion })}
+                            </span>
+                        )}
                         {isLateSubmission && (
                             <span
                                 className="badge badge-red"

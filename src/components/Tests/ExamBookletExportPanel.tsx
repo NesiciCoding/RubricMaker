@@ -8,6 +8,7 @@ import type { Student, Test } from '../../types';
 import type { DocxStyleTemplateOverrides } from '../../utils/docxExport';
 import { answerSpaceFor, groupQuestionsBySection, subItemCount } from '../../utils/testExamContent';
 import type { TestExamExportOptions } from '../../utils/testExamContent';
+import { versionLabels, versionedTest } from '../../utils/testVersions';
 
 interface Props {
     test: Test;
@@ -25,10 +26,14 @@ export default function ExamBookletExportPanel({ test, students, fontFamily, sty
     const [scanMarkers, setScanMarkers] = useState(false);
     const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
     const [exporting, setExporting] = useState(false);
+    const [version, setVersion] = useState('');
     const classes = useStoreSelector((st) => st.classes);
 
     const hasHotText = test.questions.some((q) => q.type === 'hot-text');
     const hasAttachment = (test.sections ?? []).some((s) => s.content);
+    const versions = versionLabels(test.versionCount);
+    const exportTest = version ? versionedTest(test, version) : test;
+    const versionLabel = version ? t('tests.versioning_badge', { version }) : undefined;
 
     // Multi-part questions with nothing configured (no pairs, gaps, rows...) collapse to a single
     // answer line at export time. Assignment blockers normally prevent handing such a test out,
@@ -87,14 +92,15 @@ export default function ExamBookletExportPanel({ test, students, fontFamily, sty
                 attachmentMode: hasAttachment ? attachmentMode : 'inline',
                 hotTextMirror,
                 scanMarkers,
+                versionLabel,
             };
             const selectedStudents = students.filter((s) => selectedStudentIds.has(s.id));
             if (format === 'pdf') {
                 const { exportExamPdf } = await import('../../utils/testExamExportHtml');
-                await exportExamPdf(test, { ...options, students: selectedStudents });
+                await exportExamPdf(exportTest, { ...options, students: selectedStudents });
             } else {
                 const { exportExamDocx } = await import('../../utils/testExamExportDocx');
-                await exportExamDocx(test, { ...options, students: selectedStudents });
+                await exportExamDocx(exportTest, { ...options, students: selectedStudents });
             }
             logAuditEvent('export', `export_test_exam_${format}`, 'test', test.id, {
                 count: selectedStudents.length,
@@ -121,13 +127,14 @@ export default function ExamBookletExportPanel({ test, students, fontFamily, sty
                 attachmentMode: hasAttachment ? attachmentMode : 'inline',
                 hotTextMirror,
                 scanMarkers,
+                versionLabel,
             };
             if (format === 'pdf') {
                 const { exportExamGradingKeyPdf } = await import('../../utils/testExamExportHtml');
-                await exportExamGradingKeyPdf(test, options);
+                await exportExamGradingKeyPdf(exportTest, options);
             } else {
                 const { exportExamGradingKeyDocx } = await import('../../utils/testExamExportDocx');
-                await exportExamGradingKeyDocx(test, options);
+                await exportExamGradingKeyDocx(exportTest, options);
             }
             logAuditEvent('export', `export_test_exam_grading_key_${format}`, 'test', test.id, {});
         } catch (err) {
@@ -143,6 +150,23 @@ export default function ExamBookletExportPanel({ test, students, fontFamily, sty
             <p className="text-muted text-sm" style={{ marginBottom: 14 }}>
                 {t('tests.export.exam.description')}
             </p>
+
+            {versions.length > 0 && (
+                <div className="form-group" style={{ marginBottom: 12 }}>
+                    <label htmlFor="exam-booklet-version">{t('tests.versioning_export_label')}</label>
+                    <select id="exam-booklet-version" value={version} onChange={(e) => setVersion(e.target.value)}>
+                        <option value="">{t('tests.versioning_off')}</option>
+                        {versions.map((label) => (
+                            <option key={label} value={label}>
+                                {t('tests.versioning_badge', { version: label })}
+                            </option>
+                        ))}
+                    </select>
+                    <p className="text-muted text-xs" style={{ margin: '6px 0 0', lineHeight: 1.5 }}>
+                        {t('tests.versioning_export_help')}
+                    </p>
+                </div>
+            )}
 
             {hasAttachment && (
                 <div className="form-group" style={{ marginBottom: 12 }}>

@@ -105,6 +105,10 @@ const NO_BORDER: ITableCellBorders = {
 };
 
 /** One-cell shaded table used as a full-width black subject banner, matching the print/HTML rendering. */
+function docLabelWithVersion(label: string, versionLabel?: string): string {
+    return versionLabel ? `${label} — ${versionLabel}` : label;
+}
+
 function blackBannerTable(text: string): Table {
     return new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
@@ -552,7 +556,9 @@ async function coverWithPrintText(test: Test, label: string): Promise<(Paragraph
 }
 
 async function buildBookletChildren(test: Test, options: TestExamExportOptions): Promise<(Paragraph | Table)[]> {
-    const children: (Paragraph | Table)[] = [...(await coverWithPrintText(test, tx('booklet_subtitle')))];
+    const children: (Paragraph | Table)[] = [
+        ...(await coverWithPrintText(test, docLabelWithVersion(tx('booklet_subtitle'), options.versionLabel))),
+    ];
     for (const group of groupQuestionsBySection(test)) {
         if (group.section) {
             children.push(sectionDivider(group.section.title));
@@ -570,8 +576,10 @@ async function buildBookletChildren(test: Test, options: TestExamExportOptions):
     return children;
 }
 
-async function buildAttachmentChildren(test: Test): Promise<(Paragraph | Table)[]> {
-    const children: (Paragraph | Table)[] = [...(await coverWithPrintText(test, tx('attachment_subtitle')))];
+async function buildAttachmentChildren(test: Test, options: TestExamExportOptions): Promise<(Paragraph | Table)[]> {
+    const children: (Paragraph | Table)[] = [
+        ...(await coverWithPrintText(test, docLabelWithVersion(tx('attachment_subtitle'), options.versionLabel))),
+    ];
     const groups = groupQuestionsBySection(test).filter((g) => g.section?.content);
     for (const [i, group] of groups.entries()) {
         if (!group.section?.content) continue;
@@ -716,7 +724,11 @@ function answerSpaceChildren(space: AnswerSpaceSpec): (Paragraph | Table)[] {
     }
 }
 
-async function answerSheetChildren(test: Test, student?: Student): Promise<(Paragraph | Table)[]> {
+async function answerSheetChildren(
+    test: Test,
+    student?: Student,
+    versionLabel?: string
+): Promise<(Paragraph | Table)[]> {
     const blocks = answerSheetGeometry(test).flatMap((block) => [
         new Paragraph({
             children: [new TextRun({ text: String(block.number), bold: true })],
@@ -733,7 +745,11 @@ async function answerSheetChildren(test: Test, student?: Student): Promise<(Para
 
     return [
         ...(await printTextBlocks(test.printHeader)),
-        new Paragraph({ text: tx('answer_sheet_title'), heading: HeadingLevel.HEADING_1, alignment: 'right' }),
+        new Paragraph({
+            text: docLabelWithVersion(tx('answer_sheet_title'), versionLabel),
+            heading: HeadingLevel.HEADING_1,
+            alignment: 'right',
+        }),
         blackBannerTable(test.name),
         new Paragraph({
             children: [
@@ -833,7 +849,7 @@ function gradingTableRows(test: Test): TableRow[] {
     return rows;
 }
 
-function buildGradingSheetChildren(test: Test): (Paragraph | Table)[] {
+function buildGradingSheetChildren(test: Test, versionLabel?: string): (Paragraph | Table)[] {
     const headerRow = new TableRow({
         children: [
             new TableCell({
@@ -857,7 +873,7 @@ function buildGradingSheetChildren(test: Test): (Paragraph | Table)[] {
         rows: [headerRow, ...gradingTableRows(test)],
         width: { size: 100, type: WidthType.PERCENTAGE },
     });
-    return [...coverParagraphs(test, tx('grading_sheet_subtitle')), table];
+    return [...coverParagraphs(test, docLabelWithVersion(tx('grading_sheet_subtitle'), versionLabel)), table];
 }
 
 async function buildDocxBlob(children: (Paragraph | Table)[], options: TestExamExportOptions): Promise<Blob> {
@@ -901,7 +917,7 @@ export async function exportExamDocx(test: Test, options: ExportExamDocxOptions)
     if (options.attachmentMode === 'separate') {
         files.push({
             name: `${base}-attachment.docx`,
-            blob: await buildDocxBlob(await buildAttachmentChildren(test), options),
+            blob: await buildDocxBlob(await buildAttachmentChildren(test, options), options),
         });
     }
     const students = options.students ?? [];
@@ -911,11 +927,11 @@ export async function exportExamDocx(test: Test, options: ExportExamDocxOptions)
                   await Promise.all(
                       students.map(async (s, i) => [
                           ...(i > 0 ? [new Paragraph({ children: [new PageBreak()] })] : []),
-                          ...(await answerSheetChildren(test, s)),
+                          ...(await answerSheetChildren(test, s, options.versionLabel)),
                       ])
                   )
               ).flat()
-            : await answerSheetChildren(test);
+            : await answerSheetChildren(test, undefined, options.versionLabel);
     files.push({ name: `${base}-answer-sheet.docx`, blob: await buildDocxBlob(answerChildren, options) });
 
     if (files.length === 1) {
@@ -931,6 +947,6 @@ export async function exportExamDocx(test: Test, options: ExportExamDocxOptions)
 
 /** Exports only the grading key — kept as an explicit, separate action from exportExamDocx() so a teacher never bundles it with student-facing materials by default. */
 export async function exportExamGradingKeyDocx(test: Test, options: TestExamExportOptions): Promise<void> {
-    const blob = await buildDocxBlob(buildGradingSheetChildren(test), options);
+    const blob = await buildDocxBlob(buildGradingSheetChildren(test, options.versionLabel), options);
     saveAs(blob, `${sanitizeFilename(test.name)}-grading-sheet.docx`);
 }

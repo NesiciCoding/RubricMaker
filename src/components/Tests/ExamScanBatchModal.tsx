@@ -23,6 +23,7 @@ import { imageSourceToRgbaImage, rgbaImageToDataUrl } from '../../utils/rgbaImag
 import { orderCorners, cropQuadrilateral, type Point } from '../../utils/documentCrop';
 import { preprocessScan } from '../../utils/preprocessScan';
 import { EXAM_PAGE_MM } from '../../utils/testExamContent';
+import { versionLabels, versionedTest } from '../../utils/testVersions';
 import {
     detectScannedAnswers,
     mergeScannedAnswers,
@@ -195,6 +196,11 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
     } | null>(null);
 
     const questionsById = useMemo(() => new Map(test.questions.map((q) => [q.id, q])), [test.questions]);
+    // The paper version the stack was printed in. Choice letters on the sheet follow that
+    // version's option order, so detection and merging must read the same versioned layout.
+    const [version, setVersion] = useState('');
+    const versions = versionLabels(test.versionCount);
+    const scannableTest = useMemo(() => (version ? versionedTest(test, version) : test), [test, version]);
 
     const rosterOptions = useMemo(() => {
         const withResult = new Set(studentTests.filter((st) => st.testId === test.id).map((st) => st.studentId));
@@ -457,7 +463,7 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
                     try {
                         const corrected = await pageImage(page);
                         const prepared = preprocessScan(corrected, { deskew: false });
-                        pageResults.push(await detectScannedAnswers(prepared, test, i + 1, recognize));
+                        pageResults.push(await detectScannedAnswers(prepared, scannableTest, i + 1, recognize));
                         updatePage(page.id, { error: undefined });
                     } catch (err) {
                         const message =
@@ -474,7 +480,7 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
                     setBusy({ label: t('tests.scan.batch_detecting'), done, total });
                     if (cancelledRef.current) return;
                 }
-                results[group.studentId] = mergeScannedAnswers(test, pageResults);
+                results[group.studentId] = mergeScannedAnswers(scannableTest, pageResults);
             }
         } finally {
             // Only terminate a session that was actually created — a failed creation (caught per
@@ -496,7 +502,7 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
         );
         setBusy(null);
         setPhase('review');
-    }, [defaultLang, groups, pageImage, t, test, updatePage]);
+    }, [defaultLang, groups, pageImage, scannableTest, t, updatePage]);
 
     const setResponse = useCallback((studentId: string, questionId: string, response: string) => {
         setResponsesByStudent((prev) => ({
@@ -801,6 +807,32 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
                                         >
                                             {t('tests.scan.batch_read_names')}
                                         </button>
+                                        {versions.length > 0 && (
+                                            <label
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 6,
+                                                    fontSize: '0.82rem',
+                                                }}
+                                                title={t('tests.versioning_scan_help')}
+                                            >
+                                                {t('tests.versioning_scan_label')}
+                                                <select
+                                                    className="input"
+                                                    style={{ width: 'auto' }}
+                                                    value={version}
+                                                    onChange={(e) => setVersion(e.target.value)}
+                                                >
+                                                    <option value="">{t('tests.versioning_off')}</option>
+                                                    {versions.map((label) => (
+                                                        <option key={label} value={label}>
+                                                            {t('tests.versioning_badge', { version: label })}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </label>
+                                        )}
                                     </div>
 
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
