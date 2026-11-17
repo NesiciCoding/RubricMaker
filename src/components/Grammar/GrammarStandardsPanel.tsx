@@ -40,7 +40,13 @@ export default function GrammarStandardsPanel({
     onOpenBuilder?: () => void;
 }) {
     const { t } = useTranslation();
-    const breakdown = useMemo(() => getTestGrammarBreakdown(test, studentTests), [test, studentTests]);
+    const breakdown = useMemo(() => {
+        const roster = new Set(students.map((student) => student.id));
+        return getTestGrammarBreakdown(
+            test,
+            studentTests.filter((studentTest) => roster.has(studentTest.studentId))
+        );
+    }, [test, studentTests, students]);
 
     if (breakdown.taggedQuestionCount === 0) {
         return (
@@ -138,8 +144,9 @@ export default function GrammarStandardsPanel({
                             <summary
                                 style={{
                                     display: 'grid',
-                                    gridTemplateColumns:
-                                        'minmax(200px, 1.6fr) minmax(110px, 0.8fr) minmax(120px, 1fr) 110px',
+                                    gridTemplateColumns: focusStudentId
+                                        ? 'minmax(200px, 1.6fr) minmax(110px, 0.8fr) minmax(120px, 1fr) 110px'
+                                        : 'minmax(200px, 1.6fr) minmax(110px, 0.8fr) 110px',
                                     gap: 12,
                                     alignItems: 'center',
                                     padding: '10px 4px',
@@ -180,18 +187,20 @@ export default function GrammarStandardsPanel({
                                         {classAccuracy(row)} {t('grammarOverview.correct_suffix')}
                                     </div>
                                 </div>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                    {result ? (
-                                        <span>
-                                            {t('grammarOverview.test_this_student')}{' '}
-                                            <b style={{ color: 'var(--text)' }}>
-                                                {result.correct}/{result.attempts}
-                                            </b>
-                                        </span>
-                                    ) : (
-                                        <span>{t('grammarOverview.test_not_answered')}</span>
-                                    )}
-                                </div>
+                                {focusStudentId && (
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                        {result ? (
+                                            <span>
+                                                {t('grammarOverview.test_this_student')}{' '}
+                                                <b style={{ color: 'var(--text)' }}>
+                                                    {result.correct}/{result.attempts}
+                                                </b>
+                                            </span>
+                                        ) : (
+                                            <span>{t('grammarOverview.test_not_answered')}</span>
+                                        )}
+                                    </div>
+                                )}
                                 <GrammarStatusText status={grammarStatus(row.accuracyPct)} />
                             </summary>
                             {missed.length > 0 && (

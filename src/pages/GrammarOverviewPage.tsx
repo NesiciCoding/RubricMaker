@@ -91,14 +91,13 @@ export default function GrammarOverviewPage() {
         [overview, filteredStudents, classById]
     );
 
-    const reteachRows = useMemo(() => {
-        const rows = overview.categories
+    const { reteachRows, reteachCount } = useMemo(() => {
+        const below = overview.categories
             .flatMap((category) => category.standards)
             .filter((row) => row.classPct !== null && row.classPct < GRAMMAR_SECURE_PCT)
-            .sort((a, b) => a.classPct! - b.classPct!)
-            .slice(0, MAX_RETEACH_ROWS);
+            .sort((a, b) => a.classPct! - b.classPct!);
 
-        return rows.map((row) => ({
+        const rows = below.slice(0, MAX_RETEACH_ROWS).map((row) => ({
             row,
             missed: overview.students
                 .map((student) => {
@@ -110,6 +109,8 @@ export default function GrammarOverviewPage() {
                 })
                 .filter((entry): entry is { studentId: string; name: string } => entry !== null),
         }));
+
+        return { reteachRows: rows, reteachCount: below.length };
     }, [overview, filteredStudents]);
 
     const defaultHint = (() => {
@@ -322,7 +323,7 @@ export default function GrammarOverviewPage() {
                                     </p>
                                 </div>
                                 <span className="badge">
-                                    {t('grammarOverview.reteach_badge', { count: overview.belowSecureCount })}
+                                    {t('grammarOverview.reteach_badge', { count: reteachCount })}
                                 </span>
                             </div>
 

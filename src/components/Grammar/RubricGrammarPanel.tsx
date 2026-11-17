@@ -5,6 +5,11 @@ import type { Rubric, ScoreEntry } from '../../types';
 import { criterionMaxPoints, criterionPercentage } from '../../utils/gradeCalc';
 import { GrammarScoreBadge } from './GrammarScoreBadge';
 
+/** A criterion the teacher has not graded yet has no percentage — it is not a zero. */
+function isScored(entry: ScoreEntry): boolean {
+    return entry.levelId !== null || entry.overridePoints !== undefined || entry.singlePointOutcome !== undefined;
+}
+
 interface RubricGrammarRow {
     itemId: string;
     labelEn: string;
@@ -37,7 +42,7 @@ export default function RubricGrammarPanel({
             );
             if (links.length === 0) continue;
             const entry = entries.find((candidate) => candidate.criterionId === criterion.id);
-            if (!entry) continue;
+            if (!entry || !isScored(entry)) continue;
             const pct = criterionPercentage(entry, criterion);
             const seen = new Set<string>();
             for (const link of links) {
