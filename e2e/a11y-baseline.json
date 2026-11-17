@@ -191,6 +191,16 @@
       ]
     },
     {
+      "route": "/grammar-overview",
+      "theme": "dark",
+      "violations": []
+    },
+    {
+      "route": "/grammar-overview",
+      "theme": "light",
+      "violations": []
+    },
+    {
       "route": "/join",
       "theme": "dark",
       "violations": []
@@ -515,6 +525,16 @@
     },
     {
       "route": "/students/student-a11y-1/cefr-overview",
+      "theme": "light",
+      "violations": []
+    },
+    {
+      "route": "/students/student-a11y-1/grammar-overview",
+      "theme": "dark",
+      "violations": []
+    },
+    {
+      "route": "/students/student-a11y-1/grammar-overview",
       "theme": "light",
       "violations": []
     },

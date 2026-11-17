@@ -1161,16 +1161,14 @@ export default function TestResultsPage() {
                         </div>
                     </div>
                 )}
-                {test && (
-                    <GrammarStandardsPanel
-                        test={test}
-                        studentTests={studentTests}
-                        students={students}
-                        lang={lang}
-                        focusStudentId={studentTest?.studentId}
-                        onOpenBuilder={() => navigate(`/tests/${test.id}`)}
-                    />
-                )}
+                <GrammarStandardsPanel
+                    test={test}
+                    studentTests={studentTests}
+                    students={students}
+                    lang={lang}
+                    focusStudentId={studentTest?.studentId}
+                    onOpenBuilder={() => navigate(`/tests/${test.id}`)}
+                />
             </div>
             {commentBankFor && (
                 <CommentBankModal onClose={() => setCommentBankFor(null)} onSelect={handleInsertComment} />
