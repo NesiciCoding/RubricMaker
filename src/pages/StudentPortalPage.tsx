@@ -604,6 +604,7 @@ export default function StudentPortalPage() {
             showToast(t('tests.review_deck_none'), 'info');
             return;
         }
+        if (test.mode !== 'practice') return;
         const answersById = new Map(attempt.answers.map((answer) => [answer.questionId, answer]));
         const deck = buildReviewDeck(
             t('tests.taking.review_deck_name', { test: test.name }),
@@ -2052,7 +2053,7 @@ function TestCard({
                         {t('studentPortal.test_open_error')}
                     </div>
                 )}
-                {done && (
+                {done && row.testMode === 'practice' && (
                     <button
                         type="button"
                         className="btn btn-ghost btn-sm"

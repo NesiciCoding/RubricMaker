@@ -44,16 +44,16 @@ export function buildEasierClozeVariant(question: TestQuestion, kind: ClozeVaria
         const { gap, start, end } = matches[i];
         const correct = gapCorrectAnswers(gap, legacyFirstOnly);
         const shouldKeep = i % 2 === 0 && kept < maxGaps;
-        const options = shouldKeep && kind === 'dropdown' ? distractorsFor(correct[0] ?? '', correct) : [];
-        if (!shouldKeep || (kind === 'dropdown' && options.length === 0)) {
+        const gapDistractors = shouldKeep ? distractorsFor(correct[0] ?? '', correct) : [];
+        if (!shouldKeep || gapDistractors.length === 0) {
             prompt = `${prompt.slice(0, start)}${correct[0] ?? ''}${prompt.slice(end)}`;
             continue;
         }
         kept += 1;
         if (kind === 'bank') {
-            bankDistractors.push(...distractorsFor(correct[0] ?? '', correct));
+            bankDistractors.push(...gapDistractors);
         }
-        const alternatives = kind === 'dropdown' ? [...correct, ...options] : correct;
+        const alternatives = kind === 'dropdown' ? [...correct, ...gapDistractors] : correct;
         const roles = alternatives.map((_, index) =>
             index < correct.length ? ('correct' as const) : ('wrong' as const)
         );
