@@ -92,7 +92,11 @@ export default function QuestionBankImportModal({ onImport, onClose }: Props) {
                             /* v8 ignore start -- every parser warning carries params */
                             const params = w.params ?? {};
                             /* v8 ignore stop */
-                            return <li key={`${w.key}:${JSON.stringify(params)}`}>{t(w.key, w.params)}</li>;
+                            return (
+                                <li key={`${w.key}:${JSON.stringify(params)}`}>
+                                    {w.params ? t(w.key, w.params) : t(w.key)}
+                                </li>
+                            );
                         })}
                     </ul>
                 </div>

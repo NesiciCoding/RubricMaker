@@ -58,6 +58,7 @@ import { getStudentPortalTutorialSteps } from '../data/StudentPortalTutorialStep
 import RubricSelfAssessPanel from '../components/Students/RubricSelfAssessPanel';
 import { encodeEssayAssignment, encodeTestAssignment } from '../utils/shareCode';
 import { loadSupabaseConfig } from '../services/database';
+import type { TFunction } from 'i18next';
 import { groupMessageThreads, MessageThread } from '../utils/messageThreads';
 import { computeDeckInsights } from '../utils/flashcardInsights';
 import { searchPortal } from '../utils/portalSearch';
@@ -1691,7 +1692,7 @@ export default function StudentPortalPage() {
     );
 }
 
-type TFunc = (key: string, opts?: Record<string, string | number>) => string;
+type TFunc = TFunction<'translation', undefined>;
 
 type WorkEntry =
     | { kind: 'essay'; key: string; row: StudentEssayAssignmentSummary }

@@ -103,7 +103,9 @@ export default function TestImportModal({ onImport, onClose }: Props) {
                     </div>
                     <ul style={{ margin: 0, paddingLeft: 20 }}>
                         {warnings.map((w) => (
-                            <li key={`${w.key}:${JSON.stringify(w.params ?? {})}`}>{t(w.key, w.params)}</li>
+                            <li key={`${w.key}:${JSON.stringify(w.params ?? {})}`}>
+                                {w.params ? t(w.key, w.params) : t(w.key)}
+                            </li>
                         ))}
                     </ul>
                 </div>

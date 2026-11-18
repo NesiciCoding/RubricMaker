@@ -27,6 +27,7 @@ import PresenceBadge from './PresenceBadge';
 import type { PaceTrend } from '../../utils/monitorSignals';
 import type { PresenceState, ProctorFlagSummary } from '../../utils/proctorAggregator';
 import type { ProctorEvent, Test, TestAnswer, TestQuestion } from '../../types';
+import type { TFunction } from 'i18next';
 
 /** Live proctoring state folded into a matrix row instead of a separate list of cards. */
 export interface ResponsesGridProctor {
@@ -109,7 +110,7 @@ function formatPct(p: number | undefined): string {
 function answerDisplayText(
     question: TestQuestion,
     answer: TestAnswer | undefined,
-    t: (key: string, options?: Record<string, unknown>) => string
+    t: TFunction<'translation', undefined>
 ): string {
     if (!answer || answer.response.trim() === '') return '';
     if (question.type === 'multiple-choice') {

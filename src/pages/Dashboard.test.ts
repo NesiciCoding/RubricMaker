@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { dateGroupLabel } from './Dashboard';
 
-const t = ((key: string, fallback?: string) => fallback ?? key) as Parameters<typeof dateGroupLabel>[1];
+const t = ((key: string, fallback?: string) => fallback ?? key) as unknown as Parameters<typeof dateGroupLabel>[1];
 
 describe('dateGroupLabel', () => {
     beforeEach(() => {

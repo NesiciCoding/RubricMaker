@@ -88,7 +88,8 @@ export function collectParagraphTexts(root: Element): string[] {
     return texts;
 }
 
-const tx = (key: string, opts?: Record<string, unknown>) => i18n.t(`tests.export.exam.${key}`, opts);
+const tx = (key: string, opts?: Record<string, unknown>) =>
+    opts ? i18n.t(`tests.export.exam.${key}`, opts) : i18n.t(`tests.export.exam.${key}`);
 
 const CELL_BORDER: ITableCellBorders = {
     top: { style: BorderStyle.SINGLE, size: 2, color: '000000' },

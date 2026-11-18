@@ -47,7 +47,8 @@ import {
     type TestExamExportOptions,
 } from './testExamContent';
 
-const tx = (key: string, opts?: Record<string, unknown>) => i18n.t(`tests.export.exam.${key}`, opts);
+const tx = (key: string, opts?: Record<string, unknown>) =>
+    opts ? i18n.t(`tests.export.exam.${key}`, opts) : i18n.t(`tests.export.exam.${key}`);
 
 function clozeBookletHtml(question: TestQuestion): string {
     return clozeBookletParts(question)
