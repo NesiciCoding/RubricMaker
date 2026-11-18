@@ -104,22 +104,21 @@ export class TestListPage extends BasePage {
 
     // ── Class average adjuster ────────────────────────────────────────────────
 
-    classAverageAdjuster(testName: string): Locator {
+    classAverageAdjuster(): Locator {
         // Results and analysis open in the results drawer, not inside the card.
-        void testName;
         return this.page
             .getByRole('dialog')
             .locator('.card')
             .filter({ hasText: /class average adjustment/i });
     }
 
-    async setTargetAverage(testName: string, value: number): Promise<void> {
-        const input = this.classAverageAdjuster(testName).locator('#adjuster-target-pct');
+    async setTargetAverage(value: number): Promise<void> {
+        const input = this.classAverageAdjuster().locator('#adjuster-target-pct');
         await input.fill(String(value));
     }
 
-    async applyAdjustment(testName: string): Promise<void> {
-        await this.classAverageAdjuster(testName)
+    async applyAdjustment(): Promise<void> {
+        await this.classAverageAdjuster()
             .getByRole('button', { name: /apply adjustment/i })
             .click();
     }

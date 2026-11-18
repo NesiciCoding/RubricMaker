@@ -185,8 +185,8 @@ test.describe('Testing environment — full lifecycle (offline)', () => {
 
         // Current average is 87.5% — target a lower average to get a negative
         // adjustment that's easy to assert on the results page.
-        await list.setTargetAverage('E2E Vocabulary Quiz', 75);
-        await list.applyAdjustment('E2E Vocabulary Quiz');
+        await list.setTargetAverage(75);
+        await list.applyAdjustment();
         await appExpect(appPage.getByText(/adjustment to apply/i)).toBeVisible();
 
         // ── Results page reflects the adjustment ─────────────────────────────

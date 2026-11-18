@@ -33,6 +33,9 @@ export interface TestResultsDrawerProps {
     onOpenAnalysis: () => void;
     onOpenGradeQueue: () => void;
     onClose: () => void;
+    /** Owned by the page so closing the drawer mid-export does not re-arm the export buttons. */
+    exporting?: boolean;
+    onExportingChange?: (exporting: boolean) => void;
 }
 
 /**
@@ -56,6 +59,8 @@ export default function TestResultsDrawer({
     onOpenAnalysis,
     onOpenGradeQueue,
     onClose,
+    exporting: exportingProp,
+    onExportingChange,
 }: TestResultsDrawerProps) {
     const { t } = useTranslation();
     const { showToast } = useToast();
@@ -63,7 +68,9 @@ export default function TestResultsDrawer({
     const [exportStudentId, setExportStudentId] = useState('');
     const [gradebookPreset, setGradebookPreset] = useState<GradebookPresetId>('generic');
     const [gradebookDecimal, setGradebookDecimal] = useState<DecimalSeparator>('comma');
-    const [exporting, setExporting] = useState(false);
+    const [localExporting, setLocalExporting] = useState(false);
+    const exporting = exportingProp ?? localExporting;
+    const setExporting = onExportingChange ?? setLocalExporting;
 
     const relevantStudentTests = studentTests.filter((st) => st.testId === test.id);
     const submittedCount = new Set(relevantStudentTests.map((st) => st.studentId)).size;
@@ -146,7 +153,13 @@ export default function TestResultsDrawer({
                 }
                 logAuditEvent('export', `export_test_summary_${format}`, 'test', test.id, { count: 1 });
             } else {
+                const seenStudentIds = new Set<string>();
                 const entries = relevantStudentTests
+                    .filter((st) => {
+                        if (seenStudentIds.has(st.studentId)) return false;
+                        seenStudentIds.add(st.studentId);
+                        return true;
+                    })
                     .map((st) => ({
                         studentId: st.studentId,
                         student: students.find((s) => s.id === st.studentId),

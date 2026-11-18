@@ -217,6 +217,8 @@ export default function TestListPage() {
     const [scanningTestId, setScanningTestId] = useState<string | null>(null);
     const [resultsTestId, setResultsTestId] = useState<string | null>(null);
     const [examExportTestId, setExamExportTestId] = useState<string | null>(null);
+    const [examExportTrigger, setExamExportTrigger] = useState<HTMLElement | null>(null);
+    const [resultsExporting, setResultsExporting] = useState(false);
     const [showGenerateModal, setShowGenerateModal] = useState(false);
     const [showImportTest, setShowImportTest] = useState(false);
 
@@ -591,7 +593,10 @@ export default function TestListPage() {
                                                         onImportSubmission={() => setImportingTestId(test.id)}
                                                         onScan={() => setScanningTestId(test.id)}
                                                         onMonitor={() => navigate(`/tests/${test.id}/monitor`)}
-                                                        onExamExport={() => setExamExportTestId(test.id)}
+                                                        onExamExport={(trigger) => {
+                                                            setExamExportTrigger(trigger);
+                                                            setExamExportTestId(test.id);
+                                                        }}
                                                         onShare={() => setSharingTarget({ kind: 'test', id: test.id })}
                                                         onDuplicate={() => handleDuplicate(test.id)}
                                                         onArchive={() => handleArchive(test)}
@@ -661,11 +666,18 @@ export default function TestListPage() {
                         onOpenAnalysis={() => navigate(`/tests/${resultsTest.id}/scores?tab=analysis`)}
                         onOpenGradeQueue={() => navigate(`/tests/${resultsTest.id}/grade`)}
                         onClose={() => setResultsTestId(null)}
+                        exporting={resultsExporting}
+                        onExportingChange={setResultsExporting}
                     />
                 )}
 
                 {examExportTest && (
-                    <Modal titleId="test-exam-export-title" onClose={() => setExamExportTestId(null)} maxWidth={720}>
+                    <Modal
+                        titleId="test-exam-export-title"
+                        onClose={() => setExamExportTestId(null)}
+                        returnFocusTo={examExportTrigger}
+                        maxWidth={720}
+                    >
                         <div
                             style={{
                                 display: 'flex',
