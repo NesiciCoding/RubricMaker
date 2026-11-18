@@ -1107,7 +1107,9 @@
             "import_success": "Submission imported successfully!",
             "import_error_invalid": "Invalid submission code. Make sure you copied the full code from the student.",
             "import_error_wrong_test": "This submission code is for a different test.",
-            "attempt_label": "(Attempt {{n}})"
+            "attempt_label": "(Attempt {{n}})",
+            "drawer_title": "Results — {{name}}",
+            "submissions_title": "Submissions ({{count}})"
         },
         "export": {
             "section_title": "Export summary",
@@ -2198,7 +2200,11 @@
         "quick_jump_empty": "Nothing matches that.",
         "quick_jump_section": "Section",
         "outline_collapse_section": "Collapse {{name}}",
-        "outline_expand_section": "Expand {{name}}"
+        "outline_expand_section": "Expand {{name}}",
+        "card_more_actions": "More actions",
+        "card_menu_teaching": "Teaching",
+        "card_menu_organise": "Organise",
+        "card_menu_sharing": "Sharing"
     },
     "classShare": {
         "menu_item": "Share with co-teachers…",

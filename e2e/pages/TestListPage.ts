@@ -23,12 +23,22 @@ export class TestListPage extends BasePage {
         return this.testCard(name).getByLabel(/drag to reorder/i);
     }
 
+    /** Secondary card actions (assign, import, monitor, …) live in the card's overflow menu. */
+    async openCardMenu(testName: string): Promise<void> {
+        await this.testCard(testName)
+            .getByRole('button', { name: /more actions/i })
+            .click();
+    }
+
+    cardMenuItem(name: RegExp): Locator {
+        return this.page.getByRole('menuitem', { name });
+    }
+
     // ── Assignment modal ──────────────────────────────────────────────────────
 
     async openAssignModal(testName: string): Promise<void> {
-        await this.testCard(testName)
-            .getByRole('button', { name: /assign to students/i })
-            .click();
+        await this.openCardMenu(testName);
+        await this.cardMenuItem(/assign to students/i).click();
     }
 
     assignmentModal(): Locator {
@@ -54,9 +64,8 @@ export class TestListPage extends BasePage {
     // ── Import submission modal ──────────────────────────────────────────────
 
     async openImportModal(testName: string): Promise<void> {
-        await this.testCard(testName)
-            .getByRole('button', { name: /import submission code/i })
-            .click();
+        await this.openCardMenu(testName);
+        await this.cardMenuItem(/import submission code/i).click();
     }
 
     importModal(): Locator {
@@ -96,7 +105,10 @@ export class TestListPage extends BasePage {
     // ── Class average adjuster ────────────────────────────────────────────────
 
     classAverageAdjuster(testName: string): Locator {
-        return this.testCard(testName)
+        // Results and analysis open in the results drawer, not inside the card.
+        void testName;
+        return this.page
+            .getByRole('dialog')
             .locator('.card')
             .filter({ hasText: /class average adjustment/i });
     }

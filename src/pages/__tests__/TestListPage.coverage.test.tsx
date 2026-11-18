@@ -192,8 +192,7 @@ describe('TestListPage coverage', () => {
 
     it('files a test into a folder from its card menu', () => {
         loadPage();
-        const menus = screen.getAllByRole('button', { name: 'folders.move_to' });
-        fireEvent.click(menus[2]);
+        fireEvent.click(screen.getByLabelText('tests.card_more_actions'));
         fireEvent.click(screen.getByRole('menuitem', { name: 'Vocabulary' }));
         expect(mockUpdateTest).toHaveBeenCalledWith(expect.objectContaining({ id: 't1', folderId: 'vocab' }));
     });
@@ -260,15 +259,16 @@ describe('TestListPage coverage', () => {
         expect(screen.getByText('0%')).toBeInTheDocument();
     });
 
-    it('navigates from the card edit icon, primary edit button, and monitor button', () => {
+    it('navigates from the card primary action, its score sheet button and its overflow menu', () => {
         loadPage();
-        // Small icon edit button in the card header.
-        fireEvent.click(screen.getByLabelText('tests.action_edit'));
-        expect(mockNavigate).toHaveBeenLastCalledWith('/tests/t1');
-        // Primary edit button in the card footer.
+        // Primary action in the card footer.
         fireEvent.click(screen.getByText('tests.action_edit'));
         expect(mockNavigate).toHaveBeenLastCalledWith('/tests/t1');
-        // Monitor button.
+        // Score sheet button next to it.
+        fireEvent.click(screen.getByTitle('tests.scoreSheet.action_open'));
+        expect(mockNavigate).toHaveBeenLastCalledWith('/tests/t1/scores');
+        // Live monitor lives in the overflow menu.
+        fireEvent.click(screen.getByLabelText('tests.card_more_actions'));
         fireEvent.click(screen.getByTitle('tests.monitor.action_monitor'));
         expect(mockNavigate).toHaveBeenLastCalledWith('/tests/t1/monitor');
         expect(mockNavigate).toHaveBeenCalledTimes(3);

@@ -1107,7 +1107,9 @@
             "import_success": "Abgabe erfolgreich importiert!",
             "import_error_invalid": "Ungültiger Abgabecode. Stellen Sie sicher, dass Sie den vollständigen Code kopiert haben.",
             "import_error_wrong_test": "Dieser Abgabecode gehört zu einem anderen Test.",
-            "attempt_label": "(Versuch {{n}})"
+            "attempt_label": "(Versuch {{n}})",
+            "drawer_title": "Ergebnisse — {{name}}",
+            "submissions_title": "Abgaben ({{count}})"
         },
         "export": {
             "section_title": "Zusammenfassung exportieren",
@@ -2198,7 +2200,11 @@
         "quick_jump_empty": "Nichts passt dazu.",
         "quick_jump_section": "Abschnitt",
         "outline_collapse_section": "{{name}} zuklappen",
-        "outline_expand_section": "{{name}} aufklappen"
+        "outline_expand_section": "{{name}} aufklappen",
+        "card_more_actions": "Weitere Aktionen",
+        "card_menu_teaching": "Unterrichten",
+        "card_menu_organise": "Organisieren",
+        "card_menu_sharing": "Teilen"
     },
     "classShare": {
         "menu_item": "Mit Kolleg:innen teilen…",
