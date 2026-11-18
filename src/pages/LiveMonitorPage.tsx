@@ -39,7 +39,12 @@ import ColumnSortModal from '../components/Monitor/ColumnSortModal';
 import PlacementLevelPanel from '../components/Monitor/PlacementLevelPanel';
 import EssayMonitorRoster from '../components/Monitor/EssayMonitorRoster';
 import EssaySpotlight from '../components/Monitor/EssaySpotlight';
-import { derivePresence, summarizeProctorFlags, mergeProctorEvents } from '../utils/proctorAggregator';
+import {
+    derivePresence,
+    deriveConnectionState,
+    summarizeProctorFlags,
+    mergeProctorEvents,
+} from '../utils/proctorAggregator';
 import { estimatePlacement, levelPathRunConfig } from '../utils/placementResult';
 import { MAX_QUESTIONS as STAIRCASE_MAX_QUESTIONS } from '../utils/placementStaircase';
 import { stripCommentHtml } from '../utils/exportDataPrep';
@@ -660,7 +665,6 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         };
         // The roster object is rebuilt on every read; its ids and the resolved teacher keys are
         // the only inputs that change which rows to load.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [hasDb, kind, monitorStudents.map((r) => r.studentId).join(','), testTeacherKeys]);
 
     const sendNudge = useCallback(
@@ -787,6 +791,23 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                 kind === 'test' && test && row.studentTest ? levelPathRunConfig(test, row.studentTest) : undefined;
             const sectionPath = kind === 'test' ? row.studentTest?.sectionPath : undefined;
             const finished = row.status === 'submitted' || row.status === 'late' || !!live.submitted;
+            // Presence alone shows a student who never opened the assignment and one whose laptop
+            // dropped as the same grey dot; the teacher needs to tell them apart.
+            const seen = live.firstSeenAt !== undefined || row.persistedEvents.length > 0;
+            const connection = deriveConnectionState({ presence, seen, finished });
+            const lastPersistedSignalAt = row.persistedEvents.reduce(
+                (latest, event) => Math.max(latest, new Date(event.at).getTime()),
+                0
+            );
+            const lastSignalAt = live.lastUpdateAt
+                ? new Date(live.lastUpdateAt).getTime()
+                : lastPersistedSignalAt > 0
+                  ? lastPersistedSignalAt
+                  : undefined;
+            const silentMinutes =
+                connection === 'lost' && lastSignalAt !== undefined
+                    ? Math.floor((now - lastSignalAt) / 60_000)
+                    : undefined;
             let completion: StudentCompletion | undefined;
             if (kind === 'test' && test && isLevelGrid) {
                 // A live 'submitted' broadcast can land before the persisted trace does.
@@ -815,10 +836,11 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                 // the monitor learns about a hand-in via the student's 'submitted'
                 // broadcast or the essay_submissions check on mount.
                 status: row.status ?? (live.submitted ? 'submitted' : undefined),
+                connection,
+                silentMinutes,
             };
         });
         // `now` forces presence to be re-derived against the current time as heartbeats age.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [monitorStudents, liveStates, kind, now, test, isLevelGrid, levelMaxQuestions]);
 
     const paceByStudent = useMemo(
@@ -1366,6 +1388,8 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                         proctor: {
                                             presence: row.presence,
                                             status: row.status,
+                                            connection: row.connection,
+                                            silentMinutes: row.silentMinutes,
                                             flags: row.flags,
                                             events: mergeProctorEvents(row.persistedEvents, row.live.events),
                                             stalledMinutes: stalled,
@@ -1455,6 +1479,8 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                                 displayName: displayName(row, index),
                                                 presence: row.presence,
                                                 status: row.status,
+                                                connection: row.connection,
+                                                silentMinutes: row.silentMinutes,
                                                 wordCount: row.live.snapshot?.wordCount,
                                                 wordSamples: row.live.wordSamples,
                                                 lastChangeAt: row.live.lastChangeAt,

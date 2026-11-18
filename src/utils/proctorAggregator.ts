@@ -31,6 +31,23 @@ function latestHeartbeat(events: ProctorEvent[]): ProctorEvent | null {
 }
 
 /**
+ * Why a student is quiet. Presence alone cannot tell "has not opened the assignment yet" from
+ * "opened it and then went silent", and the two call for different reactions from a teacher.
+ */
+export type ConnectionState = 'never_opened' | 'lost';
+
+export function deriveConnectionState(input: {
+    presence: PresenceState;
+    /** Any signal at all — a heartbeat, a proctoring event, or a progress snapshot. */
+    seen: boolean;
+    finished?: boolean;
+}): ConnectionState | undefined {
+    if (input.finished) return undefined;
+    if (!input.seen) return 'never_opened';
+    return input.presence === 'disconnected' ? 'lost' : undefined;
+}
+
+/**
  * Derives presence from the most recent heartbeat's age and reported value.
  * No heartbeat at all (e.g. student hasn't connected yet) is 'disconnected'.
  */

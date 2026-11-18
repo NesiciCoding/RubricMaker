@@ -25,7 +25,7 @@ import Modal from '../ui/Modal';
 import CompletionBar from './CompletionBar';
 import PresenceBadge from './PresenceBadge';
 import type { PaceTrend } from '../../utils/monitorSignals';
-import type { PresenceState, ProctorFlagSummary } from '../../utils/proctorAggregator';
+import type { ConnectionState, PresenceState, ProctorFlagSummary } from '../../utils/proctorAggregator';
 import type { ProctorEvent, Test, TestAnswer, TestQuestion } from '../../types';
 import type { TFunction } from 'i18next';
 
@@ -40,6 +40,9 @@ export interface ResponsesGridProctor {
     stalledMinutes?: number | null;
     /** One-line human summary, e.g. "Handed in · 82% done". */
     statusSummary?: string;
+    /** 'never_opened' / 'lost' when the student's signal is missing or stopped. */
+    connection?: ConnectionState;
+    silentMinutes?: number;
     onNudge?: () => void;
 }
 
@@ -878,6 +881,31 @@ export default function ResponsesGrid({
                                                                                 presence={row.proctor.presence}
                                                                                 status={row.proctor.status}
                                                                             />
+                                                                            {row.proctor.connection ===
+                                                                                'never_opened' && (
+                                                                                <span className="badge badge-yellow">
+                                                                                    {t(
+                                                                                        'tests.monitor.signal.never_opened'
+                                                                                    )}
+                                                                                </span>
+                                                                            )}
+                                                                            {row.proctor.connection === 'lost' && (
+                                                                                <span className="badge badge-red">
+                                                                                    {row.proctor.silentMinutes !==
+                                                                                        undefined &&
+                                                                                    row.proctor.silentMinutes >= 1
+                                                                                        ? t(
+                                                                                              'tests.monitor.signal.lost',
+                                                                                              {
+                                                                                                  count: row.proctor
+                                                                                                      .silentMinutes,
+                                                                                              }
+                                                                                          )
+                                                                                        : t(
+                                                                                              'tests.monitor.signal.lost_now'
+                                                                                          )}
+                                                                                </span>
+                                                                            )}
                                                                             {row.proctor.statusSummary && (
                                                                                 <span
                                                                                     data-testid="monitor-status-summary"
