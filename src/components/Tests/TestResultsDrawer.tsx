@@ -1,11 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FileDown, ListChecks, Table2, X } from 'lucide-react';
 import ClassAverageAdjuster from './ClassAverageAdjuster';
 import ItemAnalysisPanel from './ItemAnalysisPanel';
 import PlacementAnalysisPanel from './PlacementAnalysisPanel';
 import GrammarStandardsPanel from '../Grammar/GrammarStandardsPanel';
+import Modal from '../ui/Modal';
 import { logAuditEvent } from '../../services/database/AuditLogger';
 import { useToast } from '../../hooks/useToast';
 import type { AppSettings, Class, GradeScale, Student, StudentTest, Test } from '../../types';
@@ -59,9 +59,6 @@ export default function TestResultsDrawer({
 }: TestResultsDrawerProps) {
     const { t } = useTranslation();
     const { showToast } = useToast();
-    const closeRef = useRef<HTMLButtonElement>(null);
-    const drawerRef = useRef<HTMLDivElement>(null);
-    const openerRef = useRef<HTMLElement | null>(null);
     const [exportScope, setExportScope] = useState<'single' | 'batch'>('single');
     const [exportStudentId, setExportStudentId] = useState('');
     const [gradebookPreset, setGradebookPreset] = useState<GradebookPresetId>('generic');
@@ -73,51 +70,6 @@ export default function TestResultsDrawer({
     const average = relevantStudentTests.length
         ? Math.round(calcClassAveragePercentage(relevantStudentTests, test))
         : null;
-
-    useEffect(() => {
-        openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-        closeRef.current?.focus();
-        const previousOverflow = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
-        return () => {
-            const opener = openerRef.current;
-            openerRef.current = null;
-            document.body.style.overflow = previousOverflow;
-            if (opener?.isConnected) opener.focus();
-        };
-    }, []);
-
-    // The drawer is a modal surface, so Tab has to stay inside it: the page behind it is
-    // unreachable, and letting focus wander there would strand a keyboard user off-screen.
-    useEffect(() => {
-        function onKeyDown(event: KeyboardEvent) {
-            if (event.key === 'Escape') {
-                event.stopPropagation();
-                onClose();
-                return;
-            }
-            if (event.key !== 'Tab') return;
-            const drawer = drawerRef.current;
-            if (!drawer) return;
-            const focusables = Array.from(
-                drawer.querySelectorAll<HTMLElement>(
-                    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-                )
-            ).filter((el) => el.offsetParent !== null || el === document.activeElement);
-            if (focusables.length === 0) return;
-            const first = focusables[0];
-            const last = focusables[focusables.length - 1];
-            if (event.shiftKey && document.activeElement === first) {
-                event.preventDefault();
-                last.focus();
-            } else if (!event.shiftKey && document.activeElement === last) {
-                event.preventDefault();
-                first.focus();
-            }
-        }
-        document.addEventListener('keydown', onKeyDown);
-        return () => document.removeEventListener('keydown', onKeyDown);
-    }, [onClose]);
 
     async function handleExportTestSummaryText(attempts: StudentTest[]) {
         const { buildTestStudentSummary, pickLatestAttempt } = await import('../../utils/testAnswerText');
@@ -271,36 +223,16 @@ export default function TestResultsDrawer({
         }
     }
 
-    return createPortal(
-        <div
-            className="test-results-drawer-overlay"
-            style={{
-                position: 'fixed',
-                inset: 0,
-                background: 'rgba(0,0,0,0.4)',
-                display: 'flex',
-                justifyContent: 'flex-end',
-                zIndex: 1200,
-            }}
-            onMouseDown={(event) => {
-                if (event.target === event.currentTarget) onClose();
-            }}
+    return (
+        <Modal
+            titleId="test-results-drawer-title"
+            onClose={onClose}
+            className="modal-sheet modal-sheet-wide"
+            style={{ padding: 0 }}
         >
             <div
-                ref={drawerRef}
-                id={`test-results-${test.id}`}
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="test-results-drawer-title"
-                style={{
-                    width: 'min(620px, 100%)',
-                    height: '100%',
-                    background: 'var(--bg-card)',
-                    borderLeft: '1px solid var(--border)',
-                    boxShadow: '-12px 0 40px rgba(0,0,0,0.25)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                }}
+                data-testid="test-results-drawer"
+                style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}
             >
                 <div
                     style={{
@@ -322,7 +254,6 @@ export default function TestResultsDrawer({
                         </p>
                     </div>
                     <button
-                        ref={closeRef}
                         type="button"
                         className="btn btn-ghost btn-icon btn-sm"
                         aria-label={t('common.close')}
@@ -506,7 +437,6 @@ export default function TestResultsDrawer({
                     </div>
                 </div>
             </div>
-        </div>,
-        document.body
+        </Modal>
     );
 }
