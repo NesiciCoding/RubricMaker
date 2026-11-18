@@ -554,6 +554,45 @@ describe('LiveMonitorPage', () => {
             vi.useRealTimers();
         });
 
+        it('announces a student dropping out through the polite live region, once', async () => {
+            vi.useFakeTimers();
+
+            mockUseApp = {
+                ...mockUseApp,
+                studentTests: [
+                    {
+                        id: 'st-1',
+                        testId: 'test-1',
+                        studentId: 'student-1',
+                        answers: [],
+                        status: 'in_progress',
+                        startedAt: '2026-06-13T10:00:00.000Z',
+                        events: [{ type: 'heartbeat', at: '2026-06-13T10:00:00.000Z', value: 'active' }],
+                    },
+                ],
+            };
+
+            const fixedNow = new Date('2026-06-13T10:00:00.000Z');
+            vi.setSystemTime(fixedNow);
+
+            renderPage(['/tests/test-1/monitor']);
+            await settleTeacherKeys();
+
+            const announcer = screen.getByTestId('monitor-connection-announcer');
+            expect(announcer).toHaveAttribute('role', 'status');
+            expect(announcer).toHaveAttribute('aria-live', 'polite');
+            expect(announcer).toBeEmptyDOMElement();
+
+            act(() => {
+                vi.setSystemTime(new Date(fixedNow.getTime() + 95_000));
+                vi.advanceTimersByTime(5_000);
+            });
+
+            expect(announcer.textContent).toContain('tests.monitor.signal.announce_lost');
+
+            vi.useRealTimers();
+        });
+
         it('flags a submission made after the due date as late', async () => {
             mockUseApp = {
                 ...mockUseApp,
