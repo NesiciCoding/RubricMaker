@@ -324,14 +324,22 @@ export function calcLinkedItemAccuracies(questions: TestQuestion[], rows: TestAn
         const row = rows[i];
         /* v8 ignore next 1 */
         if (!row) return;
+        // Imports preserve repeated links; count each item once per question so its points are not
+        // added twice, while keeping contributions from different questions.
+        const seen = new Set<string>();
+        const addOnce = (key: string, label: string) => {
+            if (seen.has(key)) return;
+            seen.add(key);
+            add(key, label, row);
+        };
         for (const standard of question.linkedStandards ?? []) {
-            add(`standard:${standard.guid}`, standard.statementNotation ?? standard.description, row);
+            addOnce(`standard:${standard.guid}`, standard.statementNotation ?? standard.description);
         }
         for (const descriptor of question.linkedCefrDescriptors ?? []) {
-            add(`cefr:${descriptor.descriptorId}`, descriptor.descriptionEn, row);
+            addOnce(`cefr:${descriptor.descriptorId}`, descriptor.descriptionEn);
         }
         for (const descriptor of question.frameworkDescriptors ?? []) {
-            add(`framework:${descriptor.framework}:${descriptor.descriptorId}`, descriptor.descriptionEn, row);
+            addOnce(`framework:${descriptor.framework}:${descriptor.descriptorId}`, descriptor.descriptionEn);
         }
     });
 

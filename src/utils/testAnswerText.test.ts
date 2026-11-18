@@ -272,6 +272,29 @@ describe('calcLinkedItemAccuracies', () => {
         expect(out).toContain('\n    0%  Past simple');
     });
 
+    it('counts a link listed twice on one question only once', () => {
+        const duplicated: Test = {
+            ...baseTest,
+            questions: [
+                { ...mc, id: 'q1', points: 1, linkedStandards: [standard, { ...standard }] },
+                { ...mc, id: 'q2', prompt: 'Other', points: 1, linkedStandards: [standard] },
+            ],
+        };
+        const submission: StudentTest = {
+            ...gradedSubmission,
+            answers: [
+                { questionId: 'q1', response: 'o2' },
+                { questionId: 'q2', response: 'o1' },
+            ],
+        };
+        const items = calcLinkedItemAccuracies(
+            duplicated.questions,
+            buildAnswerRows(duplicated, submission, duplicated.questions)
+        );
+        expect(items).toHaveLength(1);
+        expect(items[0].accuracyPct).toBe(50);
+    });
+
     it('counts an unanswered linked question as zero credit', () => {
         const partial: StudentTest = { ...answers, answers: [{ questionId: 'q1', response: 'o2' }] };
         const items = calcLinkedItemAccuracies(

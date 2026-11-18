@@ -243,6 +243,7 @@ export default function TestListPage() {
     async function handleExportTestSummaryText(test: Test, relevantStudentTests: StudentTest[]) {
         const { buildTestStudentSummary, pickLatestAttempt } = await import('../utils/testAnswerText');
         const { effectiveTestQuestions } = await import('../utils/testSummaryAggregator');
+        const { scoreStudentTest } = await import('../utils/studentTestScore');
         const { saveAs } = await import('file-saver');
         const { sanitizeFilename } = await import('../utils/exportDataPrep');
 
@@ -253,11 +254,14 @@ export default function TestListPage() {
             const studentClass = classes.find((c) => c.id === student?.classId);
             const track = getEffectiveVoTrack(student, studentClass);
             const year = getEffectiveSchoolYear(student, studentClass);
+            // Score against the questions this student was actually presented: a staged placement
+            // attempt never saw the other branch's questions, so they must not count as unanswered.
+            const presented = scoreStudentTest(test, studentTest).pathQuestions;
             return buildTestStudentSummary(
                 test,
                 studentTest,
                 student,
-                effectiveTestQuestions(studentTest.studentId, [studentTest], test),
+                presented.length > 0 ? presented : effectiveTestQuestions(studentTest.studentId, [studentTest], test),
                 {
                     className: studentClass?.name,
                     level: track ? VO_TRACK_LABELS[track] : year ? SCHOOL_YEAR_LABELS[year] : undefined,
