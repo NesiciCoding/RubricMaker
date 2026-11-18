@@ -149,8 +149,10 @@ describe('LiveMonitorPage', () => {
                 },
             ],
             classes: [],
+            essayAssignments: [],
             fetchEssayAssignmentByKey: vi.fn().mockResolvedValue(null),
             fetchEssaySubmissions: vi.fn().mockResolvedValue([]),
+            fetchAllEssaySubmissions: vi.fn().mockResolvedValue([]),
             fetchTestAssignmentTeacherKeys: vi.fn().mockResolvedValue({}),
             setPlacementOverride: mockSetPlacementOverride,
         };
@@ -1007,6 +1009,51 @@ describe('LiveMonitorPage', () => {
             await waitFor(() => expect(mockClient.channel).toHaveBeenCalledWith('monitor:essay:assn-1:student-1'));
         });
 
+        it('monitors every student on a class-wide assignment and opens the spotlight on request', async () => {
+            const essayRow = {
+                rubricId: 'r1',
+                teacherKey: 'assn-1',
+                title: 'My Essay',
+                readOnlyAfterSubmit: true,
+                createdAt: '2026-01-01T00:00:00.000Z',
+            };
+            mockUseApp = {
+                ...mockUseApp,
+                students: [mockStudent, { id: 'student-2', name: 'Bob', classId: 'class-1' }],
+                essayAssignments: [
+                    { ...essayRow, studentId: 'student-1' },
+                    { ...essayRow, studentId: 'student-2' },
+                ],
+                fetchEssayAssignmentByKey: vi
+                    .fn()
+                    .mockResolvedValue({ rubricId: 'r1', studentId: 'student-1', title: 'My Essay' }),
+            };
+            renderPage(['/essays/assn-1/monitor']);
+            await screen.findByText('tests.monitor.title_essay: My Essay');
+
+            // Both students hold a row for this teacherKey, so both channels open and the
+            // roster — not a single draft card — is what the monitor shows.
+            expect(await screen.findByTestId('essay-monitor-roster')).toBeInTheDocument();
+            expect(screen.getByTestId('essay-roster-cadence')).toHaveTextContent(
+                'tests.monitor.essay.roster_header (2)'
+            );
+            await waitFor(() => expect(mockClient.channel).toHaveBeenCalledWith('monitor:essay:assn-1:student-1'));
+            expect(mockClient.channel).toHaveBeenCalledWith('monitor:essay:assn-1:student-2');
+
+            fireEvent.click(screen.getAllByText('tests.monitor.essay.watch_live')[1]);
+            expect(await screen.findByTestId('essay-spotlight')).toBeInTheDocument();
+            expect(screen.getByTestId('essay-draft-analysis')).toBeInTheDocument();
+
+            // The spotlight asks that student for the 5s cadence.
+            await waitFor(() =>
+                expect(mockSend).toHaveBeenCalledWith({
+                    type: 'broadcast',
+                    event: 'spotlight',
+                    payload: { on: true },
+                })
+            );
+        });
+
         it('renders the live draft text from a snapshot broadcast', async () => {
             mockUseApp = {
                 ...mockUseApp,
@@ -1023,11 +1070,19 @@ describe('LiveMonitorPage', () => {
                 ch.handlers.snapshot({ payload: { text: '<p>Hello draft</p>', wordCount: 2 } });
             });
             // Snapshot updates are coalesced onto a short debounce (see LiveMonitorPage) so a
-            // burst of broadcasts from a full class only triggers one re-render.
+            // burst of broadcasts from a full class only triggers one re-render. A one-student
+            // assignment opens straight into the spotlight, which shows the draft without a click.
             await waitFor(() => expect(screen.queryByLabelText('tests.monitor.draft.toggle_preview')).not.toBeNull());
-            fireEvent.click(screen.getByLabelText('tests.monitor.draft.toggle_preview'));
-            expect(screen.getByText('Hello draft')).toBeInTheDocument();
+            expect(await screen.findByText('Hello draft')).toBeInTheDocument();
             expect(screen.getByText('tests.monitor.draft.word_count (2)')).toBeInTheDocument();
+
+            // A stats-only tick (the roster cadence's cheap snapshot) updates the word count but
+            // must keep the last draft the monitor received.
+            act(() => {
+                ch.handlers.snapshot({ payload: { wordCount: 6 } });
+            });
+            expect(await screen.findByText('tests.monitor.draft.word_count (6)')).toBeInTheDocument();
+            expect(screen.getByText('Hello draft')).toBeInTheDocument();
         });
 
         it('preserves a submitted flag set while a snapshot patch is still queued (debounce-flush race)', async () => {

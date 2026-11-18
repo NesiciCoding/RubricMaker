@@ -193,10 +193,10 @@ test.describe('Live monitor — essay kind', () => {
             await essay.typeInEditor(sentence);
             await expect(supabasePage.getByText('13 words')).toBeVisible({ timeout: 25_000 });
 
-            // Expand the draft preview on the teacher side and verify the live
-            // draft text arrived (stripped of markup by LiveDraftPanel).
-            await supabasePage.getByRole('button', { name: 'Toggle draft preview' }).click();
-            await expect(supabasePage.getByText(/the autumn leaves fell gently/i)).toBeVisible({ timeout: 10_000 });
+            // A one-student assignment opens straight into the spotlight view, which shows the
+            // live draft without a click (markup stripped by LiveDraftPanel). The monitor asks
+            // for the 5s cadence every 10s until the student's channel is up.
+            await expect(supabasePage.getByText(/the autumn leaves fell gently/i)).toBeVisible({ timeout: 20_000 });
 
             // Proctoring: a tab switch on the student side reaches the teacher
             // in real time on the shared Realtime channel.
