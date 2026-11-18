@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { appendWordSample, type WordSample } from './monitorSignals';
 import { buildTimeline, TIMELINE_WINDOW_MS } from './monitorTimeline';
 
 const MIN = 60_000;
@@ -37,27 +38,53 @@ describe('buildTimeline', () => {
         expect(timeline.markers.map((m) => m.kind)).toEqual(['tab_switch', 'paste']);
     });
 
-    it('marks a flat stretch of five minutes or more as a pause', () => {
+    it('marks a completed stall between two change points as a pause', () => {
         const timeline = buildTimeline(
             [
                 { at: at(20), words: 30 },
-                { at: at(14), words: 30 },
-                { at: at(13), words: 55 },
-                { at: at(12), words: 55 },
+                { at: at(14), words: 55 },
+                { at: at(13), words: 70 },
+                { at: at(1), words: 90 },
             ],
             [],
             NOW
         );
 
-        expect(timeline.markers.filter((m) => m.kind === 'idle')).toHaveLength(1);
-        expect(timeline.longestFlatMinutes).toBe(6);
+        expect(timeline.markers.filter((m) => m.kind === 'idle')).toHaveLength(2);
+        expect(timeline.longestFlatMinutes).toBe(12);
+    });
+
+    it('reports a stall that is still going on up to now', () => {
+        const timeline = buildTimeline([{ at: at(8), words: 30 }], [], NOW);
+
+        expect(timeline.markers.filter((m) => m.kind === 'idle')).toEqual([{ at: NOW, kind: 'idle' }]);
+        expect(timeline.longestFlatMinutes).toBe(8);
+    });
+
+    it('finds a stall in samples that went through appendWordSample', () => {
+        let samples: WordSample[] = [];
+        for (const [minutesAgo, words] of [
+            [20, 10],
+            [18, 10],
+            [15, 10],
+            [10, 25],
+            [3, 25],
+        ] as const) {
+            samples = appendWordSample(samples, { at: at(minutesAgo), words });
+        }
+
+        expect(samples).toHaveLength(2);
+        const timeline = buildTimeline(samples, [], NOW);
+        expect(timeline.markers.some((m) => m.kind === 'idle')).toBe(true);
+        expect(timeline.longestFlatMinutes).toBe(10);
     });
 
     it('does not mark a slow minute as a pause', () => {
         const timeline = buildTimeline(
             [
                 { at: at(4), words: 30 },
-                { at: at(2), words: 30 },
+                { at: at(2), words: 40 },
+                { at: at(0.5), words: 41 },
             ],
             [],
             NOW
@@ -65,6 +92,22 @@ describe('buildTimeline', () => {
 
         expect(timeline.markers.filter((m) => m.kind === 'idle')).toHaveLength(0);
         expect(timeline.longestFlatMinutes).toBe(2);
+    });
+
+    it('counts only the part of a pause that falls inside the window', () => {
+        const timeline = buildTimeline(
+            [
+                { at: at(45), words: 30 },
+                { at: at(29), words: 40 },
+                { at: at(1), words: 41 },
+            ],
+            [],
+            NOW
+        );
+
+        // 45 -> 29 minutes ago is 16 minutes long, but only the last minute is inside the 30-minute window.
+        expect(timeline.longestFlatMinutes).toBe(28);
+        expect(timeline.markers.filter((m) => m.kind === 'idle')).toHaveLength(1);
     });
 
     it('returns an empty curve when nothing has been recorded yet', () => {

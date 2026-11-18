@@ -1,3 +1,4 @@
+import { TIMELINE_WINDOW_MS } from './monitorTimeline';
 import { describe, it, expect } from 'vitest';
 import {
     appendWordSample,
@@ -94,11 +95,11 @@ describe('appendWordSample', () => {
 
     it('drops old samples but keeps one baseline before the retention cutoff', () => {
         let s: WordSample[] = [];
-        for (let i = 0; i <= 20; i++) s = appendWordSample(s, { at: i * MIN, words: i * 10 });
-        const cutoff = 20 * MIN - (2 * WRITING_PACE_WINDOW_MS + MIN);
+        for (let i = 0; i <= 60; i++) s = appendWordSample(s, { at: i * MIN, words: i * 10 });
+        const cutoff = 60 * MIN - (TIMELINE_WINDOW_MS + MIN);
         expect(s[0].at).toBeLessThanOrEqual(cutoff);
         expect(s[1].at).toBeGreaterThan(cutoff);
-        expect(s[s.length - 1]).toEqual({ at: 20 * MIN, words: 200 });
+        expect(s[s.length - 1]).toEqual({ at: 60 * MIN, words: 600 });
     });
 });
 
