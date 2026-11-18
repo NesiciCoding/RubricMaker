@@ -9,6 +9,7 @@ import { loadSupabaseConfig } from '../../services/database';
 import { encodeTestAssignment, buildShareUrl } from '../../utils/shareCode';
 import { loginCode } from '../../utils/nanoid';
 import { toLocalDatetimeInput } from '../../utils/dateInput';
+import { normalizeVersionCount, versionForStudent } from '../../utils/testVersions';
 import type { Test, TestAssignmentPayload, TestAssignment } from '../../types';
 
 interface Props {
@@ -23,13 +24,14 @@ export default function TestAssignmentModal({ test, onClose, ownerId }: Props) {
     const { students } = useStudents();
     const { classes } = useClasses();
 
-    const { saveTestAssignment, fetchTestAssignmentTeacherKeys } = useAssessment();
+    const { saveTestAssignment, fetchTestAssignmentTeacherKeys, updateTest } = useAssessment();
     const { settings } = useSettings();
 
     const dbStatus = useDbStatus();
     const config = loadSupabaseConfig();
 
     const [classId, setClassId] = useState(settings.activeClassId ?? classes[0]?.id ?? '');
+    const [versionCount, setVersionCount] = useState(normalizeVersionCount(test.versionCount));
     const [expiresAt, setExpiresAt] = useState(test.dueDate ? toLocalDatetimeInput(test.dueDate) : '');
     const [embedDb, setEmbedDb] = useState(dbStatus.isConnected);
     const [copiedStudentId, setCopiedStudentId] = useState<string | null>(null);
@@ -278,6 +280,30 @@ export default function TestAssignmentModal({ test, onClose, ownerId }: Props) {
                     </select>
                 </div>
 
+                {/* Parallel paper versions */}
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label htmlFor="ta-versions">{t('tests.versioning_count_label')}</label>
+                    <select
+                        id="ta-versions"
+                        value={versionCount}
+                        disabled={!!ownerId}
+                        onChange={(e) => {
+                            const next = normalizeVersionCount(Number(e.target.value));
+                            setVersionCount(next);
+                            updateTest({ ...test, versionCount: next });
+                        }}
+                    >
+                        {[1, 2, 3, 4].map((count) => (
+                            <option key={count} value={count}>
+                                {count === 1 ? t('tests.versioning_off') : t('tests.versioning_option', { count })}
+                            </option>
+                        ))}
+                    </select>
+                    <p className="text-muted text-xs" style={{ margin: '6px 0 0', lineHeight: 1.5 }}>
+                        {t('tests.versioning_count_help')}
+                    </p>
+                </div>
+
                 {/* Expiry */}
                 <div className="form-group" style={{ marginBottom: 0 }}>
                     <label htmlFor="ta-expires-at">
@@ -431,7 +457,21 @@ export default function TestAssignmentModal({ test, onClose, ownerId }: Props) {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                             {classStudents.map((s) => (
                                 <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <span style={{ flexShrink: 0, minWidth: 100, fontSize: '0.85rem' }}>{s.name}</span>
+                                    <span style={{ flexShrink: 0, minWidth: 100, fontSize: '0.85rem' }}>
+                                        {s.name}
+                                        {(() => {
+                                            const version = versionForStudent(s.id, versionCount);
+                                            return version ? (
+                                                <span
+                                                    className="badge"
+                                                    style={{ marginLeft: 6 }}
+                                                    title={t('tests.versioning_badge', { version })}
+                                                >
+                                                    {version}
+                                                </span>
+                                            ) : null;
+                                        })()}
+                                    </span>
                                     <input
                                         readOnly
                                         value={buildUrl(s.id)}

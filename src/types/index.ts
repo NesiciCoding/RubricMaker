@@ -1501,6 +1501,8 @@ export interface TestQuestion {
     partialCredit?: boolean;
     /** Opt-in leniencies for typed answers on short-answer and cloze (see AnswerTolerance in testScoring.ts) */
     answerTolerance?: AnswerTolerance;
+    /** Set on an auto-generated easier copy of another question (e.g. a cloze variant), so the builder can trace it back */
+    variantOfQuestionId?: string;
     linkedStandards?: LinkedStandard[];
     /** CEFR Can-Do statements linked to this question */
     linkedCefrDescriptors?: LinkedCefrDescriptor[];
@@ -1617,6 +1619,13 @@ export interface Test {
     scoreOnly?: boolean;
     /** Treat confident auto-scores (option questions, numeric and short answers with an answer model) as final, so only the rest reaches the grading queue. Absent means on. */
     autoConfirmScores?: boolean;
+    /**
+     * Number of parallel paper versions (1–4; unset/1 = a single version). Each student is assigned
+     * one deterministically from their id, and choice options are shown in that version's seeded
+     * order in the runner, the printed paper and the scan. Content and points are identical, so
+     * results stay comparable across versions.
+     */
+    versionCount?: number;
 }
 
 /** One row of a points → grade norm table: the grade per tier column for scores of at least `minPoints`. */

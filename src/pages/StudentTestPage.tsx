@@ -31,6 +31,7 @@ import { isAllowedSupabaseUrl } from '../services/database/trustedSupabaseUrl';
 import { autoScoreResponse } from '../utils/testCalc';
 import { enqueueSubmission, removeSubmission, pendingSubmissions, isAlreadySubmitted } from '../utils/testSubmitOutbox';
 import { clozeInstructionKey } from '../utils/questionTypeKey';
+import { versionForStudent, versionQuestion } from '../utils/testVersions';
 import SubmitReviewDialog from '../components/Tests/SubmitReviewDialog';
 import type {
     TestAnswer,
@@ -293,6 +294,17 @@ export default function StudentTestPage() {
         if (!test.shuffleQuestions || !code) return test.questions;
         return seededShuffle(test.questions, code);
     }, [test, code, staged, currentStageId]);
+
+    // Parallel-paper version for this student: derived, never transmitted, so an offline share link
+    // and the teacher's printed answer sheet resolve the same option order.
+    const testVersion = versionForStudent(
+        resolvedContent?.studentId || assignment?.studentId || '',
+        test?.versionCount
+    );
+    const displayQuestion = useCallback(
+        (question: TestQuestion) => versionQuestion(question, testVersion),
+        [testVersion]
+    );
 
     const isStaircase = !!test && isStaircaseTest(test);
     const staircaseQuestion = useMemo(() => {
@@ -1207,7 +1219,7 @@ export default function StudentTestPage() {
                             {question && (
                                 <StudentQuestionCard
                                     key={question.id}
-                                    question={question}
+                                    question={displayQuestion(question)}
                                     index={isStaircase ? levelPath.length : isGenerator ? answeredCount : currentIndex}
                                     total={orderedQuestions.length}
                                     value={answers.get(question.id) ?? ''}

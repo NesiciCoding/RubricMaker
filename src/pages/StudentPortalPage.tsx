@@ -68,6 +68,8 @@ import { InlineSkeleton, ChartSkeleton } from '../components/ui/Skeleton';
 import StudentDecksSection from '../components/Students/StudentDecksSection';
 import { PortalCriterionFeedback } from '../components/Students/PortalCriterionFeedback';
 import { nanoid } from '../utils/nanoid';
+import { buildReviewDeck } from '../utils/questionsToDeck';
+import { autoScoreResponse } from '../utils/testCalc';
 import type {
     EssayAssignment,
     StudentEssayAssignmentSummary,
@@ -85,6 +87,7 @@ import type {
 } from '../types';
 import { isLocalMode } from '../store/storage';
 import { useToast } from '../hooks/useToast';
+import { useDbStatus } from '../hooks/useDbStatus';
 import { EmptyState } from '../components/ui/EmptyState';
 
 // Sections scroll to just below the sticky tab bar, whose height grows when the tabs wrap on phones.
@@ -220,10 +223,13 @@ export default function StudentPortalPage() {
         markNewsFlashReadAsStudent,
         fetchMyFlashcardAssignments,
         updateSettings,
+        addFlashcardDeck,
+        saveFlashcardDeckAsStudent,
     } = useStoreActions();
 
     const { t, i18n } = useTranslation();
     const { showToast } = useToast();
+    const dbStatus = useDbStatus();
     // Grammar items only carry Dutch and English labels (labelNl / labelEn); other languages show English.
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
     const [linkCopied, setLinkCopied] = useState(false);
@@ -581,6 +587,50 @@ export default function StudentPortalPage() {
             supabaseAnonKey: dbConfig?.supabaseAnonKey,
         };
         return `#/essay/${encodeEssayAssignment(assignment)}`;
+    }
+
+    /**
+     * Turns a completed test's missed items into a deck the student owns (Phase 41.4 path). The
+     * share-link test page runs outside AppProvider and has no student record, so this lives here
+     * where the signed-in student actually exists — teachers get the class-wide equivalent instead.
+     */
+    async function handleReviewDeck(row: StudentTestAssignmentSummary) {
+        const test = tests.find((candidate) => candidate.id === row.testId);
+        const attempt = [...studentTests]
+            .filter((st) => st.testId === row.testId && st.studentId === row.studentId)
+            .sort((a, b) => (a.submittedAt ?? '').localeCompare(b.submittedAt ?? ''))
+            .at(-1);
+        if (!test || !attempt) {
+            showToast(t('tests.review_deck_none'), 'info');
+            return;
+        }
+        if (test.mode !== 'practice') return;
+        const answersById = new Map(attempt.answers.map((answer) => [answer.questionId, answer]));
+        const deck = buildReviewDeck(
+            t('tests.taking.review_deck_name', { test: test.name }),
+            test.questions.map((question) => {
+                const answer = answersById.get(question.id);
+                return {
+                    question,
+                    pointsEarned: answer?.pointsEarned ?? autoScoreResponse(question, answer?.response ?? ''),
+                };
+            })
+        );
+        if (!deck) {
+            showToast(t('tests.review_deck_none'), 'info');
+            return;
+        }
+        const owned = { ...deck, ownerStudentId: row.studentId };
+        if (dbStatus.isConnected) {
+            const result = await saveFlashcardDeckAsStudent(owned);
+            if (!result.success) {
+                showToast(t('studentDecks.save_error'), 'error');
+                return;
+            }
+        } else {
+            addFlashcardDeck(owned);
+        }
+        showToast(t('studentPortal.review_deck_created'), 'success');
     }
 
     async function handleOpenTest(row: StudentTestAssignmentSummary) {
@@ -1112,6 +1162,7 @@ export default function StudentPortalPage() {
                                         entries={overdueWork}
                                         buildEssayUrl={buildEssayUrl}
                                         onOpenTest={handleOpenTest}
+                                        onReviewDeck={handleReviewDeck}
                                         openingTestKey={openingTestKey}
                                         testOpenErrorKey={testOpenErrorKey}
                                         t={t}
@@ -1123,6 +1174,7 @@ export default function StudentPortalPage() {
                                         entries={plannedWork}
                                         buildEssayUrl={buildEssayUrl}
                                         onOpenTest={handleOpenTest}
+                                        onReviewDeck={handleReviewDeck}
                                         openingTestKey={openingTestKey}
                                         testOpenErrorKey={testOpenErrorKey}
                                         t={t}
@@ -1134,6 +1186,7 @@ export default function StudentPortalPage() {
                                         entries={completedWork}
                                         buildEssayUrl={buildEssayUrl}
                                         onOpenTest={handleOpenTest}
+                                        onReviewDeck={handleReviewDeck}
                                         openingTestKey={openingTestKey}
                                         testOpenErrorKey={testOpenErrorKey}
                                         t={t}
@@ -1649,6 +1702,7 @@ function WorkGroup({
     entries,
     buildEssayUrl,
     onOpenTest,
+    onReviewDeck,
     openingTestKey,
     testOpenErrorKey,
     t,
@@ -1657,6 +1711,7 @@ function WorkGroup({
     entries: WorkEntry[];
     buildEssayUrl: (row: StudentEssayAssignmentSummary) => string;
     onOpenTest: (row: StudentTestAssignmentSummary) => void;
+    onReviewDeck: (row: StudentTestAssignmentSummary) => void;
     openingTestKey: string | null;
     testOpenErrorKey: string | null;
     t: TFunc;
@@ -1684,6 +1739,7 @@ function WorkGroup({
                             key={entry.key}
                             row={entry.row}
                             onOpen={onOpenTest}
+                            onReviewDeck={onReviewDeck}
                             opening={openingTestKey === entry.row.teacherKey}
                             openError={testOpenErrorKey === entry.row.teacherKey}
                             t={t}
@@ -1898,12 +1954,14 @@ function PortalMessages({
 function TestCard({
     row,
     onOpen,
+    onReviewDeck,
     opening,
     openError,
     t,
 }: {
     row: StudentTestAssignmentSummary;
     onOpen: (row: StudentTestAssignmentSummary) => void;
+    onReviewDeck: (row: StudentTestAssignmentSummary) => void;
     opening: boolean;
     openError: boolean;
     t: TFunc;
@@ -1994,6 +2052,16 @@ function TestCard({
                     <div style={{ fontSize: '0.78rem', color: 'var(--red-text)', marginTop: 4 }}>
                         {t('studentPortal.test_open_error')}
                     </div>
+                )}
+                {done && row.testMode === 'practice' && (
+                    <button
+                        type="button"
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => onReviewDeck(row)}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 8 }}
+                    >
+                        <BookOpen size={13} /> {t('tests.taking.review_deck_button')}
+                    </button>
                 )}
             </div>
             {!expired && !done && (

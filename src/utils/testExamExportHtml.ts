@@ -239,13 +239,20 @@ function nameClassDateBoxHtml(): string {
 }
 
 /** Right-aligned title block + black subject banner + question/point/duration summary — the CITO cover-page pattern. */
-function coverPageHtml(test: Test, docLabel: string, includeNameBox = false, withPrintText = false): string {
+function coverPageHtml(
+    test: Test,
+    docLabel: string,
+    includeNameBox = false,
+    withPrintText = false,
+    versionLabel?: string
+): string {
     const totalQuestions = test.questions.length;
     const totalPoints = calcTestMaxPoints(test);
     return `<div class="print-page" style="page-break-after:always;padding-top:36px;font-family:inherit;color:#1e293b;background:#fff">
     ${withPrintText ? richBlockHtml(test.printHeader) : ''}
     <div style="text-align:right">
       <div style="font-weight:700;font-size:16px">${escapeHtml(docLabel)}</div>
+      ${versionLabel ? `<div style="font-weight:700;font-size:14px;margin-top:2px">${escapeHtml(versionLabel)}</div>` : ''}
       <div style="font-weight:800;font-size:34px;margin-top:2px">${new Date().getFullYear()}</div>
     </div>
     ${blackBannerHtml(test.name)}
@@ -319,7 +326,7 @@ export function buildTestPreviewHtml(test: Test, preview: TestPreviewOptions): s
 
 export function buildExamBookletHtml(test: Test, options: TestExamExportOptions): string {
     const groups = groupQuestionsBySection(test);
-    let html = coverPageHtml(test, tx('booklet_subtitle'), true, true);
+    let html = coverPageHtml(test, tx('booklet_subtitle'), true, true, options.versionLabel);
     for (const group of groups) {
         if (group.section) {
             html += sectionDividerHtml(group.section.title);
@@ -333,9 +340,9 @@ export function buildExamBookletHtml(test: Test, options: TestExamExportOptions)
     return `<div class="print-page" style="color:#1e293b;background:#fff">${html}${richBlockHtml(test.printFooter)}</div>`;
 }
 
-export function buildExamAttachmentHtml(test: Test): string {
+export function buildExamAttachmentHtml(test: Test, versionLabel?: string): string {
     const groups = groupQuestionsBySection(test).filter((g) => g.section?.content);
-    let html = coverPageHtml(test, tx('attachment_subtitle'), true, true);
+    let html = coverPageHtml(test, tx('attachment_subtitle'), true, true, versionLabel);
     groups.forEach((group, i) => {
         if (!group.section) return;
         const pageBreak = i > 0 ? 'page-break-before:always;' : '';
@@ -426,7 +433,7 @@ async function answerSheetPagesHtml(test: Test, options: TestExamExportOptions, 
                 page.pageNumber === 1
                     ? `<div style="height:${firstPageHeaderHeight}mm;box-sizing:border-box;overflow:hidden">
     ${richBlockHtml(test.printHeader)}
-    <div style="text-align:right;font-weight:700;font-size:16px">${tx('answer_sheet_title')}</div>
+    <div style="text-align:right;font-weight:700;font-size:16px">${tx('answer_sheet_title')}${options.versionLabel ? ` · ${escapeHtml(options.versionLabel)}` : ''}</div>
     ${blackBannerHtml(test.name)}
     <div style="margin-top:16px;font-size:13px">
       <strong>${tx('candidate_name')}:</strong> ${student ? escapeHtml(student.name) : '______________________'}
@@ -500,12 +507,12 @@ function gradingTableRowsHtml(test: Test): string {
     return rows;
 }
 
-export function buildGradingSheetHtml(test: Test): string {
+export function buildGradingSheetHtml(test: Test, versionLabel?: string): string {
     const th = (label: string) =>
         `<th style="border:1px solid #000;padding:6px 8px;font-size:11px;text-align:left">${label}</th>`;
     const table = `<table style="border-collapse:collapse;width:100%;margin-top:16px"><tr>${th(tx('question_col'))}${th(tx('answer_col'))}${th(tx('scores_col'))}</tr>${gradingTableRowsHtml(test)}</table>`;
 
-    let html = coverPageHtml(test, tx('grading_sheet_subtitle'));
+    let html = coverPageHtml(test, tx('grading_sheet_subtitle'), false, false, versionLabel);
     html += table;
     return `<div class="print-page" style="color:#1e293b;background:#fff">${html}</div>`;
 }
@@ -530,7 +537,7 @@ export async function exportExamPdf(test: Test, options: ExportExamPdfOptions): 
         });
     await print(withoutBrowserPrintChrome(buildExamBookletHtml(test, options)));
     if (options.attachmentMode === 'separate') {
-        await print(withoutBrowserPrintChrome(buildExamAttachmentHtml(test)));
+        await print(withoutBrowserPrintChrome(buildExamAttachmentHtml(test, options.versionLabel)));
     }
     await print(await buildAnswerSheetHtml(test, options, options.students));
 }
@@ -538,7 +545,7 @@ export async function exportExamPdf(test: Test, options: ExportExamPdfOptions): 
 /** Exports only the grading key/answer sheet — kept as an explicit, separate action from exportExamPdf() so a teacher never bundles it with student-facing materials by default. */
 export async function exportExamGradingKeyPdf(test: Test, options: TestExamExportOptions): Promise<void> {
     await printHtml(
-        withoutBrowserPrintChrome(buildGradingSheetHtml(test)),
+        withoutBrowserPrintChrome(buildGradingSheetHtml(test, options.versionLabel)),
         'portrait',
         options.fontFamily,
         options.styleTemplate,

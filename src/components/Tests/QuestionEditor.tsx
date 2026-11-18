@@ -68,6 +68,7 @@ import {
 import AnswerToleranceFields from './AnswerToleranceFields';
 import DistractorSuggestions from './DistractorSuggestions';
 import { generateCloze, type ClozeStrategy } from '../../utils/clozeGenerators';
+import type { ClozeVariantKind } from '../../utils/clozeVariant';
 import { CEFR_LEVELS } from '../../data/cefrDescriptors';
 import { cefrEloRange, LEVEL_TO_ELO } from '../../utils/placementStaircase';
 import { grammarItemToFrameworkDescriptor } from '../../data/grammarStandards';
@@ -100,6 +101,11 @@ interface Props {
     onRemove: () => void;
     /** Insert a copy right after this question; the button is hidden when omitted. */
     onDuplicate?: () => void;
+    /**
+     * Offer a one-click easier copy of a cloze question (fewer gaps, answered from options); the
+     * parent inserts the returned question as a sibling. Hidden when omitted (e.g. the bank editor).
+     */
+    onCreateVariant?: (kind: ClozeVariantKind) => void;
     /** Show only the header and a one-line summary. */
     collapsed?: boolean;
     /** Collapse/expand toggle in the header; hidden when omitted. */
@@ -123,6 +129,7 @@ export default function QuestionEditor({
     onChange,
     onRemove,
     onDuplicate,
+    onCreateVariant,
     collapsed = false,
     onToggleCollapsed,
     issues,
@@ -801,6 +808,26 @@ export default function QuestionEditor({
                                     title={t('tests.cloze_generate_hint')}
                                 >
                                     <Sparkles size={14} /> {t('tests.cloze_generate_button')}
+                                </button>
+                            </div>
+                        )}
+                        {onCreateVariant && (
+                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+                                <button
+                                    type="button"
+                                    className="btn btn-ghost btn-sm"
+                                    onClick={() => onCreateVariant('dropdown')}
+                                    title={t('tests.cloze_variant_hint')}
+                                >
+                                    <Sparkles size={14} /> {t('tests.cloze_variant_button')}
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn btn-ghost btn-sm"
+                                    onClick={() => onCreateVariant('bank')}
+                                    title={t('tests.cloze_variant_hint')}
+                                >
+                                    <Sparkles size={14} /> {t('tests.cloze_variant_bank_button')}
                                 </button>
                             </div>
                         )}

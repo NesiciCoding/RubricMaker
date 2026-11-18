@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Columns3, Download, Edit2, Table2, BarChart3 } from 'lucide-react';
+import { ArrowLeft, BookOpen, Columns3, Download, Edit2, Table2, BarChart3 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { EmptyState } from '../components/ui/EmptyState';
 import SegmentedToggle from '../components/ui/SegmentedToggle';
@@ -30,6 +30,7 @@ import {
     type TestGradeResult,
 } from '../utils/testGradingNorm';
 import { buildScoreSheetCsv, isSheetComplete } from '../utils/scoreSheet';
+import { buildReviewDeck, type MissedQuestion } from '../utils/questionsToDeck';
 import { downloadCsv } from '../utils/csvDownload';
 import { sanitizeFilename } from '../utils/exportDataPrep';
 
@@ -217,6 +218,8 @@ function ScoreSheetBody({
 }: BodyProps) {
     const { t } = useTranslation();
     const navigate = useNavigate();
+    const { addFlashcardDeck } = useStoreActions();
+    const { showToast } = useToast();
     const scale = resolveTestScale(test, gradeScales, defaultGradeScaleId);
     const maxPoints = test.questions.reduce((s, q) => s + q.points, 0);
     const classById = new Map(classes.map((c) => [c.id, c]));
@@ -224,6 +227,34 @@ function ScoreSheetBody({
 
     const rowTests = rows.map((s) => sheetByStudent.get(s.id)).filter((st): st is StudentTest => !!st);
     const report = calcTestQuality(test, rowTests);
+
+    const missedEntries: MissedQuestion[] = [];
+    for (const student of rows) {
+        const submission = sheetByStudent.get(student.id);
+        if (!submission || submission.absent) continue;
+        const answers = new Map(submission.answers.map((answer) => [answer.questionId, answer]));
+        for (const question of test.questions) {
+            const answer = answers.get(question.id);
+            if (!answer) continue;
+            missedEntries.push({
+                question,
+                pointsEarned: answer.pointsEarned ?? scoreTestAnswer(question, answer),
+            });
+        }
+    }
+
+    function createClassReviewDeck() {
+        const label = classId === WITH_RESULTS ? allLabel : (classById.get(classId)?.name ?? allLabel);
+        const deck = buildReviewDeck(`${test.name} — ${label}`.trim(), missedEntries);
+        if (!deck) {
+            showToast(t('tests.review_deck_none'), 'info');
+            return;
+        }
+        addFlashcardDeck(deck);
+        showToast(t('tests.review_deck_created'), 'success', {
+            action: { label: t('tests.review_deck_open'), onClick: () => navigate('/flashcards') },
+        });
+    }
 
     function gradeFor(student: Student, st: StudentTest | undefined): { grade: TestGradeResult; pct: number } | null {
         if (!st || st.absent || st.answers.length === 0) return null;
@@ -321,6 +352,13 @@ function ScoreSheetBody({
                         )}
                         <button className="btn btn-secondary btn-sm" onClick={exportCsv} disabled={rows.length === 0}>
                             <Download size={15} /> {t('tests.scoreSheet.export_csv')}
+                        </button>
+                        <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={createClassReviewDeck}
+                            disabled={rows.length === 0}
+                        >
+                            <BookOpen size={15} /> {t('tests.review_deck_class_button')}
                         </button>
                         <button
                             className="btn btn-secondary btn-sm"

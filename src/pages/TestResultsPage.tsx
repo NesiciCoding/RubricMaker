@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import HelpPopover from '../components/ui/HelpPopover';
 import { useStoreActions, useStoreSelector } from '../context/useStore';
+import { useToast } from '../hooks/useToast';
 import { useOwnOrSharedItem } from '../hooks/useSharedMaterials';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { useCanEditStudentWork } from '../hooks/useClassRoles';
@@ -34,6 +35,8 @@ import RubricTaskScorer from '../components/Tests/RubricTaskScorer';
 import OpenAnswerInsightsPanel from '../components/Tests/OpenAnswerInsightsPanel';
 import { blankRubricEntries, rubricAnswerPoints } from '../utils/rubricTaskScoring';
 import { questionTypeLabelKey } from '../utils/questionTypeKey';
+import { buildReviewDeck } from '../utils/questionsToDeck';
+import { versionForStudent } from '../utils/testVersions';
 import CommentBankModal from '../components/Comments/CommentBankModal';
 import type { TestAnswer, TestQuestion, ProctorEventType, CommentBankItem, Rubric, ScoreEntry } from '../types';
 
@@ -456,7 +459,8 @@ export default function TestResultsPage() {
     // The roster domain hooks filtered soft-deleted rows; archived students must not
     // resolve from a results route.
     const students = React.useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
-    const { saveStudentTest, recordCommentBankUsage, addCommentBankItem } = useStoreActions();
+    const { saveStudentTest, recordCommentBankUsage, addCommentBankItem, addFlashcardDeck } = useStoreActions();
+    const { showToast } = useToast();
     const dbStatus = useDbStatus();
     const canEditStudentWork = useCanEditStudentWork();
 
@@ -467,6 +471,7 @@ export default function TestResultsPage() {
     );
     const studentTest = studentTests.find((st) => st.id === studentTestId && st.testId === testId);
     const student = students.find((s) => s.id === studentTest?.studentId);
+    const testVersion = versionForStudent(studentTest?.studentId ?? '', test?.versionCount);
     // A class shared with me as "Can view": results are readable, but the server refuses changes.
     const readOnly = !canEditStudentWork(student?.classId);
     const isLateSubmission = !!test?.dueDate && !!studentTest?.submittedAt && studentTest.submittedAt > test.dueDate;
@@ -494,6 +499,25 @@ export default function TestResultsPage() {
         question,
         answer: answersById.get(question.id),
     }));
+    const missedEntries = effectiveAnswers.map(({ question, answer }) => ({
+        question,
+        pointsEarned: answer?.pointsEarned ?? autoScore(question, answer),
+    }));
+
+    function createReviewDeck() {
+        const deck = buildReviewDeck(
+            `${test?.name ?? ''} — ${student?.name ?? studentTest?.studentId ?? ''}`.trim(),
+            missedEntries
+        );
+        if (!deck) {
+            showToast(t('tests.review_deck_none'), 'info');
+            return;
+        }
+        addFlashcardDeck(deck);
+        showToast(t('tests.review_deck_created'), 'success', {
+            action: { label: t('tests.review_deck_open'), onClick: () => navigate('/flashcards') },
+        });
+    }
 
     const rawPoints = score?.rawPoints ?? 0;
     const adjustmentPoints = score?.adjustmentPoints ?? 0;
@@ -704,6 +728,13 @@ export default function TestResultsPage() {
                         </button>
                         <button
                             className="btn btn-secondary btn-sm"
+                            onClick={createReviewDeck}
+                            disabled={missedEntries.every((entry) => entry.pointsEarned >= entry.question.points)}
+                        >
+                            <BookOpen size={14} /> {t('tests.review_deck_button')}
+                        </button>
+                        <button
+                            className="btn btn-secondary btn-sm"
                             onClick={() => navigate(`/tests/${testId}/grade?view=student`)}
                         >
                             {t('tests.scoreSheet.grade_queue_action')}
@@ -731,6 +762,11 @@ export default function TestResultsPage() {
                     )}
                     <p className="text-muted text-sm" style={{ margin: '0 0 14px' }}>
                         {t('tests.results.student_label')}: {student?.name ?? studentTest.studentId}
+                        {testVersion && (
+                            <span className="badge" style={{ marginLeft: 8 }}>
+                                {t('tests.versioning_badge', { version: testVersion })}
+                            </span>
+                        )}
                         {isLateSubmission && (
                             <span
                                 className="badge badge-red"

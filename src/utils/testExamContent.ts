@@ -375,6 +375,8 @@ export interface TestExamExportOptions {
     hotTextMirror: boolean;
     /** Fiducial markers + a per-page QR header on answer sheets, for a future scan-ingestion pipeline. Off by default. */
     scanMarkers: boolean;
+    /** Localized "Version B" label when exporting one parallel version; printed in the document header. */
+    versionLabel?: string;
 }
 
 export const EXAM_BASE_FONT_PT = 11;
