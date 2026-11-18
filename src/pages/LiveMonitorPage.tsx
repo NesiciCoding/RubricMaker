@@ -1564,6 +1564,9 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                     : undefined;
                                 if (focusedRow) {
                                     const index = visibleRows.indexOf(focusedRow);
+                                    const proseSnapshots = (focusedRow.live.snapshots ?? [])
+                                        .map((snap) => snap.text)
+                                        .filter((text): text is string => text !== undefined);
                                     return (
                                         <EssaySpotlight
                                             displayName={displayName(focusedRow, index)}
@@ -1576,6 +1579,11 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                             draftText={
                                                 focusedRow.live.snapshot?.text !== undefined
                                                     ? stripCommentHtml(focusedRow.live.snapshot.text)
+                                                    : undefined
+                                            }
+                                            previousDraftText={
+                                                proseSnapshots.length > 1
+                                                    ? stripCommentHtml(proseSnapshots[proseSnapshots.length - 2])
                                                     : undefined
                                             }
                                             snapshots={[...(focusedRow.live.snapshots ?? [])].reverse()}
