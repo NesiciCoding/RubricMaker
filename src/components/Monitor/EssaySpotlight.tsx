@@ -261,6 +261,7 @@ export default function EssaySpotlight({
                     <div style={rowStyle()}>
                         <span style={{ color: 'var(--text-muted)' }}>{t('tests.monitor.essay.tab_switches')}</span>
                         <span
+                            data-testid="essay-proctoring-tab-switches"
                             style={{ color: (flags?.tabSwitchCount ?? 0) > 0 ? 'var(--yellow-text)' : 'var(--text)' }}
                         >
                             {flags?.tabSwitchCount ?? 0}
@@ -268,7 +269,9 @@ export default function EssaySpotlight({
                     </div>
                     <div style={rowStyle()}>
                         <span style={{ color: 'var(--text-muted)' }}>{t('tests.monitor.essay.clipboard')}</span>
-                        <span>{(flags?.copyCount ?? 0) + (flags?.cutCount ?? 0) + (flags?.pasteCount ?? 0)}</span>
+                        <span data-testid="essay-proctoring-clipboard">
+                            {(flags?.copyCount ?? 0) + (flags?.cutCount ?? 0) + (flags?.pasteCount ?? 0)}
+                        </span>
                     </div>
                     <div style={rowStyle()}>
                         <span style={{ color: 'var(--text-muted)' }}>{t('tests.monitor.essay.battery')}</span>
