@@ -510,7 +510,9 @@ export default function ResponsesGrid({
                                     <span style={{ color: 'var(--text-dim)' }}>{eventTime(event.at)}</span>{' '}
                                     {t(`tests.monitor.events.${event.type}`)}
                                     {(event.type === 'battery' || event.type === 'heartbeat') &&
-                                    event.value !== undefined
+                                    (typeof event.value === 'string' ||
+                                        typeof event.value === 'number' ||
+                                        typeof event.value === 'boolean')
                                         ? ` · ${String(event.value)}`
                                         : ''}
                                 </li>

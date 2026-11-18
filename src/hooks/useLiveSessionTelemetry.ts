@@ -12,6 +12,9 @@ const SNAPSHOT_INTERVAL_MS = 5_000;
 // text throttle for that one student.
 const ROSTER_TEXT_INTERVAL_MS = 60_000;
 const TAB_SWITCH_DEDUPE_MS = 750;
+// Outlives one missed renewal of the teacher's 10s spotlight broadcast, so a brief hiccup keeps the
+// fast cadence but a monitor that went away stops it.
+const SPOTLIGHT_LEASE_MS = 15_000;
 
 interface BatteryManagerLike {
     level: number;
@@ -119,6 +122,21 @@ export function useLiveSessionTelemetry({
     const [events, setEvents] = useState<ProctorEvent[]>([]);
     const [isBroadcasting, setIsBroadcasting] = useState(false);
     const [spotlighted, setSpotlighted] = useState(false);
+    // A spotlight is a lease, not a latch: the teacher's monitor re-sends `on: true` every 10s while
+    // the student stays open in its spotlight view. A renewal that never arrives means that view is
+    // gone, and the `on: false` that would have cleared it was dropped with the teacher's
+    // connection — so expire it rather than keep sending five-second prose to nobody.
+    const spotlightLeaseRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const applySpotlight = useCallback((on: boolean) => {
+        if (spotlightLeaseRef.current) clearTimeout(spotlightLeaseRef.current);
+        spotlightLeaseRef.current = null;
+        setSpotlighted(on);
+        if (!on) return;
+        spotlightLeaseRef.current = setTimeout(() => {
+            spotlightLeaseRef.current = null;
+            setSpotlighted(false);
+        }, SPOTLIGHT_LEASE_MS);
+    }, []);
 
     const lastActivityRef = useRef<number>(Date.now());
     const lastTabSwitchAtRef = useRef(0);
@@ -211,7 +229,7 @@ export function useLiveSessionTelemetry({
                 onNudgeRef.current?.((payload as { message: string }).message);
             });
             channel.on('broadcast', { event: 'spotlight' }, ({ payload }) => {
-                setSpotlighted((payload as { on?: boolean } | null)?.on === true);
+                applySpotlight((payload as { on?: boolean } | null)?.on === true);
             });
             channel.subscribe((status) => {
                 setIsBroadcasting(status === 'SUBSCRIBED');
@@ -257,10 +275,14 @@ export function useLiveSessionTelemetry({
             cancelled = true;
             channelRef.current = null;
             pendingBroadcastsRef.current = [];
+            // A different session's spotlight says nothing about this one.
+            if (spotlightLeaseRef.current) clearTimeout(spotlightLeaseRef.current);
+            spotlightLeaseRef.current = null;
+            setSpotlighted(false);
             if (channel) void client.removeChannel(channel);
             setIsBroadcasting(false);
         };
-    }, [enabled, hasDb, kind, assignmentKey, supabaseUrl, supabaseAnonKey]);
+    }, [enabled, hasDb, kind, assignmentKey, supabaseUrl, supabaseAnonKey, applySpotlight]);
 
     // ── tab_switch: visibilitychange + window blur ───────────────────────────
     useEffect(() => {
@@ -377,14 +399,18 @@ export function useLiveSessionTelemetry({
 
     // ── throttled work-in-progress snapshots (ephemeral, broadcast only) ─────
     useEffect(() => {
-        if (!enabled || !getSnapshot || !hasDb) return;
-        const tick = () => {
+        // Nothing can be sent before the channel joins, and a tick in that window would advance the
+        // text throttle for a snapshot the socket drops — pushing the first draft back to the next
+        // minute. Wait for SUBSCRIBED, then send a full baseline that ignores both the throttle and
+        // the dedupe, so the monitor starts from the real draft instead of waiting for a change.
+        if (!enabled || !getSnapshot || !hasDb || !isBroadcasting) return;
+        const tick = (baseline = false) => {
             const full = getSnapshot();
             const now = Date.now();
-            const withText = spotlighted || now - lastTextSentAtRef.current >= ROSTER_TEXT_INTERVAL_MS;
+            const withText = baseline || spotlighted || now - lastTextSentAtRef.current >= ROSTER_TEXT_INTERVAL_MS;
             if (withText) lastTextSentAtRef.current = now;
             const snapshot = withText ? full : withoutText(full);
-            if (!shallowEqualSnapshot(lastSnapshotRef.current, snapshot)) {
+            if (baseline || !shallowEqualSnapshot(lastSnapshotRef.current, snapshot)) {
                 lastSnapshotRef.current = snapshot;
                 wsSend('snapshot', snapshot);
             }
@@ -392,8 +418,8 @@ export function useLiveSessionTelemetry({
         // Fire once right away (re-runs when isBroadcasting flips true, i.e. the channel just
         // subscribed — and again when a spotlight starts) so the teacher's first snapshot lands
         // immediately instead of after a full interval — the initial-signal lag point 2 called out.
-        if (isBroadcasting) tick();
-        const interval = setInterval(tick, SNAPSHOT_INTERVAL_MS);
+        tick(true);
+        const interval = setInterval(() => tick(), SNAPSHOT_INTERVAL_MS);
         return () => clearInterval(interval);
     }, [enabled, getSnapshot, hasDb, isBroadcasting, spotlighted, wsSend]);
 
