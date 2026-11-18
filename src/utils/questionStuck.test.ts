@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { stuckQuestions } from './questionStuck';
+import type { TestAnswer, TestQuestion } from '../types';
+import { answeredQuestionIds, stuckQuestions } from './questionStuck';
 
 const QUESTIONS = ['q1', 'q2', 'q3', 'q4'];
 
@@ -75,5 +76,31 @@ describe('stuckQuestions', () => {
         ]);
 
         expect(stuckQuestions(QUESTIONS, byStudent, { minShare: 0 })[0].asked).toBe(3);
+    });
+});
+
+describe('answeredQuestionIds', () => {
+    const question = (id: string) => ({ id, type: 'short_answer', points: 1 }) as unknown as TestQuestion;
+    const answer = (questionId: string, response: string) => ({ questionId, response }) as unknown as TestAnswer;
+
+    it('does not count a kept snapshot key whose response was cleared', () => {
+        const answered = answeredQuestionIds(
+            [question('q1'), question('q2'), question('q3')],
+            [answer('q1', 'yes'), answer('q2', ''), answer('q3', 'no'), answer('gone', 'x')]
+        );
+
+        expect([...answered].sort()).toEqual(['q1', 'q3']);
+    });
+
+    it('lets a cleared answer surface the question as stuck', () => {
+        const questions = [question('q1'), question('q2'), question('q3')];
+        const student = () => answeredQuestionIds(questions, [answer('q1', 'a'), answer('q2', ''), answer('q3', 'c')]);
+        const byStudent = new Map([
+            ['s1', student()],
+            ['s2', student()],
+            ['s3', student()],
+        ]);
+
+        expect(stuckQuestions(['q1', 'q2', 'q3'], byStudent).map((q) => q.questionId)).toEqual(['q2']);
     });
 });
