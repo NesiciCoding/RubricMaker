@@ -839,11 +839,13 @@ describe('LiveMonitorPage', () => {
         it('sends a nudge over the student channel', async () => {
             renderPage(['/tests/test-1/monitor']);
             await settleTeacherKeys();
+            // The nudge button opens the presets; sending is the second click.
             fireEvent.click(screen.getByTitle('tests.monitor.nudge_button'));
+            fireEvent.click(screen.getByRole('menuitem', { name: 'tests.monitor.nudge.preset_check' }));
             expect(mockSend).toHaveBeenCalledWith({
                 type: 'broadcast',
                 event: 'nudge',
-                payload: { message: 'tests.monitor.nudge_message' },
+                payload: { message: 'tests.monitor.nudge.preset_check' },
             });
         });
 

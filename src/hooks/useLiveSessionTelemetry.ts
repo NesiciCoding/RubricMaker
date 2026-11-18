@@ -233,7 +233,11 @@ export function useLiveSessionTelemetry({
                 config: { broadcast: { ack: true, self: false } },
             });
             channel.on('broadcast', { event: 'nudge' }, ({ payload }) => {
-                onNudgeRef.current?.((payload as { message: string }).message);
+                const message = (payload as { message: string }).message;
+                // Log the nudge in the student's own event history, so the transcript the teacher
+                // reads afterwards matches what actually happened during the lesson.
+                pushEvent({ type: 'nudge', at: new Date().toISOString(), value: message });
+                onNudgeRef.current?.(message);
             });
             channel.on('broadcast', { event: 'spotlight' }, ({ payload }) => {
                 setSpotlighted((payload as { on?: boolean } | null)?.on === true);

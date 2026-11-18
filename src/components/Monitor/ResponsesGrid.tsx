@@ -11,7 +11,6 @@ import {
     BatteryMedium,
     ClipboardCopy,
     Hourglass,
-    Send,
     ShieldCheck,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -24,6 +23,7 @@ import { buildColumnMeta, orderColumns, type ColumnSortRule } from '../../utils/
 import Modal from '../ui/Modal';
 import CompletionBar from './CompletionBar';
 import PresenceBadge from './PresenceBadge';
+import NudgeMenu from './NudgeMenu';
 import type { PaceTrend } from '../../utils/monitorSignals';
 import type { ConnectionState, PresenceState, ProctorFlagSummary } from '../../utils/proctorAggregator';
 import type { ProctorEvent, Test, TestAnswer, TestQuestion } from '../../types';
@@ -43,7 +43,8 @@ export interface ResponsesGridProctor {
     /** 'never_opened' / 'lost' when the student's signal is missing or stopped. */
     connection?: ConnectionState;
     silentMinutes?: number;
-    onNudge?: () => void;
+    /** Receives the nudge message the teacher picked. */
+    onNudge?: (message: string) => void;
 }
 
 export interface ResponsesGridStudentRow {
@@ -445,17 +446,7 @@ export default function ResponsesGrid({
                             );
                         })()}
                     {quiet && <span style={{ color: 'var(--text-dim)', fontSize: '0.78rem' }}>—</span>}
-                    {proctor.onNudge && (
-                        <button
-                            type="button"
-                            className="btn btn-ghost btn-icon btn-sm"
-                            onClick={proctor.onNudge}
-                            title={t('tests.monitor.nudge_button')}
-                            aria-label={t('tests.monitor.nudge_button')}
-                        >
-                            <Send size={13} aria-hidden="true" />
-                        </button>
-                    )}
+                    {proctor.onNudge && <NudgeMenu onSend={proctor.onNudge} iconOnly />}
                 </div>
             </td>
         );

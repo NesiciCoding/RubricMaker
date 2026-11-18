@@ -1509,7 +1509,8 @@
                 "paste": "Pegar",
                 "battery": "Batería",
                 "seb_status": "Comprobación de Safe Exam Browser",
-                "audio_play": "Audio reproducido"
+                "audio_play": "Audio reproducido",
+                "nudge": "Aviso"
             },
             "essay": {
                 "watch_live": "Ver en directo",
@@ -1575,6 +1576,11 @@
                 "behind_other": "{{count}} por detrás",
                 "clear": "Mostrar todos",
                 "empty": "Nadie coincide con este filtro."
+            },
+            "nudge": {
+                "preset_check": "Revisa la pregunta en la que estás",
+                "preset_time": "Quedan 5 minutos",
+                "preset_save": "No olvides guardar"
             }
         },
         "sections_title": "Secciones",
@@ -4907,7 +4913,7 @@
         "rb_live_monitor_intro_suffix": "(desde la página Pruebas para una prueba, o desde el diálogo de asignación para una redacción) para abrir una vista en vivo de la sesión. Esto requiere que la sincronización en la nube esté habilitada — sin ella, la página explica que puedes revisar el progreso posteriormente a partir de las respuestas guardadas o el borrador de cada alumno.",
         "rb_live_monitor_item_presence": "Presencia — un punto de color muestra si cada alumno está activo, inactivo o desconectado, según cuán recientemente se conectó su navegador.",
         "rb_live_monitor_item_grid": "Cuadrícula de respuestas (tests) — una matriz de alumnos × preguntas con barras de color, agrupada por clase con la media por pregunta y el total por alumno. Cada fila es un alumno y cada columna una pregunta; haz clic en la cabecera de una pregunta para abrir una galería con todas las respuestas. La presencia, la antigüedad del último latido y los indicadores de supervisión ocupan dos columnas fijas a la izquierda de la fila, y el chevrón abre el registro de supervisión completo del alumno dentro de la cuadrícula. Una línea sobre la tabla nombra las preguntas que los alumnos alcanzaron y dejaron en blanco: ahí se atasca la clase, no un alumno. Una franja fija sobre la cuadrícula resume la clase de un vistazo — marcados, parados, sin escribir, por detrás — y al hacer clic la cuadrícula se limita a esos alumnos.",
-        "rb_live_monitor_item_draft": "Borradores en directo (redacciones) — el monitor muestra a cada alumno que escribe esta tarea con una instantánea de su texto aproximadamente una vez por minuto (el número de palabras, el ritmo de escritura y el tiempo desde la última pulsación se actualizan cada pocos segundos), resaltando las palabras añadidas desde la instantánea anterior, además del número de palabras, el ritmo de escritura, el tiempo desde la última pulsación y una minigráfica del recuento. Haz clic en «Ver en directo» para abrir una vista spotlight que se actualiza cada cinco segundos: el borrador completo, medidas de frases y vocabulario, un registro de instantáneas y sus señales de supervisión. Las instantáneas se guardan en el servidor, así que tras recargar o perder la conexión la lista sigue mostrando el último borrador y su antigüedad. La fila también lo indica cuando un alumno aún no ha abierto la tarea o se ha cortado su conexión, en lugar de mostrar el mismo punto gris en ambos casos. Cada fila separa los caracteres escritos de los pegados (solo recuentos, nunca el texto), así que un párrafo pegado destaca. La vista spotlight traza además una cronología de la curva de palabras con los cambios de pestaña, los pegados y las pausas marcados, para que un tramo plano se vea de un vistazo. Cada fila indica además las palabras recién añadidas y cuándo, y la vista spotlight resalta la frase más reciente.",
+        "rb_live_monitor_item_draft": "Borradores en directo (redacciones) — el monitor muestra a cada alumno que escribe esta tarea con una instantánea de su texto aproximadamente una vez por minuto (el número de palabras, el ritmo de escritura y el tiempo desde la última pulsación se actualizan cada pocos segundos), resaltando las palabras añadidas desde la instantánea anterior, además del número de palabras, el ritmo de escritura, el tiempo desde la última pulsación y una minigráfica del recuento. Haz clic en «Ver en directo» para abrir una vista spotlight que se actualiza cada cinco segundos: el borrador completo, medidas de frases y vocabulario, un registro de instantáneas y sus señales de supervisión. Las instantáneas se guardan en el servidor, así que tras recargar o perder la conexión la lista sigue mostrando el último borrador y su antigüedad. La fila también lo indica cuando un alumno aún no ha abierto la tarea o se ha cortado su conexión, en lugar de mostrar el mismo punto gris en ambos casos. Cada fila separa los caracteres escritos de los pegados (solo recuentos, nunca el texto), así que un párrafo pegado destaca. La vista spotlight traza además una cronología de la curva de palabras con los cambios de pestaña, los pegados y las pausas marcados, para que un tramo plano se vea de un vistazo. Cada fila indica además las palabras recién añadidas y cuándo, y la vista spotlight resalta la frase más reciente. Los avisos pueden enviarse como mensajes preparados (revisa la pregunta, quedan cinco minutos, guarda), y cada uno queda registrado en el historial de eventos del profesor y del alumno.",
         "rb_live_monitor_item_writing_pace": "Ritmo de escritura (redacciones) — el botón «Ritmo de escritura» muestra las palabras por minuto de los últimos tres minutos, si el alumno acelera, escribe constante, se ralentiza o se ha detenido, y hace cuánto cambió el borrador por última vez.",
         "rb_live_monitor_item_hide_names": "Ocultar nombres — activar para anonimizar la vista, útil al compartir tu pantalla.",
         "rb_live_monitor_item_proctoring": "Señales de supervisión — recuentos de cambios de pestaña, copiar/pegar/cortar, nivel de batería y estado de Safe Exam Browser. Estas son solo señales orientativas: un alumno decidido puede falsearlas, así que úsalas para iniciar una conversación, no como prueba definitiva.",

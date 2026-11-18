@@ -675,11 +675,23 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     }, [hasDb, kind, monitorStudents.map((r) => r.studentId).join(','), testTeacherKeys]);
 
     const sendNudge = useCallback(
-        (studentId: string) => {
+        (studentId: string, message: string) => {
             channelsRef.current.get(studentId)?.send({
                 type: 'broadcast',
                 event: 'nudge',
-                payload: { message: t('tests.monitor.nudge_message') },
+                payload: { message },
+            });
+            // The teacher's own log keeps what was sent, so both sides tell the same story and the
+            // in-row history shows when a nudge went out.
+            setLiveStates((prev) => {
+                const current = prev[studentId] ?? emptyLiveState(studentId);
+                return {
+                    ...prev,
+                    [studentId]: {
+                        ...current,
+                        events: [...current.events, { type: 'nudge', at: new Date().toISOString(), value: message }],
+                    },
+                };
             });
             if (hideNames) {
                 // Sharing the anonymized monitor must never leak a real name in the toast.
@@ -696,9 +708,12 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         },
         [t, hideNames, monitorStudents, showToast]
     );
-    const nudgeFocusedStudent = useCallback(() => {
-        if (focusedStudentId) sendNudge(focusedStudentId);
-    }, [focusedStudentId, sendNudge]);
+    const nudgeFocusedStudent = useCallback(
+        (message: string) => {
+            if (focusedStudentId) sendNudge(focusedStudentId, message);
+        },
+        [focusedStudentId, sendNudge]
+    );
 
     // ── Live level override (roadmap 27.2) — persists via the owner-scoped
     // set_placement_override RPC, consumed by the student's NEXT next-placement-question call;
@@ -1392,7 +1407,9 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                                 <button
                                                     type="button"
                                                     className="btn btn-ghost btn-sm"
-                                                    onClick={() => sendNudge(row.studentId)}
+                                                    onClick={() =>
+                                                        sendNudge(row.studentId, t('tests.monitor.nudge_message'))
+                                                    }
                                                     title={t('tests.monitor.nudge_button')}
                                                     style={{ display: 'flex', alignItems: 'center', gap: 4 }}
                                                 >
@@ -1517,7 +1534,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                             statusSummary: showStatusSummary
                                                 ? statusSummary(row, stalled, pace)
                                                 : undefined,
-                                            onNudge: () => sendNudge(row.studentId),
+                                            onNudge: (message: string) => sendNudge(row.studentId, message),
                                         },
                                     };
                                 })}
