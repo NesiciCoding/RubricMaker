@@ -297,7 +297,7 @@ export default function ImportRubricModal({ onClose, onImport }: Props) {
                                 }}
                             >
                                 <AlertTriangle size={14} style={{ marginTop: 1, flexShrink: 0 }} />
-                                {t(w.key, w.params)}
+                                {w.params ? t(w.key, w.params) : t(w.key)}
                             </div>
                         ))}
 

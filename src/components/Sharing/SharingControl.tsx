@@ -2,6 +2,7 @@ import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { MaterialAccess, MaterialSharing, MaterialVisibility } from '../../types';
 import { MATERIAL_VISIBILITIES, type ResolvedSharing } from '../../utils/materialSharing';
+import type { TFunction } from 'i18next';
 
 interface Props {
     /** The item's own setting; undefined means it inherits. */
@@ -14,10 +15,7 @@ interface Props {
 
 const INHERIT = 'inherit';
 
-function inheritedLabel(
-    t: (key: string, opts?: Record<string, unknown>) => string,
-    inherited: ResolvedSharing
-): string {
+function inheritedLabel(t: TFunction<'translation', undefined>, inherited: ResolvedSharing): string {
     const visibility = t(`sharing.visibility_${inherited.sharing.visibility}`);
     if (inherited.source === 'folder' && inherited.folder)
         return t('sharing.inherit_folder', { folder: inherited.folder.name, visibility });

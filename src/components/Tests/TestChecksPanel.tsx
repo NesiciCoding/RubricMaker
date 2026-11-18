@@ -176,7 +176,7 @@ export default function TestChecksPanel({
                                 }}
                             >
                                 <CheckCircle2 size={14} style={{ color: 'var(--green-text)' }} aria-hidden="true" />
-                                {t(check.labelKey, check.values)}
+                                {check.values ? t(check.labelKey, check.values) : t(check.labelKey)}
                             </li>
                         ))}
                     </ul>

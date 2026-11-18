@@ -38,7 +38,8 @@ const BATCH_YIELD_EVERY = 10;
  */
 // Shares the `exportDoc.*` keys docxExport.ts's own docLabel() uses, so the same label is
 // identical across the DOCX and PDF/HTML rubric exports.
-const docLabel = (key: string, opts?: Record<string, unknown>): string => i18n.t(`exportDoc.${key}`, opts);
+const docLabel = (key: string, opts?: Record<string, unknown>): string =>
+    opts ? i18n.t(`exportDoc.${key}`, opts) : i18n.t(`exportDoc.${key}`);
 
 function parseMd(text: string) {
     if (!text) return text;
@@ -630,7 +631,8 @@ function buildTestSummaryHTML(
     student?: Student,
     achieveThreshold?: number
 ): string {
-    const tx = (key: string, opts?: Record<string, unknown>) => i18n.t(`tests.export.summary.${key}`, opts);
+    const tx = (key: string, opts?: Record<string, unknown>) =>
+        opts ? i18n.t(`tests.export.summary.${key}`, opts) : i18n.t(`tests.export.summary.${key}`);
     const questions = calcQuestionBreakdowns(studentId, studentTests, test);
     const skills = calcSkillBreakdowns(studentId, studentTests, test);
     const questionsById = new Map(effectiveTestQuestions(studentId, studentTests, test).map((q) => [q.id, q]));

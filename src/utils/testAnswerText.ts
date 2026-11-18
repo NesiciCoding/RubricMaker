@@ -10,7 +10,8 @@ import { estimatePlacement, type PlacementPathStep } from './placementResult';
 import { summarizeProctorFlags } from './proctorAggregator';
 
 /** Shorthand for the test-summary-export string namespace. */
-const tx = (key: string, opts?: Record<string, unknown>) => i18n.t(`tests.export.summary.${key}`, opts);
+const tx = (key: string, opts?: Record<string, unknown>) =>
+    opts ? i18n.t(`tests.export.summary.${key}`, opts) : i18n.t(`tests.export.summary.${key}`);
 
 /**
  * Canonical "which submission represents this student" selector, shared by every export format:
