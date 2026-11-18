@@ -1541,7 +1541,9 @@
                 "never_opened": "Pas encore ouvert",
                 "lost_now": "Aucun signal",
                 "lost_one": "Aucun signal · {{count}} min",
-                "lost_other": "Aucun signal · {{count}} min"
+                "lost_other": "Aucun signal · {{count}} min",
+                "announce_lost": "{{name}} : aucun signal",
+                "announce_never_opened": "{{name}} n'a pas encore ouvert"
             }
         },
         "sections_title": "Sections",
