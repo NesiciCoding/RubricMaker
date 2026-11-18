@@ -191,7 +191,9 @@ test.describe('Live monitor — essay kind', () => {
             // word count should reach the monitor shortly after typing stops.
             const sentence = 'The autumn leaves fell gently on the quiet lane while students walked home.';
             await essay.typeInEditor(sentence);
-            await expect(supabasePage.getByText('13 words')).toBeVisible({ timeout: 25_000 });
+            // The draft panel's own count — the draft-analysis card also reads "13 words" for the
+            // average and longest sentence once the text lands, so the panel pins which one.
+            await expect(supabasePage.getByTestId('draft-word-count')).toHaveText('13 words', { timeout: 25_000 });
 
             // A one-student assignment opens straight into the spotlight view, which shows the
             // live draft without a click (markup stripped by LiveDraftPanel). The monitor asks
@@ -250,7 +252,9 @@ test.describe('Live monitor — essay kind', () => {
                 'The tide came in slowly covering the sandbars where the gulls had been resting all morning.';
             await essay.typeInEditor(sentence);
             // Proves the live channel is up before the hand-in (snapshots every ~5s).
-            await expect(supabasePage.getByText('16 words')).toBeVisible({ timeout: 25_000 });
+            await expect(supabasePage.getByTestId('draft-word-count')).toHaveText('16 words', {
+                timeout: 25_000,
+            });
 
             // ── SIMULTANEOUS: student hands in while the teacher watches ────────
             await essay.submitButton().click();
