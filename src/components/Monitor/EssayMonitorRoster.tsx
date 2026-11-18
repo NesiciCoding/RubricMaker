@@ -2,6 +2,7 @@ import React from 'react';
 import {
     AlertTriangle,
     ClipboardCopy,
+    Flag,
     Hourglass,
     MoveRight,
     PauseCircle,
@@ -57,6 +58,10 @@ export interface EssayMonitorRow {
     /** Characters typed vs pasted so far — counts only, never content. */
     typedChars?: number;
     pastedChars?: number;
+    /** Holds the proctoring cursor (j/k, n, f act on this row). */
+    selected?: boolean;
+    /** Flagged by the teacher during this session. */
+    flagged?: boolean;
 }
 
 export interface EssayMonitorRosterProps {
@@ -134,6 +139,8 @@ export default function EssayMonitorRoster({ rows, onWatch, showWritingPace = fa
                                 row.flags.tabSwitchCount >= TAB_SWITCH_WARNING_THRESHOLD || stalled
                                     ? '3px solid var(--red)'
                                     : '3px solid transparent',
+                            outline: row.selected ? '2px solid var(--accent-text)' : undefined,
+                            outlineOffset: row.selected ? 1 : undefined,
                             borderRadius: 10,
                             padding: '10px 12px',
                             display: 'flex',
@@ -144,6 +151,16 @@ export default function EssayMonitorRoster({ rows, onWatch, showWritingPace = fa
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                             <span style={{ fontWeight: 700, color: 'var(--text)' }}>{row.displayName}</span>
                             <PresenceBadge presence={row.presence} status={row.status} />
+                            {row.flagged && (
+                                <span
+                                    className="badge badge-yellow"
+                                    data-testid={`essay-flagged-${row.studentId}`}
+                                    style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                                >
+                                    <Flag size={11} aria-hidden="true" />
+                                    {t('tests.monitor.shortcuts.flagged')}
+                                </span>
+                            )}
                             {row.connection === 'never_opened' && (
                                 <span className="badge badge-yellow" data-testid={`essay-connection-${row.studentId}`}>
                                     {t('tests.monitor.signal.never_opened')}

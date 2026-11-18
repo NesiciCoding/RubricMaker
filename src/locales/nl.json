@@ -1627,6 +1627,12 @@
                 "summary_words_other": "{{count}} woorden",
                 "summary_nudges_one": "{{count}} zetje",
                 "summary_nudges_other": "{{count}} zetjes"
+            },
+            "shortcuts": {
+                "hint": "j / k verplaatsen · spatie volgen · n zetje · f markeren",
+                "flagged": "Gemarkeerd",
+                "flag_on": "Markeren",
+                "flag_off": "Gemarkeerd — klik om te demarkeren"
             }
         },
         "sections_title": "Secties",
@@ -5531,7 +5537,8 @@
         "route_essay_projector_label": "Geprojecteerde tekst",
         "route_essay_projector_desc": "Alleen-lezen weergave van één tekst voor het projectiescherm in de klas, zonder knoppen of klasselijst.",
         "es_creating_item_projector": "Zet één tekst in een tweede venster op het projectiescherm om over één zin te praten, terwijl de monitor de rest van de klas blijft volgen.",
-        "rb_live_monitor_item_session_export": "Exporteer de sessie als CSV met per leerling de aantallen, stilgevallen minuten, leeftijd van de tekst, geschreven woorden en het logboek van zetjes — plus een PDF-samenvatting van één pagina — om later bij een integriteitsvraag bij te voegen."
+        "rb_live_monitor_item_session_export": "Exporteer de sessie als CSV met per leerling de aantallen, stilgevallen minuten, leeftijd van de tekst, geschreven woorden en het logboek van zetjes — plus een PDF-samenvatting van één pagina — om later bij een integriteitsvraag bij te voegen.",
+        "rb_live_monitor_item_shortcuts": "Monitor vanuit het toetsenbord terwijl je staat: j/k wisselt van leerling, spatie opent of sluit de volgweergave, n stuurt een zetje en f markeert de leerling waar je op staat, zonder de muis te pakken."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",

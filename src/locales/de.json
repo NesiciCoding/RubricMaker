@@ -1627,6 +1627,12 @@
                 "summary_words_other": "{{count}} Wörter",
                 "summary_nudges_one": "{{count}} Hinweis",
                 "summary_nudges_other": "{{count}} Hinweise"
+            },
+            "shortcuts": {
+                "hint": "j / k bewegen · Leertaste verfolgen · n Hinweis · f markieren",
+                "flagged": "Markiert",
+                "flag_on": "Markieren",
+                "flag_off": "Markiert — zum Aufheben klicken"
             }
         },
         "sections_title": "Abschnitte",
@@ -5531,7 +5537,8 @@
         "route_essay_projector_label": "Projizierter Entwurf",
         "route_essay_projector_desc": "Nur-Lese-Ansicht eines einzelnen Entwurfs für den Beamer im Klassenzimmer, ohne Steuerung und ohne Klassenliste.",
         "es_creating_item_projector": "Einen Entwurf in einem zweiten Fenster auf den Beamer legen, um über einen Satz zu sprechen, während der Monitor den Rest der Klasse weiter beobachtet.",
-        "rb_live_monitor_item_session_export": "Exportiere die Sitzung als CSV mit Zählungen, Stock-Minuten, Alter des Textes, geschriebenen Wörtern und dem Hinweisprotokoll pro Schülerin oder Schüler — plus einer einseitigen PDF-Zusammenfassung —, um sie später bei einer Integritätsfrage beizulegen."
+        "rb_live_monitor_item_session_export": "Exportiere die Sitzung als CSV mit Zählungen, Stock-Minuten, Alter des Textes, geschriebenen Wörtern und dem Hinweisprotokoll pro Schülerin oder Schüler — plus einer einseitigen PDF-Zusammenfassung —, um sie später bei einer Integritätsfrage beizulegen.",
+        "rb_live_monitor_item_shortcuts": "Aufsicht per Tastatur im Stehen: j/k wechselt zwischen Schülerinnen und Schülern, Leertaste öffnet oder schließt die Verfolgung, n sendet einen Hinweis und f markiert die aktuelle Person, ohne zur Maus zu greifen."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",

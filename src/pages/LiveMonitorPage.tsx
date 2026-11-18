@@ -31,6 +31,7 @@ import { InlineMonitorSkeleton } from '../components/ui/Skeleton';
 import { useAssessment, useEssays, useStudents, useClasses, useSettings } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { useDbStatus } from '../hooks/useDbStatus';
+import { useMonitorShortcuts } from '../hooks/useMonitorShortcuts';
 import { useOwnOrSharedItem } from '../hooks/useSharedMaterials';
 import { loadSupabaseConfig } from '../services/database';
 import { LiveDraftAdapter, type PersistedDraftSnapshot } from '../services/database/LiveDraftAdapter';
@@ -220,6 +221,10 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     // The one student whose 5s spotlight view is open. A single-student assignment opens straight
     // into it; a class roster starts on the per-minute roster.
     const [focusedStudentId, setFocusedStudentId] = useState<string | null>(null);
+    // The row the proctoring keys act on. Kept apart from the spotlight so j/k can walk the class
+    // with the roster still on screen, and n/f can aim without opening a draft.
+    const [cursorStudentId, setCursorStudentId] = useState<string | null>(null);
+    const [flaggedStudentIds, setFlaggedStudentIds] = useState<Set<string>>(new Set());
     const [testTeacherKeys, setTestTeacherKeys] = useState<Record<string, string>>({});
     // Which test.id the teacher-key lookup has finished for. The lookup is what reveals
     // in-progress students (they have no `student_tests` row until hand-in), so until it
@@ -950,6 +955,49 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         ? visibleRows.filter((_, index) => triageMatches(triageRows[index], triageFilter))
         : visibleRows;
 
+    // A row the filters removed can't hold the cursor, so it falls back to the first visible one.
+    const cursorId =
+        cursorStudentId && shownRows.some((row) => row.studentId === cursorStudentId)
+            ? cursorStudentId
+            : (shownRows[0]?.studentId ?? null);
+
+    const stepCursor = (delta: number) => {
+        if (shownRows.length === 0) return;
+        const current = shownRows.findIndex((row) => row.studentId === cursorId);
+        const nextIndex = Math.min(shownRows.length - 1, Math.max(0, (current < 0 ? 0 : current) + delta));
+        const nextId = shownRows[nextIndex].studentId;
+        setCursorStudentId(nextId);
+        // While the spotlight is open the cursor follows into it, so the teacher reads one draft
+        // after another instead of returning to the roster between students.
+        setFocusedStudentId((focused) => (focused === null ? null : nextId));
+    };
+
+    const toggleFlag = (studentId: string | null) => {
+        if (!studentId) return;
+        setFlaggedStudentIds((previous) => {
+            const next = new Set(previous);
+            if (next.has(studentId)) next.delete(studentId);
+            else next.add(studentId);
+            return next;
+        });
+    };
+
+    useMonitorShortcuts(
+        {
+            next: () => stepCursor(1),
+            previous: () => stepCursor(-1),
+            spotlight: () => {
+                if (!cursorId) return;
+                setFocusedStudentId((focused) => (focused === cursorId ? null : cursorId));
+            },
+            nudge: () => {
+                if (cursorId) sendNudge(cursorId, t('tests.monitor.nudge_message'));
+            },
+            flag: () => toggleFlag(cursorId),
+        },
+        kind === 'essay' && !sortModalOpen && shownRows.length > 0
+    );
+
     // Where the class — not one student — is stuck: questions someone answered past but left blank.
     const stuck = useMemo(() => {
         if (kind !== 'test' || !test || isLevelGrid) return [];
@@ -1308,6 +1356,14 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                         <FileText size={14} />
                         {t('tests.monitor.export.button_pdf')}
                     </button>
+                    {kind === 'essay' && (
+                        <span
+                            data-testid="monitor-shortcuts-hint"
+                            style={{ fontSize: '0.78rem', color: 'var(--text-dim)' }}
+                        >
+                            {t('tests.monitor.shortcuts.hint')}
+                        </span>
+                    )}
                     <HelpPopover title={t('help.proctoring_title')}>{t('help.proctoring_body')}</HelpPopover>
                 </div>
 
@@ -1687,6 +1743,8 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                                 focusedRow.live.events
                                             )}
                                             flags={focusedRow.flags}
+                                            flagged={flaggedStudentIds.has(focusedRow.studentId)}
+                                            onToggleFlag={() => toggleFlag(focusedRow.studentId)}
                                             showWritingPace={showWritingPace}
                                             onNudge={nudgeFocusedStudent}
                                             projectorHref={`/essays/${params.assignmentId ?? ''}/monitor/project/${focusedRow.studentId}`}
@@ -1710,6 +1768,8 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                                 status: row.status,
                                                 connection: row.connection,
                                                 silentMinutes: row.silentMinutes,
+                                                selected: row.studentId === cursorId,
+                                                flagged: flaggedStudentIds.has(row.studentId),
                                                 typedChars: row.live.snapshot?.typedChars,
                                                 pastedChars: row.live.snapshot?.pastedChars,
                                                 wordCount: row.live.snapshot?.wordCount,
