@@ -159,10 +159,11 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
             key: 'students',
             icon: Users,
             label: t('sidebar.domain_students'),
-            matchPrefixes: ['/students', '/cefr-overview', '/vocabulary', '/messages'],
+            matchPrefixes: ['/students', '/cefr-overview', '/grammar-overview', '/vocabulary', '/messages'],
             items: [
                 { to: '/students', icon: Users, label: t('navigation.students') },
                 { to: '/cefr-overview', icon: GraduationCap, label: t('navigation.cefr_overview') },
+                { to: '/grammar-overview', icon: Languages, label: t('navigation.grammar_overview') },
                 { to: '/vocabulary', icon: Languages, label: t('navigation.vocabulary') },
                 { to: '/messages', icon: Mail, label: t('navigation.messages') },
             ],

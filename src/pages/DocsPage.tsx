@@ -28,6 +28,7 @@ import {
     Newspaper,
     Bell,
     BarChart2,
+    ListChecks,
 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import ShortcutList from '../components/ui/ShortcutList';
@@ -281,6 +282,12 @@ export function getRouteTree(t: TFunction): RouteNode[] {
                             description: t('docs.route_learning_path_desc'),
                             color: '#10b981',
                         },
+                        {
+                            path: '/students/:id/grammar-overview',
+                            label: t('docs.route_student_grammar_overview_label'),
+                            description: t('docs.route_student_grammar_overview_desc'),
+                            color: '#10b981',
+                        },
                     ],
                 },
             ],
@@ -289,6 +296,12 @@ export function getRouteTree(t: TFunction): RouteNode[] {
             path: '/cefr-overview',
             label: t('docs.route_cefr_overview_label'),
             description: t('docs.route_cefr_overview_desc'),
+            color: '#f59e0b',
+        },
+        {
+            path: '/grammar-overview',
+            label: t('docs.route_grammar_overview_label'),
+            description: t('docs.route_grammar_overview_desc'),
             color: '#f59e0b',
         },
         {
@@ -1735,6 +1748,21 @@ function CefrTab() {
                     ]}
                 />
                 <InfoBox color="#f59e0b">{t('docs.ce_overview_info')}</InfoBox>
+            </FeatureSection>
+
+            <FeatureSection icon={ListChecks} title={t('docs.gr_overview_title')} color="#0ea5e9">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    {t('docs.gr_overview_intro')}
+                </p>
+                <FeatureList
+                    items={[
+                        t('docs.gr_overview_item_whole_class'),
+                        t('docs.gr_overview_item_per_student'),
+                        t('docs.gr_overview_item_tests'),
+                        t('docs.gr_overview_item_rubrics'),
+                    ]}
+                />
+                <InfoBox color="#0ea5e9">{t('docs.gr_overview_info')}</InfoBox>
             </FeatureSection>
 
             <FeatureSection icon={Award} title={t('docs.ce_mastery_targets_title')} color="#10b981">

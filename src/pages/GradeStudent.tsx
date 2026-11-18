@@ -31,6 +31,7 @@ import {
 import PageTour from '../components/Tour/PageTour';
 import Topbar from '../components/Layout/Topbar';
 import CommentBankModal from '../components/Comments/CommentBankModal';
+import RubricGrammarPanel from '../components/Grammar/RubricGrammarPanel';
 import AttachmentViewer from '../components/Attachments/AttachmentViewer';
 import DocumentAnalysisPanel from '../components/Essay/DocumentAnalysisPanel';
 import ScanCaptureModal from '../components/Grading/ScanCaptureModal';
@@ -115,6 +116,7 @@ export default function GradeStudent() {
 
 function GradeStudentEditor() {
     const { t, i18n } = useTranslation();
+    const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
     const { rubricId, studentId } = useParams();
     const navigate = useNavigate();
     const {
@@ -2118,6 +2120,10 @@ function GradeStudentEditor() {
                         })}
                     </div>
                 )}
+
+                <div style={{ marginBottom: 20 }}>
+                    <RubricGrammarPanel rubric={rubric} entries={sr.entries} lang={lang} />
+                </div>
 
                 {/* Overall comment */}
                 <div className="card">

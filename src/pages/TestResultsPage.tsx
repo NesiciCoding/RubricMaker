@@ -38,6 +38,7 @@ import { questionTypeLabelKey } from '../utils/questionTypeKey';
 import { buildReviewDeck } from '../utils/questionsToDeck';
 import { versionForStudent } from '../utils/testVersions';
 import CommentBankModal from '../components/Comments/CommentBankModal';
+import GrammarStandardsPanel from '../components/Grammar/GrammarStandardsPanel';
 import type { TestAnswer, TestQuestion, ProctorEventType, CommentBankItem, Rubric, ScoreEntry } from '../types';
 
 const isClozeType = (type: TestQuestion['type']) =>
@@ -435,7 +436,8 @@ const PROCTOR_EVENT_TYPES: ProctorEventType[] = [
 ];
 
 export default function TestResultsPage() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
     const tour = usePageTourState('tresults');
     const navigate = useNavigate();
     const { testId, studentTestId } = useParams<{ testId: string; studentTestId: string }>();
@@ -1195,6 +1197,14 @@ export default function TestResultsPage() {
                         </div>
                     </div>
                 )}
+                <GrammarStandardsPanel
+                    test={test}
+                    studentTests={studentTests}
+                    students={students}
+                    lang={lang}
+                    focusStudentId={studentTest?.studentId}
+                    onOpenBuilder={() => navigate(`/tests/${test.id}`)}
+                />
             </div>
             {commentBankFor && (
                 <CommentBankModal onClose={() => setCommentBankFor(null)} onSelect={handleInsertComment} />

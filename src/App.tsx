@@ -49,6 +49,8 @@ const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 const StudentCefrOverviewPage = lazy(() => import('./pages/StudentCefrOverviewPage'));
 const StudentLearningPathPage = lazy(() => import('./pages/StudentLearningPathPage'));
 const CefrOverviewPage = lazy(() => import('./pages/CefrOverviewPage'));
+const GrammarOverviewPage = lazy(() => import('./pages/GrammarOverviewPage'));
+const StudentGrammarOverviewPage = lazy(() => import('./pages/StudentGrammarOverviewPage'));
 const VocabularyDashboardPage = lazy(() => import('./pages/VocabularyDashboardPage'));
 const TestListPage = lazy(() => import('./pages/TestListPage'));
 const TestBuilderPage = lazy(() => import('./pages/TestBuilderPage'));
@@ -310,6 +312,11 @@ export default function App() {
                                     <Route path="/students/:id/cefr-overview" element={<StudentCefrOverviewPage />} />
                                     <Route path="/students/:id/learning-path" element={<StudentLearningPathPage />} />
                                     <Route path="/cefr-overview" element={<CefrOverviewPage />} />
+                                    <Route
+                                        path="/students/:id/grammar-overview"
+                                        element={<StudentGrammarOverviewPage />}
+                                    />
+                                    <Route path="/grammar-overview" element={<GrammarOverviewPage />} />
                                     <Route path="/vocabulary" element={<VocabularyDashboardPage />} />
                                     <Route path="/tests" element={<TestListPage />} />
                                     <Route
