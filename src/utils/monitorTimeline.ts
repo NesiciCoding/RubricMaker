@@ -22,7 +22,7 @@ export interface MonitorTimeline {
 
 /** A lesson's worth of history; longer than any single essay session, short enough to read. */
 export const TIMELINE_WINDOW_MS = 30 * 60_000;
-/** Below this, two equal word counts are just a slow minute, not a pause worth marking. */
+/** Below this, an unchanged word count is just a slow minute, not a pause worth marking. */
 const IDLE_GAP_MS = 5 * 60_000;
 
 /**
@@ -53,15 +53,21 @@ export function buildTimeline(
         markers.push({ at, kind: event.type });
     }
 
+    // Samples are change points: appendWordSample drops a repeated count, so a stall leaves no
+    // samples at all and shows up only as the time between two of them. Each count is held until
+    // the next change, and the last one until now. Only the part of a stretch inside the window counts.
     let longestFlatMs = 0;
-    for (let index = 1; index < points.length; index += 1) {
-        const previous = points[index - 1];
-        const current = points[index];
-        if (previous.words !== current.words) continue;
-        const gap = current.at - previous.at;
+    const notePause = (start: number, end: number, markerAt: number) => {
+        const gap = end - Math.max(start, from);
+        if (gap <= 0) return;
         longestFlatMs = Math.max(longestFlatMs, gap);
-        if (gap >= IDLE_GAP_MS) markers.push({ at: current.at, kind: 'idle' });
+        if (gap >= IDLE_GAP_MS) markers.push({ at: markerAt, kind: 'idle' });
+    };
+    for (let index = 1; index < points.length; index += 1) {
+        notePause(points[index - 1].at, points[index].at, points[index].at);
     }
+    const newest = points.at(-1);
+    if (newest) notePause(newest.at, to, to);
     markers.sort((a, b) => a.at - b.at);
 
     return { from, to, points, markers, longestFlatMinutes: Math.round(longestFlatMs / 60_000) };
