@@ -138,6 +138,9 @@ export default function EssayDraftProjectorPage() {
     if (!hasDb) {
         return (
             <div style={screenStyle} data-testid="essay-draft-projector">
+                <h1 style={{ margin: 0, fontSize: 'clamp(20px, 2vw, 28px)', lineHeight: 1.2 }}>
+                    {t('tests.monitor.projector.title')}
+                </h1>
                 <p className="text-muted">{t('tests.monitor.projector.db_required')}</p>
                 {backLink}
             </div>
