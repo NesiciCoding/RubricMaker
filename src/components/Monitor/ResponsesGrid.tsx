@@ -1,5 +1,19 @@
 import React, { useMemo, useState } from 'react';
-import { X, ChevronDown, ChevronRight, Flag, TrendingUp, TrendingDown, MoveRight } from 'lucide-react';
+import {
+    X,
+    ChevronDown,
+    ChevronRight,
+    Flag,
+    TrendingUp,
+    TrendingDown,
+    MoveRight,
+    AlertTriangle,
+    BatteryMedium,
+    ClipboardCopy,
+    Hourglass,
+    Send,
+    ShieldCheck,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cellState, cellPoints, isAnswered, type CellState } from '../../utils/responseCells';
 import { parseClozeGaps, parseHotTextFragments, plainQuestionPromptText } from '../../utils/clozeParse';
@@ -9,9 +23,25 @@ import { parseAudioResponse } from '../../utils/audioResponseCode';
 import { buildColumnMeta, orderColumns, type ColumnSortRule } from '../../utils/responseGridOrder';
 import Modal from '../ui/Modal';
 import CompletionBar from './CompletionBar';
+import PresenceBadge from './PresenceBadge';
 import type { PaceTrend } from '../../utils/monitorSignals';
-import type { Test, TestAnswer, TestQuestion } from '../../types';
+import type { PresenceState, ProctorFlagSummary } from '../../utils/proctorAggregator';
+import type { ProctorEvent, Test, TestAnswer, TestQuestion } from '../../types';
 import type { TFunction } from 'i18next';
+
+/** Live proctoring state folded into a matrix row instead of a separate list of cards. */
+export interface ResponsesGridProctor {
+    presence: PresenceState;
+    status?: 'submitted' | 'opened' | 'late';
+    flags: ProctorFlagSummary;
+    /** Merged persisted + live event log, newest last; the expandable detail row shows the tail. */
+    events: ProctorEvent[];
+    /** Whole minutes without progress once the stall flag is on. */
+    stalledMinutes?: number | null;
+    /** One-line human summary, e.g. "Handed in · 82% done". */
+    statusSummary?: string;
+    onNudge?: () => void;
+}
 
 export interface ResponsesGridStudentRow {
     studentId: string;
@@ -26,6 +56,8 @@ export interface ResponsesGridStudentRow {
     sectionPath?: string[];
     /** Ahead / on pace / behind against the class median; omitted when the pace indicator is off. */
     pace?: PaceTrend;
+    /** Presence + proctoring signals; when set, the grid grows the signal column and the in-row log. */
+    proctor?: ResponsesGridProctor;
 }
 
 const PACE_ICON: Record<PaceTrend, { Icon: typeof TrendingUp; color: string }> = {
@@ -45,6 +77,14 @@ export interface ResponsesGridProps {
     showClassProgress?: boolean;
     /** Marks the halfway question and the final question (in the test's authored order) on the header. */
     showMilestones?: boolean;
+}
+
+const TAB_SWITCH_WARNING_THRESHOLD = 3;
+const BATTERY_WARNING_LEVEL = 20;
+const DETAIL_EVENT_LIMIT = 12;
+
+function eventTime(at: string): string {
+    return new Date(at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
 const CELL_COLORS: Record<CellState, string> = {
@@ -149,6 +189,8 @@ export default function ResponsesGrid({
     const { t } = useTranslation();
     const [galleryQuestion, setGalleryQuestion] = useState<TestQuestion | null>(null);
     const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+    const [openDetail, setOpenDetail] = useState<Set<string>>(new Set());
+    const showProctor = rows.some((row) => row.proctor);
 
     const questionsById = useMemo(() => new Map(test.questions.map((q) => [q.id, q])), [test.questions]);
 
@@ -182,6 +224,17 @@ export default function ResponsesGrid({
         () => orderColumns(buildColumnMeta(test, avgByQuestion), sortRules ?? [{ key: 'original', dir: 'asc' }]),
         [test, avgByQuestion, sortRules]
     );
+
+    const columnCount = 1 + (showProctor ? 1 : 0) + 1 + (showProgress ? 1 : 0) + orderedColumns.length;
+
+    function toggleDetail(studentId: string) {
+        setOpenDetail((prev) => {
+            const next = new Set(prev);
+            if (next.has(studentId)) next.delete(studentId);
+            else next.add(studentId);
+            return next;
+        });
+    }
 
     const milestones = useMemo(() => {
         const count = test.questions.length;
@@ -304,6 +357,173 @@ export default function ResponsesGrid({
         whiteSpace: 'nowrap',
     };
 
+    function renderSignals(row: ResponsesGridStudentRow) {
+        const proctor = row.proctor;
+        if (!proctor) return null;
+        const battery = proctor.flags.battery;
+        const clipboard = proctor.flags.copyCount + proctor.flags.cutCount + proctor.flags.pasteCount;
+        const stalled = proctor.stalledMinutes ?? null;
+        const flagged = proctor.flags.tabSwitchCount >= TAB_SWITCH_WARNING_THRESHOLD || stalled !== null;
+        const quiet =
+            proctor.flags.tabSwitchCount === 0 &&
+            clipboard === 0 &&
+            !battery &&
+            !proctor.flags.sebActive &&
+            stalled === null &&
+            !row.pace;
+        return (
+            <td style={{ padding: '4px 8px', whiteSpace: 'nowrap' }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    {proctor.flags.tabSwitchCount > 0 && (
+                        <span
+                            className={`badge ${flagged ? 'badge-red' : 'badge-yellow'}`}
+                            title={t('tests.monitor.flags.tabSwitch', { count: proctor.flags.tabSwitchCount })}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                        >
+                            <AlertTriangle size={11} aria-hidden="true" />
+                            {t('tests.monitor.flags.tabSwitch', { count: proctor.flags.tabSwitchCount })}
+                        </span>
+                    )}
+                    {clipboard > 0 && (
+                        <span
+                            className="badge badge-blue"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                        >
+                            <ClipboardCopy size={11} aria-hidden="true" />
+                            {t('tests.monitor.flags.clipboard', { count: clipboard })}
+                        </span>
+                    )}
+                    {battery && (
+                        <span
+                            className={`badge ${battery.level <= BATTERY_WARNING_LEVEL ? 'badge-red' : ''}`}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                            title={t('tests.monitor.flags.battery', {
+                                level: battery.level,
+                                charging: battery.charging ? '+' : '',
+                            })}
+                        >
+                            <BatteryMedium size={11} aria-hidden="true" />
+                            {t('tests.monitor.flags.battery', {
+                                level: battery.level,
+                                charging: battery.charging ? '+' : '',
+                            })}
+                        </span>
+                    )}
+                    {proctor.flags.sebActive && (
+                        <span
+                            className="badge badge-green"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                        >
+                            <ShieldCheck size={11} aria-hidden="true" />
+                            {t('tests.monitor.flags.seb')}
+                        </span>
+                    )}
+                    {stalled !== null && (
+                        <span
+                            className="badge badge-yellow"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                            title={t('tests.monitor.stalled_badge', { count: stalled })}
+                        >
+                            <Hourglass size={11} aria-hidden="true" />
+                            {t('tests.monitor.stalled_badge', { count: stalled })}
+                        </span>
+                    )}
+                    {row.pace &&
+                        (() => {
+                            const { Icon, color } = PACE_ICON[row.pace];
+                            return (
+                                <span
+                                    className="badge"
+                                    style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color }}
+                                >
+                                    <Icon size={11} aria-hidden="true" />
+                                    {t(`tests.monitor.pace.${row.pace}`)}
+                                </span>
+                            );
+                        })()}
+                    {quiet && <span style={{ color: 'var(--text-dim)', fontSize: '0.78rem' }}>—</span>}
+                    {proctor.onNudge && (
+                        <button
+                            type="button"
+                            className="btn btn-ghost btn-icon btn-sm"
+                            onClick={proctor.onNudge}
+                            title={t('tests.monitor.nudge_button')}
+                            aria-label={t('tests.monitor.nudge_button')}
+                        >
+                            <Send size={13} aria-hidden="true" />
+                        </button>
+                    )}
+                </div>
+            </td>
+        );
+    }
+
+    function renderDetailRow(row: ResponsesGridStudentRow) {
+        const proctor = row.proctor;
+        if (!proctor || !openDetail.has(row.studentId)) return null;
+        const recent = proctor.events.slice(-DETAIL_EVENT_LIMIT).reverse();
+        return (
+            <tr data-testid={`proctor-detail-${row.studentId}`}>
+                <td
+                    colSpan={columnCount}
+                    style={{
+                        padding: '8px 12px 10px',
+                        background: 'var(--bg)',
+                        borderBottom: '1px solid var(--border)',
+                    }}
+                >
+                    {proctor.statusSummary && (
+                        <p style={{ margin: '0 0 6px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                            {proctor.statusSummary}
+                        </p>
+                    )}
+                    <div
+                        style={{
+                            fontSize: '0.7rem',
+                            fontWeight: 700,
+                            letterSpacing: '0.04em',
+                            textTransform: 'uppercase',
+                            color: 'var(--text-dim)',
+                        }}
+                    >
+                        {t('tests.monitor.grid.detail_title')}
+                    </div>
+                    {recent.length === 0 ? (
+                        <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: 'var(--text-dim)' }}>
+                            {t('tests.monitor.grid.detail_empty')}
+                        </p>
+                    ) : (
+                        <ul
+                            style={{
+                                margin: '4px 0 0',
+                                padding: 0,
+                                listStyle: 'none',
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))',
+                                gap: '2px 14px',
+                                fontSize: '0.78rem',
+                                color: 'var(--text)',
+                            }}
+                        >
+                            {recent.map((event) => (
+                                <li key={`${event.type}:${event.at}`}>
+                                    <span style={{ color: 'var(--text-dim)' }}>{eventTime(event.at)}</span>{' '}
+                                    {t(`tests.monitor.events.${event.type}`)}
+                                    {(event.type === 'battery' || event.type === 'heartbeat') &&
+                                    (typeof event.value === 'string' ||
+                                        typeof event.value === 'number' ||
+                                        typeof event.value === 'boolean')
+                                        ? ` · ${String(event.value)}`
+                                        : ''}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </td>
+            </tr>
+        );
+    }
+
     function renderAvgCell(p: number | undefined, key: string, divider: React.CSSProperties = {}) {
         return (
             <td key={key} style={{ padding: '4px 8px', textAlign: 'center', minWidth: 46, ...divider }}>
@@ -362,6 +582,11 @@ export default function ResponsesGrid({
                             <th style={{ ...th, ...stickyLeft, textAlign: 'left', color: 'var(--text-muted)' }}>
                                 {t('tests.monitor.grid.student')}
                             </th>
+                            {showProctor && (
+                                <th style={{ ...th, textAlign: 'left', color: 'var(--text-muted)' }}>
+                                    {t('tests.monitor.grid.signals')}
+                                </th>
+                            )}
                             <th style={{ ...th, textAlign: 'center', color: 'var(--text-muted)' }}>
                                 {t('tests.monitor.grid.totals')}
                             </th>
@@ -431,6 +656,7 @@ export default function ResponsesGrid({
                             <td style={{ ...stickyLeft, padding: '4px 8px', fontWeight: 700 }}>
                                 {t('tests.monitor.grid.average')}
                             </td>
+                            {showProctor && <td style={{ padding: '4px 8px' }} />}
                             {renderAvgCell(overallAvg, 'avg-total')}
                             {showProgress && <td />}
                             {orderedColumns.map((col) =>
@@ -446,6 +672,7 @@ export default function ResponsesGrid({
                                 <td style={{ ...stickyLeft, padding: '4px 8px', fontWeight: 700 }}>
                                     {t('tests.monitor.grid.class_progress')}
                                 </td>
+                                {showProctor && <td style={{ padding: '4px 8px' }} />}
                                 <td style={{ padding: '4px 8px' }}>
                                     <CompletionBar
                                         value={classProgress.finished}
@@ -527,6 +754,15 @@ export default function ResponsesGrid({
                                                     {group.label || t('tests.monitor.grid.no_class')}
                                                 </button>
                                             </td>
+                                            {showProctor && (
+                                                <td
+                                                    style={{
+                                                        ...stickyLeft,
+                                                        background: 'var(--bg-panel)',
+                                                        padding: '4px 8px',
+                                                    }}
+                                                />
+                                            )}
                                             {renderAvgCell(ga!.total, `g-total-${group.key}`)}
                                             {showProgress && <td />}
                                             {orderedColumns.map((col) =>
@@ -539,66 +775,169 @@ export default function ResponsesGrid({
                                         </tr>
                                     )}
                                     {!isCollapsed &&
-                                        group.rows.map((row) => (
-                                            <tr key={row.studentId}>
-                                                <td
-                                                    style={{
-                                                        ...stickyLeft,
-                                                        padding: '4px 8px',
-                                                        whiteSpace: 'nowrap',
-                                                        color: 'var(--text)',
-                                                    }}
-                                                >
-                                                    {row.displayName}
-                                                    {row.pace &&
-                                                        (() => {
-                                                            const { Icon, color } = PACE_ICON[row.pace];
-                                                            const label = t(`tests.monitor.pace.${row.pace}`);
-                                                            return (
+                                        group.rows.map((row) => {
+                                            const flagged =
+                                                !!row.proctor &&
+                                                (row.proctor.flags.tabSwitchCount >= TAB_SWITCH_WARNING_THRESHOLD ||
+                                                    (row.proctor.stalledMinutes ?? null) !== null);
+                                            const detailOpen = openDetail.has(row.studentId);
+                                            return (
+                                                <React.Fragment key={row.studentId}>
+                                                    <tr data-testid={`response-row-${row.studentId}`}>
+                                                        <td
+                                                            style={{
+                                                                ...stickyLeft,
+                                                                padding: '4px 8px',
+                                                                whiteSpace: 'nowrap',
+                                                                color: 'var(--text)',
+                                                                borderLeft: flagged
+                                                                    ? '3px solid var(--red)'
+                                                                    : '3px solid transparent',
+                                                            }}
+                                                        >
+                                                            <div
+                                                                style={{
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: 6,
+                                                                }}
+                                                            >
+                                                                {row.proctor && (
+                                                                    <button
+                                                                        type="button"
+                                                                        className="btn btn-ghost btn-icon btn-sm"
+                                                                        onClick={() => toggleDetail(row.studentId)}
+                                                                        aria-expanded={detailOpen}
+                                                                        aria-label={t(
+                                                                            detailOpen
+                                                                                ? 'tests.monitor.grid.detail_close'
+                                                                                : 'tests.monitor.grid.detail_open',
+                                                                            { name: row.displayName }
+                                                                        )}
+                                                                        title={t(
+                                                                            detailOpen
+                                                                                ? 'tests.monitor.grid.detail_close'
+                                                                                : 'tests.monitor.grid.detail_open',
+                                                                            { name: row.displayName }
+                                                                        )}
+                                                                    >
+                                                                        {detailOpen ? (
+                                                                            <ChevronDown size={14} />
+                                                                        ) : (
+                                                                            <ChevronRight size={14} />
+                                                                        )}
+                                                                    </button>
+                                                                )}
                                                                 <span
-                                                                    role="img"
-                                                                    aria-label={label}
-                                                                    title={label}
                                                                     style={{
                                                                         display: 'inline-flex',
-                                                                        verticalAlign: 'middle',
-                                                                        marginLeft: 6,
-                                                                        color,
+                                                                        flexDirection: 'column',
+                                                                        gap: 2,
                                                                     }}
                                                                 >
-                                                                    <Icon size={13} aria-hidden="true" />
+                                                                    <span
+                                                                        style={{
+                                                                            display: 'inline-flex',
+                                                                            alignItems: 'center',
+                                                                            gap: 6,
+                                                                        }}
+                                                                    >
+                                                                        {row.displayName}
+                                                                        {row.pace &&
+                                                                            (() => {
+                                                                                const { Icon, color } =
+                                                                                    PACE_ICON[row.pace];
+                                                                                const label = t(
+                                                                                    `tests.monitor.pace.${row.pace}`
+                                                                                );
+                                                                                return (
+                                                                                    <span
+                                                                                        role="img"
+                                                                                        aria-label={label}
+                                                                                        title={label}
+                                                                                        style={{
+                                                                                            display: 'inline-flex',
+                                                                                            color,
+                                                                                        }}
+                                                                                    >
+                                                                                        <Icon
+                                                                                            size={13}
+                                                                                            aria-hidden="true"
+                                                                                        />
+                                                                                    </span>
+                                                                                );
+                                                                            })()}
+                                                                    </span>
+                                                                    {row.proctor && (
+                                                                        <span
+                                                                            style={{
+                                                                                display: 'inline-flex',
+                                                                                alignItems: 'center',
+                                                                                gap: 8,
+                                                                            }}
+                                                                        >
+                                                                            <PresenceBadge
+                                                                                presence={row.proctor.presence}
+                                                                                status={row.proctor.status}
+                                                                            />
+                                                                            {row.proctor.statusSummary && (
+                                                                                <span
+                                                                                    data-testid="monitor-status-summary"
+                                                                                    style={{
+                                                                                        fontSize: '0.72rem',
+                                                                                        color: 'var(--text-dim)',
+                                                                                    }}
+                                                                                >
+                                                                                    {row.proctor.statusSummary}
+                                                                                </span>
+                                                                            )}
+                                                                        </span>
+                                                                    )}
                                                                 </span>
-                                                            );
-                                                        })()}
-                                                </td>
-                                                <td
-                                                    style={{ padding: '4px 8px', textAlign: 'center', fontWeight: 600 }}
-                                                >
-                                                    {formatPct(studentTotal(row))}
-                                                </td>
-                                                {showProgress &&
-                                                    (() => {
-                                                        const p = studentProgress(row);
-                                                        return (
-                                                            <td style={{ padding: '4px 8px' }}>
-                                                                <CompletionBar
-                                                                    value={p.answered}
-                                                                    max={p.total}
-                                                                    text={t('tests.monitor.grid.progress_value', p)}
-                                                                    label={t('tests.monitor.grid.progress_aria', p)}
-                                                                />
-                                                            </td>
-                                                        );
-                                                    })()}
-                                                {orderedColumns.map((col) =>
-                                                    renderCell(
-                                                        row,
-                                                        questionsById.get(col.id)!,
-                                                        dividerAfter(col.originalIndex)
-                                                    )
-                                                )}
-                                            </tr>
-                                        ))}
+                                                            </div>
+                                                        </td>
+                                                        {showProctor && (renderSignals(row) ?? <td />)}
+                                                        <td
+                                                            style={{
+                                                                padding: '4px 8px',
+                                                                textAlign: 'center',
+                                                                fontWeight: 600,
+                                                            }}
+                                                        >
+                                                            {formatPct(studentTotal(row))}
+                                                        </td>
+                                                        {showProgress &&
+                                                            (() => {
+                                                                const p = studentProgress(row);
+                                                                return (
+                                                                    <td style={{ padding: '4px 8px' }}>
+                                                                        <CompletionBar
+                                                                            value={p.answered}
+                                                                            max={p.total}
+                                                                            text={t(
+                                                                                'tests.monitor.grid.progress_value',
+                                                                                p
+                                                                            )}
+                                                                            label={t(
+                                                                                'tests.monitor.grid.progress_aria',
+                                                                                p
+                                                                            )}
+                                                                        />
+                                                                    </td>
+                                                                );
+                                                            })()}
+                                                        {orderedColumns.map((col) =>
+                                                            renderCell(
+                                                                row,
+                                                                questionsById.get(col.id)!,
+                                                                dividerAfter(col.originalIndex)
+                                                            )
+                                                        )}
+                                                    </tr>
+                                                    {renderDetailRow(row)}
+                                                </React.Fragment>
+                                            );
+                                        })}
                                 </React.Fragment>
                             );
                         })}

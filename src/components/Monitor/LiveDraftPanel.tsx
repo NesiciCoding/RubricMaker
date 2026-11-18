@@ -28,6 +28,8 @@ export interface LiveDraftPanelProps {
     lastChangeAt?: number;
     /** Epoch ms the page last ticked; passed in so every panel ages from the same clock. */
     now?: number;
+    /** Starts with the draft preview open — the spotlight view shows the text without a click. */
+    defaultExpanded?: boolean;
 }
 
 export default function LiveDraftPanel({
@@ -41,9 +43,10 @@ export default function LiveDraftPanel({
     wordSamples,
     lastChangeAt,
     now,
+    defaultExpanded = false,
 }: LiveDraftPanelProps) {
     const { t } = useTranslation();
-    const [expanded, setExpanded] = useState(false);
+    const [expanded, setExpanded] = useState(defaultExpanded);
     const clock = now ?? lastChangeAt ?? 0;
     const finished = status === 'submitted' || status === 'late';
     const pace = showWritingPace && !finished && wordSamples ? writingPace(wordSamples, clock) : undefined;
@@ -82,7 +85,9 @@ export default function LiveDraftPanel({
                     }}
                 >
                     {wordCount !== undefined && (
-                        <span>{t('tests.monitor.draft.word_count', { count: wordCount })}</span>
+                        <span data-testid="draft-word-count">
+                            {t('tests.monitor.draft.word_count', { count: wordCount })}
+                        </span>
                     )}
                     {pace && (
                         <span
