@@ -49,6 +49,7 @@ import { estimatePlacement, levelPathRunConfig } from '../utils/placementResult'
 import { MAX_QUESTIONS as STAIRCASE_MAX_QUESTIONS } from '../utils/placementStaircase';
 import { stripCommentHtml } from '../utils/exportDataPrep';
 import { studentCompletion, type StudentCompletion } from '../utils/responseCells';
+import { stuckQuestions } from '../utils/questionStuck';
 import {
     appendWordSample,
     clampStallMinutes,
@@ -903,6 +904,20 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         });
     }, [sortedRows, classFilter, startedOnly]);
 
+    // Where the class — not one student — is stuck: questions someone answered past but left blank.
+    const stuck = useMemo(() => {
+        if (kind !== 'test' || !test || isLevelGrid) return [];
+        const answersByStudent = new Map(
+            visibleRows
+                .filter((row) => !row.finished)
+                .map((row) => [row.studentId, new Set(row.mergedAnswers.map((answer) => answer.questionId))] as const)
+        );
+        return stuckQuestions(
+            test.questions.map((question) => question.id),
+            answersByStudent
+        );
+    }, [kind, test, isLevelGrid, visibleRows]);
+
     const statusSummary = (row: (typeof rows)[number], stalled: number | null, pace: PaceTrend | undefined) => {
         const parts: string[] = [];
         if (row.finished) parts.push(t('tests.monitor.summary.handed_in'));
@@ -1187,6 +1202,23 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                         onApply={setColumnSortRules}
                         onClose={() => setSortModalOpen(false)}
                     />
+                )}
+
+                {stuck.length > 0 && (
+                    <p
+                        data-testid="monitor-stuck-questions"
+                        style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-muted)' }}
+                    >
+                        <strong style={{ color: 'var(--text)' }}>{t('tests.monitor.stuck.title')}:</strong>{' '}
+                        {stuck
+                            .map((question) =>
+                                t('tests.monitor.stuck.item', {
+                                    index: question.index,
+                                    count: question.reached,
+                                })
+                            )
+                            .join(' · ')}
+                    </p>
                 )}
 
                 {kind === 'test' && testTeacherKeysLoading ? (
