@@ -28,6 +28,10 @@ export interface LiveSessionSnapshot {
     text?: string;
     answers?: unknown;
     wordCount?: number;
+    /** Cumulative characters the student typed, never their content. */
+    typedChars?: number;
+    /** Cumulative characters inserted by paste — the cheapest honest integrity signal. */
+    pastedChars?: number;
     /** Current CEFR level/Elo anchor/progress of a generator-engine (roadmap 27.1) placement run in progress, for the Live Monitor's live level display (27.3). */
     generatorLevel?: CefrLevel;
     generatorEloAnchor?: number;
@@ -87,6 +91,8 @@ function shallowEqualSnapshot(a: LiveSessionSnapshot | null, b: LiveSessionSnaps
         // must still go out.
         (b.text === undefined || a.text === b.text) &&
         a.wordCount === b.wordCount &&
+        a.typedChars === b.typedChars &&
+        a.pastedChars === b.pastedChars &&
         JSON.stringify(a.answers) === JSON.stringify(b.answers) &&
         a.generatorLevel === b.generatorLevel &&
         a.generatorEloAnchor === b.generatorEloAnchor &&
@@ -100,6 +106,8 @@ function withoutText(snapshot: LiveSessionSnapshot): LiveSessionSnapshot {
     return {
         answers: snapshot.answers,
         wordCount: snapshot.wordCount,
+        typedChars: snapshot.typedChars,
+        pastedChars: snapshot.pastedChars,
         generatorLevel: snapshot.generatorLevel,
         generatorEloAnchor: snapshot.generatorEloAnchor,
         questionsAsked: snapshot.questionsAsked,
@@ -131,6 +139,9 @@ export function useLiveSessionTelemetry({
     const lastTabSwitchAtRef = useRef(0);
     const lastSnapshotRef = useRef<LiveSessionSnapshot | null>(null);
     const lastTextSentAtRef = useRef(0);
+    // Counts only — never the characters themselves.
+    const typedCharsRef = useRef(0);
+    const pastedCharsRef = useRef(0);
     const channelRef = useRef<ReturnType<SupabaseClient['channel']> | null>(null);
     // Mirrors `events` so flush() can read the latest log synchronously —
     // setState updaters are not guaranteed to run before flush() returns.
@@ -306,7 +317,12 @@ export function useLiveSessionTelemetry({
         if (!enabled) return;
         const onCopy = () => pushEvent({ type: 'copy', at: new Date().toISOString() });
         const onCut = () => pushEvent({ type: 'cut', at: new Date().toISOString() });
-        const onPaste = () => pushEvent({ type: 'paste', at: new Date().toISOString() });
+        const onPaste = (event: Event) => {
+            // The length only: a paste counter that stored clipboard text would be a privacy
+            // problem, while the size is exactly what tells pasted prose from typed prose.
+            pastedCharsRef.current += ((event as ClipboardEvent).clipboardData?.getData('text') ?? '').length;
+            pushEvent({ type: 'paste', at: new Date().toISOString() });
+        };
         document.addEventListener('copy', onCopy);
         document.addEventListener('cut', onCut);
         document.addEventListener('paste', onPaste);
@@ -316,6 +332,20 @@ export function useLiveSessionTelemetry({
             document.removeEventListener('paste', onPaste);
         };
     }, [enabled, pushEvent]);
+
+    // ── typed characters — the other half of the typed/pasted split ──────────
+    // insertText is what a human keystroke or dictation produces; paste arrives as
+    // insertFromPaste and is counted by the paste handler instead, so the two never overlap.
+    useEffect(() => {
+        if (!enabled) return;
+        const onInput = (event: Event) => {
+            const input = event as InputEvent;
+            if (input.inputType !== 'insertText' && input.inputType !== 'insertCompositionText') return;
+            typedCharsRef.current += input.data?.length ?? 1;
+        };
+        document.addEventListener('input', onInput);
+        return () => document.removeEventListener('input', onInput);
+    }, [enabled]);
 
     // ── battery status — initial reading + change events ─────────────────────
     useEffect(() => {
@@ -393,7 +423,11 @@ export function useLiveSessionTelemetry({
     useEffect(() => {
         if (!enabled || !getSnapshot || !hasDb) return;
         const tick = () => {
-            const full = getSnapshot();
+            const full: LiveSessionSnapshot = {
+                ...getSnapshot(),
+                typedChars: typedCharsRef.current,
+                pastedChars: pastedCharsRef.current,
+            };
             const now = Date.now();
             const withText = spotlighted || now - lastTextSentAtRef.current >= ROSTER_TEXT_INTERVAL_MS;
             if (withText) lastTextSentAtRef.current = now;

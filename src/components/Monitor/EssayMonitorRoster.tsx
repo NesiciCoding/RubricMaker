@@ -25,6 +25,9 @@ const TREND_ICON: Record<WritingTrend, { Icon: typeof TrendingUp; color: string 
 
 const TAB_SWITCH_WARNING_THRESHOLD = 3;
 const BATTERY_WARNING_LEVEL = 20;
+// Below this much text the ratio is noise (a pasted title would read as 100% pasted).
+const PASTED_SHARE_MIN_CHARS = 80;
+const PASTED_SHARE_WARNING = 0.5;
 const SPARKLINE_WIDTH = 96;
 const SPARKLINE_HEIGHT = 22;
 
@@ -50,6 +53,9 @@ export interface EssayMonitorRow {
     connection?: ConnectionState;
     /** Whole minutes since the last signal, when `connection` is 'lost'. */
     silentMinutes?: number;
+    /** Characters typed vs pasted so far — counts only, never content. */
+    typedChars?: number;
+    pastedChars?: number;
 }
 
 export interface EssayMonitorRosterProps {
@@ -92,6 +98,11 @@ export default function EssayMonitorRoster({ rows, onWatch, showWritingPace = fa
                         ? elapsedParts(row.lastChangeAt, clock)
                         : undefined;
                 const clipboard = row.flags.copyCount + row.flags.cutCount + row.flags.pasteCount;
+                const typedChars = row.typedChars ?? 0;
+                const pastedChars = row.pastedChars ?? 0;
+                const pastedDominant =
+                    typedChars + pastedChars >= PASTED_SHARE_MIN_CHARS &&
+                    pastedChars / (typedChars + pastedChars) >= PASTED_SHARE_WARNING;
                 const stalled = !finished && row.lastChangeAt !== undefined && clock - row.lastChangeAt >= 4 * 60_000;
                 const changes = draftChanges(row.previousText ?? '', row.draftText ?? '');
                 const sparkline = sparklinePoints(row.snapshotWords);
@@ -123,6 +134,17 @@ export default function EssayMonitorRoster({ rows, onWatch, showWritingPace = fa
                                 <span className="badge badge-yellow" data-testid={`essay-connection-${row.studentId}`}>
                                     {t('tests.monitor.signal.never_opened')}
                                 </span>
+                            )}
+                            {(typedChars > 0 || pastedChars > 0) && (
+                                <span
+                                    data-testid={`essay-typed-pasted-${row.studentId}`}
+                                    style={{ fontSize: '0.78rem', color: 'var(--text-dim)' }}
+                                >
+                                    {t('tests.monitor.draft.typed_pasted', { typed: typedChars, pasted: pastedChars })}
+                                </span>
+                            )}
+                            {pastedDominant && (
+                                <span className="badge badge-yellow">{t('tests.monitor.draft.pasted_caution')}</span>
                             )}
                             {row.connection === 'lost' && (
                                 <span className="badge badge-red" data-testid={`essay-connection-${row.studentId}`}>

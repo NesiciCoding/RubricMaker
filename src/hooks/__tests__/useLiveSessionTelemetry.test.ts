@@ -251,13 +251,54 @@ describe('useLiveSessionTelemetry', () => {
         act(() => {
             vi.advanceTimersByTime(5_000);
         });
-        expect(sentSnapshots().at(-1)).toEqual({ wordCount: 2 });
+        expect(sentSnapshots().at(-1)).toEqual({ wordCount: 2, typedChars: 0, pastedChars: 0 });
 
         words = 3;
         act(() => {
             vi.advanceTimersByTime(55_000);
         });
         expect(sentSnapshots().at(-1)).toMatchObject({ text: 'draft 3', wordCount: 3 });
+    });
+
+    it('counts typed and pasted characters without ever recording their content', () => {
+        vi.useFakeTimers();
+        Object.assign(mockChannel, { state: 'joined' });
+        const getSnapshot = vi.fn(() => ({ text: 'draft', wordCount: 1 }));
+
+        renderHook(() =>
+            useLiveSessionTelemetry({
+                kind: 'essay',
+                assignmentKey: 'key1',
+                enabled: true,
+                getSnapshot,
+                supabaseUrl: 'https://example.supabase.co',
+                supabaseAnonKey: 'anon-key',
+            })
+        );
+
+        const typed = new Event('input') as Event & { inputType?: string; data?: string };
+        Object.defineProperty(typed, 'inputType', { value: 'insertText' });
+        Object.defineProperty(typed, 'data', { value: 'hello' });
+        act(() => {
+            document.dispatchEvent(typed);
+        });
+
+        const paste = new Event('paste');
+        Object.defineProperty(paste, 'clipboardData', { value: { getData: () => 'pasted!' } });
+        act(() => {
+            document.dispatchEvent(paste);
+        });
+
+        act(() => {
+            (mockChannel.subscribe.mock.calls.at(-1)?.[0] as (status: string) => void)('SUBSCRIBED');
+        });
+
+        const snapshot = mockChannel.send.mock.calls
+            .map(([message]) => message as { event: string; payload: Record<string, unknown> })
+            .filter((message) => message.event === 'snapshot')
+            .at(-1)?.payload;
+        expect(snapshot).toMatchObject({ typedChars: 5, pastedChars: 7 });
+        expect(JSON.stringify(snapshot)).not.toContain('pasted!');
     });
 
     it('hands the prose to persistDraftText only on the ticks that actually carry it', () => {
