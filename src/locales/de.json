@@ -1543,7 +1543,9 @@
                 "never_opened": "Noch nicht geöffnet",
                 "lost_now": "Kein Signal",
                 "lost_one": "Kein Signal · {{count}} min",
-                "lost_other": "Kein Signal · {{count}} min"
+                "lost_other": "Kein Signal · {{count}} min",
+                "announce_lost": "{{name}}: kein Signal",
+                "announce_never_opened": "{{name}} hat noch nicht geöffnet"
             },
             "stuck": {
                 "title": "Erreichte, aber leere Fragen",
