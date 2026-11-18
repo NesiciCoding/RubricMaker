@@ -112,25 +112,34 @@ function emptyLiveState(studentId: string): StudentLiveState {
  * have shown had the tab never dropped.
  */
 function applyPersistedSnapshots(current: StudentLiveState, history: PersistedDraftSnapshot[]): StudentLiveState {
-    let wordSamples = current.wordSamples ?? [];
-    const snapshots = [...(current.snapshots ?? [])];
+    const wordSamples = [
+        ...(current.wordSamples ?? []),
+        ...history.map((snapshot) => ({ at: snapshot.at, words: snapshot.wordCount })),
+    ]
+        .sort((a, b) => a.at - b.at)
+        .reduce<WordSample[]>(appendWordSample, []);
+    const byAt = new Map<number, NonNullable<StudentLiveState['snapshots']>[number]>();
+    for (const entry of current.snapshots ?? []) byAt.set(entry.at, entry);
     for (const snapshot of history) {
-        wordSamples = appendWordSample(wordSamples, { at: snapshot.at, words: snapshot.wordCount });
-        if (snapshot.text !== undefined) {
-            snapshots.push({ at: snapshot.at, words: snapshot.wordCount, text: snapshot.text });
+        if (snapshot.text !== undefined && !byAt.has(snapshot.at)) {
+            byAt.set(snapshot.at, { at: snapshot.at, words: snapshot.wordCount, text: snapshot.text });
         }
     }
+    const snapshots = [...byAt.values()].sort((a, b) => a.at - b.at).slice(-8);
     const latest = history[history.length - 1];
     const latestWithText = [...history]
         .reverse()
         .find((snapshot): snapshot is PersistedDraftSnapshot & { text: string } => snapshot.text !== undefined);
+    const stored = latestWithText ? { text: latestWithText.text, wordCount: latestWithText.wordCount } : null;
     return {
         ...current,
         wordSamples,
-        snapshots: snapshots.slice(-8),
-        snapshot:
-            current.snapshot ??
-            (latestWithText ? { text: latestWithText.text, wordCount: latestWithText.wordCount } : null),
+        snapshots,
+        snapshot: current.snapshot
+            ? current.snapshot.text === undefined && stored
+                ? { ...current.snapshot, text: stored.text, wordCount: current.snapshot.wordCount ?? stored.wordCount }
+                : current.snapshot
+            : stored,
         lastChangeAt: current.lastChangeAt ?? latest?.at,
         lastUpdateAt: current.lastUpdateAt ?? (latest ? new Date(latest.at).toISOString() : null),
         firstSeenAt: current.firstSeenAt ?? history[0]?.at,
@@ -139,6 +148,8 @@ function applyPersistedSnapshots(current: StudentLiveState, history: PersistedDr
 
 interface MonitorStudent {
     studentId: string;
+    /** The student's own essay_assignments.id; a batch assignment stores each student's drafts under it, not under the route key. */
+    teacherKey?: string;
     name: string;
     classId?: string;
     className?: string;
@@ -324,18 +335,24 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         // single row fetched from Supabase is the fallback for a monitor opened before the
         // hydrated roster arrived, which keeps a one-student assignment working on its own.
         const essayStudentIds = new Set<string>();
+        const essayTeacherKeys = new Map<string, string>();
         for (const assignment of essayAssignments ?? []) {
             if (assignment.teacherKey !== params.assignmentId && assignment.sourceTeacherKey !== params.assignmentId)
                 continue;
             essayStudentIds.add(assignment.studentId);
+            essayTeacherKeys.set(assignment.studentId, assignment.teacherKey);
         }
-        if (essayAssignment) essayStudentIds.add(essayAssignment.studentId);
+        if (essayAssignment) {
+            essayStudentIds.add(essayAssignment.studentId);
+            essayTeacherKeys.set(essayAssignment.studentId, params.assignmentId ?? '');
+        }
         return Array.from(essayStudentIds)
             .map((studentId): MonitorStudent | null => {
                 const student = students.find((s) => s.id === studentId);
                 if (!student) return null;
                 return {
                     studentId: student.id,
+                    teacherKey: essayTeacherKeys.get(student.id),
                     name: student.name,
                     classId: student.classId,
                     className: classes.find((c) => c.id === student.classId)?.name,
@@ -623,17 +640,26 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     // already did. Tests store no draft history, so their monitors have nothing to seed from.
     const essayAssignmentKey = kind === 'essay' ? (params.assignmentId ?? '') : '';
     const rosterKey = monitorStudents.map((row) => row.studentId).join(',');
-    const hydratedRosterRef = useRef('');
+    const hydratedRef = useRef('');
     useEffect(() => {
-        if (!hasDb || !essayAssignmentKey || rosterKey === '' || hydratedRosterRef.current === rosterKey) return;
-        hydratedRosterRef.current = rosterKey;
+        const hydrationKey = `${essayAssignmentKey}|${rosterKey}`;
+        if (!hasDb || !essayAssignmentKey || rosterKey === '' || hydratedRef.current === hydrationKey) return;
         const drafts = LiveDraftAdapter.forTeacher();
         if (!drafts) return;
         let cancelled = false;
+        const assignmentKeys = [
+            essayAssignmentKey,
+            ...monitorStudents.map((row) => row.teacherKey).filter((key): key is string => !!key),
+        ];
         drafts
-            .listSnapshots([essayAssignmentKey])
+            .listSnapshots(
+                assignmentKeys,
+                monitorStudents.map((row) => row.studentId)
+            )
             .then((byStudent) => {
-                if (cancelled || byStudent.size === 0) return;
+                if (cancelled) return;
+                hydratedRef.current = hydrationKey;
+                if (byStudent.size === 0) return;
                 setLiveStates((prev) => {
                     const next = { ...prev };
                     for (const row of monitorStudents) {

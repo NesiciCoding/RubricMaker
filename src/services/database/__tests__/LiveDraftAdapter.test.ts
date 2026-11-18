@@ -86,4 +86,37 @@ describe('LiveDraftAdapter', () => {
         expect(grouped.size).toBe(0);
         expect(from).not.toHaveBeenCalled();
     });
+
+    it('fetches the latest row for a student the shared page limit left out', async () => {
+        const limit = vi
+            .fn()
+            .mockResolvedValueOnce({
+                data: [{ student_id: 's2', captured_at: '2026-05-01T10:05:00Z', word_count: 9, draft_text: 'b' }],
+                error: null,
+            })
+            .mockResolvedValueOnce({
+                data: [{ student_id: 's1', captured_at: '2026-05-01T09:00:00Z', word_count: 3, draft_text: 'a' }],
+                error: null,
+            });
+        const eq = vi.fn(() => ({ order: () => ({ limit }) }));
+        const inFilter = vi.fn(() => ({ order: () => ({ limit }), eq }));
+        const client = asClient({ from: () => ({ select: () => ({ in: inFilter }) }) });
+
+        const grouped = await new LiveDraftAdapter(client).listSnapshots(['key'], ['s1', 's2']);
+
+        expect(eq).toHaveBeenCalledTimes(1);
+        expect(eq).toHaveBeenCalledWith('student_id', 's1');
+        expect(grouped.get('s1')?.[0].wordCount).toBe(3);
+        expect(grouped.get('s2')?.[0].wordCount).toBe(9);
+    });
+
+    it('builds the student client around the essay adapter session instead of a bare anon key', () => {
+        const session = { getAccessToken: vi.fn().mockResolvedValue('jwt') };
+        const first = LiveDraftAdapter.forStudent('https://abc.supabase.co', 'anon', session);
+        const second = LiveDraftAdapter.forStudent('https://abc.supabase.co', 'anon', session);
+
+        expect(first).not.toBeNull();
+        expect(second).not.toBeNull();
+        expect(LiveDraftAdapter.forStudent('https://abc.supabase.co', 'anon', null)).toBeNull();
+    });
 });

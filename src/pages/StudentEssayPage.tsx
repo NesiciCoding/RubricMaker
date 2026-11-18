@@ -426,13 +426,13 @@ export default function StudentEssayPage() {
     const draftAssignmentKey = assignment?.teacherKey;
     const persistDraftText = useCallback(
         (snapshot: { text: string; wordCount?: number }) => {
-            const drafts = LiveDraftAdapter.forStudent(draftSupabaseUrl, draftSupabaseKey);
+            const drafts = LiveDraftAdapter.forStudent(draftSupabaseUrl, draftSupabaseKey, adapter);
             if (!drafts || !draftAssignmentKey) return;
             void drafts.recordSnapshot(draftAssignmentKey, snapshot.wordCount, snapshot.text).catch(() => {
                 // History only — the live broadcast already carried this draft.
             });
         },
-        [draftSupabaseUrl, draftSupabaseKey, draftAssignmentKey]
+        [draftSupabaseUrl, draftSupabaseKey, draftAssignmentKey, adapter]
     );
     const telemetry = useLiveSessionTelemetry({
         kind: 'essay',
