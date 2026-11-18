@@ -31,6 +31,7 @@ import { useToast } from '../hooks/useToast';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { useOwnOrSharedItem } from '../hooks/useSharedMaterials';
 import { loadSupabaseConfig } from '../services/database';
+import { LiveDraftAdapter, type PersistedDraftSnapshot } from '../services/database/LiveDraftAdapter';
 import PresenceBadge from '../components/Monitor/PresenceBadge';
 import ResponsesGrid from '../components/Monitor/ResponsesGrid';
 import LevelResponsesGrid from '../components/Monitor/LevelResponsesGrid';
@@ -103,6 +104,37 @@ const PACE_BADGE: Record<PaceTrend, { className: string; Icon: typeof TrendingUp
 
 function emptyLiveState(studentId: string): StudentLiveState {
     return { studentId, events: [], snapshot: null, lastUpdateAt: null };
+}
+
+/**
+ * Folds stored snapshots into a student's live state without overwriting anything the channels
+ * have already delivered: after a reload the roster shows the same draft, pace and age it would
+ * have shown had the tab never dropped.
+ */
+function applyPersistedSnapshots(current: StudentLiveState, history: PersistedDraftSnapshot[]): StudentLiveState {
+    let wordSamples = current.wordSamples ?? [];
+    const snapshots = [...(current.snapshots ?? [])];
+    for (const snapshot of history) {
+        wordSamples = appendWordSample(wordSamples, { at: snapshot.at, words: snapshot.wordCount });
+        if (snapshot.text !== undefined) {
+            snapshots.push({ at: snapshot.at, words: snapshot.wordCount, text: snapshot.text });
+        }
+    }
+    const latest = history[history.length - 1];
+    const latestWithText = [...history]
+        .reverse()
+        .find((snapshot): snapshot is PersistedDraftSnapshot & { text: string } => snapshot.text !== undefined);
+    return {
+        ...current,
+        wordSamples,
+        snapshots: snapshots.slice(-8),
+        snapshot:
+            current.snapshot ??
+            (latestWithText ? { text: latestWithText.text, wordCount: latestWithText.wordCount } : null),
+        lastChangeAt: current.lastChangeAt ?? latest?.at,
+        lastUpdateAt: current.lastUpdateAt ?? (latest ? new Date(latest.at).toISOString() : null),
+        firstSeenAt: current.firstSeenAt ?? history[0]?.at,
+    };
 }
 
 interface MonitorStudent {
@@ -583,6 +615,53 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
             send(false);
         };
     }, [kind, focusedStudentId, monitorStudents.length, hasDb]);
+
+    // ── Persisted draft history ───────────────────────────────────────────────────
+    // A reload, a sleeping laptop or a dropped connection empties the channels, and the roster
+    // would know nothing until a student writes again. The once-a-minute snapshots are stored
+    // server-side, so seed from them instead of claiming to know less than the class already did.
+    const persistedHistoryKeyRef = useRef('');
+    useEffect(() => {
+        if (!hasDb || monitorStudents.length === 0) return;
+        const assignmentKeyOf = (studentId: string) =>
+            kind === 'essay' ? (params.assignmentId ?? '') : (testTeacherKeys[studentId] ?? '');
+        const assignmentIds = [
+            ...new Set(monitorStudents.map((row) => assignmentKeyOf(row.studentId)).filter((id) => id !== '')),
+        ];
+        if (assignmentIds.length === 0) return;
+        const historyKey = `${kind}:${assignmentIds.slice().sort().join(',')}`;
+        if (persistedHistoryKeyRef.current === historyKey) return;
+        persistedHistoryKeyRef.current = historyKey;
+        const drafts = LiveDraftAdapter.forTeacher();
+        if (!drafts) return;
+        let cancelled = false;
+        drafts
+            .listSnapshots(kind, assignmentIds)
+            .then((byStudent) => {
+                if (cancelled || byStudent.size === 0) return;
+                setLiveStates((prev) => {
+                    const next = { ...prev };
+                    for (const row of monitorStudents) {
+                        const history = byStudent.get(row.studentId);
+                        if (!history || history.length === 0) continue;
+                        next[row.studentId] = applyPersistedSnapshots(
+                            next[row.studentId] ?? emptyLiveState(row.studentId),
+                            history
+                        );
+                    }
+                    return next;
+                });
+            })
+            .catch(() => {
+                // History is a convenience; the live channels remain the primary path.
+            });
+        return () => {
+            cancelled = true;
+        };
+        // The roster object is rebuilt on every read; its ids and the resolved teacher keys are
+        // the only inputs that change which rows to load.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [hasDb, kind, monitorStudents.map((r) => r.studentId).join(','), testTeacherKeys]);
 
     const sendNudge = useCallback(
         (studentId: string) => {

@@ -38,6 +38,7 @@ import {
 import { countWords } from '../utils/essayUtils';
 import { nanoid } from '../utils/nanoid';
 import { useLiveSessionTelemetry } from '../hooks/useLiveSessionTelemetry';
+import { LiveDraftAdapter } from '../services/database/LiveDraftAdapter';
 import type { EssayAssignmentContent, EssaySubmission } from '../types';
 import { EssayAdapter } from '../services/database/EssayAdapter';
 import { isAllowedSupabaseUrl } from '../services/database/trustedSupabaseUrl';
@@ -418,6 +419,21 @@ export default function StudentEssayPage() {
     // student id is resolved so we never broadcast on an unstable key.
     const resolvedStudentId = resolvedContent?.studentId ?? assignment?.studentId ?? '';
     const { showToast } = useContext(ToastContext);
+    // The live channel forgets everything when the teacher's tab drops, so the once-a-minute draft
+    // also goes to the server: the monitor seeds its roster from it instead of showing nothing.
+    const draftSupabaseUrl = assignment?.supabaseUrl;
+    const draftSupabaseKey = assignment?.supabaseAnonKey;
+    const draftAssignmentKey = assignment?.teacherKey;
+    const persistDraftText = useCallback(
+        (snapshot: { text: string; wordCount?: number }) => {
+            const drafts = LiveDraftAdapter.forStudent(draftSupabaseUrl, draftSupabaseKey);
+            if (!drafts || !draftAssignmentKey) return;
+            void drafts.recordSnapshot('essay', draftAssignmentKey, snapshot.wordCount, snapshot.text).catch(() => {
+                // History only — the live broadcast already carried this draft.
+            });
+        },
+        [draftSupabaseUrl, draftSupabaseKey, draftAssignmentKey]
+    );
     const telemetry = useLiveSessionTelemetry({
         kind: 'essay',
         assignmentKey: resolvedStudentId ? `${assignment?.teacherKey ?? ''}:${resolvedStudentId}` : '',
@@ -426,6 +442,7 @@ export default function StudentEssayPage() {
         supabaseUrl: hasDb ? assignment?.supabaseUrl : undefined,
         supabaseAnonKey: hasDb ? assignment?.supabaseAnonKey : undefined,
         onNudge: (message) => showToast(message, 'info'),
+        persistDraftText,
     });
 
     const handleSubmit = useCallback(async () => {
