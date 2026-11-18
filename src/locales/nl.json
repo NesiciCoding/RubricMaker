@@ -1596,6 +1596,37 @@
                 "updated_now": "Minder dan een minuut geleden bijgewerkt",
                 "updated_minutes_one": "{{count}} min geleden bijgewerkt",
                 "updated_minutes_other": "{{count}} min geleden bijgewerkt"
+            },
+            "export": {
+                "button_csv": "Sessie exporteren (CSV)",
+                "button_pdf": "PDF-samenvatting van de sessie",
+                "csv_saved": "CSV van de sessie opgeslagen.",
+                "pdf_failed": "De PDF-samenvatting kon niet worden geopend.",
+                "filename_fallback": "sessie",
+                "column_student": "Leerling",
+                "column_status": "Status",
+                "column_tab_switches": "Tabwissels",
+                "column_copy": "Kopiëren",
+                "column_cut": "Knippen",
+                "column_paste": "Plakken",
+                "column_stalled": "Stilgevallen (min)",
+                "column_draft_age": "Leeftijd tekst (min)",
+                "column_words": "Woorden",
+                "column_nudges": "Zetjes",
+                "column_nudge_log": "Logboek zetjes",
+                "column_last_signal": "Laatste signaal",
+                "status_submitted": "Ingeleverd",
+                "status_opened": "Geopend",
+                "summary_title": "Sessiesamenvatting",
+                "summary_generated": "Gegenereerd om {{time}} door RubricMaker.",
+                "summary_students_one": "{{count}} leerling",
+                "summary_students_other": "{{count}} leerlingen",
+                "summary_tab_switches_one": "{{count}} tabwissel",
+                "summary_tab_switches_other": "{{count}} tabwissels",
+                "summary_words_one": "{{count}} woord",
+                "summary_words_other": "{{count}} woorden",
+                "summary_nudges_one": "{{count}} zetje",
+                "summary_nudges_other": "{{count}} zetjes"
             }
         },
         "sections_title": "Secties",
@@ -5499,7 +5530,8 @@
         "gr_queue_bulk": "Kies Leerlingen selecteren om meerdere leerlingen aan te vinken (of Alles in beeld selecteren) en ze in één stap als niet ingeleverd te markeren of te herstellen. Alleen leerlingen die nu in beeld zijn worden aangepast, herstellen behoudt scores en geschiedenis, en de selectie wordt gewist zodra de filters wijzigen.",
         "route_essay_projector_label": "Geprojecteerde tekst",
         "route_essay_projector_desc": "Alleen-lezen weergave van één tekst voor het projectiescherm in de klas, zonder knoppen of klasselijst.",
-        "es_creating_item_projector": "Zet één tekst in een tweede venster op het projectiescherm om over één zin te praten, terwijl de monitor de rest van de klas blijft volgen."
+        "es_creating_item_projector": "Zet één tekst in een tweede venster op het projectiescherm om over één zin te praten, terwijl de monitor de rest van de klas blijft volgen.",
+        "rb_live_monitor_item_session_export": "Exporteer de sessie als CSV met per leerling de aantallen, stilgevallen minuten, leeftijd van de tekst, geschreven woorden en het logboek van zetjes — plus een PDF-samenvatting van één pagina — om later bij een integriteitsvraag bij te voegen."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",

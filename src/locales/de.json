@@ -1596,6 +1596,37 @@
                 "updated_now": "Vor weniger als einer Minute aktualisiert",
                 "updated_minutes_one": "Vor {{count}} Min. aktualisiert",
                 "updated_minutes_other": "Vor {{count}} Min. aktualisiert"
+            },
+            "export": {
+                "button_csv": "Sitzung exportieren (CSV)",
+                "button_pdf": "PDF-Zusammenfassung der Sitzung",
+                "csv_saved": "CSV der Sitzung gespeichert.",
+                "pdf_failed": "Die PDF-Zusammenfassung konnte nicht geöffnet werden.",
+                "filename_fallback": "sitzung",
+                "column_student": "Schülerin/Schüler",
+                "column_status": "Status",
+                "column_tab_switches": "Tab-Wechsel",
+                "column_copy": "Kopieren",
+                "column_cut": "Ausschneiden",
+                "column_paste": "Einfügen",
+                "column_stalled": "Stockt (Min.)",
+                "column_draft_age": "Alter des Textes (Min.)",
+                "column_words": "Wörter",
+                "column_nudges": "Hinweise",
+                "column_nudge_log": "Hinweisprotokoll",
+                "column_last_signal": "Letztes Signal",
+                "status_submitted": "Abgegeben",
+                "status_opened": "Geöffnet",
+                "summary_title": "Zusammenfassung der Sitzung",
+                "summary_generated": "Erstellt um {{time}} von RubricMaker.",
+                "summary_students_one": "{{count}} Schülerin oder Schüler",
+                "summary_students_other": "{{count}} Schülerinnen und Schüler",
+                "summary_tab_switches_one": "{{count}} Tab-Wechsel",
+                "summary_tab_switches_other": "{{count}} Tab-Wechsel",
+                "summary_words_one": "{{count}} Wort",
+                "summary_words_other": "{{count}} Wörter",
+                "summary_nudges_one": "{{count}} Hinweis",
+                "summary_nudges_other": "{{count}} Hinweise"
             }
         },
         "sections_title": "Abschnitte",
@@ -5499,7 +5530,8 @@
         "gr_queue_bulk": "Wähle Lernende auswählen, um mehrere Personen anzuhaken (oder Alle angezeigten auswählen) und sie in einem Schritt als nicht abgegeben zu markieren oder wiederherzustellen. Nur aktuell angezeigte Personen werden geändert, Wiederherstellen behält Bewertungen und Verlauf, und die Auswahl wird bei jeder Filteränderung geleert.",
         "route_essay_projector_label": "Projizierter Entwurf",
         "route_essay_projector_desc": "Nur-Lese-Ansicht eines einzelnen Entwurfs für den Beamer im Klassenzimmer, ohne Steuerung und ohne Klassenliste.",
-        "es_creating_item_projector": "Einen Entwurf in einem zweiten Fenster auf den Beamer legen, um über einen Satz zu sprechen, während der Monitor den Rest der Klasse weiter beobachtet."
+        "es_creating_item_projector": "Einen Entwurf in einem zweiten Fenster auf den Beamer legen, um über einen Satz zu sprechen, während der Monitor den Rest der Klasse weiter beobachtet.",
+        "rb_live_monitor_item_session_export": "Exportiere die Sitzung als CSV mit Zählungen, Stock-Minuten, Alter des Textes, geschriebenen Wörtern und dem Hinweisprotokoll pro Schülerin oder Schüler — plus einer einseitigen PDF-Zusammenfassung —, um sie später bei einer Integritätsfrage beizulegen."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",

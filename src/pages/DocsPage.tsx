@@ -1134,6 +1134,7 @@ function RubricsTab() {
                         t('docs.rb_live_monitor_item_hide_names'),
                         t('docs.rb_live_monitor_item_proctoring'),
                         t('docs.rb_live_monitor_item_nudge'),
+                        t('docs.rb_live_monitor_item_session_export'),
                     ]}
                 />
             </FeatureSection>
