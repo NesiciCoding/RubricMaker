@@ -196,6 +196,10 @@ export class EssayAdapter {
      * no email on the JWT, so fall back to the value stored by signInAnonymously — without
      * this, a remount would restore the session but not the email, re-showing the gate.
      */
+    async getAccessToken(): Promise<string | null> {
+        return (await this.getActiveSession())?.session.access_token ?? null;
+    }
+
     async getSession(): Promise<{ userId: string | null; email: string | null }> {
         const active = await this.getActiveSession();
         if (!active) return { userId: null, email: null };

@@ -1543,7 +1543,9 @@
                 "never_opened": "Nog niet geopend",
                 "lost_now": "Geen signaal",
                 "lost_one": "Geen signaal · {{count}} min",
-                "lost_other": "Geen signaal · {{count}} min"
+                "lost_other": "Geen signaal · {{count}} min",
+                "announce_lost": "{{name}}: geen signaal",
+                "announce_never_opened": "{{name}} heeft nog niet geopend"
             }
         },
         "sections_title": "Secties",
