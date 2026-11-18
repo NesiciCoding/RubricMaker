@@ -77,6 +77,8 @@ import { testAssignBlockers } from '../utils/testQuestionIssues';
 import { resolveScanOcrSettings } from '../utils/scanSettings';
 import { defaultScoreOnlyQuestions } from '../utils/scoreSheet';
 import { resolveTestScale } from '../utils/testGradingNorm';
+import { getEffectiveVoTrack, VO_TRACK_LABELS } from '../data/voTracks';
+import { getEffectiveSchoolYear, SCHOOL_YEAR_LABELS } from '../data/schoolYears';
 
 export default function TestListPage() {
     const { t, i18n } = useTranslation();
@@ -246,14 +248,22 @@ export default function TestListPage() {
 
         // Scope the question set to the exported attempt so adaptive questions from other attempts
         // don't appear as blank rows.
-        const summaryFor = (studentTest: StudentTest) =>
-            buildTestStudentSummary(
+        const summaryFor = (studentTest: StudentTest) => {
+            const student = students.find((s) => s.id === studentTest.studentId);
+            const studentClass = classes.find((c) => c.id === student?.classId);
+            const track = getEffectiveVoTrack(student, studentClass);
+            const year = getEffectiveSchoolYear(student, studentClass);
+            return buildTestStudentSummary(
                 test,
                 studentTest,
-                students.find((s) => s.id === studentTest.studentId),
+                student,
                 effectiveTestQuestions(studentTest.studentId, [studentTest], test),
-                settings.cefrAchieveThreshold
+                {
+                    className: studentClass?.name,
+                    level: track ? VO_TRACK_LABELS[track] : year ? SCHOOL_YEAR_LABELS[year] : undefined,
+                }
             );
+        };
 
         if (exportScope === 'single') {
             const studentTest = pickLatestAttempt(

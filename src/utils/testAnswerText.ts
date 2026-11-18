@@ -7,6 +7,7 @@ import { keyWordChunks, parseErrorPassage, sentenceBuilderText } from '../../sup
 import { parseAudioResponse } from './audioResponseCode';
 import { autoScoreResponse, calcStudentTestRawPoints, calcTestMaxPoints, calcTestPercentage } from './testCalc';
 import { estimatePlacement, type PlacementPathStep } from './placementResult';
+import { clamp } from './clamp';
 import { summarizeProctorFlags } from './proctorAggregator';
 
 /** Shorthand for the test-summary-export string namespace. */
@@ -296,48 +297,82 @@ export function describeTestMeta(studentTest: StudentTest): string[] {
     return lines;
 }
 
+/** One linked standard / CEFR descriptor / framework descriptor and the student's accuracy on it. */
+export interface LinkedItemAccuracy {
+    label: string;
+    /** Points earned on the questions linked to this item, as a percentage of their points, 0-100 */
+    accuracyPct: number;
+}
+
 /**
- * Plain-text "mini summary" of one student's test result — mirrors buildStudentSummary() for
- * rubrics (StudentsPage): score, CEFR estimate, and per-question given/correct answers.
+ * Rolls one student's per-question answers up into an accuracy percentage per linked standard, CEFR
+ * descriptor or framework descriptor (grammar items, IB, Bloom's, SLO). Unanswered linked questions
+ * count as zero credit, so the figure is the student's own result on that item, not a class average.
+ * Sorted strongest first.
+ */
+export function calcLinkedItemAccuracies(questions: TestQuestion[], rows: TestAnswerRow[]): LinkedItemAccuracy[] {
+    const groups = new Map<string, { label: string; earned: number; points: number }>();
+
+    const add = (key: string, label: string, row: TestAnswerRow) => {
+        const group = groups.get(key) ?? { label, earned: 0, points: 0 };
+        group.earned += clamp(row.pointsEarned, 0, row.points);
+        group.points += row.points;
+        groups.set(key, group);
+    };
+
+    questions.forEach((question, i) => {
+        const row = rows[i];
+        /* v8 ignore next 1 */
+        if (!row) return;
+        for (const standard of question.linkedStandards ?? []) {
+            add(`standard:${standard.guid}`, standard.statementNotation ?? standard.description, row);
+        }
+        for (const descriptor of question.linkedCefrDescriptors ?? []) {
+            add(`cefr:${descriptor.descriptorId}`, descriptor.descriptionEn, row);
+        }
+        for (const descriptor of question.frameworkDescriptors ?? []) {
+            add(`framework:${descriptor.framework}:${descriptor.descriptorId}`, descriptor.descriptionEn, row);
+        }
+    });
+
+    return [...groups.values()]
+        .filter((group) => group.points > 0)
+        .map((group) => ({ label: group.label, accuracyPct: (group.earned / group.points) * 100 }))
+        .sort((a, b) => b.accuracyPct - a.accuracyPct);
+}
+
+export interface TestStudentSummaryOptions {
+    className?: string;
+    /** Result level shown in the summary — the student's VO track, or the school year for primary classes. */
+    level?: string;
+}
+
+/**
+ * Condensed plain-text summary of one student's test result: name, class, level, percentage correct
+ * and one accuracy line per linked standard / CEFR descriptor / grammar item. Deliberately has no
+ * question-by-question breakdown — the PDF and Word exports carry that detail.
  */
 export function buildTestStudentSummary(
     test: Test,
     studentTest: StudentTest,
     student: Student | undefined,
     questions: TestQuestion[],
-    achieveThreshold: number = DEFAULT_CEFR_ACHIEVE_THRESHOLD
+    options: TestStudentSummaryOptions = {}
 ): string {
-    const name = student?.name ?? tx('student');
-    const maxPoints = calcTestMaxPoints(test);
+    const maxPoints = calcTestMaxPoints(test) || questions.reduce((sum, q) => sum + (q.points ?? 0), 0);
     const rawPoints = studentTest.rawTotalPoints ?? calcStudentTestRawPoints(test, studentTest.answers);
-    const adjustment = studentTest.adjustmentPoints ?? 0;
-    const pct = calcTestPercentage(rawPoints + adjustment, maxPoints);
-    const pts = tx('pts');
+    const pct = calcTestPercentage(rawPoints + (studentTest.adjustmentPoints ?? 0), maxPoints);
 
-    const lines: string[] = [name, '─'.repeat(name.length), ''];
-    lines.push(`${tx('test')}: ${test.name}`);
-    if (maxPoints > 0) lines.push(`${tx('score')}: ${pct.toFixed(1)}% — ${rawPoints + adjustment}/${maxPoints} ${pts}`);
-    const cefr = describeTestCefr(test, studentTest, achieveThreshold);
-    if (cefr) lines.push(`${tx('cefr')}: ${cefr}`);
-    for (const line of describeTestMeta(studentTest)) lines.push(line);
+    const lines: string[] = [`${tx('name')}: ${student?.name ?? tx('student')}`];
+    if (options.className) lines.push(`${tx('class')}: ${options.className}`);
+    if (options.level) lines.push(`${tx('level')}: ${options.level}`);
+    if (maxPoints > 0) lines.push(`${tx('score')}: ${tx('score_correct', { pct: pct.toFixed(0) })}`);
 
-    const path = describePlacementPath(test, studentTest);
-    if (path.length > 0) {
-        lines.push('');
-        lines.push(`${tx('placement_path')}:`);
-        for (const step of path) {
-            lines.push(`  ${step.title}: ${step.level ?? '—'} — ${step.scorePct.toFixed(0)}%`);
-        }
+    const linked = calcLinkedItemAccuracies(questions, buildAnswerRows(test, studentTest, questions));
+    if (linked.length > 0) {
+        lines.push('', tx('frameworks_grammar'));
+        for (const item of linked) lines.push(`  ${item.accuracyPct.toFixed(0).padStart(3)}%  ${item.label}`);
     }
-    lines.push('');
-
-    buildAnswerRows(test, studentTest, questions).forEach((row, i) => {
-        const mark = ANSWER_STATUS_MARK[row.status];
-        lines.push(`${mark ? mark + ' ' : ''}Q${i + 1}. ${row.prompt} (${row.pointsEarned}/${row.points} ${pts})`);
-        lines.push(`  ${tx('given')}: ${row.given}`);
-        if (row.correct) lines.push(`  ${tx('correct')}: ${row.correct}`);
-        if (row.feedback) lines.push(`  ${tx('feedback')}: ${stripHtmlTags(row.feedback)}`);
-    });
 
     return lines.join('\n');
 }
