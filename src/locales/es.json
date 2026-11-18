@@ -1546,7 +1546,9 @@
                 "never_opened": "Todavía no lo ha abierto",
                 "lost_now": "Sin señal",
                 "lost_one": "Sin señal · {{count}} min",
-                "lost_other": "Sin señal · {{count}} min"
+                "lost_other": "Sin señal · {{count}} min",
+                "announce_lost": "{{name}}: sin señal",
+                "announce_never_opened": "{{name}} todavía no lo ha abierto"
             },
             "stuck": {
                 "title": "Preguntas alcanzadas pero sin responder",
