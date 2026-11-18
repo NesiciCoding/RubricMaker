@@ -207,6 +207,14 @@ export function getRouteTree(t: TFunction): RouteNode[] {
                             label: t('docs.route_essay_monitor_label'),
                             description: t('docs.route_essay_monitor_desc'),
                             color: '#8b5cf6',
+                            children: [
+                                {
+                                    path: '/essays/:assignmentId/monitor/project/:studentId',
+                                    label: t('docs.route_essay_projector_label'),
+                                    description: t('docs.route_essay_projector_desc'),
+                                    color: '#8b5cf6',
+                                },
+                            ],
                         },
                     ],
                 },
@@ -1917,6 +1925,7 @@ function EssaysTab() {
                         t('docs.es_creating_item_status'),
                         t('docs.es_creating_item_import'),
                         t('docs.es_creating_item_monitor'),
+                        t('docs.es_creating_item_projector'),
                     ]}
                 />
 

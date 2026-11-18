@@ -1541,7 +1541,8 @@
                 "battery": "Batería",
                 "charging": "cargando",
                 "on": "Sí",
-                "off": "No"
+                "off": "No",
+                "project_button": "Mostrar en el proyector"
             },
             "signal": {
                 "never_opened": "Todavía no lo ha abierto",
@@ -1581,6 +1582,20 @@
                 "preset_check": "Revisa la pregunta en la que estás",
                 "preset_time": "Quedan 5 minutos",
                 "preset_save": "No olvides guardar"
+            },
+            "projector": {
+                "title": "Un borrador en el proyector",
+                "note": "Solo lectura. Solo se muestra el borrador de este estudiante: sin lista de clase y sin controles de calificación.",
+                "waiting": "Esperando la próxima instantánea de este estudiante…",
+                "live": "En vivo",
+                "back": "Volver al monitor",
+                "unknown_student": "Estudiante desconocido",
+                "db_required": "El proyector necesita una conexión a la base de datos.",
+                "words_one": "{{count}} palabra",
+                "words_other": "{{count}} palabras",
+                "updated_now": "Actualizado hace menos de un minuto",
+                "updated_minutes_one": "Actualizado hace {{count}} min",
+                "updated_minutes_other": "Actualizado hace {{count}} min"
             }
         },
         "sections_title": "Secciones",
@@ -5481,7 +5496,10 @@
         "route_live_new_label": "Nueva sesión de escritura en vivo",
         "route_live_new_desc": "Crear una sesión en vivo en borrador.",
         "gr_queue_filters": "Acota la cola con el cuadro de búsqueda (ignora mayúsculas, acentos y orden de las palabras, y también busca en nombres de clase y de grupo), los chips de estado (Calificado, En curso, Sin calificar, No entregado) y los chips de grupo, que muestran cuántos miembros de cada grupo están calificados. Los filtros viven en la dirección de la página, así que actualizar, guardar un marcador o volver desde un estudiante te devuelve a la misma vista y posición. Un estudiante cuenta como Calificado solo cuando todos los criterios están puntuados; uno parcialmente puntuado está En curso y muestra cuántos criterios lleva. «Calificar siguiente» y «Guardar y siguiente» se quedan en la vista filtrada y solo ofrecen estudiantes sin entrega cuando no queda nada más.",
-        "gr_queue_bulk": "Elige Seleccionar estudiantes para marcar varios (o Seleccionar todo lo mostrado) y marcarlos como no entregado o restaurarlos de una vez. Solo se cambian los estudiantes mostrados, restaurar conserva puntuaciones e historial, y la selección se borra cuando cambian los filtros."
+        "gr_queue_bulk": "Elige Seleccionar estudiantes para marcar varios (o Seleccionar todo lo mostrado) y marcarlos como no entregado o restaurarlos de una vez. Solo se cambian los estudiantes mostrados, restaurar conserva puntuaciones e historial, y la selección se borra cuando cambian los filtros.",
+        "route_essay_projector_label": "Borrador proyectado",
+        "route_essay_projector_desc": "Vista de solo lectura de un único borrador para el proyector de clase, sin controles ni lista de clase.",
+        "es_creating_item_projector": "Proyecta un borrador en una segunda ventana para hablar de una frase mientras el monitor sigue observando al resto de la clase."
     },
     "studentProfile": {
         "tab_overview": "Resumen",

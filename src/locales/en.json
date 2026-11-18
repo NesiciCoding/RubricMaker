@@ -1541,7 +1541,8 @@
                 "battery": "Battery",
                 "charging": "charging",
                 "on": "Yes",
-                "off": "No"
+                "off": "No",
+                "project_button": "Show on projector"
             },
             "signal": {
                 "never_opened": "Hasn't opened yet",
@@ -1581,6 +1582,20 @@
                 "preset_check": "Check the question you're on",
                 "preset_time": "5 minutes left",
                 "preset_save": "Don't forget to save your work"
+            },
+            "projector": {
+                "title": "One draft on the projector",
+                "note": "Read-only. Only this student's draft is shown — no class list and no grading controls.",
+                "waiting": "Waiting for this student’s next snapshot…",
+                "live": "Live",
+                "back": "Back to the monitor",
+                "unknown_student": "Unknown student",
+                "db_required": "The projector needs a database connection.",
+                "words_one": "{{count}} word",
+                "words_other": "{{count}} words",
+                "updated_now": "Updated less than a minute ago",
+                "updated_minutes_one": "Updated {{count}} min ago",
+                "updated_minutes_other": "Updated {{count}} min ago"
             }
         },
         "queue": {
@@ -5481,7 +5496,10 @@
         "route_live_new_label": "New live writing session",
         "route_live_new_desc": "Create a draft live writing session.",
         "gr_queue_filters": "Narrow the queue with the search box (it ignores capitals, accents and word order, and also matches class and group names), the status chips (Graded, In progress, Not graded, Not handed in) and the group chips, which show how many members of each group are graded. The filters live in the page address, so refreshing, bookmarking or coming back from a student returns to the same view and scroll position. A student counts as Graded only when every criterion is scored; a partly scored one is In progress and shows how many criteria are done. Grade next and Save & Next stay inside the filtered view and only offer not-handed-in students when nothing else is left.",
-        "gr_queue_bulk": "Choose Select students to tick several students (or Select all shown) and mark them not handed in or restore them in one step. Only students currently shown are changed, restoring keeps their scores and history, and the selection clears whenever the filters change."
+        "gr_queue_bulk": "Choose Select students to tick several students (or Select all shown) and mark them not handed in or restore them in one step. Only students currently shown are changed, restoring keeps their scores and history, and the selection clears whenever the filters change.",
+        "route_essay_projector_label": "Projected draft",
+        "route_essay_projector_desc": "Read-only view of one draft for the classroom projector, without controls or a class list.",
+        "es_creating_item_projector": "Spotlight a draft on the projector in a second window to talk about one sentence, while the monitor keeps watching the rest of the class."
     },
     "studentProfile": {
         "tab_overview": "Overview",

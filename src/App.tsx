@@ -63,6 +63,7 @@ const TestResultsPage = lazy(() => import('./pages/TestResultsPage'));
 const TestScoreSheetPage = lazy(() => import('./pages/TestScoreSheetPage'));
 const TestGradingQueuePage = lazy(() => import('./pages/TestGradingQueuePage'));
 const LiveMonitorPage = lazy(() => import('./pages/LiveMonitorPage'));
+const EssayDraftProjectorPage = lazy(() => import('./pages/EssayDraftProjectorPage'));
 const StudentPortalPage = lazy(() => import('./pages/StudentPortalPage'));
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
@@ -359,6 +360,10 @@ export default function App() {
                                     <Route
                                         path="/essays/:assignmentId/monitor"
                                         element={<LiveMonitorPage kind="essay" />}
+                                    />
+                                    <Route
+                                        path="/essays/:assignmentId/monitor/project/:studentId"
+                                        element={<EssayDraftProjectorPage />}
                                     />
                                     <Route path="/live" element={<LiveWritingListPage />} />
                                     <Route path="/live/new" element={<LiveWritingSessionPage />} />

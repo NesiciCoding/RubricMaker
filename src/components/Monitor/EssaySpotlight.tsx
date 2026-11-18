@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Radio } from 'lucide-react';
+import { ArrowLeft, MonitorPlay, Radio } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import LiveDraftPanel from './LiveDraftPanel';
 import EssayTimeline from './EssayTimeline';
@@ -35,6 +35,8 @@ export interface EssaySpotlightProps {
     showWritingPace?: boolean;
     /** Receives the nudge message the teacher picked. */
     onNudge?: (message: string) => void;
+    /** Opens the read-only one-draft projector in a second window. */
+    projectorHref?: string;
     onLeave: () => void;
     now?: number;
 }
@@ -83,6 +85,7 @@ export default function EssaySpotlight({
     flags,
     showWritingPace = false,
     onNudge,
+    projectorHref,
     onLeave,
     now,
 }: EssaySpotlightProps) {
@@ -119,6 +122,19 @@ export default function EssaySpotlight({
                 <span style={{ fontSize: '0.78rem', color: 'var(--text-dim)' }}>
                     {t('tests.monitor.essay.spotlight_note')}
                 </span>
+                {projectorHref && (
+                    <a
+                        href={projectorHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-secondary btn-sm"
+                        data-testid="essay-projector-link"
+                        style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                    >
+                        <MonitorPlay size={14} aria-hidden="true" />
+                        {t('tests.monitor.essay.project_button')}
+                    </a>
+                )}
             </div>
 
             <LiveDraftPanel

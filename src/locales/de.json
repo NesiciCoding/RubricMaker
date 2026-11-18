@@ -1541,7 +1541,8 @@
                 "battery": "Akku",
                 "charging": "lädt",
                 "on": "Ja",
-                "off": "Nein"
+                "off": "Nein",
+                "project_button": "Auf dem Beamer zeigen"
             },
             "signal": {
                 "never_opened": "Noch nicht geöffnet",
@@ -1581,6 +1582,20 @@
                 "preset_check": "Sieh deine aktuelle Frage noch einmal an",
                 "preset_time": "Noch 5 Minuten",
                 "preset_save": "Denk ans Speichern"
+            },
+            "projector": {
+                "title": "Ein Entwurf auf dem Beamer",
+                "note": "Nur Lesen. Es wird ausschließlich der Entwurf dieser Schülerin oder dieses Schülers gezeigt — keine Klassenliste und keine Bewertungssteuerung.",
+                "waiting": "Warte auf die nächste Momentaufnahme dieser Schülerin oder dieses Schülers…",
+                "live": "Live",
+                "back": "Zurück zum Monitor",
+                "unknown_student": "Unbekannte Schülerin oder unbekannter Schüler",
+                "db_required": "Der Beamer benötigt eine Datenbankverbindung.",
+                "words_one": "{{count}} Wort",
+                "words_other": "{{count}} Wörter",
+                "updated_now": "Vor weniger als einer Minute aktualisiert",
+                "updated_minutes_one": "Vor {{count}} Min. aktualisiert",
+                "updated_minutes_other": "Vor {{count}} Min. aktualisiert"
             }
         },
         "sections_title": "Abschnitte",
@@ -5481,7 +5496,10 @@
         "route_live_new_label": "Neue Live-Schreibsitzung",
         "route_live_new_desc": "Eine Live-Sitzung als Entwurf erstellen.",
         "gr_queue_filters": "Grenze die Warteschlange mit dem Suchfeld (ignoriert Groß-/Kleinschreibung, Akzente und Wortreihenfolge und durchsucht auch Klassen- und Gruppennamen), den Status-Chips (Bewertet, In Bearbeitung, Nicht bewertet, Nicht abgegeben) und den Gruppen-Chips ein, die zeigen, wie viele Mitglieder jeder Gruppe bewertet sind. Die Filter stehen in der Seitenadresse: Neuladen, ein Lesezeichen oder die Rückkehr von einer Person führen zur selben Ansicht und Scrollposition. Eine Person gilt erst als Bewertet, wenn jedes Kriterium bewertet ist; teilweise Bewertete sind In Bearbeitung und zeigen, wie viele Kriterien fertig sind. „Nächste bewerten“ und „Speichern & weiter“ bleiben in der gefilterten Ansicht und bieten nicht abgegebene Arbeiten nur an, wenn sonst nichts übrig ist.",
-        "gr_queue_bulk": "Wähle Lernende auswählen, um mehrere Personen anzuhaken (oder Alle angezeigten auswählen) und sie in einem Schritt als nicht abgegeben zu markieren oder wiederherzustellen. Nur aktuell angezeigte Personen werden geändert, Wiederherstellen behält Bewertungen und Verlauf, und die Auswahl wird bei jeder Filteränderung geleert."
+        "gr_queue_bulk": "Wähle Lernende auswählen, um mehrere Personen anzuhaken (oder Alle angezeigten auswählen) und sie in einem Schritt als nicht abgegeben zu markieren oder wiederherzustellen. Nur aktuell angezeigte Personen werden geändert, Wiederherstellen behält Bewertungen und Verlauf, und die Auswahl wird bei jeder Filteränderung geleert.",
+        "route_essay_projector_label": "Projizierter Entwurf",
+        "route_essay_projector_desc": "Nur-Lese-Ansicht eines einzelnen Entwurfs für den Beamer im Klassenzimmer, ohne Steuerung und ohne Klassenliste.",
+        "es_creating_item_projector": "Einen Entwurf in einem zweiten Fenster auf den Beamer legen, um über einen Satz zu sprechen, während der Monitor den Rest der Klasse weiter beobachtet."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",
