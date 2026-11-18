@@ -123,6 +123,16 @@
       "violations": []
     },
     {
+      "route": "/essays/essay-a11y-1/monitor/project/student-a11y-1",
+      "theme": "dark",
+      "violations": []
+    },
+    {
+      "route": "/essays/essay-a11y-1/monitor/project/student-a11y-1",
+      "theme": "light",
+      "violations": []
+    },
+    {
       "route": "/essays/new",
       "theme": "dark",
       "violations": []
