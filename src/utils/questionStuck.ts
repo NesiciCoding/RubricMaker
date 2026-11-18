@@ -1,3 +1,6 @@
+import type { TestAnswer, TestQuestion } from '../types';
+import { isAnswered } from './responseCells';
+
 export interface StuckQuestion {
     questionId: string;
     /** 1-based position in the test's authored order. */
@@ -62,4 +65,18 @@ export function stuckQuestions(
             asked,
         }))
         .sort((a, b) => b.reached - a.reached || a.index - b.index);
+}
+
+/**
+ * The question ids a student has really answered. A snapshot keeps the key of a question that was
+ * cleared again, so a key alone is not an answer; the question-aware check decides what is blank.
+ */
+export function answeredQuestionIds(questions: readonly TestQuestion[], answers: readonly TestAnswer[]): Set<string> {
+    const byId = new Map(questions.map((question) => [question.id, question]));
+    const answered = new Set<string>();
+    for (const answer of answers) {
+        const question = byId.get(answer.questionId);
+        if (question && isAnswered(question, answer)) answered.add(answer.questionId);
+    }
+    return answered;
 }
