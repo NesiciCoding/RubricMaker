@@ -1493,6 +1493,10 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                                     : undefined
                                             }
                                             snapshots={[...(focusedRow.live.snapshots ?? [])].reverse()}
+                                            events={mergeProctorEvents(
+                                                focusedRow.persistedEvents,
+                                                focusedRow.live.events
+                                            )}
                                             flags={focusedRow.flags}
                                             showWritingPace={showWritingPace}
                                             onNudge={nudgeFocusedStudent}
