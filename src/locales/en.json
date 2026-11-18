@@ -1559,6 +1559,19 @@
                     "paste": "paste",
                     "idle": "pause"
                 }
+            },
+            "triage": {
+                "label": "Class triage",
+                "flagged_one": "{{count}} flagged",
+                "flagged_other": "{{count}} flagged",
+                "stalled_one": "{{count}} stalled >{{minutes}} min",
+                "stalled_other": "{{count}} stalled >{{minutes}} min",
+                "not_writing_one": "{{count}} not writing",
+                "not_writing_other": "{{count}} not writing",
+                "behind_one": "{{count}} behind pace",
+                "behind_other": "{{count}} behind pace",
+                "clear": "Show all",
+                "empty": "Nobody matches this filter."
             }
         },
         "queue": {
@@ -4888,7 +4901,7 @@
         "rb_live_monitor_button": "Monitor",
         "rb_live_monitor_intro_suffix": "(from the Tests page for a test, or from the assignment dialog for an essay) to open a live view of the session. This requires cloud sync to be enabled — without it, the page explains that you can review progress after the fact from each student's saved answers or draft instead.",
         "rb_live_monitor_item_presence": "Presence — a coloured dot shows whether each student is active, idle, or disconnected, based on how recently their browser checked in.",
-        "rb_live_monitor_item_grid": "Response grid (tests) — a students-by-questions matrix of coloured bars, grouped by class with a per-question class average and a per-student total. Each row is a student, each column a question; click a question header to open a gallery of every answer to it. Presence, heartbeat age and the proctoring flags sit in two fixed columns at the left of the row, and the chevron opens that student's full proctoring log inside the grid. A line above the grid names the questions students reached and left blank, which is where the class, not one student, is stuck.",
+        "rb_live_monitor_item_grid": "Response grid (tests) — a students-by-questions matrix of coloured bars, grouped by class with a per-question class average and a per-student total. Each row is a student, each column a question; click a question header to open a gallery of every answer to it. Presence, heartbeat age and the proctoring flags sit in two fixed columns at the left of the row, and the chevron opens that student's full proctoring log inside the grid. A line above the grid names the questions students reached and left blank, which is where the class, not one student, is stuck. A sticky strip above the grid counts the class at a glance — flagged, stalled, not writing, behind pace — and clicking one narrows the grid to those students.",
         "rb_live_monitor_item_draft": "Live drafts (essays) — the monitor lists every student writing this assignment with a snapshot of their text roughly once a minute (word count, writing pace and last-typed age update every few seconds), the words added since the previous snapshot highlighted, plus their word count, writing pace, last-typed age and a word-count sparkline. Click \"Watch live\" on a student for a spotlight view that refreshes every five seconds: their full draft, sentence and vocabulary measurements, a snapshot log and their proctoring signals. Snapshots are stored server-side, so after a reload or a dropped connection the roster still shows the last draft and how old it is. A row also says so when a student has not opened the assignment yet or their connection dropped, instead of showing the same grey dot either way. Each row separates characters typed from characters pasted (counts only, never the text), so a pasted paragraph stands out. The spotlight also draws a timeline of the word-count curve with tab switches, pastes and pauses marked on it, so a flat stretch is visible at a glance.",
         "rb_live_monitor_item_writing_pace": "Writing pace (essays) — the \"Writing pace\" toggle adds words per minute over the last three minutes, whether the student is speeding up, steady, slowing down or has stopped, and how long ago the draft last changed.",
         "rb_live_monitor_item_hide_names": "Hide names — toggle to anonymise the view, useful when sharing your screen.",

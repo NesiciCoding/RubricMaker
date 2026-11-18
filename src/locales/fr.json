@@ -1559,6 +1559,19 @@
                     "paste": "coller",
                     "idle": "pause"
                 }
+            },
+            "triage": {
+                "label": "Tri de classe",
+                "flagged_one": "{{count}} signalé(s)",
+                "flagged_other": "{{count}} signalé(s)",
+                "stalled_one": "{{count}} à l'arrêt >{{minutes}} min",
+                "stalled_other": "{{count}} à l'arrêt >{{minutes}} min",
+                "not_writing_one": "{{count}} n'écrit pas",
+                "not_writing_other": "{{count}} n'écrit pas",
+                "behind_one": "{{count}} en retard",
+                "behind_other": "{{count}} en retard",
+                "clear": "Tout afficher",
+                "empty": "Aucun élève ne correspond à ce filtre."
             }
         },
         "sections_title": "Sections",
@@ -4890,7 +4903,7 @@
         "rb_live_monitor_button": "Surveiller",
         "rb_live_monitor_intro_suffix": "(depuis la page Tests pour un test, ou depuis la boîte de dialogue d'attribution pour une rédaction) pour ouvrir une vue en direct de la session. Cela nécessite que la synchronisation cloud soit activée — sans cela, la page explique que vous pouvez examiner les progrès après coup à partir des réponses ou du brouillon enregistrés de chaque élève.",
         "rb_live_monitor_item_presence": "Présence — un point coloré indique si chaque élève est actif, inactif ou déconnecté, selon la dernière connexion enregistrée de son navigateur.",
-        "rb_live_monitor_item_grid": "Grille de réponses (tests) — une matrice élèves × questions de barres colorées, groupée par classe avec une moyenne par question et un total par élève. Chaque ligne est un élève, chaque colonne une question ; cliquez sur l'en-tête d'une question pour ouvrir une galerie de toutes les réponses. La présence, l'âge du dernier signal et les indicateurs de surveillance occupent deux colonnes fixes à gauche de la ligne, et le chevron ouvre le journal de surveillance complet de l'élève dans la grille. Une ligne au-dessus de la grille nomme les questions atteintes mais laissées vides : c'est là que la classe bloque, pas un élève.",
+        "rb_live_monitor_item_grid": "Grille de réponses (tests) — une matrice élèves × questions de barres colorées, groupée par classe avec une moyenne par question et un total par élève. Chaque ligne est un élève, chaque colonne une question ; cliquez sur l'en-tête d'une question pour ouvrir une galerie de toutes les réponses. La présence, l'âge du dernier signal et les indicateurs de surveillance occupent deux colonnes fixes à gauche de la ligne, et le chevron ouvre le journal de surveillance complet de l'élève dans la grille. Une ligne au-dessus de la grille nomme les questions atteintes mais laissées vides : c'est là que la classe bloque, pas un élève. Une bande collante au-dessus de la grille résume la classe d'un coup d'œil — signalés, à l'arrêt, n'écrivant pas, en retard — et un clic restreint la grille à ces élèves.",
         "rb_live_monitor_item_draft": "Brouillons en direct (rédactions) — le moniteur liste chaque élève qui écrit ce devoir avec un instantané de son texte environ une fois par minute (nombre de mots, rythme d'écriture et ancienneté de la dernière frappe se mettent à jour toutes les quelques secondes), les mots ajoutés depuis l'instantané précédent surlignés, ainsi que le nombre de mots, le rythme d'écriture, l'ancienneté de la dernière frappe et une courbe miniature. Cliquez sur « Suivre en direct » pour ouvrir une vue spotlight actualisée toutes les cinq secondes : le brouillon complet, des mesures de phrases et de vocabulaire, un journal des instantanés et les signaux de surveillance. Les instantanés sont conservés côté serveur : après un rechargement ou une coupure, la liste affiche toujours le dernier brouillon et son ancienneté. Une ligne indique aussi quand un élève n'a pas encore ouvert le devoir ou quand sa connexion a été coupée, au lieu d'afficher le même point gris dans les deux cas. Chaque ligne sépare les caractères saisis des caractères collés (des nombres seulement, jamais le texte), ce qui fait ressortir un paragraphe collé. La vue spotlight trace aussi une chronologie de la courbe du nombre de mots, avec les changements d'onglet, les collages et les pauses marqués dessus, pour qu'un passage plat se voie d'un coup d'œil.",
         "rb_live_monitor_item_writing_pace": "Rythme d'écriture (rédactions) — le bouton « Rythme d'écriture » affiche les mots par minute des trois dernières minutes, si l'élève accélère, écrit régulièrement, ralentit ou s'est arrêté, et depuis combien de temps le brouillon n'a pas changé.",
         "rb_live_monitor_item_hide_names": "Masquer les noms — basculer pour anonymiser la vue, utile lors du partage d'écran.",
