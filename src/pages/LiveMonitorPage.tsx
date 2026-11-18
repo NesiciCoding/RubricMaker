@@ -44,6 +44,7 @@ import EssaySpotlight from '../components/Monitor/EssaySpotlight';
 import {
     derivePresence,
     deriveConnectionState,
+    type ConnectionState,
     summarizeProctorFlags,
     mergeProctorEvents,
 } from '../utils/proctorAggregator';
@@ -131,25 +132,34 @@ function emptyLiveState(studentId: string): StudentLiveState {
  * have shown had the tab never dropped.
  */
 function applyPersistedSnapshots(current: StudentLiveState, history: PersistedDraftSnapshot[]): StudentLiveState {
-    let wordSamples = current.wordSamples ?? [];
-    const snapshots = [...(current.snapshots ?? [])];
+    const wordSamples = [
+        ...(current.wordSamples ?? []),
+        ...history.map((snapshot) => ({ at: snapshot.at, words: snapshot.wordCount })),
+    ]
+        .sort((a, b) => a.at - b.at)
+        .reduce<WordSample[]>(appendWordSample, []);
+    const byAt = new Map<number, NonNullable<StudentLiveState['snapshots']>[number]>();
+    for (const entry of current.snapshots ?? []) byAt.set(entry.at, entry);
     for (const snapshot of history) {
-        wordSamples = appendWordSample(wordSamples, { at: snapshot.at, words: snapshot.wordCount });
-        if (snapshot.text !== undefined) {
-            snapshots.push({ at: snapshot.at, words: snapshot.wordCount, text: snapshot.text });
+        if (snapshot.text !== undefined && !byAt.has(snapshot.at)) {
+            byAt.set(snapshot.at, { at: snapshot.at, words: snapshot.wordCount, text: snapshot.text });
         }
     }
+    const snapshots = [...byAt.values()].sort((a, b) => a.at - b.at).slice(-8);
     const latest = history[history.length - 1];
     const latestWithText = [...history]
         .reverse()
         .find((snapshot): snapshot is PersistedDraftSnapshot & { text: string } => snapshot.text !== undefined);
+    const stored = latestWithText ? { text: latestWithText.text, wordCount: latestWithText.wordCount } : null;
     return {
         ...current,
         wordSamples,
-        snapshots: snapshots.slice(-8),
-        snapshot:
-            current.snapshot ??
-            (latestWithText ? { text: latestWithText.text, wordCount: latestWithText.wordCount } : null),
+        snapshots,
+        snapshot: current.snapshot
+            ? current.snapshot.text === undefined && stored
+                ? { ...current.snapshot, text: stored.text, wordCount: current.snapshot.wordCount ?? stored.wordCount }
+                : current.snapshot
+            : stored,
         lastChangeAt: current.lastChangeAt ?? latest?.at,
         lastUpdateAt: current.lastUpdateAt ?? (latest ? new Date(latest.at).toISOString() : null),
         firstSeenAt: current.firstSeenAt ?? history[0]?.at,
@@ -158,6 +168,8 @@ function applyPersistedSnapshots(current: StudentLiveState, history: PersistedDr
 
 interface MonitorStudent {
     studentId: string;
+    /** The student's own essay_assignments.id; a batch assignment stores each student's drafts under it, not under the route key. */
+    teacherKey?: string;
     name: string;
     classId?: string;
     className?: string;
@@ -345,18 +357,24 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         // single row fetched from Supabase is the fallback for a monitor opened before the
         // hydrated roster arrived, which keeps a one-student assignment working on its own.
         const essayStudentIds = new Set<string>();
+        const essayTeacherKeys = new Map<string, string>();
         for (const assignment of essayAssignments ?? []) {
             if (assignment.teacherKey !== params.assignmentId && assignment.sourceTeacherKey !== params.assignmentId)
                 continue;
             essayStudentIds.add(assignment.studentId);
+            essayTeacherKeys.set(assignment.studentId, assignment.teacherKey);
         }
-        if (essayAssignment) essayStudentIds.add(essayAssignment.studentId);
+        if (essayAssignment) {
+            essayStudentIds.add(essayAssignment.studentId);
+            essayTeacherKeys.set(essayAssignment.studentId, params.assignmentId ?? '');
+        }
         return Array.from(essayStudentIds)
             .map((studentId): MonitorStudent | null => {
                 const student = students.find((s) => s.id === studentId);
                 if (!student) return null;
                 return {
                     studentId: student.id,
+                    teacherKey: essayTeacherKeys.get(student.id),
                     name: student.name,
                     classId: student.classId,
                     className: classes.find((c) => c.id === student.classId)?.name,
@@ -503,6 +521,21 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         }, 300);
     }
 
+    // Live state is per student *and* per assignment; a teacher moving from one assignment to the
+    // next on a mounted page must not carry the first one's heartbeat history or queued patches over.
+    const scopeKey = `${kind}:${params.testId ?? params.assignmentId ?? ''}`;
+    const scopeKeyRef = useRef(scopeKey);
+    useEffect(() => {
+        if (scopeKeyRef.current === scopeKey) return;
+        scopeKeyRef.current = scopeKey;
+        if (flushTimerRef.current) {
+            clearTimeout(flushTimerRef.current);
+            flushTimerRef.current = null;
+        }
+        pendingPatchesRef.current = {};
+        setLiveStates({});
+    }, [scopeKey]);
+
     const channelsRef = useRef<Map<string, RealtimeChannel>>(new Map());
     useEffect(() => {
         if (!hasDb || monitorStudents.length === 0) return;
@@ -639,27 +672,31 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
 
     // ── Persisted draft history ───────────────────────────────────────────────────
     // A reload, a sleeping laptop or a dropped connection empties the channels, and the roster
-    // would know nothing until a student writes again. The once-a-minute snapshots are stored
-    // server-side, so seed from them instead of claiming to know less than the class already did.
-    const persistedHistoryKeyRef = useRef('');
+    // would know nothing until a student writes again. The once-a-minute essay snapshots are
+    // stored server-side, so seed from them instead of claiming to know less than the class
+    // already did. Tests store no draft history, so their monitors have nothing to seed from.
+    const essayAssignmentKey = kind === 'essay' ? (params.assignmentId ?? '') : '';
+    const rosterKey = monitorStudents.map((row) => row.studentId).join(',');
+    const hydratedRef = useRef('');
     useEffect(() => {
-        if (!hasDb || monitorStudents.length === 0) return;
-        const assignmentKeyOf = (studentId: string) =>
-            kind === 'essay' ? (params.assignmentId ?? '') : (testTeacherKeys[studentId] ?? '');
-        const assignmentIds = [
-            ...new Set(monitorStudents.map((row) => assignmentKeyOf(row.studentId)).filter((id) => id !== '')),
-        ];
-        if (assignmentIds.length === 0) return;
-        const historyKey = `${kind}:${assignmentIds.slice().sort().join(',')}`;
-        if (persistedHistoryKeyRef.current === historyKey) return;
-        persistedHistoryKeyRef.current = historyKey;
+        const hydrationKey = `${essayAssignmentKey}|${rosterKey}`;
+        if (!hasDb || !essayAssignmentKey || rosterKey === '' || hydratedRef.current === hydrationKey) return;
         const drafts = LiveDraftAdapter.forTeacher();
         if (!drafts) return;
         let cancelled = false;
+        const assignmentKeys = [
+            essayAssignmentKey,
+            ...monitorStudents.map((row) => row.teacherKey).filter((key): key is string => !!key),
+        ];
         drafts
-            .listSnapshots(kind, assignmentIds)
+            .listSnapshots(
+                assignmentKeys,
+                monitorStudents.map((row) => row.studentId)
+            )
             .then((byStudent) => {
-                if (cancelled || byStudent.size === 0) return;
+                if (cancelled) return;
+                hydratedRef.current = hydrationKey;
+                if (byStudent.size === 0) return;
                 setLiveStates((prev) => {
                     const next = { ...prev };
                     for (const row of monitorStudents) {
@@ -679,9 +716,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         return () => {
             cancelled = true;
         };
-        // The roster object is rebuilt on every read; its ids and the resolved teacher keys are
-        // the only inputs that change which rows to load.
-    }, [hasDb, kind, monitorStudents.map((r) => r.studentId).join(','), testTeacherKeys]);
+    }, [hasDb, essayAssignmentKey, rosterKey, monitorStudents]);
 
     const sendNudge = useCallback(
         (studentId: string, message: string) => {
@@ -982,6 +1017,30 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     const displayName = (row: { studentId: string; name: string }, index: number) =>
         hideNames ? t('tests.monitor.anonymous_student', { index: index + 1 }) : row.name;
 
+    // Badges flip silently for a screen-reader user, so say it once when a student drops out. Only
+    // transitions are spoken: the first read of the roster and the per-minute "silent for N min"
+    // counter would otherwise repeat for the whole class.
+    const announcedConnectionRef = useRef<Map<string, ConnectionState | undefined>>(new Map());
+    const [connectionAnnouncement, setConnectionAnnouncement] = useState('');
+    useEffect(() => {
+        const known = announcedConnectionRef.current;
+        const messages: string[] = [];
+        rows.forEach((row, index) => {
+            const hadPrevious = known.has(row.studentId);
+            const previous = known.get(row.studentId);
+            known.set(row.studentId, row.connection);
+            if (!hadPrevious || previous === row.connection) return;
+            if (row.connection === 'lost') {
+                messages.push(t('tests.monitor.signal.announce_lost', { name: displayName(row, index) }));
+            } else if (row.connection === 'never_opened') {
+                messages.push(t('tests.monitor.signal.announce_never_opened', { name: displayName(row, index) }));
+            }
+        });
+        if (messages.length > 0) setConnectionAnnouncement(messages.join('. '));
+        // displayName only varies with the anonymize toggle and the language, neither of which is a transition.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [rows]);
+
     // ── Session export (the exam file) ────────────────────────────────────────────
     // The proctoring picture is ephemeral by design, so this is the teacher's only chance to keep
     // it: counts and ages that can sit next to a student's file without carrying their writing.
@@ -1115,6 +1174,9 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                 }
             />
             <div className="page-content fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div role="status" aria-live="polite" className="sr-only" data-testid="monitor-connection-announcer">
+                    {connectionAnnouncement}
+                </div>
                 {/* Controls */}
                 <div
                     data-tour="lm-controls"

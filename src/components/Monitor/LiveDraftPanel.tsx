@@ -85,7 +85,9 @@ export default function LiveDraftPanel({
                     }}
                 >
                     {wordCount !== undefined && (
-                        <span>{t('tests.monitor.draft.word_count', { count: wordCount })}</span>
+                        <span data-testid="draft-word-count">
+                            {t('tests.monitor.draft.word_count', { count: wordCount })}
+                        </span>
                     )}
                     {pace && (
                         <span

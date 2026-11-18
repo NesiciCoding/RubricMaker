@@ -100,7 +100,7 @@ describe('EssayDraftProjectorPage', () => {
         // It shows the words and the writer, and nothing about the rest of the class.
         expect(screen.getByText('Ada Lovelace')).toBeTruthy();
         expect(screen.getByText('tests.monitor.projector.words:15')).toBeTruthy();
-        expect(listSnapshots).toHaveBeenCalledWith('essay', ['essay-1']);
+        expect(listSnapshots).toHaveBeenCalledWith(['essay-1'], [expect.any(String)]);
     });
 
     it('replaces the draft on a live snapshot and asks the student for the fast cadence', async () => {

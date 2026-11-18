@@ -191,7 +191,9 @@ test.describe('Live monitor — essay kind', () => {
             // word count should reach the monitor shortly after typing stops.
             const sentence = 'The autumn leaves fell gently on the quiet lane while students walked home.';
             await essay.typeInEditor(sentence);
-            await expect(supabasePage.getByText('13 words')).toBeVisible({ timeout: 25_000 });
+            // The draft panel's own count — the draft-analysis card also reads "13 words" for the
+            // average and longest sentence once the text lands, so the panel pins which one.
+            await expect(supabasePage.getByTestId('draft-word-count')).toHaveText('13 words', { timeout: 25_000 });
 
             // A one-student assignment opens straight into the spotlight view, which shows the
             // live draft without a click (markup stripped by LiveDraftPanel). The monitor asks
@@ -199,14 +201,21 @@ test.describe('Live monitor — essay kind', () => {
             await expect(supabasePage.getByText(/the autumn leaves fell gently/i)).toBeVisible({ timeout: 20_000 });
 
             // Proctoring: a tab switch on the student side reaches the teacher
-            // in real time on the shared Realtime channel.
+            // in real time on the shared Realtime channel. The spotlight's
+            // proctoring card is label/value rows, so the count is asserted on
+            // the value cell itself.
+            const proctoring = supabasePage.getByTestId('essay-proctoring');
             await essay.triggerTabSwitch();
-            await expect(supabasePage.getByText(/1 tab switch/i)).toBeVisible({ timeout: 15_000 });
+            await expect(proctoring.getByTestId('essay-proctoring-tab-switches')).toHaveText('1', {
+                timeout: 15_000,
+            });
 
             // Proctoring clipboard flag: a copy on the student side reaches the
-            // teacher as a "1 copy/paste" badge (same flags path as tests).
+            // teacher as a clipboard count (same flags path as tests).
             await studentPage.evaluate(() => document.dispatchEvent(new Event('copy')));
-            await expect(supabasePage.getByText(/1 copy\/paste/i)).toBeVisible({ timeout: 15_000 });
+            await expect(proctoring.getByTestId('essay-proctoring-clipboard')).toHaveText('1', {
+                timeout: 15_000,
+            });
 
             // Presence: the first heartbeat (~20s after the session starts)
             // marks the student Active on the monitor. Exact match — the sort
@@ -243,7 +252,9 @@ test.describe('Live monitor — essay kind', () => {
                 'The tide came in slowly covering the sandbars where the gulls had been resting all morning.';
             await essay.typeInEditor(sentence);
             // Proves the live channel is up before the hand-in (snapshots every ~5s).
-            await expect(supabasePage.getByText('16 words')).toBeVisible({ timeout: 25_000 });
+            await expect(supabasePage.getByTestId('draft-word-count')).toHaveText('16 words', {
+                timeout: 25_000,
+            });
 
             // ── SIMULTANEOUS: student hands in while the teacher watches ────────
             await essay.submitButton().click();
@@ -312,12 +323,16 @@ test.describe('Live monitor — essay kind', () => {
                 timeout: 15_000,
             });
 
-            // Teacher sends the check-in nudge on the shared Realtime channel.
+            // Teacher sends a nudge preset on the shared Realtime channel: the button opens
+            // the preset menu, and the chosen message is what travels to the student.
             await supabasePage.getByRole('button', { name: 'Nudge' }).click();
+            await supabasePage.getByRole('menuitem', { name: "Check the question you're on" }).click();
 
-            // The student's screen shows the live check-in banner (a toast with
-            // role="alert") within its ~4s lifetime.
-            await expect(studentPage.getByRole('alert').getByText(/check in/i)).toBeVisible({ timeout: 5_000 });
+            // The student's screen shows that message (a toast with role="alert") within
+            // its ~4s lifetime.
+            await expect(studentPage.getByRole('alert').getByText(/check the question you.re on/i)).toBeVisible({
+                timeout: 5_000,
+            });
         } finally {
             await studentContext.close();
         }

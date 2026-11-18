@@ -50,7 +50,7 @@ export default function EssayDraftProjectorPage() {
         if (!drafts) return;
         let cancelled = false;
         drafts
-            .listSnapshots('essay', [assignmentId])
+            .listSnapshots([assignmentId], [studentId])
             .then((byStudent) => {
                 if (cancelled) return;
                 const texts = (byStudent.get(studentId) ?? []).filter(
