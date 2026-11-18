@@ -56,11 +56,12 @@ export default function EssayTimeline({ timeline }: { timeline: MonitorTimeline 
     return (
         <div style={cardStyle} data-testid="essay-timeline">
             <h3 style={headingStyle}>{t('tests.monitor.timeline.title')}</h3>
-            {points.length < 2 ? (
+            {points.length < 2 && (
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>
                     {t('tests.monitor.timeline.empty')}
                 </span>
-            ) : (
+            )}
+            {(points.length >= 2 || markers.length > 0) && (
                 <>
                     <svg
                         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
@@ -89,13 +90,15 @@ export default function EssayTimeline({ timeline }: { timeline: MonitorTimeline 
                                 opacity={0.75}
                             />
                         ))}
-                        <polyline
-                            points={curve}
-                            fill="none"
-                            stroke="var(--accent-text)"
-                            strokeWidth={2}
-                            strokeLinejoin="round"
-                        />
+                        {points.length >= 2 && (
+                            <polyline
+                                points={curve}
+                                fill="none"
+                                stroke="var(--accent-text)"
+                                strokeWidth={2}
+                                strokeLinejoin="round"
+                            />
+                        )}
                     </svg>
                     <div
                         style={{

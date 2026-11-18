@@ -1,3 +1,5 @@
+import { TIMELINE_WINDOW_MS } from './monitorTimeline';
+
 export const DEFAULT_STALL_MINUTES = 4;
 export const MIN_STALL_MINUTES = 1;
 export const MAX_STALL_MINUTES = 30;
@@ -61,7 +63,8 @@ export interface WordSample {
 }
 
 export const WRITING_PACE_WINDOW_MS = 3 * 60_000;
-const SAMPLE_RETENTION_MS = 2 * WRITING_PACE_WINDOW_MS + 60_000;
+// The spotlight timeline reads this same list, so it must reach back over the whole timeline window.
+const SAMPLE_RETENTION_MS = Math.max(2 * WRITING_PACE_WINDOW_MS, TIMELINE_WINDOW_MS) + 60_000;
 
 /** Keeps the sample history to what the two pace windows need; consecutive equal counts collapse into one sample. */
 export function appendWordSample(samples: WordSample[], sample: WordSample): WordSample[] {
