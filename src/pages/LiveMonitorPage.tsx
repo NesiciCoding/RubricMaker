@@ -618,25 +618,20 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
 
     // ── Persisted draft history ───────────────────────────────────────────────────
     // A reload, a sleeping laptop or a dropped connection empties the channels, and the roster
-    // would know nothing until a student writes again. The once-a-minute snapshots are stored
-    // server-side, so seed from them instead of claiming to know less than the class already did.
-    const persistedHistoryKeyRef = useRef('');
+    // would know nothing until a student writes again. The once-a-minute essay snapshots are
+    // stored server-side, so seed from them instead of claiming to know less than the class
+    // already did. Tests store no draft history, so their monitors have nothing to seed from.
+    const essayAssignmentKey = kind === 'essay' ? (params.assignmentId ?? '') : '';
+    const rosterKey = monitorStudents.map((row) => row.studentId).join(',');
+    const hydratedRosterRef = useRef('');
     useEffect(() => {
-        if (!hasDb || monitorStudents.length === 0) return;
-        const assignmentKeyOf = (studentId: string) =>
-            kind === 'essay' ? (params.assignmentId ?? '') : (testTeacherKeys[studentId] ?? '');
-        const assignmentIds = [
-            ...new Set(monitorStudents.map((row) => assignmentKeyOf(row.studentId)).filter((id) => id !== '')),
-        ];
-        if (assignmentIds.length === 0) return;
-        const historyKey = `${kind}:${assignmentIds.slice().sort().join(',')}`;
-        if (persistedHistoryKeyRef.current === historyKey) return;
-        persistedHistoryKeyRef.current = historyKey;
+        if (!hasDb || !essayAssignmentKey || rosterKey === '' || hydratedRosterRef.current === rosterKey) return;
+        hydratedRosterRef.current = rosterKey;
         const drafts = LiveDraftAdapter.forTeacher();
         if (!drafts) return;
         let cancelled = false;
         drafts
-            .listSnapshots(kind, assignmentIds)
+            .listSnapshots([essayAssignmentKey])
             .then((byStudent) => {
                 if (cancelled || byStudent.size === 0) return;
                 setLiveStates((prev) => {
@@ -658,10 +653,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         return () => {
             cancelled = true;
         };
-        // The roster object is rebuilt on every read; its ids and the resolved teacher keys are
-        // the only inputs that change which rows to load.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [hasDb, kind, monitorStudents.map((r) => r.studentId).join(','), testTeacherKeys]);
+    }, [hasDb, essayAssignmentKey, rosterKey, monitorStudents]);
 
     const sendNudge = useCallback(
         (studentId: string) => {

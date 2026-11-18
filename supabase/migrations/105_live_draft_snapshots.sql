@@ -7,22 +7,29 @@
 -- the last minute" about an hour-old draft. This stores those once-a-minute snapshots so the
 -- monitor can seed itself on open, and so a teacher has something to look at after class.
 --
+-- Essays only. A test's answers already have a durable home (student_tests) and the test monitor
+-- reads that, so nothing writes test snapshots; a table that holds one kind of draft needs no kind
+-- column and no test/essay branch in its write path.
+--
 -- Students never get table access: rows arrive only through record_live_draft_snapshot(), which
 -- resolves the assignment (and therefore the owner and the student) server-side and refuses a
 -- caller who is not the assigned student.
+--
+-- Retention: a row per student per minute is far too much to keep forever, and export_owner_backup()
+-- would carry every lesson ever monitored into every nightly snapshot. The nightly sweep in section
+-- 3 drops drafts older than 30 days — long after the class they describe — while the roster only
+-- ever reads the last few minutes of them.
 
 -- ── 1. Table ────────────────────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS public.live_draft_snapshots (
   id           BIGINT      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  kind         TEXT        NOT NULL,
-  assignment_id TEXT       NOT NULL,          -- essay_assignments.id / test_assignments.id (the teacherKey)
+  assignment_id TEXT       NOT NULL,          -- essay_assignments.id (the teacherKey)
   owner_id     UUID        NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   student_id   TEXT        NOT NULL,          -- local app student ID, as on the assignment row
   captured_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   word_count   INTEGER     NOT NULL DEFAULT 0,
-  draft_text   TEXT,                          -- student's own draft HTML; NULL on a words-only tick
-  CONSTRAINT live_draft_snapshots_kind_check CHECK (kind IN ('test', 'essay'))
+  draft_text   TEXT                           -- student's own draft HTML; NULL on a words-only tick
 );
 
 CREATE INDEX IF NOT EXISTS live_draft_snapshots_assignment_idx
@@ -31,6 +38,9 @@ CREATE INDEX IF NOT EXISTS live_draft_snapshots_owner_idx
   ON public.live_draft_snapshots (owner_id, captured_at DESC);
 CREATE INDEX IF NOT EXISTS live_draft_snapshots_student_idx
   ON public.live_draft_snapshots (student_id);
+-- The nightly retention sweep deletes by age alone.
+CREATE INDEX IF NOT EXISTS live_draft_snapshots_captured_idx
+  ON public.live_draft_snapshots (captured_at);
 
 ALTER TABLE public.live_draft_snapshots ENABLE ROW LEVEL SECURITY;
 
@@ -44,7 +54,6 @@ CREATE POLICY "live_draft_snapshots_owner_select"
 -- ── 2. Student write path ──────────────────────────────────────────────────────
 
 CREATE OR REPLACE FUNCTION public.record_live_draft_snapshot(
-  p_kind          TEXT,
   p_assignment_id TEXT,
   p_word_count    INTEGER,
   p_draft_text    TEXT
@@ -58,23 +67,14 @@ DECLARE
   v_owner   UUID;
   v_student TEXT;
 BEGIN
-  IF p_kind NOT IN ('test', 'essay') THEN
-    RAISE EXCEPTION 'invalid_kind';
-  END IF;
   -- The same ceiling the essay editor and live writing use, so one paste cannot store a novel.
   IF p_draft_text IS NOT NULL AND char_length(p_draft_text) > 20000 THEN
     RAISE EXCEPTION 'draft_too_long';
   END IF;
 
-  IF p_kind = 'essay' THEN
-    SELECT a.owner_id, a.student_id INTO v_owner, v_student
-    FROM public.essay_assignments a
-    WHERE a.id = p_assignment_id;
-  ELSE
-    SELECT a.owner_id, a.student_id INTO v_owner, v_student
-    FROM public.test_assignments a
-    WHERE a.id = p_assignment_id;
-  END IF;
+  SELECT a.owner_id, a.student_id INTO v_owner, v_student
+  FROM public.essay_assignments a
+  WHERE a.id = p_assignment_id;
 
   IF v_owner IS NULL THEN
     RAISE EXCEPTION 'unknown_assignment';
@@ -83,15 +83,26 @@ BEGIN
     RAISE EXCEPTION 'not_your_assignment';
   END IF;
 
-  INSERT INTO public.live_draft_snapshots (kind, assignment_id, owner_id, student_id, word_count, draft_text)
-  VALUES (p_kind, p_assignment_id, v_owner, v_student, GREATEST(COALESCE(p_word_count, 0), 0), p_draft_text);
+  INSERT INTO public.live_draft_snapshots (assignment_id, owner_id, student_id, word_count, draft_text)
+  VALUES (p_assignment_id, v_owner, v_student, GREATEST(COALESCE(p_word_count, 0), 0), p_draft_text);
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.record_live_draft_snapshot(TEXT, TEXT, INTEGER, TEXT) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.record_live_draft_snapshot(TEXT, TEXT, INTEGER, TEXT) TO authenticated;
+REVOKE ALL ON FUNCTION public.record_live_draft_snapshot(TEXT, INTEGER, TEXT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.record_live_draft_snapshot(TEXT, INTEGER, TEXT) TO authenticated;
 
--- ── 3. Registries ──────────────────────────────────────────────────────────────
+-- ── 3. Retention ───────────────────────────────────────────────────────────────
+-- Nightly (03:50, after the anonymization and client-log sweeps). Without it every teacher's
+-- nightly snapshot grows by a full class's minute-by-minute history for every lesson they ever
+-- monitored; with it the dumps stay bounded and a term's worth of history ages out on its own.
+
+SELECT cron.schedule(
+  'live-draft-snapshots-cleanup',
+  '50 3 * * *',
+  $$ DELETE FROM public.live_draft_snapshots WHERE captured_at < now() - interval '30 days' $$
+);
+
+-- ── 4. Registries ──────────────────────────────────────────────────────────────
 -- Nightly backups (owner_data_tables) and "erase this student" (student_data_tables) both read
 -- these lists; a table missing from either silently survives or silently disappears. Both are
 -- redefined from their latest version (103) with the new table added.

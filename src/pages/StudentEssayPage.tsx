@@ -428,7 +428,7 @@ export default function StudentEssayPage() {
         (snapshot: { text: string; wordCount?: number }) => {
             const drafts = LiveDraftAdapter.forStudent(draftSupabaseUrl, draftSupabaseKey);
             if (!drafts || !draftAssignmentKey) return;
-            void drafts.recordSnapshot('essay', draftAssignmentKey, snapshot.wordCount, snapshot.text).catch(() => {
+            void drafts.recordSnapshot(draftAssignmentKey, snapshot.wordCount, snapshot.text).catch(() => {
                 // History only — the live broadcast already carried this draft.
             });
         },

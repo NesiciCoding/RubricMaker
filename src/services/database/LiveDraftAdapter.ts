@@ -2,10 +2,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { storageSync } from './StorageSync';
 import { isAllowedSupabaseUrl } from './trustedSupabaseUrl';
 
-export type LiveDraftKind = 'test' | 'essay';
-
 export interface PersistedDraftSnapshot {
-    studentId: string;
     /** Epoch ms, matching WordSample.at in utils/monitorSignals. */
     at: number;
     wordCount: number;
@@ -13,9 +10,10 @@ export interface PersistedDraftSnapshot {
     text?: string;
 }
 
-// One class, one exam: 30 students writing for two hours at a snapshot a minute. The cap keeps a
-// long-running reload from pulling an unbounded history into the roster.
-const MAX_ROWS = 2000;
+// A class writes one row per student per minute, so a session's history runs past the single page
+// (max_rows = 1000) PostgREST returns. That page is all the roster needs: newest first, and the
+// pace windows it seeds only cover about seven minutes.
+const HISTORY_PAGE = 1000;
 
 type Row = Record<string, unknown>;
 
@@ -36,7 +34,7 @@ function throwIfError(error: { message: string } | null): void {
 const studentClients = new Map<string, SupabaseClient>();
 
 /**
- * The live monitor's draft history (#1246 follow-up).
+ * Essay draft history for the live monitor (#1246 follow-up).
  *
  * Students write through a SECURITY DEFINER RPC (they have no table access), teachers read their
  * own rows through RLS. Everything here is best-effort: the Realtime broadcast remains the live
@@ -64,14 +62,12 @@ export class LiveDraftAdapter {
     }
 
     async recordSnapshot(
-        kind: LiveDraftKind,
         assignmentId: string,
         wordCount: number | undefined,
         draftText: string | undefined
     ): Promise<void> {
         if (!assignmentId) return;
         const { error } = await this.client.rpc('record_live_draft_snapshot', {
-            p_kind: kind,
             p_assignment_id: assignmentId,
             p_word_count: wordCount ?? null,
             p_draft_text: draftText ?? null,
@@ -79,8 +75,8 @@ export class LiveDraftAdapter {
         throwIfError(error);
     }
 
-    /** Snapshots for a set of assignments, oldest first, grouped by the student they belong to. */
-    async listSnapshots(kind: LiveDraftKind, assignmentIds: string[]): Promise<Map<string, PersistedDraftSnapshot[]>> {
+    /** Snapshots for a set of essay assignments, oldest first, grouped by the student they belong to. */
+    async listSnapshots(assignmentIds: string[]): Promise<Map<string, PersistedDraftSnapshot[]>> {
         const grouped = new Map<string, PersistedDraftSnapshot[]>();
         const ids = [...new Set(assignmentIds.filter((id) => id !== ''))];
         if (ids.length === 0) return grouped;
@@ -88,14 +84,13 @@ export class LiveDraftAdapter {
         const { data, error } = await this.client
             .from('live_draft_snapshots')
             .select('student_id, captured_at, word_count, draft_text')
-            .eq('kind', kind)
             .in('assignment_id', ids)
             .order('captured_at', { ascending: false })
-            .limit(MAX_ROWS);
+            .limit(HISTORY_PAGE);
         throwIfError(error);
 
         const rows = Array.isArray(data) ? (data as Row[]) : [];
-        // Newest-first from the query (so the cap keeps the recent exam, not last term's), then
+        // Newest-first from the query (so the page keeps the recent lesson, not last term's), then
         // reversed per student below because the roster reads history oldest-first.
         for (const row of rows) {
             const studentId = text(row.student_id);
@@ -103,7 +98,7 @@ export class LiveDraftAdapter {
             if (!studentId || Number.isNaN(at)) continue;
             const draftText = typeof row.draft_text === 'string' ? row.draft_text : undefined;
             const list = grouped.get(studentId) ?? [];
-            list.push({ studentId, at, wordCount: num(row.word_count), text: draftText });
+            list.push({ at, wordCount: num(row.word_count), text: draftText });
             grouped.set(studentId, list);
         }
         for (const [studentId, list] of grouped) grouped.set(studentId, list.reverse());
