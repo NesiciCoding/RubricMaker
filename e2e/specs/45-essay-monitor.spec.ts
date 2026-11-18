@@ -199,14 +199,21 @@ test.describe('Live monitor — essay kind', () => {
             await expect(supabasePage.getByText(/the autumn leaves fell gently/i)).toBeVisible({ timeout: 20_000 });
 
             // Proctoring: a tab switch on the student side reaches the teacher
-            // in real time on the shared Realtime channel.
+            // in real time on the shared Realtime channel. The spotlight's
+            // proctoring card is label/value rows, so the count is asserted on
+            // the value cell itself.
+            const proctoring = supabasePage.getByTestId('essay-proctoring');
             await essay.triggerTabSwitch();
-            await expect(supabasePage.getByText(/1 tab switch/i)).toBeVisible({ timeout: 15_000 });
+            await expect(proctoring.getByTestId('essay-proctoring-tab-switches')).toHaveText('1', {
+                timeout: 15_000,
+            });
 
             // Proctoring clipboard flag: a copy on the student side reaches the
-            // teacher as a "1 copy/paste" badge (same flags path as tests).
+            // teacher as a clipboard count (same flags path as tests).
             await studentPage.evaluate(() => document.dispatchEvent(new Event('copy')));
-            await expect(supabasePage.getByText(/1 copy\/paste/i)).toBeVisible({ timeout: 15_000 });
+            await expect(proctoring.getByTestId('essay-proctoring-clipboard')).toHaveText('1', {
+                timeout: 15_000,
+            });
 
             // Presence: the first heartbeat (~20s after the session starts)
             // marks the student Active on the monitor. Exact match — the sort
