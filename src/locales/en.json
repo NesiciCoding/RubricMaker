@@ -1543,7 +1543,9 @@
                 "never_opened": "Hasn't opened yet",
                 "lost_now": "No signal",
                 "lost_one": "No signal · {{count}} min",
-                "lost_other": "No signal · {{count}} min"
+                "lost_other": "No signal · {{count}} min",
+                "announce_lost": "{{name}}: no signal",
+                "announce_never_opened": "{{name}} hasn't opened yet"
             },
             "stuck": {
                 "title": "Questions reached but left blank",
