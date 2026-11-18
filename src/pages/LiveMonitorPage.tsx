@@ -60,7 +60,7 @@ import {
     type SessionExportTranslate,
 } from '../utils/monitorSessionExport';
 import { studentCompletion, type StudentCompletion } from '../utils/responseCells';
-import { stuckQuestions } from '../utils/questionStuck';
+import { answeredQuestionIds, stuckQuestions } from '../utils/questionStuck';
 import { TRIAGE_KEYS, triageCounts, triageMatches, type TriageKey } from '../utils/monitorTriage';
 import {
     appendWordSample,
@@ -1039,7 +1039,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         const answersByStudent = new Map(
             visibleRows
                 .filter((row) => !row.finished)
-                .map((row) => [row.studentId, new Set(row.mergedAnswers.map((answer) => answer.questionId))] as const)
+                .map((row) => [row.studentId, answeredQuestionIds(test.questions, row.mergedAnswers)] as const)
         );
         return stuckQuestions(
             test.questions.map((question) => question.id),
