@@ -19,12 +19,20 @@ function isTypingTarget(target: EventTarget | null): boolean {
     return element.tagName === 'INPUT' || element.tagName === 'TEXTAREA' || element.tagName === 'SELECT';
 }
 
+// Space activates a focused button or link; the page-level shortcut must leave that alone.
+function isInteractiveTarget(target: EventTarget | null): boolean {
+    const element = target as HTMLElement | null;
+    if (!element || typeof element.closest !== 'function') return false;
+    return element.closest('button, a[href], summary, [role="button"], [role="link"], [role="menuitem"]') !== null;
+}
+
 /** The action a key press means, or null when it belongs to the field the teacher is typing in. */
 export function shortcutAction(
-    event: Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'altKey' | 'target'>
+    event: Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'altKey' | 'shiftKey' | 'target'>
 ): MonitorShortcutAction | null {
-    if (event.ctrlKey || event.metaKey || event.altKey) return null;
+    if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return null;
     if (isTypingTarget(event.target ?? null)) return null;
+    if (event.key === ' ' && isInteractiveTarget(event.target ?? null)) return null;
     return KEY_ACTIONS[event.key.toLowerCase()] ?? null;
 }
 
