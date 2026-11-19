@@ -2800,6 +2800,7 @@
         "action_copy_criterion": "Copy criterion to clipboard",
         "action_duplicate_criterion": "Duplicate criterion",
         "action_paste_criterion": "Paste criterion",
+        "criterion_menu_label": "Criterion actions",
         "single_point_descriptor_label": "Proficiency descriptor — what “meets standard” looks like",
         "single_point_descriptor_placeholder": "Describe what a student does when they meet this standard…",
         "single_point_meets_points": "Points (meets)",

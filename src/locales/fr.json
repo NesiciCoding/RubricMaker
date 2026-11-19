@@ -2800,6 +2800,7 @@
         "action_copy_criterion": "Copier le critère dans le presse-papiers",
         "action_duplicate_criterion": "Dupliquer le critère",
         "action_paste_criterion": "Coller le critère",
+        "criterion_menu_label": "Actions du critère",
         "single_point_descriptor_label": "Descripteur de compétence — ce que “répond aux attentes” signifie",
         "single_point_descriptor_placeholder": "Décrivez ce que fait l’élève lorsqu’il/elle répond à ce critère…",
         "single_point_meets_points": "Points (atteint)",

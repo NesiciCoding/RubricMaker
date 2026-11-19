@@ -2800,6 +2800,7 @@
         "action_copy_criterion": "Kriterium in Zwischenablage kopieren",
         "action_duplicate_criterion": "Kriterium duplizieren",
         "action_paste_criterion": "Kriterium einfügen",
+        "criterion_menu_label": "Kriteriumaktionen",
         "single_point_descriptor_label": "Kompetenz-Deskriptor — was „erfüllt den Standard“ bedeutet",
         "single_point_descriptor_placeholder": "Beschreiben Sie, was ein Schüler tut, wenn er/sie diesen Standard erfüllt…",
         "single_point_meets_points": "Punkte (erfüllt)",

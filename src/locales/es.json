@@ -2800,6 +2800,7 @@
         "action_copy_criterion": "Copiar criterio al portapapeles",
         "action_duplicate_criterion": "Duplicar criterio",
         "action_paste_criterion": "Pegar criterio",
+        "criterion_menu_label": "Acciones del criterio",
         "single_point_descriptor_label": "Descriptor de competencia — qué significa “cumple el estándar”",
         "single_point_descriptor_placeholder": "Describa lo que hace un estudiante cuando cumple este estándar…",
         "single_point_meets_points": "Puntos (cumple)",

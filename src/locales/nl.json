@@ -2800,6 +2800,7 @@
         "action_copy_criterion": "Criterium kopiëren naar klembord",
         "action_duplicate_criterion": "Criterium dupliceren",
         "action_paste_criterion": "Criterium plakken",
+        "criterion_menu_label": "Criteriumacties",
         "single_point_descriptor_label": "Vaardigheidsbeschrijving — wat “voldoet aan de norm” betekent",
         "single_point_descriptor_placeholder": "Beschrijf wat een leerling doet als hij/zij aan de norm voldoet…",
         "single_point_meets_points": "Punten (voldoet)",
