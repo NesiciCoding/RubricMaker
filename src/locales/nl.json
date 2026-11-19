@@ -1469,9 +1469,11 @@
                 },
                 "typed_pasted": "getypt {{typed}} · geplakt {{pasted}}",
                 "pasted_caution": "Vooral geplakt",
-                "added_sentence": "{{count}} woorden toegevoegd om {{time}} — “{{snippet}}”",
+                "added_sentence_one": "{{count}} woord toegevoegd om {{time}} — “{{snippet}}”",
+                "added_sentence_other": "{{count}} woorden toegevoegd om {{time}} — “{{snippet}}”",
                 "just_written": "Zojuist geschreven",
-                "added_words": "{{count}} woorden toegevoegd"
+                "added_words_one": "{{count}} woord toegevoegd",
+                "added_words_other": "{{count}} woorden toegevoegd"
             },
             "advisory_note": "Aanwezigheid, concepten en proctoringsignalen zijn indicatieve signalen vanuit de browser van de leerling — een vastberaden leerling kan deze omzeilen. Gebruik ze om patronen te herkennen, niet als definitief bewijs.",
             "progress_toggle": "Voortgang leerling",

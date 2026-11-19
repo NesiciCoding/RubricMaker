@@ -1469,9 +1469,11 @@
                 },
                 "typed_pasted": "saisis {{typed}} · collés {{pasted}}",
                 "pasted_caution": "Surtout collé",
-                "added_sentence": "{{count}} mots ajoutés à {{time}} — « {{snippet}} »",
+                "added_sentence_one": "{{count}} mot ajouté à {{time}} — « {{snippet}} »",
+                "added_sentence_other": "{{count}} mots ajoutés à {{time}} — « {{snippet}} »",
                 "just_written": "Vient d'être écrit",
-                "added_words": "{{count}} mots ajoutés"
+                "added_words_one": "{{count}} mot ajouté",
+                "added_words_other": "{{count}} mots ajoutés"
             },
             "advisory_note": "La présence, les brouillons et les signaux de surveillance sont des indications fournies par le navigateur de l'élève — un élève déterminé peut les contourner. Utilisez-les pour repérer des tendances, pas comme preuve définitive.",
             "progress_toggle": "Progression élève",
