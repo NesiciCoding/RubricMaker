@@ -1469,9 +1469,11 @@
                 },
                 "typed_pasted": "escritos {{typed}} · pegados {{pasted}}",
                 "pasted_caution": "Sobre todo pegado",
-                "added_sentence": "{{count}} palabras añadidas a las {{time}} — «{{snippet}}»",
+                "added_sentence_one": "{{count}} palabra añadida a las {{time}} — «{{snippet}}»",
+                "added_sentence_other": "{{count}} palabras añadidas a las {{time}} — «{{snippet}}»",
                 "just_written": "Recién escrito",
-                "added_words": "{{count}} palabras añadidas"
+                "added_words_one": "{{count}} palabra añadida",
+                "added_words_other": "{{count}} palabras añadidas"
             },
             "advisory_note": "La presencia, los borradores y las señales de supervisión son indicios informativos del navegador del estudiante; un estudiante decidido puede falsearlos. Úsalos para detectar patrones, no como prueba definitiva.",
             "progress_toggle": "Progreso del alumno",
