@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import DropdownMenu from '../DropdownMenu';
 
@@ -86,6 +86,22 @@ describe('DropdownMenu', () => {
         expect(screen.getByRole('menu')).toBeInTheDocument();
         fireEvent(window, new Event('resize'));
         expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    });
+
+    it('scrolls a newly focused item into view inside the menu without touching the page', () => {
+        render(<Harness />);
+        fireEvent.click(screen.getByText('Toggle'));
+        const menu = screen.getByRole('menu');
+        const rect = (top: number, bottom: number) => () => ({ top, bottom }) as DOMRect;
+        menu.getBoundingClientRect = rect(0, 100);
+        screen.getByText('Last').getBoundingClientRect = rect(120, 150);
+        menu.scrollTop = 0;
+        const pageScroll = vi.spyOn(window, 'scrollTo');
+
+        fireEvent.keyDown(menu, { key: 'ArrowDown' });
+
+        expect(menu.scrollTop).toBe(50);
+        expect(pageScroll).not.toHaveBeenCalled();
     });
 
     it('focuses the first item on open and moves between enabled items with the arrow keys', () => {

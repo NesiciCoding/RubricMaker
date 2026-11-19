@@ -1107,7 +1107,9 @@
             "import_success": "Inzending succesvol geïmporteerd!",
             "import_error_invalid": "Ongeldige inzendingscode. Controleer of je de volledige code van de leerling hebt gekopieerd.",
             "import_error_wrong_test": "Deze inzendingscode is voor een andere toets.",
-            "attempt_label": "(Poging {{n}})"
+            "attempt_label": "(Poging {{n}})",
+            "drawer_title": "Resultaten — {{name}}",
+            "submissions_title": "Inzendingen ({{count}})"
         },
         "export": {
             "section_title": "Samenvatting exporteren",
@@ -2298,7 +2300,11 @@
         "quick_jump_empty": "Niets gevonden.",
         "quick_jump_section": "Onderdeel",
         "outline_collapse_section": "{{name}} inklappen",
-        "outline_expand_section": "{{name}} uitklappen"
+        "outline_expand_section": "{{name}} uitklappen",
+        "card_more_actions": "Meer acties",
+        "card_menu_teaching": "Lesgeven",
+        "card_menu_organise": "Ordenen",
+        "card_menu_sharing": "Delen"
     },
     "classShare": {
         "menu_item": "Delen met collega's…",
