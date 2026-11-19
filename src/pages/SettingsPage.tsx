@@ -1710,6 +1710,8 @@ export default function SettingsPage() {
                                             style={{
                                                 flex: 1,
                                                 fontWeight: 600,
+                                                background: 'transparent',
+                                                border: 'none',
                                                 color: 'var(--text)',
                                                 fontSize: '0.9rem',
                                             }}

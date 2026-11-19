@@ -324,7 +324,11 @@ export default function SelfAssessPage() {
                                                                 key={lvl}
                                                                 onClick={() => setLevel(d.descriptorId, lvl)}
                                                                 style={{
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
                                                                     flex: 1,
+                                                                    minHeight: 44,
                                                                     padding: '5px 2px',
                                                                     borderRadius: 6,
                                                                     border: `1.5px solid ${selected ? clr : 'var(--border)'}`,

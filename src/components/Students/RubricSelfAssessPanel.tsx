@@ -65,6 +65,9 @@ export default function RubricSelfAssessPanel({ sr, rubric, onSave }: Props) {
                                                 }))
                                             }
                                             style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                minHeight: 44,
                                                 padding: '4px 10px',
                                                 fontSize: 12,
                                                 borderRadius: 6,

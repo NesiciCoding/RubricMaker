@@ -54,6 +54,10 @@ const TARGET_SIZE_ROUTES = [
     '/docs',
     // Settings section tabs, accent presets/picker and theme bundles.
     '/settings',
+    // Self-assessment confidence scale.
+    '/rubrics/rubric-a11y-1/self-assess/student-a11y-1',
+    // Question bank row actions (the `.btn-xs` width).
+    '/question-bank',
     // The question editor's inline formatting toolbar.
     '/tests/test-a11y-1',
 ];

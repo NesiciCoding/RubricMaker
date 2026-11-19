@@ -119,6 +119,18 @@ const PINNED: Pin[] = [
         block: ['THEME_BUNDLES.map', '</button>'],
         declares: ['minHeight: 44'],
     },
+    {
+        file: 'components/Students/RubricSelfAssessPanel.tsx',
+        label: 'self-assessment level buttons',
+        block: ['criterion.levels.map', '</button>'],
+        declares: ['minHeight: 44'],
+    },
+    {
+        file: 'pages/SelfAssessPage.tsx',
+        label: 'self-assessment confidence scale',
+        block: ['as ConfidenceLevel[]', '</button>'],
+        declares: ['minHeight: 44'],
+    },
 ];
 
 describe('inline-styled targets at 44 px (#533, WCAG 2.5.5)', () => {
@@ -132,13 +144,12 @@ describe('inline-styled targets at 44 px (#533, WCAG 2.5.5)', () => {
         });
     }
 
-    it('gives the borderless grade-scale name its own visible focus style', () => {
-        // The shared field rule sets `outline: none`, and this field is transparent with no border
-        // colour of its own, so the ring and the border it gains on focus have to be declared here.
+    it('gives the borderless grade-scale name its own visible focus ring', () => {
+        // The shared field rule sets `outline: none` and this field has no border colour of its
+        // own, so the ring has to be declared here; nothing else on the field shows focus.
         expect(source('pages/SettingsPage.tsx')).toMatch(/className="grade-scale-name"/);
-        const focus = block('index.css', ['input.grade-scale-name:focus', '}']);
+        const focus = block('index.css', ['.grade-scale-name:focus-visible', '}']);
         expect(focus).toContain('outline: 2px solid var(--accent)');
-        expect(focus).toContain('border-color: var(--accent)');
     });
 
     it('does not hide keyboard focus on any Settings control', () => {
