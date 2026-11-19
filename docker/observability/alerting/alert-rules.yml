@@ -503,3 +503,57 @@ groups:
             type: gt
             params:
             - 25
+- orgId: 1
+  name: Client
+  folder: RubricMaker alerts
+  interval: 1m
+  rules:
+  - uid: rm-client-error-burst
+    title: Burst of browser errors
+    condition: C
+    for: 0s
+    noDataState: OK
+    execErrState: OK
+    labels:
+      severity: warning
+    annotations:
+      summary: '{{ humanize $values.B.Value }} browser sessions reported JavaScript errors in the last 15 minutes'
+      description: 'Errors-only reporting (VITE_ERROR_REPORTING, docs/ERROR_REPORTING.md). Open the Client Diagnostics dashboard, panel "Top error signatures", to see which failure and which release. Decode the frame with the sourcemaps-<sha> artifact of that release.'
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 900
+        to: 0
+      datasourceUid: client_logs_postgres
+      model:
+        refId: A
+        rawSql: SELECT CASE WHEN count(*) >= 10 THEN count(DISTINCT session_id) ELSE 0 END AS affected_sessions FROM public.client_logs WHERE category = 'error' AND created_at > now() - interval '15 minutes'
+        rawQuery: true
+        editorMode: code
+        format: table
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 0
+        to: 0
+      model:
+        refId: B
+        type: reduce
+        expression: A
+        reducer: last
+        settings:
+          mode: dropNN
+    - refId: C
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 0
+        to: 0
+      model:
+        refId: C
+        type: threshold
+        expression: B
+        conditions:
+        - evaluator:
+            type: gt
+            params:
+            - 4

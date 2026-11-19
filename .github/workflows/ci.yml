@@ -829,6 +829,20 @@ jobs:
           # variables → Actions → Variables (not a secret: it's a feature
           # flag, not sensitive data).
           VITE_STRESS_TEST_LOGGING: ${{ vars.VITE_STRESS_TEST_LOGGING }}
+          # Errors-only reporting to `client_logs` (#870): on for production builds. Set the repo
+          # variable VITE_ERROR_REPORTING to 'false' to switch it off.
+          VITE_ERROR_REPORTING: ${{ vars.VITE_ERROR_REPORTING || 'true' }}
+
+      # #870: the hidden source maps were moved out of dist/ by the build, so the deploy below never
+      # publishes them. Keep them for the commit that was built, to decode a production error frame.
+      - name: Keep the source maps (not deployed)
+        if: steps.changes.outputs.changed == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sourcemaps-${{ github.sha }}
+          path: sourcemaps/
+          retention-days: 90
+          if-no-files-found: warn
 
       # #404: the `rubricmaker` HestiaCP user is locked to SFTP at the server level — that
       # overrides anything in authorized_keys (a forced rsync command never gets a chance to

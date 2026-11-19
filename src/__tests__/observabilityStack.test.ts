@@ -163,13 +163,26 @@ describe('alerting (#869)', () => {
         expect(service('grafana')).toMatch(/ALERT_EMAIL: "\$\{ALERT_EMAIL:-[^}\s]+@[^}\s]+\}"/);
     });
 
+    const rawQueries = () => [...rules.matchAll(/rawSql: (.+)/g)].map((m) => m[1]);
+
     it('reads scheduled-job failures through monitoring.failed_jobs(), not tables RLS hides', () => {
-        const queries = [...rules.matchAll(/rawSql: (.+)/g)].map((m) => m[1]);
+        const queries = rawQueries().filter((query) => !/\bclient_logs\b/.test(query));
         expect(queries).toHaveLength(2);
         for (const query of queries) {
             expect(query).toContain('FROM monitoring.failed_jobs()');
             expect(query).not.toMatch(/\b(cron|net)\./);
         }
+    });
+
+    it('reads browser errors from client_logs, which pg_monitor may select (migration 092)', () => {
+        const queries = rawQueries().filter((query) => /\bclient_logs\b/.test(query));
+        expect(queries).toHaveLength(1);
+        expect(queries[0]).toContain("category = 'error'");
+        // Counts only: the rule must not pull `meta` (or any row content) into an alert.
+        expect(queries[0]).not.toMatch(/\bmeta\b/);
+        const policy = read('supabase/migrations/092_monitoring_dashboard_reads.sql');
+        expect(policy).toContain('grant select on public.client_logs to pg_monitor;');
+        expect(policy).toContain('client_logs_monitor_select');
     });
 });
 

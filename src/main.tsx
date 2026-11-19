@@ -6,7 +6,7 @@ import { AppProvider } from './context/AppContext';
 import { ToastProvider } from './context/ToastContext';
 import './index.css';
 import { i18nReady } from './i18n';
-import { logEvent, logMetric, STRESS_TEST_LOGGING_ENABLED } from './services/logging/clientLogger';
+import { logError, logMetric, STRESS_TEST_LOGGING_ENABLED } from './services/logging/clientLogger';
 import { setupPwaUpdatePrompt } from './pwa';
 import { UpdateAvailableToast } from './components/ui/UpdateAvailableToast';
 import { HydrationProgress } from './components/ui/HydrationProgress';
@@ -128,10 +128,18 @@ const StudentLiveWritePage = lazy(() => import('./pages/StudentLiveWritePage'));
 
 function handleUnhandledRejection(event: PromiseRejectionEvent) {
     console.error('[unhandled rejection]', event.reason);
-    logEvent('error', 'unhandled_rejection', { message: String(event.reason) }, 'error');
+    logError('unhandled_rejection', event.reason);
 }
 window.removeEventListener('unhandledrejection', handleUnhandledRejection);
 window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+// A script error outside React and outside a promise (an event handler, a timer) would otherwise
+// leave no trace in production. Resource load failures fire `error` too but carry no Error object.
+function handleWindowError(event: ErrorEvent) {
+    if (event.error) logError('window_error', event.error);
+}
+window.removeEventListener('error', handleWindowError);
+window.addEventListener('error', handleWindowError);
 
 const root = ReactDOM.createRoot(document.getElementById('root')!);
 

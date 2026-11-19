@@ -3262,7 +3262,9 @@
         "s10_title": "10. Contact & Data Protection Officer",
         "oss_title": "Open-source attributions",
         "local_title": "Local storage (default)",
-        "db_title": "Database (Supabase) — optional"
+        "db_title": "Database (Supabase) — optional",
+        "errors_title": "Fehlerberichte aus dem Browser (optional)",
+        "errors_body": "Wenn der Betreiber die App mit eingeschalteter Fehlerberichterstattung baut und eine Datenbank verbunden ist, wird ein JavaScript-Fehler in einem Browser-Tab in der eigenen Datenbank des Betreibers aufgezeichnet. Der Eintrag enthält nur technische Daten: die Fehlerart, einen Einweg-Hash der Meldung (nie die Meldung selbst), die Stelle im Code der Anwendung, das Seitenmuster (ohne Datensatz-IDs oder Freigabecodes), die App-Version, die Rolle, die Schul- und Konto-Kennungen, die die Protokolltabelle ohnehin speichert, und eine zufällige Sitzungs-ID pro Tab. Er enthält niemals etwas, das ein Nutzer eingegeben hat, keine Schülernamen, Noten oder Dokumentinhalte. Nichts wird an Dritte gesendet, und Einträge werden nach 30 Tagen automatisch gelöscht."
     },
     "cefr": {
         "placement_recover": "Einstufungsergebnisse laden",
@@ -5330,6 +5332,9 @@
         "da_stress_body_prefix": "Admins können mit",
         "da_stress_body_mid": "bauen, um Diagnoseereignisse (Aktionen, Synchronisierungsergebnisse, Fehler — niemals Aufsatztext, Kommentare oder Bewertungen) während eines Pilotprojekts in einer",
         "da_stress_body_suffix": "-Tabelle aufzuzeichnen. Nützlich, um vor der Einführung einen vollständigen Klassentest durchzuführen. Deaktivieren durch erneutes Bauen ohne das Flag, sobald der Pilot abgeschlossen ist.",
+        "da_errors_title": "Fehlerberichterstattung",
+        "da_errors_body_prefix": "Produktions-Builds können stattdessen",
+        "da_errors_body_suffix": "setzen, um nur JavaScript-Fehler aufzuzeichnen. Ein Eintrag enthält die Fehlerart, einen Hash der Meldung, die Stelle im Code, das Seitenmuster und die App-Version — nie den Meldungstext, etwas, das ein Nutzer eingegeben hat, Namen oder Noten — und wird nach 30 Tagen gelöscht.",
         "da_admin_title": "Admin-Panel",
         "da_admin_intro_prefix": "Zugänglich unter",
         "da_admin_intro_suffix": "für Benutzer mit der Admin-Rolle.",

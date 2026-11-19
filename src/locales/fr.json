@@ -3262,7 +3262,9 @@
         "s10_title": "10. Contact & Data Protection Officer",
         "oss_title": "Open-source attributions",
         "local_title": "Local storage (default)",
-        "db_title": "Database (Supabase) — optional"
+        "db_title": "Database (Supabase) — optional",
+        "errors_title": "Rapports d'erreurs du navigateur (facultatif)",
+        "errors_body": "Si l'opérateur compile l'application avec le rapport d'erreurs activé et qu'une base de données est connectée, une erreur JavaScript dans un onglet du navigateur est enregistrée dans la propre base de données de l'opérateur. L'enregistrement ne contient que des données techniques : le type d'erreur, une empreinte irréversible du message (jamais le message lui-même), l'emplacement dans le code de l'application, le modèle de page (sans identifiants d'enregistrement ni codes de partage), la version de l'application, le rôle, les identifiants d'école et de compte déjà conservés par la table de journalisation, et un identifiant de session aléatoire par onglet. Il ne contient jamais rien de ce qu'un utilisateur a saisi, ni noms d'élèves, notes ou contenu de documents. Rien n'est envoyé à un tiers et les enregistrements sont supprimés automatiquement après 30 jours."
     },
     "cefr": {
         "placement_recover": "Charger les résultats de placement",
@@ -5330,6 +5332,9 @@
         "da_stress_body_prefix": "Les administrateurs peuvent construire avec",
         "da_stress_body_mid": "pour enregistrer des événements de diagnostic (actions, résultats de synchronisation, erreurs — jamais le texte des rédactions, les commentaires ou les notes) dans une table",
         "da_stress_body_suffix": "pendant un pilote. Utile pour effectuer un test complet de classe avant le déploiement. Désactivez en reconstruisant sans l'indicateur une fois le pilote terminé.",
+        "da_errors_title": "Rapport d'erreurs",
+        "da_errors_body_prefix": "Les versions de production peuvent à la place définir",
+        "da_errors_body_suffix": "pour n'enregistrer que les erreurs JavaScript. Un enregistrement contient le type d'erreur, une empreinte du message, l'emplacement dans le code, le modèle de page et la version de l'application — jamais le texte du message, ce qu'un utilisateur a saisi, des noms ou des notes — et il est supprimé après 30 jours.",
         "da_admin_title": "Panneau d'administration",
         "da_admin_intro_prefix": "Accessible sur",
         "da_admin_intro_suffix": "pour les utilisateurs ayant le rôle administrateur.",

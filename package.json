@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "build:analyze": "tsc && ANALYZE=1 vite build",
+    "build": "tsc && vite build && node scripts/extract-sourcemaps.mjs",
+    "build:analyze": "tsc && ANALYZE=1 vite build && node scripts/extract-sourcemaps.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "typecheck:edge-shared": "npx -y deno@2.9.6 check supabase/functions/_shared/ supabase/functions/_deno/",

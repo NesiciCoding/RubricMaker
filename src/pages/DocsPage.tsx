@@ -2258,6 +2258,13 @@ function DataTab() {
                     {t('docs.da_stress_body_prefix')} <code>VITE_STRESS_TEST_LOGGING=true</code>{' '}
                     {t('docs.da_stress_body_mid')} <code>client_logs</code> {t('docs.da_stress_body_suffix')}
                 </p>
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.da_errors_title')}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    {t('docs.da_errors_body_prefix')} <code>VITE_ERROR_REPORTING=true</code>{' '}
+                    {t('docs.da_errors_body_suffix')}
+                </p>
             </FeatureSection>
 
             <FeatureSection icon={Shield} title={t('docs.da_admin_title')} color="#ef4444">
