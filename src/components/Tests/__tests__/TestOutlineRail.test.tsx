@@ -191,4 +191,30 @@ describe('TestOutlineRail tab stop', () => {
         expect(tabbable).toHaveLength(1);
         expect(screen.queryByTestId('outline-question-q2')).not.toBeInTheDocument();
     });
+
+    it('offers the question menu on right-click and keeps the rail read-only without one', () => {
+        const duplicate = vi.fn();
+        const questionMenu = (q: TestQuestion) => [{ key: 'dup', label: `dup ${q.id}`, onSelect: duplicate }];
+        renderRail({ questionMenu });
+        fireEvent.contextMenu(screen.getByText('Second question'));
+        fireEvent.click(screen.getByRole('menuitem', { name: 'dup q2' }));
+        expect(duplicate).toHaveBeenCalledOnce();
+    });
+
+    it('gives each row a touch-only menu button that opens the same menu', () => {
+        const questionMenu = (q: TestQuestion) => [{ key: 'x', label: `act ${q.id}`, onSelect: vi.fn() }];
+        renderRail({ questionMenu });
+        const buttons = screen.getAllByRole('button', { name: 'tests.outline_menu_label' });
+        expect(buttons).toHaveLength(questions.length);
+        expect(buttons[0]).toHaveClass('menu-touch-only');
+        fireEvent.click(buttons[0]);
+        expect(screen.getByRole('menuitem', { name: 'act q1' })).toBeInTheDocument();
+    });
+
+    it('opens no menu when the rail has none', () => {
+        renderRail();
+        fireEvent.contextMenu(screen.getByText('Second question'));
+        expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'tests.outline_menu_label' })).not.toBeInTheDocument();
+    });
 });

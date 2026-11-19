@@ -3217,3 +3217,14 @@ label.sub-item-check {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
 }
+
+/* A menu button that only touch screens need: a mouse user right-clicks, a finger has no such gesture. */
+.menu-touch-only {
+    display: none;
+}
+
+@media (pointer: coarse) {
+    .menu-touch-only {
+        display: inline-flex;
+    }
+}

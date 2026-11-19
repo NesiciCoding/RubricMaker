@@ -57,6 +57,7 @@ import { plainQuestionPromptText } from '../utils/clozeParse';
 import { EmptyState } from '../components/ui/EmptyState';
 import QuestionTypePicker from '../components/Tests/QuestionTypePicker';
 import TestOutlineRail from '../components/Tests/TestOutlineRail';
+import { questionOutlineMenuItems } from '../components/Tests/questionOutlineMenuItems';
 import QuestionSwitcher from '../components/Tests/QuestionSwitcher';
 import ColumnResizer from '../components/Tests/ColumnResizer';
 import TestSettingsDrawer, {
@@ -157,6 +158,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
     const [description, setDescription] = useState(existing?.description ?? '');
     const [questions, setQuestions] = useState<TestQuestion[]>(existing?.questions ?? generated?.questions ?? []);
     const [showBankModal, setShowBankModal] = useState(false);
+    const [bankInsertAfterId, setBankInsertAfterId] = useState<string | null>(null);
     /** Section the question being created belongs to; null while the type picker is closed. */
     const [newQuestionFor, setNewQuestionFor] = useState<{ sectionId?: string } | null>(null);
     /** Question open in the focus pane. At rail widths this is the only editor on screen. */
@@ -765,8 +767,24 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
     function insertFromBank(item: QuestionBankItem) {
         const { questions: cloned, section } = cloneBankItemIntoTest(item);
         if (section) setSections((prev) => [...prev, section]);
-        setQuestions((prev) => [...prev, ...cloned]);
+        // Chosen from a question's outline menu: land right after it, in its section unless the bank
+        // item brings a section of its own.
+        const anchor = bankInsertAfterId ? questions.find((q) => q.id === bankInsertAfterId) : undefined;
+        if (anchor) {
+            const placed = section ? cloned : cloned.map((q) => ({ ...q, sectionId: anchor.sectionId }));
+            setQuestions((prev) => {
+                const at = prev.findIndex((q) => q.id === anchor.id);
+                return at < 0 ? [...prev, ...placed] : [...prev.slice(0, at + 1), ...placed, ...prev.slice(at + 1)];
+            });
+        } else {
+            setQuestions((prev) => [...prev, ...cloned]);
+        }
+        setBankInsertAfterId(null);
         setShowBankModal(false);
+    }
+
+    function moveQuestionToSection(qid: string, sectionId: string | undefined) {
+        setQuestions((prev) => prev.map((q) => (q.id === qid ? { ...q, sectionId } : q)));
     }
 
     function saveSectionToBank(section: TestSection) {
@@ -1443,6 +1461,26 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                         activeId={selectedQuestionId}
                         activeSectionId={selectedSectionId}
                         onSelect={jumpToQuestion}
+                        questionMenu={(question) =>
+                            questionOutlineMenuItems({
+                                question,
+                                sections,
+                                labels: {
+                                    duplicate: t('tests.menu_duplicate_question'),
+                                    insertFromBank: t('tests.menu_insert_from_bank'),
+                                    moveTo: (title) => t('tests.menu_move_to_section', { section: title }),
+                                    noSection: t('tests.no_section'),
+                                    remove: t('tests.menu_delete_question'),
+                                },
+                                duplicate: () => copyQuestion(question.id),
+                                insertFromBankAfter: () => {
+                                    setBankInsertAfterId(question.id);
+                                    setShowBankModal(true);
+                                },
+                                moveToSection: (sectionId) => moveQuestionToSection(question.id, sectionId),
+                                remove: () => removeQuestion(question.id),
+                            })
+                        }
                         onSelectSection={(sectionId) => {
                             setChecksOpen(false);
                             setSelectedSectionId(sectionId);
@@ -2486,7 +2524,15 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                 durationError={durationError}
                 readOnly={readOnly}
             />
-            {showBankModal && <QuestionBankModal onClose={() => setShowBankModal(false)} onSelect={insertFromBank} />}
+            {showBankModal && (
+                <QuestionBankModal
+                    onClose={() => {
+                        setShowBankModal(false);
+                        setBankInsertAfterId(null);
+                    }}
+                    onSelect={insertFromBank}
+                />
+            )}
             {newQuestionFor && (
                 <QuestionTypePicker onSelect={createQuestionOfType} onClose={() => setNewQuestionFor(null)} />
             )}

@@ -5,6 +5,8 @@ import { plainQuestionPromptText } from '../../utils/clozeParse';
 import { htmlToPlainText } from '../../utils/essayUtils';
 import { questionTypeLabelKey } from '../../utils/questionTypeKey';
 import type { TestQuestion, TestSection } from '../../types';
+import ContextMenu, { useContextMenu, type ContextMenuItem } from '../ui/ContextMenu';
+import MenuButton from '../ui/MenuButton';
 
 interface Props {
     sections: TestSection[];
@@ -17,6 +19,8 @@ interface Props {
     /** Section whose workspace is open in the focus pane. */
     activeSectionId?: string | null;
     onSelect: (questionId: string) => void;
+    /** Actions offered for a question row by right-click (and the ⋯ button on touch); omit for a read-only rail. */
+    questionMenu?: (question: TestQuestion) => ContextMenuItem[];
     /** Opens a section's workspace; the uncategorised group has none to open. */
     onSelectSection?: (sectionId: string) => void;
     onAdd: () => void;
@@ -41,6 +45,7 @@ export default function TestOutlineRail({
     activeId,
     activeSectionId,
     onSelect,
+    questionMenu,
     onSelectSection,
     onAdd,
     onOpenSettings,
@@ -48,6 +53,7 @@ export default function TestOutlineRail({
     onToggleExpand,
 }: Props) {
     const { t } = useTranslation();
+    const menu = useContextMenu();
     const [query, setQuery] = useState('');
     const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
     const treeRef = useRef<HTMLDivElement | null>(null);
@@ -346,76 +352,95 @@ export default function TestOutlineRail({
                                             {group.questions.map((question) => {
                                                 const active = question.id === activeId;
                                                 const issues = issuesByQuestion.get(question.id) ?? [];
+                                                const openMenu = (event: React.MouseEvent) =>
+                                                    menu.open(
+                                                        event,
+                                                        questionMenu?.(question) ?? [],
+                                                        t('tests.outline_menu_label')
+                                                    );
                                                 return (
-                                                    <button
+                                                    <div
                                                         key={question.id}
-                                                        type="button"
-                                                        role="treeitem"
-                                                        aria-selected={active}
-                                                        aria-current={active ? 'true' : undefined}
-                                                        tabIndex={treeTabStop === `q:${question.id}` ? 0 : -1}
-                                                        data-tree-row="true"
-                                                        data-row-kind="question"
-                                                        data-section-id={group.id}
-                                                        onClick={() => onSelect(question.id)}
-                                                        title={labelFor(question)}
-                                                        data-testid={`outline-question-${question.id}`}
-                                                        style={{
-                                                            display: 'grid',
-                                                            gridTemplateColumns: '22px minmax(0, 1fr) auto',
-                                                            alignItems: 'center',
-                                                            gap: 6,
-                                                            width: '100%',
-                                                            padding: '5px 6px',
-                                                            border: 'none',
-                                                            borderRadius: 6,
-                                                            background: active
-                                                                ? 'color-mix(in srgb, var(--accent) 14%, transparent)'
-                                                                : 'none',
-                                                            color: 'var(--text)',
-                                                            font: 'inherit',
-                                                            fontSize: '0.8rem',
-                                                            fontWeight: active ? 600 : 400,
-                                                            textAlign: 'left',
-                                                            cursor: 'pointer',
-                                                        }}
+                                                        style={{ display: 'flex', alignItems: 'center', gap: 2 }}
+                                                        onContextMenu={questionMenu ? openMenu : undefined}
                                                     >
-                                                        <span
+                                                        <button
+                                                            type="button"
+                                                            role="treeitem"
+                                                            aria-selected={active}
+                                                            aria-current={active ? 'true' : undefined}
+                                                            tabIndex={treeTabStop === `q:${question.id}` ? 0 : -1}
+                                                            data-tree-row="true"
+                                                            data-row-kind="question"
+                                                            data-section-id={group.id}
+                                                            onClick={() => onSelect(question.id)}
+                                                            title={labelFor(question)}
+                                                            data-testid={`outline-question-${question.id}`}
                                                             style={{
-                                                                fontVariantNumeric: 'tabular-nums',
-                                                                color: 'var(--text-muted)',
-                                                            }}
-                                                        >
-                                                            {numberOf(question)}
-                                                        </span>
-                                                        <span
-                                                            style={{
-                                                                overflow: 'hidden',
-                                                                textOverflow: 'ellipsis',
-                                                                whiteSpace: 'nowrap',
-                                                            }}
-                                                        >
-                                                            {labelFor(question)}
-                                                        </span>
-                                                        <span
-                                                            style={{
-                                                                display: 'flex',
+                                                                display: 'grid',
+                                                                gridTemplateColumns: '22px minmax(0, 1fr) auto',
                                                                 alignItems: 'center',
-                                                                gap: 4,
-                                                                color: 'var(--text-muted)',
-                                                                fontVariantNumeric: 'tabular-nums',
+                                                                gap: 6,
+                                                                flex: 1,
+                                                                minWidth: 0,
+                                                                padding: '5px 6px',
+                                                                border: 'none',
+                                                                borderRadius: 6,
+                                                                background: active
+                                                                    ? 'color-mix(in srgb, var(--accent) 14%, transparent)'
+                                                                    : 'none',
+                                                                color: 'var(--text)',
+                                                                font: 'inherit',
+                                                                fontSize: '0.8rem',
+                                                                fontWeight: active ? 600 : 400,
+                                                                textAlign: 'left',
+                                                                cursor: 'pointer',
                                                             }}
                                                         >
-                                                            {issues.length > 0 && (
-                                                                <AlertCircle
-                                                                    size={12}
-                                                                    style={{ color: 'var(--yellow-text)' }}
-                                                                    aria-label={t('tests.issues_title')}
-                                                                />
-                                                            )}
-                                                            {question.points}
-                                                        </span>
-                                                    </button>
+                                                            <span
+                                                                style={{
+                                                                    fontVariantNumeric: 'tabular-nums',
+                                                                    color: 'var(--text-muted)',
+                                                                }}
+                                                            >
+                                                                {numberOf(question)}
+                                                            </span>
+                                                            <span
+                                                                style={{
+                                                                    overflow: 'hidden',
+                                                                    textOverflow: 'ellipsis',
+                                                                    whiteSpace: 'nowrap',
+                                                                }}
+                                                            >
+                                                                {labelFor(question)}
+                                                            </span>
+                                                            <span
+                                                                style={{
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: 4,
+                                                                    color: 'var(--text-muted)',
+                                                                    fontVariantNumeric: 'tabular-nums',
+                                                                }}
+                                                            >
+                                                                {issues.length > 0 && (
+                                                                    <AlertCircle
+                                                                        size={12}
+                                                                        style={{ color: 'var(--yellow-text)' }}
+                                                                        aria-label={t('tests.issues_title')}
+                                                                    />
+                                                                )}
+                                                                {question.points}
+                                                            </span>
+                                                        </button>
+                                                        {questionMenu && (
+                                                            <MenuButton
+                                                                className="menu-touch-only"
+                                                                label={t('tests.outline_menu_label')}
+                                                                onOpen={openMenu}
+                                                            />
+                                                        )}
+                                                    </div>
                                                 );
                                             })}
                                         </div>
@@ -451,6 +476,7 @@ export default function TestOutlineRail({
             >
                 <Settings size={14} /> {t('tests.settings_title')}
             </button>
+            <ContextMenu {...menu.menuProps} />
         </nav>
     );
 }
