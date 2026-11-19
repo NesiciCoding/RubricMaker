@@ -42,6 +42,17 @@ const submission: TestSubmissionPayload = {
 };
 
 describe('TestSubmissionImportModal', () => {
+    it('keeps the version the student was shown', () => {
+        const onSave = vi.fn();
+        const code = encodeTestSubmission({ ...submission, testVersion: 'B' });
+        render(<TestSubmissionImportModal test={test} studentTests={[]} onSave={onSave} onClose={vi.fn()} />);
+
+        fireEvent.change(screen.getByLabelText('tests.results.import_code_label'), { target: { value: code } });
+        fireEvent.click(screen.getByText(/tests.results.import_btn/));
+
+        expect(onSave.mock.calls[0][0].testVersion).toBe('B');
+    });
+
     it('decodes a pasted submission code and creates a StudentTest via the save helper', () => {
         const onSave = vi.fn();
         const code = encodeTestSubmission(submission);

@@ -116,6 +116,7 @@ serve(async (req) => {
         events?: unknown[];
         sectionPath?: string[];
         levelPath?: { sectionId: string; level: string; questionId: string; correct: boolean }[];
+        testVersion?: string;
     };
     try {
         body = await req.json();
@@ -129,7 +130,8 @@ serve(async (req) => {
         return json({ error: 'Invalid request body' }, 400);
     }
 
-    const { assignmentId, submissionId, answers, startedAt, submittedAt, events, sectionPath, levelPath } = body;
+    const { assignmentId, submissionId, answers, startedAt, submittedAt, events, sectionPath, levelPath, testVersion } =
+        body;
     if (
         !assignmentId ||
         !submissionId ||
@@ -365,6 +367,7 @@ serve(async (req) => {
                 events: events ?? [],
                 attemptNumber,
                 ...(sectionPath ? { sectionPath } : {}),
+                ...(typeof testVersion === 'string' && /^[A-D]$/.test(testVersion) ? { testVersion } : {}),
                 ...(generatorLevelPath
                     ? {
                           levelPath: generatorLevelPath,

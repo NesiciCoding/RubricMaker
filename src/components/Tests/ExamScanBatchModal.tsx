@@ -548,6 +548,7 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
                 status: 'submitted',
                 submittedAt: base.submittedAt ?? now,
                 rawTotalPoints: calcStudentTestRawPoints(test, answers),
+                testVersion: version || undefined,
                 updatedAt: now,
                 // A scan replaces every answer, so prior grading metadata no longer matches.
                 gradedAt: undefined,
@@ -557,7 +558,7 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
         }
         setSavedCount(groups.length);
         setPhase('done');
-    }, [confirm, groups, onSave, responsesByStudent, studentTests, t, test]);
+    }, [confirm, groups, onSave, responsesByStudent, studentTests, t, test, version]);
 
     const close = useCallback(() => {
         cancelledRef.current = true;

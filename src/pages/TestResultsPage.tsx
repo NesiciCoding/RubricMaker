@@ -36,7 +36,6 @@ import OpenAnswerInsightsPanel from '../components/Tests/OpenAnswerInsightsPanel
 import { blankRubricEntries, rubricAnswerPoints } from '../utils/rubricTaskScoring';
 import { questionTypeLabelKey } from '../utils/questionTypeKey';
 import { buildReviewDeck } from '../utils/questionsToDeck';
-import { versionForStudent } from '../utils/testVersions';
 import CommentBankModal from '../components/Comments/CommentBankModal';
 import GrammarStandardsPanel from '../components/Grammar/GrammarStandardsPanel';
 import type { TestAnswer, TestQuestion, ProctorEventType, CommentBankItem, Rubric, ScoreEntry } from '../types';
@@ -473,7 +472,7 @@ export default function TestResultsPage() {
     );
     const studentTest = studentTests.find((st) => st.id === studentTestId && st.testId === testId);
     const student = students.find((s) => s.id === studentTest?.studentId);
-    const testVersion = versionForStudent(studentTest?.studentId ?? '', test?.versionCount);
+    const testVersion = studentTest?.testVersion;
     // A class shared with me as "Can view": results are readable, but the server refuses changes.
     const readOnly = !canEditStudentWork(student?.classId);
     const isLateSubmission = !!test?.dueDate && !!studentTest?.submittedAt && studentTest.submittedAt > test.dueDate;

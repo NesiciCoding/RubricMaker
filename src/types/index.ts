@@ -1781,6 +1781,8 @@ export interface StudentTest {
     source?: 'online' | 'import' | 'manual';
     /** Marked absent in the score sheet: kept for the record, but left out of totals, grades and analysis. */
     absent?: boolean;
+    /** Parallel paper version ('A'–'D') the student actually received. Absent means not recorded — never derive it from the current `versionCount`. */
+    testVersion?: string;
 }
 
 export type TestStrengthBucket = 'strong' | 'developing' | 'weak';
@@ -1999,6 +2001,8 @@ export interface TestSubmissionPayload {
     sectionPath?: string[];
     /** The full adaptive question trace — only set for staircase-engine placement tests */
     levelPath?: StaircaseStep[];
+    /** Parallel paper version ('A'–'D') the student was shown; absent when the test has no versions */
+    testVersion?: string;
 }
 
 /** A student's completed essay, encoded into a submission code for the teacher to import */

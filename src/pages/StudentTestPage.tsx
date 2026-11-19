@@ -448,7 +448,8 @@ export default function StudentTestPage() {
                 item.submittedAt,
                 item.events,
                 item.sectionPath,
-                item.levelPath
+                item.levelPath,
+                item.testVersion
             );
             if (res.success || isAlreadySubmitted(res.error)) {
                 removeSubmission(item.id);
@@ -567,6 +568,7 @@ export default function StudentTestPage() {
             events: telemetry.flush(),
             sectionPath: staged && sectionPath.length > 0 ? sectionPath : undefined,
             levelPath: isStaircase && effectiveLevelPath.length > 0 ? effectiveLevelPath : undefined,
+            testVersion: testVersion ?? undefined,
         };
         const legacyCode = encodeTestSubmission(submissionPayload);
 
@@ -580,7 +582,8 @@ export default function StudentTestPage() {
                 submittedAt,
                 submissionPayload.events,
                 submissionPayload.sectionPath,
-                submissionPayload.levelPath
+                submissionPayload.levelPath,
+                submissionPayload.testVersion
             );
             setSubmitting(false);
             if (!result.success) {
@@ -598,6 +601,7 @@ export default function StudentTestPage() {
                     events: submissionPayload.events,
                     sectionPath: submissionPayload.sectionPath,
                     levelPath: submissionPayload.levelPath,
+                    testVersion: submissionPayload.testVersion,
                     queuedAt: new Date().toISOString(),
                 });
                 setSubmitError(t('tests.taking.submit_error_db'));

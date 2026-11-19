@@ -125,6 +125,31 @@ describe('TestResultsPage', () => {
         resetClassRolesCache();
         resultsDb.isConnected = false;
         mockUseApp.studentTests = [mockStudentTest];
+        mockUseApp.tests = [mockTest];
+    });
+
+    async function renderResults() {
+        const { default: TestResultsPage } = await import('../TestResultsPage');
+        render(
+            <MemoryRouter initialEntries={['/tests/t1/results/st1']}>
+                <Routes>
+                    <Route path="/tests/:testId/results/:studentTestId" element={<TestResultsPage />} />
+                </Routes>
+            </MemoryRouter>
+        );
+    }
+
+    it('shows the stored parallel version and ignores later versionCount changes', async () => {
+        mockUseApp.tests = [{ ...mockTest, versionCount: 3 }];
+        mockUseApp.studentTests = [{ ...mockStudentTest, testVersion: 'B' }];
+        await renderResults();
+        expect(screen.getByText('tests.versioning_badge:{"version":"B"}')).toBeInTheDocument();
+    });
+
+    it('shows no version badge for an attempt that never recorded one, even when the test has versions', async () => {
+        mockUseApp.tests = [{ ...mockTest, versionCount: 2 }];
+        await renderResults();
+        expect(screen.queryByText(/tests\.versioning_badge/)).not.toBeInTheDocument();
     });
 
     it('shows who last changed the result and stamps me when I save while connected', async () => {

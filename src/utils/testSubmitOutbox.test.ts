@@ -29,6 +29,11 @@ describe('testSubmitOutbox', () => {
         expect(pendingSubmissions('https://a.example')).toEqual([]);
     });
 
+    it('carries the delivered test version through the queue unchanged', () => {
+        enqueueSubmission({ ...base, testVersion: 'B' });
+        expect(pendingSubmissions('https://a.example')[0].testVersion).toBe('B');
+    });
+
     it('re-enqueuing the same id replaces rather than duplicates', () => {
         enqueueSubmission(base);
         enqueueSubmission({ ...base, submittedAt: '2026-01-01T00:06:00Z' });
