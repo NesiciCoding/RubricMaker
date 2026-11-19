@@ -506,6 +506,37 @@ describe('useLiveSessionTelemetry', () => {
         expect(heartbeats().map((message) => message.payload.value)).toEqual(['idle']);
     });
 
+    it('announces active on join even after a long wait before the session was enabled', () => {
+        vi.useFakeTimers();
+        Object.assign(mockChannel, { state: 'joined' });
+        const { rerender } = renderHook(
+            ({ enabled }: { enabled: boolean }) =>
+                useLiveSessionTelemetry({
+                    kind: 'test',
+                    assignmentKey: 'key1',
+                    enabled,
+                    supabaseUrl: 'https://example.supabase.co',
+                    supabaseAnonKey: 'anon-key',
+                }),
+            { initialProps: { enabled: false } }
+        );
+        act(() => {
+            vi.advanceTimersByTime(90_000);
+        });
+        mockChannel.send.mockClear();
+
+        rerender({ enabled: true });
+        act(() => {
+            (mockChannel.subscribe.mock.calls.at(-1)?.[0] as (status: string) => void)('SUBSCRIBED');
+        });
+
+        const values = mockChannel.send.mock.calls
+            .map(([message]) => message as { event: string; payload: { type: string; value: string } })
+            .filter((message) => message.event === 'event' && message.payload.type === 'heartbeat')
+            .map((message) => message.payload.value);
+        expect(values).toEqual(['active']);
+    });
+
     it('forwards nudge broadcasts to the onNudge callback', () => {
         const onNudge = vi.fn();
         renderHook(() =>

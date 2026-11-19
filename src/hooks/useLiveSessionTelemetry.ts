@@ -4,9 +4,8 @@ import { getMonitorClient, releaseStaleChannels } from '../utils/monitorClient';
 import type { ProctorEvent, CefrLevel } from '../types';
 
 const HEARTBEAT_INTERVAL_MS = 20_000;
-// The join announce covers the teacher's monitor finishing its own subscribe a moment later; a
-// monitor that arrives after that asks for one itself (the `probe` below) instead of every student
-// blindly retrying five times into a class opening at once.
+// One retry covers the monitor finishing its own subscribe; later monitors `probe` instead of the
+// whole class re-announcing.
 const JOIN_ANNOUNCE_RETRY_MS = 1_500;
 const IDLE_THRESHOLD_MS = 60_000;
 const SNAPSHOT_INTERVAL_MS = 5_000;
@@ -236,6 +235,7 @@ export function useLiveSessionTelemetry({
         const topic = `monitor:${kind}:${assignmentKey}`;
         let cancelled = false;
         let channel: ReturnType<SupabaseClient['channel']> | null = null;
+        let announceTimer: ReturnType<typeof setTimeout> | undefined;
         const open = () => {
             if (cancelled) return;
             channel = joinChannel();
@@ -258,26 +258,18 @@ export function useLiveSessionTelemetry({
             channel.on('broadcast', { event: 'spotlight' }, ({ payload }) => {
                 setSpotlighted((payload as { on?: boolean } | null)?.on === true);
             });
-            // The regular heartbeat only fires every ~20s, so a student who joins without
-            // announcing would read as disconnected for that whole window. Two announces cover the
-            // monitor's channel finishing its own subscribe a moment later; a monitor that joins
-            // later than that asks for one itself through `probe`, so presence stays accurate
-            // without every student in a class firing five broadcasts as the lesson starts.
-            const announceJoin = () => {
+            // A student joining without announcing would read as disconnected until the next ~20s
+            // heartbeat. A probe reply keeps the idle rule so it cannot turn an idle student active.
+            const announce = (respectIdle: boolean) => {
                 if (channelRef.current !== channel) return; // channel already torn down
+                const idle = respectIdle && Date.now() - lastActivityRef.current >= IDLE_THRESHOLD_MS;
                 channel.send({
                     type: 'broadcast',
                     event: 'event',
-                    payload: {
-                        type: 'heartbeat',
-                        at: new Date().toISOString(),
-                        // The same rule as the regular heartbeat: answering a probe must not turn an
-                        // idle student back into an active one until the next real activity.
-                        value: Date.now() - lastActivityRef.current >= IDLE_THRESHOLD_MS ? 'idle' : 'active',
-                    },
+                    payload: { type: 'heartbeat', at: new Date().toISOString(), value: idle ? 'idle' : 'active' },
                 });
             };
-            channel.on('broadcast', { event: 'probe' }, () => announceJoin());
+            channel.on('broadcast', { event: 'probe' }, () => announce(true));
             channel.subscribe((status) => {
                 setIsBroadcasting(status === 'SUBSCRIBED');
                 if (status !== 'SUBSCRIBED') return;
@@ -289,8 +281,8 @@ export function useLiveSessionTelemetry({
                 for (const b of buffered) {
                     channel.send({ type: 'broadcast', event: b.event, payload: b.payload });
                 }
-                announceJoin();
-                setTimeout(announceJoin, JOIN_ANNOUNCE_RETRY_MS);
+                announce(false);
+                announceTimer = setTimeout(() => announce(false), JOIN_ANNOUNCE_RETRY_MS);
             });
             return channel;
         };
@@ -299,6 +291,7 @@ export function useLiveSessionTelemetry({
         else open();
         return () => {
             cancelled = true;
+            clearTimeout(announceTimer);
             channelRef.current = null;
             pendingBroadcastsRef.current = [];
             if (channel) void client.removeChannel(channel);
@@ -433,6 +426,9 @@ export function useLiveSessionTelemetry({
     // ── activity tracking for idle detection ─────────────────────────────────
     useEffect(() => {
         if (!enabled) return;
+        // Listeners attach only now, so the baseline must not predate this moment or a long wait
+        // on a start screen would read as idle the instant the student begins.
+        lastActivityRef.current = Date.now();
         const onActivity = () => {
             lastActivityRef.current = Date.now();
         };
