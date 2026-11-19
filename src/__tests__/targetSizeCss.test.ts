@@ -63,6 +63,7 @@ describe('pointer targets at 44 px (#533, WCAG 2.5.5)', () => {
             "input[type='date']",
             'select',
             'textarea',
+            '.settings-tab',
         ]) {
             expect(minHeightsFor(selector), selector).toContain(TARGET);
         }
@@ -71,7 +72,7 @@ describe('pointer targets at 44 px (#533, WCAG 2.5.5)', () => {
     });
 
     it('has no selector targeting a guarded target that shrinks it below 44 px', () => {
-        const guarded = ['btn', 'btn-sm', 'btn-icon', 'toolbar-btn'];
+        const guarded = ['btn', 'btn-sm', 'btn-icon', 'toolbar-btn', 'settings-tab'];
         const shrinking = parseRules(css)
             .filter((rule) => rule.selectors.some((selector) => guarded.some((name) => targetsClass(selector, name))))
             .filter((rule) => {

@@ -56,6 +56,11 @@ const PINNED: { file: string; label: string; pattern: RegExp; occurrences?: numb
         pattern: /role="tab"[\s\S]{0,600}?minHeight: 44/,
     },
     {
+        file: 'pages/SettingsPage.tsx',
+        label: 'accent preset swatches',
+        pattern: /ACCENT_PRESETS\.map[\s\S]{0,1200}?width: 44[\s\S]{0,120}?height: 44/,
+    },
+    {
         file: 'pages/DocsPage.tsx',
         label: 'Docs section rail',
         pattern: /docs\.sections_nav_label[\s\S]{0,3600}?minHeight: 44/,

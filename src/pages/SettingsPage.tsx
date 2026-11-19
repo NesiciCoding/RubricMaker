@@ -852,24 +852,39 @@ export default function SettingsPage() {
                                                     aria-label={`${t('settings.accent_color_label')}: ${t(`settings.preset_${id}`, id)}`}
                                                     onClick={() => handleAccentChange(color)}
                                                     style={{
-                                                        width: 22,
-                                                        height: 22,
-                                                        borderRadius: '50%',
-                                                        background: color,
-                                                        border:
-                                                            accentInput === color && !settings.colorPreset
-                                                                ? '2.5px solid var(--text)'
-                                                                : '2px solid transparent',
-                                                        cursor: 'pointer',
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        width: 44,
+                                                        height: 44,
                                                         padding: 0,
+                                                        borderRadius: '50%',
+                                                        background: 'transparent',
+                                                        border: 'none',
+                                                        cursor: 'pointer',
                                                         outline: 'none',
-                                                        boxShadow:
-                                                            accentInput === color && !settings.colorPreset
-                                                                ? `0 0 0 1px ${color}`
-                                                                : 'none',
-                                                        transition: 'border 0.15s',
                                                     }}
-                                                />
+                                                >
+                                                    {/* The dot keeps its 22 px look; the button around it is the 44 px target. */}
+                                                    <span
+                                                        aria-hidden="true"
+                                                        style={{
+                                                            width: 22,
+                                                            height: 22,
+                                                            borderRadius: '50%',
+                                                            background: color,
+                                                            border:
+                                                                accentInput === color && !settings.colorPreset
+                                                                    ? '2.5px solid var(--text)'
+                                                                    : '2px solid transparent',
+                                                            boxShadow:
+                                                                accentInput === color && !settings.colorPreset
+                                                                    ? `0 0 0 1px ${color}`
+                                                                    : 'none',
+                                                            transition: 'border 0.15s',
+                                                        }}
+                                                    />
+                                                </button>
                                             ))}
                                         </div>
                                     </div>

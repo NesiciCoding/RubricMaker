@@ -2518,6 +2518,8 @@ select.input-error {
     display: flex;
     align-items: center;
     gap: 7px;
+    /* 2.5.5: 10 px around a 19 px line is 39 px, so the tab carries the 44 px floor itself. */
+    min-height: 44px;
     padding: 10px 18px;
     border: none;
     background: transparent;
