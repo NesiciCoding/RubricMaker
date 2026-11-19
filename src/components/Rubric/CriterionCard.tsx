@@ -181,6 +181,7 @@ export default memo(function CriterionCard({
                     ref={provided.innerRef}
                     {...provided.draggableProps}
                     className="card print-criterion"
+                    data-longpress
                     onContextMenu={openMenu}
                     style={{
                         marginBottom: 16,

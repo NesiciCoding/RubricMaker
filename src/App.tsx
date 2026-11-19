@@ -20,6 +20,7 @@ import { PageViewLogger } from './components/ui/PageViewLogger';
 import { isLocalMode } from './store/storage';
 import { canOpenAdmin, resolveUserRole } from './utils/userRole';
 import { RemountOnParam } from './components/ui/RemountOnParam';
+import { useLongPressContextMenu } from './hooks/useLongPressContextMenu';
 
 // react-joyride only runs the onboarding tour inside the dashboard, never on the landing
 // page — lazy so its ~800KB isn't parsed on every load. No default export, so re-wrap it.
@@ -105,6 +106,7 @@ export default function App() {
     const { showLanding, isCheckingSession, bootPhase, signOutFromDatabase, showMigrationPrompt } = usePlatform();
 
     const { t } = useTranslation();
+    useLongPressContextMenu();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const steps = useMemo(
         () => (isMobileViewport() ? withMobileDrawer(getTutorialSteps(t), setMobileMenuOpen) : getTutorialSteps(t)),

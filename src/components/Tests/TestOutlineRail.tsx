@@ -362,6 +362,7 @@ export default function TestOutlineRail({
                                                     <div
                                                         key={question.id}
                                                         style={{ display: 'flex', alignItems: 'center', gap: 2 }}
+                                                        data-longpress={questionMenu ? '' : undefined}
                                                         onContextMenu={questionMenu ? openMenu : undefined}
                                                     >
                                                         <button

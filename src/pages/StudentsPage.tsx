@@ -1393,7 +1393,7 @@ export default function StudentsPage() {
                                                     t('studentsPage.row_menu_label')
                                                 );
                                             return (
-                                                <tr key={s.id} onContextMenu={openRowMenu}>
+                                                <tr key={s.id} data-longpress onContextMenu={openRowMenu}>
                                                     <td style={{ fontWeight: 500 }}>
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                                             <Avatar name={s.name} size={26} fontSize="0.75rem" />

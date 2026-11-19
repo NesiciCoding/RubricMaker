@@ -31,6 +31,7 @@ import { useToast } from '../../../hooks/useToast';
 import ContextMenu, { useContextMenu } from '../../ui/ContextMenu';
 import type { ContextMenuItem } from '../../ui/ContextMenu';
 import { isQuestionDelivered } from '../../../utils/variantDelivery';
+import MenuButton from '../../ui/MenuButton';
 
 interface Props {
     test: Test;
@@ -492,6 +493,7 @@ export default function ScoreSheetGrid({
                             <tr key={student.id} style={{ opacity: absent ? 0.55 : 1 }}>
                                 <th
                                     scope="row"
+                                    data-longpress
                                     tabIndex={0}
                                     aria-label={t('tests.scoreSheet.row_header_label', { student: student.name })}
                                     onContextMenu={(e) =>
@@ -507,6 +509,12 @@ export default function ScoreSheetGrid({
                                     }}
                                 >
                                     {student.name}
+                                    <MenuButton
+                                        className="menu-touch-only"
+                                        label={t('tests.scoreSheet.menu_row_label')}
+                                        onOpen={(e) => ctx.open(e, rowMenu(row), t('tests.scoreSheet.menu_row_label'))}
+                                        style={{ marginLeft: 4 }}
+                                    />
                                 </th>
                                 {questions.map((q, col) => {
                                     const k = key(student.id, q.id);

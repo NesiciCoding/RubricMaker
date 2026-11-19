@@ -3228,3 +3228,9 @@ label.sub-item-check {
         display: inline-flex;
     }
 }
+
+/* Long-press opens the app's own menu on touch screens, so the browser's callout must not compete.
+   Only opted-in surfaces: text outside them stays selectable. */
+[data-longpress] {
+    -webkit-touch-callout: none;
+}
