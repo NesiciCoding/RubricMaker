@@ -466,6 +466,79 @@ describe('useLiveSessionTelemetry', () => {
         expect(result.current.spotlighted).toBe(false);
     });
 
+    it('expires the spotlight lease when the teacher stops renewing it', () => {
+        vi.useFakeTimers();
+        Object.assign(mockChannel, { state: 'joined' });
+        const { result } = renderHook(() =>
+            useLiveSessionTelemetry({
+                kind: 'essay',
+                assignmentKey: 'key1',
+                enabled: true,
+                getSnapshot: () => ({ wordCount: 1 }),
+                supabaseUrl: 'https://example.supabase.co',
+                supabaseAnonKey: 'anon-key',
+            })
+        );
+        act(() => {
+            (mockChannel.subscribe.mock.calls.at(-1)?.[0] as (status: string) => void)('SUBSCRIBED');
+        });
+        const spotlightHandler = mockChannel.on.mock.calls
+            .filter(([type, opts]) => type === 'broadcast' && (opts as { event: string }).event === 'spotlight')
+            .at(-1)?.[2] as (msg: { payload: unknown }) => void;
+
+        act(() => {
+            spotlightHandler({ payload: { on: true } });
+        });
+        expect(result.current.spotlighted).toBe(true);
+
+        // The monitor re-sends every 10s while the view stays open, which keeps the lease alive.
+        act(() => {
+            vi.advanceTimersByTime(10_000);
+            spotlightHandler({ payload: { on: true } });
+            vi.advanceTimersByTime(10_000);
+        });
+        expect(result.current.spotlighted).toBe(true);
+
+        // A monitor whose connection dropped never sends `on: false`, so the lease runs out.
+        act(() => {
+            vi.advanceTimersByTime(20_000);
+        });
+        expect(result.current.spotlighted).toBe(false);
+    });
+
+    it('holds snapshot ticks until the channel joins, then sends a full baseline', () => {
+        vi.useFakeTimers();
+        Object.assign(mockChannel, { state: 'joining' });
+        const getSnapshot = vi.fn(() => ({ text: 'draft', wordCount: 4 }));
+        renderHook(() =>
+            useLiveSessionTelemetry({
+                kind: 'essay',
+                assignmentKey: 'key1',
+                enabled: true,
+                getSnapshot,
+                supabaseUrl: 'https://example.supabase.co',
+                supabaseAnonKey: 'anon-key',
+            })
+        );
+        const sentSnapshots = () =>
+            mockChannel.send.mock.calls
+                .map(([message]) => message as { event: string; payload: Record<string, unknown> })
+                .filter((message) => message.event === 'snapshot')
+                .map((message) => message.payload);
+
+        // A slow join must not burn the once-a-minute text throttle on a snapshot the socket drops.
+        act(() => {
+            vi.advanceTimersByTime(20_000);
+        });
+        expect(sentSnapshots()).toHaveLength(0);
+
+        Object.assign(mockChannel, { state: 'joined' });
+        act(() => {
+            (mockChannel.subscribe.mock.calls.at(-1)?.[0] as (status: string) => void)('SUBSCRIBED');
+        });
+        expect(sentSnapshots().at(-1)).toEqual({ text: 'draft', wordCount: 4, typedChars: 0, pastedChars: 0 });
+    });
+
     it('answers a monitor probe with one heartbeat that keeps an idle student idle', () => {
         vi.useFakeTimers();
         Object.assign(mockChannel, { state: 'joined' });
