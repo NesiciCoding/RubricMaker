@@ -21,14 +21,32 @@ export default function NudgeMenu({ onSend, iconOnly = false }: NudgeMenuProps) 
     const { t } = useTranslation();
     const [open, setOpen] = useState(false);
     const rootRef = useRef<HTMLDivElement | null>(null);
+    const triggerRef = useRef<HTMLButtonElement | null>(null);
+    const menuRef = useRef<HTMLDivElement | null>(null);
+    // Where focus goes once the menu is open: set by a keyboard open, never by a pointer one.
+    const [entryFocus, setEntryFocus] = useState<'first' | 'last' | null>(null);
+
+    const items = () => Array.from(menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []);
+    const close = (restoreFocus: boolean) => {
+        setOpen(false);
+        setEntryFocus(null);
+        if (restoreFocus) triggerRef.current?.focus();
+    };
+
+    useEffect(() => {
+        if (!open || entryFocus === null) return;
+        const entries = items();
+        (entryFocus === 'first' ? entries[0] : entries[entries.length - 1])?.focus();
+    }, [open, entryFocus]);
 
     useEffect(() => {
         if (!open) return;
         const onPointerDown = (event: PointerEvent) => {
-            if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+            // An outside click may be aimed at another control, so it must not pull focus back here.
+            if (!rootRef.current?.contains(event.target as Node)) close(false);
         };
         const onKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') setOpen(false);
+            if (event.key === 'Escape') close(true);
         };
         document.addEventListener('pointerdown', onPointerDown);
         document.addEventListener('keydown', onKeyDown);
@@ -43,11 +61,23 @@ export default function NudgeMenu({ onSend, iconOnly = false }: NudgeMenuProps) 
             <button
                 type="button"
                 className={iconOnly ? 'btn btn-ghost btn-icon btn-sm' : 'btn btn-secondary btn-sm'}
+                ref={triggerRef}
                 aria-haspopup="menu"
                 aria-expanded={open}
                 title={t('tests.monitor.nudge_button')}
                 aria-label={t('tests.monitor.nudge_button')}
-                onClick={() => setOpen((value) => !value)}
+                onClick={(event) => {
+                    // detail 0 is a keyboard activation (Enter/Space): move into the menu like a native one.
+                    if (!open && event.detail === 0) setEntryFocus('first');
+                    setOpen((value) => !value);
+                }}
+                onKeyDown={(event) => {
+                    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                        event.preventDefault();
+                        setEntryFocus(event.key === 'ArrowDown' ? 'first' : 'last');
+                        setOpen(true);
+                    }
+                }}
                 style={
                     iconOnly
                         ? undefined
@@ -59,7 +89,22 @@ export default function NudgeMenu({ onSend, iconOnly = false }: NudgeMenuProps) 
             </button>
             {open && (
                 <div
+                    ref={menuRef}
                     role="menu"
+                    aria-label={t('tests.monitor.nudge_button')}
+                    onKeyDown={(event) => {
+                        const entries = items();
+                        const index = entries.indexOf(document.activeElement as HTMLElement);
+                        const move = (target: HTMLElement | undefined) => {
+                            event.preventDefault();
+                            target?.focus();
+                        };
+                        if (event.key === 'ArrowDown') move(entries[(index + 1) % entries.length]);
+                        else if (event.key === 'ArrowUp') move(entries[(index - 1 + entries.length) % entries.length]);
+                        else if (event.key === 'Home') move(entries[0]);
+                        else if (event.key === 'End') move(entries[entries.length - 1]);
+                        else if (event.key === 'Tab') close(false);
+                    }}
                     data-testid="nudge-presets"
                     style={{
                         position: 'absolute',
@@ -84,10 +129,11 @@ export default function NudgeMenu({ onSend, iconOnly = false }: NudgeMenuProps) 
                                 key={preset}
                                 type="button"
                                 role="menuitem"
+                                tabIndex={-1}
                                 className="btn btn-secondary btn-sm"
                                 style={{ justifyContent: 'flex-start', textAlign: 'left' }}
                                 onClick={() => {
-                                    setOpen(false);
+                                    close(true);
                                     onSend(message);
                                 }}
                             >
