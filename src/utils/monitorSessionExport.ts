@@ -45,9 +45,13 @@ function clockTime(at: number | string | undefined): string {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
+/** A spreadsheet reads a cell starting with one of these as a formula; names and messages are not trusted. */
+const FORMULA_PREFIX = /^[=+\-@\t\r]/;
+
 function cell(value: string | number | undefined): string {
     if (value === undefined) return '';
-    const text = String(value);
+    // Counts and ages are real numbers; only literal text is neutralised.
+    const text = typeof value === 'string' && FORMULA_PREFIX.test(value) ? `'${value}` : String(value);
     return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
