@@ -2458,6 +2458,7 @@
         "back_to_roster": "Back to Roster",
         "action_class_menu": "Class options",
         "action_edit_student": "Edit student",
+        "row_menu_label": "Student actions",
         "action_delete_student": "Delete student",
         "link_rubrics": "Link rubrics",
         "link_rubrics_title": "Link rubrics to {{className}}",

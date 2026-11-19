@@ -2458,6 +2458,7 @@
         "back_to_roster": "Volver al listado",
         "action_class_menu": "Opciones de clase",
         "action_edit_student": "Editar estudiante",
+        "row_menu_label": "Acciones del alumno",
         "action_delete_student": "Eliminar estudiante",
         "link_rubrics": "Vincular rúbricas",
         "link_rubrics_title": "Vincular rúbricas a {{className}}",

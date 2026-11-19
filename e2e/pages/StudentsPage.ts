@@ -120,8 +120,9 @@ export class StudentsPage extends BasePage {
 
     async openEditStudentModal(name: string): Promise<void> {
         await this.getStudentRowByName(name)
-            .getByRole('button', { name: /edit student/i })
+            .getByRole('button', { name: /student actions/i })
             .click();
+        await this.page.getByRole('menuitem', { name: /edit student/i }).click();
         await this.page.locator('#student-name').waitFor({ timeout: 10_000 });
     }
 

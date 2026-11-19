@@ -28,7 +28,8 @@ test.describe('Student CRUD', () => {
         await expect(appPage.getByText('Delete Me Student')).toBeVisible();
 
         const studentRow = appPage.locator('table tbody tr').filter({ hasText: 'Delete Me Student' });
-        await studentRow.getByRole('button', { name: /delete student/i }).click();
+        await studentRow.getByRole('button', { name: /student actions/i }).click();
+        await appPage.getByRole('menuitem', { name: /delete student/i }).click();
         // Student delete confirm uses <div class="modal"> without role="dialog"
         await expect(appPage.locator('.modal-overlay')).toBeVisible();
         await appPage.locator('.modal').locator('button.btn-primary').click();

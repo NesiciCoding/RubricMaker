@@ -2458,6 +2458,7 @@
         "back_to_roster": "Zurück zur Liste",
         "action_class_menu": "Klassenoptionen",
         "action_edit_student": "Schüler bearbeiten",
+        "row_menu_label": "Schüleraktionen",
         "action_delete_student": "Schüler löschen",
         "link_rubrics": "Rubriken verknüpfen",
         "link_rubrics_title": "Rubriken mit {{className}} verknüpfen",
