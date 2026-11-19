@@ -4,6 +4,9 @@ import { getMonitorClient, releaseStaleChannels } from '../utils/monitorClient';
 import type { ProctorEvent, CefrLevel } from '../types';
 
 const HEARTBEAT_INTERVAL_MS = 20_000;
+// One retry covers the monitor finishing its own subscribe; later monitors `probe` instead of the
+// whole class re-announcing.
+const JOIN_ANNOUNCE_RETRY_MS = 1_500;
 const IDLE_THRESHOLD_MS = 60_000;
 const SNAPSHOT_INTERVAL_MS = 5_000;
 // Every tick carries the cheap signals (word count, answers, questions asked), but full prose for a
@@ -250,6 +253,7 @@ export function useLiveSessionTelemetry({
         const topic = `monitor:${kind}:${assignmentKey}`;
         let cancelled = false;
         let channel: ReturnType<SupabaseClient['channel']> | null = null;
+        let announceTimer: ReturnType<typeof setTimeout> | undefined;
         const open = () => {
             if (cancelled) return;
             channel = joinChannel();
@@ -272,6 +276,18 @@ export function useLiveSessionTelemetry({
             channel.on('broadcast', { event: 'spotlight' }, ({ payload }) => {
                 applySpotlight((payload as { on?: boolean } | null)?.on === true);
             });
+            // A student joining without announcing would read as disconnected until the next ~20s
+            // heartbeat. A probe reply keeps the idle rule so it cannot turn an idle student active.
+            const announce = (respectIdle: boolean) => {
+                if (channelRef.current !== channel) return; // channel already torn down
+                const idle = respectIdle && Date.now() - lastActivityRef.current >= IDLE_THRESHOLD_MS;
+                channel.send({
+                    type: 'broadcast',
+                    event: 'event',
+                    payload: { type: 'heartbeat', at: new Date().toISOString(), value: idle ? 'idle' : 'active' },
+                });
+            };
+            channel.on('broadcast', { event: 'probe' }, () => announce(true));
             channel.subscribe((status) => {
                 setIsBroadcasting(status === 'SUBSCRIBED');
                 if (status !== 'SUBSCRIBED') return;
@@ -283,29 +299,8 @@ export function useLiveSessionTelemetry({
                 for (const b of buffered) {
                     channel.send({ type: 'broadcast', event: b.event, payload: b.payload });
                 }
-                // Announce the join immediately — and a few times over the next seconds:
-                // the regular heartbeat only fires every ~20s, so without this the
-                // teacher's monitor would keep showing the student as disconnected for
-                // that whole window after they connect. The retries cover the teacher's
-                // monitor channel joining a moment later (its row renders before the
-                // channel finishes subscribing) — a one-shot broadcast at join would
-                // otherwise be silently missed and presence would lie until the first
-                // real heartbeat.
-                const announce = (delayMs: number) => {
-                    setTimeout(() => {
-                        if (channelRef.current !== channel) return; // channel already torn down
-                        channel.send({
-                            type: 'broadcast',
-                            event: 'event',
-                            payload: { type: 'heartbeat', at: new Date().toISOString(), value: 'active' },
-                        });
-                    }, delayMs);
-                };
-                announce(0);
-                announce(750);
-                announce(1500);
-                announce(3000);
-                announce(5000);
+                announce(false);
+                announceTimer = setTimeout(() => announce(false), JOIN_ANNOUNCE_RETRY_MS);
             });
             return channel;
         };
@@ -314,6 +309,7 @@ export function useLiveSessionTelemetry({
         else open();
         return () => {
             cancelled = true;
+            clearTimeout(announceTimer);
             channelRef.current = null;
             pendingBroadcastsRef.current = [];
             // A different session's spotlight says nothing about this one.
@@ -452,6 +448,9 @@ export function useLiveSessionTelemetry({
     // ── activity tracking for idle detection ─────────────────────────────────
     useEffect(() => {
         if (!enabled) return;
+        // Listeners attach only now, so the baseline must not predate this moment or a long wait
+        // on a start screen would read as idle the instant the student begins.
+        lastActivityRef.current = Date.now();
         const onActivity = () => {
             lastActivityRef.current = Date.now();
         };

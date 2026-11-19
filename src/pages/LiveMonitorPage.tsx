@@ -646,7 +646,12 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                         firstSeenAt: current.firstSeenAt ?? at,
                     }));
                 })
-                .subscribe();
+                .subscribe((status) => {
+                    // Ask the student to announce itself now: its own join announce landed before
+                    // this monitor channel existed, so without the probe the row would read as
+                    // disconnected until the next 20s heartbeat.
+                    if (status === 'SUBSCRIBED') channel.send({ type: 'broadcast', event: 'probe' });
+                });
             return channel;
         };
         for (let start = 0; start < monitorStudents.length; start += MONITOR_CHANNELS_PER_CLIENT) {
