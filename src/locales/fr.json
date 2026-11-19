@@ -4344,6 +4344,7 @@
         "individual_assignment_badge": "Individuel",
         "individual_assignment_hint": "Assigné séparément depuis la page de notation d'un élève, ne fait pas partie de ce groupe",
         "submission_status_submitted": "Soumis",
+        "submission_progress_label": "{{submitted}} sur {{total}} remis",
         "action_grade_with_rubric": "Noter avec la grille",
         "submission_status_pending": "En attente",
         "action_monitor": "Surveiller",

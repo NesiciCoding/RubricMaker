@@ -4539,6 +4539,7 @@
         "individual_assignment_badge": "Individual",
         "individual_assignment_hint": "Assigned separately from a student's grading page, not part of this group",
         "submission_status_submitted": "Submitted",
+        "submission_progress_label": "{{submitted}} of {{total}} submitted",
         "action_grade_with_rubric": "Grade with rubric",
         "submission_status_pending": "Pending",
         "action_monitor": "Monitor",

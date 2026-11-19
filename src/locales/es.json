@@ -4539,6 +4539,7 @@
         "individual_assignment_badge": "Individual",
         "individual_assignment_hint": "Asignado por separado desde la página de calificación de un estudiante, no forma parte de este grupo",
         "submission_status_submitted": "Entregado",
+        "submission_progress_label": "{{submitted}} de {{total}} entregados",
         "action_grade_with_rubric": "Calificar con rúbrica",
         "submission_status_pending": "Pendiente",
         "action_monitor": "Monitorizar",

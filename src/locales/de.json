@@ -4344,6 +4344,7 @@
         "individual_assignment_badge": "Individuell",
         "individual_assignment_hint": "Separat über die Bewertungsseite eines Schülers zugewiesen, nicht Teil dieser Gruppe",
         "submission_status_submitted": "Eingereicht",
+        "submission_progress_label": "{{submitted}} von {{total}} abgegeben",
         "action_grade_with_rubric": "Mit Rubrik bewerten",
         "submission_status_pending": "Ausstehend",
         "action_monitor": "Überwachen",
