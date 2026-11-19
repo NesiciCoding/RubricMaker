@@ -172,6 +172,21 @@ describe('mergeProctorEvents', () => {
         const merged = mergeProctorEvents(persisted, [dup, { ...dup }]);
         expect(merged).toHaveLength(1);
     });
+    it('pairs a stored nudge with its live echo but keeps separate sends separate', () => {
+        const persisted: ProctorEvent[] = [
+            { type: 'nudge', at: '2024-01-01T12:00:03.000Z', value: 'Check your answer' },
+        ];
+        const live: ProctorEvent[] = [
+            { type: 'nudge', at: '2024-01-01T12:00:00.000Z', value: 'Check your answer' },
+            { type: 'nudge', at: '2024-01-01T12:00:04.000Z', value: 'Check your answer' },
+            { type: 'nudge', at: '2024-01-01T12:05:00.000Z', value: 'Check your answer' },
+        ];
+
+        const merged = mergeProctorEvents(persisted, live);
+
+        // One live copy is the persisted send's twin; the other two are different sends.
+        expect(merged.filter((e) => e.type === 'nudge')).toHaveLength(3);
+    });
 });
 
 describe('calcTestTimeOnTask', () => {

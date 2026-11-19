@@ -118,12 +118,32 @@ export function summarizeProctorFlags(events: ProctorEvent[]): ProctorFlagSummar
  * Merges a persisted event log with live broadcast events, deduping by `at`+`type`
  * so re-delivered or already-persisted heartbeats/events aren't double-counted.
  */
+/** A nudge is logged by the teacher when sent and again by the student on receipt, a moment apart. */
+const NUDGE_PAIR_MS = 15_000;
+
 export function mergeProctorEvents(persisted: ProctorEvent[], live: ProctorEvent[]): ProctorEvent[] {
     const seen = new Set(persisted.map((e) => `${e.type}:${e.at}`));
     const merged = [...persisted];
+    const pairedNudges = new Set<number>();
     for (const event of live) {
         const key = `${event.type}:${event.at}`;
         if (seen.has(key)) continue;
+        if (event.type === 'nudge') {
+            // One send, two records: pair each live nudge with at most one stored copy of the same
+            // message, so two separate sends of the same text stay two entries.
+            const liveAt = new Date(event.at).getTime();
+            const twin = persisted.findIndex(
+                (stored, index) =>
+                    stored.type === 'nudge' &&
+                    !pairedNudges.has(index) &&
+                    stored.value === event.value &&
+                    Math.abs(new Date(stored.at).getTime() - liveAt) <= NUDGE_PAIR_MS
+            );
+            if (twin >= 0) {
+                pairedNudges.add(twin);
+                continue;
+            }
+        }
         seen.add(key);
         merged.push(event);
     }
