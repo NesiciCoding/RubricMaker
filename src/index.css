@@ -655,8 +655,8 @@ h3 {
     min-height: 24px;
 }
 
-/* Declared after .btn-icon on purpose: its 24 px minimum would otherwise win the cascade for the
-   icon-and-small combination and drop the 44 px target back to 24. */
+/* Two classes beat .btn-icon's single class, so its 24 px minimum cannot reach the icon-and-small
+   combination; the source order of these two rules plays no part. */
 .btn-icon.btn-sm {
     min-height: 44px;
 }

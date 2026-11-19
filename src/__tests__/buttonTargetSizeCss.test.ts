@@ -81,19 +81,17 @@ describe('small-button target size (#533, WCAG 2.5.5)', () => {
     });
 
     it('keeps icon-and-small buttons at 44 px even though .btn-icon sets a 24 px minimum', () => {
-        // `.btn-icon` and `.btn-sm` share a specificity, so the later one wins; the compound rule
-        // outranks both and is what carries the measurement the audit recorded.
+        // The compound selector outranks both single-class rules (two classes versus one), so it
+        // carries the measurement the audit recorded wherever the rules sit in the file.
         expect(winningMinHeight(['btn', 'btn-icon', 'btn-sm'])).toEqual({
             selector: '.btn-icon.btn-sm',
             value: TARGET,
         });
     });
 
-    it('declares .btn-icon.btn-sm after .btn-icon', () => {
+    it('still has the 24 px .btn-icon minimum for the compound rule to outrank', () => {
         const icon = rules.find((rule) => rule.selectors.includes('.btn-icon'));
-        const compound = rules.find((rule) => rule.selectors.includes('.btn-icon.btn-sm'));
         expect(minHeight(icon?.decls ?? '')).toBe(24);
-        expect(compound?.order).toBeGreaterThan(icon!.order);
     });
 
     it('has no selector targeting .btn-sm that shrinks it below 44 px', () => {
