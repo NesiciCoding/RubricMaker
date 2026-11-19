@@ -337,7 +337,14 @@ export default function App() {
                                     />
                                     <Route path="/tests/:testId/results/:studentTestId" element={<TestResultsPage />} />
                                     <Route path="/tests/:testId/grade" element={<TestGradingQueuePage />} />
-                                    <Route path="/tests/:testId/monitor" element={<LiveMonitorPage kind="test" />} />
+                                    <Route
+                                        path="/tests/:testId/monitor"
+                                        element={
+                                            <RemountOnParam param="testId">
+                                                <LiveMonitorPage kind="test" />
+                                            </RemountOnParam>
+                                        }
+                                    />
                                     <Route path="/tests/:id/scores" element={<TestScoreSheetPage />} />
                                     <Route path="/essays" element={<EssayListPage />} />
                                     <Route
@@ -358,7 +365,11 @@ export default function App() {
                                     />
                                     <Route
                                         path="/essays/:assignmentId/monitor"
-                                        element={<LiveMonitorPage kind="essay" />}
+                                        element={
+                                            <RemountOnParam param="assignmentId">
+                                                <LiveMonitorPage kind="essay" />
+                                            </RemountOnParam>
+                                        }
                                     />
                                     <Route path="/live" element={<LiveWritingListPage />} />
                                     <Route path="/live/new" element={<LiveWritingSessionPage />} />
