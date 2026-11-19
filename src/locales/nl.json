@@ -3262,7 +3262,9 @@
         "s10_title": "10. Contact & Data Protection Officer",
         "oss_title": "Open-source attributions",
         "local_title": "Local storage (default)",
-        "db_title": "Database (Supabase) — optional"
+        "db_title": "Database (Supabase) — optional",
+        "errors_title": "Foutmeldingen uit de browser (optioneel)",
+        "errors_body": "Als de beheerder de app met foutrapportage bouwt en er een database is gekoppeld, wordt een JavaScript-fout in een browsertabblad vastgelegd in de eigen database van de beheerder. Het record bevat alleen technische gegevens: het type fout, een eenrichtingshash van de melding (nooit de melding zelf), de plek in de code van de applicatie, het paginapatroon (zonder record-id's of deelcodes), de appversie, de rol, de school- en accountidentificaties die de logtabel al bewaart en een willekeurig sessie-id per tabblad. Het bevat nooit iets wat een gebruiker heeft ingetypt, namen van leerlingen, cijfers of documentinhoud. Er wordt niets naar een derde partij gestuurd en records worden na 30 dagen automatisch verwijderd."
     },
     "cefr": {
         "placement_recover": "Plaatsingsresultaten laden",
@@ -5330,6 +5332,9 @@
         "da_stress_body_prefix": "Admins kunnen bouwen met",
         "da_stress_body_mid": "om diagnostische gebeurtenissen (acties, synchronisatieresultaten, fouten — nooit essaytekst, opmerkingen of cijfers) vast te leggen in een",
         "da_stress_body_suffix": "-tabel tijdens een pilot. Handig om een volledige klastest uit te voeren vóór uitrol. Schakel uit door opnieuw te bouwen zonder de vlag zodra de pilot is afgerond.",
+        "da_errors_title": "Foutrapportage",
+        "da_errors_body_prefix": "Productiebuilds kunnen in plaats daarvan",
+        "da_errors_body_suffix": "instellen om alleen JavaScript-fouten vast te leggen. Een record bevat het type fout, een hash van de melding, de plek in de code, het paginapatroon en de appversie — nooit de tekst van de melding, iets wat een gebruiker typte, namen of cijfers — en wordt na 30 dagen verwijderd.",
         "da_admin_title": "Adminpaneel",
         "da_admin_intro_prefix": "Toegankelijk op",
         "da_admin_intro_suffix": "voor gebruikers met de adminrol.",

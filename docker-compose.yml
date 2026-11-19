@@ -183,6 +183,7 @@ services:
         VITE_SUPABASE_ANON_KEY: "${ANON_KEY:?Run scripts/generate-docker-secrets.sh to create .env}"
         # Enables the client_logs diagnostic stream for a stress-test window — see .env.docker.example
         VITE_STRESS_TEST_LOGGING: "${VITE_STRESS_TEST_LOGGING:-}"
+        VITE_ERROR_REPORTING: "${VITE_ERROR_REPORTING:-}"
     ports:
       - "8080:80"
     volumes:

@@ -3262,7 +3262,9 @@
         "s10_title": "10. Contact & Data Protection Officer",
         "oss_title": "Open-source attributions",
         "local_title": "Local storage (default)",
-        "db_title": "Database (Supabase) — optional"
+        "db_title": "Database (Supabase) — optional",
+        "errors_title": "Informes de errores del navegador (opcional)",
+        "errors_body": "Si el operador compila la aplicación con el informe de errores activado y hay una base de datos conectada, un error de JavaScript en una pestaña del navegador se registra en la propia base de datos del operador. El registro contiene solo datos técnicos: el tipo de error, un hash unidireccional del mensaje (nunca el mensaje en sí), la posición en el código de la aplicación, el patrón de la página (sin identificadores de registro ni códigos para compartir), la versión de la aplicación, el rol, los identificadores de centro y de cuenta que la tabla de registro ya guarda y un identificador de sesión aleatorio por pestaña. Nunca contiene nada que un usuario haya escrito, ni nombres de alumnos, notas o contenido de documentos. No se envía nada a terceros y los registros se eliminan automáticamente a los 30 días."
     },
     "cefr": {
         "placement_recover": "Cargar resultados de nivelación",
@@ -5330,6 +5332,9 @@
         "da_stress_body_prefix": "Los administradores pueden compilar con",
         "da_stress_body_mid": "para registrar eventos de diagnóstico (acciones, resultados de sincronización, errores — nunca texto de redacciones, comentarios o calificaciones) en una tabla",
         "da_stress_body_suffix": "durante un piloto. Útil para ejecutar una prueba completa de clase antes del despliegue. Desactívalo recompilando sin la marca una vez finalizado el piloto.",
+        "da_errors_title": "Informe de errores",
+        "da_errors_body_prefix": "Las compilaciones de producción pueden en su lugar definir",
+        "da_errors_body_suffix": "para registrar solo errores de JavaScript. Un registro contiene el tipo de error, un hash del mensaje, la posición en el código, el patrón de la página y la versión de la aplicación — nunca el texto del mensaje, nada que un usuario haya escrito, nombres ni notas — y se elimina a los 30 días.",
         "da_admin_title": "Panel de administración",
         "da_admin_intro_prefix": "Accesible en",
         "da_admin_intro_suffix": "para usuarios con el rol de administrador.",

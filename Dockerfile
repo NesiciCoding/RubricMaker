@@ -9,6 +9,8 @@ ARG VITE_SUPABASE_URL
 ARG VITE_SUPABASE_ANON_KEY
 # Optional: enables the client_logs diagnostic stream for a stress-test window.
 ARG VITE_STRESS_TEST_LOGGING
+# Optional: errors-only reporting to client_logs (no actions or page views, no free text).
+ARG VITE_ERROR_REPORTING
 RUN npm run build
 
 FROM nginx:alpine

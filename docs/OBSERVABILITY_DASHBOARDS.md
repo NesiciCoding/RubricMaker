@@ -37,8 +37,9 @@ are arriving before debugging the dashboard.
 
 **Source:** the "Supabase Postgres (client_logs)" datasource, always listed by
 Grafana. Set `SUPABASE_DB_HOST` (and the other `SUPABASE_DB_*` vars) in
-`.env.observability` so its health check can pass. Panels populate only while
-the app is built with `VITE_STRESS_TEST_LOGGING=true` — see README →
+`.env.observability` so its health check can pass. Most panels populate only while
+the app is built with `VITE_STRESS_TEST_LOGGING=true`; the error panels (JS errors and Top error signatures)
+also fill from errors-only builds (`VITE_ERROR_REPORTING=true`, `docs/ERROR_REPORTING.md`) — see README →
 "Stress-test logging" for what gets logged and the privacy guarantees
 (ids/counts/durations only, never free-text content). `client_logs` has
 row-level security; migration `092_monitoring_dashboard_reads.sql` adds the
@@ -50,18 +51,19 @@ fails, so these panels cannot query `client_logs` — expected for deployments
 that don't use the stress-test logging feature. The Loki dashboards on this
 stack are unaffected.
 
-| Panel                         | What it shows                                                                                                                                                                                            |
-| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Active sessions               | Distinct `session_id` values seen in the selected time range — roughly "how many browser tabs were active".                                                                                              |
-| Actions logged                | Count of `category = 'action'` rows — every dispatched `AppContext` action (see `summarizeAction` in `src/context/AppContext.tsx`).                                                                      |
-| Sync errors                   | Count of `category = 'sync' AND level = 'error'` — failed pushes/hydration to Supabase. This should stay at 0; the panel turns red at 1 or more.                                                         |
-| JS errors                     | Count of `category = 'error'` — unhandled rejections (`src/main.tsx`) and React error boundary catches (`src/components/ui/ErrorBoundary.tsx`). This should stay at 0; the panel turns red at 1 or more. |
-| Essay submissions             | Count of `name = 'essay_submitted'` from `StudentEssayPage`.                                                                                                                                             |
-| Essay submit errors           | Count of `name = 'essay_submit_error'`. Compare against essay submissions to gauge the failure rate.                                                                                                     |
-| Events per minute by category | Time series of `action` / `sync` / `error` / `lifecycle` event volume — shows overall usage shape during a pilot window (e.g. a class period).                                                           |
-| Sync push latency (avg ms)    | Average `meta->>'ms'` for `pushOne:<entity>:<action>` sync events (`StorageSync.ts`) — rising latency over a session can indicate Supabase-side slowdowns under load.                                    |
-| Top action types              | The most frequent action names in the selected range — what teachers/students are actually doing during the pilot.                                                                                       |
-| Recent warnings & errors      | Raw rows for `level IN ('warn', 'error')`, including the `meta` JSON (error messages, entity ids, durations) for debugging a specific failure.                                                           |
+| Panel                         | What it shows                                                                                                                                                                                                    |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Active sessions               | Distinct `session_id` values seen in the selected time range — roughly "how many browser tabs were active".                                                                                                      |
+| Actions logged                | Count of `category = 'action'` rows — every dispatched `AppContext` action (see `summarizeAction` in `src/context/AppContext.tsx`).                                                                              |
+| Sync errors                   | Count of `category = 'sync' AND level = 'error'` — failed pushes/hydration to Supabase. This should stay at 0; the panel turns red at 1 or more.                                                                 |
+| JS errors                     | Count of `category = 'error'` — unhandled rejections (`src/main.tsx`) and React error boundary catches (`src/components/ui/ErrorBoundary.tsx`). This should stay at 0; the panel turns red at 1 or more.         |
+| Essay submissions             | Count of `name = 'essay_submitted'` from `StudentEssayPage`.                                                                                                                                                     |
+| Essay submit errors           | Count of `name = 'essay_submit_error'`. Compare against essay submissions to gauge the failure rate.                                                                                                             |
+| Events per minute by category | Time series of `action` / `sync` / `error` / `lifecycle` event volume — shows overall usage shape during a pilot window (e.g. a class period).                                                                   |
+| Sync push latency (avg ms)    | Average `meta->>'ms'` for `pushOne:<entity>:<action>` sync events (`StorageSync.ts`) — rising latency over a session can indicate Supabase-side slowdowns under load.                                            |
+| Top action types              | The most frequent action names in the selected range — what teachers/students are actually doing during the pilot.                                                                                               |
+| Recent warnings & errors      | Raw rows for `level IN ('warn', 'error')`, including the `meta` JSON (error messages, entity ids, durations) for debugging a specific failure.                                                                   |
+| Top error signatures          | Browser errors grouped by `meta->>'signature'`: occurrences, distinct sessions, last seen, release and top frame, for builds with `VITE_ERROR_REPORTING=true`. Decode the frame as in `docs/ERROR_REPORTING.md`. |
 
 Since migration `072_client_logs_observability.sql`, every row also carries a
 `path` column (the hash-router route the event happened on), and two new
@@ -94,7 +96,7 @@ domain tables.
 `meta` is a JSON column with different shapes per event:
 
 - `sync` events: `{ "id": "...", "ms": 123 }` (success) or `{ "id": "...", "error": "..." }` (failure).
-- `error` events: `{ "message": "..." }` or similar — never includes essay/comment/grade text.
+- `error` events: with `VITE_ERROR_REPORTING=true`, `{ "errorName", "messageHash", "signature", "frames": [...] }` — the message itself is never stored (`docs/ERROR_REPORTING.md`). Stress-test builds may still carry other ids/counts. Never includes essay/comment/grade text.
 - `essay_submitted` / `essay_submit_error`: `{ "teacherKey": "...", "wordCount": N }`.
 
 In the "Recent warnings & errors" table, expand a row to inspect `meta` for
@@ -253,18 +255,19 @@ Dashboards only help when someone is looking. Grafana evaluates the rules in
 alerts to the `rubricmaker-oncall` contact point (folder **RubricMaker alerts**
 under **Alerting → Alert rules**).
 
-| Rule                                  | Fires when                                                               | Severity |
-| ------------------------------------- | ------------------------------------------------------------------------ | -------- |
-| Disk almost full                      | A disk is over 90% full for 10 minutes                                   | critical |
-| Disk full within 2 days               | At the growth rate of the last 6 hours, a disk is full within 2 days     | warning  |
-| Monitoring target down                | Alloy cannot scrape a target (Loki, Grafana, Prometheus, exporters)      | warning  |
-| Host metrics stopped arriving         | No host metrics for 10 minutes (Alloy or Prometheus is down)             | critical |
-| CPU steal high                        | Over 10% of CPU time is stolen by the hypervisor for 15 minutes          | warning  |
-| Postgres unreachable                  | postgres-exporter cannot connect (only once `SUPABASE_DB_HOST` is set)   | critical |
-| Postgres connections nearly exhausted | Over 80% of `max_connections` in use for 5 minutes                       | warning  |
-| Scheduled database job failed         | A `pg_cron` run failed in the last 24 hours                              | warning  |
-| Scheduled HTTP call failed            | A `pg_net` call made by a scheduled job (e.g. the teacher digest) failed | warning  |
-| Burst of HTTP 5xx errors              | More than 25 server errors in the web server logs within 5 minutes       | warning  |
+| Rule                                  | Fires when                                                                                                        | Severity |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | -------- |
+| Disk almost full                      | A disk is over 90% full for 10 minutes                                                                            | critical |
+| Disk full within 2 days               | At the growth rate of the last 6 hours, a disk is full within 2 days                                              | warning  |
+| Monitoring target down                | Alloy cannot scrape a target (Loki, Grafana, Prometheus, exporters)                                               | warning  |
+| Host metrics stopped arriving         | No host metrics for 10 minutes (Alloy or Prometheus is down)                                                      | critical |
+| CPU steal high                        | Over 10% of CPU time is stolen by the hypervisor for 15 minutes                                                   | warning  |
+| Postgres unreachable                  | postgres-exporter cannot connect (only once `SUPABASE_DB_HOST` is set)                                            | critical |
+| Postgres connections nearly exhausted | Over 80% of `max_connections` in use for 5 minutes                                                                | warning  |
+| Scheduled database job failed         | A `pg_cron` run failed in the last 24 hours                                                                       | warning  |
+| Scheduled HTTP call failed            | A `pg_net` call made by a scheduled job (e.g. the teacher digest) failed                                          | warning  |
+| Burst of HTTP 5xx errors              | More than 25 server errors in the web server logs within 5 minutes                                                | warning  |
+| Burst of browser errors               | At least 5 browser sessions (and 10 error rows) reported JavaScript errors in 15 minutes (`VITE_ERROR_REPORTING`) | warning  |
 
 The thresholds are plain numbers in the rule queries; edit the file and
 restart Grafana to tune them.
