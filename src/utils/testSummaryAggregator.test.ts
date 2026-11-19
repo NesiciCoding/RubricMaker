@@ -7,7 +7,7 @@ import {
     bucketForAccuracy,
     calcTestItemAnalysis,
 } from './testSummaryAggregator';
-import type { Test, StudentTest, TestQuestion } from '../types';
+import type { Test, StudentTest, TestQuestion, LinkedFrameworkDescriptor } from '../types';
 
 const mcQuestion: TestQuestion = {
     id: 'q-mc',
@@ -229,6 +229,69 @@ describe('calcSkillBreakdowns', () => {
         expect(skills).toHaveLength(1);
         expect(skills[0].groupId).toBe('cefr-1');
         expect(skills[0].label).toBe('Can understand routine info');
+    });
+
+    it('rolls up framework descriptors such as grammar items alongside standards', () => {
+        const grammar: LinkedFrameworkDescriptor = {
+            descriptorId: 'past-simple-irregular',
+            framework: 'grammar',
+            categoryId: 'verbs',
+            categoryLabelEn: 'Verbs',
+            categoryLabelNl: 'Werkwoorden',
+            categoryColor: '#0ea5e9',
+            descriptionEn: 'Past simple — irregular verbs',
+            descriptionNl: 'Verleden tijd — onregelmatige werkwoorden',
+            level: 'A2',
+        };
+        const grammarQuestion: TestQuestion = {
+            id: 'q-grammar',
+            prompt: 'Past tense of "go"?',
+            type: 'short-answer',
+            points: 2,
+            expectedAnswer: 'went',
+            linkedStandards: mcQuestion.linkedStandards,
+            frameworkDescriptors: [grammar],
+        };
+        const test = makeTest({ questions: [grammarQuestion] });
+        const studentTests = [makeStudentTest({ answers: [{ questionId: 'q-grammar', response: 'went' }] })];
+
+        const skills = calcSkillBreakdowns('s1', studentTests, test);
+        expect(skills.map((s) => s.groupId)).toEqual(['std-1', 'framework:grammar:past-simple-irregular']);
+        const grammarGroup = skills[1];
+        expect(grammarGroup.label).toBe('Past simple — irregular verbs');
+        expect(grammarGroup.questionIds).toEqual(['q-grammar']);
+        expect(grammarGroup.accuracyPct).toBe(100);
+        expect(grammarGroup.bucket).toBe('strong');
+    });
+
+    it('keeps the same descriptorId from two frameworks in separate groups', () => {
+        const descriptor = (framework: LinkedFrameworkDescriptor['framework']): LinkedFrameworkDescriptor => ({
+            descriptorId: 'shared-id',
+            framework,
+            categoryId: 'cat',
+            categoryLabelEn: 'Category',
+            categoryLabelNl: 'Categorie',
+            categoryColor: '#0ea5e9',
+            descriptionEn: `${framework} descriptor`,
+            descriptionNl: `${framework} descriptor`,
+        });
+        const test = makeTest({
+            questions: [
+                {
+                    id: 'q-g',
+                    prompt: 'Grammar',
+                    type: 'open',
+                    points: 1,
+                    frameworkDescriptors: [descriptor('grammar')],
+                },
+                { id: 'q-ib', prompt: 'IB', type: 'open', points: 1, frameworkDescriptors: [descriptor('ib')] },
+            ],
+        });
+        const studentTests = [makeStudentTest({ answers: [{ questionId: 'q-g', response: 'x', pointsEarned: 1 }] })];
+
+        const skills = calcSkillBreakdowns('s1', studentTests, test);
+        expect(skills.map((s) => s.groupId)).toEqual(['framework:grammar:shared-id', 'framework:ib:shared-id']);
+        expect(skills.map((s) => s.accuracyPct)).toEqual([100, 0]);
     });
 
     it('falls back to the standard description without statementNotation, and handles zero-point questions', () => {
