@@ -118,6 +118,37 @@ describe('buildSessionCsv', () => {
         expect(csv).toContain('"Smith, John ""JD"""');
         expect(csv).toContain('Please save; then stop');
     });
+
+    it('neutralises a name a spreadsheet would run as a formula, and leaves ordinary names alone', () => {
+        const csv = buildSessionCsv(
+            [
+                student({ name: '=1+1' }),
+                student({ name: '@SUM(A1)' }),
+                student({ name: '-2+3' }),
+                student({ name: 'Grace "Amazing" Hopper' }),
+            ],
+            { title: 'T', kind: 'test', at: now },
+            t,
+            now
+        );
+        const rows = csv.trim().split('\r\n').slice(1);
+
+        expect(rows[0].startsWith("'=1+1,")).toBe(true);
+        expect(rows[1].startsWith("'@SUM(A1),")).toBe(true);
+        expect(rows[2].startsWith("'-2+3,")).toBe(true);
+        expect(rows[3].startsWith('"Grace ""Amazing"" Hopper",')).toBe(true);
+    });
+
+    it('keeps the counts numeric', () => {
+        const csv = buildSessionCsv(
+            [student({ tabSwitchCount: 3, wordCount: 120 })],
+            { title: 'T', kind: 'test', at: now },
+            t,
+            now
+        );
+
+        expect(csv.trim().split('\r\n')[1].split(',').slice(2, 3)).toEqual(['3']);
+    });
 });
 
 describe('buildSessionSummaryHtml', () => {

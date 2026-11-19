@@ -931,6 +931,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                 status: row.status ?? (live.submitted ? 'submitted' : undefined),
                 connection,
                 silentMinutes,
+                lastSignalAt,
             };
         });
         // `now` forces presence to be re-derived against the current time as heartbeats age.
@@ -1046,8 +1047,13 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         return parts.length > 0 ? parts.join(' · ') : t('tests.monitor.summary.no_data');
     };
 
+    // One label per student for the monitor, the nudge toast and both exports: it follows the
+    // roster, not the current sort or class filter, so "Student 2" never becomes someone else.
+    const anonymousIndexByStudent = new Map(monitorStudents.map((row, rosterIndex) => [row.studentId, rosterIndex]));
     const displayName = (row: { studentId: string; name: string }, index: number) =>
-        hideNames ? t('tests.monitor.anonymous_student', { index: index + 1 }) : row.name;
+        hideNames
+            ? t('tests.monitor.anonymous_student', { index: (anonymousIndexByStudent.get(row.studentId) ?? index) + 1 })
+            : row.name;
 
     // Badges flip silently for a screen-reader user, so say it once when a student drops out. Only
     // transitions are spoken: the first read of the roster and the per-minute "silent for N min"
@@ -1092,9 +1098,10 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                 pasteCount: row.flags.pasteCount,
                 wordCount: row.live.snapshot?.wordCount,
                 draftAt: latestDraft?.at,
-                lastChangeAt: row.live.lastChangeAt,
-                lastSignalAt: row.live.lastUpdateAt ? Date.parse(row.live.lastUpdateAt) : undefined,
-                nudges: row.live.events
+                // Stalled time stops at hand-in, and a student who only ever sent signals is measured from the first one.
+                lastChangeAt: row.finished ? undefined : (row.live.lastChangeAt ?? row.live.firstSeenAt),
+                lastSignalAt: row.lastSignalAt,
+                nudges: mergeProctorEvents(row.persistedEvents, row.live.events)
                     .filter((event) => event.type === 'nudge')
                     .map((event) => ({ at: event.at, message: String(event.value ?? '') })),
             };
@@ -1388,6 +1395,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                         type="button"
                         className="btn btn-secondary btn-sm"
                         onClick={exportSessionCsv}
+                        disabled={testTeacherKeysLoading}
                         data-testid="monitor-export-csv"
                     >
                         <Download size={14} />
@@ -1397,6 +1405,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                         type="button"
                         className="btn btn-secondary btn-sm"
                         onClick={() => void exportSessionPdf()}
+                        disabled={testTeacherKeysLoading}
                         data-testid="monitor-export-pdf"
                     >
                         <FileText size={14} />
