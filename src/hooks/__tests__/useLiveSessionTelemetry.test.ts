@@ -22,10 +22,13 @@ describe('useLiveSessionTelemetry', () => {
     beforeEach(() => {
         __resetMonitorClientForTests();
         vi.mocked(createClient).mockClear();
+        mockChannel.on.mockClear();
+        mockChannel.send.mockClear();
     });
     afterEach(() => {
         vi.useRealTimers();
         vi.unstubAllGlobals();
+        Object.assign(mockChannel, { state: undefined });
     });
 
     it('captures a tab_switch event on document visibilitychange → hidden', () => {
@@ -215,14 +218,57 @@ describe('useLiveSessionTelemetry', () => {
         expect(result.current.events).toHaveLength(0);
     });
 
-    it('throttles snapshot publishing — only sends when getSnapshot output changes', () => {
+    it('samples every 5s but sends fresh draft text at most once a minute', () => {
         vi.useFakeTimers();
-        let snapshotValue = { text: 'a' };
-        const getSnapshot = vi.fn(() => snapshotValue);
+        Object.assign(mockChannel, { state: 'joined' });
+        let words = 1;
+        const getSnapshot = vi.fn(() => ({ text: `draft ${words}`, wordCount: words }));
 
         renderHook(() =>
             useLiveSessionTelemetry({
-                kind: 'test',
+                kind: 'essay',
+                assignmentKey: 'key1',
+                enabled: true,
+                getSnapshot,
+                supabaseUrl: 'https://example.supabase.co',
+                supabaseAnonKey: 'anon-key',
+            })
+        );
+
+        // The join announce flushes the first snapshot straight away, text included.
+        act(() => {
+            (mockChannel.subscribe.mock.calls.at(-1)?.[0] as (status: string) => void)('SUBSCRIBED');
+        });
+        const sentSnapshots = () =>
+            mockChannel.send.mock.calls
+                .map(([message]) => message as { event: string; payload: Record<string, unknown> })
+                .filter((message) => message.event === 'snapshot')
+                .map((message) => message.payload);
+        expect(sentSnapshots().at(-1)).toMatchObject({ text: 'draft 1', wordCount: 1 });
+
+        // The next tick carries the new word count but leaves the prose out until the minute is up.
+        words = 2;
+        act(() => {
+            vi.advanceTimersByTime(5_000);
+        });
+        expect(sentSnapshots().at(-1)).toEqual({ wordCount: 2 });
+
+        words = 3;
+        act(() => {
+            vi.advanceTimersByTime(55_000);
+        });
+        expect(sentSnapshots().at(-1)).toMatchObject({ text: 'draft 3', wordCount: 3 });
+    });
+
+    it('lifts the draft-text throttle only while a teacher spotlight is on', () => {
+        vi.useFakeTimers();
+        Object.assign(mockChannel, { state: 'joined' });
+        let words = 1;
+        const getSnapshot = vi.fn(() => ({ text: `draft ${words}`, wordCount: words }));
+
+        const { result } = renderHook(() =>
+            useLiveSessionTelemetry({
+                kind: 'essay',
                 assignmentKey: 'key1',
                 enabled: true,
                 getSnapshot,
@@ -232,22 +278,110 @@ describe('useLiveSessionTelemetry', () => {
         );
 
         act(() => {
-            vi.advanceTimersByTime(5_000);
+            (mockChannel.subscribe.mock.calls.at(-1)?.[0] as (status: string) => void)('SUBSCRIBED');
         });
-        expect(getSnapshot).toHaveBeenCalled();
+        const sentSnapshots = () =>
+            mockChannel.send.mock.calls
+                .map(([message]) => message as { event: string; payload: Record<string, unknown> })
+                .filter((message) => message.event === 'snapshot')
+                .map((message) => message.payload);
 
-        const callsAfterFirst = getSnapshot.mock.calls.length;
+        words = 2;
         act(() => {
             vi.advanceTimersByTime(5_000);
         });
-        // getSnapshot is polled again even when unchanged
-        expect(getSnapshot.mock.calls.length).toBeGreaterThan(callsAfterFirst);
+        expect(sentSnapshots().at(-1)).not.toHaveProperty('text');
 
-        snapshotValue = { text: 'b' };
+        const spotlightHandler = mockChannel.on.mock.calls
+            .filter(([type, opts]) => type === 'broadcast' && (opts as { event: string }).event === 'spotlight')
+            .at(-1)?.[2] as ((msg: { payload: unknown }) => void) | undefined;
+        expect(spotlightHandler).toBeDefined();
+
+        words = 3;
         act(() => {
+            spotlightHandler!({ payload: { on: true } });
             vi.advanceTimersByTime(5_000);
         });
-        expect(getSnapshot).toHaveBeenCalled();
+        expect(result.current.spotlighted).toBe(true);
+        expect(sentSnapshots().at(-1)).toMatchObject({ text: 'draft 3', wordCount: 3 });
+
+        act(() => {
+            spotlightHandler!({ payload: { on: false } });
+        });
+        expect(result.current.spotlighted).toBe(false);
+    });
+
+    it('expires the spotlight lease when the teacher stops renewing it', () => {
+        vi.useFakeTimers();
+        Object.assign(mockChannel, { state: 'joined' });
+        const { result } = renderHook(() =>
+            useLiveSessionTelemetry({
+                kind: 'essay',
+                assignmentKey: 'key1',
+                enabled: true,
+                getSnapshot: () => ({ wordCount: 1 }),
+                supabaseUrl: 'https://example.supabase.co',
+                supabaseAnonKey: 'anon-key',
+            })
+        );
+        act(() => {
+            (mockChannel.subscribe.mock.calls.at(-1)?.[0] as (status: string) => void)('SUBSCRIBED');
+        });
+        const spotlightHandler = mockChannel.on.mock.calls
+            .filter(([type, opts]) => type === 'broadcast' && (opts as { event: string }).event === 'spotlight')
+            .at(-1)?.[2] as (msg: { payload: unknown }) => void;
+
+        act(() => {
+            spotlightHandler({ payload: { on: true } });
+        });
+        expect(result.current.spotlighted).toBe(true);
+
+        // The monitor re-sends every 10s while the view stays open, which keeps the lease alive.
+        act(() => {
+            vi.advanceTimersByTime(10_000);
+            spotlightHandler({ payload: { on: true } });
+            vi.advanceTimersByTime(10_000);
+        });
+        expect(result.current.spotlighted).toBe(true);
+
+        // A monitor whose connection dropped never sends `on: false`, so the lease runs out.
+        act(() => {
+            vi.advanceTimersByTime(20_000);
+        });
+        expect(result.current.spotlighted).toBe(false);
+    });
+
+    it('holds snapshot ticks until the channel joins, then sends a full baseline', () => {
+        vi.useFakeTimers();
+        Object.assign(mockChannel, { state: 'joining' });
+        const getSnapshot = vi.fn(() => ({ text: 'draft', wordCount: 4 }));
+        renderHook(() =>
+            useLiveSessionTelemetry({
+                kind: 'essay',
+                assignmentKey: 'key1',
+                enabled: true,
+                getSnapshot,
+                supabaseUrl: 'https://example.supabase.co',
+                supabaseAnonKey: 'anon-key',
+            })
+        );
+        const sentSnapshots = () =>
+            mockChannel.send.mock.calls
+                .map(([message]) => message as { event: string; payload: Record<string, unknown> })
+                .filter((message) => message.event === 'snapshot')
+                .map((message) => message.payload);
+
+        // A slow join must not burn the once-a-minute text throttle on a snapshot the socket drops.
+        act(() => {
+            vi.advanceTimersByTime(20_000);
+        });
+        expect(sentSnapshots()).toHaveLength(0);
+
+        Object.assign(mockChannel, { state: 'joined' });
+        act(() => {
+            (mockChannel.subscribe.mock.calls.at(-1)?.[0] as (status: string) => void)('SUBSCRIBED');
+        });
+        expect(sentSnapshots().at(-1)).toEqual({ text: 'draft', wordCount: 4 });
     });
 
     it('forwards nudge broadcasts to the onNudge callback', () => {
@@ -263,12 +397,12 @@ describe('useLiveSessionTelemetry', () => {
             })
         );
 
-        const broadcasts = mockChannel.on.mock.calls.filter(([type]) => type === 'broadcast');
-        expect(broadcasts.length).toBeGreaterThan(0);
+        const nudgeHandler = mockChannel.on.mock.calls
+            .filter(([type, opts]) => type === 'broadcast' && (opts as { event: string }).event === 'nudge')
+            .at(-1)?.[2] as ((msg: { payload: unknown }) => void) | undefined;
+        expect(nudgeHandler).toBeDefined();
         act(() => {
-            (broadcasts[broadcasts.length - 1][2] as (payload: unknown) => void)({
-                payload: { message: 'nudge!' },
-            });
+            nudgeHandler!({ payload: { message: 'nudge!' } });
         });
         expect(onNudge).toHaveBeenCalledWith('nudge!');
     });
