@@ -1137,14 +1137,45 @@ describe('LiveMonitorPage', () => {
             expect(screen.getByText('Hello draft')).toBeInTheDocument();
         });
 
+        it("subscribes a sourceTeacherKey-matched student on that row's own teacherKey", async () => {
+            const essayRow = {
+                rubricId: 'r1',
+                teacherKey: 'assn-1',
+                title: 'My Essay',
+                readOnlyAfterSubmit: true,
+                createdAt: '2026-01-01T00:00:00.000Z',
+            };
+            mockUseApp = {
+                ...mockUseApp,
+                students: [mockStudent, { id: 'student-2', name: 'Bob', classId: 'class-1' }],
+                essayAssignments: [
+                    { ...essayRow, studentId: 'student-1' },
+                    // A batch assignment wrote this student their own row, reachable from the
+                    // class monitor only through sourceTeacherKey — and that row is the key their
+                    // page publishes on.
+                    { ...essayRow, teacherKey: 'batch-row-2', sourceTeacherKey: 'assn-1', studentId: 'student-2' },
+                ],
+                fetchEssayAssignmentByKey: vi
+                    .fn()
+                    .mockResolvedValue({ rubricId: 'r1', studentId: 'student-1', title: 'My Essay' }),
+            };
+            renderPage(['/essays/assn-1/monitor']);
+            await screen.findByText('tests.monitor.title_essay: My Essay');
+
+            await waitFor(() => expect(mockClient.channel).toHaveBeenCalledWith('monitor:essay:assn-1:student-1'));
+            expect(mockClient.channel).toHaveBeenCalledWith('monitor:essay:batch-row-2:student-2');
+        });
+
         it('preserves a submitted flag set while a snapshot patch is still queued (debounce-flush race)', async () => {
-            let resolveSubmissions: (rows: { submittedAt: string }[]) => void = () => {};
+            let resolveSubmissions: (
+                rows: { assignmentId: string; studentId: string; submittedAt: string }[]
+            ) => void = () => {};
             mockUseApp = {
                 ...mockUseApp,
                 fetchEssayAssignmentByKey: vi
                     .fn()
                     .mockResolvedValue({ rubricId: 'r1', studentId: 'student-1', title: 'My Essay' }),
-                fetchEssaySubmissions: vi.fn(() => new Promise((resolve) => (resolveSubmissions = resolve))),
+                fetchAllEssaySubmissions: vi.fn(() => new Promise((resolve) => (resolveSubmissions = resolve))),
             };
             renderPage(['/essays/assn-1/monitor']);
             await screen.findByText('tests.monitor.title_essay: My Essay');
@@ -1160,7 +1191,9 @@ describe('LiveMonitorPage', () => {
             // The persisted-submission fetch resolves and sets submitted:true directly on
             // state, landing before the debounced snapshot patch flushes.
             await act(async () => {
-                resolveSubmissions([{ submittedAt: '2026-01-01T00:00:05.000Z' }]);
+                resolveSubmissions([
+                    { assignmentId: 'assn-1', studentId: 'student-1', submittedAt: '2026-01-01T00:00:05.000Z' },
+                ]);
             });
 
             // Confirm the submitted badge landed before the debounce window elapses — a

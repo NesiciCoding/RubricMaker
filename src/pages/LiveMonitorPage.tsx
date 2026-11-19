@@ -234,8 +234,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     // test's monitor to another's, where the page is not remounted.
     const [testTeacherKeysSettledFor, setTestTeacherKeysSettledFor] = useState<string | null>(null);
 
-    const { essayAssignments, fetchEssayAssignmentByKey, fetchEssaySubmissions, fetchAllEssaySubmissions } =
-        useEssays();
+    const { essayAssignments, fetchEssayAssignmentByKey, fetchAllEssaySubmissions } = useEssays();
 
     const hasDb = dbStatus.isConnected && !!config?.supabaseUrl && !!config?.supabaseAnonKey;
 
@@ -388,6 +387,22 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         testTeacherKeys,
     ]);
 
+    // A class essay roster reaches this monitor through `sourceTeacherKey` (a batch assignment wrote
+    // each student their own row), and a student's page broadcasts on ITS OWN row's teacherKey — so
+    // the channel has to follow the matched row, not the route param, or those students show up in
+    // the roster with no live data behind them.
+    const essayTeacherKeys = useMemo<Record<string, string>>(() => {
+        if (kind !== 'essay') return {};
+        const keys: Record<string, string> = {};
+        for (const assignment of essayAssignments ?? []) {
+            if (assignment.teacherKey !== params.assignmentId && assignment.sourceTeacherKey !== params.assignmentId)
+                continue;
+            keys[assignment.studentId] = assignment.teacherKey;
+        }
+        if (essayAssignment && params.assignmentId) keys[essayAssignment.studentId] ??= params.assignmentId;
+        return keys;
+    }, [kind, essayAssignments, essayAssignment, params.assignmentId]);
+
     // ── Persisted essay hand-ins ───────────────────────────────────────────────────
     // A submission may already exist before the monitor opens (the student handed in from a tab
     // that is now closed), so seed each roster row's submitted flag instead of waiting for a live
@@ -418,32 +433,25 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                 // Non-fatal: the live broadcast path still covers an in-session submit.
             });
         };
-        if (monitorStudents.length === 1) {
-            finish(
-                fetchEssaySubmissions(assignmentId).then((rows) => {
-                    const latest = rows[0];
-                    if (latest) markSubmitted(new Map([[monitorStudents[0].studentId, latest.submittedAt]]));
-                })
-            );
-        } else {
-            finish(
-                fetchAllEssaySubmissions().then((rows) => {
-                    const submitted = new Map<string, string>();
-                    for (const row of rows) {
-                        if (row.assignmentId !== assignmentId || !row.studentId) continue;
-                        if (!submitted.has(row.studentId)) submitted.set(row.studentId, row.submittedAt);
-                    }
-                    markSubmitted(submitted);
-                })
-            );
-        }
+        // Every roster size reads the same student-attributed source: a hand-in belongs to whoever
+        // the submission row's assignment names, and one teacherKey can cover a whole class — so a
+        // single-student roster must not adopt the newest hand-in of a key several students share.
+        finish(
+            fetchAllEssaySubmissions().then((rows) => {
+                const submitted = new Map<string, string>();
+                for (const row of rows) {
+                    if (row.assignmentId !== assignmentId || !row.studentId) continue;
+                    if (!submitted.has(row.studentId)) submitted.set(row.studentId, row.submittedAt);
+                }
+                markSubmitted(submitted);
+            })
+        );
         return () => {
             cancelled = true;
         };
         // `monitorStudents` itself is rebuilt on every roster read; keying the effect to the ids
         // keeps it from refetching on unrelated state updates.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [kind, params.assignmentId, hasDb, essayRosterKey, fetchEssaySubmissions, fetchAllEssaySubmissions]);
+    }, [kind, params.assignmentId, hasDb, essayRosterKey, fetchAllEssaySubmissions]);
 
     // A one-student assignment is already the spotlight view — open it directly. A class
     // roster starts on the per-minute roster and the teacher picks who to follow.
@@ -467,7 +475,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     // gets a key nothing will ever broadcast on — this page still works fully from
     // persisted StudentTest data in that case.
     const assignmentKeyFor = (studentId: string): string => {
-        if (kind === 'essay') return `${params.assignmentId}:${studentId}`;
+        if (kind === 'essay') return `${essayTeacherKeys[studentId] ?? params.assignmentId}:${studentId}`;
         return testTeacherKeys[studentId] ?? `no-teacher-key:${studentId}`;
     };
 
@@ -644,6 +652,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         params.assignmentId,
         monitorStudents.map((r) => r.studentId).join(','),
         testTeacherKeys,
+        essayTeacherKeys,
     ]);
 
     // ── Essay spotlight: ask one student for the 5s cadence while their live view is open ──

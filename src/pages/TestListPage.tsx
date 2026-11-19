@@ -77,6 +77,8 @@ import { testAssignBlockers } from '../utils/testQuestionIssues';
 import { resolveScanOcrSettings } from '../utils/scanSettings';
 import { defaultScoreOnlyQuestions } from '../utils/scoreSheet';
 import { resolveTestScale } from '../utils/testGradingNorm';
+import { getEffectiveVoTrack, VO_TRACK_LABELS } from '../data/voTracks';
+import { getEffectiveSchoolYear, SCHOOL_YEAR_LABELS } from '../data/schoolYears';
 
 export default function TestListPage() {
     const { t, i18n } = useTranslation();
@@ -241,19 +243,31 @@ export default function TestListPage() {
     async function handleExportTestSummaryText(test: Test, relevantStudentTests: StudentTest[]) {
         const { buildTestStudentSummary, pickLatestAttempt } = await import('../utils/testAnswerText');
         const { effectiveTestQuestions } = await import('../utils/testSummaryAggregator');
+        const { scoreStudentTest } = await import('../utils/studentTestScore');
         const { saveAs } = await import('file-saver');
         const { sanitizeFilename } = await import('../utils/exportDataPrep');
 
         // Scope the question set to the exported attempt so adaptive questions from other attempts
         // don't appear as blank rows.
-        const summaryFor = (studentTest: StudentTest) =>
-            buildTestStudentSummary(
+        const summaryFor = (studentTest: StudentTest) => {
+            const student = students.find((s) => s.id === studentTest.studentId);
+            const studentClass = classes.find((c) => c.id === student?.classId);
+            const track = getEffectiveVoTrack(student, studentClass);
+            const year = getEffectiveSchoolYear(student, studentClass);
+            // Score against the questions this student was actually presented: a staged placement
+            // attempt never saw the other branch's questions, so they must not count as unanswered.
+            const presented = scoreStudentTest(test, studentTest).pathQuestions;
+            return buildTestStudentSummary(
                 test,
                 studentTest,
-                students.find((s) => s.id === studentTest.studentId),
-                effectiveTestQuestions(studentTest.studentId, [studentTest], test),
-                settings.cefrAchieveThreshold
+                student,
+                presented.length > 0 ? presented : effectiveTestQuestions(studentTest.studentId, [studentTest], test),
+                {
+                    className: studentClass?.name,
+                    level: track ? VO_TRACK_LABELS[track] : year ? SCHOOL_YEAR_LABELS[year] : undefined,
+                }
             );
+        };
 
         if (exportScope === 'single') {
             const studentTest = pickLatestAttempt(
