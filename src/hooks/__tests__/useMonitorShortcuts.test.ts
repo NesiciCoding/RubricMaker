@@ -8,6 +8,7 @@ function press(init: Partial<KeyboardEvent> & { target?: EventTarget }): Keyboar
         ctrlKey: init.ctrlKey ?? false,
         metaKey: init.metaKey ?? false,
         altKey: init.altKey ?? false,
+        shiftKey: init.shiftKey ?? false,
         bubbles: true,
         cancelable: true,
     });
@@ -30,6 +31,21 @@ describe('shortcutAction', () => {
         expect(shortcutAction(press({ key: 'j', ctrlKey: true }))).toBeNull();
         expect(shortcutAction(press({ key: 'n', metaKey: true }))).toBeNull();
         expect(shortcutAction(press({ key: 'f', altKey: true }))).toBeNull();
+        expect(shortcutAction(press({ key: 'N', shiftKey: true }))).toBeNull();
+    });
+
+    it('leaves Space to a focused button or link but keeps it on the page background', () => {
+        const button = document.createElement('button');
+        const link = document.createElement('a');
+        link.href = '#x';
+        const inner = document.createElement('span');
+        button.appendChild(inner);
+
+        expect(shortcutAction(press({ key: ' ', target: button }))).toBeNull();
+        expect(shortcutAction(press({ key: ' ', target: inner }))).toBeNull();
+        expect(shortcutAction(press({ key: ' ', target: link }))).toBeNull();
+        expect(shortcutAction(press({ key: ' ', target: document.body }))).toBe('spotlight');
+        expect(shortcutAction(press({ key: 'j', target: button }))).toBe('next');
     });
 
     it('ignores keys typed into a field', () => {

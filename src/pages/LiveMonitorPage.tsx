@@ -1029,6 +1029,9 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
             ? cursorStudentId
             : (shownRows[0]?.studentId ?? null);
 
+    // With a spotlight open, nudge and flag act on the student being watched, however it was opened.
+    const actionTargetId = focusedStudentId ?? cursorId;
+
     const stepCursor = (delta: number) => {
         if (shownRows.length === 0) return;
         const current = shownRows.findIndex((row) => row.studentId === cursorId);
@@ -1059,9 +1062,9 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                 setFocusedStudentId((focused) => (focused === cursorId ? null : cursorId));
             },
             nudge: () => {
-                if (cursorId) sendNudge(cursorId, t('tests.monitor.nudge_message'));
+                if (actionTargetId) sendNudge(actionTargetId, t('tests.monitor.nudge_message'));
             },
-            flag: () => toggleFlag(cursorId),
+            flag: () => toggleFlag(actionTargetId),
         },
         kind === 'essay' && !sortModalOpen && shownRows.length > 0
     );
@@ -1886,7 +1889,10 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                                 snapshotAgeAt: latest?.at,
                                             };
                                         })}
-                                        onWatch={setFocusedStudentId}
+                                        onWatch={(studentId) => {
+                                            setCursorStudentId(studentId);
+                                            setFocusedStudentId(studentId);
+                                        }}
                                         showWritingPace={showWritingPace}
                                         now={now}
                                     />

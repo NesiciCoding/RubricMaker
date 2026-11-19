@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
     AlertTriangle,
     ClipboardCopy,
@@ -89,9 +89,19 @@ function sparklinePoints(values: number[]): string {
 export default function EssayMonitorRoster({ rows, onWatch, showWritingPace = false, now }: EssayMonitorRosterProps) {
     const { t } = useTranslation();
     const clock = now ?? Date.now();
+    const rosterRef = useRef<HTMLDivElement | null>(null);
+    const selectedId = rows.find((row) => row.selected)?.studentId;
+    // The keyboard cursor can move below the fold; bring its row into view without moving focus.
+    useEffect(() => {
+        rosterRef.current?.querySelector<HTMLElement>('[data-selected="true"]')?.scrollIntoView?.({ block: 'nearest' });
+    }, [selectedId]);
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }} data-testid="essay-monitor-roster">
+        <div
+            ref={rosterRef}
+            style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
+            data-testid="essay-monitor-roster"
+        >
             <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-dim)' }} data-testid="essay-roster-cadence">
                 {t('tests.monitor.essay.roster_header', { count: rows.length })}
             </p>
@@ -130,6 +140,7 @@ export default function EssayMonitorRoster({ rows, onWatch, showWritingPace = fa
                     <div
                         key={row.studentId}
                         data-testid={`essay-row-${row.studentId}`}
+                        data-selected={row.selected ? 'true' : undefined}
                         style={{
                             background: 'var(--bg-elevated)',
                             border: '1px solid var(--border)',
