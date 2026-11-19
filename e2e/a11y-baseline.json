@@ -417,10 +417,6 @@
         {
           "rule": "label",
           "nodes": 3
-        },
-        {
-          "rule": "target-size",
-          "nodes": 1
         }
       ]
     },
@@ -431,10 +427,6 @@
         {
           "rule": "label",
           "nodes": 3
-        },
-        {
-          "rule": "target-size",
-          "nodes": 1
         }
       ]
     },
