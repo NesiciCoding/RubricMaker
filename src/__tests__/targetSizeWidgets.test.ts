@@ -4,117 +4,147 @@ import { describe, expect, it } from 'vitest';
 
 /**
  * The widget clusters of 2.5.5 are styled with inline `style` objects rather than through a class
- * in `index.css`, so `targetSizeCss.test.ts` — which resolves the cascade — cannot see them. Pin
- * the shared ones at the source level: each must carry a 44 px floor. Widgets that are deliberately
- * still short are measured and listed in REPORT §10, and are not pinned here.
+ * in `index.css`, so `targetSizeCss.test.ts` (which resolves the cascade) cannot see them. Each
+ * pin names the source block that owns the target and the declarations it must carry, so a block
+ * that disappears fails with its own message instead of a regex window quietly matching nothing.
  */
 const srcRoot = resolve(__dirname, '..');
 const source = (file: string) => readFileSync(resolve(srcRoot, file), 'utf8');
 const css = source('index.css');
 
-const PINNED: { file: string; label: string; pattern: RegExp; occurrences?: number }[] = [
+/** The source from `start` through the first `end` after it, or '' when `start` is missing. */
+function block(file: string, [start, end]: [string, string]): string {
+    const text = source(file);
+    const from = text.indexOf(start);
+    if (from === -1) return '';
+    const to = text.indexOf(end, from + start.length);
+    return to === -1 ? text.slice(from) : text.slice(from, to + end.length);
+}
+
+type Pin = {
+    file: string;
+    label: string;
+    /** The block that owns the target. Omit to scan the whole file. */
+    block?: [string, string];
+    declares: string[];
+};
+
+const PINNED: Pin[] = [
     {
         file: 'components/ui/ClassFilterChips.tsx',
         label: 'class filter chips',
-        pattern: /minHeight: 44/g,
-        occurrences: 1,
+        block: ['const chipStyle', '});'],
+        declares: ['minHeight: 44'],
     },
     {
         file: 'components/ui/ToggleChipGroup.tsx',
         label: 'school-year / VO-track chips',
-        pattern: /minHeight: 44/g,
-        occurrences: 1,
+        block: ['<button', '</button>'],
+        declares: ['minHeight: 44'],
     },
     {
         file: 'components/ui/SegmentedToggle.tsx',
         label: 'Cards/List toggle',
-        pattern: /minHeight: minTargetHeight \?\? 44/,
+        declares: ['minHeight: minTargetHeight ?? 44', 'minTargetHeight?: number'],
     },
     {
         file: 'pages/Dashboard.tsx',
-        label: 'snapshot cohort chips',
-        pattern: /minHeight: 44/g,
-        occurrences: 2,
+        label: 'snapshot “All classes” chip',
+        block: ['onClick={selectAllCohorts}', '</button>'],
+        declares: ['minHeight: 44'],
+    },
+    {
+        file: 'pages/Dashboard.tsx',
+        label: 'snapshot per-class chips',
+        block: ['onClick={() => toggleCohort(c.id)}', '</button>'],
+        declares: ['minHeight: 44'],
     },
     {
         file: 'pages/StudentsPage.tsx',
         label: 'cohort chips',
-        pattern: /const chipStyle[\s\S]{0,240}?minHeight: 44/,
+        block: ['const chipStyle', '});'],
+        declares: ['minHeight: 44'],
     },
     {
         file: 'pages/StudentsPage.tsx',
         label: 'sortable table header',
-        pattern: /sortHeaderButtonStyle[\s\S]{0,240}?minHeight: 44/,
+        block: ['const sortHeaderButtonStyle', '};'],
+        declares: ['minHeight: 44'],
     },
     {
         file: 'pages/RubricGradingQueuePage.tsx',
         label: 'status / group chips',
-        pattern: /const chipStyle[\s\S]{0,240}?minHeight: 44/,
+        block: ['const chipStyle', '});'],
+        declares: ['minHeight: 44'],
     },
     {
         file: 'pages/StudentProfilePage.tsx',
         label: 'Overview / Portfolio tabs',
-        pattern: /role="tab"[\s\S]{0,600}?minHeight: 44/,
-    },
-    {
-        file: 'pages/SettingsPage.tsx',
-        label: 'accent preset swatches',
-        pattern: /ACCENT_PRESETS\.map[\s\S]{0,1200}?width: 44[\s\S]{0,120}?height: 44/,
-    },
-    {
-        file: 'pages/SettingsPage.tsx',
-        label: 'accent colour picker',
-        pattern: /type="color"[\s\S]{0,600}?width: 44[\s\S]{0,120}?height: 44/,
-    },
-    {
-        file: 'pages/SettingsPage.tsx',
-        label: 'theme-bundle buttons',
-        pattern: /THEME_BUNDLES\.map[\s\S]{0,2400}?minHeight: 44/,
+        block: ['role="tab"', '</button>'],
+        declares: ['minHeight: 44'],
     },
     {
         file: 'pages/DocsPage.tsx',
         label: 'Docs section rail',
-        pattern: /docs\.sections_nav_label[\s\S]{0,3600}?minHeight: 44/,
+        block: ['docs.sections_nav_label', '</nav>'],
+        declares: ['minHeight: 44'],
     },
     {
         file: 'components/Editor/EssayEditor.tsx',
         label: 'inline formatting toolbar',
-        pattern: /function ToolbarBtn[\s\S]{0,420}?minWidth: 44[\s\S]{0,40}?minHeight: 44/,
+        block: ['function ToolbarBtn', 'const selectStyle'],
+        declares: ['minWidth: 44', 'minHeight: 44'],
     },
     {
         file: 'components/Editor/EssayEditor.tsx',
         label: 'toolbar selects',
-        pattern: /const selectStyle[\s\S]{0,320}?height: 44/,
+        block: ['const selectStyle', '};'],
+        declares: ['height: 44'],
+    },
+    {
+        file: 'pages/SettingsPage.tsx',
+        label: 'accent preset swatches',
+        block: ['ACCENT_PRESETS.map', '</button>'],
+        declares: ['width: 44', 'height: 44'],
+    },
+    {
+        file: 'pages/SettingsPage.tsx',
+        label: 'accent colour picker',
+        block: ['type="color"', '/>'],
+        declares: ['width: 44', 'height: 44'],
+    },
+    {
+        file: 'pages/SettingsPage.tsx',
+        label: 'theme-bundle buttons',
+        block: ['THEME_BUNDLES.map', '</button>'],
+        declares: ['minHeight: 44'],
     },
 ];
 
 describe('inline-styled targets at 44 px (#533, WCAG 2.5.5)', () => {
     for (const pin of PINNED) {
         it(`${pin.label}: ${pin.file}`, () => {
-            const matches = source(pin.file).match(pin.pattern) ?? [];
-            expect(matches.length).toBeGreaterThanOrEqual(pin.occurrences ?? 1);
+            const text = pin.block ? block(pin.file, pin.block) : source(pin.file);
+            expect(text, pin.block ? `${pin.file} no longer contains ${pin.block[0]}` : pin.file).not.toBe('');
+            for (const declaration of pin.declares) {
+                expect(text, `${pin.label} no longer declares ${declaration}`).toContain(declaration);
+            }
         });
     }
 
-    it('leaves the Settings controls a visible keyboard focus ring', () => {
-        const settings = source('pages/SettingsPage.tsx');
-        // The accent swatches and the grade-scale name field are inline-styled and borderless, so
-        // the global ring is their only focus affordance; an inline `outline: none` would beat it.
-        // The scan is file-wide on purpose: every control here relies on that same ring.
-        expect(settings).not.toMatch(/outline:\s*'none'/);
-        // That only works because :focus-visible still paints the ring.
-        expect(css).toMatch(/:focus-visible\s*\{[^}]*outline:\s*2px solid/);
-    });
-
-    it('gives the borderless grade-scale name its own visible focus ring', () => {
-        // The shared field rule sets `outline: none` and this field has no border to recolour, so
-        // neither the global ring nor a border change can show focus.
+    it('gives the borderless grade-scale name its own visible focus style', () => {
+        // The shared field rule sets `outline: none`, and this field is transparent with no border
+        // colour of its own, so the ring and the border it gains on focus have to be declared here.
         expect(source('pages/SettingsPage.tsx')).toMatch(/className="grade-scale-name"/);
-        expect(css).toMatch(/\.grade-scale-name:focus-visible\s*\{[^}]*outline:\s*2px solid/);
+        const focus = block('index.css', ['input.grade-scale-name:focus', '}']);
+        expect(focus).toContain('outline: 2px solid var(--accent)');
+        expect(focus).toContain('border-color: var(--accent)');
     });
 
-    it('keeps the segmented toggle opt-in override, so a caller can still ask for another height', () => {
-        const toggle = source('components/ui/SegmentedToggle.tsx');
-        expect(toggle).toMatch(/minTargetHeight\?: number/);
+    it('does not hide keyboard focus on any Settings control', () => {
+        // Every borderless control in Settings relies on the global :focus-visible ring, so an
+        // inline `outline: none` anywhere in the page would hide focus again.
+        expect(source('pages/SettingsPage.tsx')).not.toMatch(/outline:\s*'none'/);
+        expect(css).toMatch(/:focus-visible\s*\{[^}]*outline:\s*2px solid/);
     });
 });

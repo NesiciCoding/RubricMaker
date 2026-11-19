@@ -581,9 +581,12 @@ is covered by the gate.
   quietly drop a 44 px floor. `targetSizeWidgets.test.ts` pins the inline-styled clusters (chips,
   segmented toggle, table headers, tabs, Docs rail, editor toolbar, Settings presets/picker/bundles)
   that the cascade cannot see, and fails if a Settings control re-adds `outline: none`. The
-  borderless grade-scale name field gets its own `.grade-scale-name:focus-visible` ring, pinned in
-  the same test, because the shared field rule suppresses the outline and it has no border colour
-  to change on focus.
+  borderless grade-scale name field gets its own `input.grade-scale-name` rule that draws an accent
+  border on `:focus` and a 2 px ring on `:focus-visible`, because the shared field rule suppresses
+  the outline and the field has no border colour to change on focus; the guard pins both.
+- `62-target-size.spec.ts` waits for the route's own `<Topbar>` heading, with the boot shell gone
+  and the route active, before it measures. Auditing the shell would silently pass — the sidebar's
+  controls are all 44 px — so a slow lazy page has to mount before the scan counts.
   `62-target-size.spec.ts` then measures the rendered page for 15 routes at 1280 and 390 px
   (`npm run e2e:target-size`, run in the axe job), which is the only way to catch a target shrunk by
   a transform or a container.

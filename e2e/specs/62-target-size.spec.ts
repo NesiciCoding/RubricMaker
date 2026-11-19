@@ -80,6 +80,7 @@ const measure = (minimum: number): UndersizedTarget[] => {
     };
 
     const undersized: UndersizedTarget[] = [];
+    let controls = 0;
     for (const element of document.querySelectorAll(CONTROL)) {
         if (element.closest('[inert], [hidden], [aria-hidden="true"]')) continue;
         const rect = element.getBoundingClientRect();
@@ -87,6 +88,7 @@ const measure = (minimum: number): UndersizedTarget[] => {
         const style = getComputedStyle(element);
         if (style.visibility === 'hidden' || style.display === 'none' || style.pointerEvents === 'none') continue;
         if (Number(style.opacity) === 0) continue;
+        controls += 1;
         if (rect.width + 0.5 >= minimum && rect.height + 0.5 >= minimum) continue;
         undersized.push({
             element: describe(element),
@@ -95,12 +97,41 @@ const measure = (minimum: number): UndersizedTarget[] => {
             height: Math.round(rect.height * 10) / 10,
         });
     }
-    return undersized;
+    return { undersized, controls };
 };
 
-async function audit(page: Page, route: string): Promise<UndersizedTarget[]> {
+/**
+ * Wait for the route's own page to mount, not just the app shell.
+ *
+ * `waitForRoute` proves the app painted: the sidebar and its controls are on screen while a lazy
+ * chunk is still in flight, and the boot shell renders a `.main-area` of its own. Measuring then
+ * would audit the shell and pass without ever seeing the page. Only a page's `<Topbar>` renders an
+ * `<h1 class="topbar-title">`, so requiring one — with the boot shell gone, the route active and
+ * no busy region left — is what proves the requested page, not the previous one, is on screen.
+ */
+async function audit(page: Page, route: string) {
     await page.goto(`/#${route}`);
     await waitForRoute(page);
+    await page.waitForFunction(
+        (path) => {
+            if (location.hash !== `#${path}`) return false;
+            if (document.querySelector('[data-boot-shell]')) return false;
+            const main = document.querySelector('.main-area');
+            const heading = main?.querySelector('.topbar-title');
+            if (!main || !heading || !(heading.textContent ?? '').trim()) return false;
+            return !main.querySelector('[aria-busy="true"]');
+        },
+        route,
+        { timeout: 20_000 }
+    );
+
+    const rendered = await page.evaluate(() => ({
+        hash: location.hash,
+        heading: (document.querySelector('.main-area .topbar-title')?.textContent ?? '').trim(),
+    }));
+    test.expect(rendered.hash, `${route} never became the active route`).toBe(`#${route}`);
+    test.expect(rendered.heading, `${route} rendered no page heading`).not.toBe('');
+
     return page.evaluate(measure, TARGET);
 }
 
@@ -113,7 +144,8 @@ test.describe('44 px targets (WCAG 2.5.5)', () => {
     for (const route of ROUTES) {
         test(`${route.label} (${route.path})`, async ({ page }, testInfo) => {
             await seedApp(page, 'light');
-            const undersized = await audit(page, route.path);
+            const { undersized, controls } = await audit(page, route.path);
+            test.expect(controls, `${route.path} rendered no controls — the page did not mount`).toBeGreaterThan(0);
             const viewport = testInfo.project.use.viewport;
             const label = viewport ? `${viewport.width}×${viewport.height}` : 'default viewport';
 

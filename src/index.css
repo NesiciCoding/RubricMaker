@@ -2557,13 +2557,21 @@ select.input-error {
     color: var(--text-muted);
 }
 
-/* The grade-scale name is a borderless, transparent field inside its row, so it has no border
-   colour to change on focus and the shared field rule suppresses the outline. Give it its own
-   ring rather than relying on either. */
-.grade-scale-name:focus-visible {
+/* The grade-scale name is a transparent field inside its row, so the shared field rule's
+   `outline: none` leaves it with no focus cue at all. Give it a transparent border that turns
+   accent on focus (mouse and keyboard) plus the ring (keyboard). `input.` matches the shared
+   rule's specificity and sits later, so it wins the border and outline. */
+input.grade-scale-name {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+}
+
+input.grade-scale-name:focus,
+input.grade-scale-name:focus-visible {
+    border-color: var(--accent);
     outline: 2px solid var(--accent);
     outline-offset: 2px;
-    border-radius: 4px;
 }
 
 /* Section headings inside cards need more weight than body text so the eye
