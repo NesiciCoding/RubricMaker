@@ -60,6 +60,18 @@ const PINNED: Pin[] = [
         declares: ['minHeight: 44'],
     },
     {
+        file: 'pages/Dashboard.tsx',
+        label: 'needs-grading “View queue” action',
+        block: ['const needsGradingWidget', '</span>'],
+        declares: ['minHeight: 44'],
+    },
+    {
+        file: 'components/Dashboard/StudentSnapshotTable.tsx',
+        label: 'snapshot CEFR badge buttons',
+        block: ['const badgeButtonStyle', '};'],
+        declares: ['minWidth: 44', 'minHeight: 44'],
+    },
+    {
         file: 'pages/StudentsPage.tsx',
         label: 'cohort chips',
         block: ['const chipStyle', '});'],

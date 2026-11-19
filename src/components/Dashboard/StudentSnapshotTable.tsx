@@ -51,6 +51,18 @@ interface Row {
 
 const textDim: React.CSSProperties = { color: 'var(--border)', fontSize: '0.7rem' };
 
+const badgeButtonStyle: React.CSSProperties = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 44,
+    minHeight: 44,
+    cursor: 'pointer',
+    background: 'none',
+    border: 'none',
+    padding: 0,
+};
+
 function parseColor(color: string): { r: number; g: number; b: number } | null {
     const hexMatch = /^#([0-9a-f]{6})$/i.exec(color.trim());
     if (hexMatch) {
@@ -265,7 +277,7 @@ export default function StudentSnapshotTable({
                                 {cefrLevel ? (
                                     <button
                                         type="button"
-                                        style={{ cursor: 'pointer', background: 'none', border: 'none', padding: 0 }}
+                                        style={badgeButtonStyle}
                                         onClick={() => navigate(`/students/${s.id}/cefr-overview`)}
                                         aria-label={t('dashboard.snapshot_open_cefr', {
                                             name: s.name,
@@ -336,7 +348,7 @@ export default function StudentSnapshotTable({
                                 {vocabLevel ? (
                                     <button
                                         type="button"
-                                        style={{ cursor: 'pointer', background: 'none', border: 'none', padding: 0 }}
+                                        style={badgeButtonStyle}
                                         onClick={() => navigate(`/students/${s.id}`)}
                                         aria-label={t('dashboard.snapshot_open_vocab', { name: s.name })}
                                     >

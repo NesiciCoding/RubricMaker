@@ -33,6 +33,8 @@ const TARGET = 44;
  * editor's toolbar and the Settings tabs/presets/bundles.
  */
 const TARGET_SIZE_ROUTES = [
+    // Snapshot CEFR badge buttons and the needs-grading “View queue” action.
+    '/',
     // Builders: every control comes from a shared primitive.
     '/rubrics/new',
     '/rubrics/rubric-a11y-1',

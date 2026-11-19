@@ -747,7 +747,14 @@ export default function Dashboard() {
                     className="text-muted text-xs"
                     role="button"
                     tabIndex={0}
-                    style={{ fontWeight: 600, cursor: 'pointer' }}
+                    style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        minHeight: 44,
+                        padding: '0 4px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                    }}
                     onClick={() => navigate('/rubrics')}
                     onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') navigate('/rubrics');
