@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
     AlertTriangle,
     ClipboardCopy,
+    Flag,
     Hourglass,
     MoveRight,
     PauseCircle,
@@ -57,6 +58,10 @@ export interface EssayMonitorRow {
     /** Characters typed vs pasted so far — counts only, never content. */
     typedChars?: number;
     pastedChars?: number;
+    /** Holds the proctoring cursor (j/k, n, f act on this row). */
+    selected?: boolean;
+    /** Flagged by the teacher during this session. */
+    flagged?: boolean;
 }
 
 export interface EssayMonitorRosterProps {
@@ -84,9 +89,19 @@ function sparklinePoints(values: number[]): string {
 export default function EssayMonitorRoster({ rows, onWatch, showWritingPace = false, now }: EssayMonitorRosterProps) {
     const { t } = useTranslation();
     const clock = now ?? Date.now();
+    const rosterRef = useRef<HTMLDivElement | null>(null);
+    const selectedId = rows.find((row) => row.selected)?.studentId;
+    // The keyboard cursor can move below the fold; bring its row into view without moving focus.
+    useEffect(() => {
+        rosterRef.current?.querySelector<HTMLElement>('[data-selected="true"]')?.scrollIntoView?.({ block: 'nearest' });
+    }, [selectedId]);
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }} data-testid="essay-monitor-roster">
+        <div
+            ref={rosterRef}
+            style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
+            data-testid="essay-monitor-roster"
+        >
             <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-dim)' }} data-testid="essay-roster-cadence">
                 {t('tests.monitor.essay.roster_header', { count: rows.length })}
             </p>
@@ -125,6 +140,7 @@ export default function EssayMonitorRoster({ rows, onWatch, showWritingPace = fa
                     <div
                         key={row.studentId}
                         data-testid={`essay-row-${row.studentId}`}
+                        data-selected={row.selected ? 'true' : undefined}
                         style={{
                             background: 'var(--bg-elevated)',
                             border: '1px solid var(--border)',
@@ -132,6 +148,8 @@ export default function EssayMonitorRoster({ rows, onWatch, showWritingPace = fa
                                 row.flags.tabSwitchCount >= TAB_SWITCH_WARNING_THRESHOLD || stalled
                                     ? '3px solid var(--red)'
                                     : '3px solid transparent',
+                            outline: row.selected ? '2px solid var(--accent-text)' : undefined,
+                            outlineOffset: row.selected ? 1 : undefined,
                             borderRadius: 10,
                             padding: '10px 12px',
                             display: 'flex',
@@ -142,6 +160,16 @@ export default function EssayMonitorRoster({ rows, onWatch, showWritingPace = fa
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                             <span style={{ fontWeight: 700, color: 'var(--text)' }}>{row.displayName}</span>
                             <PresenceBadge presence={row.presence} status={row.status} />
+                            {row.flagged && (
+                                <span
+                                    className="badge badge-yellow"
+                                    data-testid={`essay-flagged-${row.studentId}`}
+                                    style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                                >
+                                    <Flag size={11} aria-hidden="true" />
+                                    {t('tests.monitor.shortcuts.flagged')}
+                                </span>
+                            )}
                             {row.connection === 'never_opened' && (
                                 <span className="badge badge-yellow" data-testid={`essay-connection-${row.studentId}`}>
                                     {t('tests.monitor.signal.never_opened')}

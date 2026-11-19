@@ -1638,6 +1638,12 @@
                 "summary_words_other": "{{count}} words",
                 "summary_nudges_one": "{{count}} nudge",
                 "summary_nudges_other": "{{count}} nudges"
+            },
+            "shortcuts": {
+                "hint": "j / k move · space spotlight · n nudge · f flag",
+                "flagged": "Flagged",
+                "flag_on": "Flag",
+                "flag_off": "Flagged — click to unflag"
             }
         },
         "queue": {
@@ -5546,7 +5552,8 @@
         "route_essay_projector_label": "Projected draft",
         "route_essay_projector_desc": "Read-only view of one draft for the classroom projector, without controls or a class list.",
         "es_creating_item_projector": "Spotlight a draft on the projector in a second window to talk about one sentence, while the monitor keeps watching the rest of the class.",
-        "rb_live_monitor_item_session_export": "Export the session as a CSV of per-student counts, stall minutes, draft ages, words written and the nudge log — plus a one-page PDF summary — to attach when an integrity question arrives later."
+        "rb_live_monitor_item_session_export": "Export the session as a CSV of per-student counts, stall minutes, draft ages, words written and the nudge log — plus a one-page PDF summary — to attach when an integrity question arrives later.",
+        "rb_live_monitor_item_shortcuts": "Proctor from the keyboard while standing up: j/k move between students, space opens or closes the spotlight, n nudges and f flags the student you are on, without reaching for the mouse."
     },
     "studentProfile": {
         "tab_overview": "Overview",

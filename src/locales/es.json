@@ -1638,6 +1638,12 @@
                 "summary_words_other": "{{count}} palabras",
                 "summary_nudges_one": "{{count}} aviso",
                 "summary_nudges_other": "{{count}} avisos"
+            },
+            "shortcuts": {
+                "hint": "j / k moverse · espacio seguir · n aviso · f marcar",
+                "flagged": "Marcado",
+                "flag_on": "Marcar",
+                "flag_off": "Marcado — clic para desmarcar"
             }
         },
         "sections_title": "Secciones",
@@ -5546,7 +5552,8 @@
         "route_essay_projector_label": "Borrador proyectado",
         "route_essay_projector_desc": "Vista de solo lectura de un único borrador para el proyector de clase, sin controles ni lista de clase.",
         "es_creating_item_projector": "Proyecta un borrador en una segunda ventana para hablar de una frase mientras el monitor sigue observando al resto de la clase.",
-        "rb_live_monitor_item_session_export": "Exporta la sesión como CSV con los recuentos, minutos estancados, antigüedad del texto, palabras escritas y el registro de avisos por estudiante — más un resumen PDF de una página — para adjuntarlo si más adelante surge una duda de integridad."
+        "rb_live_monitor_item_session_export": "Exporta la sesión como CSV con los recuentos, minutos estancados, antigüedad del texto, palabras escritas y el registro de avisos por estudiante — más un resumen PDF de una página — para adjuntarlo si más adelante surge una duda de integridad.",
+        "rb_live_monitor_item_shortcuts": "Supervisa con el teclado mientras estás de pie: j/k cambia de estudiante, espacio abre o cierra el seguimiento, n envía un aviso y f marca al estudiante actual, sin tocar el ratón."
     },
     "studentProfile": {
         "tab_overview": "Resumen",

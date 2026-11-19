@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, MonitorPlay, Radio } from 'lucide-react';
+import { ArrowLeft, Flag, MonitorPlay, Radio } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import LiveDraftPanel from './LiveDraftPanel';
 import EssayTimeline from './EssayTimeline';
@@ -37,6 +37,9 @@ export interface EssaySpotlightProps {
     onNudge?: (message: string) => void;
     /** Opens the read-only one-draft projector in a second window. */
     projectorHref?: string;
+    /** Marked by the teacher (`f` in the monitor) for a follow-up after the lesson. */
+    flagged?: boolean;
+    onToggleFlag?: () => void;
     onLeave: () => void;
     now?: number;
 }
@@ -86,6 +89,8 @@ export default function EssaySpotlight({
     showWritingPace = false,
     onNudge,
     projectorHref,
+    flagged = false,
+    onToggleFlag,
     onLeave,
     now,
 }: EssaySpotlightProps) {
@@ -119,6 +124,20 @@ export default function EssaySpotlight({
                 <span style={{ fontSize: '0.78rem', color: 'var(--text-dim)' }}>
                     {t('tests.monitor.essay.spotlight_note')}
                 </span>
+                {onToggleFlag && (
+                    <button
+                        type="button"
+                        className={flagged ? 'btn btn-secondary btn-sm' : 'btn btn-ghost btn-sm'}
+                        aria-pressed={flagged}
+                        data-testid="essay-spotlight-flag"
+                        title={flagged ? t('tests.monitor.shortcuts.flag_off') : t('tests.monitor.shortcuts.flag_on')}
+                        onClick={onToggleFlag}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                    >
+                        <Flag size={14} aria-hidden="true" />
+                        {flagged ? t('tests.monitor.shortcuts.flagged') : t('tests.monitor.shortcuts.flag_on')}
+                    </button>
+                )}
                 {projectorHref && (
                     <a
                         href={projectorHref}

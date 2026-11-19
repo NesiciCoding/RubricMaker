@@ -1108,6 +1108,38 @@ describe('LiveMonitorPage', () => {
             );
         });
 
+        it('flags the student opened with the mouse, not the one the keyboard cursor started on', async () => {
+            const essayRow = {
+                rubricId: 'r1',
+                teacherKey: 'assn-1',
+                title: 'My Essay',
+                readOnlyAfterSubmit: true,
+                createdAt: '2026-01-01T00:00:00.000Z',
+            };
+            mockUseApp = {
+                ...mockUseApp,
+                students: [mockStudent, { id: 'student-2', name: 'Bob', classId: 'class-1' }],
+                essayAssignments: [
+                    { ...essayRow, studentId: 'student-1' },
+                    { ...essayRow, studentId: 'student-2' },
+                ],
+                fetchEssayAssignmentByKey: vi
+                    .fn()
+                    .mockResolvedValue({ rubricId: 'r1', studentId: 'student-1', title: 'My Essay' }),
+            };
+            renderPage(['/essays/assn-1/monitor']);
+            await screen.findByTestId('essay-monitor-roster');
+
+            fireEvent.click(screen.getAllByText('tests.monitor.essay.watch_live')[1]);
+            await screen.findByTestId('essay-spotlight');
+            fireEvent.keyDown(window, { key: 'f' });
+            expect(screen.getByTestId('essay-spotlight-flag')).toHaveAttribute('aria-pressed', 'true');
+
+            fireEvent.click(screen.getByText('tests.monitor.essay.back'));
+            expect(await screen.findByTestId('essay-flagged-student-2')).toBeInTheDocument();
+            expect(screen.queryByTestId('essay-flagged-student-1')).toBeNull();
+        });
+
         it('renders the live draft text from a snapshot broadcast', async () => {
             mockUseApp = {
                 ...mockUseApp,
