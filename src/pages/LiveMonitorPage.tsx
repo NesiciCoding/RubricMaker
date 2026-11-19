@@ -76,6 +76,7 @@ import {
 } from '../utils/monitorSignals';
 import type { ColumnSortRule } from '../utils/responseGridOrder';
 import type { ProctorEvent, TestAnswer, CefrLevel, StudentTest, StaircaseStep } from '../types';
+import { deliveredTest } from '../utils/variantDelivery';
 
 const TAB_SWITCH_WARNING_THRESHOLD = 3;
 
@@ -929,7 +930,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                 const total = levelMaxQuestions ?? 0;
                 completion = { answered: finished ? Math.max(answered, total) : answered, total };
             } else if (kind === 'test' && test) {
-                completion = studentCompletion(test, mergedAnswers, sectionPath);
+                completion = studentCompletion(deliveredTest(test, row.studentId), mergedAnswers, sectionPath);
             }
 
             return {

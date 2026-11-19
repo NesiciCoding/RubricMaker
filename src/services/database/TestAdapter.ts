@@ -150,7 +150,8 @@ export class TestAdapter {
         submittedAt: string,
         events?: ProctorEvent[],
         sectionPath?: string[],
-        levelPath?: StaircaseStep[]
+        levelPath?: StaircaseStep[],
+        testVersion?: string
     ): Promise<SyncResult> {
         const {
             data: { session },
@@ -175,6 +176,7 @@ export class TestAdapter {
                     events,
                     sectionPath,
                     levelPath,
+                    testVersion,
                 }),
             });
         } catch (err) {

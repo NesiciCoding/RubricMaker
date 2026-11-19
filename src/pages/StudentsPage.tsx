@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { saveAs } from 'file-saver';
 import { useNavigate } from 'react-router-dom';
@@ -68,6 +68,9 @@ import type {
 } from '../types';
 import Avatar from '../components/ui/Avatar';
 import DropdownMenu from '../components/ui/DropdownMenu';
+import ContextMenu, { useContextMenu } from '../components/ui/ContextMenu';
+import MenuButton from '../components/ui/MenuButton';
+import { studentRowMenuItems } from '../components/Students/studentRowMenuItems';
 import ToggleChipGroup from '../components/ui/ToggleChipGroup';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import { getCefrStudentOverview, skillLevelStatus, type CefrLevelStatus } from '../utils/cefrStudentAggregator';
@@ -471,6 +474,15 @@ export default function StudentsPage() {
     const [editStudentClassId, setEditStudentClassId] = useState('');
     const [editStudentTrack, setEditStudentTrack] = useState<VoTrack | ''>('');
     const [editStudentReadAloud, setEditStudentReadAloud] = useState(false);
+    const rowMenu = useContextMenu();
+    const [rowMenuStudentId, setRowMenuStudentId] = useState<string | null>(null);
+    const { close: closeRowMenu } = rowMenu;
+    useEffect(() => {
+        if (rowMenuStudentId && !students.some((st) => st.id === rowMenuStudentId)) {
+            closeRowMenu();
+            setRowMenuStudentId(null);
+        }
+    }, [rowMenuStudentId, students, closeRowMenu]);
     const [editStudentYear, setEditStudentYear] = useState<SchoolYear | ''>('');
     const [newClassName, setNewClassName] = useState('');
     const [importFile, setImportFile] = useState<File | null>(null);
@@ -910,6 +922,17 @@ export default function StudentsPage() {
         setShowAddModal(true);
     }
 
+    function openEditStudent(s: Student) {
+        setEditStudent({ id: s.id, name: s.name, email: s.email ?? '' });
+        setName(s.name);
+        setEmail(s.email ?? '');
+        setEditStudentClassId(s.classId);
+        setEditStudentTrack(s.voTrack ?? '');
+        setEditStudentYear(s.schoolYear ?? '');
+        setEditStudentReadAloud(s.readAloudAccommodation ?? false);
+        setShowAddModal(true);
+    }
+
     function handleCSVImport(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -1341,8 +1364,49 @@ export default function StudentsPage() {
                                                     (r) => r.id === lastRubricByClass.get(s.classId)
                                                 ) ?? null;
                                             const gradedRubricIds = gradedRubricsByStudent.get(s.id);
+                                            const openRowMenu = (e: React.MouseEvent) => {
+                                                setRowMenuStudentId(s.id);
+                                                rowMenu.open(
+                                                    e,
+                                                    studentRowMenuItems({
+                                                        labels: {
+                                                            gradeLast: t('studentsPage.grade_last_used', {
+                                                                rubric: lastRubric?.name ?? '',
+                                                            }),
+                                                            profile: t('studentsPage.view_profile'),
+                                                            copySummary: t('studentsPage.action_copy_summary'),
+                                                            generatePassword: t(
+                                                                'studentsPage.action_generate_password'
+                                                            ),
+                                                            edit: t('studentsPage.action_edit_student'),
+                                                            remove: t('studentsPage.action_delete_student'),
+                                                        },
+                                                        gradeLast: lastRubric
+                                                            ? () => navigate(`/rubrics/${lastRubric.id}/grade/${s.id}`)
+                                                            : undefined,
+                                                        openProfile: () => navigate(`/students/${s.id}`),
+                                                        copySummary: () => {
+                                                            setSummaryStudentId(s.id);
+                                                            setCopied(false);
+                                                        },
+                                                        generatePassword:
+                                                            dbStatus.isConnected && s.email
+                                                                ? () =>
+                                                                      void handleGeneratePasswordSlips([
+                                                                          { id: s.id, name: s.name, email: s.email! },
+                                                                      ])
+                                                                : undefined,
+                                                        edit: () => {
+                                                            const current = students.find((st) => st.id === s.id);
+                                                            if (current) openEditStudent(current);
+                                                        },
+                                                        remove: () => setConfirmDeleteStudent(s.id),
+                                                    }),
+                                                    t('studentsPage.row_menu_label')
+                                                );
+                                            };
                                             return (
-                                                <tr key={s.id}>
+                                                <tr key={s.id} data-longpress tabIndex={-1} onContextMenu={openRowMenu}>
                                                     <td style={{ fontWeight: 500 }}>
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                                             <Avatar name={s.name} size={26} fontSize="0.75rem" />
@@ -1592,70 +1656,10 @@ export default function StudentsPage() {
                                                             >
                                                                 <TrendingUp size={14} />
                                                             </button>
-                                                            <button
-                                                                type="button"
-                                                                className="btn btn-ghost btn-icon btn-sm"
-                                                                onClick={() => {
-                                                                    setSummaryStudentId(s.id);
-                                                                    setCopied(false);
-                                                                }}
-                                                                title={t('studentsPage.action_copy_summary')}
-                                                            >
-                                                                <ClipboardCopy size={14} />
-                                                            </button>
-                                                            {dbStatus.isConnected && s.email && (
-                                                                <button
-                                                                    type="button"
-                                                                    className="btn btn-ghost btn-icon btn-sm"
-                                                                    aria-label={t(
-                                                                        'studentsPage.action_generate_password'
-                                                                    )}
-                                                                    title={t('studentsPage.action_generate_password')}
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        void handleGeneratePasswordSlips([
-                                                                            { id: s.id, name: s.name, email: s.email! },
-                                                                        ]);
-                                                                    }}
-                                                                >
-                                                                    <KeyRound size={14} />
-                                                                </button>
-                                                            )}
-                                                            <button
-                                                                type="button"
-                                                                className="btn btn-ghost btn-icon btn-sm"
-                                                                aria-label={t('studentsPage.action_edit_student')}
-                                                                onClick={() => {
-                                                                    setEditStudent({
-                                                                        id: s.id,
-                                                                        name: s.name,
-                                                                        email: s.email ?? '',
-                                                                    });
-                                                                    setName(s.name);
-                                                                    setEmail(s.email ?? '');
-                                                                    setEditStudentClassId(s.classId);
-                                                                    setEditStudentTrack(s.voTrack ?? '');
-                                                                    setEditStudentYear(s.schoolYear ?? '');
-                                                                    setEditStudentReadAloud(
-                                                                        s.readAloudAccommodation ?? false
-                                                                    );
-                                                                    setShowAddModal(true);
-                                                                }}
-                                                            >
-                                                                <Edit2 size={14} />
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                className="btn btn-ghost btn-icon btn-sm"
-                                                                aria-label={t('studentsPage.action_delete_student')}
-                                                                style={{ color: 'var(--red-text)' }}
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setConfirmDeleteStudent(s.id);
-                                                                }}
-                                                            >
-                                                                <Trash2 size={14} />
-                                                            </button>
+                                                            <MenuButton
+                                                                label={t('studentsPage.row_menu_label')}
+                                                                onOpen={openRowMenu}
+                                                            />
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -2410,6 +2414,8 @@ export default function StudentsPage() {
                         returnFocusTo={classMenuTrigger}
                     />
                 )}
+
+                <ContextMenu {...rowMenu.menuProps} />
 
                 {/* Class options menu — portaled to the body and positioned against the trigger, so
                     the cohort bar's horizontal overflow can never clip or scroll it. */}

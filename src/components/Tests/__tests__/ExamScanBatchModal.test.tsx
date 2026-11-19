@@ -101,10 +101,10 @@ function pickTwoPages() {
     fireEvent.change(input, { target: { files } });
 }
 
-function renderModal(onSave = vi.fn()) {
+function renderModal(onSave = vi.fn(), testOverride: Test = test) {
     render(
         <ExamScanBatchModal
-            test={test}
+            test={testOverride}
             students={students}
             studentTests={[]}
             defaultLang="eng"
@@ -191,6 +191,67 @@ describe('ExamScanBatchModal', () => {
             { questionId: 'q1', response: '' },
             { questionId: 'q2', response: 'false' },
         ]);
+    });
+
+    it('records the printed version picked in the intake on every saved attempt', async () => {
+        decodeAnswerSheetQr
+            .mockReturnValueOnce({ testId: 't1', studentId: 's1', pages: 1 })
+            .mockReturnValueOnce({ testId: 't1', studentId: 's2', pages: 1 });
+        const onSave = renderModal(vi.fn(), { ...test, versionCount: 2 });
+
+        pickTwoPages();
+        await screen.findByLabelText('tests.scan.batch_page_student:1');
+        fireEvent.change(screen.getByLabelText(/tests.versioning_scan_label/), { target: { value: 'B' } });
+
+        fireEvent.click(await screen.findByText('tests.scan.batch_detect_button'));
+        fireEvent.click(await screen.findByText('tests.scan.batch_save_all'));
+
+        const saved = onSave.mock.calls.map((call) => call[0] as { testVersion?: string });
+        expect(saved).toHaveLength(2);
+        expect(saved.every((st) => st.testVersion === 'B')).toBe(true);
+    });
+
+    it('leaves the version unrecorded when no printed version is picked', async () => {
+        decodeAnswerSheetQr
+            .mockReturnValueOnce({ testId: 't1', studentId: 's1', pages: 1 })
+            .mockReturnValueOnce({ testId: 't1', studentId: 's2', pages: 1 });
+        const onSave = renderModal(vi.fn(), { ...test, versionCount: 2 });
+
+        pickTwoPages();
+        fireEvent.click(await screen.findByText('tests.scan.batch_detect_button'));
+        fireEvent.click(await screen.findByText('tests.scan.batch_save_all'));
+
+        expect((onSave.mock.calls[0][0] as { testVersion?: string }).testVersion).toBeUndefined();
+    });
+
+    it('saves answers only for the question set each student was given', async () => {
+        const variantTest: Test = {
+            ...test,
+            questions: [
+                test.questions[0],
+                { ...test.questions[0], id: 'q1v', variantOfQuestionId: 'q1' },
+                test.questions[1],
+            ],
+        };
+        decodeAnswerSheetQr
+            .mockReturnValueOnce({ testId: 't1', studentId: 's1', pages: 1 })
+            .mockReturnValueOnce({ testId: 't1', studentId: 's2', pages: 1 });
+        const onSave = renderModal(vi.fn(), variantTest);
+
+        pickTwoPages();
+        fireEvent.click(await screen.findByText('tests.scan.batch_detect_button'));
+        fireEvent.click(await screen.findByText('tests.scan.batch_save_all'));
+
+        const saved = onSave.mock.calls.map(
+            (call) => call[0] as { studentId: string; answers: { questionId: string }[] }
+        );
+        expect(saved).toHaveLength(2);
+        for (const attempt of saved) {
+            const ids = attempt.answers.map((a) => a.questionId);
+            expect(ids).toHaveLength(2);
+            expect(ids.filter((id) => id === 'q1' || id === 'q1v')).toHaveLength(1);
+            expect(ids).toContain('q2');
+        }
     });
 
     it('creates one shared OCR session lazily when a block actually needs recognition', async () => {

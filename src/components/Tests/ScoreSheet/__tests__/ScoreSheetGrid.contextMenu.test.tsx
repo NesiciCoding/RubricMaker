@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { beforeEach, describe, it, expect, vi } from 'vitest';
 import type { Student, StudentTest, Test } from '../../../../types';
 import ScoreSheetGrid from '../ScoreSheetGrid';
+import { isQuestionDelivered } from '../../../../utils/variantDelivery';
 
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
@@ -44,10 +45,10 @@ const bram: StudentTest = {
     source: 'manual',
 };
 
-function renderGrid(onSave = vi.fn(), sheet = new Map([['s1', bram]])) {
+function renderGrid(onSave = vi.fn(), sheet = new Map([['s1', bram]]), gridTest: Test = test) {
     render(
         <ScoreSheetGrid
-            test={test}
+            test={gridTest}
             students={students}
             classes={[]}
             sheetByStudent={sheet}
@@ -156,6 +157,70 @@ describe('ScoreSheetGrid context menu', () => {
 
         const saved = onSave.mock.calls[0][0] as StudentTest[];
         expect(saved.map((st) => st.studentId)).toEqual(['s3']);
+    });
+
+    describe('fill across', () => {
+        const wide: Test = {
+            ...test,
+            questions: [
+                { id: 'q1', prompt: '1a', type: 'open', points: 2 },
+                { id: 'q2', prompt: '1b', type: 'open', points: 4 },
+                { id: 'q3', prompt: '2a', type: 'open', points: 2 },
+                { id: 'q4', prompt: '2b', type: 'open', points: 2 },
+            ],
+        };
+
+        it('copies the points only into cells worth the same maximum', () => {
+            const onSave = renderGrid(vi.fn(), new Map([['s1', bram]]), wide);
+            fireEvent.contextMenu(cell(0, 0));
+            fireEvent.click(screen.getByRole('menuitem', { name: 'tests.scoreSheet.menu_fill_across' }));
+
+            const saved = onSave.mock.calls[0][0] as StudentTest[];
+            expect(saved).toHaveLength(1);
+            const earned = Object.fromEntries(saved[0].answers.map((a) => [a.questionId, a.pointsEarned]));
+            expect(earned).toEqual({ q1: 2, q3: 2, q4: 2 });
+            expect(mockShowToast).toHaveBeenCalledWith('tests.scoreSheet.menu_filled', 'success');
+        });
+
+        it('is disabled on the last column, for absent students and when nothing to the right matches', () => {
+            renderGrid(vi.fn(), new Map([['s1', bram]]), wide);
+            fireEvent.contextMenu(cell(0, 3));
+            expect(screen.getByRole('menuitem', { name: 'tests.scoreSheet.menu_fill_across' })).toBeDisabled();
+        });
+
+        it('stays disabled when no later question has the same maximum', () => {
+            renderGrid();
+            fireEvent.contextMenu(cell(0, 0));
+            expect(screen.getByRole('menuitem', { name: 'tests.scoreSheet.menu_fill_across' })).toBeDisabled();
+        });
+
+        it('does not fill for an absent student', () => {
+            const absentBram: StudentTest = { ...bram, absent: true };
+            renderGrid(vi.fn(), new Map([['s1', absentBram]]), wide);
+            fireEvent.contextMenu(cell(0, 0));
+            expect(screen.getByRole('menuitem', { name: 'tests.scoreSheet.menu_fill_across' })).toBeDisabled();
+        });
+
+        it('leaves out the easier copy a student was never given', () => {
+            const family: Test = {
+                ...test,
+                questions: [
+                    { id: 'q1', prompt: '1', type: 'open', points: 2 },
+                    { id: 'q1v', prompt: '1 easier', type: 'open', points: 2, variantOfQuestionId: 'q1' },
+                    { id: 'q3', prompt: '2', type: 'open', points: 2 },
+                ],
+            };
+            const givenCol = isQuestionDelivered(family, 's1', 'q1') ? 0 : 1;
+            const givenId = family.questions[givenCol].id;
+            const scored: StudentTest = { ...bram, answers: [{ questionId: givenId, response: '', pointsEarned: 2 }] };
+            const onSave = renderGrid(vi.fn(), new Map([['s1', scored]]), family);
+            fireEvent.contextMenu(cell(0, givenCol));
+            fireEvent.click(screen.getByRole('menuitem', { name: 'tests.scoreSheet.menu_fill_across' }));
+            const saved = onSave.mock.calls[0][0] as StudentTest[];
+            const ids = saved[0].answers.map((a) => a.questionId);
+            expect(ids).toContain('q3');
+            expect(ids.filter((id) => id === 'q1' || id === 'q1v')).toEqual([givenId]);
+        });
     });
 
     it('marks the student absent from the cell menu', () => {

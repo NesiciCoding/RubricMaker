@@ -78,7 +78,8 @@ test.describe('ConfirmDialog — delete flows', () => {
         await expect(appPage.getByText('Student To Delete')).toBeVisible();
 
         const row = appPage.locator('table tbody tr').filter({ hasText: 'Student To Delete' });
-        await row.getByRole('button', { name: /delete student/i }).click();
+        await row.getByRole('button', { name: /student actions/i }).click();
+        await appPage.getByRole('menuitem', { name: /delete student/i }).click();
 
         // Student delete confirm uses <div class="modal"> without role="dialog"
         await expect(appPage.locator('.modal-overlay')).toBeVisible();

@@ -19,7 +19,7 @@ import ScoreSheetColumnsModal from '../components/Tests/ScoreSheet/ScoreSheetCol
 import type { Class, GradeScale, Student, StudentTest, Test } from '../types';
 import { pickLatestAttempt } from '../utils/testAnswerText';
 import { scoreStudentTest } from '../utils/studentTestScore';
-import { scoreTestAnswer } from '../utils/testCalc';
+import { calcTestMaxPoints, scoreTestAnswer } from '../utils/testCalc';
 import { calcTestQuality } from '../utils/testQualityMetrics';
 import {
     DEFAULT_PASS_GRADE,
@@ -221,7 +221,7 @@ function ScoreSheetBody({
     const { addFlashcardDeck } = useStoreActions();
     const { showToast } = useToast();
     const scale = resolveTestScale(test, gradeScales, defaultGradeScaleId);
-    const maxPoints = test.questions.reduce((s, q) => s + q.points, 0);
+    const maxPoints = calcTestMaxPoints(test);
     const classById = new Map(classes.map((c) => [c.id, c]));
     const allLabel = t('tests.norm.tier_all');
 

@@ -1,7 +1,7 @@
 import JSZip from 'jszip';
 import { afterEach, describe, it, expect, vi } from 'vitest';
 import '../i18n';
-import type { Test } from '../types';
+import type { Student, Test } from '../types';
 import { collectParagraphTexts, exportExamDocx, richPassageToDocx, richPromptToDocx } from './testExamExportDocx';
 import { htmlToDocxChildren, htmlToDocxLead } from './essayExport';
 
@@ -213,5 +213,51 @@ describe('exam booklet .docx content', () => {
             expect(xml).toContain('this');
             expect(xml).toContain(' carefully.');
         });
+    });
+});
+
+describe('exam .docx export with easier-cloze variants', () => {
+    const base: Test = {
+        id: 't1',
+        name: 'Quiz',
+        requireSEB: false,
+        shuffleQuestions: false,
+        createdAt: '2026-01-01T00:00:00.000Z',
+        questions: [
+            { id: 'q1', type: 'open', points: 1, prompt: '<p>Original</p>' },
+            { id: 'q1v', type: 'open', points: 1, prompt: '<p>Easier copy</p>', variantOfQuestionId: 'q1' },
+        ],
+    };
+
+    async function names(students?: Student[]): Promise<string[]> {
+        saved.length = 0;
+        await exportExamDocx(base, {
+            attachmentMode: 'inline',
+            hotTextMirror: false,
+            scanMarkers: false,
+            students,
+        });
+        return Object.keys((await JSZip.loadAsync(saved[0])).files).sort();
+    }
+
+    it('prints one paper per member for an unnamed stack, never both members on one paper', async () => {
+        const files = await names();
+        expect(files.filter((f) => f.endsWith('-booklet.docx'))).toHaveLength(2);
+        const zip = await JSZip.loadAsync(saved[0]);
+        for (const name of files.filter((f) => f.endsWith('-booklet.docx'))) {
+            const booklet = await JSZip.loadAsync(await zip.files[name].async('arraybuffer'));
+            const xml = await booklet.files['word/document.xml'].async('string');
+            expect(xml.includes('Original') !== xml.includes('Easier copy')).toBe(true);
+        }
+    });
+
+    it('keeps a test without variants as a single paper', async () => {
+        saved.length = 0;
+        await exportExamDocx(
+            { ...base, questions: [base.questions[0]] },
+            { attachmentMode: 'inline', hotTextMirror: false, scanMarkers: false }
+        );
+        const files = Object.keys((await JSZip.loadAsync(saved[0])).files);
+        expect(files.filter((f) => f.endsWith('-booklet.docx'))).toHaveLength(1);
     });
 });
