@@ -10647,6 +10647,49 @@ AS $$
     ('students',                  'students',                  'id = $1',                                                                                  'owner_id = $2')
 $$;
 
+-- ── 106_scheduled_digest_pg_net_timeout.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 106: give the nightly digest's pg_net call a realistic timeout.
+--
+-- net.http_post cancels its request after `timeout_milliseconds`, which defaults to 5000.
+-- On expiry pg_net writes a row to net._http_response with an empty status_code,
+-- timed_out = true and an "Timeout of … ms reached" error_msg, while the edge function keeps
+-- running server-side. So the digest still sends its email, but the run is counted as a
+-- failed HTTP call by monitoring.failed_jobs() (migration 091) and the "Scheduled HTTP call
+-- failed" alert fires every morning the digest had something to deliver: SMTP sends are
+-- synchronous and are followed by the heartbeat ping, which routinely takes longer than
+-- five seconds. Re-schedule the job with a two-minute budget.
+--
+-- The job also fails loudly in cron.job_run_details (with a message naming the missing
+-- setting) when app.settings.project_url / app.settings.service_role_key are unset, instead
+-- of sending "Bearer null" and showing up only as a 401 in net._http_response.
+
+select cron.schedule(
+  'teacher-email-digest',
+  '0 6 * * *',
+  $job$
+    do $digest$
+    declare
+      project_url text := nullif(current_setting('app.settings.project_url', true), '');
+      service_key text := nullif(current_setting('app.settings.service_role_key', true), '');
+    begin
+      if project_url is null or service_key is null then
+        raise exception 'teacher-email-digest: set app.settings.project_url and app.settings.service_role_key (docs/SELF_HOSTING_OPS.md -> Teacher email digest job)';
+      end if;
+      perform net.http_post(
+        url := project_url || '/functions/v1/scheduled-digest',
+        headers := jsonb_build_object(
+          'Authorization', 'Bearer ' || service_key,
+          'Content-Type', 'application/json'
+        ),
+        body := '{}'::jsonb,
+        timeout_milliseconds := 120000
+      );
+    end
+    $digest$;
+  $job$
+);
+
 -- ── 20260617093844_delete_old_attachments_fn.sql ──────────────────────────────────────────────────────────────
 
 -- Returns attachments whose updated_at has passed the owner's school retention
@@ -10791,5 +10834,6 @@ insert into public._migrations (name) values
     ('103_live_writing_self_check_peer_voting.sql'),
     ('104_live_writing_finals_insights_grading.sql'),
     ('105_live_draft_snapshots.sql'),
+    ('106_scheduled_digest_pg_net_timeout.sql'),
     ('20260617093844_delete_old_attachments_fn.sql')
 on conflict (name) do nothing;
