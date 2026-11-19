@@ -181,12 +181,12 @@ test.describe('Testing environment — full lifecycle (offline)', () => {
         // ── 6. Teacher applies a class-average adjustment ────────────────────
         await list.goto();
         await list.openResultsList('E2E Vocabulary Quiz');
-        await appExpect(list.classAverageAdjuster('E2E Vocabulary Quiz')).toBeVisible();
+        await appExpect(list.classAverageAdjuster()).toBeVisible();
 
         // Current average is 87.5% — target a lower average to get a negative
         // adjustment that's easy to assert on the results page.
-        await list.setTargetAverage('E2E Vocabulary Quiz', 75);
-        await list.applyAdjustment('E2E Vocabulary Quiz');
+        await list.setTargetAverage(75);
+        await list.applyAdjustment();
         await appExpect(appPage.getByText(/adjustment to apply/i)).toBeVisible();
 
         // ── Results page reflects the adjustment ─────────────────────────────

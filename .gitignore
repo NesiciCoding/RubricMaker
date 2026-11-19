@@ -15,6 +15,9 @@ coverage
 # Copy scripts/deploy.example.sh → scripts/deploy.sh and fill in your values
 scripts/deploy.sh
 
+# Throwaway screenshots and visual-check output captured while working on the UI
+artifacts/
+
 # Playwright output
 playwright-report/
 playwright-results/

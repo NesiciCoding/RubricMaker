@@ -131,6 +131,7 @@ export default function DropdownMenu({
         if (!next) return;
         e.preventDefault();
         next.focus({ preventScroll: true });
+        revealInMenu(menuRef.current, next);
     };
 
     if (!open || !pos) return null;
@@ -159,6 +160,15 @@ export default function DropdownMenu({
         </div>,
         document.body
     );
+}
+
+/** Scrolls only the menu's own container; scrollIntoView would also move ancestors and close a point-opened menu. */
+function revealInMenu(menu: HTMLElement | null, item: HTMLElement) {
+    if (!menu) return;
+    const menuRect = menu.getBoundingClientRect();
+    const itemRect = item.getBoundingClientRect();
+    if (itemRect.top < menuRect.top) menu.scrollTop -= menuRect.top - itemRect.top;
+    else if (itemRect.bottom > menuRect.bottom) menu.scrollTop += itemRect.bottom - menuRect.bottom;
 }
 
 function menuItems(menu: HTMLElement | null): HTMLElement[] {
