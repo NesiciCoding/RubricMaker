@@ -8,7 +8,8 @@ import type {
     TestStrengthBucket,
     TestStrongWeakSummary,
 } from '../types';
-import { autoScoreResponse, calcStudentTestRawPoints } from './testCalc';
+import { autoScoreResponse, calcStudentTestRawPoints, calcTestMaxPoints } from './testCalc';
+import { undeliveredQuestionIds } from './variantDelivery';
 import {
     clozeGapCorrectness,
     gapCorrectAnswers,
@@ -56,9 +57,12 @@ export function effectiveTestQuestions(
     return [...byId.values()];
 }
 
-function latestAnswerByQuestion(studentTest: StudentTest): Map<string, TestAnswer> {
+/** A student's latest answer per question, leaving out the sibling of a variant family they were not given. */
+function latestAnswerByQuestion(studentTest: StudentTest, test: Test): Map<string, TestAnswer> {
+    const undelivered = undeliveredQuestionIds(test, studentTest.studentId);
     const byQuestion = new Map<string, TestAnswer>();
     for (const answer of studentTest.answers) {
+        if (undelivered.has(answer.questionId)) continue;
         byQuestion.set(answer.questionId, answer);
     }
     return byQuestion;
@@ -76,7 +80,7 @@ export function calcQuestionBreakdowns(
     test: Test
 ): TestQuestionBreakdown[] {
     const relevant = relevantStudentTests(studentId, studentTests, test);
-    const answersByStudent = relevant.map(latestAnswerByQuestion);
+    const answersByStudent = relevant.map((st) => latestAnswerByQuestion(st, test));
 
     return effectiveTestQuestions(studentId, studentTests, test).map((question) => {
         const samples: number[] = [];
@@ -155,7 +159,7 @@ export function calcSkillBreakdowns(
     test: Test
 ): TestSkillBreakdown[] {
     const relevant = relevantStudentTests(studentId, studentTests, test);
-    const answersByStudent = relevant.map(latestAnswerByQuestion);
+    const answersByStudent = relevant.map((st) => latestAnswerByQuestion(st, test));
     const questions = effectiveTestQuestions(studentId, studentTests, test);
     const questionsById = new Map(questions.map((q) => [q.id, q]));
 
@@ -302,7 +306,7 @@ const DISCRIMINATION_GROUP_RATIO = 0.27;
  */
 export function calcTestItemAnalysis(studentTests: StudentTest[], test: Test): QuestionItemAnalysis[] {
     const relevant = relevantStudentTests(null, studentTests, test).filter((st) => st.answers.length > 0);
-    const maxPoints = test.questions.reduce((sum, q) => sum + q.points, 0);
+    const maxPoints = calcTestMaxPoints(test);
 
     const ranked = [...relevant].sort(
         (a, b) => calcStudentTestRawPoints(test, b.answers) - calcStudentTestRawPoints(test, a.answers)
@@ -314,7 +318,7 @@ export function calcTestItemAnalysis(studentTests: StudentTest[], test: Test): Q
 
     const answersByStudent = relevant.map((st) => ({
         studentId: st.studentId,
-        byQuestion: latestAnswerByQuestion(st),
+        byQuestion: latestAnswerByQuestion(st, test),
     }));
 
     return test.questions.map((question) => {

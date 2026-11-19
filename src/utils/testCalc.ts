@@ -13,9 +13,11 @@ export {
     scoreCategorize,
     scoreHotText,
 } from '../../supabase/functions/_shared/testScoring.ts';
+import { deliveredMaxPoints } from './variantDelivery';
 
-export function calcTestMaxPoints(test: Test): number {
-    return test.questions.reduce((sum, q) => sum + q.points, 0);
+/** Maximum points one student can earn: a variant family counts once, via the member that student is given. */
+export function calcTestMaxPoints(test: Test, studentId?: string | null): number {
+    return deliveredMaxPoints(test, studentId);
 }
 
 export function scoreTestAnswer(question: TestQuestion, answer: TestAnswer): number {

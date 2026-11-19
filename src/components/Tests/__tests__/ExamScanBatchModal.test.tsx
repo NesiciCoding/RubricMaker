@@ -224,6 +224,36 @@ describe('ExamScanBatchModal', () => {
         expect((onSave.mock.calls[0][0] as { testVersion?: string }).testVersion).toBeUndefined();
     });
 
+    it('saves answers only for the question set each student was given', async () => {
+        const variantTest: Test = {
+            ...test,
+            questions: [
+                test.questions[0],
+                { ...test.questions[0], id: 'q1v', variantOfQuestionId: 'q1' },
+                test.questions[1],
+            ],
+        };
+        decodeAnswerSheetQr
+            .mockReturnValueOnce({ testId: 't1', studentId: 's1', pages: 1 })
+            .mockReturnValueOnce({ testId: 't1', studentId: 's2', pages: 1 });
+        const onSave = renderModal(vi.fn(), variantTest);
+
+        pickTwoPages();
+        fireEvent.click(await screen.findByText('tests.scan.batch_detect_button'));
+        fireEvent.click(await screen.findByText('tests.scan.batch_save_all'));
+
+        const saved = onSave.mock.calls.map(
+            (call) => call[0] as { studentId: string; answers: { questionId: string }[] }
+        );
+        expect(saved).toHaveLength(2);
+        for (const attempt of saved) {
+            const ids = attempt.answers.map((a) => a.questionId);
+            expect(ids).toHaveLength(2);
+            expect(ids.filter((id) => id === 'q1' || id === 'q1v')).toHaveLength(1);
+            expect(ids).toContain('q2');
+        }
+    });
+
     it('creates one shared OCR session lazily when a block actually needs recognition', async () => {
         decodeAnswerSheetQr
             .mockReturnValueOnce({ testId: 't1', studentId: 's1', pages: 1 })

@@ -21,6 +21,7 @@ import type { ItemQuality } from '../../../utils/testQualityMetrics';
 import { useToast } from '../../../hooks/useToast';
 import ContextMenu, { useContextMenu } from '../../ui/ContextMenu';
 import type { ContextMenuItem } from '../../ui/ContextMenu';
+import { isQuestionDelivered } from '../../../utils/variantDelivery';
 
 interface Props {
     test: Test;
@@ -102,6 +103,7 @@ export default function ScoreSheetGrid({
             const student = students[row];
             const q = questions[col];
             if (!student || !q) continue;
+            if (!isQuestionDelivered(test, student.id, q.id)) continue;
             const validity = validateCell(raw, q.points);
             if (validity === 'invalid' || validity === 'over_max') continue;
             const current = touched.has(student.id) ? touched.get(student.id) : sheetRef.current.get(student.id);
@@ -463,6 +465,7 @@ export default function ScoreSheetGrid({
                                     const bad = validity === 'invalid' || validity === 'over_max';
                                     const isFocused = focus?.row === row && focus?.col === col;
                                     const inBand = !isFocused && (focus?.row === row || focus?.col === col);
+                                    const notGiven = !isQuestionDelivered(test, student.id, q.id);
                                     return (
                                         <td
                                             key={q.id}
@@ -480,7 +483,8 @@ export default function ScoreSheetGrid({
                                                 data-cell={`${row}-${col}`}
                                                 inputMode="decimal"
                                                 autoComplete="off"
-                                                disabled={absent || !(canEdit?.(student) ?? true)}
+                                                disabled={absent || notGiven || !(canEdit?.(student) ?? true)}
+                                                placeholder={notGiven ? '–' : undefined}
                                                 aria-label={t('tests.scoreSheet.cell_label', {
                                                     student: student.name,
                                                     question: test.scoreOnly ? q.prompt : col + 1,
@@ -488,11 +492,13 @@ export default function ScoreSheetGrid({
                                                 })}
                                                 aria-invalid={bad || undefined}
                                                 title={
-                                                    validity === 'over_max'
-                                                        ? t('tests.scoreSheet.over_max', { max: q.points })
-                                                        : validity === 'invalid'
-                                                          ? t('tests.scoreSheet.invalid')
-                                                          : undefined
+                                                    notGiven
+                                                        ? t('tests.scoreSheet.not_delivered')
+                                                        : validity === 'over_max'
+                                                          ? t('tests.scoreSheet.over_max', { max: q.points })
+                                                          : validity === 'invalid'
+                                                            ? t('tests.scoreSheet.invalid')
+                                                            : undefined
                                                 }
                                                 value={value}
                                                 onChange={(e) => setDrafts((d) => ({ ...d, [k]: e.target.value }))}

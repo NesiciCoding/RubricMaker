@@ -7,6 +7,7 @@ import { PRINT_MARGIN_MM, printHtml, withoutBrowserPrintChrome } from './pdfExpo
 import { escapeHtml, hasRichContent, promptToHtml, sanitizeFilename } from './exportDataPrep';
 import { plainQuestionPromptText } from './clozeParse';
 import { calcTestMaxPoints } from './testCalc';
+import { examPapers } from './variantDelivery';
 import {
     ANSWER_BLOCK_PADDING_MM,
     ANSWER_LINE_SPACING_MM,
@@ -529,6 +530,14 @@ interface ExportExamPdfOptions extends TestExamExportOptions {
  * handed out as a unit. Export the grading key separately via exportExamGradingKeyPdf().
  */
 export async function exportExamPdf(test: Test, options: ExportExamPdfOptions): Promise<void> {
+    // A test with easier-cloze variants needs one paper per set of questions: named students share a
+    // paper only when they are given the same members, an unnamed stack gets one paper per member.
+    for (const paper of examPapers(test, options.students)) {
+        await exportExamPaperPdf(paper.test, { ...options, students: paper.students });
+    }
+}
+
+async function exportExamPaperPdf(test: Test, options: ExportExamPdfOptions): Promise<void> {
     const orientation = 'portrait';
     const print = (html: string) =>
         printHtml(html, orientation, options.fontFamily, options.styleTemplate, {

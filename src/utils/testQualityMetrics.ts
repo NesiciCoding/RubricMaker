@@ -1,6 +1,7 @@
-import type { StudentTest, Test, TestAnswer } from '../types';
+import type { StudentTest, Test, TestAnswer, TestQuestion } from '../types';
 import { scoreTestAnswer } from './testCalc';
 import { calcTestItemAnalysis } from './testSummaryAggregator';
+import { chosenMemberId, variantFamilies } from './variantDelivery';
 
 /** Below this many complete score rows, correlations and α are too noisy to show. */
 export const MIN_STUDENTS_FOR_CORRELATION = 5;
@@ -272,8 +273,16 @@ function scoredSubmissions(test: Test, studentTests: StudentTest[]): StudentTest
  * missing cells would otherwise read as zeroes.
  */
 export function calcTestQuality(test: Test, studentTests: StudentTest[]): ItemQualityReport {
-    const questions = test.questions;
     const submissions = scoredSubmissions(test, studentTests);
+    // A variant family is one item: each student is scored on the member they were given, so the
+    // sibling they never saw can't read as a missing score and drop them from the correlations.
+    const familyByFirstMember = new Map<string, { familyId: string; members: TestQuestion[] }>();
+    const siblings = new Set<string>();
+    for (const [familyId, members] of variantFamilies(test.questions)) {
+        familyByFirstMember.set(members[0].id, { familyId, members });
+        for (const member of members.slice(1)) siblings.add(member.id);
+    }
+    const questions = test.questions.filter((q) => !siblings.has(q.id));
     const matrix: ItemMatrix = {
         items: questions.map((q) => ({ id: q.id, maxPoints: q.points })),
         rows: submissions.map((st) => {
@@ -281,8 +290,14 @@ export function calcTestQuality(test: Test, studentTests: StudentTest[]): ItemQu
             return {
                 studentId: st.studentId,
                 scores: questions.map((q) => {
-                    const a = answers.get(q.id);
-                    return a ? scoreTestAnswer(q, a) : null;
+                    const family = familyByFirstMember.get(q.id);
+                    const given = family
+                        ? (family.members.find(
+                              (m) => m.id === chosenMemberId(family.familyId, family.members, st.studentId)
+                          ) ?? q)
+                        : q;
+                    const a = answers.get(given.id);
+                    return a ? scoreTestAnswer(given, a) : null;
                 }),
             };
         }),

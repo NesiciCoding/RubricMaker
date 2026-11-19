@@ -2,6 +2,7 @@ import type { StudentTest, Test, TestAnswer, TestQuestion } from '../types';
 import Papa from 'papaparse';
 import { CSV_UNPARSE_OPTIONS } from './csvOptions';
 import { calcStudentTestRawPoints } from './testCalc';
+import { deliveredQuestions } from './variantDelivery';
 import { nanoid } from './nanoid';
 
 /** "4,5" and "4.5" both read as 4.5; blank is null; anything else is NaN so the cell can flag it. */
@@ -43,7 +44,7 @@ function emptyManualTest(testId: string, studentId: string, now: string): Studen
 /** Every question has a score: online answers count when auto-scorable, manual cells when typed in. */
 export function isSheetComplete(test: Test, st: StudentTest): boolean {
     const answered = new Set(st.answers.map((a) => a.questionId));
-    return test.questions.every((q) => answered.has(q.id));
+    return deliveredQuestions(test, st.studentId).every((q) => answered.has(q.id));
 }
 
 function withTotals(test: Test, st: StudentTest, now: string): StudentTest {

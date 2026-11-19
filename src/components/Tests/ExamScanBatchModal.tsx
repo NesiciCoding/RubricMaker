@@ -24,6 +24,7 @@ import { orderCorners, cropQuadrilateral, type Point } from '../../utils/documen
 import { preprocessScan } from '../../utils/preprocessScan';
 import { EXAM_PAGE_MM } from '../../utils/testExamContent';
 import { versionLabels, versionedTest } from '../../utils/testVersions';
+import { deliveredQuestions, deliveredTest } from '../../utils/variantDelivery';
 import {
     detectScannedAnswers,
     mergeScannedAnswers,
@@ -200,7 +201,15 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
     // version's option order, so detection and merging must read the same versioned layout.
     const [version, setVersion] = useState('');
     const versions = versionLabels(test.versionCount);
-    const scannableTest = useMemo(() => (version ? versionedTest(test, version) : test), [test, version]);
+    // A student's sheet was printed with the members of an easier-cloze family they were given, so
+    // detection and merging read that student's own layout.
+    const scannableTestFor = useCallback(
+        (studentId: string) => {
+            const given = deliveredTest(test, studentId);
+            return version ? versionedTest(given, version) : given;
+        },
+        [test, version]
+    );
 
     const rosterOptions = useMemo(() => {
         const withResult = new Set(studentTests.filter((st) => st.testId === test.id).map((st) => st.studentId));
@@ -457,6 +466,7 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
         const results: Record<string, ScannedAnswer[]> = {};
         try {
             for (const group of groups) {
+                const scannableTest = scannableTestFor(group.studentId);
                 const pageResults: ScannedAnswer[][] = [];
                 for (let i = 0; i < group.pages.length; i += 1) {
                     const page = group.pages[i];
@@ -502,7 +512,7 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
         );
         setBusy(null);
         setPhase('review');
-    }, [defaultLang, groups, pageImage, scannableTest, t, updatePage]);
+    }, [defaultLang, groups, pageImage, scannableTestFor, t, updatePage]);
 
     const setResponse = useCallback((studentId: string, questionId: string, response: string) => {
         setResponsesByStudent((prev) => ({
@@ -527,7 +537,7 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
         const now = new Date().toISOString();
         for (const group of groups) {
             const studentId = group.studentId;
-            const answers: TestAnswer[] = test.questions.map((q) => ({
+            const answers: TestAnswer[] = deliveredQuestions(test, studentId).map((q) => ({
                 questionId: q.id,
                 response: responsesByStudent[studentId]?.[q.id] ?? '',
             }));
