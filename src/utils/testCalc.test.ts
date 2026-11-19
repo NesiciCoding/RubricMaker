@@ -241,18 +241,38 @@ describe('scoreMultipleResponse', () => {
         expect(scoreMultipleResponse(mrQuestion, JSON.stringify(['a', 'b']))).toBe(4);
     });
 
-    it('awards proportional credit by default', () => {
-        expect(scoreMultipleResponse(mrQuestion, JSON.stringify(['a']))).toBe(3);
-        expect(scoreMultipleResponse(mrQuestion, JSON.stringify(['a', 'c']))).toBe(2);
+    it('awards proportional credit for correct picks and cancels one per wrong pick', () => {
+        expect(scoreMultipleResponse(mrQuestion, JSON.stringify(['a']))).toBe(2);
+        expect(scoreMultipleResponse(mrQuestion, JSON.stringify(['a', 'c']))).toBe(0);
+        expect(scoreMultipleResponse(mrQuestion, JSON.stringify(['a', 'b', 'c']))).toBe(2);
+    });
+
+    it('never goes below zero', () => {
+        expect(scoreMultipleResponse(mrQuestion, JSON.stringify(['c', 'd']))).toBe(0);
+        expect(scoreMultipleResponse(mrQuestion, JSON.stringify(['a', 'b', 'c', 'd']))).toBe(0);
     });
 
     it('awards 0 for an empty selection', () => {
-        expect(scoreMultipleResponse(mrQuestion, JSON.stringify([]))).toBe(2);
+        expect(scoreMultipleResponse(mrQuestion, JSON.stringify([]))).toBe(0);
     });
 
     it('treats unparsable responses as no selection', () => {
-        expect(scoreMultipleResponse(mrQuestion, '')).toBe(2);
-        expect(scoreMultipleResponse(mrQuestion, 'not json')).toBe(2);
+        expect(scoreMultipleResponse(mrQuestion, '')).toBe(0);
+        expect(scoreMultipleResponse(mrQuestion, 'not json')).toBe(0);
+    });
+
+    it('does not reward leaving distractors alone when nothing is selected, however many there are', () => {
+        const manyDistractors = {
+            ...mrQuestion,
+            options: [
+                { id: 'a', text: 'x', isCorrect: true },
+                { id: 'b', text: 'y', isCorrect: false },
+                { id: 'c', text: 'z', isCorrect: false },
+                { id: 'd', text: 'w', isCorrect: false },
+            ],
+        };
+        expect(scoreMultipleResponse(manyDistractors, JSON.stringify([]))).toBe(0);
+        expect(scoreMultipleResponse(manyDistractors, JSON.stringify(['b']))).toBe(0);
     });
 
     it('awards 0 when the question has no options', () => {
@@ -473,13 +493,19 @@ describe('scoreHotText', () => {
         expect(scoreHotText(hotTextQuestion, JSON.stringify([0, 1]))).toBe(4);
     });
 
-    it('awards proportional credit by default', () => {
-        expect(scoreHotText(hotTextQuestion, JSON.stringify([0]))).toBeCloseTo((4 * 2) / 3);
+    it('awards proportional credit for correct picks and cancels one per wrong pick', () => {
+        expect(scoreHotText(hotTextQuestion, JSON.stringify([0]))).toBe(2);
+        expect(scoreHotText(hotTextQuestion, JSON.stringify([0, 2]))).toBe(0);
+        expect(scoreHotText(hotTextQuestion, JSON.stringify([0, 1, 2]))).toBe(2);
+    });
+
+    it('awards 0 for an empty selection', () => {
+        expect(scoreHotText(hotTextQuestion, JSON.stringify([]))).toBe(0);
     });
 
     it('treats unparsable responses as no selection', () => {
-        expect(scoreHotText(hotTextQuestion, '')).toBeCloseTo((4 * 1) / 3);
-        expect(scoreHotText(hotTextQuestion, 'not json')).toBeCloseTo((4 * 1) / 3);
+        expect(scoreHotText(hotTextQuestion, '')).toBe(0);
+        expect(scoreHotText(hotTextQuestion, 'not json')).toBe(0);
     });
 
     it('is all-or-nothing when partialCredit is false', () => {

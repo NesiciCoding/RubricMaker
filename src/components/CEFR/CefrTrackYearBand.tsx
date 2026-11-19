@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import HelpPopover from '../ui/HelpPopover';
 import {
     CEFR_SUBLEVEL_ORDER,
     CEFR_SUBLEVEL_LABELS,
@@ -45,6 +46,7 @@ export default function CefrTrackYearBand({ expectedRange, achievedLevel, status
             >
                 <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>
                     {t('cefr.track_year_band_title')}
+                    <HelpPopover title={t('cefr.track_year_band_title')}>{t('cefr.track_year_band_help')}</HelpPopover>
                 </span>
                 <span style={{ fontSize: '0.8rem', fontWeight: 700, color: PROGRESS_STATUS_COLOR[status] }}>
                     {t(progressStatusLabelKey(status))}

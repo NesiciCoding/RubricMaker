@@ -1,0 +1,105 @@
+From 79599935a064cab7828d436e6b15622f91f6012d Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Thu, 19 Nov 2026 10:14:18 +0000
+Subject: [PATCH 4/4] docs: reflect new select-all/hot-text scoring rule and
+ staircase explanation
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01HFRQRtQF3AF1WTUxbKkCgw
+---
+ Placement-Testing.md               | 2 ++
+ Question-Type-Hot-text.md          | 4 ++--
+ Question-Type-Multiple-response.md | 4 ++--
+ Research-Agenda.md                 | 2 +-
+ Research-Findings.md               | 6 +++---
+ 5 files changed, 10 insertions(+), 8 deletions(-)
+
+diff --git a/Placement-Testing.md b/Placement-Testing.md
+index 2da55ea..d7d9c46 100644
+--- a/Placement-Testing.md
++++ b/Placement-Testing.md
+@@ -29,6 +29,8 @@ The staircase is deliberately simple, so you can explain it to a student or a pa
+ 
+ **Worked example.** A2 ✓ ✓ → B1 ✓ ✗ → A2 *(reversal 1: up then down)* ✓ ✓ → B1 ✗ → A2 *(reversal 2)* → stop. Estimate: **A2**.
+ 
++**What the estimate means.** A rule that goes up after two correct answers and down after one miss tends to settle where the student answers about **7 in 10 correctly** (Levitt's classic result for this kind of rule). So the estimate is "the level where this student is right about 70% of the time", not a mastery level. Classic staircase studies usually average the levels at the reversals; this app reports the **final level** instead, which is simpler to explain but not the same thing.
++
+ Notes:
+ - Reversals only count when the level actually changes (a miss at A1 can't move down, so it is not a reversal).
+ - A teacher **nudge** during a live run moves the level up or down for the next question and resets the "correct in a row" counter.
+diff --git a/Question-Type-Hot-text.md b/Question-Type-Hot-text.md
+index 463dc3a..04ca2b3 100644
+--- a/Question-Type-Hot-text.md
++++ b/Question-Type-Hot-text.md
+@@ -14,11 +14,11 @@ Finding evidence, identifying parts of speech or errors in a text.
+ 
+ ## How it is scored
+ 
+-Automatic. With partial credit on, the score is the share of fragments judged correctly — selected when they should be, and left alone when they should be.
++Automatic. With partial credit on, each correct fragment clicked earns a share of the points and each wrong fragment clicked cancels one share; the score never goes below zero and a blank answer scores zero. With it off, only an exact match scores.
+ 
+ ## Watch out for
+ 
+-- As with multiple-response, leaving a wrong fragment alone earns credit, so an empty answer is not zero.
++- Clicking every fragment scores zero. (Before 2026-11-19 an empty answer still earned credit for the fragments that should stay unclicked.)
+ 
+ ## Open research question
+ 
+diff --git a/Question-Type-Multiple-response.md b/Question-Type-Multiple-response.md
+index d0ccd5e..22f7f2c 100644
+--- a/Question-Type-Multiple-response.md
++++ b/Question-Type-Multiple-response.md
+@@ -14,11 +14,11 @@ Questions with more than one right answer, e.g. "Which of these are irregular ve
+ 
+ ## How it is scored
+ 
+-Automatic. With partial credit on (the default), the score is the share of options the student got *right in either direction* — correctly ticked **and** correctly left blank. With it off, only an exact match scores.
++Automatic. With partial credit on (the default), each correct option ticked earns a share of the points (points ÷ number of correct options) and **each wrong option ticked cancels one share**; the score never goes below zero. A blank answer scores zero. With partial credit off, only an exact match scores.
+ 
+ ## Watch out for
+ 
+-- Because correctly *leaving out* a wrong option earns credit, a student who ticks nothing still scores on the options that were meant to stay empty. If that is not what you want, switch partial credit off.
++- Ticking everything scores zero, because each wrong tick cancels a correct one. This stops "select all" being a safe strategy. (Before 2026-11-19 the score also counted wrong options correctly left blank, so a blank answer earned most of the points.)
+ 
+ ## Open research question
+ 
+diff --git a/Research-Agenda.md b/Research-Agenda.md
+index 28101b8..ed81c92 100644
+--- a/Research-Agenda.md
++++ b/Research-Agenda.md
+@@ -56,7 +56,7 @@ How the staircase works is explained in [Placement testing](Placement-Testing).
+ 
+ | # | Question | What the app does today | Priority |
+ |---|---|---|---|
+-| 3.1 | **Partial credit for "select all" and hot-text.** The score is the share of options judged correctly *including options correctly left unselected*, so a blank answer can score above zero. Is that fair, or should it be (correct − incorrect) / total, or all-or-nothing? | Partial credit on by default for [Multiple-response](Question-Type-Multiple-response) and [Hot text](Question-Type-Hot-text) | 🔴 |
++| 3.1 | **Partial credit for "select all" and hot-text.** The old rule gave credit for options correctly left unselected, so a blank answer scored above zero; since 2026-11-19 each correct pick earns a share, each wrong pick cancels one, and a blank scores zero (issue #1266). Is that the fairest rule, or should it be all-or-nothing? | Partial credit on by default for [Multiple-response](Question-Type-Multiple-response) and [Hot text](Question-Type-Hot-text) | 🔴 |
+ | 3.2 | **Guessing.** Should MC/True-False apply a correction for guessing or just have more items? | No guessing correction | 🟠 |
+ | 3.3 | **How tolerant should typed answers be?** When do spelling slips mask what you want to measure? | Four opt-in tolerances; near-misses flagged for human review | 🟠 |
+ | 3.4 | **Dictation scoring.** Word-level edit distance weighs every word equally; do character-level or error-type schemes track listening and spelling skill better? | Word-level alignment, no speech recognition | 🟡 |
+diff --git a/Research-Findings.md b/Research-Findings.md
+index e5943b2..ae1af68 100644
+--- a/Research-Findings.md
++++ b/Research-Findings.md
+@@ -100,7 +100,7 @@ Also: the ERK reportedly has no formal status in vmbo, and no national Cito or I
+ 
+ | # | Finding | Status |
+ |---|---|---|
+-| 3.1 | Studies on multiple-response scoring generally find **partial-credit rules perform better psychometrically than all-or-nothing**, including Ripkey's rule and balanced rules; the differences are sometimes small. The app's rule (credit for correctly *unselected* options too) is a form of "balanced" scoring but gives a non-zero score to a blank answer — compare it with other rules. See [Psychometrika framework](https://www.cambridge.org/core/journals/psychometrika/article/psychometric-model-framework-for-multiple-response-items/10D6DCD514D67281E4695FFC00C88B6A) and the 2021 EPM paper "Evaluating Different Scoring Methods for Multiple Response Items Providing Partial Credit" (DOI 10.1177/0013164421994636). | 🟢 |
++| 3.1 | Studies on multiple-response scoring generally find **partial-credit rules perform better psychometrically than all-or-nothing**, including Ripkey's rule and balanced rules; the differences are sometimes small. The app's rule (credit for correctly *unselected* options too) is a form of "balanced" scoring but gives a non-zero score to a blank answer — compare it with other rules. **Update 2026-11-19:** changed in the app to *correct picks minus wrong picks, floored at zero, blank = 0* (issue #1266). See [Psychometrika framework](https://www.cambridge.org/core/journals/psychometrika/article/psychometric-model-framework-for-multiple-response-items/10D6DCD514D67281E4695FFC00C88B6A) and the 2021 EPM paper "Evaluating Different Scoring Methods for Multiple Response Items Providing Partial Credit" (DOI 10.1177/0013164421994636). | 🟢 |
+ | 3.6 | The **C-test** (damaged words) is designed around "reduced redundancy" and general proficiency; the **rational-deletion cloze** gives the author control over *content* but is *not* a measure of general proficiency (Grotjahn, quoted). Fixed-ratio cloze results depend on text, deletion rate and starting point. Construct validity of the C-test is still debated, and one study suggests it also reflects processing speed ([overview](https://research.bangor.ac.uk/portal/files/78069213/28Jul2020The_C-test_as_predictor_final_manuscript.pdf)). The app's gap generators should be labelled accordingly. | 🟢 |
+ | 3.3, 3.5, 3.7, 3.8, 3.10, 3.11 | Not found yet; 3.8 needs your own audit. | ⚪ |
+ | 3.2 | **Correction for guessing** (formula scoring) reduces guessing noise, but is criticised for adding anxiety and for **risk-attitude effects**; findings on gender bias are inconsistent and depend on how the rule is framed. Alternatives include elimination scoring. See [Sussex analysis](https://blogs.sussex.ac.uk/learning-matters/2024/06/11/guessing-and-gender-bias-in-multiple-choice-quizzes-with-negative-marking/). The app doesn't apply one; more items is the simpler fix. | 🟡 |
+@@ -149,8 +149,8 @@ Also: the ERK reportedly has no formal status in vmbo, and no national Cito or I
+ ## Suggested next research steps
+ 
+ 1. **Read the SLO documents** (4.1) and decide what to do with the table; this is the most actionable finding.
+-2. Add the **70.7% convergence** fact and the "final level vs mean of reversals" difference to [Placement testing](Placement-Testing).
+-3. Look at the **multiple-response scoring** research and decide whether a blank answer should score above zero (3.1).
++2. ✅ Done: the **70.7% convergence** fact and the "final level vs mean of reversals" difference are now on [Placement testing](Placement-Testing) and in the staircase help text in the app.
++3. ✅ Done: a blank answer no longer scores above zero on select-all and hot-text questions (issue #1266).
+ 4. Still unsearched or empty: 2.2, 2.7, 2.9, 3.3, 3.5, 3.7, 3.8, 3.10, 3.11, 4.2–4.4, 4.8–4.11, 5.4–5.5, 6.2–6.4, 6.6 and 8.x.
+ 5. Deviations between the app and this evidence are tracked in a GitHub issue (NesiciCoding/RubricMaker issue #1266).
+ 6. For everything marked ⚪ and the placement accuracy questions, **collect pilot data** — no desk research can replace it.
+-- 
+2.43.0
+

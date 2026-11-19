@@ -236,8 +236,10 @@ const fixtures: Fixture[] = [
     { name: 'multiple-choice blank', question: mc, response: '', expected: 0 },
 
     { name: 'multiple-response exact', question: mr, response: '["a","b"]', expected: 4 },
-    { name: 'multiple-response partial', question: mr, response: '["a","c"]', expected: 2 },
-    { name: 'multiple-response malformed JSON', question: mr, response: '{nope', expected: 2 },
+    { name: 'multiple-response partial', question: mr, response: '["a"]', expected: 2 },
+    { name: 'multiple-response wrong pick cancels a correct pick', question: mr, response: '["a","c"]', expected: 0 },
+    { name: 'multiple-response blank scores zero', question: mr, response: '[]', expected: 0 },
+    { name: 'multiple-response malformed JSON', question: mr, response: '{nope', expected: 0 },
     {
         name: 'multiple-response partial, all-or-nothing',
         question: { ...mr, partialCredit: false },
@@ -316,7 +318,8 @@ const fixtures: Fixture[] = [
     { name: 'categorize one of two', question: categorize, response: '{"x":"noun","y":"noun"}', expected: 1 },
 
     { name: 'hot-text exact selection', question: hotText, response: '[0,2]', expected: 4 },
-    { name: 'hot-text one wrong selection', question: hotText, response: '[0,2,3]', expected: 3 },
+    { name: 'hot-text one wrong selection', question: hotText, response: '[0,2,3]', expected: 2 },
+    { name: 'hot-text blank scores zero', question: hotText, response: '[]', expected: 0 },
     {
         name: 'hot-text wrong selection, all-or-nothing',
         question: { ...hotText, partialCredit: false },
@@ -541,8 +544,8 @@ const fixtures: Fixture[] = [
     { name: 'sentence-builder blank and wrong shape', question: builder, response: '{"0":"I"}', expected: 0 },
 
     // Valid JSON of the wrong shape scores as unanswered instead of throwing.
-    { name: 'multiple-response non-array JSON', question: mr, response: '5', expected: 2 },
-    { name: 'hot-text object instead of array', question: hotText, response: '{}', expected: 2 },
+    { name: 'multiple-response non-array JSON', question: mr, response: '5', expected: 0 },
+    { name: 'hot-text object instead of array', question: hotText, response: '{}', expected: 0 },
     { name: 'cloze null response', question: cloze, response: 'null', expected: 0 },
     { name: 'cloze non-string gap value', question: cloze, response: '{"0":5,"1":"since"}', expected: 1 },
     { name: 'matching null response', question: matching, response: 'null', expected: 0 },

@@ -395,7 +395,25 @@ export function scoreNumeric(question: ScorableQuestion, response: string): numb
     return Math.abs(value - question.expectedNumericValue) <= tolerance + 1e-9 ? question.points : 0;
 }
 
-/** Auto-score for a multiple-response (checkbox) question, supporting partial credit. */
+/**
+ * Share of the points a select-all style answer earns: each correct pick counts for it, each wrong pick
+ * cancels one, floored at zero. Options left unselected earn nothing, so a blank answer scores zero.
+ */
+function selectionCredit(selected: Set<unknown>, correct: Set<unknown>): number {
+    if (correct.size === 0) return selected.size === 0 ? 1 : 0;
+    let right = 0;
+    let wrong = 0;
+    for (const pick of selected) {
+        if (correct.has(pick)) right++;
+        else wrong++;
+    }
+    return Math.max(0, (right - wrong) / correct.size);
+}
+
+/**
+ * Auto-score for a multiple-response (checkbox) question. With partial credit each correct pick earns a
+ * share and each wrong pick cancels one (never below zero); without it only an exact match scores.
+ */
 export function scoreMultipleResponse(question: ScorableQuestion, response: string): number {
     const options = question.options ?? [];
     const selectedSet = new Set(parseJsonArray(response));
@@ -408,8 +426,7 @@ export function scoreMultipleResponse(question: ScorableQuestion, response: stri
     }
 
     if (options.length === 0) return 0;
-    const matches = options.filter((o) => selectedSet.has(o.id) === correctSet.has(o.id)).length;
-    return question.points * (matches / options.length);
+    return question.points * selectionCredit(selectedSet, correctSet);
 }
 
 /**
@@ -740,7 +757,7 @@ export function scoreCategorize(question: ScorableQuestion, response: string): n
     return partialOrAll(question, correctCount, items.length);
 }
 
-/** Auto-score a hot-text question: each fragment is correct when its selection state matches hotTextCorrectIndices. Supports partial credit. */
+/** Auto-score a hot-text question: with partial credit each correct fragment picked earns a share and each wrong pick cancels one (never below zero). */
 export function scoreHotText(question: ScorableQuestion, response: string): number {
     const fragments = parseHotTextFragments(question.hotTextPassage ?? '').filter((s) => s.type === 'fragment');
     if (fragments.length === 0) return 0;
@@ -754,8 +771,7 @@ export function scoreHotText(question: ScorableQuestion, response: string): numb
         return exact ? question.points : 0;
     }
 
-    const matches = fragments.filter((f) => selectedSet.has(f.index) === correctSet.has(f.index)).length;
-    return question.points * (matches / fragments.length);
+    return question.points * selectionCredit(selectedSet, correctSet);
 }
 
 // ── Auto-confirm verdict ────────────────────────────────────────────────────
