@@ -466,6 +466,46 @@ describe('useLiveSessionTelemetry', () => {
         expect(result.current.spotlighted).toBe(false);
     });
 
+    it('answers a monitor probe with one heartbeat that keeps an idle student idle', () => {
+        vi.useFakeTimers();
+        Object.assign(mockChannel, { state: 'joined' });
+        renderHook(() =>
+            useLiveSessionTelemetry({
+                kind: 'test',
+                assignmentKey: 'key1',
+                enabled: true,
+                supabaseUrl: 'https://example.supabase.co',
+                supabaseAnonKey: 'anon-key',
+            })
+        );
+        act(() => {
+            (mockChannel.subscribe.mock.calls.at(-1)?.[0] as (status: string) => void)('SUBSCRIBED');
+        });
+        const probe = mockChannel.on.mock.calls
+            .filter(([type, opts]) => type === 'broadcast' && (opts as { event: string }).event === 'probe')
+            .at(-1)?.[2] as (() => void) | undefined;
+        expect(probe).toBeDefined();
+        const heartbeats = () =>
+            mockChannel.send.mock.calls
+                .map(([message]) => message as { event: string; payload: { type: string; value: string } })
+                .filter((message) => message.event === 'event' && message.payload.type === 'heartbeat');
+
+        mockChannel.send.mockClear();
+        act(() => {
+            probe!();
+        });
+        expect(heartbeats().map((message) => message.payload.value)).toEqual(['active']);
+
+        act(() => {
+            vi.setSystemTime(Date.now() + 61_000);
+        });
+        mockChannel.send.mockClear();
+        act(() => {
+            probe!();
+        });
+        expect(heartbeats().map((message) => message.payload.value)).toEqual(['idle']);
+    });
+
     it('forwards nudge broadcasts to the onNudge callback', () => {
         const onNudge = vi.fn();
         renderHook(() =>

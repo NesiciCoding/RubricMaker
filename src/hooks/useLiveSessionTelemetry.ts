@@ -268,7 +268,13 @@ export function useLiveSessionTelemetry({
                 channel.send({
                     type: 'broadcast',
                     event: 'event',
-                    payload: { type: 'heartbeat', at: new Date().toISOString(), value: 'active' },
+                    payload: {
+                        type: 'heartbeat',
+                        at: new Date().toISOString(),
+                        // The same rule as the regular heartbeat: answering a probe must not turn an
+                        // idle student back into an active one until the next real activity.
+                        value: Date.now() - lastActivityRef.current >= IDLE_THRESHOLD_MS ? 'idle' : 'active',
+                    },
                 });
             };
             channel.on('broadcast', { event: 'probe' }, () => announceJoin());
