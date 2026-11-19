@@ -1460,9 +1460,11 @@
                 },
                 "typed_pasted": "typed {{typed}} · pasted {{pasted}}",
                 "pasted_caution": "Mostly pasted",
-                "added_sentence": "Added {{count}} words at {{time}} — “{{snippet}}”",
+                "added_sentence_one": "Added {{count}} word at {{time}} — “{{snippet}}”",
+                "added_sentence_other": "Added {{count}} words at {{time}} — “{{snippet}}”",
                 "just_written": "Just written",
-                "added_words": "{{count}} words added"
+                "added_words_one": "{{count}} word added",
+                "added_words_other": "{{count}} words added"
             },
             "advisory_note": "Presence, drafts, and proctoring flags are advisory signals reported by the student's browser — a determined student can spoof them. Use them to spot patterns, not as definitive proof.",
             "progress_toggle": "Student progress",

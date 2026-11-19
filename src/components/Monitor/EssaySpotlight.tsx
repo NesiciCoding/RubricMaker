@@ -95,10 +95,7 @@ export default function EssaySpotlight({
     const timeline = buildTimeline(wordSamples ?? [], events ?? [], clock);
     // Nothing is "just written" on the first snapshot: there is no earlier draft to compare to,
     // and everything would read as new.
-    const added =
-        previousDraftText !== undefined && previousDraftText.trim() !== ''
-            ? lastAddedSentence(previousDraftText, draftText ?? '')
-            : null;
+    const added = previousDraftText !== undefined ? lastAddedSentence(previousDraftText, draftText ?? '') : null;
     const addedAt = snapshots[0]
         ? new Date(snapshots[0].at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         : undefined;

@@ -1469,9 +1469,11 @@
                 },
                 "typed_pasted": "getippt {{typed}} · eingefügt {{pasted}}",
                 "pasted_caution": "Überwiegend eingefügt",
-                "added_sentence": "{{count}} Wörter um {{time}} ergänzt — „{{snippet}}“",
+                "added_sentence_one": "{{count}} Wort um {{time}} ergänzt — „{{snippet}}“",
+                "added_sentence_other": "{{count}} Wörter um {{time}} ergänzt — „{{snippet}}“",
                 "just_written": "Gerade geschrieben",
-                "added_words": "{{count}} Wörter ergänzt"
+                "added_words_one": "{{count}} Wort ergänzt",
+                "added_words_other": "{{count}} Wörter ergänzt"
             },
             "advisory_note": "Anwesenheit, Entwürfe und Proctoring-Signale sind unterstützende Hinweise aus dem Browser des Schülers — ein entschlossener Schüler kann sie umgehen. Nutze sie, um Muster zu erkennen, nicht als endgültigen Beweis.",
             "progress_toggle": "Fortschritt Schüler",
