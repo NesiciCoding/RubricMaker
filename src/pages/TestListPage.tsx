@@ -10,50 +10,40 @@ import {
     Copy,
     ClipboardCheck,
     Send,
-    BarChart3,
-    Upload,
     Radio,
-    FileDown,
     Sparkles,
     LayoutGrid,
     List,
-    ScanLine,
-    ListChecks,
     Table2,
     Share2,
     FileJson,
+    X,
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { useToast } from '../hooks/useToast';
-import { logAuditEvent } from '../services/database/AuditLogger';
 import { cloneTestForCopy } from '../utils/testClone';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import Modal from '../components/ui/Modal';
+import TestCard from '../components/Tests/TestCard';
+import TestResultsDrawer from '../components/Tests/TestResultsDrawer';
 import CardGrid from '../components/ui/CardGrid';
-import CardTile from '../components/ui/CardTile';
-import CardGrip from '../components/ui/CardGrip';
 import { EmptyState } from '../components/ui/EmptyState';
 import { useConfirm } from '../hooks/useConfirm';
 import { useFolderDropTarget } from '../hooks/useFolderDropTarget';
 import TestAssignmentModal from '../components/Tests/TestAssignmentModal';
 import FolderBar from '../components/Folders/FolderBar';
-import MoveToMenu from '../components/Folders/MoveToMenu';
-import FolderLocationBadge from '../components/Folders/FolderLocationBadge';
 import { FOLDER_DROP_PREFIX } from '../components/Folders/FolderTile';
 import FolderNameModal from '../components/Folders/FolderNameModal';
 import TestSubmissionImportModal from '../components/Tests/TestSubmissionImportModal';
 import ExamScanBatchModal from '../components/Tests/ExamScanBatchModal';
-import ClassAverageAdjuster from '../components/Tests/ClassAverageAdjuster';
-import ItemAnalysisPanel from '../components/Tests/ItemAnalysisPanel';
-import PlacementAnalysisPanel from '../components/Tests/PlacementAnalysisPanel';
-import GrammarStandardsPanel from '../components/Grammar/GrammarStandardsPanel';
 import GenerateTestModal from '../components/Tests/GenerateTestModal';
 import TestImportModal from '../components/Tests/TestImportModal';
 import type { ImportedTest } from '../utils/testImport';
 import ExamBookletExportPanel from '../components/Tests/ExamBookletExportPanel';
-import type { Folder, MaterialSharing, Test, StudentTest, CohortFilter as CohortFilterValue } from '../types';
+import type { Folder, MaterialSharing, Test, CohortFilter as CohortFilterValue } from '../types';
 import { useDbStatus } from '../hooks/useDbStatus';
 import {
     inheritedSharing,
@@ -62,7 +52,6 @@ import {
     resolveSharing,
     type SharedEntry,
 } from '../utils/materialSharing';
-import SharingBadge from '../components/Sharing/SharingBadge';
 import SharingModal from '../components/Sharing/SharingModal';
 import SharedMaterialsSection from '../components/Sharing/SharedMaterialsSection';
 import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
@@ -72,13 +61,9 @@ import { isGeneratorTest } from '../utils/placementGenerator';
 import CohortFilter from '../components/CohortFilter';
 import SegmentedToggle from '../components/ui/SegmentedToggle';
 import { calcClassAveragePercentage } from '../utils/testCalc';
-import { GRADEBOOK_PRESET_IDS, type DecimalSeparator, type GradebookPresetId } from '../utils/gradebookExportPresets';
 import { testAssignBlockers } from '../utils/testQuestionIssues';
 import { resolveScanOcrSettings } from '../utils/scanSettings';
 import { defaultScoreOnlyQuestions } from '../utils/scoreSheet';
-import { resolveTestScale } from '../utils/testGradingNorm';
-import { getEffectiveVoTrack, VO_TRACK_LABELS } from '../data/voTracks';
-import { getEffectiveSchoolYear, SCHOOL_YEAR_LABELS } from '../data/schoolYears';
 
 export default function TestListPage() {
     const { t, i18n } = useTranslation();
@@ -232,181 +217,13 @@ export default function TestListPage() {
     const [scanningTestId, setScanningTestId] = useState<string | null>(null);
     const [resultsTestId, setResultsTestId] = useState<string | null>(null);
     const [examExportTestId, setExamExportTestId] = useState<string | null>(null);
-    const [exportScope, setExportScope] = useState<'single' | 'batch'>('single');
-    const [exportStudentId, setExportStudentId] = useState<string>('');
-    const [gradebookPreset, setGradebookPreset] = useState<GradebookPresetId>('generic');
-    const [gradebookDecimal, setGradebookDecimal] = useState<DecimalSeparator>('comma');
-    const [exporting, setExporting] = useState(false);
+    const [examExportTrigger, setExamExportTrigger] = useState<HTMLElement | null>(null);
+    const [resultsExporting, setResultsExporting] = useState(false);
     const [showGenerateModal, setShowGenerateModal] = useState(false);
     const [showImportTest, setShowImportTest] = useState(false);
 
-    async function handleExportTestSummaryText(test: Test, relevantStudentTests: StudentTest[]) {
-        const { buildTestStudentSummary, pickLatestAttempt } = await import('../utils/testAnswerText');
-        const { effectiveTestQuestions } = await import('../utils/testSummaryAggregator');
-        const { scoreStudentTest } = await import('../utils/studentTestScore');
-        const { saveAs } = await import('file-saver');
-        const { sanitizeFilename } = await import('../utils/exportDataPrep');
-
-        // Scope the question set to the exported attempt so adaptive questions from other attempts
-        // don't appear as blank rows.
-        const summaryFor = (studentTest: StudentTest) => {
-            const student = students.find((s) => s.id === studentTest.studentId);
-            const studentClass = classes.find((c) => c.id === student?.classId);
-            const track = getEffectiveVoTrack(student, studentClass);
-            const year = getEffectiveSchoolYear(student, studentClass);
-            // Score against the questions this student was actually presented: a staged placement
-            // attempt never saw the other branch's questions, so they must not count as unanswered.
-            const presented = scoreStudentTest(test, studentTest).pathQuestions;
-            return buildTestStudentSummary(
-                test,
-                studentTest,
-                student,
-                presented.length > 0 ? presented : effectiveTestQuestions(studentTest.studentId, [studentTest], test),
-                {
-                    className: studentClass?.name,
-                    level: track ? VO_TRACK_LABELS[track] : year ? SCHOOL_YEAR_LABELS[year] : undefined,
-                }
-            );
-        };
-
-        if (exportScope === 'single') {
-            const studentTest = pickLatestAttempt(
-                relevantStudentTests.filter((st) => st.studentId === exportStudentId)
-            );
-            if (!studentTest) return;
-            const student = students.find((s) => s.id === exportStudentId);
-            saveAs(
-                new Blob([summaryFor(studentTest)], { type: 'text/plain;charset=utf-8' }),
-                `${sanitizeFilename(test.name)}_${sanitizeFilename(student?.name ?? 'student')}_summary.txt`
-            );
-            logAuditEvent('export', 'export_test_summary_text', 'test', test.id, { count: 1 });
-            return;
-        }
-        const attemptsByStudent = new Map<string, StudentTest[]>();
-        for (const st of relevantStudentTests) {
-            const arr = attemptsByStudent.get(st.studentId);
-            if (arr) arr.push(st);
-            else attemptsByStudent.set(st.studentId, [st]);
-        }
-        const latestByStudent = new Map<string, StudentTest>();
-        for (const [studentId, attempts] of attemptsByStudent) {
-            const latest = pickLatestAttempt(attempts);
-            if (latest) latestByStudent.set(studentId, latest);
-        }
-        const text = [...latestByStudent.values()].map(summaryFor).join('\n\n' + '═'.repeat(40) + '\n\n');
-        saveAs(new Blob([text], { type: 'text/plain;charset=utf-8' }), `${sanitizeFilename(test.name)}_summaries.txt`);
-        logAuditEvent('export', 'export_test_summary_text', 'test', test.id, { count: latestByStudent.size });
-    }
-
-    async function handleExportTestSummary(test: Test, format: 'pdf' | 'docx' | 'text') {
-        const relevantStudentTests = studentTests.filter((st) => st.testId === test.id);
-        // v8 ignore next: the results panel (and its export buttons) only render with submissions
-        if (relevantStudentTests.length === 0) return;
-        setExporting(true);
-        try {
-            if (format === 'text') {
-                await handleExportTestSummaryText(test, relevantStudentTests);
-                return;
-            }
-            if (exportScope === 'single') {
-                const student = students.find((s) => s.id === exportStudentId);
-                if (!student) return;
-                if (format === 'pdf') {
-                    const { exportTestSummaryPdf } = await import('../utils/pdfExport');
-                    await exportTestSummaryPdf(
-                        exportStudentId,
-                        studentTests,
-                        test,
-                        student,
-                        activeStyleTemplate,
-                        settings.cefrAchieveThreshold
-                    );
-                } else {
-                    const { exportTestSummaryDocx } = await import('../utils/docxExport');
-                    await exportTestSummaryDocx(
-                        exportStudentId,
-                        studentTests,
-                        test,
-                        student,
-                        settings.cefrAchieveThreshold
-                    );
-                }
-                logAuditEvent('export', `export_test_summary_${format}`, 'test', test.id, { count: 1 });
-            } else {
-                const entries = relevantStudentTests
-                    .map((st) => ({ studentId: st.studentId, student: students.find((s) => s.id === st.studentId) }))
-                    .filter((e): e is { studentId: string; student: (typeof students)[number] } => !!e.student);
-                if (format === 'pdf') {
-                    const { exportBatchTestSummaryPdf } = await import('../utils/pdfExport');
-                    await exportBatchTestSummaryPdf(
-                        entries,
-                        studentTests,
-                        test,
-                        activeStyleTemplate,
-                        settings.cefrAchieveThreshold
-                    );
-                } else {
-                    const { exportBatchTestSummaryDocx } = await import('../utils/docxExport');
-                    await exportBatchTestSummaryDocx(entries, studentTests, test, settings.cefrAchieveThreshold);
-                }
-                logAuditEvent('export', `export_test_summary_${format}`, 'test', test.id, { count: entries.length });
-            }
-        } catch {
-            showToast(t('toast.export_error'), 'error');
-        } finally {
-            setExporting(false);
-        }
-    }
-
-    async function handleExportTestResultsCsv(test: Test) {
-        const relevantStudentTests = studentTests.filter((st) => st.testId === test.id);
-        // v8 ignore next: the results panel (and its export buttons) only render with submissions
-        if (relevantStudentTests.length === 0) return;
-        setExporting(true);
-        try {
-            const { buildTestResultsCsv, buildTestGradebookRows } = await import('../utils/testExportPresets');
-            const { buildGradebookPresetCsv } = await import('../utils/gradebookExportPresets');
-            const { downloadCsv } = await import('../utils/csvDownload');
-            const { sanitizeFilename } = await import('../utils/exportDataPrep');
-            // Same scale resolution as TestResultsPage, so the CSV grade matches the one shown there.
-            const scale = resolveTestScale(test, gradeScales, settings.defaultGradeScaleId);
-            const preset = buildGradebookPresetCsv(
-                gradebookPreset,
-                buildTestGradebookRows(test, studentTests, students, scale, classes),
-                gradebookDecimal
-            );
-            if (preset) {
-                downloadCsv(preset.csv, `${sanitizeFilename(test.name)}_${gradebookPreset}_results.csv`);
-                if (preset.missingNumberCount > 0)
-                    showToast(
-                        t('exportPage.csv_missing_student_numbers', { count: preset.missingNumberCount }),
-                        'warning'
-                    );
-                if (preset.blankGradeCount > 0)
-                    showToast(t('exportPage.csv_grades_blank', { count: preset.blankGradeCount }), 'warning');
-                if (preset.inProgressCount > 0)
-                    showToast(t('exportPage.csv_grades_in_progress', { count: preset.inProgressCount }), 'warning');
-            } else {
-                const csv = buildTestResultsCsv(
-                    test,
-                    studentTests,
-                    students,
-                    settings.cefrAchieveThreshold,
-                    scale,
-                    classes
-                );
-                downloadCsv(csv, `${sanitizeFilename(test.name)}_results.csv`);
-            }
-            const uniqueStudentCount = new Set(relevantStudentTests.map((st) => st.studentId)).size;
-            logAuditEvent('export', 'export_test_summary_csv', 'test', test.id, {
-                count: uniqueStudentCount,
-            });
-        } catch {
-            showToast(t('toast.export_error'), 'error');
-        } finally {
-            setExporting(false);
-        }
-    }
+    const resultsTest = resultsTestId ? tests.find((tst) => tst.id === resultsTestId) : undefined;
+    const examExportTest = examExportTestId ? tests.find((tst) => tst.id === examExportTestId) : undefined;
 
     function sharingOf(test: Test): MaterialSharing {
         return resolveSharing(test.sharing, test.folderId, testFolders, settings.materialSharing).sharing;
@@ -734,7 +551,6 @@ export default function TestListPage() {
                                 <CardGrid ref={droppableProvided.innerRef} {...droppableProvided.droppableProps}>
                                     {visibleTests.map((test, idx) => {
                                         const totalPoints = test.questions.reduce((sum, q) => sum + (q.points || 0), 0);
-                                        const isOverdue = !!test.dueDate && new Date(test.dueDate) < new Date();
                                         const relevantStudentTests = studentTests.filter((st) => st.testId === test.id);
                                         const submittedCount = new Set(relevantStudentTests.map((st) => st.studentId))
                                             .size;
@@ -750,663 +566,43 @@ export default function TestListPage() {
                                                 isDragDisabled={!reorderable}
                                             >
                                                 {(dragProvided) => (
-                                                    <CardTile
+                                                    <TestCard
                                                         ref={dragProvided.innerRef}
-                                                        {...dragProvided.draggableProps}
-                                                        hoverable
-                                                        style={{
-                                                            cursor: 'pointer',
-                                                            ...dragProvided.draggableProps.style,
+                                                        draggableProps={dragProvided.draggableProps}
+                                                        dragHandleProps={dragProvided.dragHandleProps}
+                                                        test={test}
+                                                        totalPoints={totalPoints}
+                                                        submittedCount={submittedCount}
+                                                        averagePercentage={avgPct}
+                                                        folderPath={
+                                                            activeFolder === ALL_FOLDERS
+                                                                ? (folderPathLabel(testFolders, test.folderId) ??
+                                                                  undefined)
+                                                                : undefined
+                                                        }
+                                                        shared={sharingOf(test)}
+                                                        canReorder={reorderable}
+                                                        folders={testFolders}
+                                                        resultsOpen={resultsTestId === test.id}
+                                                        onOpen={() => navigate(`/tests/${test.id}`)}
+                                                        onOpenScores={() => navigate(`/tests/${test.id}/scores`)}
+                                                        onOpenResults={() =>
+                                                            setResultsTestId(resultsTestId === test.id ? null : test.id)
+                                                        }
+                                                        onAssign={() => requestAssign(test)}
+                                                        onImportSubmission={() => setImportingTestId(test.id)}
+                                                        onScan={() => setScanningTestId(test.id)}
+                                                        onMonitor={() => navigate(`/tests/${test.id}/monitor`)}
+                                                        onExamExport={(trigger) => {
+                                                            setExamExportTrigger(trigger);
+                                                            setExamExportTestId(test.id);
                                                         }}
-                                                    >
-                                                        <div
-                                                            style={{
-                                                                display: 'flex',
-                                                                justifyContent: 'space-between',
-                                                                alignItems: 'flex-start',
-                                                                marginBottom: 12,
-                                                            }}
-                                                        >
-                                                            <div
-                                                                style={{
-                                                                    display: 'flex',
-                                                                    alignItems: 'flex-start',
-                                                                    gap: 6,
-                                                                }}
-                                                            >
-                                                                {reorderable && (
-                                                                    <CardGrip
-                                                                        {...dragProvided.dragHandleProps}
-                                                                        label={t('rubricList.drag_to_reorder')}
-                                                                    />
-                                                                )}
-                                                                <div>
-                                                                    <h2 className="item-heading">{test.name}</h2>
-                                                                    <div
-                                                                        className="text-muted text-xs"
-                                                                        style={{ marginTop: 2 }}
-                                                                    >
-                                                                        {new Date(test.createdAt).toLocaleDateString()}
-                                                                        {test.dueDate && (
-                                                                            <span
-                                                                                style={{
-                                                                                    marginLeft: 8,
-                                                                                    color: isOverdue
-                                                                                        ? 'var(--red)'
-                                                                                        : undefined,
-                                                                                    fontWeight: isOverdue
-                                                                                        ? 700
-                                                                                        : undefined,
-                                                                                }}
-                                                                            >
-                                                                                {t('tests.due_date_badge', {
-                                                                                    date: new Date(
-                                                                                        test.dueDate
-                                                                                    ).toLocaleDateString(),
-                                                                                })}
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div style={{ display: 'flex', gap: 4 }}>
-                                                                <MoveToMenu
-                                                                    folders={testFolders}
-                                                                    kind="test"
-                                                                    currentFolderId={test.folderId}
-                                                                    rootLabel={t('folders.move_to_unfiled')}
-                                                                    onMove={(folderId) => moveTest(test, folderId)}
-                                                                />
-                                                                <button
-                                                                    type="button"
-                                                                    className="btn btn-ghost btn-icon btn-sm"
-                                                                    title={t('sharing.action_share')}
-                                                                    aria-label={t('sharing.action_share')}
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        setSharingTarget({ kind: 'test', id: test.id });
-                                                                    }}
-                                                                >
-                                                                    <Share2 size={14} />
-                                                                </button>
-                                                                <button
-                                                                    type="button"
-                                                                    className="btn btn-ghost btn-icon btn-sm"
-                                                                    title={t('tests.action_duplicate')}
-                                                                    aria-label={t('tests.action_duplicate')}
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        handleDuplicate(test.id);
-                                                                    }}
-                                                                >
-                                                                    <Copy size={14} />
-                                                                </button>
-                                                                <button
-                                                                    type="button"
-                                                                    className="btn btn-ghost btn-icon btn-sm"
-                                                                    title={t('tests.action_edit')}
-                                                                    aria-label={t('tests.action_edit')}
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        navigate(`/tests/${test.id}`);
-                                                                    }}
-                                                                >
-                                                                    <Edit2 size={14} />
-                                                                </button>
-                                                                <button
-                                                                    type="button"
-                                                                    className="btn btn-ghost btn-icon btn-sm"
-                                                                    title={t('tests.archive')}
-                                                                    aria-label={t('tests.archive')}
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        handleArchive(test);
-                                                                    }}
-                                                                >
-                                                                    <Archive size={14} />
-                                                                </button>
-                                                                <button
-                                                                    type="button"
-                                                                    className="btn btn-ghost btn-icon btn-sm"
-                                                                    title={t('tests.action_delete')}
-                                                                    aria-label={t('tests.action_delete')}
-                                                                    style={{ color: 'var(--red-text)' }}
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        handleDelete(test.id, test.name);
-                                                                    }}
-                                                                >
-                                                                    <Trash2 size={14} />
-                                                                </button>
-                                                            </div>
-                                                        </div>
-
-                                                        <div
-                                                            style={{
-                                                                display: 'flex',
-                                                                gap: 8,
-                                                                flexWrap: 'wrap',
-                                                                marginBottom: 14,
-                                                            }}
-                                                        >
-                                                            {folderPathLabel(testFolders, test.folderId) && (
-                                                                <FolderLocationBadge
-                                                                    path={folderPathLabel(testFolders, test.folderId)!}
-                                                                />
-                                                            )}
-                                                            <SharingBadge sharing={sharingOf(test)} />
-                                                            <span className="badge badge-blue">
-                                                                {t('tests.question_count', {
-                                                                    count: test.questions.length,
-                                                                })}
-                                                            </span>
-                                                            <span className="badge badge-purple">
-                                                                {t('tests.points_total', { count: totalPoints })}
-                                                            </span>
-                                                            {test.requireSEB && (
-                                                                <span className="badge badge-green">
-                                                                    {t('tests.seb_badge')}
-                                                                </span>
-                                                            )}
-                                                            {submittedCount > 0 && (
-                                                                <span className="badge badge-blue">
-                                                                    {t('tests.list_submitted', {
-                                                                        count: submittedCount,
-                                                                    })}
-                                                                </span>
-                                                            )}
-                                                            {avgPct !== null && (
-                                                                <span className="badge badge-yellow">
-                                                                    {t('tests.list_avg', { pct: avgPct })}
-                                                                </span>
-                                                            )}
-                                                        </div>
-
-                                                        {test.description && (
-                                                            <p
-                                                                className="text-muted text-sm truncate"
-                                                                style={{ marginBottom: 14 }}
-                                                            >
-                                                                {test.description}
-                                                            </p>
-                                                        )}
-
-                                                        <div
-                                                            style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
-                                                        >
-                                                            {test.scoreOnly ? (
-                                                                <button
-                                                                    type="button"
-                                                                    className="btn btn-primary btn-sm"
-                                                                    onClick={() => navigate(`/tests/${test.id}/scores`)}
-                                                                >
-                                                                    <Table2 size={14} />{' '}
-                                                                    {t('tests.scoreSheet.action_open')}
-                                                                </button>
-                                                            ) : (
-                                                                <button
-                                                                    type="button"
-                                                                    className="btn btn-primary btn-sm"
-                                                                    onClick={() => navigate(`/tests/${test.id}`)}
-                                                                >
-                                                                    <Edit2 size={14} /> {t('tests.action_edit')}
-                                                                </button>
-                                                            )}
-                                                            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                                                                {!test.scoreOnly && (
-                                                                    <button
-                                                                        type="button"
-                                                                        className="btn btn-ghost btn-icon btn-sm"
-                                                                        title={t('tests.action_assign')}
-                                                                        aria-label={t('tests.action_assign')}
-                                                                        disabled={
-                                                                            test.questions.length === 0 &&
-                                                                            !isGeneratorTest(test)
-                                                                        }
-                                                                        onClick={() => requestAssign(test)}
-                                                                    >
-                                                                        <Send size={14} />
-                                                                    </button>
-                                                                )}
-                                                                {test.mode !== 'placement' && !test.scoreOnly && (
-                                                                    <button
-                                                                        type="button"
-                                                                        className="btn btn-ghost btn-icon btn-sm"
-                                                                        title={t('tests.scoreSheet.action_open')}
-                                                                        aria-label={t('tests.scoreSheet.action_open')}
-                                                                        onClick={() =>
-                                                                            navigate(`/tests/${test.id}/scores`)
-                                                                        }
-                                                                    >
-                                                                        <Table2 size={14} />
-                                                                    </button>
-                                                                )}
-                                                                <button
-                                                                    type="button"
-                                                                    className="btn btn-ghost btn-icon btn-sm"
-                                                                    title={t('tests.results.action_results')}
-                                                                    aria-label={t('tests.results.action_results')}
-                                                                    aria-expanded={resultsTestId === test.id}
-                                                                    aria-controls={`test-results-${test.id}`}
-                                                                    disabled={
-                                                                        studentTests.filter(
-                                                                            (st) => st.testId === test.id
-                                                                        ).length === 0
-                                                                    }
-                                                                    style={{
-                                                                        color:
-                                                                            resultsTestId === test.id
-                                                                                ? 'var(--accent)'
-                                                                                : undefined,
-                                                                    }}
-                                                                    onClick={() =>
-                                                                        setResultsTestId(
-                                                                            resultsTestId === test.id ? null : test.id
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    <BarChart3 size={14} />
-                                                                </button>
-                                                                {!test.scoreOnly && (
-                                                                    <>
-                                                                        <button
-                                                                            type="button"
-                                                                            className="btn btn-ghost btn-icon btn-sm"
-                                                                            title={t('tests.results.action_import')}
-                                                                            aria-label={t(
-                                                                                'tests.results.action_import'
-                                                                            )}
-                                                                            onClick={() => setImportingTestId(test.id)}
-                                                                        >
-                                                                            <Upload size={14} />
-                                                                        </button>
-                                                                        <button
-                                                                            type="button"
-                                                                            className="btn btn-ghost btn-icon btn-sm"
-                                                                            title={t('tests.scan.action_scan')}
-                                                                            aria-label={t('tests.scan.action_scan')}
-                                                                            onClick={() => setScanningTestId(test.id)}
-                                                                        >
-                                                                            <ScanLine size={14} />
-                                                                        </button>
-                                                                        <button
-                                                                            type="button"
-                                                                            className="btn btn-ghost btn-icon btn-sm"
-                                                                            title={t('tests.monitor.action_monitor')}
-                                                                            aria-label={t(
-                                                                                'tests.monitor.action_monitor'
-                                                                            )}
-                                                                            onClick={() =>
-                                                                                navigate(`/tests/${test.id}/monitor`)
-                                                                            }
-                                                                        >
-                                                                            <Radio size={14} />
-                                                                        </button>
-                                                                        <button
-                                                                            type="button"
-                                                                            className="btn btn-ghost btn-icon btn-sm"
-                                                                            title={t('tests.export.exam.section_title')}
-                                                                            aria-label={t(
-                                                                                'tests.export.exam.section_title'
-                                                                            )}
-                                                                            aria-expanded={examExportTestId === test.id}
-                                                                            aria-controls={`test-exam-export-${test.id}`}
-                                                                            style={{
-                                                                                color:
-                                                                                    examExportTestId === test.id
-                                                                                        ? 'var(--accent)'
-                                                                                        : undefined,
-                                                                            }}
-                                                                            onClick={() =>
-                                                                                setExamExportTestId(
-                                                                                    examExportTestId === test.id
-                                                                                        ? null
-                                                                                        : test.id
-                                                                                )
-                                                                            }
-                                                                        >
-                                                                            <FileDown size={14} />
-                                                                        </button>
-                                                                    </>
-                                                                )}
-                                                            </div>
-                                                        </div>
-
-                                                        {examExportTestId === test.id && (
-                                                            <div
-                                                                id={`test-exam-export-${test.id}`}
-                                                                style={{
-                                                                    marginTop: 14,
-                                                                    paddingTop: 14,
-                                                                    borderTop: '1px solid var(--border)',
-                                                                    display: 'flex',
-                                                                    flexDirection: 'column',
-                                                                    gap: 8,
-                                                                }}
-                                                            >
-                                                                <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>
-                                                                    {t('tests.export.exam.section_title')}
-                                                                </div>
-                                                                <ExamBookletExportPanel
-                                                                    test={test}
-                                                                    students={students}
-                                                                    fontFamily={settings.defaultFormat.fontFamily}
-                                                                    styleTemplate={activeStyleTemplate}
-                                                                />
-                                                            </div>
-                                                        )}
-
-                                                        {resultsTestId === test.id && (
-                                                            <div
-                                                                id={`test-results-${test.id}`}
-                                                                style={{
-                                                                    marginTop: 14,
-                                                                    paddingTop: 14,
-                                                                    borderTop: '1px solid var(--border)',
-                                                                    display: 'flex',
-                                                                    flexDirection: 'column',
-                                                                    gap: 10,
-                                                                }}
-                                                            >
-                                                                <div
-                                                                    style={{
-                                                                        display: 'flex',
-                                                                        flexDirection: 'column',
-                                                                        gap: 6,
-                                                                    }}
-                                                                >
-                                                                    {studentTests
-                                                                        .filter((st) => st.testId === test.id)
-                                                                        .map((st) => {
-                                                                            const stStudent = students.find(
-                                                                                (s) => s.id === st.studentId
-                                                                            );
-                                                                            return (
-                                                                                <button
-                                                                                    key={st.id}
-                                                                                    type="button"
-                                                                                    className="btn btn-ghost btn-sm"
-                                                                                    style={{
-                                                                                        justifyContent: 'flex-start',
-                                                                                    }}
-                                                                                    onClick={() =>
-                                                                                        navigate(
-                                                                                            `/tests/${test.id}/results/${st.id}`
-                                                                                        )
-                                                                                    }
-                                                                                >
-                                                                                    {stStudent?.name ?? st.studentId}
-                                                                                    {st.attemptNumber &&
-                                                                                        st.attemptNumber > 1 && (
-                                                                                            <span
-                                                                                                style={{
-                                                                                                    marginLeft: 6,
-                                                                                                    fontSize: '0.75rem',
-                                                                                                    color: 'var(--text-muted)',
-                                                                                                }}
-                                                                                            >
-                                                                                                {t(
-                                                                                                    'tests.results.attempt_label',
-                                                                                                    {
-                                                                                                        n: st.attemptNumber,
-                                                                                                    }
-                                                                                                )}
-                                                                                            </span>
-                                                                                        )}
-                                                                                </button>
-                                                                            );
-                                                                        })}
-                                                                </div>
-                                                                {test.mode === 'placement' ? (
-                                                                    <PlacementAnalysisPanel
-                                                                        test={test}
-                                                                        studentTests={studentTests.filter(
-                                                                            (st) => st.testId === test.id
-                                                                        )}
-                                                                        students={students}
-                                                                    />
-                                                                ) : (
-                                                                    <>
-                                                                        <ClassAverageAdjuster
-                                                                            test={test}
-                                                                            studentTests={studentTests.filter(
-                                                                                (st) => st.testId === test.id
-                                                                            )}
-                                                                            students={students}
-                                                                            onSaveStudentTest={saveStudentTest}
-                                                                        />
-                                                                        <ItemAnalysisPanel
-                                                                            test={test}
-                                                                            studentTests={studentTests.filter(
-                                                                                (st) => st.testId === test.id
-                                                                            )}
-                                                                        />
-                                                                        <GrammarStandardsPanel
-                                                                            test={test}
-                                                                            studentTests={studentTests.filter(
-                                                                                (st) => st.testId === test.id
-                                                                            )}
-                                                                            students={students}
-                                                                            lang={lang}
-                                                                        />
-                                                                        <button
-                                                                            type="button"
-                                                                            className="btn btn-secondary btn-sm"
-                                                                            onClick={() =>
-                                                                                navigate(
-                                                                                    `/tests/${test.id}/scores?tab=analysis`
-                                                                                )
-                                                                            }
-                                                                        >
-                                                                            <Table2 size={14} />{' '}
-                                                                            {t('tests.scoreSheet.action_full_analysis')}
-                                                                        </button>
-                                                                        <button
-                                                                            type="button"
-                                                                            className="btn btn-secondary btn-sm"
-                                                                            onClick={() =>
-                                                                                navigate(`/tests/${test.id}/grade`)
-                                                                            }
-                                                                        >
-                                                                            <ListChecks size={14} />{' '}
-                                                                            {t('tests.scoreSheet.grade_queue_action')}
-                                                                        </button>
-                                                                    </>
-                                                                )}
-
-                                                                <div
-                                                                    style={{
-                                                                        marginTop: 6,
-                                                                        paddingTop: 14,
-                                                                        borderTop: '1px solid var(--border)',
-                                                                        display: 'flex',
-                                                                        flexDirection: 'column',
-                                                                        gap: 8,
-                                                                    }}
-                                                                >
-                                                                    <div
-                                                                        style={{ fontWeight: 600, fontSize: '0.85rem' }}
-                                                                    >
-                                                                        {t('tests.export.section_title')}
-                                                                    </div>
-                                                                    <div
-                                                                        style={{
-                                                                            display: 'flex',
-                                                                            gap: 8,
-                                                                            flexWrap: 'wrap',
-                                                                        }}
-                                                                    >
-                                                                        <select
-                                                                            value={exportScope}
-                                                                            onChange={(e) =>
-                                                                                setExportScope(
-                                                                                    e.target.value as 'single' | 'batch'
-                                                                                )
-                                                                            }
-                                                                            style={{ width: 'auto' }}
-                                                                        >
-                                                                            <option value="single">
-                                                                                {t('tests.export.scope_single')}
-                                                                            </option>
-                                                                            <option value="batch">
-                                                                                {t('tests.export.scope_batch')}
-                                                                            </option>
-                                                                        </select>
-                                                                        {exportScope === 'single' && (
-                                                                            <select
-                                                                                value={exportStudentId}
-                                                                                onChange={(e) =>
-                                                                                    setExportStudentId(e.target.value)
-                                                                                }
-                                                                                style={{ width: 'auto' }}
-                                                                            >
-                                                                                <option value="">
-                                                                                    {t(
-                                                                                        'tests.export.select_student_placeholder'
-                                                                                    )}
-                                                                                </option>
-                                                                                {studentTests
-                                                                                    .filter(
-                                                                                        (st) => st.testId === test.id
-                                                                                    )
-                                                                                    .map((st) => {
-                                                                                        const stStudent = students.find(
-                                                                                            (s) => s.id === st.studentId
-                                                                                        );
-                                                                                        return (
-                                                                                            <option
-                                                                                                key={st.id}
-                                                                                                value={st.studentId}
-                                                                                            >
-                                                                                                {stStudent?.name ??
-                                                                                                    st.studentId}
-                                                                                            </option>
-                                                                                        );
-                                                                                    })}
-                                                                            </select>
-                                                                        )}
-                                                                        <button
-                                                                            type="button"
-                                                                            className="btn btn-secondary btn-sm"
-                                                                            disabled={
-                                                                                exporting ||
-                                                                                (exportScope === 'single' &&
-                                                                                    !exportStudentId)
-                                                                            }
-                                                                            onClick={() =>
-                                                                                handleExportTestSummary(test, 'pdf')
-                                                                            }
-                                                                        >
-                                                                            <FileDown size={14} />{' '}
-                                                                            {t('tests.export.export_pdf')}
-                                                                        </button>
-                                                                        <button
-                                                                            type="button"
-                                                                            className="btn btn-secondary btn-sm"
-                                                                            disabled={
-                                                                                exporting ||
-                                                                                (exportScope === 'single' &&
-                                                                                    !exportStudentId)
-                                                                            }
-                                                                            onClick={() =>
-                                                                                handleExportTestSummary(test, 'docx')
-                                                                            }
-                                                                        >
-                                                                            <FileDown size={14} />{' '}
-                                                                            {t('tests.export.export_docx')}
-                                                                        </button>
-                                                                        <button
-                                                                            type="button"
-                                                                            className="btn btn-secondary btn-sm"
-                                                                            disabled={
-                                                                                exporting ||
-                                                                                (exportScope === 'single' &&
-                                                                                    !exportStudentId)
-                                                                            }
-                                                                            onClick={() =>
-                                                                                handleExportTestSummary(test, 'text')
-                                                                            }
-                                                                        >
-                                                                            <FileDown size={14} />{' '}
-                                                                            {t('tests.export.export_text')}
-                                                                        </button>
-                                                                        {exportScope === 'batch' && (
-                                                                            <>
-                                                                                <select
-                                                                                    aria-label={t(
-                                                                                        'exportPage.csv_preset_label'
-                                                                                    )}
-                                                                                    className="form-control"
-                                                                                    style={{
-                                                                                        fontSize: '0.8rem',
-                                                                                        padding: '4px 6px',
-                                                                                        width: 'auto',
-                                                                                    }}
-                                                                                    value={gradebookPreset}
-                                                                                    onChange={(e) =>
-                                                                                        setGradebookPreset(
-                                                                                            e.target
-                                                                                                .value as GradebookPresetId
-                                                                                        )
-                                                                                    }
-                                                                                >
-                                                                                    {GRADEBOOK_PRESET_IDS.map((id) => (
-                                                                                        <option key={id} value={id}>
-                                                                                            {t(
-                                                                                                `exportPage.csv_preset_${id}`
-                                                                                            )}
-                                                                                        </option>
-                                                                                    ))}
-                                                                                </select>
-                                                                                {gradebookPreset !== 'generic' && (
-                                                                                    <select
-                                                                                        aria-label={t(
-                                                                                            'exportPage.csv_decimal_label'
-                                                                                        )}
-                                                                                        className="form-control"
-                                                                                        style={{
-                                                                                            fontSize: '0.8rem',
-                                                                                            padding: '4px 6px',
-                                                                                            width: 'auto',
-                                                                                        }}
-                                                                                        value={gradebookDecimal}
-                                                                                        onChange={(e) =>
-                                                                                            setGradebookDecimal(
-                                                                                                e.target
-                                                                                                    .value as DecimalSeparator
-                                                                                            )
-                                                                                        }
-                                                                                    >
-                                                                                        <option value="comma">
-                                                                                            {t(
-                                                                                                'exportPage.csv_decimal_comma'
-                                                                                            )}
-                                                                                        </option>
-                                                                                        <option value="dot">
-                                                                                            {t(
-                                                                                                'exportPage.csv_decimal_dot'
-                                                                                            )}
-                                                                                        </option>
-                                                                                    </select>
-                                                                                )}
-                                                                                <button
-                                                                                    type="button"
-                                                                                    className="btn btn-secondary btn-sm"
-                                                                                    disabled={exporting}
-                                                                                    onClick={() =>
-                                                                                        handleExportTestResultsCsv(test)
-                                                                                    }
-                                                                                >
-                                                                                    <FileDown size={14} />{' '}
-                                                                                    {t('tests.export.export_csv')}
-                                                                                </button>
-                                                                            </>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                    </CardTile>
+                                                        onShare={() => setSharingTarget({ kind: 'test', id: test.id })}
+                                                        onDuplicate={() => handleDuplicate(test.id)}
+                                                        onArchive={() => handleArchive(test)}
+                                                        onDelete={() => handleDelete(test.id, test.name)}
+                                                        onMove={(folderId) => moveTest(test, folderId)}
+                                                    />
                                                 )}
                                             </Draggable>
                                         );
@@ -1451,6 +647,68 @@ export default function TestListPage() {
                     subtitle={(x) => t('tests.question_count', { count: x.questions.length })}
                 />
                 {renderSharingModal()}
+
+                {resultsTest && (
+                    <TestResultsDrawer
+                        key={resultsTest.id}
+                        test={resultsTest}
+                        studentTests={studentTests}
+                        students={students}
+                        classes={classes}
+                        gradeScales={gradeScales}
+                        settings={settings}
+                        activeStyleTemplate={activeStyleTemplate}
+                        lang={lang}
+                        saveStudentTest={saveStudentTest}
+                        onOpenStudentResult={(studentTestId) =>
+                            navigate(`/tests/${resultsTest.id}/results/${studentTestId}`)
+                        }
+                        onOpenAnalysis={() => navigate(`/tests/${resultsTest.id}/scores?tab=analysis`)}
+                        onOpenGradeQueue={() => navigate(`/tests/${resultsTest.id}/grade`)}
+                        onClose={() => setResultsTestId(null)}
+                        exporting={resultsExporting}
+                        onExportingChange={setResultsExporting}
+                    />
+                )}
+
+                {examExportTest && (
+                    <Modal
+                        titleId="test-exam-export-title"
+                        onClose={() => setExamExportTestId(null)}
+                        returnFocusTo={examExportTrigger}
+                        maxWidth={720}
+                    >
+                        <div
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '16px 20px',
+                                borderBottom: '1px solid var(--border)',
+                            }}
+                        >
+                            <h2 id="test-exam-export-title" style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>
+                                {t('tests.export.exam.section_title')}
+                            </h2>
+                            <button
+                                type="button"
+                                className="btn btn-ghost btn-icon btn-sm"
+                                aria-label={t('common.close')}
+                                onClick={() => setExamExportTestId(null)}
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+                        <div style={{ padding: 20, maxHeight: '70vh', overflowY: 'auto' }}>
+                            <ExamBookletExportPanel
+                                test={examExportTest}
+                                students={students}
+                                fontFamily={settings.defaultFormat.fontFamily}
+                                styleTemplate={activeStyleTemplate}
+                            />
+                        </div>
+                    </Modal>
+                )}
 
                 {folderModal && (
                     <FolderNameModal

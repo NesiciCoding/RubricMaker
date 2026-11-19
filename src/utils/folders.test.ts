@@ -12,6 +12,7 @@ import {
     folderDepth,
     folderPath,
     folderPathLabel,
+    folderTreeEntries,
     foldersForKind,
     itemsInFolder,
     nextFolderOrder,
@@ -72,6 +73,38 @@ describe('childFolders', () => {
         const orphaned = [folder({ id: 'root', displayOrder: 0 }), folder({ id: 'orphan', parentId: 'gone' })];
         expect(childFolders(orphaned, 'rubric').map((f) => f.id)).toEqual(['root', 'orphan']);
         expect(folderDepth(orphaned, 'orphan')).toBe(1);
+    });
+});
+
+describe('folderTreeEntries', () => {
+    const tree = [
+        folder({ id: 'root-b', displayOrder: 0 }),
+        folder({ id: 'root-a', displayOrder: 1 }),
+        folder({ id: 'a-child', parentId: 'root-a', displayOrder: 1 }),
+        folder({ id: 'a-child-2', parentId: 'root-a', displayOrder: 0 }),
+        folder({ id: 'grandchild', parentId: 'a-child' }),
+        folder({ id: 'test-root', kind: 'test' }),
+    ];
+
+    it('walks each parent immediately before its children, in display order', () => {
+        expect(folderTreeEntries(tree, 'rubric').map((entry) => [entry.folder.id, entry.depth])).toEqual([
+            ['root-b', 0],
+            ['root-a', 0],
+            ['a-child-2', 1],
+            ['a-child', 1],
+            ['grandchild', 2],
+        ]);
+    });
+
+    it('walks one kind only, so a card menu cannot offer the rubric tree', () => {
+        expect(folderTreeEntries(tree, 'test').map((entry) => entry.folder.id)).toEqual(['test-root']);
+    });
+
+    it('keeps a folder with a deleted parent at the top level, like the folder bar', () => {
+        const orphaned = [folder({ id: 'orphan', parentId: 'gone' })];
+        expect(folderTreeEntries(orphaned, 'rubric').map((entry) => [entry.folder.id, entry.depth])).toEqual([
+            ['orphan', 0],
+        ]);
     });
 });
 

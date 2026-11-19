@@ -1107,7 +1107,9 @@
             "import_success": "Soumission importée avec succès !",
             "import_error_invalid": "Code de soumission invalide. Vérifiez que vous avez copié le code complet envoyé par l'élève.",
             "import_error_wrong_test": "Ce code de soumission correspond à un autre test.",
-            "attempt_label": "(Tentative {{n}})"
+            "attempt_label": "(Tentative {{n}})",
+            "drawer_title": "Résultats — {{name}}",
+            "submissions_title": "Remises ({{count}})"
         },
         "export": {
             "section_title": "Exporter le résumé",
@@ -2350,7 +2352,11 @@
         "quick_jump_empty": "Aucun résultat.",
         "quick_jump_section": "Section",
         "outline_collapse_section": "Replier {{name}}",
-        "outline_expand_section": "Déplier {{name}}"
+        "outline_expand_section": "Déplier {{name}}",
+        "card_more_actions": "Plus d'actions",
+        "card_menu_teaching": "Enseigner",
+        "card_menu_organise": "Organiser",
+        "card_menu_sharing": "Partager"
     },
     "classShare": {
         "menu_item": "Partager avec des co-enseignants…",
