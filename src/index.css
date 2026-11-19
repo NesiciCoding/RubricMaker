@@ -1550,6 +1550,12 @@ select.input-error {
     animation: modal-sheet-in 180ms ease-out;
 }
 
+/* Wider sheet for panels that need more than one column: results and analysis tables. */
+.modal.modal-sheet.modal-sheet-wide {
+    width: min(100%, 620px);
+    max-width: 620px;
+}
+
 @keyframes modal-sheet-in {
     from {
         transform: translateX(16px);
