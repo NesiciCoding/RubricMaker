@@ -327,6 +327,19 @@ describe('LiveMonitorPage', () => {
                 events: [],
             });
 
+            it('does not count a cleared answer as progress in the class triage strip', async () => {
+                mockUseApp = {
+                    ...mockUseApp,
+                    tests: [fourQuestionTest],
+                    studentTests: [attempt('student-1', [{ questionId: 'q1', response: '' }])],
+                };
+                renderPage(['/tests/test-1/monitor']);
+                await settleTeacherKeys();
+
+                // Started, but nothing is answered: "not writing", not progress 1.
+                expect(screen.getByTestId('monitor-triage-not_writing')).not.toBeDisabled();
+            });
+
             it('persists each new toggle to settings', async () => {
                 renderPage(['/tests/test-1/monitor']);
                 await settleTeacherKeys();
