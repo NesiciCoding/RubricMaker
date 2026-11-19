@@ -39,7 +39,13 @@ import ColumnSortModal from '../components/Monitor/ColumnSortModal';
 import PlacementLevelPanel from '../components/Monitor/PlacementLevelPanel';
 import EssayMonitorRoster from '../components/Monitor/EssayMonitorRoster';
 import EssaySpotlight from '../components/Monitor/EssaySpotlight';
-import { derivePresence, summarizeProctorFlags, mergeProctorEvents } from '../utils/proctorAggregator';
+import {
+    derivePresence,
+    deriveConnectionState,
+    type ConnectionState,
+    summarizeProctorFlags,
+    mergeProctorEvents,
+} from '../utils/proctorAggregator';
 import { estimatePlacement, levelPathRunConfig } from '../utils/placementResult';
 import { MAX_QUESTIONS as STAIRCASE_MAX_QUESTIONS } from '../utils/placementStaircase';
 import { stripCommentHtml } from '../utils/exportDataPrep';
@@ -507,6 +513,21 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         }, 300);
     }
 
+    // Live state is per student *and* per assignment; a teacher moving from one assignment to the
+    // next on a mounted page must not carry the first one's heartbeat history or queued patches over.
+    const scopeKey = `${kind}:${params.testId ?? params.assignmentId ?? ''}`;
+    const scopeKeyRef = useRef(scopeKey);
+    useEffect(() => {
+        if (scopeKeyRef.current === scopeKey) return;
+        scopeKeyRef.current = scopeKey;
+        if (flushTimerRef.current) {
+            clearTimeout(flushTimerRef.current);
+            flushTimerRef.current = null;
+        }
+        pendingPatchesRef.current = {};
+        setLiveStates({});
+    }, [scopeKey]);
+
     const channelsRef = useRef<Map<string, RealtimeChannel>>(new Map());
     useEffect(() => {
         if (!hasDb || monitorStudents.length === 0) return;
@@ -814,6 +835,23 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                 kind === 'test' && test && row.studentTest ? levelPathRunConfig(test, row.studentTest) : undefined;
             const sectionPath = kind === 'test' ? row.studentTest?.sectionPath : undefined;
             const finished = row.status === 'submitted' || row.status === 'late' || !!live.submitted;
+            // Presence alone shows a student who never opened the assignment and one whose laptop
+            // dropped as the same grey dot; the teacher needs to tell them apart.
+            const seen = live.firstSeenAt !== undefined || row.persistedEvents.length > 0;
+            const connection = deriveConnectionState({ presence, seen, finished });
+            const lastPersistedSignalAt = row.persistedEvents.reduce(
+                (latest, event) => Math.max(latest, new Date(event.at).getTime()),
+                0
+            );
+            const lastSignalAt = live.lastUpdateAt
+                ? new Date(live.lastUpdateAt).getTime()
+                : lastPersistedSignalAt > 0
+                  ? lastPersistedSignalAt
+                  : undefined;
+            const silentMinutes =
+                connection === 'lost' && lastSignalAt !== undefined
+                    ? Math.floor((now - lastSignalAt) / 60_000)
+                    : undefined;
             let completion: StudentCompletion | undefined;
             if (kind === 'test' && test && isLevelGrid) {
                 // A live 'submitted' broadcast can land before the persisted trace does.
@@ -842,10 +880,11 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                 // the monitor learns about a hand-in via the student's 'submitted'
                 // broadcast or the essay_submissions check on mount.
                 status: row.status ?? (live.submitted ? 'submitted' : undefined),
+                connection,
+                silentMinutes,
             };
         });
         // `now` forces presence to be re-derived against the current time as heartbeats age.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [monitorStudents, liveStates, kind, now, test, isLevelGrid, levelMaxQuestions]);
 
     const paceByStudent = useMemo(
@@ -922,6 +961,30 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
 
     const displayName = (row: { studentId: string; name: string }, index: number) =>
         hideNames ? t('tests.monitor.anonymous_student', { index: index + 1 }) : row.name;
+
+    // Badges flip silently for a screen-reader user, so say it once when a student drops out. Only
+    // transitions are spoken: the first read of the roster and the per-minute "silent for N min"
+    // counter would otherwise repeat for the whole class.
+    const announcedConnectionRef = useRef<Map<string, ConnectionState | undefined>>(new Map());
+    const [connectionAnnouncement, setConnectionAnnouncement] = useState('');
+    useEffect(() => {
+        const known = announcedConnectionRef.current;
+        const messages: string[] = [];
+        rows.forEach((row, index) => {
+            const hadPrevious = known.has(row.studentId);
+            const previous = known.get(row.studentId);
+            known.set(row.studentId, row.connection);
+            if (!hadPrevious || previous === row.connection) return;
+            if (row.connection === 'lost') {
+                messages.push(t('tests.monitor.signal.announce_lost', { name: displayName(row, index) }));
+            } else if (row.connection === 'never_opened') {
+                messages.push(t('tests.monitor.signal.announce_never_opened', { name: displayName(row, index) }));
+            }
+        });
+        if (messages.length > 0) setConnectionAnnouncement(messages.join('. '));
+        // displayName only varies with the anonymize toggle and the language, neither of which is a transition.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [rows]);
 
     // ── Guard: no database configured ──────────────────────────────────────────────
     if (!hasDb) {
@@ -1005,6 +1068,9 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                 }
             />
             <div className="page-content fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div role="status" aria-live="polite" className="sr-only" data-testid="monitor-connection-announcer">
+                    {connectionAnnouncement}
+                </div>
                 {/* Controls */}
                 <div
                     data-tour="lm-controls"
@@ -1393,6 +1459,8 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                         proctor: {
                                             presence: row.presence,
                                             status: row.status,
+                                            connection: row.connection,
+                                            silentMinutes: row.silentMinutes,
                                             flags: row.flags,
                                             events: mergeProctorEvents(row.persistedEvents, row.live.events),
                                             stalledMinutes: stalled,
@@ -1482,6 +1550,8 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                                 displayName: displayName(row, index),
                                                 presence: row.presence,
                                                 status: row.status,
+                                                connection: row.connection,
+                                                silentMinutes: row.silentMinutes,
                                                 wordCount: row.live.snapshot?.wordCount,
                                                 wordSamples: row.live.wordSamples,
                                                 lastChangeAt: row.live.lastChangeAt,

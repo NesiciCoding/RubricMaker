@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import PresenceBadge from './PresenceBadge';
-import type { PresenceState, ProctorFlagSummary } from '../../utils/proctorAggregator';
+import type { ConnectionState, PresenceState, ProctorFlagSummary } from '../../utils/proctorAggregator';
 import { elapsedParts, writingPace, type WordSample, type WritingTrend } from '../../utils/monitorSignals';
 import { draftChanges } from '../../utils/writingAnalysis';
 
@@ -46,6 +46,10 @@ export interface EssayMonitorRow {
     /** Epoch ms of the newest snapshot that carried draft text, so the age readout is honest about
      * only knowing the prose to the minute. */
     snapshotAgeAt?: number;
+    /** Set when the student has not opened the assignment yet, or their signal stopped. */
+    connection?: ConnectionState;
+    /** Whole minutes since the last signal, when `connection` is 'lost'. */
+    silentMinutes?: number;
 }
 
 export interface EssayMonitorRosterProps {
@@ -115,6 +119,18 @@ export default function EssayMonitorRoster({ rows, onWatch, showWritingPace = fa
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                             <span style={{ fontWeight: 700, color: 'var(--text)' }}>{row.displayName}</span>
                             <PresenceBadge presence={row.presence} status={row.status} />
+                            {row.connection === 'never_opened' && (
+                                <span className="badge badge-yellow" data-testid={`essay-connection-${row.studentId}`}>
+                                    {t('tests.monitor.signal.never_opened')}
+                                </span>
+                            )}
+                            {row.connection === 'lost' && (
+                                <span className="badge badge-red" data-testid={`essay-connection-${row.studentId}`}>
+                                    {row.silentMinutes !== undefined && row.silentMinutes >= 1
+                                        ? t('tests.monitor.signal.lost', { count: row.silentMinutes })
+                                        : t('tests.monitor.signal.lost_now')}
+                                </span>
+                            )}
                             {row.wordCount !== undefined && (
                                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                                     {t('tests.monitor.draft.word_count', { count: row.wordCount })}

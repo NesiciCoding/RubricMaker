@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { derivePresence, summarizeProctorFlags, mergeProctorEvents, calcTestTimeOnTask } from './proctorAggregator';
+import {
+    derivePresence,
+    deriveConnectionState,
+    summarizeProctorFlags,
+    mergeProctorEvents,
+    calcTestTimeOnTask,
+} from './proctorAggregator';
 import type { ProctorEvent, StudentTest, Test } from '../types';
 
 const NOW = new Date('2024-01-01T12:00:00.000Z').getTime();
@@ -7,6 +13,25 @@ const NOW = new Date('2024-01-01T12:00:00.000Z').getTime();
 function heartbeat(secondsAgo: number, value: 'active' | 'idle' = 'active'): ProctorEvent {
     return { type: 'heartbeat', at: new Date(NOW - secondsAgo * 1000).toISOString(), value };
 }
+
+describe('deriveConnectionState', () => {
+    it('calls a student who never signalled "never_opened"', () => {
+        expect(deriveConnectionState({ presence: 'disconnected', seen: false })).toBe('never_opened');
+    });
+
+    it('calls a student whose signal stopped "lost" rather than never opened', () => {
+        expect(deriveConnectionState({ presence: 'disconnected', seen: true })).toBe('lost');
+    });
+
+    it('says nothing while the student is connected', () => {
+        expect(deriveConnectionState({ presence: 'active', seen: true })).toBeUndefined();
+        expect(deriveConnectionState({ presence: 'idle', seen: true })).toBeUndefined();
+    });
+
+    it('says nothing about a student who already handed in', () => {
+        expect(deriveConnectionState({ presence: 'disconnected', seen: false, finished: true })).toBeUndefined();
+    });
+});
 
 describe('derivePresence', () => {
     it('returns disconnected when there are no heartbeats', () => {
