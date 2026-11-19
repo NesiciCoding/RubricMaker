@@ -1107,7 +1107,9 @@
             "import_success": "¡Entrega importada correctamente!",
             "import_error_invalid": "Código de entrega no válido. Asegúrate de haber copiado el código completo del estudiante.",
             "import_error_wrong_test": "Este código de entrega corresponde a otra prueba.",
-            "attempt_label": "(Intento {{n}})"
+            "attempt_label": "(Intento {{n}})",
+            "drawer_title": "Resultados — {{name}}",
+            "submissions_title": "Entregas ({{count}})"
         },
         "export": {
             "section_title": "Exportar resumen",
@@ -2313,7 +2315,11 @@
         "quick_jump_empty": "No hay coincidencias.",
         "quick_jump_section": "Sección",
         "outline_collapse_section": "Contraer {{name}}",
-        "outline_expand_section": "Expandir {{name}}"
+        "outline_expand_section": "Expandir {{name}}",
+        "card_more_actions": "Más acciones",
+        "card_menu_teaching": "Enseñanza",
+        "card_menu_organise": "Organizar",
+        "card_menu_sharing": "Compartir"
     },
     "classShare": {
         "menu_item": "Compartir con co-docentes…",
