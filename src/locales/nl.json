@@ -1550,7 +1550,8 @@
                 "battery": "Accu",
                 "charging": "opladen",
                 "on": "Ja",
-                "off": "Nee"
+                "off": "Nee",
+                "project_button": "Op projectiescherm tonen"
             },
             "signal": {
                 "never_opened": "Nog niet geopend",
@@ -1592,6 +1593,20 @@
                 "preset_check": "Kijk je huidige vraag nog eens na",
                 "preset_time": "Nog 5 minuten",
                 "preset_save": "Vergeet niet op te slaan"
+            },
+            "projector": {
+                "title": "Eén tekst op het projectiescherm",
+                "note": "Alleen-lezen. Alleen de tekst van deze leerling is zichtbaar — geen klasselijst en geen beoordelingsknoppen.",
+                "waiting": "Wachten op de volgende momentopname van deze leerling…",
+                "live": "Live",
+                "back": "Terug naar de monitor",
+                "unknown_student": "Onbekende leerling",
+                "db_required": "Het projectiescherm heeft een databaseverbinding nodig.",
+                "words_one": "{{count}} woord",
+                "words_other": "{{count}} woorden",
+                "updated_now": "Minder dan een minuut geleden bijgewerkt",
+                "updated_minutes_one": "{{count}} min geleden bijgewerkt",
+                "updated_minutes_other": "{{count}} min geleden bijgewerkt"
             }
         },
         "sections_title": "Secties",
@@ -5496,7 +5511,10 @@
         "route_live_new_label": "Nieuwe liveschrijfsessie",
         "route_live_new_desc": "Maak een concept-livesessie.",
         "gr_queue_filters": "Beperk de wachtrij met het zoekveld (negeert hoofdletters, accenten en woordvolgorde en zoekt ook in klas- en groepsnamen), de statuschips (Beoordeeld, Bezig, Niet beoordeeld, Niet ingeleverd) en de groepschips, die tonen hoeveel leden van elke groep beoordeeld zijn. De filters staan in het paginaadres, dus verversen, een bladwijzer of terugkeren vanuit een leerling brengt je terug bij dezelfde weergave en scrollpositie. Een leerling telt pas als Beoordeeld wanneer elk criterium gescoord is; een gedeeltelijk gescoorde leerling is Bezig en toont hoeveel criteria klaar zijn. Volgende beoordelen en Opslaan & volgende blijven binnen de gefilterde weergave en bieden alleen niet-ingeleverde leerlingen aan als er niets anders meer is.",
-        "gr_queue_bulk": "Kies Leerlingen selecteren om meerdere leerlingen aan te vinken (of Alles in beeld selecteren) en ze in één stap als niet ingeleverd te markeren of te herstellen. Alleen leerlingen die nu in beeld zijn worden aangepast, herstellen behoudt scores en geschiedenis, en de selectie wordt gewist zodra de filters wijzigen."
+        "gr_queue_bulk": "Kies Leerlingen selecteren om meerdere leerlingen aan te vinken (of Alles in beeld selecteren) en ze in één stap als niet ingeleverd te markeren of te herstellen. Alleen leerlingen die nu in beeld zijn worden aangepast, herstellen behoudt scores en geschiedenis, en de selectie wordt gewist zodra de filters wijzigen.",
+        "route_essay_projector_label": "Geprojecteerde tekst",
+        "route_essay_projector_desc": "Alleen-lezen weergave van één tekst voor het projectiescherm in de klas, zonder knoppen of klasselijst.",
+        "es_creating_item_projector": "Zet één tekst in een tweede venster op het projectiescherm om over één zin te praten, terwijl de monitor de rest van de klas blijft volgen."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",

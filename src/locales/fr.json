@@ -1550,7 +1550,8 @@
                 "battery": "Batterie",
                 "charging": "en charge",
                 "on": "Oui",
-                "off": "Non"
+                "off": "Non",
+                "project_button": "Afficher au projecteur"
             },
             "signal": {
                 "never_opened": "Pas encore ouvert",
@@ -1592,6 +1593,20 @@
                 "preset_check": "Relis la question en cours",
                 "preset_time": "Il reste 5 minutes",
                 "preset_save": "N'oublie pas d'enregistrer"
+            },
+            "projector": {
+                "title": "Un seul texte sur le projecteur",
+                "note": "Lecture seule. Seul le texte de cet élève est affiché — pas de liste de classe ni de commandes de notation.",
+                "waiting": "En attente du prochain instantané de cet élève…",
+                "live": "Direct",
+                "back": "Retour au moniteur",
+                "unknown_student": "Élève inconnu",
+                "db_required": "Le projecteur nécessite une connexion à la base de données.",
+                "words_one": "{{count}} mot",
+                "words_other": "{{count}} mots",
+                "updated_now": "Mis à jour il y a moins d’une minute",
+                "updated_minutes_one": "Mis à jour il y a {{count}} min",
+                "updated_minutes_other": "Mis à jour il y a {{count}} min"
             }
         },
         "sections_title": "Sections",
@@ -5496,7 +5511,10 @@
         "route_live_new_label": "Nouvelle session d’écriture en direct",
         "route_live_new_desc": "Créer une session en direct brouillon.",
         "gr_queue_filters": "Affinez la file avec la recherche (elle ignore majuscules, accents et ordre des mots, et couvre aussi les noms de classe et de groupe), les puces d'état (Noté, En cours, Non noté, Non rendu) et les puces de groupe, qui indiquent combien de membres de chaque groupe sont notés. Les filtres sont dans l'adresse de la page : actualiser, ajouter aux favoris ou revenir depuis un élève ramène à la même vue et à la même position. Un élève n'est Noté que lorsque tous les critères sont notés ; un élève partiellement noté est En cours et affiche le nombre de critères faits. « Noter le suivant » et « Enregistrer et suivant » restent dans la vue filtrée et ne proposent les élèves n'ayant rien rendu que s'il ne reste rien d'autre.",
-        "gr_queue_bulk": "Choisissez Sélectionner des élèves pour cocher plusieurs élèves (ou Tout sélectionner) et les marquer comme non rendu ou les restaurer en une fois. Seuls les élèves affichés sont modifiés, la restauration conserve notes et historique, et la sélection est effacée dès que les filtres changent."
+        "gr_queue_bulk": "Choisissez Sélectionner des élèves pour cocher plusieurs élèves (ou Tout sélectionner) et les marquer comme non rendu ou les restaurer en une fois. Seuls les élèves affichés sont modifiés, la restauration conserve notes et historique, et la sélection est effacée dès que les filtres changent.",
+        "route_essay_projector_label": "Texte projeté",
+        "route_essay_projector_desc": "Vue en lecture seule d’un seul texte pour le projecteur de la classe, sans commandes ni liste de classe.",
+        "es_creating_item_projector": "Projetez un texte dans une seconde fenêtre pour parler d’une phrase, pendant que le moniteur continue de suivre le reste de la classe."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",
