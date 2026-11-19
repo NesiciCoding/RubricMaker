@@ -46,4 +46,50 @@ describe('NudgeMenu', () => {
 
         expect(screen.getByRole('button', { name: 'tests.monitor.nudge_button' })).toBeInTheDocument();
     });
+
+    it('moves focus into the menu on a keyboard open and arrows through the presets', () => {
+        render(<NudgeMenu onSend={vi.fn()} />);
+        const trigger = screen.getByRole('button', { name: 'tests.monitor.nudge_button' });
+
+        fireEvent.keyDown(trigger, { key: 'ArrowDown' });
+
+        const items = screen.getAllByRole('menuitem');
+        expect(document.activeElement).toBe(items[0]);
+        fireEvent.keyDown(screen.getByRole('menu'), { key: 'ArrowDown' });
+        expect(document.activeElement).toBe(items[1]);
+        fireEvent.keyDown(screen.getByRole('menu'), { key: 'End' });
+        expect(document.activeElement).toBe(items[items.length - 1]);
+        fireEvent.keyDown(screen.getByRole('menu'), { key: 'ArrowDown' });
+        expect(document.activeElement).toBe(items[0]);
+    });
+
+    it('returns focus to the trigger after Escape and after picking a preset', () => {
+        render(<NudgeMenu onSend={vi.fn()} />);
+        const trigger = screen.getByRole('button', { name: 'tests.monitor.nudge_button' });
+
+        fireEvent.keyDown(trigger, { key: 'ArrowDown' });
+        fireEvent.keyDown(document, { key: 'Escape' });
+        expect(document.activeElement).toBe(trigger);
+
+        fireEvent.keyDown(trigger, { key: 'ArrowDown' });
+        fireEvent.click(screen.getAllByRole('menuitem')[0]);
+        expect(document.activeElement).toBe(trigger);
+    });
+
+    it('does not pull focus back when the menu closes from a click elsewhere', () => {
+        render(
+            <div>
+                <NudgeMenu onSend={vi.fn()} />
+                <button>Elsewhere</button>
+            </div>
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'tests.monitor.nudge_button' }));
+        const other = screen.getByText('Elsewhere');
+        other.focus();
+
+        fireEvent.pointerDown(other);
+
+        expect(screen.queryByRole('menu')).toBeNull();
+        expect(document.activeElement).toBe(other);
+    });
 });
