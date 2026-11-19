@@ -638,6 +638,8 @@ h3 {
 }
 
 .btn-sm {
+    /* 2.5.5: the small variant keeps its compact type but must still be a 44 px target. */
+    min-height: 44px;
     padding: 5px 11px;
     font-size: 0.8rem;
 }
@@ -651,6 +653,12 @@ h3 {
     padding: 7px;
     min-width: 24px;
     min-height: 24px;
+}
+
+/* Two classes beat .btn-icon's single class, so its 24 px minimum cannot reach the icon-and-small
+   combination; the source order of these two rules plays no part. */
+.btn-icon.btn-sm {
+    min-height: 44px;
 }
 
 .btn:disabled,
