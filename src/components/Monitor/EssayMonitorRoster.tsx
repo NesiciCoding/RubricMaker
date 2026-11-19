@@ -15,6 +15,7 @@ import PresenceBadge from './PresenceBadge';
 import type { ConnectionState, PresenceState, ProctorFlagSummary } from '../../utils/proctorAggregator';
 import { elapsedParts, writingPace, type WordSample, type WritingTrend } from '../../utils/monitorSignals';
 import { draftChanges } from '../../utils/writingAnalysis';
+import { lastAddedSentence } from '../../utils/draftHighlights';
 
 const TREND_ICON: Record<WritingTrend, { Icon: typeof TrendingUp; color: string }> = {
     speeding_up: { Icon: TrendingUp, color: 'var(--green-text)' },
@@ -105,6 +106,17 @@ export default function EssayMonitorRoster({ rows, onWatch, showWritingPace = fa
                     pastedChars / (typedChars + pastedChars) >= PASTED_SHARE_WARNING;
                 const stalled = !finished && row.lastChangeAt !== undefined && clock - row.lastChangeAt >= 4 * 60_000;
                 const changes = draftChanges(row.previousText ?? '', row.draftText ?? '');
+                // The prose arrives once a minute, so say what that minute added in the student's
+                // own words instead of leaving the teacher to diff two truncated previews.
+                const added =
+                    row.previousText !== undefined ? lastAddedSentence(row.previousText, row.draftText ?? '') : null;
+                const addedAt =
+                    row.snapshotAgeAt !== undefined
+                        ? new Date(row.snapshotAgeAt).toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                          })
+                        : undefined;
                 const sparkline = sparklinePoints(row.snapshotWords);
                 const snapshotAgeMinutes =
                     row.snapshotAgeAt !== undefined ? Math.floor((clock - row.snapshotAgeAt) / 60_000) : undefined;
@@ -324,6 +336,19 @@ export default function EssayMonitorRoster({ rows, onWatch, showWritingPace = fa
                                 </svg>
                             )}
                         </div>
+
+                        {added && addedAt && !finished && (
+                            <p
+                                data-testid={`essay-added-${row.studentId}`}
+                                style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-dim)' }}
+                            >
+                                {t('tests.monitor.draft.added_sentence', {
+                                    count: added.addedWords,
+                                    time: addedAt,
+                                    snippet: added.sentence,
+                                })}
+                            </p>
+                        )}
                     </div>
                 );
             })}

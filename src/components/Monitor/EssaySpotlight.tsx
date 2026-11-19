@@ -6,6 +6,7 @@ import EssayTimeline from './EssayTimeline';
 import type { PresenceState, ProctorFlagSummary } from '../../utils/proctorAggregator';
 import type { WordSample } from '../../utils/monitorSignals';
 import { buildTimeline } from '../../utils/monitorTimeline';
+import { lastAddedSentence } from '../../utils/draftHighlights';
 import { analyzeDraft } from '../../utils/writingAnalysis';
 import type { ProctorEvent } from '../../types';
 
@@ -23,6 +24,8 @@ export interface EssaySpotlightProps {
     lastChangeAt?: number;
     lastActivityAt?: string;
     draftText?: string;
+    /** Plain text of the snapshot before `draftText`, so the newest sentence can be marked. */
+    previousDraftText?: string;
     /** Snapshot history, newest first. */
     snapshots: EssaySpotlightSnapshot[];
     /** Proctoring events (persisted and live), already merged by the caller. */
@@ -72,6 +75,7 @@ export default function EssaySpotlight({
     lastChangeAt,
     lastActivityAt,
     draftText,
+    previousDraftText,
     snapshots,
     events,
     flags,
@@ -84,6 +88,12 @@ export default function EssaySpotlight({
     const stats = analyzeDraft(draftText ?? '');
     const clock = now ?? Date.now();
     const timeline = buildTimeline(wordSamples ?? [], events ?? [], clock);
+    // Nothing is "just written" on the first snapshot: there is no earlier draft to compare to,
+    // and everything would read as new.
+    const added = previousDraftText !== undefined ? lastAddedSentence(previousDraftText, draftText ?? '') : null;
+    const addedAt = snapshots[0]
+        ? new Date(snapshots[0].at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        : undefined;
 
     return (
         <div data-testid="essay-spotlight" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -119,6 +129,28 @@ export default function EssaySpotlight({
                 now={clock}
                 defaultExpanded
             />
+
+            {added && (
+                <div style={cardStyle} data-testid="essay-just-written">
+                    <h3 style={headingStyle}>{t('tests.monitor.draft.just_written')}</h3>
+                    <p style={{ margin: 0, fontSize: '0.85rem', lineHeight: 1.5, color: 'var(--text)' }}>
+                        <mark
+                            style={{
+                                background: 'color-mix(in srgb, var(--accent) 22%, transparent)',
+                                color: 'var(--text)',
+                                borderRadius: 3,
+                                padding: '0 2px',
+                            }}
+                        >
+                            {added.sentence}
+                        </mark>
+                    </p>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
+                        {t('tests.monitor.draft.added_words', { count: added.addedWords })}
+                        {addedAt ? ` · ${addedAt}` : ''}
+                    </span>
+                </div>
+            )}
 
             <EssayTimeline timeline={timeline} />
 
