@@ -1980,6 +1980,13 @@ function GradeStudentEditor() {
                                                                                 min={level.minPoints}
                                                                                 max={level.maxPoints}
                                                                                 step={0.5}
+                                                                                aria-label={`${c.title} — ${level.label} ${
+                                                                                    scoresSubItems(c)
+                                                                                        ? t(
+                                                                                              'gradeStudent.label_base_points'
+                                                                                          )
+                                                                                        : t('gradeStudent.label_points')
+                                                                                }`}
                                                                                 value={
                                                                                     entry.selectedPoints ??
                                                                                     level.minPoints

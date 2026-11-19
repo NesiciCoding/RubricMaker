@@ -175,30 +175,12 @@
     {
       "route": "/grade-comparative/class-a11y-1/rubric-a11y-1",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "label-title-only",
-          "nodes": 1
-        },
-        {
-          "rule": "select-name",
-          "nodes": 6
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/grade-comparative/class-a11y-1/rubric-a11y-1",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "label-title-only",
-          "nodes": 1
-        },
-        {
-          "rule": "select-name",
-          "nodes": 6
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/grammar-overview",
@@ -383,22 +365,12 @@
     {
       "route": "/rubrics/rubric-a11y-1",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "label",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/rubrics/rubric-a11y-1",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "label",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/rubrics/rubric-a11y-1/grade",
@@ -413,30 +385,12 @@
     {
       "route": "/rubrics/rubric-a11y-1/grade/student-a11y-1",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "label",
-          "nodes": 3
-        },
-        {
-          "rule": "target-size",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/rubrics/rubric-a11y-1/grade/student-a11y-1",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "label",
-          "nodes": 3
-        },
-        {
-          "rule": "target-size",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/rubrics/rubric-a11y-1/peer-review",
@@ -491,22 +445,12 @@
     {
       "route": "/statistics",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "label-title-only",
-          "nodes": 3
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/statistics",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "label-title-only",
-          "nodes": 3
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/students",
@@ -591,22 +535,12 @@
     {
       "route": "/tests/test-a11y-1",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "label-title-only",
-          "nodes": 12
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/tests/test-a11y-1",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "label-title-only",
-          "nodes": 12
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/tests/test-a11y-1/monitor",
