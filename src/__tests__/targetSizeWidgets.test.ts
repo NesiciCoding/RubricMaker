@@ -96,14 +96,21 @@ describe('inline-styled targets at 44 px (#533, WCAG 2.5.5)', () => {
         });
     }
 
-    it('leaves the accent swatches a visible keyboard focus ring', () => {
+    it('leaves the Settings controls a visible keyboard focus ring', () => {
         const settings = source('pages/SettingsPage.tsx');
-        const start = settings.indexOf('ACCENT_PRESETS.map');
-        const swatch = settings.slice(start, settings.indexOf('</button>', start));
-        // An inline `outline: none` would beat the global ring and leave keyboard focus invisible.
-        expect(swatch).not.toMatch(/outline:\s*'none'/);
+        // The accent swatches and the grade-scale name field are inline-styled and borderless, so
+        // the global ring is their only focus affordance; an inline `outline: none` would beat it.
+        // The scan is file-wide on purpose: every control here relies on that same ring.
+        expect(settings).not.toMatch(/outline:\s*'none'/);
         // That only works because :focus-visible still paints the ring.
         expect(css).toMatch(/:focus-visible\s*\{[^}]*outline:\s*2px solid/);
+    });
+
+    it('gives the borderless grade-scale name its own visible focus ring', () => {
+        // The shared field rule sets `outline: none` and this field has no border to recolour, so
+        // neither the global ring nor a border change can show focus.
+        expect(source('pages/SettingsPage.tsx')).toMatch(/className="grade-scale-name"/);
+        expect(css).toMatch(/\.grade-scale-name:focus-visible\s*\{[^}]*outline:\s*2px solid/);
     });
 
     it('keeps the segmented toggle opt-in override, so a caller can still ask for another height', () => {

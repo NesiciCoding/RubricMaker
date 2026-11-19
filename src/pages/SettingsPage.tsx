@@ -1704,6 +1704,7 @@ export default function SettingsPage() {
                                     >
                                         <input
                                             type="text"
+                                            className="grade-scale-name"
                                             value={gs.name}
                                             onChange={(e) => updateGradeScale({ ...gs, name: e.target.value })}
                                             style={{
@@ -1713,7 +1714,6 @@ export default function SettingsPage() {
                                                 border: 'none',
                                                 color: 'var(--text)',
                                                 fontSize: '0.9rem',
-                                                outline: 'none',
                                             }}
                                         />
                                         <div style={{ display: 'flex', gap: 4 }}>
