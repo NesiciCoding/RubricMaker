@@ -1607,6 +1607,37 @@
                 "updated_now": "Actualizado hace menos de un minuto",
                 "updated_minutes_one": "Actualizado hace {{count}} min",
                 "updated_minutes_other": "Actualizado hace {{count}} min"
+            },
+            "export": {
+                "button_csv": "Exportar la sesión (CSV)",
+                "button_pdf": "Resumen PDF de la sesión",
+                "csv_saved": "CSV de la sesión guardado.",
+                "pdf_failed": "No se pudo abrir el resumen PDF.",
+                "filename_fallback": "sesion",
+                "column_student": "Estudiante",
+                "column_status": "Estado",
+                "column_tab_switches": "Cambios de pestaña",
+                "column_copy": "Copiar",
+                "column_cut": "Cortar",
+                "column_paste": "Pegar",
+                "column_stalled": "Estancado (min)",
+                "column_draft_age": "Antigüedad del texto (min)",
+                "column_words": "Palabras",
+                "column_nudges": "Avisos",
+                "column_nudge_log": "Registro de avisos",
+                "column_last_signal": "Última señal",
+                "status_submitted": "Entregado",
+                "status_opened": "Abierto",
+                "summary_title": "Resumen de la sesión",
+                "summary_generated": "Generado a las {{time}} por RubricMaker.",
+                "summary_students_one": "{{count}} estudiante",
+                "summary_students_other": "{{count}} estudiantes",
+                "summary_tab_switches_one": "{{count}} cambio de pestaña",
+                "summary_tab_switches_other": "{{count}} cambios de pestaña",
+                "summary_words_one": "{{count}} palabra",
+                "summary_words_other": "{{count}} palabras",
+                "summary_nudges_one": "{{count}} aviso",
+                "summary_nudges_other": "{{count}} avisos"
             }
         },
         "sections_title": "Secciones",
@@ -5514,7 +5545,8 @@
         "gr_queue_bulk": "Elige Seleccionar estudiantes para marcar varios (o Seleccionar todo lo mostrado) y marcarlos como no entregado o restaurarlos de una vez. Solo se cambian los estudiantes mostrados, restaurar conserva puntuaciones e historial, y la selección se borra cuando cambian los filtros.",
         "route_essay_projector_label": "Borrador proyectado",
         "route_essay_projector_desc": "Vista de solo lectura de un único borrador para el proyector de clase, sin controles ni lista de clase.",
-        "es_creating_item_projector": "Proyecta un borrador en una segunda ventana para hablar de una frase mientras el monitor sigue observando al resto de la clase."
+        "es_creating_item_projector": "Proyecta un borrador en una segunda ventana para hablar de una frase mientras el monitor sigue observando al resto de la clase.",
+        "rb_live_monitor_item_session_export": "Exporta la sesión como CSV con los recuentos, minutos estancados, antigüedad del texto, palabras escritas y el registro de avisos por estudiante — más un resumen PDF de una página — para adjuntarlo si más adelante surge una duda de integridad."
     },
     "studentProfile": {
         "tab_overview": "Resumen",

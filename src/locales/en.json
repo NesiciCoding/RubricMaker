@@ -1607,6 +1607,37 @@
                 "updated_now": "Updated less than a minute ago",
                 "updated_minutes_one": "Updated {{count}} min ago",
                 "updated_minutes_other": "Updated {{count}} min ago"
+            },
+            "export": {
+                "button_csv": "Export session (CSV)",
+                "button_pdf": "Session PDF summary",
+                "csv_saved": "Session CSV saved.",
+                "pdf_failed": "Could not open the PDF summary.",
+                "filename_fallback": "session",
+                "column_student": "Student",
+                "column_status": "Status",
+                "column_tab_switches": "Tab switches",
+                "column_copy": "Copy",
+                "column_cut": "Cut",
+                "column_paste": "Paste",
+                "column_stalled": "Stalled (min)",
+                "column_draft_age": "Draft age (min)",
+                "column_words": "Words",
+                "column_nudges": "Nudges",
+                "column_nudge_log": "Nudge log",
+                "column_last_signal": "Last signal",
+                "status_submitted": "Submitted",
+                "status_opened": "Opened",
+                "summary_title": "Session summary",
+                "summary_generated": "Generated {{time}} by RubricMaker.",
+                "summary_students_one": "{{count}} student",
+                "summary_students_other": "{{count}} students",
+                "summary_tab_switches_one": "{{count}} tab switch",
+                "summary_tab_switches_other": "{{count}} tab switches",
+                "summary_words_one": "{{count}} word",
+                "summary_words_other": "{{count}} words",
+                "summary_nudges_one": "{{count}} nudge",
+                "summary_nudges_other": "{{count}} nudges"
             }
         },
         "queue": {
@@ -5514,7 +5545,8 @@
         "gr_queue_bulk": "Choose Select students to tick several students (or Select all shown) and mark them not handed in or restore them in one step. Only students currently shown are changed, restoring keeps their scores and history, and the selection clears whenever the filters change.",
         "route_essay_projector_label": "Projected draft",
         "route_essay_projector_desc": "Read-only view of one draft for the classroom projector, without controls or a class list.",
-        "es_creating_item_projector": "Spotlight a draft on the projector in a second window to talk about one sentence, while the monitor keeps watching the rest of the class."
+        "es_creating_item_projector": "Spotlight a draft on the projector in a second window to talk about one sentence, while the monitor keeps watching the rest of the class.",
+        "rb_live_monitor_item_session_export": "Export the session as a CSV of per-student counts, stall minutes, draft ages, words written and the nudge log — plus a one-page PDF summary — to attach when an integrity question arrives later."
     },
     "studentProfile": {
         "tab_overview": "Overview",

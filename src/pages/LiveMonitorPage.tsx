@@ -21,6 +21,8 @@ import {
     TrendingUp,
     TrendingDown,
     MoveRight,
+    Download,
+    FileText,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
@@ -49,7 +51,14 @@ import {
 } from '../utils/proctorAggregator';
 import { estimatePlacement, levelPathRunConfig } from '../utils/placementResult';
 import { MAX_QUESTIONS as STAIRCASE_MAX_QUESTIONS } from '../utils/placementStaircase';
-import { stripCommentHtml } from '../utils/exportDataPrep';
+import { sanitizeFilename, stripCommentHtml } from '../utils/exportDataPrep';
+import { downloadCsv } from '../utils/csvDownload';
+import {
+    buildSessionCsv,
+    buildSessionSummaryHtml,
+    type SessionExportStudent,
+    type SessionExportTranslate,
+} from '../utils/monitorSessionExport';
 import { studentCompletion, type StudentCompletion } from '../utils/responseCells';
 import { answeredQuestionIds, stuckQuestions } from '../utils/questionStuck';
 import { previousDistinctDraft } from '../utils/draftHighlights';
@@ -931,6 +940,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                 status: row.status ?? (live.submitted ? 'submitted' : undefined),
                 connection,
                 silentMinutes,
+                lastSignalAt,
             };
         });
         // `now` forces presence to be re-derived against the current time as heartbeats age.
@@ -1046,8 +1056,13 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         return parts.length > 0 ? parts.join(' · ') : t('tests.monitor.summary.no_data');
     };
 
+    // One label per student for the monitor, the nudge toast and both exports: it follows the
+    // roster, not the current sort or class filter, so "Student 2" never becomes someone else.
+    const anonymousIndexByStudent = new Map(monitorStudents.map((row, rosterIndex) => [row.studentId, rosterIndex]));
     const displayName = (row: { studentId: string; name: string }, index: number) =>
-        hideNames ? t('tests.monitor.anonymous_student', { index: index + 1 }) : row.name;
+        hideNames
+            ? t('tests.monitor.anonymous_student', { index: (anonymousIndexByStudent.get(row.studentId) ?? index) + 1 })
+            : row.name;
 
     // Badges flip silently for a screen-reader user, so say it once when a student drops out. Only
     // transitions are spoken: the first read of the roster and the per-minute "silent for N min"
@@ -1072,6 +1087,58 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         // displayName only varies with the anonymize toggle and the language, neither of which is a transition.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [rows]);
+
+    // ── Session export (the exam file) ────────────────────────────────────────────
+    // The proctoring picture is ephemeral by design, so this is the teacher's only chance to keep
+    // it: counts and ages that can sit next to a student's file without carrying their writing.
+    const sessionTitle = kind === 'test' ? (test?.name ?? '') : (essayAssignment?.title ?? '');
+    // i18next's overloads are narrower than the exporters' plain lookup, so adapt once here.
+    const exportT: SessionExportTranslate = (key, options) => t(key, options as Record<string, unknown>);
+    const exportStudents = (): SessionExportStudent[] =>
+        sortedRows.map((row, index) => {
+            const latestDraft = [...(row.live.snapshots ?? [])].reverse().find((snap) => snap.text !== undefined);
+            return {
+                name: displayName(row, index),
+                status: row.status,
+                finished: row.finished,
+                tabSwitchCount: row.flags.tabSwitchCount,
+                copyCount: row.flags.copyCount,
+                cutCount: row.flags.cutCount,
+                pasteCount: row.flags.pasteCount,
+                wordCount: row.live.snapshot?.wordCount,
+                draftAt: latestDraft?.at,
+                // Stalled time stops at hand-in, and a student who only ever sent signals is measured from the first one.
+                lastChangeAt: row.finished ? undefined : (row.live.lastChangeAt ?? row.live.firstSeenAt),
+                lastSignalAt: row.lastSignalAt,
+                nudges: mergeProctorEvents(row.persistedEvents, row.live.events)
+                    .filter((event) => event.type === 'nudge')
+                    .map((event) => ({ at: event.at, message: String(event.value ?? '') })),
+            };
+        });
+
+    const exportSessionCsv = () => {
+        const at = Date.now();
+        const students = exportStudents();
+        downloadCsv(
+            buildSessionCsv(students, { title: sessionTitle, kind, at }, exportT, at),
+            `${sanitizeFilename(sessionTitle || t('tests.monitor.export.filename_fallback'))}_session.csv`
+        );
+        showToast(t('tests.monitor.export.csv_saved'), 'success');
+    };
+
+    const exportSessionPdf = async () => {
+        const at = Date.now();
+        const students = exportStudents();
+        try {
+            const { printHtml } = await import('../utils/pdfExport');
+            await printHtml(
+                buildSessionSummaryHtml(students, { title: sessionTitle, kind, at }, exportT, at),
+                'portrait'
+            );
+        } catch {
+            showToast(t('tests.monitor.export.pdf_failed'), 'error');
+        }
+    };
 
     // ── Guard: no database configured ──────────────────────────────────────────────
     if (!hasDb) {
@@ -1333,6 +1400,26 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                             {t('tests.monitor.writing_pace_toggle')}
                         </button>
                     )}
+                    <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={exportSessionCsv}
+                        disabled={testTeacherKeysLoading}
+                        data-testid="monitor-export-csv"
+                    >
+                        <Download size={14} />
+                        {t('tests.monitor.export.button_csv')}
+                    </button>
+                    <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => void exportSessionPdf()}
+                        disabled={testTeacherKeysLoading}
+                        data-testid="monitor-export-pdf"
+                    >
+                        <FileText size={14} />
+                        {t('tests.monitor.export.button_pdf')}
+                    </button>
                     <HelpPopover title={t('help.proctoring_title')}>{t('help.proctoring_body')}</HelpPopover>
                 </div>
 

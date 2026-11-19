@@ -1607,6 +1607,37 @@
                 "updated_now": "Mis à jour il y a moins d’une minute",
                 "updated_minutes_one": "Mis à jour il y a {{count}} min",
                 "updated_minutes_other": "Mis à jour il y a {{count}} min"
+            },
+            "export": {
+                "button_csv": "Exporter la session (CSV)",
+                "button_pdf": "Résumé PDF de la session",
+                "csv_saved": "CSV de la session enregistré.",
+                "pdf_failed": "Impossible d’ouvrir le résumé PDF.",
+                "filename_fallback": "session",
+                "column_student": "Élève",
+                "column_status": "Statut",
+                "column_tab_switches": "Changements d’onglet",
+                "column_copy": "Copier",
+                "column_cut": "Couper",
+                "column_paste": "Coller",
+                "column_stalled": "Bloqué (min)",
+                "column_draft_age": "Âge du texte (min)",
+                "column_words": "Mots",
+                "column_nudges": "Rappels",
+                "column_nudge_log": "Journal des rappels",
+                "column_last_signal": "Dernier signal",
+                "status_submitted": "Rendu",
+                "status_opened": "Ouvert",
+                "summary_title": "Résumé de la session",
+                "summary_generated": "Généré à {{time}} par RubricMaker.",
+                "summary_students_one": "{{count}} élève",
+                "summary_students_other": "{{count}} élèves",
+                "summary_tab_switches_one": "{{count}} changement d’onglet",
+                "summary_tab_switches_other": "{{count}} changements d’onglet",
+                "summary_words_one": "{{count}} mot",
+                "summary_words_other": "{{count}} mots",
+                "summary_nudges_one": "{{count}} rappel",
+                "summary_nudges_other": "{{count}} rappels"
             }
         },
         "sections_title": "Sections",
@@ -5514,7 +5545,8 @@
         "gr_queue_bulk": "Choisissez Sélectionner des élèves pour cocher plusieurs élèves (ou Tout sélectionner) et les marquer comme non rendu ou les restaurer en une fois. Seuls les élèves affichés sont modifiés, la restauration conserve notes et historique, et la sélection est effacée dès que les filtres changent.",
         "route_essay_projector_label": "Texte projeté",
         "route_essay_projector_desc": "Vue en lecture seule d’un seul texte pour le projecteur de la classe, sans commandes ni liste de classe.",
-        "es_creating_item_projector": "Projetez un texte dans une seconde fenêtre pour parler d’une phrase, pendant que le moniteur continue de suivre le reste de la classe."
+        "es_creating_item_projector": "Projetez un texte dans une seconde fenêtre pour parler d’une phrase, pendant que le moniteur continue de suivre le reste de la classe.",
+        "rb_live_monitor_item_session_export": "Exportez la session en CSV avec, par élève, les comptages, les minutes de blocage, l’âge du texte, les mots écrits et le journal des rappels — et un résumé PDF d’une page — à joindre si une question d’intégrité arrive plus tard."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",
