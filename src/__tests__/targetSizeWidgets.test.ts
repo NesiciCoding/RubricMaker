@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest';
  */
 const srcRoot = resolve(__dirname, '..');
 const source = (file: string) => readFileSync(resolve(srcRoot, file), 'utf8');
+const css = source('index.css');
 
 const PINNED: { file: string; label: string; pattern: RegExp; occurrences?: number }[] = [
     {
@@ -61,6 +62,16 @@ const PINNED: { file: string; label: string; pattern: RegExp; occurrences?: numb
         pattern: /ACCENT_PRESETS\.map[\s\S]{0,1200}?width: 44[\s\S]{0,120}?height: 44/,
     },
     {
+        file: 'pages/SettingsPage.tsx',
+        label: 'accent colour picker',
+        pattern: /type="color"[\s\S]{0,600}?width: 44[\s\S]{0,120}?height: 44/,
+    },
+    {
+        file: 'pages/SettingsPage.tsx',
+        label: 'theme-bundle buttons',
+        pattern: /THEME_BUNDLES\.map[\s\S]{0,2400}?minHeight: 44/,
+    },
+    {
         file: 'pages/DocsPage.tsx',
         label: 'Docs section rail',
         pattern: /docs\.sections_nav_label[\s\S]{0,3600}?minHeight: 44/,
@@ -84,6 +95,16 @@ describe('inline-styled targets at 44 px (#533, WCAG 2.5.5)', () => {
             expect(matches.length).toBeGreaterThanOrEqual(pin.occurrences ?? 1);
         });
     }
+
+    it('leaves the accent swatches a visible keyboard focus ring', () => {
+        const settings = source('pages/SettingsPage.tsx');
+        const start = settings.indexOf('ACCENT_PRESETS.map');
+        const swatch = settings.slice(start, settings.indexOf('</button>', start));
+        // An inline `outline: none` would beat the global ring and leave keyboard focus invisible.
+        expect(swatch).not.toMatch(/outline:\s*'none'/);
+        // That only works because :focus-visible still paints the ring.
+        expect(css).toMatch(/:focus-visible\s*\{[^}]*outline:\s*2px solid/);
+    });
 
     it('keeps the segmented toggle opt-in override, so a caller can still ask for another height', () => {
         const toggle = source('components/ui/SegmentedToggle.tsx');

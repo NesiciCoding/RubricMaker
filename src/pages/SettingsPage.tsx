@@ -815,8 +815,8 @@ export default function SettingsPage() {
                                                 value={/^#[0-9A-Fa-f]{6}$/.test(accentInput) ? accentInput : '#37b49c'}
                                                 onChange={(e) => handleAccentChange(e.target.value)}
                                                 style={{
-                                                    width: 36,
-                                                    height: 32,
+                                                    width: 44,
+                                                    height: 44,
                                                     padding: 2,
                                                     border: '1px solid var(--border)',
                                                     borderRadius: 5,
@@ -862,10 +862,11 @@ export default function SettingsPage() {
                                                         background: 'transparent',
                                                         border: 'none',
                                                         cursor: 'pointer',
-                                                        outline: 'none',
                                                     }}
                                                 >
-                                                    {/* The dot keeps its 22 px look; the button around it is the 44 px target. */}
+                                                    {/* The dot keeps its 22 px look; the button around it is the 44 px target.
+                                                        No `outline: none` here: the global :focus-visible ring is the
+                                                        only thing that shows where keyboard focus is. */}
                                                     <span
                                                         aria-hidden="true"
                                                         style={{
@@ -917,6 +918,7 @@ export default function SettingsPage() {
                                                             display: 'flex',
                                                             alignItems: 'center',
                                                             gap: 8,
+                                                            minHeight: 44,
                                                             padding: '6px 12px',
                                                             borderRadius: 8,
                                                             border: active

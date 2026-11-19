@@ -29,8 +29,8 @@ const TARGET = 44;
 
 /**
  * Routes whose controls are all at the 44 px floor: the builders, every page carrying the chip rows
- * or the Cards/List toggle, the sortable student table, the profile tabs, the Docs rail and the
- * question editor's toolbar.
+ * or the Cards/List toggle, the sortable student table, the profile tabs, the Docs rail, the question
+ * editor's toolbar and the Settings tabs/presets/bundles.
  */
 const TARGET_SIZE_ROUTES = [
     // Builders: every control comes from a shared primitive.
@@ -52,6 +52,8 @@ const TARGET_SIZE_ROUTES = [
     '/students/student-a11y-1',
     // Section rail.
     '/docs',
+    // Settings section tabs, accent presets/picker and theme bundles.
+    '/settings',
     // The question editor's inline formatting toolbar.
     '/tests/test-a11y-1',
 ];
