@@ -51,6 +51,7 @@ import { MAX_QUESTIONS as STAIRCASE_MAX_QUESTIONS } from '../utils/placementStai
 import { stripCommentHtml } from '../utils/exportDataPrep';
 import { studentCompletion, type StudentCompletion } from '../utils/responseCells';
 import { answeredQuestionIds, stuckQuestions } from '../utils/questionStuck';
+import { TRIAGE_KEYS, triageCounts, triageMatches, type TriageKey } from '../utils/monitorTriage';
 import {
     appendWordSample,
     clampStallMinutes,
@@ -203,9 +204,13 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     const [classFilter, setClassFilter] = useState<string>('all');
     // A class selected for one test may not exist in the next: reset so the new
     // test never opens with every student filtered out and no way to recover.
+    // A triage chip narrows the grid to the students the strip counted. It applies to one monitored
+    // assignment only, so it resets with the class filter below.
+    const [triageFilter, setTriageFilter] = useState<TriageKey | null>(null);
     const monitoredKey = kind === 'test' ? (params.testId ?? '') : (params.assignmentId ?? '');
     useEffect(() => {
         setClassFilter('all');
+        setTriageFilter(null);
     }, [monitoredKey]);
     const [startedOnly, setStartedOnly] = useState(false);
     const [columnSortRules, setColumnSortRules] = useState<ColumnSortRule[]>([{ key: 'original', dir: 'asc' }]);
@@ -948,6 +953,30 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         });
     }, [sortedRows, classFilter, startedOnly]);
 
+    // The class triage strip: a worklist over the same rows the class/started filters left, so the
+    // counts and the grid's rows always describe the same students.
+    const triageRows = visibleRows.map((row) => {
+        // A cleared answer keeps its key in the snapshot, so count answered questions, not entries.
+        const answeredCount = test ? answeredQuestionIds(test.questions, row.mergedAnswers).size : 0;
+        return {
+            finished: row.finished,
+            tabSwitchCount: row.flags.tabSwitchCount,
+            stalledMinutes: stalledFor(row),
+            started:
+                row.live.snapshot !== null ||
+                row.live.firstSeenAt !== undefined ||
+                row.persistedEvents.length > 0 ||
+                row.mergedAnswers.length > 0,
+            progress: kind === 'essay' ? row.live.snapshot?.wordCount : answeredCount,
+            pace: paceByStudent.get(row.studentId),
+        };
+    });
+    const triage = triageCounts(triageRows);
+    const shownRows =
+        triageFilter && kind === 'test' && !isLevelGrid
+            ? visibleRows.filter((_, index) => triageMatches(triageRows[index], triageFilter))
+            : visibleRows;
+
     // Where the class — not one student — is stuck: questions someone answered past but left blank.
     const stuck = useMemo(() => {
         if (kind !== 'test' || !test || isLevelGrid) return [];
@@ -1275,6 +1304,66 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                     />
                 )}
 
+                {kind === 'test' && !isLevelGrid && visibleRows.length > 0 && (
+                    <div
+                        data-testid="monitor-triage"
+                        style={{
+                            position: 'sticky',
+                            top: 0,
+                            zIndex: 2,
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            alignItems: 'center',
+                            gap: 6,
+                            padding: '6px 0',
+                            background: 'var(--bg)',
+                            borderBottom: '1px solid var(--border)',
+                        }}
+                    >
+                        <span
+                            style={{
+                                fontSize: '0.72rem',
+                                letterSpacing: '0.04em',
+                                textTransform: 'uppercase',
+                                color: 'var(--text-dim)',
+                            }}
+                        >
+                            {t('tests.monitor.triage.label')}
+                        </span>
+                        {TRIAGE_KEYS.map((key) => {
+                            const count = triage[key];
+                            const active = triageFilter === key;
+                            return (
+                                <button
+                                    key={key}
+                                    type="button"
+                                    className={count > 0 ? 'badge badge-yellow' : 'badge'}
+                                    aria-pressed={active}
+                                    disabled={count === 0}
+                                    data-testid={`monitor-triage-${key}`}
+                                    onClick={() => setTriageFilter(active ? null : key)}
+                                    style={{
+                                        cursor: count > 0 ? 'pointer' : 'default',
+                                        color: count > 0 ? undefined : 'var(--text-dim)',
+                                        outline: active ? '2px solid var(--accent-text)' : undefined,
+                                    }}
+                                >
+                                    {t(`tests.monitor.triage.${key}`, { count, minutes: stallMinutes })}
+                                </button>
+                            );
+                        })}
+                        {triageFilter && (
+                            <button
+                                type="button"
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => setTriageFilter(null)}
+                            >
+                                {t('tests.monitor.triage.clear')}
+                            </button>
+                        )}
+                    </div>
+                )}
+
                 {stuck.length > 0 && (
                     <p
                         data-testid="monitor-stuck-questions"
@@ -1300,6 +1389,10 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                     <InlineMonitorSkeleton />
                 ) : visibleRows.length === 0 ? (
                     <p className="text-muted">{t('tests.monitor.no_students')}</p>
+                ) : shownRows.length === 0 ? (
+                    <p className="text-muted" data-testid="monitor-triage-empty">
+                        {t('tests.monitor.triage.empty')}
+                    </p>
                 ) : (
                     <>
                         {/* Presence + proctoring summary — the adaptive level grids have no question
@@ -1478,7 +1571,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                 showProgress={showProgress}
                                 showClassProgress={showClassProgress}
                                 showMilestones={showMilestones}
-                                rows={visibleRows.map((row, index) => {
+                                rows={shownRows.map((row, index) => {
                                     const pace = paceByStudent.get(row.studentId);
                                     const stalled = stalledFor(row);
                                     return {
