@@ -1,6 +1,6 @@
 import type { StudentTest, Test, TestQuestion } from '../types';
 import { clamp } from './clamp';
-import { deliveredQuestions } from './variantDelivery';
+import { deliveredQuestions, hasVariantFamilies } from './variantDelivery';
 import { isStagedTest, maxPointsForPath, sectionQuestions } from './placementRouting';
 import { staircaseMaxPoints, usesLevelPathEstimate } from './placementStaircase';
 import {
@@ -63,7 +63,12 @@ export function scoreStudentTest(test: Test, studentTest: StudentTest): StudentT
                   scoredTest,
                   studentTest.answers.filter((a) => pathQuestionIds.has(a.questionId))
               )
-            : (studentTest.rawTotalPoints ?? calcStudentTestRawPoints(scoredTest, studentTest.answers));
+            : hasVariantFamilies(test) && studentTest.answers.some((a) => !pathQuestionIds.has(a.questionId))
+              ? calcStudentTestRawPoints(
+                    scoredTest,
+                    studentTest.answers.filter((a) => pathQuestionIds.has(a.questionId))
+                )
+              : (studentTest.rawTotalPoints ?? calcStudentTestRawPoints(scoredTest, studentTest.answers));
 
     const adjustmentPoints = studentTest.adjustmentPoints ?? 0;
     const totalPoints = clamp(rawPoints + adjustmentPoints, 0, maxPoints);

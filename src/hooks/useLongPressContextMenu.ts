@@ -55,6 +55,7 @@ export function useLongPressContextMenu(): void {
             if (event.touches.length !== 1) return;
             const target = event.target instanceof Element ? event.target : null;
             if (!target || !target.closest('[data-longpress]') || keepsNativeMenu(target)) return;
+            if (target.closest('[data-rfd-drag-handle-draggable-id]')) return;
             const touch = event.touches[0];
             press = {
                 x: touch.clientX,

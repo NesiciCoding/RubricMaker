@@ -308,9 +308,12 @@ export function calcTestItemAnalysis(studentTests: StudentTest[], test: Test): Q
     const relevant = relevantStudentTests(null, studentTests, test).filter((st) => st.answers.length > 0);
     const maxPoints = calcTestMaxPoints(test);
 
-    const ranked = [...relevant].sort(
-        (a, b) => calcStudentTestRawPoints(test, b.answers) - calcStudentTestRawPoints(test, a.answers)
-    );
+    const deliveredAnswers = (st: StudentTest) => {
+        const undelivered = undeliveredQuestionIds(test, st.studentId);
+        return undelivered.size === 0 ? st.answers : st.answers.filter((a) => !undelivered.has(a.questionId));
+    };
+    const rankScore = new Map(relevant.map((st) => [st, calcStudentTestRawPoints(test, deliveredAnswers(st))]));
+    const ranked = [...relevant].sort((a, b) => rankScore.get(b)! - rankScore.get(a)!);
     const groupSize = Math.max(1, Math.round(ranked.length * DISCRIMINATION_GROUP_RATIO));
     const upperIds = new Set(ranked.slice(0, groupSize).map((st) => st.studentId));
     const lowerIds = new Set(ranked.slice(-groupSize).map((st) => st.studentId));

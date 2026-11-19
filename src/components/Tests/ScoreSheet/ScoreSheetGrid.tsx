@@ -113,9 +113,9 @@ export default function ScoreSheetGrid({
             const student = students[row];
             const q = questions[col];
             if (!student || !q) continue;
-            if (!isQuestionDelivered(test, student.id, q.id)) continue;
             const validity = validateCell(raw, q.points);
             if (validity === 'invalid' || validity === 'over_max') continue;
+            if (validity !== 'empty' && !isQuestionDelivered(test, student.id, q.id)) continue;
             const current = touched.has(student.id) ? touched.get(student.id) : sheetRef.current.get(student.id);
             const before = latestAnswer(current, q.id);
             const next = validity === 'empty' ? null : parsePoints(raw)!;
@@ -342,9 +342,17 @@ export default function ScoreSheetGrid({
         if (e.key === 'ArrowLeft' && input.selectionStart !== 0) return;
         if (e.key === 'ArrowRight' && input.selectionEnd !== input.value.length) return;
         e.preventDefault();
-        const r = Math.min(Math.max(row + move[0], 0), students.length - 1);
-        const c = Math.min(Math.max(col + move[1], 0), questions.length - 1);
-        focusCell(r, c);
+        let r = row + move[0];
+        let c = col + move[1];
+        while (r >= 0 && r < students.length && c >= 0 && c < questions.length) {
+            const target = tableRef.current?.querySelector<HTMLInputElement>(`[data-cell="${r}-${c}"]`);
+            if (target && !target.disabled) {
+                focusCell(r, c);
+                return;
+            }
+            r += move[0];
+            c += move[1];
+        }
     }
 
     /** Writes a pasted block from (row, col), skipping rows that are absent or that I cannot edit. */

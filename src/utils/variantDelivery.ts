@@ -1,100 +1,31 @@
-import type { Test, TestQuestion } from '../types';
+import type { Test } from '../types';
+import {
+    chosenMemberId,
+    deliveredQuestions,
+    hasVariantFamilies,
+    isQuestionDelivered,
+    undeliveredQuestionIds,
+    variantFamilies,
+} from '../../supabase/functions/_shared/variantDelivery.ts';
+
+export {
+    chosenMemberId,
+    deliveredQuestions,
+    hasVariantFamilies,
+    isQuestionDelivered,
+    undeliveredQuestionIds,
+    variantFamilies,
+};
 
 /**
  * An easier copy of a cloze question (`buildEasierClozeVariant`) sits next to its source and points
  * back through `variantOfQuestionId`. Together they are one family, and a student must be given
  * exactly one member: the copy can fill a gap with the very answer the original asks for.
  *
- * The member is derived from the student id and the family id, so the runner, the printed paper, the
+ * The member is derived from the student id and the family id (see `_shared/variantDelivery.ts`), so the runner, the printed paper, the
  * scan and every score view agree without a stored field. Members keep identical `points`, so which
  * member a student gets never changes the total.
  */
-
-function familyIdOf(question: TestQuestion): string {
-    return question.variantOfQuestionId ?? question.id;
-}
-
-/** Families with at least two members present, in test order, keyed by the source question id. */
-export function variantFamilies(questions: TestQuestion[]): Map<string, TestQuestion[]> {
-    const referenced = new Set(questions.flatMap((q) => (q.variantOfQuestionId ? [q.variantOfQuestionId] : [])));
-    const byFamily = new Map<string, TestQuestion[]>();
-    for (const question of questions) {
-        const id = familyIdOf(question);
-        if (!referenced.has(id)) continue;
-        byFamily.set(id, [...(byFamily.get(id) ?? []), question]);
-    }
-    for (const [id, members] of byFamily) if (members.length < 2) byFamily.delete(id);
-    return byFamily;
-}
-
-export function hasVariantFamilies(test: Pick<Test, 'questions'>): boolean {
-    return variantFamilies(test.questions).size > 0;
-}
-
-/** Stable 32-bit FNV-1a hash of a string. */
-function hashOf(key: string): number {
-    let hash = 0x811c9dc5;
-    for (let i = 0; i < key.length; i++) {
-        hash ^= key.charCodeAt(i);
-        hash = Math.imul(hash, 0x01000193) >>> 0;
-    }
-    return hash;
-}
-
-/**
- * Which member of a family a student receives. `null` (a blank, unnamed paper) takes the first
- * member, i.e. the original question.
- */
-export function chosenMemberId(
-    familyId: string,
-    members: TestQuestion[],
-    studentId: string | null | undefined
-): string {
-    if (!studentId) return members[0].id;
-    return members[hashOf(`${studentId}:${familyId}`) % members.length].id;
-}
-
-/** Ids of the questions a student is NOT given because a sibling in their family was chosen instead. */
-export function undeliveredQuestionIds(
-    test: Pick<Test, 'questions'>,
-    studentId: string | null | undefined
-): Set<string> {
-    // Score views ask this once per student × question, so cache per question array.
-    const key = studentId ?? '';
-    let perStudent = skippedCache.get(test.questions);
-    if (!perStudent) {
-        perStudent = new Map();
-        skippedCache.set(test.questions, perStudent);
-    }
-    const cached = perStudent.get(key);
-    if (cached) return cached;
-    const skipped = new Set<string>();
-    for (const [familyId, members] of variantFamilies(test.questions)) {
-        const chosen = chosenMemberId(familyId, members, studentId);
-        for (const member of members) if (member.id !== chosen) skipped.add(member.id);
-    }
-    perStudent.set(key, skipped);
-    return skipped;
-}
-
-const skippedCache = new WeakMap<TestQuestion[], Map<string, Set<string>>>();
-
-export function isQuestionDelivered(
-    test: Pick<Test, 'questions'>,
-    studentId: string | null | undefined,
-    questionId: string
-): boolean {
-    return !undeliveredQuestionIds(test, studentId).has(questionId);
-}
-
-/** The questions one student is given: every non-family question plus one member per family. */
-export function deliveredQuestions(
-    test: Pick<Test, 'questions'>,
-    studentId: string | null | undefined
-): TestQuestion[] {
-    const skipped = undeliveredQuestionIds(test, studentId);
-    return skipped.size === 0 ? test.questions : test.questions.filter((q) => !skipped.has(q.id));
-}
 
 /** The test as one student receives it; the same object when it has no variant families. */
 export function deliveredTest(test: Test, studentId: string | null | undefined): Test {

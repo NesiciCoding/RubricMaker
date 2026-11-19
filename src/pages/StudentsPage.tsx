@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { saveAs } from 'file-saver';
 import { useNavigate } from 'react-router-dom';
@@ -475,6 +475,14 @@ export default function StudentsPage() {
     const [editStudentTrack, setEditStudentTrack] = useState<VoTrack | ''>('');
     const [editStudentReadAloud, setEditStudentReadAloud] = useState(false);
     const rowMenu = useContextMenu();
+    const [rowMenuStudentId, setRowMenuStudentId] = useState<string | null>(null);
+    const { close: closeRowMenu } = rowMenu;
+    useEffect(() => {
+        if (rowMenuStudentId && !students.some((st) => st.id === rowMenuStudentId)) {
+            closeRowMenu();
+            setRowMenuStudentId(null);
+        }
+    }, [rowMenuStudentId, students, closeRowMenu]);
     const [editStudentYear, setEditStudentYear] = useState<SchoolYear | ''>('');
     const [newClassName, setNewClassName] = useState('');
     const [importFile, setImportFile] = useState<File | null>(null);
@@ -1356,7 +1364,8 @@ export default function StudentsPage() {
                                                     (r) => r.id === lastRubricByClass.get(s.classId)
                                                 ) ?? null;
                                             const gradedRubricIds = gradedRubricsByStudent.get(s.id);
-                                            const openRowMenu = (e: React.MouseEvent) =>
+                                            const openRowMenu = (e: React.MouseEvent) => {
+                                                setRowMenuStudentId(s.id);
                                                 rowMenu.open(
                                                     e,
                                                     studentRowMenuItems({
@@ -1387,13 +1396,17 @@ export default function StudentsPage() {
                                                                           { id: s.id, name: s.name, email: s.email! },
                                                                       ])
                                                                 : undefined,
-                                                        edit: () => openEditStudent(s),
+                                                        edit: () => {
+                                                            const current = students.find((st) => st.id === s.id);
+                                                            if (current) openEditStudent(current);
+                                                        },
                                                         remove: () => setConfirmDeleteStudent(s.id),
                                                     }),
                                                     t('studentsPage.row_menu_label')
                                                 );
+                                            };
                                             return (
-                                                <tr key={s.id} data-longpress onContextMenu={openRowMenu}>
+                                                <tr key={s.id} data-longpress tabIndex={-1} onContextMenu={openRowMenu}>
                                                     <td style={{ fontWeight: 500 }}>
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                                             <Avatar name={s.name} size={26} fontSize="0.75rem" />

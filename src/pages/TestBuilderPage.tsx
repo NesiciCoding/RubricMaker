@@ -1461,25 +1461,32 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                         activeId={selectedQuestionId}
                         activeSectionId={selectedSectionId}
                         onSelect={jumpToQuestion}
-                        questionMenu={(question) =>
-                            questionOutlineMenuItems({
-                                question,
-                                sections,
-                                labels: {
-                                    duplicate: t('tests.menu_duplicate_question'),
-                                    insertFromBank: t('tests.menu_insert_from_bank'),
-                                    moveTo: (title) => t('tests.menu_move_to_section', { section: title }),
-                                    noSection: t('tests.no_section'),
-                                    remove: t('tests.menu_delete_question'),
-                                },
-                                duplicate: () => copyQuestion(question.id),
-                                insertFromBankAfter: () => {
-                                    setBankInsertAfterId(question.id);
-                                    setShowBankModal(true);
-                                },
-                                moveToSection: (sectionId) => moveQuestionToSection(question.id, sectionId),
-                                remove: () => removeQuestion(question.id),
-                            })
+                        questionMenu={
+                            readOnly
+                                ? undefined
+                                : (question) =>
+                                      questionOutlineMenuItems({
+                                          question,
+                                          sections,
+                                          labels: {
+                                              duplicate: t('tests.menu_duplicate_question'),
+                                              insertFromBank: t('tests.menu_insert_from_bank'),
+                                              moveTo: (title) => t('tests.menu_move_to_section', { section: title }),
+                                              noSection: t('tests.no_section'),
+                                              remove: t('tests.menu_delete_question'),
+                                          },
+                                          duplicate: () => {
+                                              setChecksOpen(false);
+                                              setSelectedSectionId(null);
+                                              copyQuestion(question.id);
+                                          },
+                                          insertFromBankAfter: () => {
+                                              setBankInsertAfterId(question.id);
+                                              setShowBankModal(true);
+                                          },
+                                          moveToSection: (sectionId) => moveQuestionToSection(question.id, sectionId),
+                                          remove: () => removeQuestion(question.id),
+                                      })
                         }
                         onSelectSection={(sectionId) => {
                             setChecksOpen(false);

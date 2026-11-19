@@ -266,6 +266,31 @@ function scoredSubmissions(test: Test, studentTests: StudentTest[]): StudentTest
     return [...byStudent.values()].filter((st) => !st.absent);
 }
 
+/** Upper/lower-27% discrimination per item of the collapsed matrix, so a family counts every member's samples. */
+function familyDiscrimination(matrix: ItemMatrix): Map<string, number | null> {
+    const totals = matrix.rows.map((row) => row.scores.reduce<number>((sum, s) => sum + (s ?? 0), 0));
+    const order = matrix.rows.map((_, i) => i).sort((a, b) => totals[b] - totals[a]);
+    const groupSize = Math.max(1, Math.round(order.length * DISCRIMINATION_GROUP_RATIO));
+    const upper = order.slice(0, groupSize);
+    const lower = order.slice(-groupSize);
+    const canDiscriminate =
+        order.length >= MIN_STUDENTS_FOR_DISCRIMINATION && matrix.items.reduce((sum, i) => sum + i.maxPoints, 0) > 0;
+    const result = new Map<string, number | null>();
+    matrix.items.forEach((item, col) => {
+        const mean = (rows: number[]) => {
+            const fractions = rows.flatMap((r) => {
+                const score = matrix.rows[r].scores[col];
+                return score === null || item.maxPoints <= 0 ? [] : [score / item.maxPoints];
+            });
+            return fractions.length ? fractions.reduce((a, b) => a + b, 0) / fractions.length : null;
+        };
+        const up = mean(upper);
+        const low = mean(lower);
+        result.set(item.id, canDiscriminate && up !== null && low !== null ? up - low : null);
+    });
+    return result;
+}
+
 /**
  * Classical test-theory quality report for a test: difficulty (P), item-total and item-rest
  * correlations, Cronbach's α (and α if an item is dropped), SEM and the score distribution.
@@ -305,6 +330,10 @@ export function calcTestQuality(test: Test, studentTests: StudentTest[]): ItemQu
     const discrimination = new Map(
         calcTestItemAnalysis(submissions, test).map((row) => [row.questionId, row.discrimination])
     );
+    if (familyByFirstMember.size > 0) {
+        const collapsed = familyDiscrimination(matrix);
+        for (const itemId of familyByFirstMember.keys()) discrimination.set(itemId, collapsed.get(itemId) ?? null);
+    }
     return calcItemQuality(matrix, { discriminationOf: (itemId) => discrimination.get(itemId) ?? null });
 }
 
