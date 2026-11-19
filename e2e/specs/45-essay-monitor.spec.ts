@@ -326,12 +326,16 @@ test.describe('Live monitor — essay kind', () => {
                 timeout: 15_000,
             });
 
-            // Teacher sends the check-in nudge on the shared Realtime channel.
+            // Teacher sends a nudge preset on the shared Realtime channel: the button opens
+            // the preset menu, and the chosen message is what travels to the student.
             await supabasePage.getByRole('button', { name: 'Nudge' }).click();
+            await supabasePage.getByRole('menuitem', { name: "Check the question you're on" }).click();
 
-            // The student's screen shows the live check-in banner (a toast with
-            // role="alert") within its ~4s lifetime.
-            await expect(studentPage.getByRole('alert').getByText(/check in/i)).toBeVisible({ timeout: 5_000 });
+            // The student's screen shows that message (a toast with role="alert") within
+            // its ~4s lifetime.
+            await expect(studentPage.getByRole('alert').getByText(/check the question you.re on/i)).toBeVisible({
+                timeout: 5_000,
+            });
         } finally {
             await studentContext.close();
         }

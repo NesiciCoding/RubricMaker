@@ -1,8 +1,9 @@
 import React from 'react';
-import { ArrowLeft, Radio, Send } from 'lucide-react';
+import { ArrowLeft, Radio } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import LiveDraftPanel from './LiveDraftPanel';
 import EssayTimeline from './EssayTimeline';
+import NudgeMenu from './NudgeMenu';
 import type { PresenceState, ProctorFlagSummary } from '../../utils/proctorAggregator';
 import type { WordSample } from '../../utils/monitorSignals';
 import { buildTimeline } from '../../utils/monitorTimeline';
@@ -32,7 +33,8 @@ export interface EssaySpotlightProps {
     events?: ProctorEvent[];
     flags?: ProctorFlagSummary;
     showWritingPace?: boolean;
-    onNudge?: () => void;
+    /** Receives the nudge message the teacher picked. */
+    onNudge?: (message: string) => void;
     onLeave: () => void;
     now?: number;
 }
@@ -283,21 +285,9 @@ export default function EssaySpotlight({
                         </span>
                     </div>
                     {onNudge && (
-                        <button
-                            type="button"
-                            className="btn btn-secondary btn-sm"
-                            onClick={onNudge}
-                            style={{
-                                marginTop: 6,
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 5,
-                                justifyContent: 'center',
-                            }}
-                        >
-                            <Send size={13} aria-hidden="true" />
-                            {t('tests.monitor.nudge_button')}
-                        </button>
+                        <div style={{ marginTop: 6 }}>
+                            <NudgeMenu onSend={onNudge} />
+                        </div>
                     )}
                 </div>
             </div>

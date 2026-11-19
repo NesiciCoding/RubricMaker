@@ -1700,7 +1700,16 @@ export interface QuestionBankItem {
 }
 
 export type ProctorEventType =
-    'tab_switch' | 'copy' | 'paste' | 'cut' | 'battery' | 'heartbeat' | 'seb_status' | 'audio_play';
+    | 'tab_switch'
+    | 'copy'
+    | 'paste'
+    | 'cut'
+    | 'battery'
+    | 'heartbeat'
+    | 'seb_status'
+    | 'audio_play'
+    // A teacher's nudge, logged on both ends so student and teacher share one history.
+    | 'nudge';
 
 export interface ProctorEvent {
     type: ProctorEventType;

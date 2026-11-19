@@ -37,6 +37,7 @@ import ResponsesGrid from '../components/Monitor/ResponsesGrid';
 import LevelResponsesGrid from '../components/Monitor/LevelResponsesGrid';
 import ColumnSortModal from '../components/Monitor/ColumnSortModal';
 import PlacementLevelPanel from '../components/Monitor/PlacementLevelPanel';
+import NudgeMenu from '../components/Monitor/NudgeMenu';
 import EssayMonitorRoster from '../components/Monitor/EssayMonitorRoster';
 import EssaySpotlight from '../components/Monitor/EssaySpotlight';
 import {
@@ -541,6 +542,20 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         setLiveStates({});
     }, [scopeKey]);
 
+    // The student echoes every nudge back as an event of its own; remember what was just sent so
+    // that echo is recognised instead of showing one send twice.
+    const sentNudgesRef = useRef<Map<string, { message: string; at: number }[]>>(new Map());
+    const consumeNudgeEcho = useCallback((studentId: string, message: string) => {
+        const pending = sentNudgesRef.current.get(studentId) ?? [];
+        const index = pending.findIndex((sent) => sent.message === message && Date.now() - sent.at <= 60_000);
+        if (index < 0) return false;
+        sentNudgesRef.current.set(
+            studentId,
+            pending.filter((_, i) => i !== index)
+        );
+        return true;
+    }, []);
+
     const channelsRef = useRef<Map<string, RealtimeChannel>>(new Map());
     useEffect(() => {
         if (!hasDb || monitorStudents.length === 0) return;
@@ -558,9 +573,11 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
             channel
                 .on('broadcast', { event: 'event' }, ({ payload }) => {
                     const at = Date.now();
+                    const incoming = payload as ProctorEvent;
+                    const isEcho = incoming.type === 'nudge' && consumeNudgeEcho(row.studentId, String(incoming.value));
                     updateLiveState(row.studentId, (current) => ({
                         ...current,
-                        events: [...current.events, payload as ProctorEvent],
+                        events: isEcho ? current.events : [...current.events, incoming],
                         lastUpdateAt: new Date(at).toISOString(),
                         firstSeenAt: current.firstSeenAt ?? at,
                     }));
@@ -725,11 +742,27 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     }, [hasDb, essayAssignmentKey, rosterKey, monitorStudents]);
 
     const sendNudge = useCallback(
-        (studentId: string) => {
+        (studentId: string, message: string) => {
+            sentNudgesRef.current.set(studentId, [
+                ...(sentNudgesRef.current.get(studentId) ?? []),
+                { message, at: Date.now() },
+            ]);
             channelsRef.current.get(studentId)?.send({
                 type: 'broadcast',
                 event: 'nudge',
-                payload: { message: t('tests.monitor.nudge_message') },
+                payload: { message },
+            });
+            // The teacher's own log keeps what was sent, so both sides tell the same story and the
+            // in-row history shows when a nudge went out.
+            setLiveStates((prev) => {
+                const current = prev[studentId] ?? emptyLiveState(studentId);
+                return {
+                    ...prev,
+                    [studentId]: {
+                        ...current,
+                        events: [...current.events, { type: 'nudge', at: new Date().toISOString(), value: message }],
+                    },
+                };
             });
             if (hideNames) {
                 // Sharing the anonymized monitor must never leak a real name in the toast.
@@ -746,9 +779,12 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         },
         [t, hideNames, monitorStudents, showToast]
     );
-    const nudgeFocusedStudent = useCallback(() => {
-        if (focusedStudentId) sendNudge(focusedStudentId);
-    }, [focusedStudentId, sendNudge]);
+    const nudgeFocusedStudent = useCallback(
+        (message: string) => {
+            if (focusedStudentId) sendNudge(focusedStudentId, message);
+        },
+        [focusedStudentId, sendNudge]
+    );
 
     // ── Live level override (roadmap 27.2) — persists via the owner-scoped
     // set_placement_override RPC, consumed by the student's NEXT next-placement-question call;
@@ -1471,15 +1507,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                                             </span>
                                                         );
                                                     })()}
-                                                <button
-                                                    type="button"
-                                                    className="btn btn-ghost btn-sm"
-                                                    onClick={() => sendNudge(row.studentId)}
-                                                    title={t('tests.monitor.nudge_button')}
-                                                    style={{ display: 'flex', alignItems: 'center', gap: 4 }}
-                                                >
-                                                    <Send size={13} /> {t('tests.monitor.nudge_button')}
-                                                </button>
+                                                <NudgeMenu onSend={(message) => sendNudge(row.studentId, message)} />
                                                 {kind === 'test' && test?.placementEngine === 'generator' && (
                                                     <PlacementLevelPanel
                                                         level={row.placementLevel}
@@ -1599,7 +1627,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                             statusSummary: showStatusSummary
                                                 ? statusSummary(row, stalled, pace)
                                                 : undefined,
-                                            onNudge: () => sendNudge(row.studentId),
+                                            onNudge: (message: string) => sendNudge(row.studentId, message),
                                         },
                                     };
                                 })}

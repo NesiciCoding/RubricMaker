@@ -1518,7 +1518,8 @@
                 "paste": "Einfügen",
                 "battery": "Akku",
                 "seb_status": "Safe-Exam-Browser-Prüfung",
-                "audio_play": "Audio abgespielt"
+                "audio_play": "Audio abgespielt",
+                "nudge": "Hinweis"
             },
             "essay": {
                 "watch_live": "Live beobachten",
@@ -1586,6 +1587,11 @@
                 "behind_other": "{{count}} im Rückstand",
                 "clear": "Alle anzeigen",
                 "empty": "Niemand passt zu diesem Filter."
+            },
+            "nudge": {
+                "preset_check": "Sieh deine aktuelle Frage noch einmal an",
+                "preset_time": "Noch 5 Minuten",
+                "preset_save": "Denk ans Speichern"
             }
         },
         "sections_title": "Abschnitte",
@@ -4922,7 +4928,7 @@
         "rb_live_monitor_intro_suffix": "(von der Testseite für einen Test oder vom Zuweisungsdialog für einen Aufsatz), um eine Live-Ansicht der Sitzung zu öffnen. Dies erfordert eine aktivierte Cloud-Synchronisierung — ohne sie erklärt die Seite, dass du den Fortschritt stattdessen nachträglich aus den gespeicherten Antworten oder dem Entwurf jedes Schülers überprüfen kannst.",
         "rb_live_monitor_item_presence": "Anwesenheit — ein farbiger Punkt zeigt an, ob jeder Schüler aktiv, inaktiv oder getrennt ist, basierend darauf, wie kürzlich sich sein Browser gemeldet hat.",
         "rb_live_monitor_item_grid": "Antwortraster (Tests) — eine Schüler×Fragen-Matrix aus farbigen Balken, nach Klasse gruppiert, mit Klassendurchschnitt pro Frage und Gesamtwert pro Schüler. Jede Zeile ist ein Schüler, jede Spalte eine Frage; ein Klick auf den Fragenkopf öffnet eine Galerie aller Antworten. Anwesenheit, Alter des letzten Signals und die Proctoring-Markierungen stehen in zwei festen Spalten links in der Zeile, und das Pfeilsymbol öffnet das vollständige Proctoring-Protokoll dieses Schülers im Raster. Eine Zeile über dem Raster nennt die Fragen, die Schüler erreicht und leer gelassen haben: dort hängt die Klasse, nicht eine Person. Eine fixierte Leiste über dem Raster fasst die Klasse auf einen Blick zusammen — markiert, still, schreibt nicht, im Rückstand — und ein Klick darauf beschränkt das Raster auf diese Schüler.",
-        "rb_live_monitor_item_draft": "Live-Entwürfe (Aufsätze) — der Monitor listet jeden Schüler, der an dieser Aufgabe schreibt, mit einer Momentaufnahme des Textes etwa einmal pro Minute (Wortzahl, Schreibtempo und Zeit seit dem letzten Tastendruck aktualisieren sich alle paar Sekunden), wobei die seit der letzten Momentaufnahme hinzugefügten Wörter hervorgehoben sind, plus Wortzahl, Schreibtempo, Zeit seit dem letzten Tastendruck und eine Sparkline der Wortzahl. Ein Klick auf „Live beobachten“ öffnet eine Spotlight-Ansicht, die alle fünf Sekunden aktualisiert wird: der vollständige Entwurf, Satz- und Wortschatzmessungen, ein Momentaufnahme-Protokoll und die Proctoring-Signale. Snapshots werden serverseitig gespeichert, daher zeigt die Liste nach einem Neuladen oder einer Verbindungsunterbrechung weiterhin den letzten Entwurf und dessen Alter. Eine Zeile sagt außerdem, wenn eine Schülerin oder ein Schüler die Aufgabe noch nicht geöffnet hat oder die Verbindung abgebrochen ist, statt beides als denselben grauen Punkt zu zeigen. Jede Zeile trennt getippte von eingefügten Zeichen (nur Zahlen, nie der Text), sodass ein eingefügter Absatz auffällt. Die Spotlight-Ansicht zeichnet außerdem eine Zeitleiste der Wortzahl-Kurve mit markierten Tab-Wechseln, Einfügevorgängen und Pausen, sodass eine flache Phase sofort ins Auge fällt. Jede Zeile nennt außerdem die gerade ergänzten Wörter und wann, und die Spotlight-Ansicht hebt den neuesten Satz hervor.",
+        "rb_live_monitor_item_draft": "Live-Entwürfe (Aufsätze) — der Monitor listet jeden Schüler, der an dieser Aufgabe schreibt, mit einer Momentaufnahme des Textes etwa einmal pro Minute (Wortzahl, Schreibtempo und Zeit seit dem letzten Tastendruck aktualisieren sich alle paar Sekunden), wobei die seit der letzten Momentaufnahme hinzugefügten Wörter hervorgehoben sind, plus Wortzahl, Schreibtempo, Zeit seit dem letzten Tastendruck und eine Sparkline der Wortzahl. Ein Klick auf „Live beobachten“ öffnet eine Spotlight-Ansicht, die alle fünf Sekunden aktualisiert wird: der vollständige Entwurf, Satz- und Wortschatzmessungen, ein Momentaufnahme-Protokoll und die Proctoring-Signale. Snapshots werden serverseitig gespeichert, daher zeigt die Liste nach einem Neuladen oder einer Verbindungsunterbrechung weiterhin den letzten Entwurf und dessen Alter. Eine Zeile sagt außerdem, wenn eine Schülerin oder ein Schüler die Aufgabe noch nicht geöffnet hat oder die Verbindung abgebrochen ist, statt beides als denselben grauen Punkt zu zeigen. Jede Zeile trennt getippte von eingefügten Zeichen (nur Zahlen, nie der Text), sodass ein eingefügter Absatz auffällt. Die Spotlight-Ansicht zeichnet außerdem eine Zeitleiste der Wortzahl-Kurve mit markierten Tab-Wechseln, Einfügevorgängen und Pausen, sodass eine flache Phase sofort ins Auge fällt. Jede Zeile nennt außerdem die gerade ergänzten Wörter und wann, und die Spotlight-Ansicht hebt den neuesten Satz hervor. Hinweise lassen sich als fertige Nachrichten senden (aktuelle Frage prüfen, noch fünf Minuten, speichern), und jeder wird im Ereignisverlauf von Lehrkraft und Schüler festgehalten.",
         "rb_live_monitor_item_writing_pace": "Schreibtempo (Aufsätze) — der Schalter „Schreibtempo“ zeigt Wörter pro Minute der letzten drei Minuten, ob der Schüler schneller wird, gleichmäßig schreibt, langsamer wird oder aufgehört hat, und wie lange die letzte Änderung am Entwurf her ist.",
         "rb_live_monitor_item_hide_names": "Namen ausblenden — Umschalter, um die Ansicht zu anonymisieren, nützlich beim Teilen deines Bildschirms.",
         "rb_live_monitor_item_proctoring": "Aufsichtssignale — Anzahl der Tabwechsel, Kopieren/Einfügen/Ausschneiden, Akkustand und Safe-Exam-Browser-Status. Dies sind nur Hinweissignale: Ein entschlossener Schüler kann sie fälschen, also nutze sie, um ein Gespräch anzustoßen, nicht als endgültigen Beweis.",
