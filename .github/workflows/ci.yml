@@ -568,6 +568,13 @@ jobs:
         env:
           CI: true
 
+      # WCAG 2.5.5 (AAA) has no axe rule, so its 44×44 px floor is measured from the rendered page
+      # at a desktop and a phone width instead.
+      - name: Run target-size audit
+        run: npm run e2e:target-size
+        env:
+          CI: true
+
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

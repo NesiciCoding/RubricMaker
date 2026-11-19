@@ -503,17 +503,60 @@ This gate does **not** replace the manual checks in §4–§6: keyboard trap mec
 Full AAA conformance is not the goal; the aim is AA everywhere plus the AAA criteria that materially
 help teachers and students. This is where the push stands.
 
-| AAA criterion                                                                       | State                                                                                                                                                                                                                                                                                                                                                                                             | Where                                                                              |
-| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| **1.4.6 Contrast (Enhanced)** — 7:1 for all text                                    | **Met.** Every text token (`--text`, `--text-muted`, `--text-dim`, the `-text` semantic colours, `--accent-text`) clears 7:1 on all four surfaces and on the badge/accent tints it is painted over, in both themes. Primary/danger button labels are derived rather than assumed: `accentFillFor` deepens a fill until its own label clears 7:1, which is also what a filled CEFR badge now does. | `src/index.css`, `src/utils/contrastCheck.ts`, `src/utils/contrastPalette.test.ts` |
-| **2.4.9 Link Purpose (Link Only)**                                                  | **Met** for the automatable part: `identical-links-same-purpose` reports zero nodes. Distinct-context wording stays a manual review.                                                                                                                                                                                                                                                              | axe `wcag2aaa` tag                                                                 |
-| **2.4.10 Section Headings**                                                         | **Met.** Every route renders exactly one `<h1>` — the Topbar title, which pins its own type so the bar does not restyle — and the levels below it never skip, so `page-has-heading-one` and `heading-order` are both at zero nodes on all 114 scans. Promoted headings carry `card-heading` / `item-heading` so their appearance did not change with the tag.                                     | `e2e/a11y-baseline.json`, `src/index.css`                                          |
-| **2.5.5 Target Size (44×44)**                                                       | **Partly met.** Every `.btn-sm` is 44 px tall, including `btn-icon btn-sm`; the grading level-card header, the grading grid row-head toggle and the builder's level drag grips are 44×44. Still open: `btn-icon` (33.6 px), the `btn-icon btn-sm` width (28.6 px), the builder's criterion grip (25 px), form fields and selects (37–39 px) and the A4-preview toolbar (26 px).                   | `src/index.css`, `GradingGrid.tsx`, `CriterionCard.tsx`                            |
-| **2.3.3 Animation from Interactions**                                               | **Partly met.** The modal open animation and its overlay honour `prefers-reduced-motion`; the rest of the transitions have not been swept.                                                                                                                                                                                                                                                        | `src/index.css`, `src/__tests__/modalReducedMotionCss.test.ts`                     |
-| **1.4.8 Visual Presentation**, **2.4.13 Focus Appearance**, **3.1.5 Reading Level** | **Open.** None has an automated rule; they need a manual pass, and 1.4.8 likely wants a user-facing text-spacing control.                                                                                                                                                                                                                                                                         | —                                                                                  |
+| AAA criterion                                                                       | State                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Where                                                                                 |
+| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| **1.4.6 Contrast (Enhanced)** — 7:1 for all text                                    | **Met.** Every text token (`--text`, `--text-muted`, `--text-dim`, the `-text` semantic colours, `--accent-text`) clears 7:1 on all four surfaces and on the badge/accent tints it is painted over, in both themes. Primary/danger button labels are derived rather than assumed: `accentFillFor` deepens a fill until its own label clears 7:1, which is also what a filled CEFR badge now does.                                                                                                                                                       | `src/index.css`, `src/utils/contrastCheck.ts`, `src/utils/contrastPalette.test.ts`    |
+| **2.4.9 Link Purpose (Link Only)**                                                  | **Met** for the automatable part: `identical-links-same-purpose` reports zero nodes. Distinct-context wording stays a manual review.                                                                                                                                                                                                                                                                                                                                                                                                                    | axe `wcag2aaa` tag                                                                    |
+| **2.4.10 Section Headings**                                                         | **Met.** Every route renders exactly one `<h1>` — the Topbar title, which pins its own type so the bar does not restyle — and the levels below it never skip, so `page-has-heading-one` and `heading-order` are both at zero nodes on all 114 scans. Promoted headings carry `card-heading` / `item-heading` so their appearance did not change with the tag.                                                                                                                                                                                           | `e2e/a11y-baseline.json`, `src/index.css`                                             |
+| **2.5.5 Target Size (44×44)**                                                       | **Met for every shared control primitive; component widgets remain (below).** `.btn` 37 → 44 px, `.btn-sm` 28.6 → 44×44, `.btn-icon` 33.6 → 44×44, fields/selects 37.2 → 44 px, `.toolbar-btn` 26 → 44×44, `.nav-item` 35.6 → 44 px, `.qtype-trigger` 35.2 → 44 px and `CardGrip` 25 → 44×44 (so the criterion, level, question and card grips are all 44). Measured at 1280 and 390 px: zero controls under 44×44 on `/rubrics/new`, `/rubrics/:id`, `/tests/new`, `/essays/new` and `/essays/:key`, which the new `62-target-size.spec.ts` now gates. | `src/index.css`, `src/components/ui/CardGrip.tsx`, `e2e/specs/62-target-size.spec.ts` |
+| **2.3.3 Animation from Interactions**                                               | **Partly met.** The modal open animation and its overlay honour `prefers-reduced-motion`; the rest of the transitions have not been swept.                                                                                                                                                                                                                                                                                                                                                                                                              | `src/index.css`, `src/__tests__/modalReducedMotionCss.test.ts`                        |
+| **1.4.8 Visual Presentation**, **2.4.13 Focus Appearance**, **3.1.5 Reading Level** | **Open.** None has an automated rule; they need a manual pass, and 1.4.8 likely wants a user-facing text-spacing control.                                                                                                                                                                                                                                                                                                                                                                                                                               | —                                                                                     |
 
 Remaining AA debt after the heading pass: `label-title-only` 32, `select-name` 12, `label` 8, plus
 three two-node rules (§9).
+
+### 2.5.5 — what is still under 44 px
+
+Measured from the rendered page at 1280 px (the same elements at 390 px unless noted). None of these
+is axe-detectable: every one already clears the 24 px floor of 2.5.8, which is why the axe gate stays
+at zero `target-size` nodes.
+
+| Where                             | Control                                       | Size                        |
+| --------------------------------- | --------------------------------------------- | --------------------------- |
+| Dashboard, CEFR overview, lists   | class filter chips (All classes / Class 4A …) | 88.5 × 28.4                 |
+| Rubrics, tests, grading queue     | Cards / List view toggle                      | 82.3 × 28 / 72.3 × 24       |
+| Grading queue                     | cohort + status chips (All / Graded …)        | 53.2 × 28.4                 |
+| Students, student profile         | cohort chips, sortable table headers          | 100.8 × 28.4 / 106.7 × 17.4 |
+| Student profile                   | Overview / Portfolio tabs                     | 94.1 × 35.2                 |
+| Docs                              | section rail buttons                          | 198.4 × 34.8                |
+| Flashcards                        | card title (stretched link)                   | 127.9 × 23.3                |
+| Test builder question editor      | Bold / Italic / … inline toolbar              | 27 × 23                     |
+| Self-assessment, speaking session | confidence scale, level buttons               | 222.8 × 26 / 104.8 × 30.4   |
+| Dashboard                         | CEFR badge button, “View queue” action        | 25.9 × 18.6 / 58.9 × 17.4   |
+
+They come in three shapes, so each cluster is one decision rather than 57 route fixes: a chip row
+(needs 44 px of height without breaking the wrap), a segmented toggle (needs a taller control), and a
+table-header button (needs 44 px inside a `<th>`, which grows every header row). Add each route to
+`TARGET_SIZE_ROUTES` in `e2e/specs/62-target-size.spec.ts` as its cluster is fixed.
+
+### AAA backlog — not started
+
+Recorded so the remaining work is a decision, not a surprise. None of these has an axe rule, so none
+is covered by the gate.
+
+- **2.3.3 Animation from Interactions** — only the modal open animation honours
+  `prefers-reduced-motion`. A sweep of every `transition`/`animation` in `src/index.css` is needed,
+  plus a guard that new ones are either covered by the reduced-motion block or declared exempt.
+- **2.4.13 Focus Appearance** — the global `:focus-visible` outline is 2 px at a 2 px offset against
+  the page background; whether it clears the 2 px-perimeter / 3:1-contrast rule on every surface
+  (cards, tinted badges, the accent fill) has not been measured.
+- **1.4.8 Visual Presentation** — line height and paragraph spacing are not user-adjustable, and the
+  app has no text-spacing control; 200 % text already has a known clipping case in the test-builder
+  toolbar (F14).
+- **3.1.5 Reading Level** — needs a manual pass over the teacher-facing copy (the student portal is
+  the priority) and, if anything exceeds lower-secondary reading level, plain-language rewrites.
+- **2.4.9 manual half** — `identical-links-same-purpose` is at zero nodes, but distinct-context link
+  wording (“Open”, “View”) is still a manual review.
 
 **Guardrails added with this pass**
 
@@ -522,3 +565,8 @@ three two-node rules (§9).
   data colour with the body colour (was 60 %), which is what keeps CEFR/grade colours at 7:1.
 - The axe gate runs the `wcag2aaa` tag set on every route in both themes, so AAA contrast, AAA link
   purpose and meta-refresh cannot regress unnoticed.
+- `targetSizeCss.test.ts` resolves the cascade for every guarded class (`.btn`, `.btn-sm`,
+  `.btn-icon`, `.btn-icon.btn-sm`, `.toolbar-btn`) and the field rules, so a stylesheet edit cannot
+  quietly drop a 44 px floor; `62-target-size.spec.ts` then measures the rendered page at 1280 and
+  390 px (`npm run e2e:target-size`, run in the axe job), which is the only way to catch a target
+  shrunk by an inline style or a transform.

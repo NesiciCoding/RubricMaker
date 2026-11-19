@@ -571,14 +571,12 @@ export default function QuestionEditor({
                         {...(dragHandleProps ?? {})}
                         label={dragHandleProps ? t('tests.drag_question') : undefined}
                         size={16}
-                        // The glyph is 16px and the padding only grows the box vertically, so pin
-                        // the 25px touch target from the other side too.
+                        // The glyph is 16px and the padding only grows the box vertically, so the
+                        // 44px target (2.5.5) comes from CardGrip's own minimums.
                         style={{
                             padding: '2px 0',
                             margin: 0,
                             color: 'var(--text-muted)',
-                            minWidth: 25,
-                            minHeight: 25,
                             justifyContent: 'center',
                         }}
                     >

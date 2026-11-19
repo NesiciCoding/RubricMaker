@@ -20,9 +20,9 @@ export interface CardGripProps extends React.HTMLAttributes<HTMLSpanElement> {
  * Spread @hello-pangea/dnd's `dragHandleProps` onto it — the role, tabIndex, keyboard
  * handlers and `data-rfd-*` attributes all come from there; this component only owns the look.
  *
- * The padding (cancelled by the negative margin, so the glyph does not move) grows the hit
- * area from a 15px glyph to a 25px target, and `touchAction: 'none'` keeps a touch drag from
- * scrolling the list instead of picking the card up.
+ * The 44px minimum is the WCAG 2.5.5 target, not the 25px that 2.5.8 asks for; the 5px padding
+ * and the negative margin keep the glyph where the surrounding layout expects it. `touchAction:
+ * 'none'` keeps a touch drag from scrolling the list instead of picking the card up.
  */
 const CardGrip = React.forwardRef<HTMLSpanElement, CardGripProps>(function CardGrip(
     { label, size = 15, style, children, ...rest },
@@ -42,8 +42,13 @@ const CardGrip = React.forwardRef<HTMLSpanElement, CardGripProps>(function CardG
                 display: 'flex',
                 alignItems: 'center',
                 flexShrink: 0,
+                justifyContent: 'center',
                 padding: 5,
-                margin: '-1px 0 0 -5px',
+                minWidth: 44,
+                minHeight: 44,
+                // The box grew by 19px on each side; pulling it back by 10px leaves the 15px glyph
+                // within half a pixel of where the 25px box put it.
+                margin: '-1px 0 0 -10px',
                 touchAction: 'none',
                 ...style,
             }}

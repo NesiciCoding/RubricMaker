@@ -55,14 +55,18 @@ describe('CardGrip targets', () => {
         }
     });
 
-    it('declares the 25px minimum wherever it tightens the default padding', () => {
+    it('takes the 44px target (2.5.5) from CardGrip rather than from any call site', () => {
+        const gripSource = readFileSync(resolve(srcRoot, 'components/ui/CardGrip.tsx'), 'utf8');
+        expect(gripSource).toMatch(/minWidth:\s*44/);
+        expect(gripSource).toMatch(/minHeight:\s*44/);
         // The TipTap grip is the one exception: its 18px box sits inside a wrapper that pads 4px
         // around it, which is the area a drag actually starts from.
         const tightened = sites.filter((s) => !s.inDragHandle && /padding:/.test(s.tag));
         expect(tightened.length).toBeGreaterThan(0);
         for (const site of tightened) {
-            expect(site.tag, `${site.file} shrinks the grab target below 25px`).toMatch(/minWidth:\s*25/);
-            expect(site.tag, `${site.file} shrinks the grab target below 25px`).toMatch(/minHeight:\s*25/);
+            for (const match of site.tag.matchAll(/min(?:Width|Height):\s*(\d+)/g)) {
+                expect(Number(match[1]), `${site.file} shrinks the grab target below 44px`).toBeGreaterThanOrEqual(44);
+            }
         }
     });
 

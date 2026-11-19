@@ -1089,14 +1089,11 @@ export default function StudentsPage() {
                                                             {...classDragProvided.dragHandleProps}
                                                             label={t('rubricList.drag_to_reorder')}
                                                             size={13}
-                                                            // A 13px glyph in a row this tight: the
-                                                            // padding alone never reaches 25px, so the
-                                                            // minimums set the target.
+                                                            // A 13px glyph in a row this tight: CardGrip's
+                                                            // 44px minimum sets the 2.5.5 target.
                                                             style={{
                                                                 padding: '0 2px',
                                                                 margin: 0,
-                                                                minWidth: 25,
-                                                                minHeight: 25,
                                                                 justifyContent: 'center',
                                                             }}
                                                         />

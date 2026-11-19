@@ -58,6 +58,7 @@ export default defineConfig({
                 '**/50-owner-data-backup.spec.ts',
                 '**/51-a11y.spec.ts',
                 '**/61-test-builder-wide.spec.ts',
+                '**/62-target-size.spec.ts',
                 '**/57-coteaching-live-sync.spec.ts',
                 '**/58-coteaching-shared-export.spec.ts',
                 ...quarantinePatterns,
@@ -86,6 +87,7 @@ export default defineConfig({
                 '**/50-owner-data-backup.spec.ts',
                 '**/51-a11y.spec.ts',
                 '**/61-test-builder-wide.spec.ts',
+                '**/62-target-size.spec.ts',
                 '**/57-coteaching-live-sync.spec.ts',
                 '**/58-coteaching-shared-export.spec.ts',
                 ...quarantinePatterns,
@@ -114,6 +116,7 @@ export default defineConfig({
                 '**/50-owner-data-backup.spec.ts',
                 '**/51-a11y.spec.ts',
                 '**/61-test-builder-wide.spec.ts',
+                '**/62-target-size.spec.ts',
                 '**/57-coteaching-live-sync.spec.ts',
                 '**/58-coteaching-shared-export.spec.ts',
                 ...quarantinePatterns,
@@ -127,6 +130,20 @@ export default defineConfig({
             name: 'a11y',
             use: { ...devices['Desktop Chrome'], reducedMotion: 'reduce' },
             testMatch: ['**/51-a11y.spec.ts'],
+            testIgnore: [...quarantinePatterns],
+        },
+        // Target size audit — WCAG 2.5.5's 44×44 px, measured from rendered geometry instead of
+        // read off the stylesheet. Phone width included because the layout reflows there.
+        {
+            name: 'target-size',
+            use: { ...devices['Desktop Chrome'] },
+            testMatch: ['**/62-target-size.spec.ts'],
+            testIgnore: [...quarantinePatterns],
+        },
+        {
+            name: 'target-size-mobile',
+            use: { ...devices['Desktop Chrome'], viewport: { width: 390, height: 844 }, hasTouch: true },
+            testMatch: ['**/62-target-size.spec.ts'],
             testIgnore: [...quarantinePatterns],
         },
         // Wide layout — the builder's rail + focus pane + inspector only exists at ≥1400px, so the
