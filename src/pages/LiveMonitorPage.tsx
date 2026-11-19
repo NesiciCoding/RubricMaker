@@ -214,13 +214,15 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     const [classFilter, setClassFilter] = useState<string>('all');
     // A class selected for one test may not exist in the next: reset so the new
     // test never opens with every student filtered out and no way to recover.
+    // A triage chip narrows the grid to the students the strip counted. It applies to one monitored
+    // assignment only, so it resets with the class filter below.
+    const [triageFilter, setTriageFilter] = useState<TriageKey | null>(null);
     const monitoredKey = kind === 'test' ? (params.testId ?? '') : (params.assignmentId ?? '');
     useEffect(() => {
         setClassFilter('all');
+        setTriageFilter(null);
     }, [monitoredKey]);
     const [startedOnly, setStartedOnly] = useState(false);
-    // A triage chip narrows the grid to the students the strip counted.
-    const [triageFilter, setTriageFilter] = useState<TriageKey | null>(null);
     const [columnSortRules, setColumnSortRules] = useState<ColumnSortRule[]>([{ key: 'original', dir: 'asc' }]);
     const [sortModalOpen, setSortModalOpen] = useState(false);
     const [liveStates, setLiveStates] = useState<Record<string, StudentLiveState>>({});
@@ -978,22 +980,27 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
 
     // The class triage strip: a worklist over the same rows the class/started filters left, so the
     // counts and the grid's rows always describe the same students.
-    const triageRows = visibleRows.map((row) => ({
-        finished: row.finished,
-        tabSwitchCount: row.flags.tabSwitchCount,
-        stalledMinutes: stalledFor(row),
-        started:
-            row.live.snapshot !== null ||
-            row.live.firstSeenAt !== undefined ||
-            row.persistedEvents.length > 0 ||
-            row.mergedAnswers.length > 0,
-        progress: kind === 'essay' ? row.live.snapshot?.wordCount : row.mergedAnswers.length,
-        pace: paceByStudent.get(row.studentId),
-    }));
+    const triageRows = visibleRows.map((row) => {
+        // A cleared answer keeps its key in the snapshot, so count answered questions, not entries.
+        const answeredCount = test ? answeredQuestionIds(test.questions, row.mergedAnswers).size : 0;
+        return {
+            finished: row.finished,
+            tabSwitchCount: row.flags.tabSwitchCount,
+            stalledMinutes: stalledFor(row),
+            started:
+                row.live.snapshot !== null ||
+                row.live.firstSeenAt !== undefined ||
+                row.persistedEvents.length > 0 ||
+                row.mergedAnswers.length > 0,
+            progress: kind === 'essay' ? row.live.snapshot?.wordCount : answeredCount,
+            pace: paceByStudent.get(row.studentId),
+        };
+    });
     const triage = triageCounts(triageRows);
-    const shownRows = triageFilter
-        ? visibleRows.filter((_, index) => triageMatches(triageRows[index], triageFilter))
-        : visibleRows;
+    const shownRows =
+        triageFilter && kind === 'test' && !isLevelGrid
+            ? visibleRows.filter((_, index) => triageMatches(triageRows[index], triageFilter))
+            : visibleRows;
 
     // A row the filters removed can't hold the cursor, so it falls back to the first visible one.
     const cursorId =
