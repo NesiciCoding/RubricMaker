@@ -52,6 +52,8 @@ export default function ToggleChipGroup<T extends string>({ label, options, valu
                             style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
+                                justifyContent: 'center',
+                                minHeight: 44,
                                 padding: '5px 12px',
                                 borderRadius: 999,
                                 fontSize: '0.85rem',

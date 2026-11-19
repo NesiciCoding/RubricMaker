@@ -116,6 +116,8 @@ function ToolbarBtn({ active, onClick, title, disabled, children }: ToolbarBtnPr
             onClick={onClick}
             style={{
                 padding: '4px 6px',
+                minWidth: 44,
+                minHeight: 44,
                 borderRadius: 5,
                 border: 'none',
                 cursor: disabled ? 'not-allowed' : 'pointer',
@@ -141,7 +143,7 @@ const selectStyle: React.CSSProperties = {
     background: 'var(--bg-card)',
     color: 'var(--text)',
     cursor: 'pointer',
-    height: 28,
+    height: 44,
 };
 
 export default function EssayEditor({
@@ -399,6 +401,8 @@ export default function EssayEditor({
                             onClick={() => colorInputRef.current?.click()}
                             style={{
                                 padding: '3px 6px',
+                                minWidth: 44,
+                                minHeight: 44,
                                 borderRadius: 5,
                                 border: 'none',
                                 cursor: 'pointer',
@@ -446,6 +450,8 @@ export default function EssayEditor({
                             }}
                             style={{
                                 padding: '4px 6px',
+                                minWidth: 44,
+                                minHeight: 44,
                                 borderRadius: 5,
                                 border: 'none',
                                 cursor: 'pointer',

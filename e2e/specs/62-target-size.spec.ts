@@ -11,9 +11,14 @@
  * them, so both are out of scope here and listed in docs/a11y/REPORT.md §10 instead.
  *
  * The route list is the pages whose controls are all built from the shared primitives (`.btn`,
- * `.toolbar-btn`, `.nav-item`, the field rules). The component-level widgets that are still under
- * 44 px — the Cards/List toggles, the cohort chips, the sortable table headers, the Docs rail — are
- * measured and listed in REPORT §10; add their routes here as each one is fixed.
+ * `.toolbar-btn`, `.nav-item`, the field rules) or from the widget clusters fixed in the 2.5.5
+ * closeout: the class/cohort/status chip rows, `SegmentedToggle`, the sortable table headers, the
+ * profile tabs, the Docs rail and the question editor's inline formatting toolbar. Every other
+ * cluster still under 44 px is measured and listed in REPORT §10; add its routes here as it is fixed.
+ *
+ * A control is skipped when it is not a target at all: `pointer-events: none` behind a styled
+ * proxy button, transparent, or too small to paint (the colour `<input>`s the editor opens from a
+ * toolbar button render as 2×2 px with `pointer-events: none`).
  *
  *   npm run e2e:target-size
  */
@@ -22,13 +27,33 @@ import { A11Y_ROUTES, seedApp, waitForRoute } from '../fixtures/a11y.fixture';
 
 const TARGET = 44;
 
-/** The builders: every control they render comes from the shared primitives. */
+/**
+ * Routes whose controls are all at the 44 px floor: the builders, every page carrying the chip rows
+ * or the Cards/List toggle, the sortable student table, the profile tabs, the Docs rail and the
+ * question editor's toolbar.
+ */
 const TARGET_SIZE_ROUTES = [
+    // Builders: every control comes from a shared primitive.
     '/rubrics/new',
     '/rubrics/rubric-a11y-1',
     '/tests/new',
     '/essays/new',
     '/essays/essay-a11y-1',
+    // Chip rows and the Cards/List toggles.
+    '/rubrics',
+    '/tests',
+    '/rubrics/rubric-a11y-1/grade',
+    '/cefr-overview',
+    '/grammar-overview',
+    '/vocabulary',
+    // Cohort chips + sortable table headers.
+    '/students',
+    // Overview / Portfolio tabs.
+    '/students/student-a11y-1',
+    // Section rail.
+    '/docs',
+    // The question editor's inline formatting toolbar.
+    '/tests/test-a11y-1',
 ];
 
 const ROUTES = A11Y_ROUTES.filter((route) => TARGET_SIZE_ROUTES.includes(route.path));
@@ -58,7 +83,8 @@ const measure = (minimum: number): UndersizedTarget[] => {
         const rect = element.getBoundingClientRect();
         if (rect.width === 0 || rect.height === 0) continue;
         const style = getComputedStyle(element);
-        if (style.visibility === 'hidden' || style.display === 'none') continue;
+        if (style.visibility === 'hidden' || style.display === 'none' || style.pointerEvents === 'none') continue;
+        if (Number(style.opacity) === 0) continue;
         if (rect.width + 0.5 >= minimum && rect.height + 0.5 >= minimum) continue;
         undersized.push({
             element: describe(element),
@@ -77,6 +103,11 @@ async function audit(page: Page, route: string): Promise<UndersizedTarget[]> {
 }
 
 test.describe('44 px targets (WCAG 2.5.5)', () => {
+    test('every audited route exists in A11Y_ROUTES', () => {
+        // A typo in TARGET_SIZE_ROUTES would otherwise shrink the audit silently.
+        test.expect(ROUTES.map((route) => route.path).sort()).toEqual([...TARGET_SIZE_ROUTES].sort());
+    });
+
     for (const route of ROUTES) {
         test(`${route.label} (${route.path})`, async ({ page }, testInfo) => {
             await seedApp(page, 'light');

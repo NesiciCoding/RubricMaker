@@ -89,8 +89,10 @@ import { EmptyState } from '../components/ui/EmptyState';
 import CardGrip from '../components/ui/CardGrip';
 
 const sortHeaderButtonStyle: React.CSSProperties = {
-    display: 'block',
+    display: 'flex',
+    alignItems: 'center',
     width: '100%',
+    minHeight: 44,
     textAlign: 'left',
     background: 'none',
     border: 'none',
@@ -638,7 +640,9 @@ export default function StudentsPage() {
     const chipStyle = (active: boolean): React.CSSProperties => ({
         display: 'inline-flex',
         alignItems: 'center',
+        justifyContent: 'center',
         gap: 6,
+        minHeight: 44,
         padding: '5px 12px',
         borderRadius: 999,
         fontSize: '0.85rem',

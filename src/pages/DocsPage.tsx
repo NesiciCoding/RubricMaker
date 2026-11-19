@@ -2414,6 +2414,7 @@ export default function DocsPage() {
                                     alignItems: 'center',
                                     gap: 8,
                                     width: '100%',
+                                    minHeight: 44,
                                     padding: '9px 14px',
                                     background: activeTab === id ? 'var(--accent-soft)' : 'transparent',
                                     color: activeTab === id ? 'var(--accent-text)' : 'var(--text-muted)',

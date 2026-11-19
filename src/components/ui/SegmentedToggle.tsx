@@ -14,7 +14,7 @@ interface Props<T extends string> {
     size?: 'sm' | 'md';
     /** Let options wrap onto a second row instead of overflowing narrow screens. */
     wrap?: boolean;
-    /** Minimum button height in px, e.g. 44 for touch targets. */
+    /** Minimum button height in px; defaults to the 44 px target WCAG 2.5.5 (AAA) asks for. */
     minTargetHeight?: number;
 }
 
@@ -62,7 +62,7 @@ export default function SegmentedToggle<T extends string>({
                             alignItems: 'center',
                             justifyContent: 'center',
                             gap: 6,
-                            minHeight: minTargetHeight,
+                            minHeight: minTargetHeight ?? 44,
                             ...(wrap ? { flex: '1 0 auto' } : {}),
                             padding: pad,
                             fontSize,

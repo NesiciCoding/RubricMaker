@@ -645,6 +645,7 @@ export default function StudentProfilePage() {
                             onClick={() => setActiveTab(tab)}
                             style={{
                                 padding: '8px 18px',
+                                minHeight: 44,
                                 fontSize: '0.9rem',
                                 fontWeight: activeTab === tab ? 700 : 500,
                                 color: activeTab === tab ? 'var(--accent-text)' : 'var(--text-muted)',

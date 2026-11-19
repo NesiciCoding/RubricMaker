@@ -48,9 +48,9 @@ describe('SegmentedToggle', () => {
         for (const button of screen.getAllByRole('button')) expect(button.style.minHeight).toBe('44px');
     });
 
-    it('stays a single nowrap pill by default', () => {
+    it('stays a single nowrap pill by default, at the 44 px target of 2.5.5', () => {
         render(<SegmentedToggle options={options} value="cards" onChange={() => {}} ariaLabel="View mode" />);
         expect(screen.getByRole('group').style.flexWrap).toBe('');
-        expect(screen.getAllByRole('button')[0].style.minHeight).toBe('');
+        expect(screen.getAllByRole('button')[0].style.minHeight).toBe('44px');
     });
 });
