@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FolderInput, Folder as FolderIcon } from 'lucide-react';
 import type { Folder, FolderKind } from '../../types';
-import { canNestFolder, childFolders, descendantFolderIds } from '../../utils/folders';
+import { canNestFolder, descendantFolderIds, folderTreeEntries } from '../../utils/folders';
 import DropdownMenu from '../ui/DropdownMenu';
 
 export interface MoveToMenuProps {
@@ -28,26 +28,24 @@ interface Target {
     blocked?: 'here' | 'self' | 'descendant' | 'depth';
 }
 
-/** The tree in reading order, each folder tagged with its depth and whether it can be a target. */
+/** The tree in reading order, each folder tagged with whether it can be a target. */
 function targets(folders: Folder[], kind: FolderKind, props: MoveToMenuProps): Target[] {
     // The moving folder's own subtree is a separate refusal from the depth limit, so the menu can
     // say why: a cycle and "this would be five levels deep" are not the same mistake.
     const subtree = props.movingFolderId ? descendantFolderIds(folders, props.movingFolderId) : [];
-    const walk = (parentId: string | undefined, depth: number): Target[] =>
-        childFolders(folders, kind, parentId).flatMap((folder) => {
-            const blocked =
-                folder.id === props.currentFolderId
-                    ? ('here' as const)
-                    : folder.id === props.movingFolderId
-                      ? ('self' as const)
-                      : subtree.includes(folder.id)
-                        ? ('descendant' as const)
-                        : props.movingFolderId && !canNestFolder(folders, props.movingFolderId, folder.id)
-                          ? ('depth' as const)
-                          : undefined;
-            return [{ folder, depth, blocked }, ...walk(folder.id, depth + 1)];
-        });
-    return walk(undefined, 0);
+    return folderTreeEntries(folders, kind).map(({ folder, depth }) => {
+        const blocked =
+            folder.id === props.currentFolderId
+                ? ('here' as const)
+                : folder.id === props.movingFolderId
+                  ? ('self' as const)
+                  : subtree.includes(folder.id)
+                    ? ('descendant' as const)
+                    : props.movingFolderId && !canNestFolder(folders, props.movingFolderId, folder.id)
+                      ? ('depth' as const)
+                      : undefined;
+        return { folder, depth, blocked };
+    });
 }
 
 /**
