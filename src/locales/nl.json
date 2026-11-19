@@ -2171,6 +2171,7 @@
             "menu_paste_blocked": "Deze browser blokkeerde toegang tot het klembord — druk in de cel op Ctrl+V.",
             "menu_copy_blocked": "Deze browser blokkeerde toegang tot het klembord — selecteer de waarde en kopieer deze handmatig.",
             "menu_fill_down": "Kolom naar beneden vullen",
+            "menu_fill_across": "Rij naar rechts vullen",
             "menu_clear_row": "Rij wissen",
             "menu_copy_row": "Rij kopiëren",
             "menu_copied": "Naar het klembord gekopieerd",

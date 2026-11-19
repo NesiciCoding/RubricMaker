@@ -1,6 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlertTriangle, ArrowDownToLine, ClipboardPaste, Copy, Eraser, UserCheck, UserX } from 'lucide-react';
+import {
+    AlertTriangle,
+    ArrowDownToLine,
+    ArrowRightToLine,
+    ClipboardPaste,
+    Copy,
+    Eraser,
+    UserCheck,
+    UserX,
+} from 'lucide-react';
 import type { Class, GradeScale, Student, StudentTest, Test, TestAnswer } from '../../../types';
 import { scoreTestAnswer } from '../../../utils/testCalc';
 import { stripHtmlTags } from '../../../utils/exportDataPrep';
@@ -168,6 +177,35 @@ export default function ScoreSheetGrid({
         showToast(t('tests.scoreSheet.menu_filled'), 'success');
     }
 
+    /**
+     * Fill-across: the same points into this student's cells to the right. A cell takes the value only
+     * when it is worth the same maximum (a 2-point answer cannot be copied into a 5-point question)
+     * and the student was given that question.
+     */
+    function acrossTargets(row: number, col: number): { row: number; col: number }[] {
+        const student = students[row];
+        const max = questions[col].points;
+        const targets: { row: number; col: number }[] = [];
+        for (let c = col + 1; c < questions.length; c++) {
+            if (questions[c].points !== max) continue;
+            if (!isQuestionDelivered(test, student.id, questions[c].id)) continue;
+            targets.push({ row, col: c });
+        }
+        return targets;
+    }
+
+    function fillAcross(row: number, col: number) {
+        const student = students[row];
+        if (!rowEditable(student) || sheetRef.current.get(student.id)?.absent) return;
+        const raw = cellRaw(student, col);
+        if (validateCell(raw, questions[col].points) !== 'ok') return;
+        const targets = acrossTargets(row, col);
+        if (!targets.length) return;
+        dropDrafts(targets.map((target) => key(student.id, questions[target.col].id)));
+        commit(targets.map((target) => ({ ...target, raw })));
+        showToast(t('tests.scoreSheet.menu_filled'), 'success');
+    }
+
     function clearRow(row: number) {
         const student = students[row];
         dropDrafts(questions.map((q) => key(student.id, q.id)));
@@ -218,6 +256,18 @@ export default function ScoreSheetGrid({
                 icon: <ArrowDownToLine size={14} aria-hidden />,
                 disabled: !editable || absent || validity !== 'ok' || row === students.length - 1,
                 onSelect: () => fillDown(row, col),
+            },
+            {
+                key: 'fill-across',
+                label: t('tests.scoreSheet.menu_fill_across'),
+                icon: <ArrowRightToLine size={14} aria-hidden />,
+                disabled:
+                    !editable ||
+                    absent ||
+                    validity !== 'ok' ||
+                    !isQuestionDelivered(test, student.id, q.id) ||
+                    acrossTargets(row, col).length === 0,
+                onSelect: () => fillAcross(row, col),
             },
         ];
     }

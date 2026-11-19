@@ -2171,6 +2171,7 @@
             "menu_paste_blocked": "Dieser Browser hat den Zugriff auf die Zwischenablage blockiert — drücken Sie in der Zelle Strg+V.",
             "menu_copy_blocked": "Dieser Browser hat den Zugriff auf die Zwischenablage blockiert — markieren Sie den Wert und kopieren Sie ihn manuell.",
             "menu_fill_down": "Spalte nach unten füllen",
+            "menu_fill_across": "Zeile nach rechts füllen",
             "menu_clear_row": "Zeile leeren",
             "menu_copy_row": "Zeile kopieren",
             "menu_copied": "In die Zwischenablage kopiert",

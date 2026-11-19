@@ -2242,6 +2242,7 @@
             "menu_paste_blocked": "This browser blocked clipboard access — press Ctrl+V in the cell instead.",
             "menu_copy_blocked": "This browser blocked clipboard access — select the value and copy it manually instead.",
             "menu_fill_down": "Fill down column",
+            "menu_fill_across": "Fill across row",
             "menu_clear_row": "Clear row",
             "menu_copy_row": "Copy row",
             "menu_copied": "Copied to the clipboard",

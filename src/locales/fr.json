@@ -2171,6 +2171,7 @@
             "menu_paste_blocked": "Ce navigateur a bloqué l'accès au presse-papiers — appuyez sur Ctrl+V dans la cellule.",
             "menu_copy_blocked": "Ce navigateur a bloqué l'accès au presse-papiers — sélectionnez la valeur et copiez-la manuellement.",
             "menu_fill_down": "Remplir la colonne vers le bas",
+            "menu_fill_across": "Remplir la ligne vers la droite",
             "menu_clear_row": "Effacer la ligne",
             "menu_copy_row": "Copier la ligne",
             "menu_copied": "Copié dans le presse-papiers",
