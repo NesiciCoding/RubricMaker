@@ -8,6 +8,7 @@ import {
     buildAnswerRows,
     describeTestMeta,
     pickLatestAttempt,
+    calcLinkedItemAccuracies,
 } from './testAnswerText';
 import type { Student, StudentTest, Test, TestQuestion } from '../types';
 
@@ -186,21 +187,121 @@ describe('describeTestMeta', () => {
     });
 });
 
+const gradedSubmission: StudentTest = {
+    id: 'st1',
+    testId: 't1',
+    studentId: 's1',
+    answers: [{ questionId: 'q1', response: 'o1' }],
+    status: 'graded',
+    startedAt: '2024-01-02T00:00:00.000Z',
+};
+
 describe('buildTestStudentSummary', () => {
-    it('includes score, given and correct answers', () => {
-        const st: StudentTest = {
-            id: 'st1',
-            testId: 't1',
-            studentId: 's1',
-            answers: [{ questionId: 'q1', response: 'o1' }],
-            status: 'graded',
-            startedAt: '2024-01-02T00:00:00.000Z',
+    it('shows only the condensed header fields and no per-question rows', () => {
+        const out = buildTestStudentSummary(baseTest, gradedSubmission, student, baseTest.questions, {
+            className: '3HAVO',
+        });
+        expect(out).toContain('Name: Jane');
+        expect(out).toContain('Class: 3HAVO');
+        expect(out).toContain('Score: 0% correct');
+        expect(out).not.toContain('Given');
+        expect(out).not.toContain('Correct:');
+        expect(out).not.toContain('Q1.');
+    });
+
+    it('shows the supplied level', () => {
+        const out = buildTestStudentSummary(baseTest, gradedSubmission, student, baseTest.questions, {
+            level: 'HAVO',
+        });
+        expect(out).toContain('Level: HAVO');
+    });
+
+    it('omits the class and level lines when neither is supplied', () => {
+        const out = buildTestStudentSummary(baseTest, gradedSubmission, student, baseTest.questions);
+        expect(out).not.toContain('Class:');
+        expect(out).not.toContain('Level:');
+    });
+});
+
+describe('calcLinkedItemAccuracies', () => {
+    const standard = {
+        guid: 'g1',
+        statementNotation: 'CCSS.1',
+        description: 'Do the thing',
+        standardSetTitle: 'CCSS',
+        jurisdictionTitle: 'US',
+    };
+    const grammar = {
+        descriptorId: 'gram-1',
+        framework: 'grammar' as const,
+        categoryId: 'c1',
+        categoryLabelEn: 'Tense',
+        categoryLabelNl: 'Tijd',
+        categoryColor: '#000000',
+        descriptionEn: 'Past simple',
+        descriptionNl: 'Verleden tijd',
+    };
+    const linkedTest: Test = {
+        ...baseTest,
+        questions: [
+            { ...mc, id: 'q1', points: 1, linkedStandards: [standard] },
+            { ...mc, id: 'q2', prompt: 'Other', points: 2, frameworkDescriptors: [grammar] },
+        ],
+    };
+    const answers: StudentTest = {
+        ...gradedSubmission,
+        answers: [
+            { questionId: 'q1', response: 'o2' },
+            { questionId: 'q2', response: 'o1' },
+        ],
+    };
+
+    it("rolls the student's points up per linked item, strongest first", () => {
+        const items = calcLinkedItemAccuracies(
+            linkedTest.questions,
+            buildAnswerRows(linkedTest, answers, linkedTest.questions)
+        );
+        expect(items.map((i) => i.label)).toEqual(['CCSS.1', 'Past simple']);
+        expect(items.map((i) => i.accuracyPct)).toEqual([100, 0]);
+    });
+
+    it('renders the percentage overview in the summary', () => {
+        const out = buildTestStudentSummary(linkedTest, answers, student, linkedTest.questions);
+        expect(out).toContain('Linked frameworks & grammar');
+        expect(out).toContain('\n  100%  CCSS.1\n');
+        expect(out).toContain('\n    0%  Past simple');
+    });
+
+    it('counts a link listed twice on one question only once', () => {
+        const duplicated: Test = {
+            ...baseTest,
+            questions: [
+                { ...mc, id: 'q1', points: 1, linkedStandards: [standard, { ...standard }] },
+                { ...mc, id: 'q2', prompt: 'Other', points: 1, linkedStandards: [standard] },
+            ],
         };
-        const out = buildTestStudentSummary(baseTest, st, student, baseTest.questions);
-        expect(out).toContain('Jane');
-        expect(out).toContain('Given: go');
-        expect(out).toContain('Correct: goes');
-        expect(out).toContain('0/1 pts');
+        const submission: StudentTest = {
+            ...gradedSubmission,
+            answers: [
+                { questionId: 'q1', response: 'o2' },
+                { questionId: 'q2', response: 'o1' },
+            ],
+        };
+        const items = calcLinkedItemAccuracies(
+            duplicated.questions,
+            buildAnswerRows(duplicated, submission, duplicated.questions)
+        );
+        expect(items).toHaveLength(1);
+        expect(items[0].accuracyPct).toBe(50);
+    });
+
+    it('counts an unanswered linked question as zero credit', () => {
+        const partial: StudentTest = { ...answers, answers: [{ questionId: 'q1', response: 'o2' }] };
+        const items = calcLinkedItemAccuracies(
+            linkedTest.questions,
+            buildAnswerRows(linkedTest, partial, linkedTest.questions)
+        );
+        expect(items.find((i) => i.label === 'Past simple')?.accuracyPct).toBe(0);
     });
 });
 
