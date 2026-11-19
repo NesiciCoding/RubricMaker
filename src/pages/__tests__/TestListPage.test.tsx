@@ -180,6 +180,11 @@ async function loadPage() {
     return renderPage(TestListPage);
 }
 
+/** Open a card's overflow menu (index 0 = the first card), where the secondary actions live. */
+function openCardMenu(index = 0) {
+    fireEvent.click(screen.getAllByLabelText('tests.card_more_actions')[index]);
+}
+
 describe('TestListPage', () => {
     beforeEach(() => {
         mockAddTest.mockClear();
@@ -218,8 +223,8 @@ describe('TestListPage', () => {
                 <TestListPage />
             </MemoryRouter>
         );
-        const duplicateBtn = screen.getByTitle('tests.action_duplicate');
-        fireEvent.click(duplicateBtn);
+        openCardMenu();
+        fireEvent.click(screen.getByTitle('tests.action_duplicate'));
 
         expect(mockAddTest).toHaveBeenCalledTimes(1);
         const arg = mockAddTest.mock.calls[0][0];
@@ -236,8 +241,8 @@ describe('TestListPage', () => {
                 <TestListPage />
             </MemoryRouter>
         );
-        const assignBtn = screen.getByTitle('tests.action_assign');
-        fireEvent.click(assignBtn);
+        openCardMenu();
+        fireEvent.click(screen.getByTitle('tests.action_assign'));
         expect(screen.getByText(/tests.assignment_modal_title/)).toBeInTheDocument();
     });
 
@@ -510,10 +515,12 @@ describe('TestListPage', () => {
 
     it('deletes a test after confirming and cancels without deleting', async () => {
         await loadPage();
+        openCardMenu();
         fireEvent.click(screen.getByTitle('tests.action_delete'));
         expect(screen.getByText('tests.delete_test_title')).toBeInTheDocument();
         fireEvent.click(screen.getByText('common.cancel'));
         expect(mockDeleteTest).not.toHaveBeenCalled();
+        openCardMenu();
         fireEvent.click(screen.getByTitle('tests.action_delete'));
         fireEvent.click(screen.getByText('common.delete'));
         await waitFor(() => expect(mockDeleteTest).toHaveBeenCalledWith('t1'));
@@ -524,6 +531,7 @@ describe('TestListPage', () => {
             { ...mockTest, questions: [{ id: 'q1', prompt: 'Sum?', type: 'numeric', points: 1 }] },
         ];
         await loadPage();
+        openCardMenu();
         fireEvent.click(screen.getByTitle('tests.action_assign'));
         expect(mockShowToast).toHaveBeenCalledWith(expect.stringMatching(/^tests\.assign_blocked.*"count":1/), 'error');
         expect(screen.queryByText(/tests.assignment_modal_title/)).not.toBeInTheDocument();
@@ -536,6 +544,7 @@ describe('TestListPage', () => {
             { ...mockStudentTest, id: 'st3', testId: 'other-test' },
         ];
         await loadPage();
+        openCardMenu();
         fireEvent.click(screen.getByTitle('tests.action_delete'));
         expect(screen.getByText(/^tests\.delete_test_warning/)).toHaveTextContent('"count":2');
     });
@@ -669,6 +678,7 @@ describe('TestListPage', () => {
     it('opens the submission import modal', async () => {
         (mockUseApp as Record<string, unknown>).studentTests = [mockStudentTest];
         await loadPage();
+        openCardMenu();
         fireEvent.click(screen.getByTitle('tests.results.action_import'));
         expect(screen.getByText('tests.results.import_title')).toBeInTheDocument();
         fireEvent.click(screen.getByLabelText('common.close'));
@@ -678,6 +688,7 @@ describe('TestListPage', () => {
     it('disables assign when the test has no questions', async () => {
         (mockUseApp as Record<string, unknown>).tests = [{ ...mockTest, questions: [] }];
         await loadPage();
+        openCardMenu();
         expect(screen.getByTitle('tests.action_assign')).toBeDisabled();
     });
 
@@ -739,6 +750,7 @@ describe('TestListPage', () => {
             },
         ];
         await loadPage();
+        openCardMenu();
         expect(screen.getByTitle('tests.action_assign')).toBeEnabled();
         fireEvent.click(screen.getByText('common.view_list'));
         expect(screen.getByTitle('tests.action_assign')).toBeEnabled();

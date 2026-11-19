@@ -26,6 +26,28 @@ export function childFolders(folders: Folder[], kind: FolderKind, parentId?: str
     return sortByDisplayOrder(ofKind.filter((folder) => !folder.parentId || !ids.has(folder.parentId)));
 }
 
+export interface FolderTreeEntry {
+    folder: Folder;
+    depth: number;
+}
+
+/**
+ * The folder tree in reading order — every parent immediately followed by its children — each entry
+ * tagged with the depth it sits at. Shared by every indented folder menu (a card's "file into
+ * folder" list and a folder tile's "Move to…"), so the two cannot disagree about the tree.
+ */
+export function folderTreeEntries(
+    folders: Folder[],
+    kind: FolderKind,
+    parentId?: string,
+    depth = 0
+): FolderTreeEntry[] {
+    return childFolders(folders, kind, parentId).flatMap((folder) => [
+        { folder, depth },
+        ...folderTreeEntries(folders, kind, folder.id, depth + 1),
+    ]);
+}
+
 /**
  * The chain from a top-level folder down to `folderId`, inclusive; empty when the id is unknown.
  * A folder whose parent went missing (a stale `parentId` from a deleted ancestor) still reports

@@ -157,7 +157,8 @@ describe('TestListPage sharing', () => {
 
     it('sets a test’s own sharing from its share button', async () => {
         await renderPage();
-        fireEvent.click(screen.getAllByRole('button', { name: 'sharing.action_share' })[1]);
+        fireEvent.click(screen.getAllByLabelText('tests.card_more_actions')[1]);
+        fireEvent.click(screen.getByRole('menuitem', { name: 'sharing.action_share' }));
         const dialog = screen.getByRole('dialog');
         expect(within(dialog).getByLabelText(/sharing.inherit_default/)).toBeChecked();
         fireEvent.click(within(dialog).getByLabelText(/sharing.visibility_private/));
