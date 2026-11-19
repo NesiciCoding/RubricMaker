@@ -55,11 +55,36 @@ export function chosenMemberId(
 
 const skippedCache = new WeakMap<VariantQuestion[], Map<string, Set<string>>>();
 
-/** Ids of the questions a student is NOT given because a sibling in their family was chosen instead. */
+function chosenIds(
+    questions: VariantQuestion[],
+    studentId: string | null | undefined,
+    recorded: string[] | undefined
+): Map<string, VariantQuestion[]> {
+    const chosen = new Map<string, VariantQuestion[]>();
+    for (const [familyId, members] of variantFamilies(questions)) {
+        const kept = recorded && members.find((m) => recorded.includes(m.id));
+        const id = kept ? kept.id : chosenMemberId(familyId, members, studentId);
+        chosen.set(
+            id,
+            members.filter((m) => m.id !== id)
+        );
+    }
+    return chosen;
+}
+
+/**
+ * Ids of the questions a student is NOT given because a sibling in their family was chosen instead.
+ * `recorded` is the member ids saved on the attempt when it was delivered; it wins over the hash so
+ * later edits to a family never change what an earlier attempt was given.
+ */
 export function undeliveredQuestionIds(
     test: { questions: VariantQuestion[] },
-    studentId: string | null | undefined
+    studentId: string | null | undefined,
+    recorded?: string[]
 ): Set<string> {
+    if (recorded?.length) {
+        return new Set([...chosenIds(test.questions, studentId, recorded).values()].flat().map((q) => q.id));
+    }
     // Score views ask this once per student × question, so cache per question array.
     const key = studentId ?? '';
     let perStudent = skippedCache.get(test.questions);
@@ -69,28 +94,34 @@ export function undeliveredQuestionIds(
     }
     const cached = perStudent.get(key);
     if (cached) return cached;
-    const skipped = new Set<string>();
-    for (const [familyId, members] of variantFamilies(test.questions)) {
-        const chosen = chosenMemberId(familyId, members, studentId);
-        for (const member of members) if (member.id !== chosen) skipped.add(member.id);
-    }
+    const skipped = new Set([...chosenIds(test.questions, studentId, undefined).values()].flat().map((q) => q.id));
     perStudent.set(key, skipped);
     return skipped;
+}
+
+/** The family members a student is given — the value to save on the attempt as `deliveredVariantIds`. */
+export function deliveredVariantIds(
+    test: { questions: VariantQuestion[] },
+    studentId: string | null | undefined
+): string[] {
+    return [...chosenIds(test.questions, studentId, undefined).keys()];
 }
 
 export function isQuestionDelivered(
     test: { questions: VariantQuestion[] },
     studentId: string | null | undefined,
-    questionId: string
+    questionId: string,
+    recorded?: string[]
 ): boolean {
-    return !undeliveredQuestionIds(test, studentId).has(questionId);
+    return !undeliveredQuestionIds(test, studentId, recorded).has(questionId);
 }
 
 /** The questions one student is given: every non-family question plus one member per family. */
 export function deliveredQuestions<Q extends VariantQuestion>(
     test: { questions: Q[] },
-    studentId: string | null | undefined
+    studentId: string | null | undefined,
+    recorded?: string[]
 ): Q[] {
-    const skipped = undeliveredQuestionIds(test, studentId);
+    const skipped = undeliveredQuestionIds(test, studentId, recorded);
     return skipped.size === 0 ? test.questions : test.questions.filter((q) => !skipped.has(q.id));
 }

@@ -1783,6 +1783,8 @@ export interface StudentTest {
     absent?: boolean;
     /** Parallel paper version ('A'–'D') the student actually received. Absent means not recorded — never derive it from the current `versionCount`. */
     testVersion?: string;
+    /** Family members (easier-cloze variants) this attempt was given, saved at delivery so later edits to a family never change what it was scored on. Absent on older attempts, which fall back to the hash. */
+    deliveredVariantIds?: string[];
 }
 
 export type TestStrengthBucket = 'strong' | 'developing' | 'weak';
@@ -2003,6 +2005,8 @@ export interface TestSubmissionPayload {
     levelPath?: StaircaseStep[];
     /** Parallel paper version ('A'–'D') the student was shown; absent when the test has no versions */
     testVersion?: string;
+    /** Family members the student was given; see `StudentTest.deliveredVariantIds` */
+    deliveredVariantIds?: string[];
 }
 
 /** A student's completed essay, encoded into a submission code for the teacher to import */

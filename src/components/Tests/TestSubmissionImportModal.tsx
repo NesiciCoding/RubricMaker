@@ -59,6 +59,7 @@ export default function TestSubmissionImportModal({ test, studentTests, onSave, 
             testVersion:
                 submission.testVersion ??
                 (existing?.startedAt === submission.startedAt ? existing.testVersion : undefined),
+            deliveredVariantIds: submission.deliveredVariantIds ?? existing?.deliveredVariantIds,
             updatedAt: now,
         };
         onSave(next);

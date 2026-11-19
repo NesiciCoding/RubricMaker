@@ -4,6 +4,7 @@ import {
     deliveredMaxPoints,
     deliveredQuestions,
     deliveredTest,
+    deliveredVariantIds,
     examPapers,
     genericVariantPapers,
     groupStudentsByDelivery,
@@ -165,5 +166,45 @@ describe('printed papers', () => {
         const plain: Test = { ...test, questions: [q('x')] };
         expect(examPapers(plain, students)).toEqual([{ test: plain, students }]);
         expect(examPapers(plain, undefined)).toEqual([{ test: plain, students: [] }]);
+    });
+});
+
+describe('recorded delivery', () => {
+    it('keeps a student on the same member when the family is reordered', () => {
+        const reversed: Test = { ...test, questions: [test.questions[1], test.questions[0], test.questions[2]] };
+        for (const id of STUDENTS) {
+            expect([...undeliveredQuestionIds(reversed, id)]).toEqual([...undeliveredQuestionIds(test, id)]);
+        }
+    });
+
+    it('lets the recorded members win over the hash', () => {
+        for (const id of STUDENTS) {
+            const other = deliveredVariantIds(test, id)[0] === 'a' ? 'a2' : 'a';
+            expect(isQuestionDelivered(test, id, other, [other])).toBe(true);
+            expect(deliveredQuestions(test, id, [other]).map((x) => x.id)).toContain(other);
+        }
+    });
+
+    it('scores an attempt on the recorded member even after the family gains a copy', () => {
+        const id = STUDENTS[0];
+        const recorded = deliveredVariantIds(test, id);
+        const grown: Test = { ...test, questions: [...test.questions, q('a3', { variantOfQuestionId: 'a' })] };
+        const st = {
+            id: 's',
+            testId: 't1',
+            studentId: id,
+            status: 'submitted',
+            startedAt: 'x',
+            answers: [],
+            deliveredVariantIds: recorded,
+        } as StudentTest;
+        const { pathQuestions } = scoreStudentTest(grown, st);
+        expect(pathQuestions.map((x) => x.id)).toEqual([recorded[0], 'b']);
+    });
+
+    it('carries the printed member selection on each paper', () => {
+        expect(examPapers(test, undefined).map((p) => p.variantIds)).toEqual([['a'], ['a2']]);
+        const named = examPapers(test, [{ id: STUDENTS[0] }]);
+        expect(named[0].variantIds).toEqual(deliveredVariantIds(test, STUDENTS[0]));
     });
 });

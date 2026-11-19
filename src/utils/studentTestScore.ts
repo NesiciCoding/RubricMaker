@@ -38,7 +38,7 @@ export function scoreStudentTest(test: Test, studentTest: StudentTest): StudentT
             ? maxPointsForPath(test, sectionPath)
             : isStaircase && levelPath
               ? staircaseMaxPoints(scoredTest.questions, levelPath)
-              : calcTestMaxPoints(test, studentTest.studentId);
+              : calcTestMaxPoints(test, studentTest.studentId, studentTest.deliveredVariantIds);
 
     // For a staged (placement) submission, only the sections the student actually saw
     // count — the other branch's questions were never presented and would otherwise
@@ -51,7 +51,7 @@ export function scoreStudentTest(test: Test, studentTest: StudentTest): StudentT
               ? levelPath
                     .map((step) => scoredTest.questions.find((q) => q.id === step.questionId))
                     .filter((q): q is TestQuestion => !!q)
-              : deliveredQuestions(test, studentTest.studentId);
+              : deliveredQuestions(test, studentTest.studentId, studentTest.deliveredVariantIds);
 
     // For a staged/staircase submission, points must be scored only from the path the student
     // actually took — including off-path answers (or a stale rawTotalPoints) would let points

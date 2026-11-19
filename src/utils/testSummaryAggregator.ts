@@ -59,7 +59,7 @@ export function effectiveTestQuestions(
 
 /** A student's latest answer per question, leaving out the sibling of a variant family they were not given. */
 function latestAnswerByQuestion(studentTest: StudentTest, test: Test): Map<string, TestAnswer> {
-    const undelivered = undeliveredQuestionIds(test, studentTest.studentId);
+    const undelivered = undeliveredQuestionIds(test, studentTest.studentId, studentTest.deliveredVariantIds);
     const byQuestion = new Map<string, TestAnswer>();
     for (const answer of studentTest.answers) {
         if (undelivered.has(answer.questionId)) continue;
@@ -309,7 +309,7 @@ export function calcTestItemAnalysis(studentTests: StudentTest[], test: Test): Q
     const maxPoints = calcTestMaxPoints(test);
 
     const deliveredAnswers = (st: StudentTest) => {
-        const undelivered = undeliveredQuestionIds(test, st.studentId);
+        const undelivered = undeliveredQuestionIds(test, st.studentId, st.deliveredVariantIds);
         return undelivered.size === 0 ? st.answers : st.answers.filter((a) => !undelivered.has(a.questionId));
     };
     const rankScore = new Map(relevant.map((st) => [st, calcStudentTestRawPoints(test, deliveredAnswers(st))]));

@@ -115,7 +115,11 @@ export default function ScoreSheetGrid({
             if (!student || !q) continue;
             const validity = validateCell(raw, q.points);
             if (validity === 'invalid' || validity === 'over_max') continue;
-            if (validity !== 'empty' && !isQuestionDelivered(test, student.id, q.id)) continue;
+            if (
+                validity !== 'empty' &&
+                !isQuestionDelivered(test, student.id, q.id, sheetRef.current.get(student.id)?.deliveredVariantIds)
+            )
+                continue;
             const current = touched.has(student.id) ? touched.get(student.id) : sheetRef.current.get(student.id);
             const before = latestAnswer(current, q.id);
             const next = validity === 'empty' ? null : parsePoints(raw)!;
@@ -189,7 +193,15 @@ export default function ScoreSheetGrid({
         const targets: { row: number; col: number }[] = [];
         for (let c = col + 1; c < questions.length; c++) {
             if (questions[c].points !== max) continue;
-            if (!isQuestionDelivered(test, student.id, questions[c].id)) continue;
+            if (
+                !isQuestionDelivered(
+                    test,
+                    student.id,
+                    questions[c].id,
+                    sheetRef.current.get(student.id)?.deliveredVariantIds
+                )
+            )
+                continue;
             targets.push({ row, col: c });
         }
         return targets;
@@ -266,7 +278,12 @@ export default function ScoreSheetGrid({
                     !editable ||
                     absent ||
                     validity !== 'ok' ||
-                    !isQuestionDelivered(test, student.id, q.id) ||
+                    !isQuestionDelivered(
+                        test,
+                        student.id,
+                        q.id,
+                        sheetRef.current.get(student.id)?.deliveredVariantIds
+                    ) ||
                     acrossTargets(row, col).length === 0,
                 onSelect: () => fillAcross(row, col),
             },
@@ -531,7 +548,12 @@ export default function ScoreSheetGrid({
                                     const bad = validity === 'invalid' || validity === 'over_max';
                                     const isFocused = focus?.row === row && focus?.col === col;
                                     const inBand = !isFocused && (focus?.row === row || focus?.col === col);
-                                    const notGiven = !isQuestionDelivered(test, student.id, q.id);
+                                    const notGiven = !isQuestionDelivered(
+                                        test,
+                                        student.id,
+                                        q.id,
+                                        st?.deliveredVariantIds
+                                    );
                                     return (
                                         <td
                                             key={q.id}

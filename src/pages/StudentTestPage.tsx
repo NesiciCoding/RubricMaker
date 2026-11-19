@@ -32,7 +32,7 @@ import { autoScoreResponse } from '../utils/testCalc';
 import { enqueueSubmission, removeSubmission, pendingSubmissions, isAlreadySubmitted } from '../utils/testSubmitOutbox';
 import { clozeInstructionKey } from '../utils/questionTypeKey';
 import { versionForStudent, versionQuestion } from '../utils/testVersions';
-import { deliveredTest } from '../utils/variantDelivery';
+import { deliveredTest, deliveredVariantIds } from '../utils/variantDelivery';
 import SubmitReviewDialog from '../components/Tests/SubmitReviewDialog';
 import type {
     TestAnswer,
@@ -146,6 +146,10 @@ export default function StudentTestPage() {
     // ever sees one member of an easier-cloze family.
     const test = useMemo(
         () => (fullTest ? deliveredTest(fullTest, deliveryStudentId) : null),
+        [fullTest, deliveryStudentId]
+    );
+    const deliveredVariants = useMemo(
+        () => (fullTest ? deliveredVariantIds(fullTest, deliveryStudentId) : []),
         [fullTest, deliveryStudentId]
     );
     // Test content keeps its own language (English unless set) rather than inheriting <html lang> from the
@@ -577,6 +581,7 @@ export default function StudentTestPage() {
             sectionPath: staged && sectionPath.length > 0 ? sectionPath : undefined,
             levelPath: isStaircase && effectiveLevelPath.length > 0 ? effectiveLevelPath : undefined,
             testVersion: testVersion ?? undefined,
+            deliveredVariantIds: deliveredVariants.length > 0 ? deliveredVariants : undefined,
         };
         const legacyCode = encodeTestSubmission(submissionPayload);
 

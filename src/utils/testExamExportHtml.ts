@@ -355,8 +355,13 @@ export function buildExamAttachmentHtml(test: Test, versionLabel?: string): stri
 }
 
 /** Fiducials + QR for one answer sheet, as offsets inside withoutBrowserPrintChrome()'s repeated header (page coordinates minus the side margin), so they print on every page of that sheet. */
-async function scanMarkerHtml(test: Test, studentId?: string, pageCount?: number): Promise<string> {
-    const dataUrl = await QRCode.toDataURL(answerSheetQrPayload(test.id, studentId, { pages: pageCount }), {
+async function scanMarkerHtml(
+    test: Test,
+    studentId?: string,
+    pageCount?: number,
+    variants?: string[]
+): Promise<string> {
+    const dataUrl = await QRCode.toDataURL(answerSheetQrPayload(test.id, studentId, { pages: pageCount, variants }), {
         width: 96,
         margin: 0,
     });
@@ -470,7 +475,9 @@ export async function buildAnswerSheetHtml(
     const pages = await Promise.all(
         sheets.map(async (student, i) =>
             withoutBrowserPrintChrome(await answerSheetPagesHtml(test, options, student), {
-                headerExtra: options.scanMarkers ? await scanMarkerHtml(test, student?.id, pageCount) : '',
+                headerExtra: options.scanMarkers
+                    ? await scanMarkerHtml(test, student?.id, pageCount, options.variantIds)
+                    : '',
                 breakAfter: i < sheets.length - 1,
                 headerHeightMm: band.top,
                 footerHeightMm: band.bottom,
@@ -533,7 +540,7 @@ export async function exportExamPdf(test: Test, options: ExportExamPdfOptions): 
     // A test with easier-cloze variants needs one paper per set of questions: named students share a
     // paper only when they are given the same members, an unnamed stack gets one paper per member.
     for (const paper of examPapers(test, options.students)) {
-        await exportExamPaperPdf(paper.test, { ...options, students: paper.students });
+        await exportExamPaperPdf(paper.test, { ...options, students: paper.students, variantIds: paper.variantIds });
     }
 }
 

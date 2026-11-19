@@ -16,8 +16,8 @@ export {
 import { deliveredMaxPoints } from './variantDelivery';
 
 /** Maximum points one student can earn: a variant family counts once, via the member that student is given. */
-export function calcTestMaxPoints(test: Test, studentId?: string | null): number {
-    return deliveredMaxPoints(test, studentId);
+export function calcTestMaxPoints(test: Test, studentId?: string | null, recorded?: string[]): number {
+    return deliveredMaxPoints(test, studentId, recorded);
 }
 
 export function scoreTestAnswer(question: TestQuestion, answer: TestAnswer): number {
