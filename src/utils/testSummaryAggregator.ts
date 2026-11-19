@@ -108,8 +108,9 @@ function skillGroupsForTest(questions: TestQuestion[]): SkillGroup[] {
     for (const question of questions) {
         const standards = question.linkedStandards ?? [];
         const descriptors = question.linkedCefrDescriptors ?? [];
+        const frameworkDescriptors = question.frameworkDescriptors ?? [];
 
-        if (standards.length === 0 && descriptors.length === 0) continue;
+        if (standards.length === 0 && descriptors.length === 0 && frameworkDescriptors.length === 0) continue;
 
         for (const standard of standards) {
             const group = groups.get(standard.guid) ?? {
@@ -129,6 +130,19 @@ function skillGroupsForTest(questions: TestQuestion[]): SkillGroup[] {
             };
             group.questionIds.push(question.id);
             groups.set(descriptor.descriptorId, group);
+        }
+
+        // Grammar items and other framework descriptors (IB, Bloom's, SLO) are keyed per framework so
+        // the same descriptorId can't merge two different frameworks' groups.
+        for (const descriptor of frameworkDescriptors) {
+            const groupId = `framework:${descriptor.framework}:${descriptor.descriptorId}`;
+            const group = groups.get(groupId) ?? {
+                groupId,
+                label: descriptor.descriptionEn,
+                questionIds: [],
+            };
+            group.questionIds.push(question.id);
+            groups.set(groupId, group);
         }
     }
 
@@ -174,9 +188,9 @@ export function calcSkillBreakdowns(
 /**
  * Strong/weak-point summary for a test. studentId === null aggregates across
  * every StudentTest for the test (cohort mode); otherwise it is scoped to
- * that student's own submission(s). Questions with no linkedStandards or
- * linkedCefrDescriptors are excluded from the per-skill rollup entirely —
- * they remain visible in the per-question breakdown.
+ * that student's own submission(s). Questions with no linkedStandards,
+ * linkedCefrDescriptors or frameworkDescriptors are excluded from the per-skill
+ * rollup entirely — they remain visible in the per-question breakdown.
  */
 export function calcTestStrongWeakSummary(
     studentId: string | null,
