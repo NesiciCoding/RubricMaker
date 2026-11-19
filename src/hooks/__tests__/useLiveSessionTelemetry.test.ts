@@ -251,13 +251,129 @@ describe('useLiveSessionTelemetry', () => {
         act(() => {
             vi.advanceTimersByTime(5_000);
         });
-        expect(sentSnapshots().at(-1)).toEqual({ wordCount: 2 });
+        expect(sentSnapshots().at(-1)).toEqual({ wordCount: 2, typedChars: 0, pastedChars: 0 });
 
         words = 3;
         act(() => {
             vi.advanceTimersByTime(55_000);
         });
         expect(sentSnapshots().at(-1)).toMatchObject({ text: 'draft 3', wordCount: 3 });
+    });
+
+    function inputEvent(inputType: string, data: string) {
+        const event = new Event('input');
+        Object.defineProperty(event, 'inputType', { value: inputType });
+        Object.defineProperty(event, 'data', { value: data });
+        return event;
+    }
+
+    function pasteEvent(text: string) {
+        const event = new Event('paste', { bubbles: true });
+        Object.defineProperty(event, 'clipboardData', { value: { getData: () => text } });
+        return event;
+    }
+
+    function renderEssayTelemetry(initialKey: string) {
+        return renderHook(
+            ({ assignmentKey }: { assignmentKey: string }) =>
+                useLiveSessionTelemetry({
+                    kind: 'essay',
+                    assignmentKey,
+                    enabled: true,
+                    getSnapshot: () => ({ text: 'draft', wordCount: 1 }),
+                    supabaseUrl: 'https://example.supabase.co',
+                    supabaseAnonKey: 'anon-key',
+                }),
+            { initialProps: { assignmentKey: initialKey } }
+        );
+    }
+
+    function lastSnapshotPayload() {
+        act(() => {
+            (mockChannel.subscribe.mock.calls.at(-1)?.[0] as (status: string) => void)('SUBSCRIBED');
+            vi.advanceTimersByTime(6_000);
+        });
+        return mockChannel.send.mock.calls
+            .map(([message]) => message as { event: string; payload: Record<string, unknown> })
+            .filter((message) => message.event === 'snapshot')
+            .at(-1)?.payload;
+    }
+
+    it('counts typed and pasted characters without ever recording their content', () => {
+        vi.useFakeTimers();
+        Object.assign(mockChannel, { state: 'joined' });
+        const getSnapshot = vi.fn(() => ({ text: 'draft', wordCount: 1 }));
+
+        renderHook(() =>
+            useLiveSessionTelemetry({
+                kind: 'essay',
+                assignmentKey: 'key1',
+                enabled: true,
+                getSnapshot,
+                supabaseUrl: 'https://example.supabase.co',
+                supabaseAnonKey: 'anon-key',
+            })
+        );
+
+        const typed = new Event('input') as Event & { inputType?: string; data?: string };
+        Object.defineProperty(typed, 'inputType', { value: 'insertText' });
+        Object.defineProperty(typed, 'data', { value: 'hello' });
+        act(() => {
+            document.dispatchEvent(typed);
+        });
+
+        const editor = document.createElement('textarea');
+        document.body.appendChild(editor);
+        act(() => {
+            editor.dispatchEvent(pasteEvent('pasted!'));
+        });
+        editor.remove();
+
+        const snapshot = lastSnapshotPayload();
+        expect(snapshot).toMatchObject({ typedChars: 5, pastedChars: 7 });
+        expect(JSON.stringify(snapshot)).not.toContain('pasted!');
+    });
+
+    it('ignores a paste that landed outside an editable element', () => {
+        vi.useFakeTimers();
+        Object.assign(mockChannel, { state: 'joined' });
+        renderEssayTelemetry('key1');
+
+        act(() => {
+            document.dispatchEvent(pasteEvent('x'.repeat(80)));
+        });
+
+        expect(lastSnapshotPayload()).toMatchObject({ pastedChars: 0 });
+    });
+
+    it('counts an IME composition once, when it is committed, not on every rewrite', () => {
+        vi.useFakeTimers();
+        Object.assign(mockChannel, { state: 'joined' });
+        renderEssayTelemetry('key1');
+
+        act(() => {
+            for (const data of ['a', 'ab', 'abc']) document.dispatchEvent(inputEvent('insertCompositionText', data));
+            const end = new Event('compositionend');
+            Object.defineProperty(end, 'data', { value: 'abc' });
+            document.dispatchEvent(end);
+        });
+
+        expect(lastSnapshotPayload()).toMatchObject({ typedChars: 3 });
+    });
+
+    it('restarts the typed and pasted counts when the assignment changes, not on a re-render', () => {
+        vi.useFakeTimers();
+        Object.assign(mockChannel, { state: 'joined' });
+        const { rerender } = renderEssayTelemetry('assignment-a');
+
+        act(() => {
+            document.dispatchEvent(inputEvent('insertText', 'x'.repeat(1000)));
+        });
+        rerender({ assignmentKey: 'assignment-a' });
+        expect(lastSnapshotPayload()).toMatchObject({ typedChars: 1000 });
+
+        rerender({ assignmentKey: 'assignment-b' });
+        expect(lastSnapshotPayload()).toMatchObject({ typedChars: 0, pastedChars: 0 });
     });
 
     it('hands the prose to persistDraftText only on the ticks that actually carry it', () => {
@@ -420,7 +536,7 @@ describe('useLiveSessionTelemetry', () => {
         act(() => {
             (mockChannel.subscribe.mock.calls.at(-1)?.[0] as (status: string) => void)('SUBSCRIBED');
         });
-        expect(sentSnapshots().at(-1)).toEqual({ text: 'draft', wordCount: 4 });
+        expect(sentSnapshots().at(-1)).toEqual({ text: 'draft', wordCount: 4, typedChars: 0, pastedChars: 0 });
     });
 
     it('forwards nudge broadcasts to the onNudge callback', () => {

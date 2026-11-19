@@ -77,6 +77,9 @@ interface StudentLiveState {
         generatorLevel?: CefrLevel;
         generatorEloAnchor?: number;
         questionsAsked?: number;
+        /** Counts only — characters typed vs pasted, never the text. */
+        typedChars?: number;
+        pastedChars?: number;
         askedPrompts?: Record<string, string>;
     } | null;
     lastUpdateAt: string | null;
@@ -1552,6 +1555,8 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                                 status: row.status,
                                                 connection: row.connection,
                                                 silentMinutes: row.silentMinutes,
+                                                typedChars: row.live.snapshot?.typedChars,
+                                                pastedChars: row.live.snapshot?.pastedChars,
                                                 wordCount: row.live.snapshot?.wordCount,
                                                 wordSamples: row.live.wordSamples,
                                                 lastChangeAt: row.live.lastChangeAt,
