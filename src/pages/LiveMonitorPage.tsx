@@ -1771,7 +1771,11 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                             flags={focusedRow.flags}
                                             showWritingPace={showWritingPace}
                                             onNudge={nudgeFocusedStudent}
-                                            projectorHref={`/essays/${params.assignmentId ?? ''}/monitor/project/${focusedRow.studentId}`}
+                                            projectorHref={`/essays/${params.assignmentId ?? ''}/monitor/project/${focusedRow.studentId}${
+                                                focusedRow.teacherKey && focusedRow.teacherKey !== params.assignmentId
+                                                    ? `?key=${encodeURIComponent(focusedRow.teacherKey)}`
+                                                    : ''
+                                            }`}
                                             onLeave={() => setFocusedStudentId(null)}
                                             now={now}
                                         />

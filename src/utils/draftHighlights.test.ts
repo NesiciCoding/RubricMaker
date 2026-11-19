@@ -7,14 +7,14 @@ describe('lastAddedSentence', () => {
         const current = 'The rain fell all morning. The lane was quiet. Nobody came.';
 
         // Two sentences were added; the newest one is the one worth showing.
-        expect(lastAddedSentence(previous, current)).toEqual({
+        expect(lastAddedSentence(previous, current)).toMatchObject({
             addedWords: 6,
             sentence: 'Nobody came.',
         });
     });
 
     it('reports an unfinished tail as it stands', () => {
-        expect(lastAddedSentence('The rain fell.', 'The rain fell. Then the')).toEqual({
+        expect(lastAddedSentence('The rain fell.', 'The rain fell. Then the')).toMatchObject({
             addedWords: 2,
             sentence: 'Then the',
         });
@@ -26,7 +26,7 @@ describe('lastAddedSentence', () => {
     });
 
     it('treats the first snapshot as all-new', () => {
-        expect(lastAddedSentence('', 'One two three.')).toEqual({ addedWords: 3, sentence: 'One two three.' });
+        expect(lastAddedSentence('', 'One two three.')).toMatchObject({ addedWords: 3, sentence: 'One two three.' });
     });
 
     it('shortens a very long sentence on a word boundary', () => {
@@ -39,16 +39,16 @@ describe('lastAddedSentence', () => {
     });
 
     it('does not count the unchanged tail after an earlier edit as new', () => {
-        expect(lastAddedSentence('Rain fell all morning. Nobody came.', 'Snow fell all morning. Nobody came.')).toEqual(
-            {
-                addedWords: 1,
-                sentence: 'Snow',
-            }
-        );
+        expect(
+            lastAddedSentence('Rain fell all morning. Nobody came.', 'Snow fell all morning. Nobody came.')
+        ).toMatchObject({
+            addedWords: 1,
+            sentence: 'Snow',
+        });
     });
 
     it('shows an unfinished tail rather than the sentence before it', () => {
-        expect(lastAddedSentence('Hello.', 'Hello. The lane was quiet. Nobody')).toEqual({
+        expect(lastAddedSentence('Hello.', 'Hello. The lane was quiet. Nobody')).toMatchObject({
             addedWords: 5,
             sentence: 'Nobody',
         });
@@ -59,7 +59,22 @@ describe('lastAddedSentence', () => {
     });
 
     it('treats an empty previous snapshot as a baseline', () => {
-        expect(lastAddedSentence('', 'Hello world.')).toEqual({ addedWords: 2, sentence: 'Hello world.' });
+        expect(lastAddedSentence('', 'Hello world.')).toMatchObject({ addedWords: 2, sentence: 'Hello world.' });
+    });
+
+    it('reports where the new sentence sits, so a repeated sentence marks the new copy', () => {
+        const current = 'Echo. Echo.';
+        const added = lastAddedSentence('Echo.', current);
+
+        expect(added).toMatchObject({ sentence: 'Echo.', start: 6, end: 11 });
+        expect(current.slice(added!.start, added!.end)).toBe('Echo.');
+    });
+
+    it('locates a unique sentence by the same range', () => {
+        const current = 'The rain fell. Then the lane went quiet.';
+        const added = lastAddedSentence('The rain fell.', current);
+
+        expect(current.slice(added!.start, added!.end)).toBe('Then the lane went quiet.');
     });
 });
 

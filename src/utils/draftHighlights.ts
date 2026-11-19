@@ -8,6 +8,9 @@ export interface DraftAddition {
     addedWords: number;
     /** The last complete sentence of the addition (or the unfinished tail), trimmed for display. */
     sentence: string;
+    /** Where that sentence sits in the current text, so a repeated sentence marks the new copy. */
+    start: number;
+    end: number;
 }
 
 function shorten(text: string): string {
@@ -56,12 +59,12 @@ export function lastAddedSentence(previous: string, current: string): DraftAddit
     const added = current.slice(first.index ?? 0, end);
 
     // The last non-blank segment, so an unfinished tail ("Nobody") wins over the sentence before it.
-    const sentence =
-        (added.match(SENTENCE) ?? [added])
-            .map((segment) => segment.trim())
-            .filter(Boolean)
-            .at(-1) ?? added;
-    return { addedWords, sentence: shorten(sentence) };
+    const base = first.index ?? 0;
+    const segments = Array.from(added.matchAll(SENTENCE)).filter((match) => match[0].trim() !== '');
+    const segment = segments.at(-1);
+    const offset = segment ? (segment.index ?? 0) + (segment[0].length - segment[0].trimStart().length) : 0;
+    const sentence = segment ? segment[0].trim() : added;
+    return { addedWords, sentence: shorten(sentence), start: base + offset, end: base + offset + sentence.length };
 }
 
 /**
