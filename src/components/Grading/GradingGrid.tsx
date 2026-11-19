@@ -120,6 +120,7 @@ export default function GradingGrid({
                                                         textAlign: 'start',
                                                         fontWeight: 700,
                                                         fontSize: '0.9rem',
+                                                        minHeight: 44,
                                                     }}
                                                 >
                                                     {c.title}

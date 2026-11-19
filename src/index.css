@@ -1835,6 +1835,8 @@ select.input-error {
 .level-btn-select {
     display: block;
     width: 100%;
+    /* 44px AAA target (2.5.5); the header's own content is ~43px tall. */
+    min-height: 44px;
     padding: 0;
     margin: 0;
     border: none;

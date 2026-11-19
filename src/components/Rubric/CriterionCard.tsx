@@ -900,6 +900,10 @@ export default memo(function CriterionCard({
                                                                                 color: 'var(--text-dim)',
                                                                                 flexShrink: 0,
                                                                                 display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                justifyContent: 'center',
+                                                                                minWidth: 44,
+                                                                                minHeight: 44,
                                                                             }}
                                                                         >
                                                                             <GripHorizontal size={13} />
