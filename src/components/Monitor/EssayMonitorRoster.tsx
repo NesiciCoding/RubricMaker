@@ -114,9 +114,7 @@ export default function EssayMonitorRoster({ rows, onWatch, showWritingPace = fa
                 // The prose arrives once a minute, so say what that minute added in the student's
                 // own words instead of leaving the teacher to diff two truncated previews.
                 const added =
-                    row.previousText !== undefined && row.previousText.trim() !== ''
-                        ? lastAddedSentence(row.previousText, row.draftText ?? '')
-                        : null;
+                    row.previousText !== undefined ? lastAddedSentence(row.previousText, row.draftText ?? '') : null;
                 const addedAt =
                     row.snapshotAgeAt !== undefined
                         ? new Date(row.snapshotAgeAt).toLocaleTimeString([], {

@@ -61,6 +61,7 @@ import {
 } from '../utils/monitorSessionExport';
 import { studentCompletion, type StudentCompletion } from '../utils/responseCells';
 import { answeredQuestionIds, stuckQuestions } from '../utils/questionStuck';
+import { previousDistinctDraft } from '../utils/draftHighlights';
 import { TRIAGE_KEYS, triageCounts, triageMatches, type TriageKey } from '../utils/monitorTriage';
 import {
     appendWordSample,
@@ -142,7 +143,10 @@ function applyPersistedSnapshots(current: StudentLiveState, history: PersistedDr
     const byAt = new Map<number, NonNullable<StudentLiveState['snapshots']>[number]>();
     for (const entry of current.snapshots ?? []) byAt.set(entry.at, entry);
     for (const snapshot of history) {
-        if (snapshot.text !== undefined && !byAt.has(snapshot.at)) {
+        // A live snapshot is stamped with the monitor's receipt time, a stored one with its own, so
+        // the same draft arrives under two timestamps; recognise it by its text instead.
+        const heldLive = [...byAt.values()].some((entry) => entry.text?.trim() === snapshot.text?.trim());
+        if (snapshot.text !== undefined && !byAt.has(snapshot.at) && !heldLive) {
             byAt.set(snapshot.at, { at: snapshot.at, words: snapshot.wordCount, text: snapshot.text });
         }
     }
@@ -1801,11 +1805,9 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                                     ? stripCommentHtml(focusedRow.live.snapshot.text)
                                                     : undefined
                                             }
-                                            previousDraftText={
-                                                proseSnapshots.length > 1
-                                                    ? stripCommentHtml(proseSnapshots[proseSnapshots.length - 2])
-                                                    : undefined
-                                            }
+                                            previousDraftText={previousDistinctDraft(
+                                                proseSnapshots.map(stripCommentHtml)
+                                            )}
                                             snapshots={[...(focusedRow.live.snapshots ?? [])].reverse()}
                                             events={mergeProctorEvents(
                                                 focusedRow.persistedEvents,
@@ -1829,7 +1831,9 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                                 (snap) => snap.text !== undefined
                                             );
                                             const latest = texts[texts.length - 1];
-                                            const previous = texts[texts.length - 2];
+                                            const previousText = previousDistinctDraft(
+                                                texts.map((snap) => stripCommentHtml(snap.text ?? ''))
+                                            );
                                             return {
                                                 studentId: row.studentId,
                                                 displayName: displayName(row, index),
@@ -1849,10 +1853,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                                     latest?.text !== undefined
                                                         ? stripCommentHtml(latest.text)
                                                         : undefined,
-                                                previousText:
-                                                    previous?.text !== undefined
-                                                        ? stripCommentHtml(previous.text)
-                                                        : undefined,
+                                                previousText,
                                                 // Word counts land every few seconds, so the sparkline runs on
                                                 // those samples; only the prose is minute-grained.
                                                 snapshotWords: (row.live.wordSamples ?? []).map(
