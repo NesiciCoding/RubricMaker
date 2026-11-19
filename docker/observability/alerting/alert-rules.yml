@@ -412,7 +412,7 @@ groups:
       severity: warning
     annotations:
       summary: '{{ humanize $values.B.Value }} pg_net call(s) from a scheduled job failed in the last day'
-      description: pg_cron reports these jobs as succeeded even when the edge function they call fails (e.g. the teacher digest). Check net._http_response for the status and error.
+      description: pg_cron reports these jobs as succeeded even when the edge function they call fails (e.g. the teacher digest). Run SELECT created, status_code, timed_out, error_msg, left(content, 300) FROM net._http_response ORDER BY created DESC LIMIT 10; to see whether the call timed out (pg_net cancels at timeout_milliseconds, migration 106 sets 120 s for the digest), was rejected (401 = stale service-role key, see docs/SELF_HOSTING_OPS.md) or returned a 5xx from the function.
     data:
     - refId: A
       relativeTimeRange:
