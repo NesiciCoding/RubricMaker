@@ -51,6 +51,12 @@ export interface UseLiveSessionTelemetryOptions {
     supabaseAnonKey?: string;
     /** Called when a teacher sends a "nudge" broadcast on this session's monitor channel. */
     onNudge?: (message: string) => void;
+    /**
+     * Called with the prose whenever a text-bearing snapshot actually goes out. The channel is
+     * ephemeral, so this is the caller's chance to keep the draft somewhere durable for the
+     * monitor to seed itself from after a reload or a dropped connection.
+     */
+    persistDraftText?: (snapshot: { text: string; wordCount?: number }) => void;
 }
 
 export interface UseLiveSessionTelemetryReturn {
@@ -118,6 +124,7 @@ export function useLiveSessionTelemetry({
     supabaseUrl,
     supabaseAnonKey,
     onNudge,
+    persistDraftText,
 }: UseLiveSessionTelemetryOptions): UseLiveSessionTelemetryReturn {
     const [events, setEvents] = useState<ProctorEvent[]>([]);
     const [isBroadcasting, setIsBroadcasting] = useState(false);
@@ -151,6 +158,13 @@ export function useLiveSessionTelemetry({
     useEffect(() => {
         onNudgeRef.current = onNudge;
     }, [onNudge]);
+
+    // Same reason as onNudgeRef: persisting is a side channel, and a new callback identity per
+    // render must not tear down and rebuild the channel.
+    const persistDraftRef = useRef(persistDraftText);
+    useEffect(() => {
+        persistDraftRef.current = persistDraftText;
+    }, [persistDraftText]);
 
     const hasDb = !!(supabaseUrl && supabaseAnonKey);
 
@@ -412,6 +426,9 @@ export function useLiveSessionTelemetry({
             const snapshot = withText ? full : withoutText(full);
             if (baseline || !shallowEqualSnapshot(lastSnapshotRef.current, snapshot)) {
                 lastSnapshotRef.current = snapshot;
+                if (withText && snapshot.text !== undefined) {
+                    persistDraftRef.current?.({ text: snapshot.text, wordCount: snapshot.wordCount });
+                }
                 wsSend('snapshot', snapshot);
             }
         };

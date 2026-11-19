@@ -260,6 +260,45 @@ describe('useLiveSessionTelemetry', () => {
         expect(sentSnapshots().at(-1)).toMatchObject({ text: 'draft 3', wordCount: 3 });
     });
 
+    it('hands the prose to persistDraftText only on the ticks that actually carry it', () => {
+        vi.useFakeTimers();
+        Object.assign(mockChannel, { state: 'joined' });
+        let words = 1;
+        const persistDraftText = vi.fn();
+        const getSnapshot = vi.fn(() => ({ text: `draft ${words}`, wordCount: words }));
+
+        renderHook(() =>
+            useLiveSessionTelemetry({
+                kind: 'essay',
+                assignmentKey: 'key1',
+                enabled: true,
+                getSnapshot,
+                persistDraftText,
+                supabaseUrl: 'https://example.supabase.co',
+                supabaseAnonKey: 'anon-key',
+            })
+        );
+
+        act(() => {
+            (mockChannel.subscribe.mock.calls.at(-1)?.[0] as (status: string) => void)('SUBSCRIBED');
+        });
+        expect(persistDraftText).toHaveBeenLastCalledWith({ text: 'draft 1', wordCount: 1 });
+
+        // A stats-only tick must not store the same prose a second time.
+        words = 2;
+        act(() => {
+            vi.advanceTimersByTime(5_000);
+        });
+        expect(persistDraftText).toHaveBeenCalledTimes(1);
+
+        words = 3;
+        act(() => {
+            vi.advanceTimersByTime(60_000);
+        });
+        expect(persistDraftText).toHaveBeenLastCalledWith({ text: 'draft 3', wordCount: 3 });
+        expect(persistDraftText).toHaveBeenCalledTimes(2);
+    });
+
     it('lifts the draft-text throttle only while a teacher spotlight is on', () => {
         vi.useFakeTimers();
         Object.assign(mockChannel, { state: 'joined' });
