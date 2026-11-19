@@ -2,9 +2,12 @@ import React from 'react';
 import { ArrowLeft, Radio, Send } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import LiveDraftPanel from './LiveDraftPanel';
+import EssayTimeline from './EssayTimeline';
 import type { PresenceState, ProctorFlagSummary } from '../../utils/proctorAggregator';
 import type { WordSample } from '../../utils/monitorSignals';
+import { buildTimeline } from '../../utils/monitorTimeline';
 import { analyzeDraft } from '../../utils/writingAnalysis';
+import type { ProctorEvent } from '../../types';
 
 export interface EssaySpotlightSnapshot {
     at: number;
@@ -22,6 +25,8 @@ export interface EssaySpotlightProps {
     draftText?: string;
     /** Snapshot history, newest first. */
     snapshots: EssaySpotlightSnapshot[];
+    /** Proctoring events (persisted and live), already merged by the caller. */
+    events?: ProctorEvent[];
     flags?: ProctorFlagSummary;
     showWritingPace?: boolean;
     onNudge?: () => void;
@@ -68,6 +73,7 @@ export default function EssaySpotlight({
     lastActivityAt,
     draftText,
     snapshots,
+    events,
     flags,
     showWritingPace = false,
     onNudge,
@@ -77,6 +83,7 @@ export default function EssaySpotlight({
     const { t } = useTranslation();
     const stats = analyzeDraft(draftText ?? '');
     const clock = now ?? Date.now();
+    const timeline = buildTimeline(wordSamples ?? [], events ?? [], clock);
 
     return (
         <div data-testid="essay-spotlight" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -112,6 +119,8 @@ export default function EssaySpotlight({
                 now={clock}
                 defaultExpanded
             />
+
+            <EssayTimeline timeline={timeline} />
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 10 }}>
                 <div style={cardStyle} data-testid="essay-draft-analysis">
