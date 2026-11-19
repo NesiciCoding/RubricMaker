@@ -1,5 +1,5 @@
 import { useEffect, useState, type CSSProperties } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, MonitorPlay } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { RealtimeChannel } from '@supabase/supabase-js';
@@ -31,6 +31,9 @@ interface ProjectedDraft {
 export default function EssayDraftProjectorPage() {
     const { t } = useTranslation();
     const { assignmentId, studentId } = useParams<{ assignmentId: string; studentId: string }>();
+    const [searchParams] = useSearchParams();
+    // A batch student's drafts are stored under their own assignment key, which the monitor link carries.
+    const studentKey = searchParams.get('key') ?? '';
     const { students } = useStudents();
     const config = loadSupabaseConfig();
     const supabaseUrl = config?.supabaseUrl;
@@ -50,7 +53,9 @@ export default function EssayDraftProjectorPage() {
         if (!drafts) return;
         let cancelled = false;
         drafts
-            .listSnapshots([assignmentId], [studentId])
+            .listSnapshots(studentKey && studentKey !== assignmentId ? [assignmentId, studentKey] : [assignmentId], [
+                studentId,
+            ])
             .then((byStudent) => {
                 if (cancelled) return;
                 const texts = (byStudent.get(studentId) ?? []).filter(
@@ -78,7 +83,7 @@ export default function EssayDraftProjectorPage() {
         return () => {
             cancelled = true;
         };
-    }, [hasDb, assignmentId, studentId]);
+    }, [hasDb, assignmentId, studentId, studentKey]);
 
     useEffect(() => {
         if (!hasDb || !assignmentId || !studentId) return;
@@ -100,7 +105,9 @@ export default function EssayDraftProjectorPage() {
                 const text = stripCommentHtml(snapshot.text);
                 setDraft((current) => ({
                     text,
-                    previousText: current.text ?? current.previousText,
+                    // A re-sent identical draft must not become its own predecessor, or the mark vanishes.
+                    previousText:
+                        current.text !== undefined && current.text !== text ? current.text : current.previousText,
                     wordCount: typeof snapshot.wordCount === 'number' ? snapshot.wordCount : current.wordCount,
                     at: Date.now(),
                 }));
@@ -148,8 +155,7 @@ export default function EssayDraftProjectorPage() {
     }
 
     const text = draft.text ?? '';
-    const added = draft.previousText?.trim() ? lastAddedSentence(draft.previousText, text) : null;
-    const addedIndex = added ? text.indexOf(added.sentence) : -1;
+    const added = draft.previousText !== undefined ? lastAddedSentence(draft.previousText, text) : null;
     const ageSeconds = draft.at !== undefined ? Math.floor((now - draft.at) / 1000) : undefined;
 
     return (
@@ -197,9 +203,9 @@ export default function EssayDraftProjectorPage() {
             >
                 {text === '' ? (
                     t('tests.monitor.projector.waiting')
-                ) : added && addedIndex >= 0 ? (
+                ) : added ? (
                     <>
-                        {text.slice(0, addedIndex)}
+                        {text.slice(0, added.start)}
                         <mark
                             style={{
                                 background: 'color-mix(in srgb, var(--accent) 22%, transparent)',
@@ -208,9 +214,9 @@ export default function EssayDraftProjectorPage() {
                                 padding: '0 3px',
                             }}
                         >
-                            {added.sentence}
+                            {text.slice(added.start, added.end)}
                         </mark>
-                        {text.slice(addedIndex + added.sentence.length)}
+                        {text.slice(added.end)}
                     </>
                 ) : (
                     text

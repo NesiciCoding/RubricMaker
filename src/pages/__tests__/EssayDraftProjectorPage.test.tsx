@@ -46,9 +46,9 @@ vi.mock('react-i18next', () => ({
     }),
 }));
 
-function renderProjector() {
+function renderProjector(search = '') {
     return render(
-        <MemoryRouter initialEntries={['/essays/essay-1/monitor/project/student-1']}>
+        <MemoryRouter initialEntries={[`/essays/essay-1/monitor/project/student-1${search}`]}>
             <Routes>
                 <Route path="/essays/:assignmentId/monitor/project/:studentId" element={<EssayDraftProjectorPage />} />
             </Routes>
@@ -101,6 +101,12 @@ describe('EssayDraftProjectorPage', () => {
         expect(screen.getByText('Ada Lovelace')).toBeTruthy();
         expect(screen.getByText('tests.monitor.projector.words:15')).toBeTruthy();
         expect(listSnapshots).toHaveBeenCalledWith(['essay-1'], [expect.any(String)]);
+    });
+
+    it("also reads the snapshots stored under a batch student's own assignment key", async () => {
+        renderProjector('?key=student-key');
+
+        await waitFor(() => expect(listSnapshots).toHaveBeenCalledWith(['essay-1', 'student-key'], ['student-1']));
     });
 
     it('replaces the draft on a live snapshot and asks the student for the fast cadence', async () => {
