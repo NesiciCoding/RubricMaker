@@ -48,6 +48,7 @@ import SegmentedToggle from '../components/ui/SegmentedToggle';
 import GradingActionsMenu, { type GradingAction } from '../components/Grading/GradingActionsMenu';
 import GradingGrid from '../components/Grading/GradingGrid';
 import ContextMenu, { useContextMenu } from '../components/ui/ContextMenu';
+import MenuButton from '../components/ui/MenuButton';
 import { criterionMenuItems } from '../components/Grading/criterionMenuItems';
 import { FeedbackAudioPlayer } from '../components/Grading/FeedbackAudioPlayer';
 import TouchStepper from '../components/Grading/TouchStepper';
@@ -1511,6 +1512,7 @@ function GradeStudentEditor() {
                                     // Focusable so Escape can hand focus back to the card after a
                                     // right-click on a part of it that is not a control itself.
                                     tabIndex={-1}
+                                    data-longpress
                                     onContextMenu={(e) =>
                                         cardMenu.open(
                                             e,
@@ -1642,6 +1644,10 @@ function GradeStudentEditor() {
                                             style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}
                                         >
                                             {fmt.showWeights && <span className="badge badge-blue">{c.weight}%</span>}
+                                            <MenuButton
+                                                className="menu-touch-only"
+                                                label={t('gradeStudent.menu_label')}
+                                            />
                                             <button
                                                 type="button"
                                                 className="btn btn-ghost btn-icon btn-sm"
@@ -1980,6 +1986,13 @@ function GradeStudentEditor() {
                                                                                 min={level.minPoints}
                                                                                 max={level.maxPoints}
                                                                                 step={0.5}
+                                                                                aria-label={`${c.title} — ${level.label} ${
+                                                                                    scoresSubItems(c)
+                                                                                        ? t(
+                                                                                              'gradeStudent.label_base_points'
+                                                                                          )
+                                                                                        : t('gradeStudent.label_points')
+                                                                                }`}
                                                                                 value={
                                                                                     entry.selectedPoints ??
                                                                                     level.minPoints

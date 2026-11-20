@@ -1,6 +1,7 @@
-import type { StudentTest, Test, TestAnswer } from '../types';
+import type { StudentTest, Test, TestAnswer, TestQuestion } from '../types';
 import { scoreTestAnswer } from './testCalc';
 import { calcTestItemAnalysis } from './testSummaryAggregator';
+import { chosenMemberId, variantFamilies } from './variantDelivery';
 
 /** Below this many complete score rows, correlations and α are too noisy to show. */
 export const MIN_STUDENTS_FOR_CORRELATION = 5;
@@ -265,6 +266,31 @@ function scoredSubmissions(test: Test, studentTests: StudentTest[]): StudentTest
     return [...byStudent.values()].filter((st) => !st.absent);
 }
 
+/** Upper/lower-27% discrimination per item of the collapsed matrix, so a family counts every member's samples. */
+function familyDiscrimination(matrix: ItemMatrix): Map<string, number | null> {
+    const totals = matrix.rows.map((row) => row.scores.reduce<number>((sum, s) => sum + (s ?? 0), 0));
+    const order = matrix.rows.map((_, i) => i).sort((a, b) => totals[b] - totals[a]);
+    const groupSize = Math.max(1, Math.round(order.length * DISCRIMINATION_GROUP_RATIO));
+    const upper = order.slice(0, groupSize);
+    const lower = order.slice(-groupSize);
+    const canDiscriminate =
+        order.length >= MIN_STUDENTS_FOR_DISCRIMINATION && matrix.items.reduce((sum, i) => sum + i.maxPoints, 0) > 0;
+    const result = new Map<string, number | null>();
+    matrix.items.forEach((item, col) => {
+        const mean = (rows: number[]) => {
+            const fractions = rows.flatMap((r) => {
+                const score = matrix.rows[r].scores[col];
+                return score === null || item.maxPoints <= 0 ? [] : [score / item.maxPoints];
+            });
+            return fractions.length ? fractions.reduce((a, b) => a + b, 0) / fractions.length : null;
+        };
+        const up = mean(upper);
+        const low = mean(lower);
+        result.set(item.id, canDiscriminate && up !== null && low !== null ? up - low : null);
+    });
+    return result;
+}
+
 /**
  * Classical test-theory quality report for a test: difficulty (P), item-total and item-rest
  * correlations, Cronbach's α (and α if an item is dropped), SEM and the score distribution.
@@ -272,8 +298,16 @@ function scoredSubmissions(test: Test, studentTests: StudentTest[]): StudentTest
  * missing cells would otherwise read as zeroes.
  */
 export function calcTestQuality(test: Test, studentTests: StudentTest[]): ItemQualityReport {
-    const questions = test.questions;
     const submissions = scoredSubmissions(test, studentTests);
+    // A variant family is one item: each student is scored on the member they were given, so the
+    // sibling they never saw can't read as a missing score and drop them from the correlations.
+    const familyByFirstMember = new Map<string, { familyId: string; members: TestQuestion[] }>();
+    const siblings = new Set<string>();
+    for (const [familyId, members] of variantFamilies(test.questions)) {
+        familyByFirstMember.set(members[0].id, { familyId, members });
+        for (const member of members.slice(1)) siblings.add(member.id);
+    }
+    const questions = test.questions.filter((q) => !siblings.has(q.id));
     const matrix: ItemMatrix = {
         items: questions.map((q) => ({ id: q.id, maxPoints: q.points })),
         rows: submissions.map((st) => {
@@ -281,8 +315,14 @@ export function calcTestQuality(test: Test, studentTests: StudentTest[]): ItemQu
             return {
                 studentId: st.studentId,
                 scores: questions.map((q) => {
-                    const a = answers.get(q.id);
-                    return a ? scoreTestAnswer(q, a) : null;
+                    const family = familyByFirstMember.get(q.id);
+                    const given = family
+                        ? (family.members.find(
+                              (m) => m.id === chosenMemberId(family.familyId, family.members, st.studentId)
+                          ) ?? q)
+                        : q;
+                    const a = answers.get(given.id);
+                    return a ? scoreTestAnswer(given, a) : null;
                 }),
             };
         }),
@@ -290,6 +330,10 @@ export function calcTestQuality(test: Test, studentTests: StudentTest[]): ItemQu
     const discrimination = new Map(
         calcTestItemAnalysis(submissions, test).map((row) => [row.questionId, row.discrimination])
     );
+    if (familyByFirstMember.size > 0) {
+        const collapsed = familyDiscrimination(matrix);
+        for (const itemId of familyByFirstMember.keys()) discrimination.set(itemId, collapsed.get(itemId) ?? null);
+    }
     return calcItemQuality(matrix, { discriminationOf: (itemId) => discrimination.get(itemId) ?? null });
 }
 

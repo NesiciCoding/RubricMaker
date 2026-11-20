@@ -362,6 +362,8 @@ export function answerSpaceFor(question: TestQuestion): AnswerSpaceSpec {
 
 /** Options shared by every exam document builder/renderer. */
 export interface TestExamExportOptions {
+    /** Family members the paper being printed carries; written into the answer-sheet QR. */
+    variantIds?: string[];
     /** Base export font — mirrors RubricFormat.fontFamily / rubric export's font pipeline. */
     fontFamily?: string;
     /** Body text size in pt; every export section inherits it instead of picking its own. */
@@ -578,10 +580,13 @@ export interface AnswerSheetQrPayload {
     sheetType: 'answer';
     /** Total printed pages of this student's answer sheet, when known. */
     pages?: number;
+    /** Easier-cloze family members this paper was printed with, so a scan reads the printed layout. */
+    variants?: string[];
 }
 
 export interface AnswerSheetQrOptions {
     pages?: number;
+    variants?: string[];
 }
 
 /**
@@ -594,5 +599,6 @@ export interface AnswerSheetQrOptions {
 export function answerSheetQrPayload(testId: string, studentId?: string, opts: AnswerSheetQrOptions = {}): string {
     const payload: AnswerSheetQrPayload = { testId, studentId, sheetType: 'answer' };
     if (opts.pages !== undefined) payload.pages = opts.pages;
+    if (opts.variants?.length) payload.variants = opts.variants;
     return JSON.stringify(payload);
 }

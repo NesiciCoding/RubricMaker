@@ -370,6 +370,13 @@ export default function EssayListPage() {
                                                                     </span>
                                                                     <div
                                                                         role="progressbar"
+                                                                        aria-label={t(
+                                                                            'essays.submission_progress_label',
+                                                                            {
+                                                                                submitted,
+                                                                                total: rows.length,
+                                                                            }
+                                                                        )}
                                                                         aria-valuenow={
                                                                             // v8 ignore next line — grouped rows always have at least one row
                                                                             rows.length

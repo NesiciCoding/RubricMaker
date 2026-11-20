@@ -423,6 +423,13 @@ describe('clozeBookletParts line breaks', () => {
     });
 });
 
+describe('answerSheetQrPayload variants', () => {
+    it('prints the member selection only when there is one', () => {
+        expect(JSON.parse(answerSheetQrPayload('t1', undefined, { variants: ['a2'] })).variants).toEqual(['a2']);
+        expect(JSON.parse(answerSheetQrPayload('t1', 's1', { variants: [] }))).not.toHaveProperty('variants');
+    });
+});
+
 describe('answerSheetQrPayload', () => {
     it('identifies the sheet without a page number, since the marker repeats on every page', () => {
         expect(JSON.parse(answerSheetQrPayload('t1', 's1'))).toEqual({

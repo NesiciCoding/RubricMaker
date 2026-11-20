@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import * as sharedScoring from '../../supabase/functions/_shared/testScoring.ts';
 import * as sharedRouting from '../../supabase/functions/_shared/placementRouting.ts';
 import * as sharedStaircase from '../../supabase/functions/_shared/placementStaircase.ts';
+import * as sharedVariant from '../../supabase/functions/_shared/variantDelivery.ts';
 import * as sharedShuffle from '../../supabase/functions/_shared/seededShuffle.ts';
 import * as sharedPasswordGuard from '../../supabase/functions/_shared/studentPasswordGuard.ts';
 import * as sharedPurgeGuard from '../../supabase/functions/_shared/attachmentPurgeGuard.ts';
@@ -35,6 +36,7 @@ const SHARED_MODULES = {
     placementRouting: sharedRouting,
     placementStaircase: sharedStaircase,
     seededShuffle: sharedShuffle,
+    variantDelivery: sharedVariant,
     studentPasswordGuard: sharedPasswordGuard,
     attachmentPurgeGuard: sharedPurgeGuard,
     secureCompare: sharedSecureCompare,
@@ -45,7 +47,7 @@ const SHARED_MODULES = {
 };
 
 const EDGE_FUNCTION_IMPORTS: Record<string, (keyof typeof SHARED_MODULES)[]> = {
-    'submit-test': ['testScoring', 'placementRouting', 'placementStaircase'],
+    'submit-test': ['testScoring', 'placementRouting', 'placementStaircase', 'variantDelivery'],
     'next-placement-question': ['testScoring', 'placementStaircase', 'seededShuffle'],
     'notify-student-graded': ['notificationEmails', 'smtp'],
     'notify-student-message': ['notificationEmails', 'smtp'],

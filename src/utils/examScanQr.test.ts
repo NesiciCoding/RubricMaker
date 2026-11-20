@@ -16,6 +16,16 @@ beforeEach(() => {
     jsQR.mockReset();
 });
 
+describe('parseAnswerSheetQr variants', () => {
+    it('reads the printed member selection', () => {
+        const raw = JSON.stringify({ testId: 't1', sheetType: 'answer', variants: ['a2'] });
+        expect(parseAnswerSheetQr(raw)?.variantIds).toEqual(['a2']);
+        expect(
+            parseAnswerSheetQr(JSON.stringify({ testId: 't1', sheetType: 'answer', variants: [1] }))?.variantIds
+        ).toBeUndefined();
+    });
+});
+
 describe('parseAnswerSheetQr', () => {
     it('accepts an answer-sheet payload with an optional page count', () => {
         expect(

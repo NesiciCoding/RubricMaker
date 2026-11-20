@@ -23,6 +23,7 @@ import { hasRichContent, promptToHtml, sanitizeFilename } from './exportDataPrep
 import { htmlToDocxChildren, htmlToDocxLead, type DocxImageMap } from './essayExport';
 import { plainQuestionPromptText } from './clozeParse';
 import { calcTestMaxPoints } from './testCalc';
+import { examPapers } from './variantDelivery';
 import {
     ANSWER_LINE_SPACING_MM,
     CHOICE_CELL_GAP_MM,
@@ -909,19 +910,43 @@ interface ExportExamDocxOptions extends TestExamExportOptions {
  */
 export async function exportExamDocx(test: Test, options: ExportExamDocxOptions): Promise<void> {
     const base = sanitizeFilename(test.name);
+    // A test with easier-cloze variants needs one paper per set of questions; see examPapers().
+    const papers = examPapers(test, options.students);
+    const files: { name: string; blob: Blob }[] = [];
+    for (const [index, paper] of papers.entries()) {
+        const prefix = papers.length > 1 ? `${base}-paper${index + 1}` : base;
+        files.push(...(await examPaperFiles(paper.test, options, paper.students, prefix)));
+    }
+
+    if (files.length === 1) {
+        saveAs(files[0].blob, files[0].name);
+        return;
+    }
+    const JSZip = (await import('jszip')).default;
+    const zip = new JSZip();
+    for (const file of files) zip.file(file.name, file.blob);
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    saveAs(zipBlob, `${base}-exam.zip`);
+}
+
+async function examPaperFiles(
+    test: Test,
+    options: ExportExamDocxOptions,
+    students: Student[],
+    prefix: string
+): Promise<{ name: string; blob: Blob }[]> {
     const files: { name: string; blob: Blob }[] = [
         {
-            name: `${base}-booklet.docx`,
+            name: `${prefix}-booklet.docx`,
             blob: await buildDocxBlob(await buildBookletChildren(test, options), options),
         },
     ];
     if (options.attachmentMode === 'separate') {
         files.push({
-            name: `${base}-attachment.docx`,
+            name: `${prefix}-attachment.docx`,
             blob: await buildDocxBlob(await buildAttachmentChildren(test, options), options),
         });
     }
-    const students = options.students ?? [];
     const answerChildren: (Paragraph | Table)[] =
         students.length > 0
             ? (
@@ -933,17 +958,8 @@ export async function exportExamDocx(test: Test, options: ExportExamDocxOptions)
                   )
               ).flat()
             : await answerSheetChildren(test, undefined, options.versionLabel);
-    files.push({ name: `${base}-answer-sheet.docx`, blob: await buildDocxBlob(answerChildren, options) });
-
-    if (files.length === 1) {
-        saveAs(files[0].blob, files[0].name);
-        return;
-    }
-    const JSZip = (await import('jszip')).default;
-    const zip = new JSZip();
-    for (const file of files) zip.file(file.name, file.blob);
-    const zipBlob = await zip.generateAsync({ type: 'blob' });
-    saveAs(zipBlob, `${base}-exam.zip`);
+    files.push({ name: `${prefix}-answer-sheet.docx`, blob: await buildDocxBlob(answerChildren, options) });
+    return files;
 }
 
 /** Exports only the grading key — kept as an explicit, separate action from exportExamDocx() so a teacher never bundles it with student-facing materials by default. */

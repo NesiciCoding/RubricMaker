@@ -8,6 +8,7 @@ import SubItemChecklist, { BestFitHint } from './SubItemChecklist';
 import { scoresSubItems, subItemMode, toggleTick } from '../../utils/subItems';
 import CommentComposer from './CommentComposer';
 import ContextMenu, { useContextMenu } from '../ui/ContextMenu';
+import MenuButton from '../ui/MenuButton';
 import { useCopyFeedback } from '../../hooks/useCopyFeedback';
 import { criterionMenuItems, type PreviousFeedback } from './criterionMenuItems';
 
@@ -99,6 +100,7 @@ export default function CriterionDetailPanel({
     return (
         <div
             className="grading-detail"
+            data-longpress
             // Focusable so Escape can hand focus back to the card after a right-click on the panel
             // background, which is not an interactive control itself.
             tabIndex={-1}
@@ -120,6 +122,12 @@ export default function CriterionDetailPanel({
                         {criterionLetter}
                     </span>
                     <span style={{ fontWeight: 700 }}>{criterion.title}</span>
+                    <MenuButton
+                        className="menu-touch-only"
+                        label={t('gradeStudent.menu_label')}
+                        onOpen={(e) => ctx.open(e, menuItems, t('gradeStudent.menu_label'))}
+                        style={{ marginLeft: 'auto' }}
+                    />
                 </div>
 
                 {selectedLevel ? (
