@@ -85,22 +85,12 @@
     {
       "route": "/essays",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "aria-progressbar-name",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/essays",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "aria-progressbar-name",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/essays/essay-a11y-1",
@@ -295,22 +285,12 @@
     {
       "route": "/portal/student-a11y-1",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "aria-prohibited-attr",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/portal/student-a11y-1",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "aria-prohibited-attr",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/portal/student-a11y-1/flashcards/deck-a11y-1",

@@ -76,6 +76,7 @@ export default function NewsFlashTimeline({ studentId, flashes, readFlashIds, on
                         >
                             {unread && (
                                 <span
+                                    role="img"
                                     aria-label={t('newsFlashes.unread_label')}
                                     style={{
                                         width: 8,

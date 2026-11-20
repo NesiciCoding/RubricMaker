@@ -4548,6 +4548,7 @@
         "individual_assignment_badge": "Individueel",
         "individual_assignment_hint": "Apart toegewezen vanaf een beoordelingspagina, geen deel van deze groep",
         "submission_status_submitted": "Ingeleverd",
+        "submission_progress_label": "{{submitted}} van {{total}} ingeleverd",
         "action_grade_with_rubric": "Beoordelen met rubric",
         "submission_status_pending": "In behandeling",
         "action_monitor": "Monitor",
