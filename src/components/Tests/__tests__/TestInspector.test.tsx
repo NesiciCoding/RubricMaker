@@ -245,6 +245,23 @@ describe('TestInspector', () => {
         expect(screen.getByTestId('inspector-answers')).toHaveTextContent('tests.inspector_no_question');
     });
 
+    it('lists a cloze key per gap instead of reprinting the sentence', () => {
+        renderInspector({
+            question: {
+                ...question,
+                type: 'cloze',
+                hint: undefined,
+                prompt: '<p>Yesterday he {{went|goes}} to school and {{saw|seen}} his teacher.</p>',
+            },
+        });
+        fireEvent.click(screen.getByRole('tab', { name: /tests.inspector_answers/ }));
+
+        const panel = screen.getByTestId('inspector-answers');
+        expect(panel).toHaveTextContent('1. went / goes');
+        expect(panel).toHaveTextContent('2. saw / seen');
+        expect(panel).not.toHaveTextContent('to school and');
+    });
+
     it('marks a choice answer by its letter, then the option text', () => {
         renderInspector({
             question: {

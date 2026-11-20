@@ -6,6 +6,8 @@ import TestA4Preview, { type PrintTextFields } from './TestA4Preview';
 import StudentAnswerSurface from './StudentAnswerSurface';
 import QuestionStimulus from './QuestionStimulus';
 import { clozeInstructionKey } from '../../utils/questionTypeKey';
+import { gapCorrectAnswers, renderClozeSegments } from '../../utils/clozeParse';
+import { stripHtmlTags } from '../../utils/exportDataPrep';
 import { answerKeyText } from '../../utils/testExamContent';
 import { formatCorrectAnswer } from '../../utils/testAnswerText';
 import type { Test, TestQuestion } from '../../types';
@@ -41,9 +43,17 @@ function AnswerLine({ label, children }: { label: string; children: ReactNode })
 
 /**
  * The key with the letter a choice answer is marked against (the printed paper's key is letters), then
- * the option text so the letter does not have to be looked up.
+ * the option text so the letter does not have to be looked up. A cloze is listed per gap rather than
+ * as the whole sentence, so a long passage stays a short list instead of a wall of text.
  */
 function questionKeyText(question: TestQuestion): string {
+    if (question.type === 'cloze' || question.type === 'cloze-bank' || question.type === 'cloze-dropdown') {
+        const dropdown = question.type === 'cloze-dropdown';
+        const gaps = renderClozeSegments(stripHtmlTags(question.prompt)).flatMap((segment) =>
+            segment.type === 'gap' ? [segment.gap] : []
+        );
+        return gaps.map((gap, index) => `${index + 1}. ${gapCorrectAnswers(gap, dropdown).join(' / ')}`).join('\n');
+    }
     const answer = formatCorrectAnswer(question);
     if (
         question.type !== 'multiple-choice' &&
