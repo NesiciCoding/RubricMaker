@@ -1069,7 +1069,7 @@ function RubricsTab() {
                     {t('docs.rb_tests_fillgap_dropdown_intro')}{' '}
                     <strong>{t('docs.rb_tests_fillgap_dropdown_type')}</strong>{' '}
                     {t('docs.rb_tests_fillgap_dropdown_list')} <code>{'{{Paris|London|Berlin}}'}</code>{' '}
-                    {t('docs.rb_tests_fillgap_body_suffix')}
+                    {t('docs.rb_tests_fillgap_body_suffix')} {t('docs.rb_tests_fillgap_gap_list')}
                 </p>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     <strong>{t('docs.rb_tests_matching_label')}</strong> {t('docs.rb_tests_matching_body')}{' '}

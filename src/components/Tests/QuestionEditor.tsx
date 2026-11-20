@@ -30,6 +30,7 @@ import { useToast } from '../../hooks/useToast';
 import { nanoid } from '../../utils/nanoid';
 import EssayEditor from '../Editor/EssayEditor';
 import ClozeGapEditor from './ClozeGapEditor';
+import ClozeGapList from './ClozeGapList';
 import HotTextEditor from './HotTextEditor';
 import StandardsPickerModal from '../Standards/StandardsPickerModal';
 import Modal from '../ui/Modal';
@@ -842,6 +843,11 @@ export default function QuestionEditor({
                             insertGapLabel={t('tests.cloze_insert_gap')}
                             insertDropdownGapLabel={t('tests.cloze_insert_dropdown_gap')}
                             wordFormation={question.type === 'cloze' && !!question.wordFormation}
+                        />
+                        <ClozeGapList
+                            prompt={question.prompt}
+                            rolesEditable={question.type === 'cloze-dropdown'}
+                            onChange={(prompt) => update({ prompt })}
                         />
                     </>
                 ) : (
