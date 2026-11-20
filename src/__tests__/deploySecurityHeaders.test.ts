@@ -64,7 +64,10 @@ function headersOf(config: DeployConfig): Map<string, string[]> {
     const patterns =
         config.syntax === 'caddy'
             ? [/^\s*([A-Z][A-Za-z-]+)\s+"([^"]*)"/gm]
-            : [/add_header\s+([A-Za-z-]+)\s+"([^"]*)"/g, /Header\s+always\s+set\s+([A-Za-z-]+)\s+"([^"]*)"/gi];
+            : [
+                  /^\s*add_header\s+([A-Za-z-]+)\s+"([^"]*)"/gm,
+                  /^\s*Header\s+always\s+set\s+([A-Za-z-]+)\s+"([^"]*)"/gim,
+              ];
     for (const pattern of patterns) {
         for (const match of text.matchAll(pattern)) add(match[1], match[2]);
     }
@@ -88,7 +91,8 @@ function directives(policy: string): Map<string, string[]> {
     for (const part of policy.split(';')) {
         const [name, ...tokens] = part.trim().split(/\s+/).filter(Boolean);
         if (!name) continue;
-        parsed.set(name.toLowerCase(), tokens);
+        // A browser keeps the first occurrence of a repeated directive, so a later one must not win.
+        if (!parsed.has(name.toLowerCase())) parsed.set(name.toLowerCase(), tokens);
     }
     return parsed;
 }

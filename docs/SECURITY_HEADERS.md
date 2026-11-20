@@ -14,7 +14,7 @@ suite fails when:
 - the CSP loses a hardening directive — `default-src 'self'`, `object-src 'none'`,
   `base-uri 'self'`, `frame-ancestors 'self'`, and a `blob:` worker (the signature pad and the
   recorder need it);
-- the CSP stops allowing a host the app calls, or still allows a host it no longer calls;
+- the CSP stops allowing a host in `REQUIRED_CSP_HOSTS`, or still allows a host listed as stale. The list is maintained by hand: the test does not discover hosts the app calls, so a new external service has to be added to it;
 - `Permissions-Policy` stops allowing the camera and microphone for self;
 - the configs' external host allowlists disagree with each other.
 
