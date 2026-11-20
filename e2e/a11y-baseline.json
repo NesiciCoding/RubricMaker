@@ -485,22 +485,12 @@
     {
       "route": "/tests/new",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "target-size",
-          "nodes": 12
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/tests/new",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "target-size",
-          "nodes": 12
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/tests/test-a11y-1",
