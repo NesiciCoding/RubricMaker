@@ -24,7 +24,7 @@ import { useTranslation } from 'react-i18next';
 import PageTour from '../components/Tour/PageTour';
 import { getTestBuilderTourSteps } from '../data/TutorialSteps';
 import Topbar from '../components/Layout/Topbar';
-import { useAssessment, useAuthoring, useFlashcards, useSettings } from '../context/AppContext';
+import { useAssessment, useAuthoring, useFlashcards, useRoster, useSettings } from '../context/AppContext';
 import { htmlToPlainText } from '../hooks/useTTS';
 import { useToast } from '../hooks/useToast';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
@@ -41,6 +41,8 @@ import { cloneBankItemIntoTest, duplicateQuestion, newQuestion } from '../utils/
 import { buildEasierClozeVariant, type ClozeVariantKind } from '../utils/clozeVariant';
 import { testAssignBlockers } from '../utils/testQuestionIssues';
 import type {
+    Class,
+    Student,
     Test,
     TestQuestion,
     TestQuestionType,
@@ -57,6 +59,7 @@ import { plainQuestionPromptText } from '../utils/clozeParse';
 import { EmptyState } from '../components/ui/EmptyState';
 import QuestionTypePicker from '../components/Tests/QuestionTypePicker';
 import TestOutlineRail from '../components/Tests/TestOutlineRail';
+import { builderItemInsights } from '../utils/builderItemAnalysis';
 import { questionOutlineMenuItems } from '../components/Tests/questionOutlineMenuItems';
 import QuestionSwitcher from '../components/Tests/QuestionSwitcher';
 import ColumnResizer from '../components/Tests/ColumnResizer';
@@ -104,12 +107,19 @@ export default function TestBuilderPage() {
     const { id } = useParams();
     const { t } = useTranslation();
     const { tests } = useAssessment();
+    // Read here rather than in the editor: the editor already subscribes to four domains, and the
+    // roster is only needed to name the classes a test's results came from.
+    const { students, classes } = useRoster();
     const found = !id || tests.some((tst) => tst.id === id);
     // A colleague's test is never in our own state; look it up among the shared ones instead.
     const shared = useSharedMaterials('test', !found);
-    if (found) return <TestBuilderEditor />;
+    if (found) return <TestBuilderEditor students={students} classes={classes} />;
     const sharedEntry = shared.items.find((e) => e.item.id === id);
-    if (sharedEntry) return <TestBuilderEditor key={sharedEntry.item.id} shared={sharedEntry} />;
+    if (sharedEntry) {
+        return (
+            <TestBuilderEditor key={sharedEntry.item.id} shared={sharedEntry} students={students} classes={classes} />
+        );
+    }
     if (shared.connected && (shared.status === 'idle' || shared.status === 'loading')) {
         return (
             <>
@@ -121,17 +131,25 @@ export default function TestBuilderPage() {
             </>
         );
     }
-    return <TestBuilderEditor />;
+    return <TestBuilderEditor students={students} classes={classes} />;
 }
 
-function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
+function TestBuilderEditor({
+    shared,
+    students = [],
+    classes = [],
+}: {
+    shared?: SharedEntry<Test>;
+    students?: Student[];
+    classes?: Class[];
+}) {
     const navigate = useNavigate();
     const { id } = useParams();
     const location = useLocation();
     const { t, i18n } = useTranslation();
     const { showToast } = useToast();
     const { gradeScales, addSectionBankItem, questionBank } = useAuthoring();
-    const { tests, addTest, updateTest } = useAssessment();
+    const { tests, studentTests, addTest, updateTest } = useAssessment();
     const { settings } = useSettings();
     const { addFlashcardDeck } = useFlashcards();
 
@@ -710,6 +728,14 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
     const issuesByQuestion = React.useMemo(
         () => new Map((draftBlockers?.entries ?? []).map((entry) => [entry.questionId, entry.issues])),
         [draftBlockers]
+    );
+    /** Read-only derivation from the results of the saved test; nothing here is stored. */
+    const itemInsights = React.useMemo(
+        () =>
+            existing
+                ? builderItemInsights({ test: existing, studentTests: studentTests ?? [], students, classes })
+                : undefined,
+        [existing, studentTests, students, classes]
     );
 
     const previewTest: Test = {
@@ -1458,6 +1484,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                         questions={displayOrderedQuestions}
                         totalPoints={totalPoints}
                         issuesByQuestion={issuesByQuestion}
+                        insights={itemInsights}
                         activeId={selectedQuestionId}
                         activeSectionId={selectedSectionId}
                         onSelect={jumpToQuestion}

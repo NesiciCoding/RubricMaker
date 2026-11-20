@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import TestOutlineRail from '../TestOutlineRail';
 import type { TestQuestion, TestSection } from '../../../types';
+import type { BuilderInsights } from '../../../utils/builderItemAnalysis';
 
 const section: TestSection = { id: 's1', title: 'Part 1 — Reading', content: '' };
 
@@ -216,5 +217,66 @@ describe('TestOutlineRail tab stop', () => {
         fireEvent.contextMenu(screen.getByText('Second question'));
         expect(screen.queryByRole('menu')).not.toBeInTheDocument();
         expect(screen.queryByRole('button', { name: 'tests.outline_menu_label' })).not.toBeInTheDocument();
+    });
+});
+
+describe('TestOutlineRail item insights', () => {
+    const insights: BuilderInsights = {
+        byQuestion: new Map([
+            [
+                'q1',
+                {
+                    questionId: 'q1',
+                    sampleSize: 9,
+                    pValue: 0.2,
+                    discrimination: 0.1,
+                    readings: ['too_hard', 'weak_discrimination'],
+                    needsReview: true,
+                },
+            ],
+            [
+                'q2',
+                {
+                    questionId: 'q2',
+                    sampleSize: 9,
+                    pValue: 0.6,
+                    discrimination: 0.5,
+                    readings: [],
+                    needsReview: false,
+                },
+            ],
+        ]),
+        classes: ['3A', '3B'],
+        sample: 9,
+        minSample: 5,
+        hasData: true,
+    };
+
+    it('badges only the questions that need review', () => {
+        renderRail({ insights });
+        expect(screen.getByTestId('outline-reading-q1')).toHaveTextContent('tests.builder_insight.reading_too_hard');
+        expect(screen.queryByTestId('outline-reading-q2')).toBeNull();
+    });
+
+    it('filters the outline to questions that need review', () => {
+        renderRail({ insights, activeId: 'q1' });
+        fireEvent.click(screen.getByTestId('outline-needs-review'));
+        expect(screen.getByText('First question')).toBeInTheDocument();
+        expect(screen.queryByText('Second question')).toBeNull();
+        expect(screen.getByTestId('outline-insight')).toHaveTextContent('tests.builder_insight.title');
+    });
+
+    it("shows the focused question's numbers and the classes they came from", () => {
+        renderRail({ insights, activeId: 'q1' });
+        const card = screen.getByTestId('outline-insight');
+        expect(card).toHaveTextContent('0.20');
+        expect(card).toHaveTextContent('0.10');
+        expect(card).toHaveTextContent('tests.builder_insight.classes');
+    });
+
+    it('hides the review toggle until there are enough sittings', () => {
+        renderRail({ insights: { ...insights, hasData: false, byQuestion: new Map(), sample: 2 } });
+        expect(screen.queryByTestId('outline-needs-review')).toBeNull();
+        expect(screen.queryByTestId('outline-insight')).toBeNull();
     });
 });
