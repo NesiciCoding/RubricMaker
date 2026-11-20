@@ -47,12 +47,10 @@ const REQUIRED_CSP_HOSTS = [
 /** Self-hosted since the fonts were vendored; allowing them is a stale entry, not a fallback. */
 const STALE_CSP_HOSTS = ['https://fonts.googleapis.com', 'https://fonts.gstatic.com'];
 
-/** The deployment's own Supabase host differs per front end; compare the rest of the policy. */
-const DEPLOYMENT_HOST =
-    /https:\/\/supabase\.(?:example\.com|rubricmaker\.nl)|wss:\/\/supabase\.(?:example\.com|rubricmaker\.nl)/g;
+/** A self-hosted Supabase host is deployment-specific (the Docker stack uses the *.supabase.co wildcard or none), so it is left out of the comparison. */
+const DEPLOYMENT_HOST = /^(?:https|wss):\/\/supabase\.(?:example\.com|rubricmaker\.nl)$/;
 
 function read(config: DeployConfig): string {
-    if (!config?.path) throw new Error(`bad deploy config entry: ${JSON.stringify(config)}`);
     return readFileSync(join(process.cwd(), config.path), 'utf8');
 }
 
@@ -99,8 +97,7 @@ function cspHosts(policy: string): Set<string> {
     const hosts = new Set<string>();
     for (const tokens of directives(policy).values()) {
         for (const token of tokens) {
-            if (/^(https?:|wss:)/.test(token))
-                hosts.add(token.replace(DEPLOYMENT_HOST, 'https://<deployment-supabase>'));
+            if (/^(https?:|wss:)/.test(token) && !DEPLOYMENT_HOST.test(token)) hosts.add(token);
         }
     }
     return hosts;
@@ -109,7 +106,7 @@ function cspHosts(policy: string): Set<string> {
 const policyConfigs = CONFIGS.filter((config) => config.contentPolicy);
 
 describe('deploy security headers', () => {
-    for (const config of CONFIGS.filter((entry) => entry.contentPolicy)) {
+    for (const config of policyConfigs) {
         it(`${config.path} sets every required header`, () => {
             const headers = headersOf(config);
             for (const name of [
@@ -143,9 +140,7 @@ describe('deploy security headers', () => {
             // The signature pad and the recorder need a blob: worker and media element.
             expect(parsed.get('worker-src')).toContain('blob:');
         });
-    }
 
-    for (const config of policyConfigs) {
         it(`${config.path} allows every host the app calls`, () => {
             const parsed = directives(csp(config));
             const connect = parsed.get('connect-src') ?? [];
@@ -160,18 +155,14 @@ describe('deploy security headers', () => {
                 expect(connect, `${config.path}: connect-src`).toContain(host);
             }
         });
-    }
 
-    for (const config of policyConfigs) {
         it(`${config.path} does not allow the self-hosted font hosts`, () => {
             const policy = csp(config);
             for (const host of STALE_CSP_HOSTS) {
                 expect(policy, `${config.path} still allows ${host}, but the fonts are vendored`).not.toContain(host);
             }
         });
-    }
 
-    for (const config of policyConfigs) {
         it(`${config.path} allows the camera and microphone for the scan and recorder`, () => {
             const policy = headersOf(config).get('permissions-policy')?.[0] ?? '';
             expect(policy).toContain('camera=(self)');

@@ -26,8 +26,8 @@ suite fails when:
 3. `npx vitest run src/__tests__/deploySecurityHeaders.test.ts`.
 
 Each deployment keeps its own Supabase host (`supabase.example.com` in the templates,
-`supabase.rubricmaker.nl` on the school server); the test normalises those before comparing configs,
-so a placeholder and a real hostname are not treated as a disagreement.
+`supabase.rubricmaker.nl` on the school server); the test leaves those hosts out when comparing configs,
+so a placeholder, a real hostname or its absence (the Docker stack relies on the `*.supabase.co` wildcard) is not a disagreement.
 
 ## Why jsDelivr is in the policy
 
