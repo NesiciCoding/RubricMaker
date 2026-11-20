@@ -65,22 +65,12 @@
     {
       "route": "/docs",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "landmark-unique",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/docs",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "landmark-unique",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/essays",
