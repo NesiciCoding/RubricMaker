@@ -31,6 +31,8 @@ interface Props {
     onToggleExpand?: () => void;
 }
 
+const LETTER_KEYED_TYPES = new Set<TestQuestion['type']>(['multiple-choice', 'multiple-response', 'true-false']);
+
 /** One labelled block of the answer-key tab. */
 function AnswerLine({ label, children }: { label: string; children: ReactNode }) {
     return (
@@ -55,13 +57,7 @@ function questionKeyText(question: TestQuestion): string {
         return gaps.map((gap, index) => `${index + 1}. ${gapCorrectAnswers(gap, dropdown).join(' / ')}`).join('\n');
     }
     const answer = formatCorrectAnswer(question);
-    if (
-        question.type !== 'multiple-choice' &&
-        question.type !== 'multiple-response' &&
-        question.type !== 'true-false'
-    ) {
-        return answer;
-    }
+    if (!LETTER_KEYED_TYPES.has(question.type)) return answer;
     const letters = answerKeyText(question);
     return letters && answer ? `${letters} — ${answer}` : answer;
 }
@@ -101,7 +97,7 @@ export default function TestInspector({
         question && previewAnswer.id === question.id && previewAnswer.type === question.type ? previewAnswer.value : '';
     const plays = question && previewPlays.id === question.id ? previewPlays.count : 0;
     /** The model answer as the grading key states it; '' for types graded by hand or against a rubric. */
-    const answerKey = question ? questionKeyText(question) : '';
+    const answerKey = question && tab === 'answers' ? questionKeyText(question) : '';
 
     const panelId = (id: InspectorTab) => `test-inspector-${id}`;
     const tabRefs = useRef<Partial<Record<InspectorTab, HTMLButtonElement | null>>>({});
