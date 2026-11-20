@@ -1653,6 +1653,7 @@ function RubricBuilderEditor({ shared }: { shared?: SharedEntry<Rubric> }) {
                                                     type="number"
                                                     min={1}
                                                     max={100}
+                                                    aria-label={t('cefr.achieve_threshold_label')}
                                                     value={cefrAchieveThreshold}
                                                     onChange={(e) =>
                                                         setCefrAchieveThreshold(
