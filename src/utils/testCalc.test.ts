@@ -241,18 +241,18 @@ describe('scoreMultipleResponse', () => {
         expect(scoreMultipleResponse(mrQuestion, JSON.stringify(['a', 'b']))).toBe(4);
     });
 
-    it('awards proportional credit by default', () => {
+    it('awards proportional credit for a partly correct selection', () => {
         expect(scoreMultipleResponse(mrQuestion, JSON.stringify(['a']))).toBe(3);
         expect(scoreMultipleResponse(mrQuestion, JSON.stringify(['a', 'c']))).toBe(2);
     });
 
     it('awards 0 for an empty selection', () => {
-        expect(scoreMultipleResponse(mrQuestion, JSON.stringify([]))).toBe(2);
+        expect(scoreMultipleResponse(mrQuestion, JSON.stringify([]))).toBe(0);
     });
 
     it('treats unparsable responses as no selection', () => {
-        expect(scoreMultipleResponse(mrQuestion, '')).toBe(2);
-        expect(scoreMultipleResponse(mrQuestion, 'not json')).toBe(2);
+        expect(scoreMultipleResponse(mrQuestion, '')).toBe(0);
+        expect(scoreMultipleResponse(mrQuestion, 'not json')).toBe(0);
     });
 
     it('awards 0 when the question has no options', () => {
@@ -473,13 +473,18 @@ describe('scoreHotText', () => {
         expect(scoreHotText(hotTextQuestion, JSON.stringify([0, 1]))).toBe(4);
     });
 
-    it('awards proportional credit by default', () => {
+    it('awards proportional credit for a partly correct selection', () => {
         expect(scoreHotText(hotTextQuestion, JSON.stringify([0]))).toBeCloseTo((4 * 2) / 3);
+        expect(scoreHotText(hotTextQuestion, JSON.stringify([0, 2]))).toBeCloseTo(4 / 3);
+    });
+
+    it('awards 0 for an empty selection', () => {
+        expect(scoreHotText(hotTextQuestion, JSON.stringify([]))).toBe(0);
     });
 
     it('treats unparsable responses as no selection', () => {
-        expect(scoreHotText(hotTextQuestion, '')).toBeCloseTo((4 * 1) / 3);
-        expect(scoreHotText(hotTextQuestion, 'not json')).toBeCloseTo((4 * 1) / 3);
+        expect(scoreHotText(hotTextQuestion, '')).toBe(0);
+        expect(scoreHotText(hotTextQuestion, 'not json')).toBe(0);
     });
 
     it('is all-or-nothing when partialCredit is false', () => {

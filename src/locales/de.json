@@ -1815,7 +1815,7 @@
         "question_type_hot_text": "Interaktiver Text",
         "question_type_audio_response": "Audioantwort (Aufnahme)",
         "partial_credit_label": "Teilpunkte zulassen",
-        "partial_credit_help": "Vergib einen Anteil der Punkte für teilweise richtige Antworten.",
+        "partial_credit_help": "Vergib einen Anteil der Punkte für teilweise richtige Antworten; eine leere oder unlesbare Antwort zählt 0 Punkte.",
         "tolerance_label": "Toleranz bei Antworten",
         "tolerance_punctuation": "Satzzeichen, typografische Anführungszeichen und zusätzliche Leerzeichen ignorieren",
         "tolerance_contractions": "Zusammenziehungen als gleich behandeln (don't = do not)",

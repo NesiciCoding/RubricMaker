@@ -1886,7 +1886,7 @@
         "question_type_hot_text": "Hot text",
         "question_type_audio_response": "Audio response (recording)",
         "partial_credit_label": "Allow partial credit",
-        "partial_credit_help": "Award a fraction of the points for partially correct answers.",
+        "partial_credit_help": "Award a fraction of the points for partially correct answers; a blank or unreadable answer scores 0.",
         "tolerance_label": "Accepted-answer leniency",
         "tolerance_punctuation": "Ignore punctuation, curly quotes and extra spaces",
         "tolerance_contractions": "Treat contractions as equal (don't = do not)",
