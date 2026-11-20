@@ -6,6 +6,7 @@ import TestA4Preview, { type PrintTextFields } from './TestA4Preview';
 import StudentAnswerSurface from './StudentAnswerSurface';
 import QuestionStimulus from './QuestionStimulus';
 import { clozeInstructionKey } from '../../utils/questionTypeKey';
+import { answerKeyText } from '../../utils/testExamContent';
 import { formatCorrectAnswer } from '../../utils/testAnswerText';
 import type { Test, TestQuestion } from '../../types';
 
@@ -36,6 +37,23 @@ function AnswerLine({ label, children }: { label: string; children: ReactNode })
             <div>{children}</div>
         </div>
     );
+}
+
+/**
+ * The key with the letter a choice answer is marked against (the printed paper's key is letters), then
+ * the option text so the letter does not have to be looked up.
+ */
+function questionKeyText(question: TestQuestion): string {
+    const answer = formatCorrectAnswer(question);
+    if (
+        question.type !== 'multiple-choice' &&
+        question.type !== 'multiple-response' &&
+        question.type !== 'true-false'
+    ) {
+        return answer;
+    }
+    const letters = answerKeyText(question);
+    return letters && answer ? `${letters} — ${answer}` : answer;
 }
 
 /**
@@ -73,7 +91,7 @@ export default function TestInspector({
         question && previewAnswer.id === question.id && previewAnswer.type === question.type ? previewAnswer.value : '';
     const plays = question && previewPlays.id === question.id ? previewPlays.count : 0;
     /** The model answer as the grading key states it; '' for types graded by hand or against a rubric. */
-    const answerKey = question ? formatCorrectAnswer(question) : '';
+    const answerKey = question ? questionKeyText(question) : '';
 
     const panelId = (id: InspectorTab) => `test-inspector-${id}`;
     const tabRefs = useRef<Partial<Record<InspectorTab, HTMLButtonElement | null>>>({});

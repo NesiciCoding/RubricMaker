@@ -244,4 +244,21 @@ describe('TestInspector', () => {
         fireEvent.click(screen.getByRole('tab', { name: /tests.inspector_answers/ }));
         expect(screen.getByTestId('inspector-answers')).toHaveTextContent('tests.inspector_no_question');
     });
+
+    it('marks a choice answer by its letter, then the option text', () => {
+        renderInspector({
+            question: {
+                ...question,
+                type: 'multiple-response',
+                expectedAnswers: undefined,
+                options: [
+                    { id: 'o1', text: 'went', isCorrect: true },
+                    { id: 'o2', text: 'goed', isCorrect: false },
+                    { id: 'o3', text: 'saw', isCorrect: true },
+                ],
+            },
+        });
+        fireEvent.click(screen.getByRole('tab', { name: /tests.inspector_answers/ }));
+        expect(screen.getByTestId('inspector-answers')).toHaveTextContent('A, C — went, saw');
+    });
 });
