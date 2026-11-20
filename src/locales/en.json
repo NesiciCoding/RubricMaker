@@ -1801,6 +1801,7 @@
         "inspector_answers_hint": "Hint",
         "inspector_answers_explanation": "Explanation",
         "inspector_answers_none": "This question has no single answer to show — it is graded by hand or against a rubric.",
+        "inspector_answers_missing": "No answer is set for this question yet, so it cannot be scored.",
         "question_section_label": "Section",
         "drag_question": "Drag to reorder",
         "question_type_ordering": "Ordering (drag)",

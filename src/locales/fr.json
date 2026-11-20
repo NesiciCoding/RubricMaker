@@ -1730,6 +1730,7 @@
         "inspector_answers_hint": "Indice",
         "inspector_answers_explanation": "Explication",
         "inspector_answers_none": "Cette question n'a pas de réponse unique — elle est évaluée à la main ou à l'aide d'une grille.",
+        "inspector_answers_missing": "Aucune réponse n'est définie pour cette question, elle ne peut donc pas être corrigée.",
         "question_section_label": "Section",
         "drag_question": "Glisser pour réorganiser",
         "question_type_ordering": "Mise en ordre (glisser)",

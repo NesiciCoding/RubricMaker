@@ -1,5 +1,6 @@
 import { useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { FileText, GraduationCap, KeyRound, Maximize2, Minimize2 } from 'lucide-react';
 import RichContent from '../Editor/RichContent';
 import TestA4Preview, { type PrintTextFields } from './TestA4Preview';
@@ -31,6 +32,7 @@ interface Props {
     onToggleExpand?: () => void;
 }
 
+const HAND_GRADED_TYPES = new Set<TestQuestion['type']>(['open', 'audio-response']);
 const LETTER_KEYED_TYPES = new Set<TestQuestion['type']>(['multiple-choice', 'multiple-response', 'true-false']);
 
 /** One labelled block of the answer-key tab. */
@@ -48,7 +50,7 @@ function AnswerLine({ label, children }: { label: string; children: ReactNode })
  * the option text so the letter does not have to be looked up. A cloze is listed per gap rather than
  * as the whole sentence, so a long passage stays a short list instead of a wall of text.
  */
-function questionKeyText(question: TestQuestion): string {
+function questionKeyText(question: TestQuestion, t: TFunction): string {
     if (question.type === 'cloze' || question.type === 'cloze-bank' || question.type === 'cloze-dropdown') {
         const dropdown = question.type === 'cloze-dropdown';
         const gaps = renderClozeSegments(stripHtmlTags(question.prompt)).flatMap((segment) =>
@@ -56,7 +58,10 @@ function questionKeyText(question: TestQuestion): string {
         );
         return gaps.map((gap, index) => `${index + 1}. ${gapCorrectAnswers(gap, dropdown).join(' / ')}`).join('\n');
     }
-    const answer = formatCorrectAnswer(question);
+    const answer =
+        question.type === 'true-false'
+            ? t((question.correctBoolean ?? true) ? 'tests.true_false_true' : 'tests.true_false_false')
+            : formatCorrectAnswer(question);
     if (!LETTER_KEYED_TYPES.has(question.type)) return answer;
     const letters = answerKeyText(question);
     return letters && answer ? `${letters} — ${answer}` : answer;
@@ -97,7 +102,7 @@ export default function TestInspector({
         question && previewAnswer.id === question.id && previewAnswer.type === question.type ? previewAnswer.value : '';
     const plays = question && previewPlays.id === question.id ? previewPlays.count : 0;
     /** The model answer as the grading key states it; '' for types graded by hand or against a rubric. */
-    const answerKey = question && tab === 'answers' ? questionKeyText(question) : '';
+    const answerKey = question && tab === 'answers' ? questionKeyText(question, t) : '';
 
     const panelId = (id: InspectorTab) => `test-inspector-${id}`;
     const tabRefs = useRef<Partial<Record<InspectorTab, HTMLButtonElement | null>>>({});
@@ -290,7 +295,13 @@ export default function TestInspector({
                             {answerKey ? (
                                 <span style={{ whiteSpace: 'pre-wrap', fontWeight: 500 }}>{answerKey}</span>
                             ) : (
-                                <span className="text-muted text-sm">{t('tests.inspector_answers_none')}</span>
+                                <span className="text-muted text-sm">
+                                    {t(
+                                        HAND_GRADED_TYPES.has(question.type)
+                                            ? 'tests.inspector_answers_none'
+                                            : 'tests.inspector_answers_missing'
+                                    )}
+                                </span>
                             )}
                         </AnswerLine>
                         {question.hint && (

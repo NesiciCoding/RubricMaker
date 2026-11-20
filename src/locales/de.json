@@ -1730,6 +1730,7 @@
         "inspector_answers_hint": "Hinweis",
         "inspector_answers_explanation": "Erklärung",
         "inspector_answers_none": "Diese Frage hat keine eindeutige Antwort — sie wird von Hand oder mit einem Raster bewertet.",
+        "inspector_answers_missing": "Für diese Frage ist noch keine Antwort hinterlegt, sie kann daher nicht bewertet werden.",
         "question_section_label": "Abschnitt",
         "drag_question": "Ziehen zum Neuanordnen",
         "question_type_ordering": "Reihenfolge (Ziehen)",

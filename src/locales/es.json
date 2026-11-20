@@ -1730,6 +1730,7 @@
         "inspector_answers_hint": "Pista",
         "inspector_answers_explanation": "Explicación",
         "inspector_answers_none": "Esta pregunta no tiene una respuesta única: se corrige a mano o con una rúbrica.",
+        "inspector_answers_missing": "Esta pregunta aún no tiene respuesta definida, así que no se puede puntuar.",
         "question_section_label": "Sección",
         "drag_question": "Arrastrar para reordenar",
         "question_type_ordering": "Ordenar (arrastrar)",

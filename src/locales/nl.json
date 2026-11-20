@@ -1730,6 +1730,7 @@
         "inspector_answers_hint": "Hint",
         "inspector_answers_explanation": "Uitleg",
         "inspector_answers_none": "Deze vraag heeft geen eenduidig antwoord — hij wordt handmatig of met een rubric beoordeeld.",
+        "inspector_answers_missing": "Voor deze vraag is nog geen antwoord ingesteld, dus hij kan niet worden nagekeken.",
         "question_section_label": "Sectie",
         "drag_question": "Slepen om te herordenen",
         "question_type_ordering": "Volgorde (slepen)",

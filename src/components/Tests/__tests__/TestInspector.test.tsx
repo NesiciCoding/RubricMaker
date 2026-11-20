@@ -278,4 +278,20 @@ describe('TestInspector', () => {
         fireEvent.click(screen.getByRole('tab', { name: /tests.inspector_answers/ }));
         expect(screen.getByTestId('inspector-answers')).toHaveTextContent('A, C — went, saw');
     });
+
+    it('names a missing key instead of calling an auto-scored question hand-graded', () => {
+        renderInspector({ question: { ...question, expectedAnswers: [], hint: undefined } });
+        fireEvent.click(screen.getByRole('tab', { name: /tests.inspector_answers/ }));
+        const panel = screen.getByTestId('inspector-answers');
+        expect(panel).toHaveTextContent('tests.inspector_answers_missing');
+        expect(panel).not.toHaveTextContent('tests.inspector_answers_none');
+    });
+
+    it('translates a true/false key rather than printing English', () => {
+        renderInspector({
+            question: { ...question, type: 'true-false', correctBoolean: false, expectedAnswers: undefined },
+        });
+        fireEvent.click(screen.getByRole('tab', { name: /tests.inspector_answers/ }));
+        expect(screen.getByTestId('inspector-answers')).toHaveTextContent('tests.true_false_false');
+    });
 });
