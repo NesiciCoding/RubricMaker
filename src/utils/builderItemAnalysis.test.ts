@@ -136,4 +136,34 @@ describe('builderItemInsights', () => {
         expect(insights.classes).toEqual(['3A', '3B']);
         expect(insights.byQuestion.get('q1')?.pValue).toBe(1);
     });
+
+    it('keeps every other question when one is answered only in a stray sitting', () => {
+        const stray: StudentTest = {
+            ...sitting('s11', 'a', 'a'),
+            id: 'st-s11',
+            answers: [{ questionId: 'q3', response: 'a' }],
+            status: 'in_progress',
+        };
+        const insights = builderItemInsights({ test, studentTests: [...tenSittings, stray], students, classes });
+        expect(insights.hasData).toBe(true);
+        expect(insights.byQuestion.has('q1')).toBe(true);
+        expect(insights.byQuestion.has('q3')).toBe(false);
+    });
+
+    it('does not pin a variant family result on one of its members', () => {
+        const withVariant: Test = {
+            ...test,
+            questions: [test.questions[0], { ...test.questions[1], id: 'q1b', variantOfQuestionId: 'q1' }],
+        };
+        const studentTests = students.map((s) => ({
+            ...sitting(s.id, 'a', 'a'),
+            answers: [
+                { questionId: 'q1', response: 'a' },
+                { questionId: 'q1b', response: 'a' },
+            ],
+        }));
+        const insights = builderItemInsights({ test: withVariant, studentTests, students, classes });
+        expect(insights.byQuestion.has('q1')).toBe(false);
+        expect(insights.byQuestion.has('q1b')).toBe(false);
+    });
 });

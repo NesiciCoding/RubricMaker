@@ -278,4 +278,23 @@ describe('TestOutlineRail item insights', () => {
         expect(screen.queryByTestId('outline-needs-review')).toBeNull();
         expect(screen.queryByTestId('outline-insight')).toBeNull();
     });
+
+    it('shows every question again when the insights disappear while review-only is on', () => {
+        const props = {
+            sections: [section],
+            questions,
+            totalPoints: 9,
+            issuesByQuestion: new Map(),
+            onSelect: vi.fn(),
+            onAdd: vi.fn(),
+            onOpenSettings: vi.fn(),
+        };
+        const { rerender } = render(<TestOutlineRail {...props} insights={insights} />);
+        fireEvent.click(screen.getByTestId('outline-needs-review'));
+        expect(screen.queryByText('Second question')).toBeNull();
+
+        rerender(<TestOutlineRail {...props} insights={{ ...insights, hasData: false, needsReviewIds: new Set() }} />);
+        expect(screen.getByText('First question')).toBeInTheDocument();
+        expect(screen.getByText('Second question')).toBeInTheDocument();
+    });
 });

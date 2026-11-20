@@ -60,9 +60,10 @@ export default function TestOutlineRail({
     const menu = useContextMenu();
     const [query, setQuery] = useState('');
     const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
-    const [needsReviewOnly, setNeedsReviewOnly] = useState(false);
+    const [reviewOnlyRequested, setNeedsReviewOnly] = useState(false);
     const treeRef = useRef<HTMLDivElement | null>(null);
     const needle = query.trim().toLowerCase();
+    const needsReviewOnly = reviewOnlyRequested && !!insights?.hasData;
     const needsReviewIds = insights?.needsReviewIds ?? new Set<string>();
 
     const labelFor = (question: TestQuestion) =>
@@ -564,7 +565,11 @@ export default function TestOutlineRail({
                         )}
                         <p className="text-xs" style={{ margin: '6px 0 0' }}>
                             {insight.readings.length === 0
-                                ? t('tests.builder_insight.on_target')
+                                ? t(
+                                      insight.discrimination === null
+                                          ? 'tests.builder_insight.on_target_difficulty'
+                                          : 'tests.builder_insight.on_target'
+                                  )
                                 : insight.readings
                                       .map((reading) => t(`tests.builder_insight.explain_${reading}`))
                                       .join(' ')}

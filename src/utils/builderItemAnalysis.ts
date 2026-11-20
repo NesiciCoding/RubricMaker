@@ -1,5 +1,6 @@
 import type { Class, Student, StudentTest, Test } from '../types';
-import { calcTestQuality, MIN_STUDENTS_FOR_CORRELATION } from './testQualityMetrics';
+import { calcTestQuality, MIN_STUDENTS_FOR_CORRELATION, scoredSubmissions } from './testQualityMetrics';
+import { variantFamilies } from './variantDelivery';
 
 /** Difficulty below this reads as an item almost nobody could do. */
 export const INSIGHT_TOO_HARD = 0.3;
@@ -47,8 +48,7 @@ function classNamesOf(
     const classIdByStudent = new Map(students.map((s) => [s.id, s.classId]));
     const nameById = new Map(classes.map((c) => [c.id, c.name]));
     const names = new Set<string>();
-    for (const st of studentTests) {
-        if (st.testId !== test.id || st.absent || st.answers.length === 0) continue;
+    for (const st of scoredSubmissions(test, studentTests)) {
         const name = nameById.get(classIdByStudent.get(st.studentId) ?? '');
         if (name) names.add(name);
     }
@@ -61,23 +61,33 @@ function classNamesOf(
  * and a question added after the last sitting simply has no insight.
  */
 export function builderItemInsights({ test, studentTests, students, classes }: InsightsInput): BuilderInsights {
-    // A question added after the last sitting has no answers. Left in the matrix it would make every
-    // student's row incomplete and hide the results of the whole test.
-    const answeredIds = new Set(
-        studentTests
-            .filter((st) => st.testId === test.id && !st.absent)
-            .flatMap((st) => st.answers.map((answer) => answer.questionId))
-    );
-    const gradedTest: Test = { ...test, questions: test.questions.filter((q) => answeredIds.has(q.id)) };
+    // The same sittings the metrics score decide which questions count. A question needs enough
+    // respondents: one added after the last sitting, or answered only in a stray sitting, would
+    // otherwise be a missing cell in every other row and hide the results of the whole test.
+    const answeredBy = new Map<string, number>();
+    for (const st of scoredSubmissions(test, studentTests)) {
+        for (const questionId of new Set(st.answers.map((answer) => answer.questionId))) {
+            answeredBy.set(questionId, (answeredBy.get(questionId) ?? 0) + 1);
+        }
+    }
+    const gradedTest: Test = {
+        ...test,
+        questions: test.questions.filter((q) => (answeredBy.get(q.id) ?? 0) >= MIN_STUDENTS_FOR_CORRELATION),
+    };
     const report = calcTestQuality(gradedTest, studentTests);
     const classNames = classNamesOf(test, studentTests, students, classes);
     const hasData = report.summary.n >= MIN_STUDENTS_FOR_CORRELATION;
     const byQuestion = new Map<string, BuilderItemInsight>();
+    // The engine scores a variant family as one item under its first member, so no member's own
+    // numbers exist to show; leaving them out beats pinning the family's result on one question.
+    const familyMemberIds = new Set(
+        [...variantFamilies(test.questions).values()].flatMap((members) => members.map((member) => member.id))
+    );
     const needsReviewIds = new Set<string>();
 
     if (hasData) {
         for (const item of report.items) {
-            if (item.sampleSize === 0) continue;
+            if (item.sampleSize === 0 || familyMemberIds.has(item.itemId)) continue;
             const readings: ItemReading[] = [];
             if (item.pValue !== null && item.pValue < INSIGHT_TOO_HARD) readings.push('too_hard');
             if (item.pValue !== null && item.pValue > INSIGHT_TOO_EASY) readings.push('too_easy');
