@@ -871,36 +871,38 @@ export default function QuestionEditor({
                         return (
                             <div key={option.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <input
-                                        type={question.type === 'multiple-response' ? 'checkbox' : 'radio'}
-                                        name={`correct-option-${question.id}`}
-                                        checked={option.isCorrect}
-                                        aria-label={t('tests.mark_correct_option')}
-                                        title={t('tests.mark_correct_option')}
-                                        onChange={() =>
-                                            question.type === 'multiple-response'
-                                                ? toggleOptionCorrect(option.id)
-                                                : setCorrectOption(option.id)
-                                        }
-                                        style={{
-                                            flexShrink: 0,
-                                            width: 16,
-                                            height: 16,
-                                            accentColor: 'var(--accent-text)',
-                                        }}
-                                    />
-                                    <span
-                                        aria-hidden="true"
-                                        style={{
-                                            flexShrink: 0,
-                                            minWidth: 14,
-                                            fontSize: '0.85rem',
-                                            fontWeight: 600,
-                                            color: option.isCorrect ? 'var(--green-text)' : 'var(--text-muted)',
-                                        }}
-                                    >
-                                        {optionLetter(index)}
-                                    </span>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                                        <input
+                                            type={question.type === 'multiple-response' ? 'checkbox' : 'radio'}
+                                            name={`correct-option-${question.id}`}
+                                            checked={option.isCorrect}
+                                            aria-label={`${t('tests.mark_correct_option')} ${optionLetter(index)}`}
+                                            title={t('tests.mark_correct_option')}
+                                            onChange={() =>
+                                                question.type === 'multiple-response'
+                                                    ? toggleOptionCorrect(option.id)
+                                                    : setCorrectOption(option.id)
+                                            }
+                                            style={{
+                                                flexShrink: 0,
+                                                width: 16,
+                                                height: 16,
+                                                accentColor: 'var(--accent-text)',
+                                            }}
+                                        />
+                                        <span
+                                            aria-hidden="true"
+                                            style={{
+                                                flexShrink: 0,
+                                                minWidth: 14,
+                                                fontSize: '0.85rem',
+                                                fontWeight: 600,
+                                                color: option.isCorrect ? 'var(--green-text)' : 'var(--text-muted)',
+                                            }}
+                                        >
+                                            {optionLetter(index)}
+                                        </span>
+                                    </label>
                                     <input
                                         type="text"
                                         value={option.text}

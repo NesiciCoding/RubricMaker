@@ -150,7 +150,7 @@ describe('QuestionEditor extended', () => {
     describe('multiple-choice options', () => {
         it('marks a different option as the single correct one', () => {
             const { onChange } = renderEditor();
-            const markButtons = screen.getAllByLabelText('tests.mark_correct_option');
+            const markButtons = screen.getAllByLabelText(/tests.mark_correct_option/);
             fireEvent.click(markButtons[1]);
             expect(onChange).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -201,7 +201,7 @@ describe('QuestionEditor extended', () => {
     describe('multiple-response', () => {
         it('toggles each option independently and the partial-credit flag', () => {
             const { onChange } = renderEditor(makeQuestion({ type: 'multiple-response', partialCredit: true }));
-            fireEvent.click(screen.getAllByLabelText('tests.mark_correct_option')[1]);
+            fireEvent.click(screen.getAllByLabelText(/tests.mark_correct_option/)[1]);
             expect(onChange).toHaveBeenCalledWith(
                 expect.objectContaining({
                     options: [
