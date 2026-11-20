@@ -12,7 +12,9 @@ const CHIP: React.CSSProperties = {
     display: 'inline-flex',
     alignItems: 'center',
     gap: 6,
-    padding: '2px 10px',
+    padding: '3px 10px',
+    // Comfortably above the 24px target size the accessibility gate enforces.
+    minHeight: 26,
     borderRadius: 999,
     fontSize: '0.85rem',
     // The prompt form's label style uppercases its children; an answer must read as authored.
@@ -61,7 +63,7 @@ export default function ClozeGapList({ prompt, onChange, rolesEditable }: Props)
                                             key={`alt-${alternativeIndex}`}
                                             style={{
                                                 ...CHIP,
-                                                padding: '2px 10px 2px 8px',
+                                                padding: '3px 10px 3px 8px',
                                                 background: correct
                                                     ? 'color-mix(in srgb, var(--accent) 16%, transparent)'
                                                     : 'var(--bg-elevated)',
