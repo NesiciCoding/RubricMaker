@@ -24,6 +24,7 @@ import { orderCorners, cropQuadrilateral, type Point } from '../../utils/documen
 import { preprocessScan } from '../../utils/preprocessScan';
 import { EXAM_PAGE_MM } from '../../utils/testExamContent';
 import { versionLabels, versionedTest } from '../../utils/testVersions';
+import { deliveredQuestions, deliveredTest, deliveredVariantIds } from '../../utils/variantDelivery';
 import {
     detectScannedAnswers,
     mergeScannedAnswers,
@@ -69,6 +70,7 @@ interface BatchPage {
     qrTestId?: string;
     qrStudentId?: string;
     qrPageCount?: number;
+    qrVariantIds?: string[];
     /** Four page corners as fractions of the image; null = the image is already the page. */
     corners: CornerFraction[] | null;
     /** Detection failure for this page, if any. */
@@ -200,7 +202,15 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
     // version's option order, so detection and merging must read the same versioned layout.
     const [version, setVersion] = useState('');
     const versions = versionLabels(test.versionCount);
-    const scannableTest = useMemo(() => (version ? versionedTest(test, version) : test), [test, version]);
+    // A student's sheet was printed with the members of an easier-cloze family they were given, so
+    // detection and merging read that student's own layout.
+    const scannableTestFor = useCallback(
+        (studentId: string, recorded?: string[]) => {
+            const given = deliveredTest(test, studentId, recorded);
+            return version ? versionedTest(given, version) : given;
+        },
+        [test, version]
+    );
 
     const rosterOptions = useMemo(() => {
         const withResult = new Set(studentTests.filter((st) => st.testId === test.id).map((st) => st.studentId));
@@ -212,6 +222,15 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
     const studentNames = useMemo(() => new Map(students.map((s) => [s.id, s.name])), [students]);
 
     const groups = useMemo(() => groupPagesByStudent(pages), [pages]);
+    // An unnamed stack prints one paper per member, so the sheet's own QR — not the hash of whoever it
+    // is later assigned to — says which question layout the student answered.
+    const printedVariantsByStudent = useMemo(
+        () =>
+            new Map(
+                groups.map((group) => [group.studentId, group.pages.find((p) => p.qrVariantIds)?.qrVariantIds] as const)
+            ),
+        [groups]
+    );
     const unassigned = useMemo(() => unassignedPages(pages), [pages]);
     const mismatches = useMemo(() => pageCountMismatches(groups), [groups]);
 
@@ -234,6 +253,7 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
                     qrTestId: identity.testId,
                     qrStudentId: identity.studentId,
                     qrPageCount: identity.pages,
+                    qrVariantIds: identity.variantIds,
                     studentId,
                 });
             } catch {
@@ -457,6 +477,7 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
         const results: Record<string, ScannedAnswer[]> = {};
         try {
             for (const group of groups) {
+                const scannableTest = scannableTestFor(group.studentId, printedVariantsByStudent.get(group.studentId));
                 const pageResults: ScannedAnswer[][] = [];
                 for (let i = 0; i < group.pages.length; i += 1) {
                     const page = group.pages[i];
@@ -502,7 +523,7 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
         );
         setBusy(null);
         setPhase('review');
-    }, [defaultLang, groups, pageImage, scannableTest, t, updatePage]);
+    }, [defaultLang, groups, pageImage, printedVariantsByStudent, scannableTestFor, t, updatePage]);
 
     const setResponse = useCallback((studentId: string, questionId: string, response: string) => {
         setResponsesByStudent((prev) => ({
@@ -527,7 +548,11 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
         const now = new Date().toISOString();
         for (const group of groups) {
             const studentId = group.studentId;
-            const answers: TestAnswer[] = test.questions.map((q) => ({
+            const answers: TestAnswer[] = deliveredQuestions(
+                test,
+                studentId,
+                printedVariantsByStudent.get(studentId)
+            ).map((q) => ({
                 questionId: q.id,
                 response: responsesByStudent[studentId]?.[q.id] ?? '',
             }));
@@ -548,6 +573,8 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
                 status: 'submitted',
                 submittedAt: base.submittedAt ?? now,
                 rawTotalPoints: calcStudentTestRawPoints(test, answers),
+                testVersion: version || undefined,
+                deliveredVariantIds: printedVariantsByStudent.get(studentId) ?? deliveredVariantIds(test, studentId),
                 updatedAt: now,
                 // A scan replaces every answer, so prior grading metadata no longer matches.
                 gradedAt: undefined,
@@ -557,7 +584,7 @@ export default function ExamScanBatchModal({ test, students, studentTests, defau
         }
         setSavedCount(groups.length);
         setPhase('done');
-    }, [confirm, groups, onSave, responsesByStudent, studentTests, t, test]);
+    }, [confirm, groups, onSave, printedVariantsByStudent, responsesByStudent, studentTests, t, test, version]);
 
     const close = useCallback(() => {
         cancelledRef.current = true;

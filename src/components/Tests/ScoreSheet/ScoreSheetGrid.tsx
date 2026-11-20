@@ -1,6 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlertTriangle, ArrowDownToLine, ClipboardPaste, Copy, Eraser, UserCheck, UserX } from 'lucide-react';
+import {
+    AlertTriangle,
+    ArrowDownToLine,
+    ArrowRightToLine,
+    ClipboardPaste,
+    Copy,
+    Eraser,
+    UserCheck,
+    UserX,
+} from 'lucide-react';
 import type { Class, GradeScale, Student, StudentTest, Test, TestAnswer } from '../../../types';
 import { scoreTestAnswer } from '../../../utils/testCalc';
 import { stripHtmlTags } from '../../../utils/exportDataPrep';
@@ -21,6 +30,8 @@ import type { ItemQuality } from '../../../utils/testQualityMetrics';
 import { useToast } from '../../../hooks/useToast';
 import ContextMenu, { useContextMenu } from '../../ui/ContextMenu';
 import type { ContextMenuItem } from '../../ui/ContextMenu';
+import { isQuestionDelivered } from '../../../utils/variantDelivery';
+import MenuButton from '../../ui/MenuButton';
 
 interface Props {
     test: Test;
@@ -104,6 +115,11 @@ export default function ScoreSheetGrid({
             if (!student || !q) continue;
             const validity = validateCell(raw, q.points);
             if (validity === 'invalid' || validity === 'over_max') continue;
+            if (
+                validity !== 'empty' &&
+                !isQuestionDelivered(test, student.id, q.id, sheetRef.current.get(student.id)?.deliveredVariantIds)
+            )
+                continue;
             const current = touched.has(student.id) ? touched.get(student.id) : sheetRef.current.get(student.id);
             const before = latestAnswer(current, q.id);
             const next = validity === 'empty' ? null : parsePoints(raw)!;
@@ -166,6 +182,43 @@ export default function ScoreSheetGrid({
         showToast(t('tests.scoreSheet.menu_filled'), 'success');
     }
 
+    /**
+     * Fill-across: the same points into this student's cells to the right. A cell takes the value only
+     * when it is worth the same maximum (a 2-point answer cannot be copied into a 5-point question)
+     * and the student was given that question.
+     */
+    function acrossTargets(row: number, col: number): { row: number; col: number }[] {
+        const student = students[row];
+        const max = questions[col].points;
+        const targets: { row: number; col: number }[] = [];
+        for (let c = col + 1; c < questions.length; c++) {
+            if (questions[c].points !== max) continue;
+            if (
+                !isQuestionDelivered(
+                    test,
+                    student.id,
+                    questions[c].id,
+                    sheetRef.current.get(student.id)?.deliveredVariantIds
+                )
+            )
+                continue;
+            targets.push({ row, col: c });
+        }
+        return targets;
+    }
+
+    function fillAcross(row: number, col: number) {
+        const student = students[row];
+        if (!rowEditable(student) || sheetRef.current.get(student.id)?.absent) return;
+        const raw = cellRaw(student, col);
+        if (validateCell(raw, questions[col].points) !== 'ok') return;
+        const targets = acrossTargets(row, col);
+        if (!targets.length) return;
+        dropDrafts(targets.map((target) => key(student.id, questions[target.col].id)));
+        commit(targets.map((target) => ({ ...target, raw })));
+        showToast(t('tests.scoreSheet.menu_filled'), 'success');
+    }
+
     function clearRow(row: number) {
         const student = students[row];
         dropDrafts(questions.map((q) => key(student.id, q.id)));
@@ -216,6 +269,23 @@ export default function ScoreSheetGrid({
                 icon: <ArrowDownToLine size={14} aria-hidden />,
                 disabled: !editable || absent || validity !== 'ok' || row === students.length - 1,
                 onSelect: () => fillDown(row, col),
+            },
+            {
+                key: 'fill-across',
+                label: t('tests.scoreSheet.menu_fill_across'),
+                icon: <ArrowRightToLine size={14} aria-hidden />,
+                disabled:
+                    !editable ||
+                    absent ||
+                    validity !== 'ok' ||
+                    !isQuestionDelivered(
+                        test,
+                        student.id,
+                        q.id,
+                        sheetRef.current.get(student.id)?.deliveredVariantIds
+                    ) ||
+                    acrossTargets(row, col).length === 0,
+                onSelect: () => fillAcross(row, col),
             },
         ];
     }
@@ -289,9 +359,17 @@ export default function ScoreSheetGrid({
         if (e.key === 'ArrowLeft' && input.selectionStart !== 0) return;
         if (e.key === 'ArrowRight' && input.selectionEnd !== input.value.length) return;
         e.preventDefault();
-        const r = Math.min(Math.max(row + move[0], 0), students.length - 1);
-        const c = Math.min(Math.max(col + move[1], 0), questions.length - 1);
-        focusCell(r, c);
+        let r = row + move[0];
+        let c = col + move[1];
+        while (r >= 0 && r < students.length && c >= 0 && c < questions.length) {
+            const target = tableRef.current?.querySelector<HTMLInputElement>(`[data-cell="${r}-${c}"]`);
+            if (target && !target.disabled) {
+                focusCell(r, c);
+                return;
+            }
+            r += move[0];
+            c += move[1];
+        }
     }
 
     /** Writes a pasted block from (row, col), skipping rows that are absent or that I cannot edit. */
@@ -440,6 +518,7 @@ export default function ScoreSheetGrid({
                             <tr key={student.id} style={{ opacity: absent ? 0.55 : 1 }}>
                                 <th
                                     scope="row"
+                                    data-longpress
                                     tabIndex={0}
                                     aria-label={t('tests.scoreSheet.row_header_label', { student: student.name })}
                                     onContextMenu={(e) =>
@@ -455,6 +534,12 @@ export default function ScoreSheetGrid({
                                     }}
                                 >
                                     {student.name}
+                                    <MenuButton
+                                        className="menu-touch-only"
+                                        label={t('tests.scoreSheet.menu_row_label')}
+                                        onOpen={(e) => ctx.open(e, rowMenu(row), t('tests.scoreSheet.menu_row_label'))}
+                                        style={{ marginLeft: 4 }}
+                                    />
                                 </th>
                                 {questions.map((q, col) => {
                                     const k = key(student.id, q.id);
@@ -463,6 +548,12 @@ export default function ScoreSheetGrid({
                                     const bad = validity === 'invalid' || validity === 'over_max';
                                     const isFocused = focus?.row === row && focus?.col === col;
                                     const inBand = !isFocused && (focus?.row === row || focus?.col === col);
+                                    const notGiven = !isQuestionDelivered(
+                                        test,
+                                        student.id,
+                                        q.id,
+                                        st?.deliveredVariantIds
+                                    );
                                     return (
                                         <td
                                             key={q.id}
@@ -480,7 +571,8 @@ export default function ScoreSheetGrid({
                                                 data-cell={`${row}-${col}`}
                                                 inputMode="decimal"
                                                 autoComplete="off"
-                                                disabled={absent || !(canEdit?.(student) ?? true)}
+                                                disabled={absent || notGiven || !(canEdit?.(student) ?? true)}
+                                                placeholder={notGiven ? '–' : undefined}
                                                 aria-label={t('tests.scoreSheet.cell_label', {
                                                     student: student.name,
                                                     question: test.scoreOnly ? q.prompt : col + 1,
@@ -488,11 +580,13 @@ export default function ScoreSheetGrid({
                                                 })}
                                                 aria-invalid={bad || undefined}
                                                 title={
-                                                    validity === 'over_max'
-                                                        ? t('tests.scoreSheet.over_max', { max: q.points })
-                                                        : validity === 'invalid'
-                                                          ? t('tests.scoreSheet.invalid')
-                                                          : undefined
+                                                    notGiven
+                                                        ? t('tests.scoreSheet.not_delivered')
+                                                        : validity === 'over_max'
+                                                          ? t('tests.scoreSheet.over_max', { max: q.points })
+                                                          : validity === 'invalid'
+                                                            ? t('tests.scoreSheet.invalid')
+                                                            : undefined
                                                 }
                                                 value={value}
                                                 onChange={(e) => setDrafts((d) => ({ ...d, [k]: e.target.value }))}
