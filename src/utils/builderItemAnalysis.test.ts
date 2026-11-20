@@ -96,7 +96,7 @@ describe('builderItemInsights', () => {
         expect(q2?.discrimination).toBe(0);
         expect(q2?.discrimination).toBeLessThan(INSIGHT_WEAK_DISCRIMINATION);
         expect(q2?.readings).toContain('weak_discrimination');
-        expect(q2?.needsReview).toBe(true);
+        expect(insights.needsReviewIds.has('q2')).toBe(true);
         expect(insights.classes).toEqual(['3A', '3B']);
     });
 
@@ -112,7 +112,7 @@ describe('builderItemInsights', () => {
         const insights = builderItemInsights({ test, studentTests, students, classes });
         const q1 = insights.byQuestion.get('q1');
         expect(q1?.pValue).toBeCloseTo(0.5);
-        expect(q1?.needsReview).toBe(false);
+        expect(insights.needsReviewIds.has('q1')).toBe(false);
         expect(q1?.readings).toEqual([]);
         expect(insights.classes).toEqual(['3A', '3B']);
         expect(insights.sample).toBe(6);

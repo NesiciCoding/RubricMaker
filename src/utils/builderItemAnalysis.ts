@@ -16,11 +16,12 @@ export interface BuilderItemInsight {
     pValue: number | null;
     discrimination: number | null;
     readings: ItemReading[];
-    needsReview: boolean;
 }
 
 export interface BuilderInsights {
     byQuestion: Map<string, BuilderItemInsight>;
+    /** Questions with at least one reading, for the outline's needs-review filter. */
+    needsReviewIds: Set<string>;
     /** Names of the classes the sittings came from, sorted. */
     classes: string[];
     /** Complete score rows the metrics rest on. */
@@ -72,6 +73,7 @@ export function builderItemInsights({ test, studentTests, students, classes }: I
     const classNames = classNamesOf(test, studentTests, students, classes);
     const hasData = report.summary.n >= MIN_STUDENTS_FOR_CORRELATION;
     const byQuestion = new Map<string, BuilderItemInsight>();
+    const needsReviewIds = new Set<string>();
 
     if (hasData) {
         for (const item of report.items) {
@@ -88,13 +90,14 @@ export function builderItemInsights({ test, studentTests, students, classes }: I
                 pValue: item.pValue,
                 discrimination: item.discrimination,
                 readings,
-                needsReview: readings.length > 0,
             });
+            if (readings.length > 0) needsReviewIds.add(item.itemId);
         }
     }
 
     return {
         byQuestion,
+        needsReviewIds,
         classes: classNames,
         sample: report.summary.n,
         minSample: MIN_STUDENTS_FOR_CORRELATION,

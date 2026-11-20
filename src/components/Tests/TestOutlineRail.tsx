@@ -63,9 +63,7 @@ export default function TestOutlineRail({
     const [needsReviewOnly, setNeedsReviewOnly] = useState(false);
     const treeRef = useRef<HTMLDivElement | null>(null);
     const needle = query.trim().toLowerCase();
-    const needsReviewIds = new Set(
-        insights ? [...insights.byQuestion.values()].filter((i) => i.needsReview).map((i) => i.questionId) : []
-    );
+    const needsReviewIds = insights?.needsReviewIds ?? new Set<string>();
 
     const labelFor = (question: TestQuestion) =>
         htmlToPlainText(plainQuestionPromptText(question)).trim() || t(questionTypeLabelKey(question.type));
