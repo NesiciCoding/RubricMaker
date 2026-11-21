@@ -18,6 +18,7 @@ import { createRequire } from 'node:module';
 import path from 'node:path';
 import type { AxeResults, ImpactValue, Result } from 'axe-core';
 import type { Page } from '@playwright/test';
+import { createLiveWritingBackend, seedLiveWritingApp, studentJoinStorage } from './liveWritingBackend';
 
 const require = createRequire(path.resolve('package.json'));
 const AXE_SOURCE = readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
@@ -55,7 +56,18 @@ export const AXE_TAGS = [
 export const A11Y_THEMES = ['light', 'dark'] as const;
 export type A11yTheme = (typeof A11Y_THEMES)[number];
 
-export type A11yRoute = { path: string; label: string };
+/**
+ * `prepare` runs after `seedApp` and before the scan navigates, so a route whose real screen needs a
+ * connection (the live-writing console, projector and student screen) can stand a backend up instead
+ * of being scanned in its "database required" fallback. `ready` is the text that proves the screen's
+ * own content — not just the app shell — is on the page before axe looks at it.
+ */
+export type A11yRoute = {
+    path: string;
+    label: string;
+    prepare?: (page: Page, theme: A11yTheme) => Promise<void>;
+    ready?: string;
+};
 
 const now = new Date('2026-10-18T09:00:00.000Z').toISOString();
 const uid = (prefix: string) => `${prefix}-a11y-1`;
@@ -69,6 +81,7 @@ const DECK_ID = uid('deck');
 const STUDENT_TEST_ID = uid('student-test');
 const ESSAY_KEY = uid('essay');
 const LIVE_SESSION_ID = uid('live-session');
+const JOIN_CODE = 'RM-ABC123';
 
 const levels = [
     { label: 'Excellent', minPoints: 4, maxPoints: 4, description: 'Outstanding work', subItems: [] },
@@ -348,10 +361,26 @@ export const A11Y_ROUTES: readonly A11yRoute[] = [
     { path: `/essays/${ESSAY_KEY}/monitor`, label: 'Essay live monitor' },
     { path: '/live', label: 'Live writing' },
     { path: '/live/new', label: 'Live writing console (new)' },
-    { path: `/live/${LIVE_SESSION_ID}`, label: 'Live writing console' },
-    { path: `/live/${LIVE_SESSION_ID}/project`, label: 'Live writing projector' },
+    {
+        path: `/live/${LIVE_SESSION_ID}`,
+        label: 'Live writing console',
+        prepare: (page, theme) => seedLiveWritingRoute(page, theme, { status: 'writing', joinCode: JOIN_CODE }),
+        ready: 'Join code',
+    },
+    {
+        path: `/live/${LIVE_SESSION_ID}/project`,
+        label: 'Live writing projector',
+        prepare: (page, theme) => seedLiveWritingRoute(page, theme, { status: 'writing', joinCode: JOIN_CODE }),
+        ready: 'Live writing · projector',
+    },
     { path: '/join', label: 'Live writing join' },
-    { path: '/join/RM-ABC123', label: 'Live writing student screen' },
+    {
+        path: `/join/${JOIN_CODE}`,
+        label: 'Live writing student screen',
+        prepare: (page, theme) =>
+            seedLiveWritingRoute(page, theme, { status: 'writing', joinCode: JOIN_CODE, resumeStudent: true }),
+        ready: 'Describe what your perfect weekend would look like.',
+    },
     { path: '/flashcards', label: 'Flashcards' },
     { path: `/flashcards/${DECK_ID}`, label: 'Flashcard deck' },
     { path: '/news-flashes', label: 'News flashes' },
@@ -452,6 +481,30 @@ export async function seedApp(page: Page, theme: A11yTheme): Promise<void> {
             if (value !== undefined) localStorage.setItem(key, JSON.stringify(value));
         }
     }, seed);
+}
+
+/**
+ * Connected-mode seed for the live-writing screens. `seedApp` runs first and puts the app in local
+ * mode; this second init script wins, because a local-mode app has no client for the live pages.
+ */
+async function seedLiveWritingRoute(
+    page: Page,
+    theme: A11yTheme,
+    options: { status: 'writing'; joinCode: string; resumeStudent?: boolean }
+): Promise<void> {
+    const seed = buildA11ySeed(theme) as unknown as Record<string, unknown>;
+    const backend = createLiveWritingBackend({
+        sessionId: LIVE_SESSION_ID,
+        joinCode: options.joinCode,
+        status: options.status,
+        draftHtml: '<h2>Saturday</h2><p>A long walk, then breakfast with friends and no alarm clock.</p>',
+        settings: (seed.rm_settings as Record<string, unknown>) ?? undefined,
+    });
+    await backend.install(page);
+    await seedLiveWritingApp(page, {
+        localStorage: { ...seed, rm_local_mode: false },
+        sessionStorage: options.resumeStudent ? studentJoinStorage(options.joinCode, backend) : undefined,
+    });
 }
 
 /** Wait until the lazy route has rendered and its skeleton is gone. */

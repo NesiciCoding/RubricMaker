@@ -65,7 +65,13 @@ for (const theme of A11Y_THEMES) {
                 page.on('pageerror', (error) => pageErrors.push(error.message));
 
                 await seedApp(page, theme);
+                // Routes whose real screen needs a backend stand one up here; the rest scan the local
+                // snapshot exactly as before.
+                await route.prepare?.(page, theme);
                 await page.goto(`/#${route.path}`);
+                if (route.ready) {
+                    await test.expect(page.getByText(route.ready).first()).toBeVisible({ timeout: 20_000 });
+                }
                 await waitForRoute(page);
 
                 const results = await runAxe(page);
