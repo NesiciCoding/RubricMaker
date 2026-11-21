@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { HelpCircle } from 'lucide-react';
 
 interface Props {
@@ -6,9 +6,24 @@ interface Props {
     children: React.ReactNode;
 }
 
+/** Bottom edge of the nearest ancestor that clips its overflow (the scrolling modal, usually). */
+function visibleBottom(el: HTMLElement | null): number {
+    let node = el?.parentElement ?? null;
+    while (node) {
+        if (getComputedStyle(node).overflowY !== 'visible') {
+            return Math.min(window.innerHeight, node.getBoundingClientRect().bottom);
+        }
+        node = node.parentElement;
+    }
+    return window.innerHeight;
+}
+
 export default function HelpPopover({ title, children }: Props) {
     const [open, setOpen] = useState(false);
+    const [placement, setPlacement] = useState<'below' | 'above'>('below');
+    const [alignRight, setAlignRight] = useState(false);
     const ref = useRef<HTMLSpanElement>(null);
+    const tooltipRef = useRef<HTMLSpanElement>(null);
 
     useEffect(() => {
         if (!open) return;
@@ -27,6 +42,17 @@ export default function HelpPopover({ title, children }: Props) {
         };
     }, [open]);
 
+    useLayoutEffect(() => {
+        if (!open) return;
+        const button = ref.current;
+        const tooltip = tooltipRef.current;
+        if (!button || !tooltip) return;
+        const b = button.getBoundingClientRect();
+        const t = tooltip.getBoundingClientRect();
+        setPlacement(b.bottom + 4 + t.height <= visibleBottom(button) ? 'below' : 'above');
+        setAlignRight(b.left + t.width > window.innerWidth - 8);
+    }, [open]);
+
     return (
         <span ref={ref} style={{ position: 'relative', display: 'inline-flex', verticalAlign: 'middle' }}>
             <button
@@ -41,14 +67,16 @@ export default function HelpPopover({ title, children }: Props) {
             </button>
             {open && (
                 <span
+                    ref={tooltipRef}
                     role="tooltip"
                     style={{
                         display: 'block',
                         position: 'absolute',
-                        top: '100%',
-                        left: 0,
+                        ...(placement === 'below'
+                            ? { top: '100%', marginTop: 4 }
+                            : { bottom: '100%', marginBottom: 4 }),
+                        ...(alignRight ? { right: 0 } : { left: 0 }),
                         zIndex: 50,
-                        marginTop: 4,
                         width: 280,
                         background: 'var(--bg-elevated)',
                         border: '1px solid var(--border)',
