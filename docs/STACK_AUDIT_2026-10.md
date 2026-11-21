@@ -5,6 +5,13 @@ production host: **one Strato VPS, 6 vCores, 12 GB RAM** (Linux VC 6-12, ~360 GB
 traffic not metered). It reviews the open issues from the first audit (#882, #891) and
 adds what that audit missed.
 
+**Where the first audit lives.** That pass was written as
+`docs/LIVE_STACK_RECOMMENDATIONS.md`, which was never committed to this repository, so the
+filename cannot be opened from here. Its recommendations survive as the issues #882 indexes
+(plus the follow-up set on #891), and every citation of that filename in an issue body means
+those issues, not a file. Nothing in the repository links to it; this page is the second pass
+and supersedes the first where they disagree.
+
 This is a review, not a spec. Where something could not be checked from the repository
 (the live box was not reachable from the audit environment), it says so and gives the
 command that settles it.
