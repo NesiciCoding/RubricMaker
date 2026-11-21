@@ -248,6 +248,36 @@ describe('QuestionEditor extended', () => {
             expect(updated.options).toHaveLength(2);
             expect(updated.type).toBe('multiple-response');
         });
+
+        it('keeps one correct option when a multiple-response question becomes multiple-choice', () => {
+            const { onChange } = renderEditor(
+                makeQuestion({
+                    type: 'multiple-response',
+                    options: [
+                        { id: 'a', text: 'Option A', isCorrect: false },
+                        { id: 'b', text: 'Option B', isCorrect: true },
+                        { id: 'c', text: 'Option C', isCorrect: true },
+                    ],
+                })
+            );
+            chooseType('multiple-choice');
+            const updated = onChange.mock.calls.at(-1)![0] as TestQuestion;
+            expect(updated.options?.map((option) => option.isCorrect)).toEqual([false, true, false]);
+        });
+
+        it('leaves every correct option marked when switching to multiple-response', () => {
+            const { onChange } = renderEditor(
+                makeQuestion({
+                    options: [
+                        { id: 'a', text: 'Option A', isCorrect: true },
+                        { id: 'b', text: 'Option B', isCorrect: false },
+                    ],
+                })
+            );
+            chooseType('multiple-response');
+            const updated = onChange.mock.calls.at(-1)![0] as TestQuestion;
+            expect(updated.options?.map((option) => option.isCorrect)).toEqual([true, false]);
+        });
     });
 
     describe('key word transformation and word formation', () => {

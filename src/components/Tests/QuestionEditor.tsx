@@ -239,12 +239,17 @@ export default function QuestionEditor({
         const { linkedGrammarItemId, linkedGrammarItemIds, frameworkDescriptors } = base;
 
         if (type === 'multiple-choice' || type === 'multiple-response') {
+            const existing = question.options && question.options.length > 0 ? question.options : defaultOptions();
+            const firstCorrect = existing.findIndex((option) => option.isCorrect);
             update({
                 type,
                 linkedGrammarItemId,
                 linkedGrammarItemIds,
                 frameworkDescriptors,
-                options: question.options && question.options.length > 0 ? question.options : defaultOptions(),
+                options:
+                    type === 'multiple-choice'
+                        ? existing.map((option, index) => ({ ...option, isCorrect: index === firstCorrect }))
+                        : existing,
             });
         } else if (type === 'true-false') {
             update({
