@@ -1063,6 +1063,9 @@ function RubricsTab() {
                     {t('docs.rb_tests_inspector')}
                 </p>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    {t('docs.rb_tests_inspector_answers')}
+                </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     <strong>{t('docs.rb_tests_fillgap_label')}</strong> {t('docs.rb_tests_fillgap_uses')}{' '}
                     <code>{'{{...}}'}</code> {t('docs.rb_tests_fillgap_markers')} <code>{'{{Paris}}'}</code>{' '}
                     {t('docs.rb_tests_fillgap_blank')} <code>{'{{Paris|City of Paris}}'}</code>.{' '}
