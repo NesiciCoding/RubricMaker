@@ -72,3 +72,28 @@ describe('addGapAlternative on an empty gap', () => {
         expect(addGapAlternative('Her {{}}(HAPPY) showed.', 0, 'happiness')).toBe('Her {{happiness}}(HAPPY) showed.');
     });
 });
+
+describe('setDropdownAlternativeRole', () => {
+    it('upgrades a legacy gap so the options it already had keep their meaning', async () => {
+        const { setDropdownAlternativeRole } = await import('./clozeParse');
+        expect(setDropdownAlternativeRole('Pick {{Paris|London}}.', 0, 1, true)).toBe('Pick {{=Paris|=London}}.');
+    });
+
+    it('turns a correct alternative into a distractor', async () => {
+        const { setDropdownAlternativeRole } = await import('./clozeParse');
+        expect(setDropdownAlternativeRole('Pick {{=Paris|=London|~Berlin}}.', 0, 0, false)).toBe(
+            'Pick {{~Paris|=London|~Berlin}}.'
+        );
+    });
+
+    it('rewrites only the requested gap and leaves the ones before it untouched', async () => {
+        const { setDropdownAlternativeRole } = await import('./clozeParse');
+        expect(setDropdownAlternativeRole('{{a|b}} then {{c|d}}.', 1, 1, true)).toBe('{{a|b}} then {{=c|=d}}.');
+    });
+
+    it('returns the prompt unchanged for a gap or alternative that does not exist', async () => {
+        const { setDropdownAlternativeRole } = await import('./clozeParse');
+        expect(setDropdownAlternativeRole('{{a|b}}', 3, 0, true)).toBe('{{a|b}}');
+        expect(setDropdownAlternativeRole('{{a|b}}', 0, 5, true)).toBe('{{a|b}}');
+    });
+});
