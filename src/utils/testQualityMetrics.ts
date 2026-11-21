@@ -256,7 +256,7 @@ function latestAnswers(st: StudentTest): Map<string, TestAnswer> {
 }
 
 /** One latest attempt per student, skipping absentees and submissions without answers. */
-function scoredSubmissions(test: Test, studentTests: StudentTest[]): StudentTest[] {
+export function scoredSubmissions(test: Test, studentTests: StudentTest[]): StudentTest[] {
     const byStudent = new Map<string, StudentTest>();
     for (const st of studentTests) {
         if (st.testId !== test.id || (!st.absent && st.answers.length === 0)) continue;

@@ -7,6 +7,7 @@ import { questionTypeLabelKey } from '../../utils/questionTypeKey';
 import type { TestQuestion, TestSection } from '../../types';
 import ContextMenu, { useContextMenu, type ContextMenuItem } from '../ui/ContextMenu';
 import MenuButton from '../ui/MenuButton';
+import type { BuilderInsights } from '../../utils/builderItemAnalysis';
 
 interface Props {
     sections: TestSection[];
@@ -14,6 +15,8 @@ interface Props {
     questions: TestQuestion[];
     totalPoints: number;
     issuesByQuestion: Map<string, string[]>;
+    /** Graded results of the saved test, keyed by question id; absent while the test has no sittings. */
+    insights?: BuilderInsights;
     /** Question shown in the focus pane. */
     activeId?: string | null;
     /** Section whose workspace is open in the focus pane. */
@@ -42,6 +45,7 @@ export default function TestOutlineRail({
     questions,
     totalPoints,
     issuesByQuestion,
+    insights,
     activeId,
     activeSectionId,
     onSelect,
@@ -56,8 +60,11 @@ export default function TestOutlineRail({
     const menu = useContextMenu();
     const [query, setQuery] = useState('');
     const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+    const [reviewOnlyRequested, setNeedsReviewOnly] = useState(false);
     const treeRef = useRef<HTMLDivElement | null>(null);
     const needle = query.trim().toLowerCase();
+    const needsReviewOnly = reviewOnlyRequested && !!insights?.hasData;
+    const needsReviewIds = insights?.needsReviewIds ?? new Set<string>();
 
     const labelFor = (question: TestQuestion) =>
         htmlToPlainText(plainQuestionPromptText(question)).trim() || t(questionTypeLabelKey(question.type));
@@ -77,15 +84,20 @@ export default function TestOutlineRail({
     ]
         .map((group) => ({
             ...group,
-            questions: needle
-                ? group.questions.filter(
-                      (q) => labelFor(q).toLowerCase().includes(needle) || group.title.toLowerCase().includes(needle)
-                  )
-                : group.questions,
+            questions: group.questions.filter((q) => {
+                if (
+                    needle &&
+                    !labelFor(q).toLowerCase().includes(needle) &&
+                    !group.title.toLowerCase().includes(needle)
+                ) {
+                    return false;
+                }
+                return !needsReviewOnly || needsReviewIds.has(q.id);
+            }),
         }))
         // A section with no questions yet is still a section to open — it is the only way to reach
         // its workspace (and its own add-question button) from the rail.
-        .filter((group) => group.questions.length > 0 || (!needle && group.id !== '__none__'));
+        .filter((group) => group.questions.length > 0 || (!needle && !needsReviewOnly && group.id !== '__none__'));
 
     const numberOf = (question: TestQuestion) => questions.indexOf(question) + 1;
 
@@ -219,6 +231,26 @@ export default function TestOutlineRail({
                 />
             )}
 
+            {insights?.hasData && (
+                <button
+                    type="button"
+                    aria-pressed={needsReviewOnly}
+                    data-testid="outline-needs-review"
+                    onClick={() => setNeedsReviewOnly((prev) => !prev)}
+                    className="btn btn-ghost btn-sm"
+                    style={{
+                        width: '100%',
+                        justifyContent: 'center',
+                        marginBottom: 10,
+                        fontSize: '0.78rem',
+                        border: `1px solid ${needsReviewOnly ? 'var(--accent)' : 'var(--border)'}`,
+                        background: needsReviewOnly ? 'color-mix(in srgb, var(--accent) 14%, transparent)' : 'none',
+                    }}
+                >
+                    {t('tests.builder_insight.needs_review', { total: needsReviewIds.size })}
+                </button>
+            )}
+
             {questions.length === 0 && groups.length === 0 && (
                 <p className="text-muted text-xs" style={{ margin: 0 }}>
                     {t('tests.no_questions')}
@@ -227,7 +259,11 @@ export default function TestOutlineRail({
 
             {questions.length > 0 && groups.length === 0 && (
                 <p className="text-muted text-xs" style={{ margin: 0 }}>
-                    {t('tests.outline_no_matches')}
+                    {t(
+                        needsReviewOnly && !needle
+                            ? 'tests.builder_insight.needs_review_none'
+                            : 'tests.outline_no_matches'
+                    )}
                 </p>
             )}
 
@@ -352,6 +388,7 @@ export default function TestOutlineRail({
                                             {group.questions.map((question) => {
                                                 const active = question.id === activeId;
                                                 const issues = issuesByQuestion.get(question.id) ?? [];
+                                                const insight = insights?.byQuestion.get(question.id);
                                                 const openMenu = (event: React.MouseEvent) =>
                                                     menu.open(
                                                         event,
@@ -431,6 +468,28 @@ export default function TestOutlineRail({
                                                                         aria-label={t('tests.issues_title')}
                                                                     />
                                                                 )}
+                                                                {insight && insight.readings.length > 0 && (
+                                                                    <span
+                                                                        className="text-xs"
+                                                                        data-testid={`outline-reading-${question.id}`}
+                                                                        title={insight.readings
+                                                                            .map((reading) =>
+                                                                                t(
+                                                                                    `tests.builder_insight.reading_${reading}`
+                                                                                )
+                                                                            )
+                                                                            .join(' · ')}
+                                                                        style={{
+                                                                            color: 'var(--yellow-text)',
+                                                                            fontWeight: 600,
+                                                                            whiteSpace: 'nowrap',
+                                                                        }}
+                                                                    >
+                                                                        {t(
+                                                                            `tests.builder_insight.reading_${insight.readings[0]}`
+                                                                        )}
+                                                                    </span>
+                                                                )}
                                                                 {question.points}
                                                             </span>
                                                         </button>
@@ -450,6 +509,75 @@ export default function TestOutlineRail({
                             );
                         })}
                     </div>
+                );
+            })()}
+
+            {(() => {
+                const insight = activeId ? insights?.byQuestion.get(activeId) : undefined;
+                if (!insight) return null;
+                return (
+                    <section
+                        aria-labelledby="test-outline-insight"
+                        data-testid="outline-insight"
+                        style={{
+                            marginTop: 10,
+                            paddingTop: 8,
+                            borderTop: '1px solid var(--border)',
+                        }}
+                    >
+                        <h2
+                            id="test-outline-insight"
+                            className="card-heading"
+                            style={{
+                                margin: 0,
+                                fontSize: '0.72rem',
+                                letterSpacing: '0.07em',
+                                textTransform: 'uppercase',
+                                color: 'var(--text-muted)',
+                            }}
+                        >
+                            {t('tests.builder_insight.title')}
+                        </h2>
+                        <dl
+                            style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'auto 1fr',
+                                gap: '2px 8px',
+                                margin: '6px 0 0',
+                                fontSize: '0.78rem',
+                            }}
+                        >
+                            <dt className="text-muted">{t('tests.builder_insight.n')}</dt>
+                            <dd style={{ margin: 0 }}>{insight.sampleSize}</dd>
+                            <dt className="text-muted">{t('tests.builder_insight.p_value')}</dt>
+                            <dd style={{ margin: 0 }}>{insight.pValue === null ? '—' : insight.pValue.toFixed(2)}</dd>
+                            <dt className="text-muted">{t('tests.builder_insight.discrimination')}</dt>
+                            <dd style={{ margin: 0 }}>
+                                {insight.discrimination === null
+                                    ? t('tests.builder_insight.not_measured')
+                                    : insight.discrimination.toFixed(2)}
+                            </dd>
+                        </dl>
+                        {insights && insights.classes.length > 0 && (
+                            <p className="text-muted text-xs" style={{ margin: '6px 0 0' }}>
+                                {t('tests.builder_insight.classes', { classes: insights.classes.join(', ') })}
+                            </p>
+                        )}
+                        <p className="text-xs" style={{ margin: '6px 0 0' }}>
+                            {insight.readings.length === 0
+                                ? t(
+                                      insight.discrimination === null
+                                          ? 'tests.builder_insight.on_target_difficulty'
+                                          : 'tests.builder_insight.on_target'
+                                  )
+                                : insight.readings
+                                      .map((reading) => t(`tests.builder_insight.explain_${reading}`))
+                                      .join(' ')}
+                        </p>
+                        <p className="text-muted text-xs" style={{ margin: '6px 0 0' }}>
+                            {t('tests.builder_insight.min_sample', { total: insights?.minSample ?? 0 })}
+                        </p>
+                    </section>
                 );
             })()}
 
