@@ -1815,7 +1815,7 @@
         "question_type_hot_text": "Hot tekst",
         "question_type_audio_response": "Audioantwoord (opname)",
         "partial_credit_label": "Deelpunten toestaan",
-        "partial_credit_help": "Ken een gedeelte van de punten toe bij gedeeltelijk correcte antwoorden.",
+        "partial_credit_help": "Ken een gedeelte van de punten toe bij gedeeltelijk correcte antwoorden; een leeg of onleesbaar antwoord levert 0 punten op.",
         "tolerance_label": "Tolerantie bij antwoorden",
         "tolerance_punctuation": "Negeer leestekens, gekrulde aanhalingstekens en extra spaties",
         "tolerance_contractions": "Behandel samentrekkingen als gelijk (don't = do not)",

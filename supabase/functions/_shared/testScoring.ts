@@ -407,7 +407,7 @@ export function scoreMultipleResponse(question: ScorableQuestion, response: stri
         return exact ? question.points : 0;
     }
 
-    if (options.length === 0) return 0;
+    if (options.length === 0 || selectedSet.size === 0) return 0;
     const matches = options.filter((o) => selectedSet.has(o.id) === correctSet.has(o.id)).length;
     return question.points * (matches / options.length);
 }
@@ -754,6 +754,7 @@ export function scoreHotText(question: ScorableQuestion, response: string): numb
         return exact ? question.points : 0;
     }
 
+    if (selectedSet.size === 0) return 0;
     const matches = fragments.filter((f) => selectedSet.has(f.index) === correctSet.has(f.index)).length;
     return question.points * (matches / fragments.length);
 }

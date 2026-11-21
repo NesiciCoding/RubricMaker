@@ -1815,7 +1815,7 @@
         "question_type_hot_text": "Texto interactivo",
         "question_type_audio_response": "Respuesta de audio (grabación)",
         "partial_credit_label": "Permitir crédito parcial",
-        "partial_credit_help": "Otorga una fracción de los puntos por respuestas parcialmente correctas.",
+        "partial_credit_help": "Otorga una fracción de los puntos por respuestas parcialmente correctas; una respuesta en blanco o ilegible puntúa 0.",
         "tolerance_label": "Tolerancia de respuestas",
         "tolerance_punctuation": "Ignorar puntuación, comillas tipográficas y espacios extra",
         "tolerance_contractions": "Tratar las contracciones como iguales (don't = do not)",
