@@ -267,7 +267,7 @@ describe('TestBuilderPage', () => {
         const promptInputs = screen.getAllByLabelText('tests.question_prompt_label');
         fireEvent.change(promptInputs[0], { target: { value: 'What is the capital of France?' } });
 
-        const correctButtons = screen.getAllByLabelText('tests.mark_correct_option');
+        const correctButtons = screen.getAllByLabelText(/tests.mark_correct_option/);
         expect(correctButtons.length).toBeGreaterThanOrEqual(2);
         fireEvent.click(correctButtons[1]);
 

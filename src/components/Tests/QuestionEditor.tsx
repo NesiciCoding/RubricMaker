@@ -4,7 +4,6 @@ import {
     Trash2,
     Plus,
     X,
-    Check,
     BookOpen,
     GraduationCap,
     AlertCircle,
@@ -67,6 +66,7 @@ import {
 } from '../../utils/questionTypeDefaults';
 import AnswerToleranceFields from './AnswerToleranceFields';
 import DistractorSuggestions from './DistractorSuggestions';
+import { optionLetter } from '../../utils/testExamContent';
 import { generateCloze, type ClozeStrategy } from '../../utils/clozeGenerators';
 import type { ClozeVariantKind } from '../../utils/clozeVariant';
 import { CEFR_LEVELS } from '../../data/cefrDescriptors';
@@ -239,12 +239,17 @@ export default function QuestionEditor({
         const { linkedGrammarItemId, linkedGrammarItemIds, frameworkDescriptors } = base;
 
         if (type === 'multiple-choice' || type === 'multiple-response') {
+            const existing = question.options && question.options.length > 0 ? question.options : defaultOptions();
+            const firstCorrect = existing.findIndex((option) => option.isCorrect);
             update({
                 type,
                 linkedGrammarItemId,
                 linkedGrammarItemIds,
                 frameworkDescriptors,
-                options: question.options && question.options.length > 0 ? question.options : defaultOptions(),
+                options:
+                    type === 'multiple-choice'
+                        ? existing.map((option, index) => ({ ...option, isCorrect: index === firstCorrect }))
+                        : existing,
             });
         } else if (type === 'true-false') {
             update({
@@ -864,31 +869,45 @@ export default function QuestionEditor({
                             {t(questionTypeHelpKey(question.type, 'teacher', 'body'))}
                         </HelpPopover>
                     </label>
-                    {(question.options ?? []).map((option) => {
+                    {(question.options ?? []).map((option, index) => {
                         const showImageField = expandedOptionImages.has(option.id) || !!option.imageUrl;
                         const showAudioField =
                             expandedOptionAudio.has(option.id) || !!option.audioUrl || !!option.spokenText;
                         return (
                             <div key={option.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <button
-                                        type="button"
-                                        className="btn btn-ghost btn-icon btn-sm"
-                                        aria-label={t('tests.mark_correct_option')}
-                                        aria-pressed={option.isCorrect}
-                                        title={t('tests.mark_correct_option')}
-                                        onClick={() =>
-                                            question.type === 'multiple-response'
-                                                ? toggleOptionCorrect(option.id)
-                                                : setCorrectOption(option.id)
-                                        }
-                                        style={{
-                                            color: option.isCorrect ? 'var(--green-text)' : 'var(--text-muted)',
-                                            flexShrink: 0,
-                                        }}
-                                    >
-                                        <Check size={16} />
-                                    </button>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                                        <input
+                                            type={question.type === 'multiple-response' ? 'checkbox' : 'radio'}
+                                            name={`correct-option-${question.id}`}
+                                            checked={option.isCorrect}
+                                            aria-label={`${t('tests.mark_correct_option')} ${optionLetter(index)}`}
+                                            title={t('tests.mark_correct_option')}
+                                            onChange={() =>
+                                                question.type === 'multiple-response'
+                                                    ? toggleOptionCorrect(option.id)
+                                                    : setCorrectOption(option.id)
+                                            }
+                                            style={{
+                                                flexShrink: 0,
+                                                width: 16,
+                                                height: 16,
+                                                accentColor: 'var(--accent-text)',
+                                            }}
+                                        />
+                                        <span
+                                            aria-hidden="true"
+                                            style={{
+                                                flexShrink: 0,
+                                                minWidth: 14,
+                                                fontSize: '0.85rem',
+                                                fontWeight: 600,
+                                                color: option.isCorrect ? 'var(--green-text)' : 'var(--text-muted)',
+                                            }}
+                                        >
+                                            {optionLetter(index)}
+                                        </span>
+                                    </label>
                                     <input
                                         type="text"
                                         value={option.text}

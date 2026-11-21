@@ -97,8 +97,9 @@ export class TestBuilderPage extends BasePage {
 
     /** Mark the given option as the correct answer for a multiple-choice question. */
     async markOptionCorrect(index: number, optionIndex: number): Promise<void> {
-        const buttons = this.questionCard(index).getByRole('button', { name: /mark as correct answer/i });
-        await buttons.nth(optionIndex).click();
+        // A checkbox (multiple response) or radio (single choice) beside each option, not a button.
+        const marks = this.questionCard(index).getByLabel(/mark as correct answer/i);
+        await marks.nth(optionIndex).check();
     }
 
     async setExpectedAnswer(index: number, answer: string): Promise<void> {
