@@ -121,6 +121,19 @@ interface Props {
     showGrip?: boolean;
 }
 
+// One line per gap strategy: the strategies measure different things, and the builder only showed
+// their names.
+const CLOZE_STRATEGY_HELP: Record<ClozeStrategy, string> = {
+    fixedRatio: 'tests.cloze_generate_fixed_ratio_help',
+    cTest: 'tests.cloze_generate_c_test_help',
+    preposition: 'tests.cloze_generate_preposition_help',
+    article: 'tests.cloze_generate_article_help',
+    modal: 'tests.cloze_generate_modal_help',
+    pastTense: 'tests.cloze_generate_past_tense_help',
+    aboveLevel: 'tests.cloze_generate_above_level_help',
+    academic: 'tests.cloze_generate_academic_help',
+};
+
 export default function QuestionEditor({
     question,
     index,
@@ -815,6 +828,13 @@ export default function QuestionEditor({
                                 >
                                     <Sparkles size={14} /> {t('tests.cloze_generate_button')}
                                 </button>
+                                <p
+                                    className="text-muted"
+                                    data-testid="cloze-strategy-help"
+                                    style={{ flex: '1 1 100%', margin: 0, fontSize: '0.75rem' }}
+                                >
+                                    {t(CLOZE_STRATEGY_HELP[clozeStrategy])}
+                                </p>
                             </div>
                         )}
                         {onCreateVariant && (
