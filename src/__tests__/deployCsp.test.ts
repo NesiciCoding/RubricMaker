@@ -2,12 +2,17 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+// nginx-supabase-api-hestiacp.conf is a location-only snippet for the separate Supabase API/Studio
+// domain (#930) — it has no CSP or Permissions-Policy of its own to check because that domain never
+// serves the React SPA these headers protect.
+const DEPLOY_CONF_EXCLUDE = new Set(['nginx-supabase-api-hestiacp.conf']);
+
 const root = resolve(__dirname, '../..');
 const files = [
     'docker/nginx.conf',
     'docker/nginx.prod.conf',
     ...readdirSync(resolve(root, 'deploy'))
-        .filter((f) => f.endsWith('.conf'))
+        .filter((f) => f.endsWith('.conf') && !DEPLOY_CONF_EXCLUDE.has(f))
         .map((f) => `deploy/${f}`),
 ];
 

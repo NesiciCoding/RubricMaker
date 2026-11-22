@@ -40,6 +40,30 @@ To restore, onto the same server or a new one:
 
 Backups made before format 2 (a single `database.sql` dumped with `--no-acl`) are refused. Replaying them dropped every GRANT. Take a new backup with the current script.
 
+### Running against the official Supabase stack
+
+Production typically runs the **official Supabase self-hosted Docker stack** (its own `docker compose` project, cloned next to `deploy/supabase/docker-compose.override.yml` — see that file), not this repository's `docker-compose.yml`. Two things differ, and the scripts above handle both once you export the right variables:
+
+|                    | This repo's compose                                   | Official stack                                                                                                                            |
+| ------------------ | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Uploaded files     | Docker named volume `<project>_storage-data`          | Bind mount, `./volumes/storage` next to the stack's own compose file                                                                      |
+| Applied migrations | `public._migrations` (written by `docker/migrate.sh`) | `public._migrations` if migrated the same way, otherwise `supabase_migrations.schema_migrations` (CLI `supabase db push`) — auto-detected |
+
+```bash
+export COMPOSE_FILE=/opt/supabase/docker/docker-compose.yml   # that stack's compose file
+export STORAGE_DIR=/opt/supabase/docker/volumes/storage        # bind mount, not a volume name
+./scripts/backup.sh
+./scripts/restore.sh backups/20260515_120000
+```
+
+`STORAGE_DIR` takes priority over `STORAGE_VOLUME` and is passed straight to `docker run -v`, which accepts a host path exactly like a volume name — nothing else changes. The migrations table is detected automatically from the live database; set `MIGRATIONS_TABLE`/`MIGRATIONS_COLUMN` only if that detection picks the wrong one. `restore-drill.sh` always drills into its own scratch named volume regardless of `STORAGE_DIR`, since it proves the backup _file_ restores, not that the official stack's directory layout matches — rehearsing a restore onto a throwaway VPS with the real stack remains the drill for that part.
+
+Nightly cron on the host running the official stack:
+
+```cron
+15 3 * * * cd /path/to/rubricmaker && COMPOSE_FILE=/opt/supabase/docker/docker-compose.yml STORAGE_DIR=/opt/supabase/docker/volumes/storage ./scripts/scheduled-backup.sh >> /var/log/rubricmaker-backup.log 2>&1 || logger -t rubricmaker-backup 'nightly backup FAILED - see /var/log/rubricmaker-backup.log'
+```
+
 ### Off-site backups
 
 `backup.sh` writes to `./backups` on the same disk as the database, so losing the server (hardware failure, ransomware, a provider incident, a mistaken `docker volume rm`) loses the backups with it. The off-site scripts keep encrypted copies in an S3-compatible bucket at **another provider** and prove regularly that they restore.
@@ -151,6 +175,30 @@ Admin → Archive → **Erase permanently** removes a student and everything lin
     Voice-feedback audio is referenced from inside grade records, so it is covered by the per-bucket counts only.
 
 If uploads fail (wrong `SITE_URL`, storage not running), fix the cause and run `./scripts/import-cloud.sh <dir> --storage-only` — uploads are idempotent. `--verify-only` prints the check again; `--skip-storage` imports rows only. Exports made with `--skip-storage`, or with the older script, have no files: the rows import, but every file they reference returns 404 until the objects are copied.
+
+---
+
+## Hardening the official stack
+
+Production runs the **official Supabase self-hosted Docker stack**, not this repo's `docker-compose.yml`. Two high-priority gaps in that setup:
+
+### Network exposure (#930)
+
+Upstream's `docker-compose.yml` publishes Supavisor (`5432`, `6543`) and the API gateway (`8000`/`8443`, service key `api-gw` — Envoy-based on newer checkouts, Kong on older ones) on **all interfaces**. Docker inserts its own iptables rules ahead of the host firewall, so a port blocked in HestiaCP or ufw is still reachable from the internet — and the pooler port accepts Postgres logins directly, a known brute-force target. HestiaCP's nginx already reverse-proxies the public API domain to the gateway on `127.0.0.1`, so the raw ports don't need to be public.
+
+1. Copy [`deploy/supabase/docker-compose.override.yml`](../deploy/supabase/docker-compose.override.yml) next to the stack's own `docker-compose.yml` (Compose loads an override file automatically) and `docker compose up -d` to apply it.
+2. Copy [`deploy/nginx-supabase-api-hestiacp.conf`](../deploy/nginx-supabase-api-hestiacp.conf) to the public API domain's vhost (`nginx.ssl.conf_after`) so `/project`, `/api/platform` and `/mcp` — Studio's dashboard and its SQL-executing MCP endpoint — 404 publicly instead of being reverse-proxied through. Reach them yourself over an SSH tunnel (`ssh -L 8000:127.0.0.1:8000 <vps>`) or WireGuard/Tailscale instead.
+3. Rotate `DASHBOARD_PASSWORD` in the stack's `.env` once both are live — it may have crossed the network in clear text before the lockdown (`.mcp.json`'s production endpoint is `https://`, fixed already).
+4. Verify from **outside** the VPS: `nmap -Pn -p 22,80,443,3000,5432,6543,8000,8443 <vps-ip>` should show only 22, 80 and 443 open.
+
+### Memory and OOM protection (#932)
+
+Nothing stops a memory-hungry sidecar (Studio, LanguageTool, Whisper) from pushing the kernel into OOM-killing Postgres mid-lesson. The same override file adds a `mem_limit` to every non-critical container and `oom_score_adj: -800` to `db`, so the kernel kills the container that overran instead. Two things it can't do from a compose file:
+
+- **Swap**: check `swapon --show`; if empty, add a 2–4 GB swapfile with `vm.swappiness=10` as an OOM buffer, not working memory.
+- **Trim what isn't needed**: `docker inspect supabase-analytics supabase-vector` — if either exists, the stack is still running Logflare/Vector (a second log pipeline duplicating Alloy + Loki, ~1–1.5 GB); remove them and Studio's `depends_on: analytics`. On a VPS that doesn't host mail or PHP sites, `v-list-sys-services` and disable ClamAV, SpamAssassin, Exim/Dovecot and MariaDB if HestiaCP enabled them.
+
+`scripts/audit-live-stack.sh` (below) checks all of the above — port exposure, Studio/MCP reachability, memory limits, swap, OOM events, and the leftover Logflare/Vector/HestiaCP services — on the live host and tells you exactly what's still open.
 
 ---
 
