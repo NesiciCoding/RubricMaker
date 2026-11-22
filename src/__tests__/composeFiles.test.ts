@@ -26,11 +26,11 @@ describe('compose files', () => {
             { environment?: Record<string, string> }
         >;
         expect(Object.keys(services).sort()).toEqual([
+            'api-gw',
             'auth',
             'db',
             'functions',
             'imgproxy',
-            'kong',
             'mail-templates',
             'meta',
             'realtime',
@@ -60,7 +60,7 @@ describe('compose files', () => {
             string,
             { ports?: string[] }
         >;
-        for (const port of services.kong.ports ?? []) {
+        for (const port of services['api-gw'].ports ?? []) {
             expect(port).toMatch(/^127\.0\.0\.1:/);
         }
         for (const port of services.supavisor.ports ?? []) {

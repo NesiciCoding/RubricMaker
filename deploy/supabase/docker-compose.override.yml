@@ -20,12 +20,14 @@ services:
     # #930: bind the gateway and pooler to loopback only. Upstream publishes these on all
     # interfaces, and Docker inserts its own iptables rules ahead of the host firewall, so a port
     # blocked in HestiaCP/ufw is still reachable without this. HestiaCP's nginx already
-    # reverse-proxies the public API domain to Kong on 127.0.0.1. `!override` forces Compose to
-    # replace the upstream `ports` list outright instead of merging into it — without it, a merge
+    # reverse-proxies the public API domain to the gateway on 127.0.0.1. `!override` forces Compose
+    # to replace the upstream `ports` list outright instead of merging into it — without it, a merge
     # that appends rather than replaces would leave the old public binding live alongside this one.
-    # Verify from outside the VPS: nmap -Pn -p 5432,6543,8000,8443 <vps-ip> should show all four
-    # closed or filtered.
-    kong:
+    # The gateway service is `api-gw` (Envoy-based on newer checkouts — the upstream compose
+    # replaced Kong) and publishes only 8000 there; the 8443 entry is a no-op if nothing inside the
+    # container listens on it, kept for checkouts still on the older Kong image. Verify from
+    # outside the VPS: nmap -Pn -p 5432,6543,8000,8443 <vps-ip> should show all four closed/filtered.
+    api-gw:
         ports: !override
             - '127.0.0.1:${KONG_HTTP_PORT:-8000}:8000/tcp'
             - '127.0.0.1:${KONG_HTTPS_PORT:-8443}:8443/tcp'
