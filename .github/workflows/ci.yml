@@ -100,11 +100,17 @@ jobs:
         if: steps.nm-cache.outputs.cache-hit != 'true'
         run: npm ci
 
-      - name: Lint
-        run: npm run lint
-
-      - name: Format check
-        run: npm run format:check
+      # Lint and format:check are independent static passes over the same source tree —
+      # run them concurrently instead of back-to-back so the job's wall-clock is the
+      # slower of the two, not their sum.
+      - name: Lint & Format check
+        run: |
+          npm run lint & lint_pid=$!
+          npm run format:check & fmt_pid=$!
+          fail=0
+          wait "$lint_pid" || fail=1
+          wait "$fmt_pid" || fail=1
+          exit $fail
 
   ci-static-edge:
     name: Static — Deno, Nginx & Bootstrap
