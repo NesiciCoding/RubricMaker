@@ -98,7 +98,9 @@ fi
 
 echo "▶  Restoring into the scratch stack..."
 restore_started=$(date +%s)
-COMPOSE="${DRILL_COMPOSE[*]}" DB_EXEC="$DRILL_DB_EXEC" STORAGE_VOLUME="$DRILL_VOLUME" \
+# STORAGE_DIR="" overrides any value inherited from .env.backup (set there for a production stack
+# whose uploads are a bind mount) — the drill always restores into the scratch named volume above.
+COMPOSE="${DRILL_COMPOSE[*]}" DB_EXEC="$DRILL_DB_EXEC" STORAGE_VOLUME="$DRILL_VOLUME" STORAGE_DIR="" \
     "$SCRIPT_DIR/restore.sh" --yes "$BACKUP_DIR"
 restore_seconds=$(($(date +%s) - restore_started))
 

@@ -25,7 +25,20 @@ describe('compose files', () => {
             string,
             { environment?: Record<string, string> }
         >;
-        expect(Object.keys(services).sort()).toEqual(['auth', 'functions', 'mail-templates', 'realtime']);
+        expect(Object.keys(services).sort()).toEqual([
+            'auth',
+            'db',
+            'functions',
+            'imgproxy',
+            'kong',
+            'mail-templates',
+            'meta',
+            'realtime',
+            'rest',
+            'storage',
+            'studio',
+            'supavisor',
+        ]);
         expect(services.auth.environment?.GOTRUE_MAILER_TEMPLATES_MAGIC_LINK).toBe(
             'http://mail-templates/magic-link.html'
         );
@@ -39,6 +52,32 @@ describe('compose files', () => {
             'APP_URL',
         ]) {
             expect(services.functions.environment, name).toHaveProperty(name);
+        }
+    });
+
+    it('the official-stack override binds the gateway and pooler to loopback only (#930)', () => {
+        const services = load('deploy/supabase/docker-compose.override.yml').value.services as Record<
+            string,
+            { ports?: string[] }
+        >;
+        for (const port of services.kong.ports ?? []) {
+            expect(port).toMatch(/^127\.0\.0\.1:/);
+        }
+        for (const port of services.supavisor.ports ?? []) {
+            expect(port).toMatch(/^127\.0\.0\.1:/);
+        }
+        expect(services.supavisor.ports).toHaveLength(2);
+    });
+
+    it('the official-stack override guards Postgres from the OOM killer (#932)', () => {
+        const services = load('deploy/supabase/docker-compose.override.yml').value.services as Record<
+            string,
+            { oom_score_adj?: number; mem_limit?: string }
+        >;
+        expect(services.db.oom_score_adj).toBe(-800);
+        for (const name of Object.keys(services)) {
+            if (name === 'db') continue;
+            expect(services[name].mem_limit, name).toBeTruthy();
         }
     });
 

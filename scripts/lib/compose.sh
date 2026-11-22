@@ -97,3 +97,57 @@ resolve_storage_volume() {
 }
 
 STORAGE_VOLUME="$(resolve_storage_volume)"
+
+# STORAGE_DIR points the scripts at a bind-mount path instead of a named volume — the official
+# Supabase self-hosting stack keeps uploads in ./volumes/storage next to its own compose file, not
+# a Docker volume. `docker run -v` accepts a host path exactly like a volume name, so every script
+# that mounts STORAGE_SRC needs no separate code path for the two cases.
+if [[ -n "${STORAGE_DIR:-}" ]]; then
+    STORAGE_SRC="$STORAGE_DIR"
+else
+    STORAGE_SRC="$STORAGE_VOLUME"
+fi
+
+storage_source_exists() {
+    if [[ -n "${STORAGE_DIR:-}" ]]; then
+        [[ -d "$STORAGE_DIR" ]]
+    else
+        docker volume inspect "$STORAGE_VOLUME" >/dev/null 2>&1
+    fi
+}
+
+storage_source_missing_message() {
+    if [[ -n "${STORAGE_DIR:-}" ]]; then
+        echo "Error: uploads directory '$STORAGE_DIR' (STORAGE_DIR) does not exist."
+    else
+        echo "Error: uploads volume '$STORAGE_VOLUME' does not exist."
+        echo "       It is named <compose project>_storage-data, so start the stack (docker compose up -d)"
+        echo "       or set COMPOSE_PROJECT_NAME/STORAGE_VOLUME to the project it actually runs as."
+        echo "       Running against the official Supabase stack instead? Set STORAGE_DIR to its"
+        echo "       ./volumes/storage bind mount rather than STORAGE_VOLUME."
+    fi
+    echo "       See docs/SELF_HOSTING_OPS.md → Backup and Restore."
+}
+
+# The table + column backup.sh/restore.sh read "which migrations are applied" from. This repo's
+# own docker/migrate.sh writes public._migrations(name); a stack migrated with the Supabase CLI
+# (`supabase db push`) tracks supabase_migrations.schema_migrations(version) instead. Detected from
+# the live database; MIGRATIONS_TABLE/MIGRATIONS_COLUMN override it outright. Prints "table column".
+migrations_source() {
+    local db_exec="$1"
+    if [[ -n "${MIGRATIONS_TABLE:-}" ]]; then
+        printf '%s %s' "$MIGRATIONS_TABLE" "${MIGRATIONS_COLUMN:-name}"
+        return 0
+    fi
+    if [[ -n "$($db_exec psql -U supabase_admin -d postgres -tA -c "SELECT to_regclass('public._migrations')" < /dev/null)" ]]; then
+        printf '%s %s' "public._migrations" "name"
+        return 0
+    fi
+    if [[ -n "$($db_exec psql -U supabase_admin -d postgres -tA -c "SELECT to_regclass('supabase_migrations.schema_migrations')" < /dev/null)" ]]; then
+        printf '%s %s' "supabase_migrations.schema_migrations" "version"
+        return 0
+    fi
+    echo "Error: no migrations table found (checked public._migrations and supabase_migrations.schema_migrations)." >&2
+    echo "       Set MIGRATIONS_TABLE/MIGRATIONS_COLUMN to override." >&2
+    return 1
+}

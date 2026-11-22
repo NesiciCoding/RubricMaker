@@ -1,10 +1,15 @@
-# Mail settings for the official Supabase self-hosting stack
-# (https://github.com/supabase/supabase/tree/master/docker).
+# Overrides for the official Supabase self-hosting stack
+# (https://github.com/supabase/supabase/tree/master/docker): mail templates, port
+# lockdown (#930) and memory guardrails (#932). Copy this file next to that
+# stack's docker-compose.yml — Compose loads docker-compose.override.yml
+# automatically — and see docs/SELF_HOSTING_OPS.md → Hardening the official
+# stack for the host-level steps this file doesn't cover (swap, Studio/MCP
+# tunnel, nmap verification, trimming Logflare/Vector and unused HestiaCP
+# services).
 #
-# Copy this file next to that stack's docker-compose.yml (Compose loads
-# docker-compose.override.yml automatically) and copy public/email-templates/*.html
-# into its ./volumes/mail-templates/. Add APP_URL (where the app is served, e.g.
-# https://app.rubricmaker.nl) to the stack's .env. Then:
+# Mail: copy public/email-templates/*.html into ./volumes/mail-templates/, add
+# APP_URL (where the app is served, e.g. https://app.rubricmaker.nl) to the
+# stack's .env, then:
 #   docker compose up -d --force-recreate mail-templates auth functions
 #
 # The templates show only the 8-digit code, never a clickable token link: mail
@@ -12,13 +17,60 @@
 # one-time token before the teacher can type it.
 
 services:
+    # #930: bind the gateway and pooler to loopback only. Upstream publishes these on all
+    # interfaces, and Docker inserts its own iptables rules ahead of the host firewall, so a port
+    # blocked in HestiaCP/ufw is still reachable without this. HestiaCP's nginx already
+    # reverse-proxies the public API domain to Kong on 127.0.0.1. `!override` forces Compose to
+    # replace the upstream `ports` list outright instead of merging into it — without it, a merge
+    # that appends rather than replaces would leave the old public binding live alongside this one.
+    # Verify from outside the VPS: nmap -Pn -p 5432,6543,8000,8443 <vps-ip> should show all four
+    # closed or filtered.
+    kong:
+        ports: !override
+            - '127.0.0.1:${KONG_HTTP_PORT:-8000}:8000/tcp'
+            - '127.0.0.1:${KONG_HTTPS_PORT:-8443}:8443/tcp'
+        mem_limit: 512m
+
+    # Supavisor accepts Postgres logins directly; brute-forcing postgres.<tenant> against a port
+    # open to the internet is a known attack pattern. Loopback-only forces every caller through an
+    # SSH tunnel or WireGuard/Tailscale, same as Studio and /mcp (see the ops doc).
+    supavisor:
+        ports: !override
+            - '127.0.0.1:${POSTGRES_PORT:-5432}:5432/tcp'
+            - '127.0.0.1:${POOLER_PROXY_PORT_TRANSACTION:-6543}:6543/tcp'
+        mem_limit: 256m
+
+    # #932: a memory limit on every non-critical container means the kernel kills the container
+    # that overran — Studio, imgproxy, meta, and later LanguageTool/Whisper — instead of
+    # OOM-killing Postgres mid-lesson. `oom_score_adj` on `db` makes that explicit even if a limit
+    # is missed somewhere.
+    db:
+        oom_score_adj: -800
+
+    studio:
+        mem_limit: 512m
+
+    imgproxy:
+        mem_limit: 256m
+
+    meta:
+        mem_limit: 256m
+
+    rest:
+        mem_limit: 256m
+
+    storage:
+        mem_limit: 256m
+
     mail-templates:
         image: nginx:1.27-alpine
         restart: unless-stopped
+        mem_limit: 64m
         volumes:
             - ./volumes/mail-templates:/usr/share/nginx/html:ro
 
     auth:
+        mem_limit: 256m
         depends_on:
             mail-templates:
                 condition: service_started
@@ -46,6 +98,7 @@ services:
     # channel per student and every student page broadcasts a heartbeat and a snapshot every few
     # seconds, so whole classes need more than the defaults.
     realtime:
+        mem_limit: 512m
         environment:
             TENANT_MAX_CONCURRENT_USERS: '1000'
             TENANT_MAX_EVENTS_PER_SECOND: '1000'
@@ -60,6 +113,7 @@ services:
     # stack-drift.py treats any Deno.env.get() key missing from `docker inspect` as drift
     # and fails the deploy's drift check.
     functions:
+        mem_limit: 512m
         environment:
             SMTP_HOST: ${SMTP_HOST}
             SMTP_PORT: ${SMTP_PORT}
