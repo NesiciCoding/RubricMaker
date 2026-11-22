@@ -3350,6 +3350,7 @@
         "no_chart_data": "Onvoldoende vaardigheidsdata voor een grafiek.",
         "progress_chart_aria_label": "ERK vaardigheden radargrafiek met gemiddelde scores per vaardigheid en niveau",
         "track_year_band_title": "Verwacht niveau voor leerjaar/niveau",
+        "track_year_band_help": "Een indicatieve bandbreedte voor een gemiddelde klas in dit leerjaar en niveau — geen officiële norm. De officiële eindniveaus verschillen per vaardigheid en de bandbreedtes voor leerjaar 1–3 zijn schattingen.",
         "track_year_band_no_target": "Er is geen verwacht niveau ingesteld voor het leerjaar/niveau van deze leerling.",
         "track_year_band_aria_label": "Verwacht ERK-bereik {{min}} tot {{max}}, leerling behaalde {{achieved}}",
         "track_year_band_no_achieved": "nog geen gegevens",

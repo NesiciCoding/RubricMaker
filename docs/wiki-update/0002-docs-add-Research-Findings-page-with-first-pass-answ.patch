@@ -1,0 +1,177 @@
+From 81f3bee5dd643db203b641f6f969a2b40dec2b4b Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Thu, 19 Nov 2026 09:56:44 +0000
+Subject: [PATCH 2/4] docs: add Research Findings page with first-pass answers
+ to the research agenda
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01HFRQRtQF3AF1WTUxbKkCgw
+---
+ Home.md              |   2 +-
+ Research-Agenda.md   |   2 +
+ Research-Findings.md | 114 +++++++++++++++++++++++++++++++++++++++++++
+ _Sidebar.md          |   1 +
+ 4 files changed, 118 insertions(+), 1 deletion(-)
+ create mode 100644 Research-Findings.md
+
+diff --git a/Home.md b/Home.md
+index 9178a6a..ed18bfe 100644
+--- a/Home.md
++++ b/Home.md
+@@ -42,7 +42,7 @@ No account is required to start. The app runs fully in the browser and stores da
+ | [Essays & Document Analysis](Writing-and-Document-Analysis) · [Live Writing Sessions](Live-Writing-Sessions) | Writing tasks and in-class writing sprints |
+ | [CEFR, Mastery & Learning Paths](CEFR-and-Learning-Paths) | Levels, mastery, vocabulary profiling, recommendations |
+ | [Exporting](Exporting) · [Sharing & Co-teaching](Sharing-and-Co-teaching) · [Admin Dashboard](Admin-Dashboard) | Reports and backups, sharing with colleagues, admin tools |
+-| [Research Agenda](Research-Agenda) | Open educational and didactic questions still to research |
++| [Research Agenda](Research-Agenda) · [Research Findings](Research-Findings) | Open educational and didactic questions, and what has been found so far |
+ | [Flashcards](Flashcards) | Anki-style decks, FSRS scheduling, learner insights |
+ | [Student Portal](Student-Portal) | What students can see and do (self-assessment, essays, tests, flashcards, messages) |
+ | [Architecture](Architecture) | Project structure, data flow, and tech stack |
+diff --git a/Research-Agenda.md b/Research-Agenda.md
+index 9c3bcd2..28101b8 100644
+--- a/Research-Agenda.md
++++ b/Research-Agenda.md
+@@ -2,6 +2,8 @@
+ 
+ > The app makes many design choices (thresholds, step sizes, weights, scoring rules). This page lists, per area, **what the app does today** (checked against the code on 2026-11-19) and **what still needs to be researched or validated** before those choices can be called evidence-based.
+ >
++> **First research pass done:** see [Research Findings](Research-Findings) for what has been found so far, by question number.
++>
+ > Citations named here are **starting points to look up and verify**, not settled facts. Mark an item ✅ when it has been researched and the answer is written down somewhere teachers can find.
+ 
+ **Priority:** 🔴 affects marks or placement decisions directly · 🟠 affects teacher judgement or feedback · 🟡 nice to know
+diff --git a/Research-Findings.md b/Research-Findings.md
+new file mode 100644
+index 0000000..859c438
+--- /dev/null
++++ b/Research-Findings.md
+@@ -0,0 +1,114 @@
++# Research Findings (first pass)
++
++> Answers to the questions on the [Research Agenda](Research-Agenda), keyed by question number. Researched 2026-11-19.
++>
++> **How far to trust this page:** these findings come from web-search result excerpts. **No source below was read in full**, and the Dutch SLO PDFs could not be opened at all (network access blocked), so the SLO figures come from search snippets of those documents. Treat every row as a lead to confirm in the original, not a verified fact.
++>
++> **Status key:** 🟢 a useful answer or strong lead found · 🟡 partial / mixed evidence · ⚪ nothing found yet (needs your own data or a targeted search)
++
++The agenda has **64 questions** (12 + 10 + 11 + 11 + 5 + 6 + 5 + 4), not 80 as first estimated.
++
++---
++
++## 4.1 The Dutch CEFR ranges (the main finding)
++
++**Short answer: official end-of-programme targets exist, but the per-year table in the app does not appear to come from a government source, and some of its end-point cells look higher than the official targets.**
++
++What the SLO (national curriculum institute) sources say, from search excerpts:
++
++| School type | Official target (per SLO excerpts) | Source |
++|---|---|---|
++| VMBO | Listening **A2**, speaking/conversation **A2**, writing **A1**, reading **A2/B1** ("haalbaar geacht") | [SLO: ERK streefniveaus Engels](https://www.slo.nl/handreikingen/vmbo/handreiking-se-engels-vmbo/examenprogramma/erk-streefniveaus/) |
++| VMBO-bb / kb / gt, speaking | A2 target; attained roughly A1 (bb), A2 (kb), A2/B1 (gt) | [SLO: eindniveau gespreksvaardigheid](https://www.slo.nl/publish/pages/3186/eindniveau-gespreksvaardigheid-engels-in-het-voortgezet-onderwijs.pdf) |
++| HAVO | Speaking **B1+**, listening **B1**, writing **B1**; reading **B2\*** (asterisk unexplained in the excerpt) | [SLO overview](https://www.slo.nl/thema/vakspecifieke-thema/mvt/erk/leraar-vo/niveaus-vo/niveaus-havo-vwo-du-fa-sp/), [SLO writing study](https://slo.nl/publish/pages/2769/erk-niveau-schrijfvaardigheid-engels-duits-en-frans.pdf) |
++| VWO | Speaking **B2**, listening **B2**, writing **B2**; reading **C1** "bij een ruime voldoende" (Cito 2013 standard-setting) | same |
++
++Other points:
++- The 2007 exam programme links havo and vwo to the CEFR, but exam items sit around B2 for vwo and just below B2 for havo ([SLO handreiking schoolexamen](https://www.slo.nl/publish/pages/3038/handreiking-schoolexamen-mvt-duits-engels-frans-havo-vwo.pdf)).
++- **The exam programmes are being renewed.** Definitive draft programmes exist for [havo](https://www.slo.nl/publish/pages/22912/definitief-conceptexamenprogramma-engelse-taal-en-cultuur-havo.pdf), [vwo](https://www.slo.nl/publish/pages/22913/definitief-conceptexamenprogramma-engelse-taal-en-cultuur-vwo.pdf) and [vmbo GL/TL](https://www.slo.nl/publish/pages/22911/definitief-conceptexamenprogramma-engelse-taal-en-cultuur-vmbo-gltl.pdf), each with a CEFR section. An explanatory document was reportedly planned for November 2026, so the official numbers may change.
++- **Per-year (jaar 1–3) targets:** no official per-year CEFR table was found. SLO has "tussendoelen" advice for the lower years ([SLO advies tussendoelen](https://www.slo.nl/publish/pages/3940/advies-tussendoelen-kernvakken-onderbouw-vo.pdf)), and a test provider's table lists onderbouw levels (A2 havo, A2/B1 vwo, A1/A2 vmbo) without clear skill headings ([AMN productinformatie](https://amn.nl/onderwijs/taal-en-rekentoetsen/productinformatie-engels.pdf)). Cambridge's school pages are commercial, not official.
++
++**Comparison with the app's table** (`src/data/cefrTrackYearTargets.ts`, described there as "the school's curriculum benchmark table"):
++
++| Cell in the app | App says | Official end-point per excerpts | Observation |
++|---|---|---|---|
++| jaar-4 VMBO-tl | B1–B2 | A2 target, A2/B1 attained | App looks **higher** |
++| jaar-4 VMBO-bb / kb | A2–B1 | A2 (writing A1) | App's top end is higher |
++| jaar-5 HAVO | B2 | B1 / B1+ (reading B2) | App looks higher except reading |
++| jaar-6 VWO | B2–C1 | B2 (reading C1) | Plausible as a range |
++
++**Suggested next steps:** (1) open the SLO documents above and confirm the figures; (2) decide whether the app should show **per-skill** targets (the official numbers differ by skill, the app has one range); (3) record the source of every cell in the data file; (4) treat the jaar 1–3 cells as the school's own estimates, and say so in the UI.
++
++---
++
++## 1. Placement tests & the staircase
++
++| # | Finding | Status |
++|---|---|---|
++| 1.1 | The rule matches a classic *transformed up-down* staircase. See 1.2. | 🟡 |
++| 1.2 | **Confirmed in the literature.** A rule that makes the level go up after two correct and down after one miss converges on about **70.7% correct** (Levitt 1971). So a student settles where they answer roughly 7 in 10 correctly — higher than a "50/50" level and not the same as "mastered". Sources: [Levitt 1971 summary](https://typeset.io/papers/transformed-up-down-methods-in-psychoacoustics-31x0jr24ab), [lecture notes](https://engineering.purdue.edu/~ece511/LectureNotes/pp12.pdf). The app's docs should say so. | 🟢 |
++| 1.3 | Levitt-style methods estimate the threshold from the **mean of the reversal levels**; the app uses the **final level** instead. No rule on how many reversals or items are enough appeared in the snippets (check Levitt's paper). | 🟡 |
++| 1.4 | No accuracy data can exist without your own pilot. See "Studies you can run" on the agenda. | ⚪ |
++| 1.5–1.7, 1.10–1.12 | Nothing specific found; these need your own item data and expert review. | ⚪ |
++| 1.6 | Dutch school levels differ (A2 expected for havo/vwo year 1–2 vs A1 for vmbo-bb), which supports starting at a level that follows the class — see 4.1. | 🟡 |
++| 1.8 | Pelánek (2016) is the standard review of Elo in education and notes the usual improvement of an **uncertainty function** (smaller steps as an item gathers responses) instead of a fixed K ([paper](https://www.fi.muni.cz/~xpelanek/publications/CAE-elo.pdf)). The app uses a fixed K = 24. A 2026 follow-up says shrinking-K schemes are inadequate in some situations. | 🟢 |
++| 1.9 | Nothing specific found on cut-offs. | ⚪ |
++
++## 2. Grading with rubrics
++
++| # | Finding | Status |
++|---|---|---|
++| 2.1 | Jonsson & Svingby (2007), a review of 75 studies, links more reliable rubric scoring to **analytic criteria, task-specific wording, exemplars and rater training**; validity got less attention. Brookhart & Chen (2015) updated it. See [summary](https://frontiersin.org/journals/education/articles/10.3389/feduc.2018.00022/full). *(Secondary summaries only.)* | 🟢 |
++| 2.4 | **Comparative judgement** often shows higher reliability than rubric marking at similar time cost, but adaptive pairing may **inflate** reliability estimates, and reliability alone doesn't prove validity. See [Cambridge Assessment paper](https://www.cambridgeassessment.org.uk/Images/296241-the-reliability-of-adaptive-comparative-judgment.pdf), [JoWR](https://www.jowr.org/index.php/jowr/article/view/867). | 🟢 |
++| 2.5 | Hattie & Timperley (2007): feedback averages a large effect (0.79) but varies a lot; feedback on the **task, process and self-regulation** helps more than praise about the self. A later re-analysis of 435 studies found a medium effect (d = 0.48) with high variation ([Wisniewski et al. 2020](https://www.frontiersin.org/articles/10.3389/fpsyg.2019.03087/full)). The 2007 summary table has also been criticised. | 🟡 |
++| 2.8 | Peer vs teacher ratings correlate about **.63** on average across 69 studies (Li et al. 2016), ranging roughly .33–.86 depending on context; the effect of anonymity and training needs the full paper ([overview](https://link.springer.com/article/10.1007/s10648-019-09510-3)). | 🟡 |
++| 2.2, 2.3, 2.6, 2.7, 2.9, 2.10 | Not searched in this pass. 2.3 (mark conversion for Dutch VO) and 2.6 (late penalties) are good next targets. | ⚪ |
++
++## 3. Question types & scoring
++
++| # | Finding | Status |
++|---|---|---|
++| 3.1 | Studies on multiple-response scoring generally find **partial-credit rules perform better psychometrically than all-or-nothing**, including Ripkey's rule and balanced rules; the differences are sometimes small. The app's rule (credit for correctly *unselected* options too) is a form of "balanced" scoring but gives a non-zero score to a blank answer — compare it with other rules. See [Psychometrika framework](https://www.cambridge.org/core/journals/psychometrika/article/psychometric-model-framework-for-multiple-response-items/10D6DCD514D67281E4695FFC00C88B6A) and the 2021 EPM paper "Evaluating Different Scoring Methods for Multiple Response Items Providing Partial Credit" (DOI 10.1177/0013164421994636). | 🟢 |
++| 3.6 | The **C-test** (damaged words) is designed around "reduced redundancy" and general proficiency; the **rational-deletion cloze** gives the author control over *content* but is *not* a measure of general proficiency (Grotjahn, quoted). Fixed-ratio cloze results depend on text, deletion rate and starting point. Construct validity of the C-test is still debated, and one study suggests it also reflects processing speed ([overview](https://research.bangor.ac.uk/portal/files/78069213/28Jul2020The_C-test_as_predictor_final_manuscript.pdf)). The app's gap generators should be labelled accordingly. | 🟢 |
++| 3.2–3.5, 3.7–3.11 | Not searched in this pass. | ⚪ |
++
++## 4. CEFR, mastery & learning paths
++
++| # | Finding | Status |
++|---|---|---|
++| 4.1 | See the section at the top. | 🟢 |
++| 4.5 | The app's index is built from open lists; the **CEFR-J wordlist** (Tono) is free for research and commercial use with citation and is based on a different evidence base (textbook corpora) than the Cambridge **English Vocabulary Profile**. Disagreement between lists is expected; a direct EVP–CEFR-J comparison study was not found. Leads: [Tono's appraisal of the EVP](https://www.ceeol.com/search/chapter-detail?id=837579), [CEFR-J data](https://github.com/openlanguageprofiles/olp-en-cefrj). | 🟡 |
++| 4.6 | **Flesch-Kincaid is a rough proxy.** It mostly reflects sentence and word length, was built for native readers, and several studies and a 2025 *SSLA* article question its construct validity for L2 materials. One study found sentence word count the strongest predictor. Use alongside vocabulary profiling. See [Cambridge SSLA article](https://www.cambridge.org/core/services/aop-cambridge-core/content/view/DB604DB02A205F0F172D6024137CBFE8/S0272263125101125a.pdf/aligning-linguistic-complexity-with-the-difficulty-of-english-texts-for-l2-learners-based-on-cefr-levels.pdf). | 🟢 |
++| 4.2–4.4, 4.7–4.11 | Nothing found yet; 4.3 and 4.4 need your data, 4.7 needs a parser-accuracy-on-learner-text study. | ⚪ |
++
++## 5. Flashcards & spaced repetition
++
++| # | Finding | Status |
++|---|---|---|
++| 5.1 | The FSRS scheduler comes from Ye, Su & Cao (KDD 2022), which reports a 12.6% improvement over earlier methods, using data from a language-learning app (MaiMemo) — adult self-study, not classrooms ([paper listing](https://scholar.hit.edu.cn/en/publications/a-stochastic-shortest-path-algorithm-for-optimizing-spaced-repeti/)). No classroom or teenager study found. | 🟡 |
++| 5.2 | The FSRS project provides an "optimal retention" method that balances workload against knowledge ([FSRS wiki](https://github.com/open-spaced-repetition/fsrs4anki/wiki/The-optimal-retention)). Whether 90% is the default needs checking in the library source. | 🟡 |
++| 5.3–5.5 | Not searched. | ⚪ |
++
++## 6. Writing & live writing — not searched in this pass ⚪
++
++(6.1–6.6 are good next targets: timed vs process writing, peer voting and anonymity, leaderboards.)
++
++## 7. Fairness & integrity
++
++| # | Finding | Status |
++|---|---|---|
++| 7.1 | **Read-aloud is contested.** The main worry is that it turns a *reading* test into a *listening* test (Sireci, NAEP review). Evidence is mixed and mostly small studies; some US test consortia banned it for early grades while others allowed it. Human readers vary in quality; computer voices standardise delivery but one tiny study found worse comprehension. The app's choice — teacher enables it per student, and a badge is shown on results — is consistent with the cautious approach. See [Sireci](https://www.nagb.gov/content/dam/nagb/en/documents/publications/conferences/sireci.pdf), [JTLA article](https://ejournals.bc.edu/index.php/jtla/article/download/1660/1496). | 🟢 |
++| 7.2 | **Almost no independent validation exists** for proctoring flags. A preprint says accuracy and false-positive rates of commercial tools haven't been published in peer-reviewed work; vendors' accuracy claims are unsupported; flags are not conclusive proof of cheating, and a stray notification can trigger a tab-switch flag ([preprint](https://www.researchsquare.com/article/rs-10540699)). This supports showing flags as *information for the teacher*, never as a verdict. | 🟢 |
++| 7.3–7.5 | Not searched. | ⚪ |
++
++## 8. Practice with teachers — not searched; best answered by your own pilots ⚪
++
++---
++
++## Suggested next research steps
++
++1. **Read the SLO documents** (4.1) and decide what to do with the table; this is the most actionable finding.
++2. Add the **70.7% convergence** fact and the "final level vs mean of reversals" difference to [Placement testing](Placement-Testing).
++3. Look at the **multiple-response scoring** research and decide whether a blank answer should score above zero (3.1).
++4. Search next: 2.3 (Dutch mark conversion), 2.6 (late penalties), 6.x (live writing), 3.4/3.5 (dictation and key-word scoring), 4.7 (parser accuracy on learner English).
++5. For everything marked ⚪ and the placement accuracy questions, **collect pilot data** — no desk research can replace it.
+diff --git a/_Sidebar.md b/_Sidebar.md
+index 86f8e9b..0835804 100644
+--- a/_Sidebar.md
++++ b/_Sidebar.md
+@@ -30,6 +30,7 @@
+ - [Internationalisation](Internationalisation)
+ - [Contributing](Contributing)
+ - [Research Agenda](Research-Agenda)
++- [Research Findings](Research-Findings)
+ - [Admin Dashboard](Admin-Dashboard)
+ 
+ **Wiki upkeep**
+-- 
+2.43.0
+

@@ -3350,6 +3350,7 @@
         "no_chart_data": "Datos de habilidades insuficientes para un gráfico.",
         "progress_chart_aria_label": "Gráfico de radar de habilidades MCER con puntuaciones medias por habilidad y nivel",
         "track_year_band_title": "Nivel esperado para año/trayectoria",
+        "track_year_band_help": "Un rango indicativo para una clase típica de este curso y esta vía — no una norma oficial. Los niveles oficiales de fin de etapa difieren según la destreza, y los rangos de los cursos 1 a 3 son estimaciones.",
         "track_year_band_no_target": "No hay un nivel esperado configurado para el año escolar/trayectoria de este estudiante.",
         "track_year_band_aria_label": "Rango MCER esperado {{min}} a {{max}}, el estudiante alcanzó {{achieved}}",
         "track_year_band_no_achieved": "sin datos aún",

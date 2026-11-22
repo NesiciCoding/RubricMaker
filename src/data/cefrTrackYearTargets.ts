@@ -12,7 +12,11 @@ const UNIFORM_YEAR_TARGETS: Partial<Record<SchoolYear, CefrSubLevelRange>> = {
 };
 
 /**
- * Expected CEFR range per (year, track), from the school's curriculum benchmark table.
+ * Expected CEFR range per (year, track), from a school curriculum benchmark table whose original source is
+ * not documented. These are indicative ranges, not an official standard: SLO's end-of-programme targets differ
+ * per skill (vmbo roughly A2, havo B1/B1+ with reading B2, vwo B2 with reading C1) and no official per-year
+ * table for years 1–3 was found, so some cells (e.g. jaar-4 vmbo-tl, jaar-5 havo, the year 1–3 rows) sit above
+ * the regular-class figures and may match bilingual-education (TTO) standards. See issue #1266 before changing.
  * groep-7/groep-8 rows apply uniformly across tracks (see SCHOOL_YEAR_HAS_TRACK) via
  * UNIFORM_YEAR_TARGETS. A missing track key for a year means that track doesn't run that
  * year at all (VMBO ends jaar-4, HAVO jaar-5, VWO jaar-6). Range cells ("A1 / A2", "A2 to

@@ -3350,6 +3350,7 @@
         "no_chart_data": "Données de compétences insuffisantes pour le graphique.",
         "progress_chart_aria_label": "Graphique radar des compétences CECR avec scores moyens par compétence et niveau",
         "track_year_band_title": "Niveau attendu pour l'année/filière",
+        "track_year_band_help": "Une fourchette indicative pour une classe type de cette année et de cette filière — pas une norme officielle. Les niveaux officiels de fin de cursus diffèrent selon la compétence, et les fourchettes des années 1 à 3 sont des estimations.",
         "track_year_band_no_target": "Aucun niveau attendu n'est défini pour l'année scolaire/filière de cet élève.",
         "track_year_band_aria_label": "Plage CECR attendue {{min}} à {{max}}, élève a atteint {{achieved}}",
         "track_year_band_no_achieved": "pas encore de données",

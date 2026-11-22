@@ -3350,6 +3350,7 @@
         "no_chart_data": "Nicht genug Kompetenzdaten für ein Diagramm.",
         "progress_chart_aria_label": "GER-Kompetenz-Radar mit Durchschnittswerten je Kompetenz und Niveau",
         "track_year_band_title": "Erwartetes Niveau für Schuljahr/Niveau",
+        "track_year_band_help": "Ein Richtwert für eine typische Klasse in diesem Schuljahr und Bildungsgang — kein offizieller Standard. Die offiziellen Abschlussniveaus unterscheiden sich je Fertigkeit, und die Spannen für die Jahrgänge 1–3 sind Schätzungen.",
         "track_year_band_no_target": "Für das Schuljahr/Niveau dieses Schülers ist kein erwartetes Niveau festgelegt.",
         "track_year_band_aria_label": "Erwarteter GER-Bereich {{min}} bis {{max}}, Schüler erreichte {{achieved}}",
         "track_year_band_no_achieved": "noch keine Daten",

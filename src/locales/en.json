@@ -3350,6 +3350,7 @@
         "no_chart_data": "Not enough skill data for a chart.",
         "progress_chart_aria_label": "CEFR skills radar chart showing average scores per skill and level",
         "track_year_band_title": "Expected level for track/year",
+        "track_year_band_help": "An indicative range for a typical class in this school year and track — not an official standard. Official end-of-programme targets differ per skill, and the ranges for years 1–3 are estimates.",
         "track_year_band_no_target": "No expected level is set for this student's school year/track.",
         "track_year_band_aria_label": "Expected CEFR range {{min}} to {{max}}, student achieved {{achieved}}",
         "track_year_band_no_achieved": "no data yet",
