@@ -139,12 +139,10 @@ scp deploy/nginx-hestiacp.conf \
     rubricmaker@YOUR_VPS_IP:/home/rubricmaker/conf/web/rubricmaker.example.com/nginx.ssl.conf_after
 ```
 
-Then rebuild the Nginx config:
+Then reload Nginx (an `_after` file is a plain include, so this is the only step needed — there is no HestiaCP rebuild command for it):
 
 ```bash
-ssh rubricmaker@YOUR_VPS_IP "sudo hestia-nginx rebuild"
-# or if that command isn't available:
-ssh root@YOUR_VPS_IP "systemctl reload nginx"
+ssh root@YOUR_VPS_IP "nginx -t && systemctl reload nginx"
 ```
 
 > **What the `nginx.ssl.conf_after` file does:** HestiaCP appends `*.conf_after` files to the end of the matching `server {}` block. The file in `deploy/nginx-hestiacp.conf` adds security headers and 1-year cache rules for hashed static assets at the Nginx layer — before Apache even sees the request.
@@ -252,16 +250,16 @@ npm run build
 
 Add these repository secrets in **GitHub → Settings → Secrets and variables → Actions**:
 
-| Secret name            | Value                                                                                           |
-| ---------------------- | ------------------------------------------------------------------------------------------------ |
-| `VITE_SUPABASE_URL`    | Your Supabase project URL (optional)                                                              |
-| `VITE_SUPABASE_ANON_KEY` | Your Supabase anon (public) key (optional)                                                      |
-| `SUPABASE_PUBLIC_URL`  | Public URL of the Supabase API (optional)                                                          |
-| `VPS_HOST`             | Your VPS IP address or hostname                                                                    |
-| `VPS_DOMAIN`           | Your domain, e.g. `rubricmaker.example.com`                                                        |
-| `VPS_DEPLOY_SSH_KEY`   | Private key of the dedicated `rubricmaker` deploy key (see §9.1) — used to SFTP `dist/` (with `.htaccess` copied in) into the web root |
-| `VPS_BACKEND_SSH_KEY`  | Private key of the dedicated `rm-backend-deploy` account (see `docs/SELF_HOSTING_OPS.md` → "Deploying from CI (#935)") — used by the `deploy-backend` job to apply migrations and redeploy edge functions |
-| `VPS_SSH_KEY`          | Private key for **root** access (see §9.1) — used only by the post-deploy migration/function drift check, which needs `docker exec` |
+| Secret name              | Value                                                                                                                                                                                                     |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `VITE_SUPABASE_URL`      | Your Supabase project URL (optional)                                                                                                                                                                      |
+| `VITE_SUPABASE_ANON_KEY` | Your Supabase anon (public) key (optional)                                                                                                                                                                |
+| `SUPABASE_PUBLIC_URL`    | Public URL of the Supabase API (optional)                                                                                                                                                                 |
+| `VPS_HOST`               | Your VPS IP address or hostname                                                                                                                                                                           |
+| `VPS_DOMAIN`             | Your domain, e.g. `rubricmaker.example.com`                                                                                                                                                               |
+| `VPS_DEPLOY_SSH_KEY`     | Private key of the dedicated `rubricmaker` deploy key (see §9.1) — used to SFTP `dist/` (with `.htaccess` copied in) into the web root                                                                    |
+| `VPS_BACKEND_SSH_KEY`    | Private key of the dedicated `rm-backend-deploy` account (see `docs/SELF_HOSTING_OPS.md` → "Deploying from CI (#935)") — used by the `deploy-backend` job to apply migrations and redeploy edge functions |
+| `VPS_SSH_KEY`            | Private key for **root** access (see §9.1) — used only by the post-deploy migration/function drift check, which needs `docker exec`                                                                       |
 
 The file-deploy steps connect as the `rubricmaker` web-domain user itself (over `VPS_DEPLOY_SSH_KEY`), not root (#404); `deploy-backend` connects as `rm-backend-deploy` (over `VPS_BACKEND_SSH_KEY`), also not root (#935); only the drift-check step still uses root. There is no `VPS_USER` secret — the username is written into the workflows directly; see §9 for using a different HestiaCP user.
 
@@ -338,11 +336,11 @@ Open `https://rubricmaker.example.com` in a browser. You should see the RubricMa
 
 Three jobs, all in `.github/workflows/ci.yml`, deploy to the VPS:
 
-| Where                                               | When it runs                                                                                                                                                                                                                                         |
-| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Where                                               | When it runs                                                                                                                                                                                                                                                                             |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `deploy-backend` job in `.github/workflows/ci.yml`  | Automatically on a push to `main`, after **every** CI job passed (type-check, lint, unit tests, all e2e shards, Supabase e2e, the accessibility gate, bundle analysis). Applies pending Supabase migrations and redeploys changed edge functions (#935) before the frontend deploy runs. |
-| `deploy-hestiacp` job in `.github/workflows/ci.yml` | Same gate as `deploy-backend`, plus `deploy-backend` itself succeeding, **and** the push changed app files. Docs- or CI-only pushes skip its file-transfer steps. |
-| `.github/workflows/deploy-hestiacp.yml`             | Manually only (**Actions → Deploy to HestiaCP VPS → Run workflow**), to deploy the frontend without waiting on CI. Does not run `deploy-backend`.                                                                                                    |
+| `deploy-hestiacp` job in `.github/workflows/ci.yml` | Same gate as `deploy-backend`, plus `deploy-backend` itself succeeding, **and** the push changed app files. Docs- or CI-only pushes skip its file-transfer steps.                                                                                                                        |
+| `.github/workflows/deploy-hestiacp.yml`             | Manually only (**Actions → Deploy to HestiaCP VPS → Run workflow**), to deploy the frontend without waiting on CI. Does not run `deploy-backend`.                                                                                                                                        |
 
 All three run in the `production` GitHub environment (add required reviewers there under **Settings → Environments** if you want to approve each deploy). `deploy-backend` is covered in `docs/SELF_HOSTING_OPS.md` → "Migrations and edge functions on the official stack" → "Deploying from CI (#935)". The frontend deploy — `deploy-hestiacp` and its manual counterpart — works like this:
 
