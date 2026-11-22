@@ -3,14 +3,26 @@ import { useTranslation } from 'react-i18next';
 import { computeEssayStats } from '../../utils/essayTextStats';
 import type { TransitionCategory } from '../../types';
 import SentenceLengthChart from './SentenceLengthChart';
+import HelpPopover from '../ui/HelpPopover';
 
 const CATEGORIES: TransitionCategory[] = ['addition', 'contrast', 'cause', 'sequence', 'example', 'conclusion'];
 
-function Stat({ label, value }: { label: string; value: string | number }) {
+function Stat({ label, value, help }: { label: string; value: string | number; help?: string }) {
     return (
         <div style={{ minWidth: 110 }}>
             <div style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text)' }}>{value}</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{label}</div>
+            <div
+                style={{
+                    fontSize: '0.75rem',
+                    color: 'var(--text-muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2,
+                }}
+            >
+                <span>{label}</span>
+                {help && <HelpPopover title={label}>{help}</HelpPopover>}
+            </div>
         </div>
     );
 }
@@ -34,7 +46,11 @@ export default function EssayStatsPanel({ text }: { text: string }) {
                 />
                 {readability && (
                     <>
-                        <Stat label={t('writingStats.fkGrade')} value={readability.fleschKincaidGrade} />
+                        <Stat
+                            label={t('writingStats.fkGrade')}
+                            value={readability.fleschKincaidGrade}
+                            help={t('writingStats.fkGrade_help')}
+                        />
                         <Stat
                             label={`${t('writingStats.fre')} (${t(`writingStats.description.${readability.description}`)})`}
                             value={readability.fleschReadingEase}
