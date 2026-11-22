@@ -1,5 +1,19 @@
 # RubricMaker — Claude Code Guide
 
+Instructions for AI coding agents working in this repo. Also a reasonable map for a human contributor new to the codebase.
+
+- [Project overview](#project-overview)
+- [Commands](#commands)
+- [Tech stack](#tech-stack)
+- [Architecture](#architecture)
+- [Directory structure](#directory-structure)
+- [Key utility modules](#key-utility-modules)
+- [Code conventions](#code-conventions)
+- [CI/CD](#cicd)
+- [Environment variables](#environment-variables)
+- [Deployment](#deployment)
+- [Documentation maintenance](#documentation-maintenance)
+
 ## Project overview
 
 RubricMaker is a rubric and grading application for teachers. It is **self-hostable with full functionality** (Supabase backend for persistence, sync, multi-device and multi-teacher features) and **offline-capable with reduced capabilities**: without a Supabase connection the app still runs from browser `localStorage`, but cloud-dependent features (collaboration, student portal, multi-device access) are unavailable. The app targets static hosting and can also be self-hosted with Docker.
@@ -136,6 +150,51 @@ Pages are lazy-loaded from `src/pages/`. Key routes:
 | `/export`                               | ExportPage              |
 | `/settings`                             | SettingsPage            |
 
+## Directory structure
+
+```
+src/
+  context/        React contexts (state): AppContext, ToastContext, MobileMenuContext
+  store/          localStorage + Supabase persistence wrapper (storage.ts is the single write point)
+  services/       External integrations — services/database/ (Supabase adapters, StorageSync, lazyDb),
+                  services/logging/ (client logger), standardsApi, cambridgeApi, mediaStore
+  utils/          Pure business logic (grade calc, CEFR/placement/mastery aggregation, sync merge, export, etc.)
+  hooks/          Custom React hooks
+  components/     Reusable UI, grouped by domain (CEFR, Editor, Essay, Flashcards, Tests, Vocabulary,
+                  Monitor, Recordings, Standards, Students, Statistics, auth, ui, Modals, Layout, ...)
+  pages/          Route-level page components (lazy-loaded by React Router)
+  data/           Static reference data (CEFR descriptors, templates)
+  types/          Domain model types
+  locales/        i18n JSON files (en, nl, fr, de, es) + a key-parity test
+supabase/
+  migrations/     SQL migrations (numbered, sequential) — see supabase/CLAUDE.md
+  functions/      Edge functions (Deno)
+e2e/
+  specs/          Playwright test specs
+  pages/          Page Object Model classes
+  fixtures/       Shared fixtures, data factories, storage helpers
+```
+
+## Key utility modules
+
+Non-exhaustive — pointers to the modules most likely to matter across files. For the complete, currently-maintained list see README.md's "Key utility modules" table (kept in sync per the documentation-maintenance rule above).
+
+| File                                                                  | Purpose                                                                                                |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `src/utils/gradeCalc.ts`                                              | Score aggregation and weighted scoring engine                                                          |
+| `src/utils/cefrStudentAggregator.ts`                                  | CEFR level computation across assessments                                                              |
+| `src/utils/syncMerge.ts` / `syncDiff.ts`                              | Cloud/local conflict resolution (last-write-wins) and collection diffing — see the Storage rule above  |
+| `src/utils/placementRouting.ts` / `placementResult.ts`                | Placement-test section routing and provisional CEFR estimate                                           |
+| `supabase/functions/_shared/*.ts`                                     | Scoring, placement routing, staircase/Elo, seeded shuffle — shared by client and edge functions        |
+| `src/utils/masteryProfileAggregator.ts` / `learningPathAggregator.ts` | Cross-domain grammar mastery and rule-based (no AI) learning-path recommendations                      |
+| `src/utils/grammarWeightCalibration.ts`                               | Deterministic, gated calibration of the grammar evidence blend (standard 45/35/20 until data is thick) |
+| `src/utils/cefrExpectationCalibration.ts` / `calibrationCohorts.ts`   | Gated ±1 sub-level CEFR expectation calibration and the shared per-(year, track) cohort builder        |
+| `src/utils/globalSearch.ts`                                           | Token-aware (`type:`/`class:`/`year:`/`track:`) app-wide search                                        |
+| `src/utils/docxExport.ts` / `docxTemplateExport.ts` / `pdfExport.ts`  | Export generation (raw and template-styled DOCX, PDF)                                                  |
+| `src/utils/textExtraction.ts`                                         | OCR (Tesseract) + DOCX parsing (Mammoth)                                                               |
+| `src/utils/flashcardScheduler.ts`                                     | Thin `ts-fsrs` wrapper (FSRS spaced repetition)                                                        |
+| `src/services/standardsApi.ts`                                        | Common Standards Project API (CCSS, NGSS)                                                              |
+
 ## Code conventions
 
 ### TypeScript
@@ -188,31 +247,6 @@ Write no comments unless the _why_ is non-obvious. Never describe what the code 
     - Add it as a repository secret: Settings → Secrets and variables → Actions → `AUTO_QUARANTINE_TOKEN`.
     - Behavior: when set, auto-PRs run CI like any normal PR. When unset or expired, the workflow silently falls back to `GITHUB_TOKEN` — the PR is still created but its checks never start; close & reopen it to kick CI. Fine-grained PATs expire (max 1 year), so budget a calendar reminder or the automation will silently stop triggering checks.
 
-## Directory structure
-
-```
-src/
-  context/        React contexts (state): AppContext, ToastContext, MobileMenuContext
-  store/          localStorage + Supabase persistence wrapper (storage.ts is the single write point)
-  services/       External integrations — services/database/ (Supabase adapters, StorageSync, lazyDb),
-                  services/logging/ (client logger), standardsApi, cambridgeApi, mediaStore
-  utils/          Pure business logic (grade calc, CEFR/placement/mastery aggregation, sync merge, export, etc.)
-  hooks/          Custom React hooks
-  components/     Reusable UI, grouped by domain (CEFR, Editor, Essay, Flashcards, Tests, Vocabulary,
-                  Monitor, Recordings, Standards, Students, Statistics, auth, ui, Modals, Layout, ...)
-  pages/          Route-level page components (lazy-loaded by React Router)
-  data/           Static reference data (CEFR descriptors, templates)
-  types/          Domain model types
-  locales/        i18n JSON files (en, nl, fr, de, es) + a key-parity test
-supabase/
-  migrations/     SQL migrations (numbered, sequential) — see supabase/CLAUDE.md
-  functions/      Edge functions (Deno)
-e2e/
-  specs/          Playwright test specs
-  pages/          Page Object Model classes
-  fixtures/       Shared fixtures, data factories, storage helpers
-```
-
 ## Environment variables
 
 ```bash
@@ -259,25 +293,3 @@ The landing page's feature grid targets both teachers and students. Update it wh
 - A feature is removed → remove the corresponding card.
 
 Keep card descriptions short (one sentence, no jargon) and written from the user's perspective.
-
----
-
-## Key utility modules
-
-Non-exhaustive — pointers to the modules most likely to matter across files. For the complete, currently-maintained list see README.md's "Key utility modules" table (kept in sync per the documentation-maintenance rule above).
-
-| File                                                                  | Purpose                                                                                                |
-| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `src/utils/gradeCalc.ts`                                              | Score aggregation and weighted scoring engine                                                          |
-| `src/utils/cefrStudentAggregator.ts`                                  | CEFR level computation across assessments                                                              |
-| `src/utils/syncMerge.ts` / `syncDiff.ts`                              | Cloud/local conflict resolution (last-write-wins) and collection diffing — see the Storage rule above  |
-| `src/utils/placementRouting.ts` / `placementResult.ts`                | Placement-test section routing and provisional CEFR estimate                                           |
-| `supabase/functions/_shared/*.ts`                                     | Scoring, placement routing, staircase/Elo, seeded shuffle — shared by client and edge functions        |
-| `src/utils/masteryProfileAggregator.ts` / `learningPathAggregator.ts` | Cross-domain grammar mastery and rule-based (no AI) learning-path recommendations                      |
-| `src/utils/grammarWeightCalibration.ts`                               | Deterministic, gated calibration of the grammar evidence blend (standard 45/35/20 until data is thick) |
-| `src/utils/cefrExpectationCalibration.ts` / `calibrationCohorts.ts`   | Gated ±1 sub-level CEFR expectation calibration and the shared per-(year, track) cohort builder        |
-| `src/utils/globalSearch.ts`                                           | Token-aware (`type:`/`class:`/`year:`/`track:`) app-wide search                                        |
-| `src/utils/docxExport.ts` / `docxTemplateExport.ts` / `pdfExport.ts`  | Export generation (raw and template-styled DOCX, PDF)                                                  |
-| `src/utils/textExtraction.ts`                                         | OCR (Tesseract) + DOCX parsing (Mammoth)                                                               |
-| `src/utils/flashcardScheduler.ts`                                     | Thin `ts-fsrs` wrapper (FSRS spaced repetition)                                                        |
-| `src/services/standardsApi.ts`                                        | Common Standards Project API (CCSS, NGSS)                                                              |
