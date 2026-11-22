@@ -474,6 +474,33 @@ describe('HelpPopover', () => {
         expect(screen.getByText('Explanation text')).toBeInTheDocument();
     });
 
+    it('opens above the trigger when the space below is clipped', () => {
+        const rect = (top: number, height: number) =>
+            ({
+                top,
+                bottom: top + height,
+                left: 0,
+                right: 100,
+                width: 100,
+                height,
+                x: 0,
+                y: top,
+                toJSON: () => ({}),
+            }) as DOMRect;
+        const spy = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+            this: HTMLElement
+        ) {
+            return this.tagName === 'BUTTON' ? rect(window.innerHeight - 60, 44) : rect(window.innerHeight - 40, 200);
+        });
+        try {
+            render(<HelpPopover title="Help title">Explanation text</HelpPopover>);
+            fireEvent.click(screen.getByLabelText('Help title'));
+            expect(screen.getByRole('tooltip').style.bottom).toBe('100%');
+        } finally {
+            spy.mockRestore();
+        }
+    });
+
     it('closes the tooltip when clicking outside', () => {
         render(<HelpPopover title="Help title">Content</HelpPopover>);
         fireEvent.click(screen.getByLabelText('Help title'));

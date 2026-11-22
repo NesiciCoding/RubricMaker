@@ -638,6 +638,8 @@ h3 {
 }
 
 .btn-sm {
+    /* 2.5.5: the small variant keeps its compact type but must still be a 44 px target. */
+    min-height: 44px;
     padding: 5px 11px;
     font-size: 0.8rem;
 }
@@ -651,6 +653,12 @@ h3 {
     padding: 7px;
     min-width: 24px;
     min-height: 24px;
+}
+
+/* Two classes beat .btn-icon's single class, so its 24 px minimum cannot reach the icon-and-small
+   combination; the source order of these two rules plays no part. */
+.btn-icon.btn-sm {
+    min-height: 44px;
 }
 
 .btn:disabled,
@@ -1835,6 +1843,8 @@ select.input-error {
 .level-btn-select {
     display: block;
     width: 100%;
+    /* 44px AAA target (2.5.5); the header's own content is ~43px tall. */
+    min-height: 44px;
     padding: 0;
     margin: 0;
     border: none;
@@ -3216,4 +3226,21 @@ label.sub-item-check {
 .column-resizer:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
+}
+
+/* A menu button that only touch screens need: a mouse user right-clicks, a finger has no such gesture. */
+.menu-touch-only {
+    display: none;
+}
+
+@media (pointer: coarse) {
+    .menu-touch-only {
+        display: inline-flex;
+    }
+}
+
+/* Long-press opens the app's own menu on touch screens, so the browser's callout must not compete.
+   Only opted-in surfaces: text outside them stays selectable. */
+[data-longpress] {
+    -webkit-touch-callout: none;
 }

@@ -198,8 +198,9 @@ describe('badge labels stay AAA on their own tint', () => {
 describe('data colours used as text are mixed with the body colour', () => {
     // CEFR level colours and a school's own grade colours live in data, not in the palette, so they
     // cannot have a per-theme token. `textOnTheme` mixes them with --text, which darkens them on the
-    // light palette and lightens them on the dark one; this replays the browser's blend.
-    const MIX_PERCENT = 35;
+    // light palette and lightens them on the dark one; this replays the browser's blend. Keep this in
+    // sync with the helper's default weight.
+    const MIX_PERCENT = 25;
 
     function mixedOverText(color: string, bodyText: string): string {
         const from = parseHex(color);
@@ -209,6 +210,26 @@ describe('data colours used as text are mixed with the body colour', () => {
                 .toString(16)
                 .padStart(2, '0');
         return `#${channel(from.r, to.r)}${channel(from.g, to.g)}${channel(from.b, to.b)}`;
+    }
+
+    // The weakest app-owned data colour: amber is used for the "developing" mastery band, the vmbo-kb
+    // voTrack, Bloom's "apply" level and grammar standards. At 35% it landed at 6.83:1 on the body
+    // background, which is why the helper mixes a quarter instead of a third.
+    const DATA_TEXT_COLORS = { 'amber developing band': '#eab308' };
+
+    for (const [name, color] of Object.entries(DATA_TEXT_COLORS)) {
+        for (const theme of ['dark', 'light'] as const) {
+            it(`${name} as text (${theme})`, () => {
+                const palette = themeTokens(theme);
+                const text = mixedOverText(color, palette.text);
+                expect(
+                    worstContrast(
+                        text,
+                        SURFACES.map((surface) => palette[surface])
+                    )
+                ).toBeGreaterThanOrEqual(AAA_NORMAL);
+            });
+        }
     }
 
     for (const [level, color] of Object.entries(CEFR_LEVEL_COLORS)) {

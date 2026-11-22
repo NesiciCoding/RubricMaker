@@ -1,6 +1,6 @@
 # Wiki update patches (2026-11-19)
 
-These four patches update the GitHub wiki (`RubricMaker.wiki`). They were prepared in a session that could not push to the wiki, so they are applied by hand. Apply them in order; they touch only Markdown.
+These four patches (checked 2026-11-22: the wiki is still at 4a22e43, so they apply cleanly) update the GitHub wiki (`RubricMaker.wiki`). They were prepared in a session that could not push to the wiki, so they are applied by hand. Apply them in order; they touch only Markdown.
 
 ```bash
 # 1. Clone the wiki (a separate repo)
@@ -23,6 +23,6 @@ What the patches do:
 1. Audit fixes (sharing model, migration count, FSRS version, Live Writing), `Features` split into short overview + deep-dive articles, one article per question type, Placement testing, Live Writing, Sharing & Co-teaching, Admin Dashboard, Research Agenda.
 2. Adds the _Research Findings_ page.
 3. Second research pass: other Dutch CEFR sources, more findings.
-4. Reflects the new select-all / hot-text scoring rule and the staircase explanation.
+4. Reflects the blank-answer scoring rule (#1280) and the staircase explanation (#1286).
 
 After pushing, delete this folder (the patches are no longer needed). Tracking issues: #1266 (deviations) and #1268 (unresearched questions).

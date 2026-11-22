@@ -349,6 +349,11 @@ function resetFixtures() {
     mockAppValue.studentTests = studentTestsArr;
 }
 
+function chooseRowAction(row: HTMLElement, label: string) {
+    fireEvent.click(within(row).getByRole('button', { name: 'studentsPage.row_menu_label' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: label }));
+}
+
 describe('StudentsPage extended', () => {
     beforeEach(async () => {
         vi.clearAllMocks();
@@ -503,7 +508,7 @@ describe('StudentsPage extended', () => {
 
     it('generates a single student password slip on success without toast', async () => {
         renderPage();
-        fireEvent.click(screen.getByLabelText('studentsPage.action_generate_password'));
+        chooseRowAction(document.querySelector('tbody tr') as HTMLElement, 'studentsPage.action_generate_password');
         await waitFor(() => expect(screen.getByTestId('password-slip-sheet')).toBeInTheDocument());
         expect(h.setPassword).toHaveBeenCalledWith('alice@example.com', expect.any(String));
         expect(h.showToast).not.toHaveBeenCalled();
@@ -534,7 +539,7 @@ describe('StudentsPage extended', () => {
         renderPage();
         const rows = screen.getAllByRole('row');
         const aliceRow = rows.find((r) => within(r).queryByText('Alice'))!;
-        fireEvent.click(within(aliceRow).getByTitle('studentsPage.action_copy_summary'));
+        chooseRowAction(aliceRow, 'studentsPage.action_copy_summary');
         const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
         const value = (textarea as HTMLTextAreaElement).value;
         expect(value).toContain('Rubric: Essay Rubric');
@@ -556,7 +561,7 @@ describe('StudentsPage extended', () => {
         // Frank (s6) has only a dangling rubric reference.
         const rows = screen.getAllByRole('row');
         const frankRow = rows.find((r) => within(r).queryByText('Frank'))!;
-        fireEvent.click(within(frankRow).getByTitle('studentsPage.action_copy_summary'));
+        chooseRowAction(frankRow, 'studentsPage.action_copy_summary');
         const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
         expect(textarea.value).toContain('(No graded rubrics yet)');
     });
@@ -567,7 +572,7 @@ describe('StudentsPage extended', () => {
         fireEvent.click(screen.getByText('studentsPage.all_cohorts'));
         const rows = screen.getAllByRole('row');
         const carolRow = rows.find((r) => within(r).queryByText('Carol'))!;
-        fireEvent.click(within(carolRow).getByTitle('studentsPage.action_copy_summary'));
+        chooseRowAction(carolRow, 'studentsPage.action_copy_summary');
         const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
         expect(textarea.value).toContain('Content: 0/4 pts');
         expect(textarea.value).not.toContain('→ ');
@@ -577,7 +582,7 @@ describe('StudentsPage extended', () => {
         renderPage();
         const rows = screen.getAllByRole('row');
         const aliceRow = rows.find((r) => within(r).queryByText('Alice'))!;
-        fireEvent.click(within(aliceRow).getByLabelText('studentsPage.action_edit_student'));
+        chooseRowAction(aliceRow, 'studentsPage.action_edit_student');
         expect(screen.getByText('studentsPage.edit_student_title')).toBeInTheDocument();
         // Move Alice into Class E (two tracks, one year) → the track select offers exactly its own tracks.
         const classSelect = screen.getByLabelText('studentsPage.form_class');
@@ -598,11 +603,33 @@ describe('StudentsPage extended', () => {
         );
     });
 
+    it('opens the same student menu from a right-click and from the visible button', () => {
+        renderPage();
+        const aliceRow = screen.getAllByRole('row').find((r) => within(r).queryByText('Alice'))!;
+
+        fireEvent.contextMenu(aliceRow);
+        const names = (): string[] => screen.getAllByRole('menuitem').map((el) => el.textContent ?? '');
+        const viaRightClick = names();
+        expect(viaRightClick).toContain('studentsPage.action_edit_student');
+        expect(viaRightClick).toContain('studentsPage.action_delete_student');
+        fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
+
+        fireEvent.click(within(aliceRow).getByRole('button', { name: 'studentsPage.row_menu_label' }));
+        expect(names()).toEqual(viaRightClick);
+    });
+
+    it('keeps the grade and profile controls on the row now that the other actions sit in the menu', () => {
+        renderPage();
+        const aliceRow = screen.getAllByRole('row').find((r) => within(r).queryByText('Alice'))!;
+        expect(within(aliceRow).queryByLabelText('studentsPage.action_edit_student')).not.toBeInTheDocument();
+        expect(within(aliceRow).getByTitle('studentsPage.view_profile')).toBeInTheDocument();
+    });
+
     it("opens a co-taught class's student read-only so the owner-only write never reaches the queue", () => {
         coTaughtClassIds.add('c1');
         renderPage();
         const aliceRow = screen.getAllByRole('row').find((r) => within(r).queryByText('Alice'))!;
-        fireEvent.click(within(aliceRow).getByLabelText('studentsPage.action_edit_student'));
+        chooseRowAction(aliceRow, 'studentsPage.action_edit_student');
         expect(screen.getByRole('note')).toHaveTextContent('studentsPage.roster_read_only_notice');
         expect(screen.getByLabelText('studentsPage.form_full_name')).toBeDisabled();
         expect(screen.getByLabelText('studentsPage.form_class')).toBeDisabled();
@@ -614,7 +641,7 @@ describe('StudentsPage extended', () => {
         renderPage();
         fireEvent.click(screen.getByText('studentsPage.all_cohorts'));
         const saraRow = screen.getAllByRole('row').find((r) => within(r).queryByText('Sara'))!;
-        fireEvent.click(within(saraRow).getByLabelText('studentsPage.action_edit_student'));
+        chooseRowAction(saraRow, 'studentsPage.action_edit_student');
         const yearSelect = screen.getByLabelText('studentsPage.form_school_year') as HTMLSelectElement;
         // Only the class's own years (groep 7 & 8) are offered, seeded with Sara's own tag.
         expect([...yearSelect.options].map((o) => o.value)).toEqual(['', 'groep-7', 'groep-8']);
@@ -654,7 +681,7 @@ describe('StudentsPage extended', () => {
         renderPage();
         const rows = screen.getAllByRole('row');
         const danaRow = rows.find((r) => within(r).queryByText('Dana'))!;
-        fireEvent.click(within(danaRow).getByLabelText('studentsPage.action_edit_student'));
+        chooseRowAction(danaRow, 'studentsPage.action_edit_student');
         const emailInput = screen.getByPlaceholderText('studentsPage.form_email_placeholder') as HTMLInputElement;
         expect(emailInput.value).toBe('');
         fireEvent.change(screen.getByLabelText('studentsPage.form_full_name'), { target: { value: 'Dana D' } });
@@ -668,7 +695,7 @@ describe('StudentsPage extended', () => {
         fireEvent.click(screen.getByText('studentsPage.all_cohorts'));
         const rows = screen.getAllByRole('row');
         const bobRow = rows.find((r) => within(r).queryByText('Bob'))!;
-        fireEvent.click(within(bobRow).getByLabelText('studentsPage.action_edit_student'));
+        chooseRowAction(bobRow, 'studentsPage.action_edit_student');
         // Bob's class c2 has voTrack → adjacent track options render.
         expect(screen.getByText('voTrack.section_label')).toBeInTheDocument();
         fireEvent.change(screen.getByLabelText('studentsPage.form_full_name'), { target: { value: 'Bob B' } });
@@ -724,7 +751,7 @@ describe('StudentsPage extended', () => {
     it('does not flag the student being edited as their own duplicate (#668)', () => {
         renderPage();
         const aliceRow = screen.getAllByRole('row').find((r) => within(r).queryByText('Alice'))!;
-        fireEvent.click(within(aliceRow).getByLabelText('studentsPage.action_edit_student'));
+        chooseRowAction(aliceRow, 'studentsPage.action_edit_student');
         expect(screen.queryByText(/studentsPage\.form_duplicate_warning/)).not.toBeInTheDocument();
     });
 
@@ -988,7 +1015,7 @@ describe('StudentsPage extended', () => {
         renderPage();
         const rows = screen.getAllByRole('row');
         const aliceRow = rows.find((r) => within(r).queryByText('Alice'))!;
-        fireEvent.click(within(aliceRow).getByLabelText('studentsPage.action_delete_student'));
+        chooseRowAction(aliceRow, 'studentsPage.action_delete_student');
         expect(screen.getByText('Delete Student')).toBeInTheDocument();
         expect(screen.getByText('Warning:')).toBeInTheDocument();
         expect(screen.getByText(/This will permanently delete all grades/)).toBeInTheDocument();
@@ -1014,7 +1041,7 @@ describe('StudentsPage extended', () => {
         renderPage();
         const rows = screen.getAllByRole('row');
         const graceRow = rows.find((r) => within(r).queryByText('Grace'))!;
-        fireEvent.click(within(graceRow).getByTitle('studentsPage.action_copy_summary'));
+        chooseRowAction(graceRow, 'studentsPage.action_copy_summary');
         const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
         expect(textarea.value).toContain('Rubric: Old Rubric');
         expect(textarea.value).toContain('Score: 100.0% (A) — 4/4 pts');
@@ -1082,21 +1109,21 @@ describe('StudentsPage extended', () => {
 
         // Delete-student modal: overlay, ✕, cancel.
         const aliceRow = screen.getAllByRole('row').find((r) => within(r).queryByText('Alice'))!;
-        fireEvent.click(within(aliceRow).getByLabelText('studentsPage.action_delete_student'));
+        chooseRowAction(aliceRow, 'studentsPage.action_delete_student');
         fireEvent.keyDown(document.body, { key: 'Escape' });
         expect(screen.queryByText('studentsPage.delete_student_title')).not.toBeInTheDocument();
-        fireEvent.click(within(aliceRow).getByLabelText('studentsPage.action_delete_student'));
+        chooseRowAction(aliceRow, 'studentsPage.action_delete_student');
         fireEvent.click(screen.getAllByText('✕')[0]);
         expect(screen.queryByText('studentsPage.delete_student_title')).not.toBeInTheDocument();
-        fireEvent.click(within(aliceRow).getByLabelText('studentsPage.action_delete_student'));
+        chooseRowAction(aliceRow, 'studentsPage.action_delete_student');
         fireEvent.click(screen.getByText('common.cancel'));
         expect(screen.queryByText('studentsPage.delete_student_title')).not.toBeInTheDocument();
 
         // Summary modal: overlay + ✕.
-        fireEvent.click(within(aliceRow).getByTitle('studentsPage.action_copy_summary'));
+        chooseRowAction(aliceRow, 'studentsPage.action_copy_summary');
         fireEvent.keyDown(document.body, { key: 'Escape' });
         expect(document.querySelector('textarea')).not.toBeInTheDocument();
-        fireEvent.click(within(aliceRow).getByTitle('studentsPage.action_copy_summary'));
+        chooseRowAction(aliceRow, 'studentsPage.action_copy_summary');
         fireEvent.click(screen.getAllByText('✕')[0]);
         expect(document.querySelector('textarea')).not.toBeInTheDocument();
 

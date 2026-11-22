@@ -7,7 +7,7 @@ import { importScanFiles } from '../../utils/scanImport';
 import { fileToDataUrl } from '../../utils/fileToDataUrl';
 import { createOcrSession, type OcrResult, type OcrWord } from '../../utils/textExtraction';
 import { OcrUnavailableError } from '../../utils/ocrErrors';
-import { logEvent } from '../../services/logging/clientLogger';
+import { logError } from '../../services/logging/clientLogger';
 import { confidenceBand, lowConfidenceWords, type ConfidenceBand } from '../../utils/ocrReview';
 import type { CaptureHint } from '../../utils/ocrConfig';
 
@@ -86,12 +86,11 @@ export default function ScanCaptureModal({ defaultLang, userWords, onInsert, onC
                 if (err instanceof OcrUnavailableError) {
                     setErrorMsg(t('scan.error_engine_unavailable'));
                 } else {
-                    const message = err instanceof Error ? err.message : String(err);
-                    // logEvent is a no-op unless stress-test logging is enabled, so also surface the
+                    // The logger is a no-op unless a logging build flag is set, so also surface the
                     // failure on the console: the modal only shows generic text, leaving this as the
                     // one record of an unexpected OCR failure when that logging is off.
                     console.error('[ScanCaptureModal] OCR failed', err);
-                    logEvent('error', 'scan_ocr_failed', { message }, 'error');
+                    logError('scan_ocr_failed', err);
                     setErrorMsg(t('scan.error_generic'));
                 }
                 setPhase('error');

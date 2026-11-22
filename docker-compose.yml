@@ -103,7 +103,7 @@ services:
       GOTRUE_MAILER_TEMPLATES_INVITE: "http://app/email-templates/invite.html"
       GOTRUE_MAILER_TEMPLATES_EMAIL_CHANGE: "http://app/email-templates/email-change.html"
       GOTRUE_MAILER_TEMPLATES_REAUTHENTICATION: "http://app/email-templates/reauthentication.html"
-      GOTRUE_MAILER_SUBJECTS_CONFIRMATION: "Je RubricMaker-aanmeldcode / Your RubricMaker sign-up code"
+      GOTRUE_MAILER_SUBJECTS_CONFIRMATION: "Je RubricMaker-inlogcode / Your RubricMaker sign-in code"
       GOTRUE_MAILER_SUBJECTS_MAGIC_LINK: "Je RubricMaker-inlogcode / Your RubricMaker sign-in code"
       GOTRUE_MAILER_SUBJECTS_RECOVERY: "Je RubricMaker-herstelcode / Your RubricMaker recovery code"
       GOTRUE_MAILER_SUBJECTS_INVITE: "Uitnodiging voor RubricMaker / You've been invited to RubricMaker"
@@ -183,6 +183,7 @@ services:
         VITE_SUPABASE_ANON_KEY: "${ANON_KEY:?Run scripts/generate-docker-secrets.sh to create .env}"
         # Enables the client_logs diagnostic stream for a stress-test window — see .env.docker.example
         VITE_STRESS_TEST_LOGGING: "${VITE_STRESS_TEST_LOGGING:-}"
+        VITE_ERROR_REPORTING: "${VITE_ERROR_REPORTING:-}"
     ports:
       - "8080:80"
     volumes:

@@ -208,6 +208,12 @@ export default function PrivacyPage({ studentPortalPath }: { studentPortalPath?:
                             .
                         </p>
                     </div>
+                    <div style={{ background: 'var(--bg-elevated)', borderRadius: 8, padding: '12px 16px' }}>
+                        <div style={{ fontWeight: 600, marginBottom: 4 }}>{t('privacy.errors_title')}</div>
+                        <p className="text-sm text-muted" style={{ margin: 0 }}>
+                            {t('privacy.errors_body')}
+                        </p>
+                    </div>
                 </div>
             </div>
 

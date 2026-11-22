@@ -10647,6 +10647,155 @@ AS $$
     ('students',                  'students',                  'id = $1',                                                                                  'owner_id = $2')
 $$;
 
+-- ── 106_scheduled_digest_pg_net_timeout.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 106: give the nightly digest's pg_net call a realistic timeout.
+--
+-- net.http_post cancels its request after `timeout_milliseconds`, which defaults to 5000.
+-- On expiry pg_net writes a row to net._http_response with an empty status_code,
+-- timed_out = true and an "Timeout of … ms reached" error_msg, while the edge function keeps
+-- running server-side. So the digest still sends its email, but the run is counted as a
+-- failed HTTP call by monitoring.failed_jobs() (migration 091) and the "Scheduled HTTP call
+-- failed" alert fires every morning the digest had something to deliver: SMTP sends are
+-- synchronous and are followed by the heartbeat ping, which routinely takes longer than
+-- five seconds. Re-schedule the job with a two-minute budget.
+--
+-- The job also fails loudly in cron.job_run_details (with a message naming the missing
+-- setting) when app.settings.project_url / app.settings.service_role_key are unset, instead
+-- of sending "Bearer null" and showing up only as a 401 in net._http_response.
+
+select cron.schedule(
+  'teacher-email-digest',
+  '0 6 * * *',
+  $job$
+    do $digest$
+    declare
+      project_url text := nullif(current_setting('app.settings.project_url', true), '');
+      service_key text := nullif(current_setting('app.settings.service_role_key', true), '');
+    begin
+      if project_url is null or service_key is null then
+        raise exception 'teacher-email-digest: set app.settings.project_url and app.settings.service_role_key (docs/SELF_HOSTING_OPS.md -> Teacher email digest job)';
+      end if;
+      perform net.http_post(
+        url := project_url || '/functions/v1/scheduled-digest',
+        headers := jsonb_build_object(
+          'Authorization', 'Bearer ' || service_key,
+          'Content-Type', 'application/json'
+        ),
+        body := '{}'::jsonb,
+        timeout_milliseconds := 120000
+      );
+    end
+    $digest$;
+  $job$
+);
+
+-- ── 107_teacher_email_allowlist.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 107: only staff addresses may start as 'teacher'.
+--
+-- handle_new_user() (latest: 092-era bootstrap) gave role='teacher' to every sign-up that was not
+-- anonymous and not on a teacher's roster, so any student at a school whose address the teacher had
+-- not imported became a teacher. Teacher is now granted only when the email passes
+-- site_config 'teacher_email_rules':
+--   {"domains": ["academie-tien.nl"], "blockNumericLocalPart": true}
+-- Everyone else starts as 'student' (no data access until a roster row matches their verified
+-- email); an admin can still promote anybody by hand. With no rules row the old behaviour is kept,
+-- so self-hosted deployments that do not set the key are unaffected.
+
+CREATE OR REPLACE FUNCTION public.is_teacher_email(p_email text)
+RETURNS boolean
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_rules   jsonb;
+  v_email   text := lower(btrim(p_email));
+  v_local   text;
+  v_domain  text;
+BEGIN
+  SELECT value INTO v_rules FROM public.site_config WHERE key = 'teacher_email_rules';
+  IF v_rules IS NULL THEN
+    RETURN true;
+  END IF;
+
+  IF v_email IS NULL OR position('@' IN v_email) = 0 THEN
+    RETURN false;
+  END IF;
+
+  v_local  := split_part(v_email, '@', 1);
+  v_domain := split_part(v_email, '@', 2);
+
+  IF NOT EXISTS (
+    SELECT 1 FROM jsonb_array_elements_text(coalesce(v_rules->'domains', '[]'::jsonb)) d
+    WHERE lower(btrim(d)) = v_domain
+  ) THEN
+    RETURN false;
+  END IF;
+
+  IF coalesce((v_rules->>'blockNumericLocalPart')::boolean, true) AND v_local ~ '^[0-9]' THEN
+    RETURN false;
+  END IF;
+
+  RETURN true;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.is_teacher_email(text) FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_role TEXT;
+  v_name TEXT;
+BEGIN
+  v_name := COALESCE(
+    NULLIF(TRIM(new.raw_user_meta_data->>'full_name'), ''),
+    NULLIF(TRIM(new.raw_user_meta_data->>'name'), ''),
+    new.email
+  );
+
+  IF new.is_anonymous THEN
+    v_role := 'student';
+
+  ELSIF new.email IS NOT NULL AND EXISTS (
+    SELECT 1
+    FROM public.students s
+    JOIN public.profiles owner_p ON owner_p.id = s.owner_id
+    WHERE s.data->>'email' IS NOT NULL
+      AND lower(s.data->>'email') = lower(new.email)
+      AND owner_p.role IN ('teacher', 'admin')
+  ) THEN
+    v_role := 'student';
+
+  ELSE
+    PERFORM pg_advisory_xact_lock(hashtext('public.handle_new_user:first_admin'));
+
+    SELECT CASE
+      WHEN NOT EXISTS (
+        SELECT 1 FROM public.profiles WHERE NOT (role = 'student' AND email IS NULL) LIMIT 1
+      ) THEN 'admin'
+      WHEN public.is_teacher_email(new.email) THEN 'teacher'
+      ELSE 'student'
+    END INTO v_role;
+  END IF;
+
+  INSERT INTO public.profiles (id, email, display_name, role)
+  VALUES (new.id, new.email, v_name, v_role)
+  ON CONFLICT (id) DO NOTHING;
+
+  RETURN new;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM PUBLIC, anon, authenticated;
+
 -- ── 20260617093844_delete_old_attachments_fn.sql ──────────────────────────────────────────────────────────────
 
 -- Returns attachments whose updated_at has passed the owner's school retention
@@ -10791,5 +10940,7 @@ insert into public._migrations (name) values
     ('103_live_writing_self_check_peer_voting.sql'),
     ('104_live_writing_finals_insights_grading.sql'),
     ('105_live_draft_snapshots.sql'),
+    ('106_scheduled_digest_pg_net_timeout.sql'),
+    ('107_teacher_email_allowlist.sql'),
     ('20260617093844_delete_old_attachments_fn.sql')
 on conflict (name) do nothing;

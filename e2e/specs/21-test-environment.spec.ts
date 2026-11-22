@@ -39,6 +39,11 @@ test.describe('Testing environment — full lifecycle (offline)', () => {
         seedStorage: (d: Record<string, unknown>) => Promise<void>;
         browser: Browser;
     }) => {
+        // One test walks the whole lifecycle (build, assign, a cold student context, import, grade,
+        // adjust, two reloads) against the unbundled dev server. It needs ~12s idle in chromium but
+        // ~30s on a CI runner in webkit, which is exactly the default test timeout, so it passed or
+        // failed on a coin flip at whichever step the clock ran out.
+        test.setTimeout(90_000);
         const klass: Class = buildClass({ name: 'E2E Class' });
         const student: Student = buildStudent(klass.id, { name: 'Eva Example' });
         await seedStorage({ rm_classes: [klass], rm_students: [student] });

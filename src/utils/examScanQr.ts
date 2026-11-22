@@ -14,6 +14,8 @@ export interface AnswerSheetQrIdentity {
     studentId?: string;
     /** Total printed pages of this student's sheet, when the export recorded it. */
     pages?: number;
+    /** Easier-cloze family members the printed paper carries (see answerSheetQrPayload). */
+    variantIds?: string[];
 }
 
 /** Raw QR text from an RGBA image, or null when there is no readable code. */
@@ -44,6 +46,9 @@ export function parseAnswerSheetQr(raw: string | null | undefined): AnswerSheetQ
     if (typeof payload.studentId === 'string' && payload.studentId) identity.studentId = payload.studentId;
     if (typeof payload.pages === 'number' && Number.isFinite(payload.pages) && payload.pages > 0) {
         identity.pages = Math.floor(payload.pages);
+    }
+    if (Array.isArray(payload.variants) && payload.variants.every((v) => typeof v === 'string')) {
+        if (payload.variants.length > 0) identity.variantIds = payload.variants as string[];
     }
     return identity;
 }

@@ -406,7 +406,7 @@ SELECT * FROM cron.job_run_details ORDER BY start_time DESC LIMIT 10;
 
 ### Diagnostic log cleanup (`client-logs-cleanup`)
 
-Migration `089_client_logs_bounds.sql` schedules `client-logs-cleanup` at 03:35 every night. It deletes `client_logs` rows (the stress-test diagnostics written when the client build sets `VITE_STRESS_TEST_LOGGING=true`) older than 30 days. The same migration adds a size check that rejects oversized rows. The client logger clamps its fields to fit, so normal logging never hits the limit.
+Migration `089_client_logs_bounds.sql` schedules `client-logs-cleanup` at 03:35 every night. It deletes `client_logs` rows (the stress-test diagnostics written when the client build sets `VITE_STRESS_TEST_LOGGING=true`, and the errors-only reports written with `VITE_ERROR_REPORTING=true`, see `docs/ERROR_REPORTING.md`) older than 30 days. The same migration adds a size check that rejects oversized rows. The client logger clamps its fields to fit, so normal logging never hits the limit.
 
 ### Teacher email digest job (`scheduled-digest`)
 
@@ -420,11 +420,31 @@ Migration `059_scheduled_digest.sql` schedules a `teacher-email-digest` cron job
     ALTER DATABASE postgres SET app.settings.service_role_key = '<service-role-key>';
     ```
 
-    Until both are set, `current_setting(..., true)` returns `NULL` and the job's `net.http_post` calls fail silently — check `cron.job_run_details` for the `teacher-email-digest` jobname to confirm it's actually reaching the function.
+    Until both are set, the job raises in `cron.job_run_details` (visible as a failed `teacher-email-digest` run, with the missing setting named in `return_message`) instead of calling the function with a bogus bearer token. Migration `106` replaced the original silent version.
+
+    The job gives its `net.http_post` a **two-minute** budget (`timeout_milliseconds := 120000`, migration `106`). `net.http_post` cancels the request after that window and records a `timed_out` failure in `net._http_response`, while the function itself keeps running — the default 5 seconds was shorter than a digest run that actually sends mail (synchronous SMTP sends plus the heartbeat ping), so the "Scheduled HTTP call failed" alert used to fire every morning a digest went out.
 
 3. **The `scheduled-digest` function deployed** — same deploy step as `nightly-backup` (copy `index.ts` into the official self-hosted stack's `volumes/functions/scheduled-digest/index.ts`, or deploy via Cloud).
 
 The job only emails teachers who opted in via Settings → Email Digest (`digestEmailEnabled`); it's a no-op for everyone else.
+
+**"Scheduled HTTP call failed" e-mails every morning.** Confirm which call failed before touching anything (run this soon after the alert — pg_net prunes responses after `pg_net.ttl`, 6 hours by default):
+
+```sql
+SELECT created, status_code, timed_out, error_msg, left(content, 300) AS body
+FROM net._http_response
+ORDER BY created DESC
+LIMIT 10;
+```
+
+| Row                                                                | Meaning                                                                                                                                                                                                 |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| empty `status_code`, `timed_out = true`, "Timeout of … ms reached" | pg_net gave up waiting (default 5 s, migration `106` sets 120 s). The function usually finished anyway, so teachers did get their digest; if it still times out at 120 s the run is genuinely too slow. |
+| `status_code` 401                                                  | `app.settings.service_role_key` is not this project's current service-role key (rotated, or copied from another deployment). Re-run the `ALTER DATABASE … SET app.settings.service_role_key` above.     |
+| `status_code` 500, body `"SMTP is not configured"`                 | The edge-runtime container has no `SMTP_*` variables (see `deploy/supabase/docker-compose.override.yml`).                                                                                               |
+| `status_code` 500, body `"Server misconfigured"`                   | The function container has no `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`.                                                                                                                             |
+
+A run can also be recorded as a _success_ while individual teachers failed to receive their mail: the function returns 200 with an `errors` array and skips its heartbeat ping, so the missing dead-man's-switch ping (not this alert) is what reports partial delivery failures.
 
 ---
 

@@ -1792,6 +1792,7 @@ export default function StatisticsPage() {
                                                                     <input
                                                                         type="color"
                                                                         value={color}
+                                                                        aria-label={`${t(preset.titleKey)} — ${t('statistics.custom_views_color_label')}`}
                                                                         title={t('statistics.custom_views_color_label')}
                                                                         onChange={(e) =>
                                                                             updateSettings({

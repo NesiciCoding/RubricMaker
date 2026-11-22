@@ -21,6 +21,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { autoScoreResponse, isAutoScorable, type ScorableQuestion } from '../_shared/testScoring.ts';
 import { recomputeSectionPath, sectionPathsMatch } from '../_shared/placementRouting.ts';
+import { deliveredQuestions, deliveredVariantIds } from '../_shared/variantDelivery.ts';
 import {
     DEFAULT_ELO_RATING,
     LEVEL_TO_ELO,
@@ -53,6 +54,7 @@ function json(body: unknown, status = 200) {
 interface MinimalQuestion extends ScorableQuestion {
     id: string;
     sectionId?: string;
+    variantOfQuestionId?: string;
     eloRating?: number;
 }
 interface MinimalSection {
@@ -116,6 +118,7 @@ serve(async (req) => {
         events?: unknown[];
         sectionPath?: string[];
         levelPath?: { sectionId: string; level: string; questionId: string; correct: boolean }[];
+        testVersion?: string;
     };
     try {
         body = await req.json();
@@ -129,7 +132,8 @@ serve(async (req) => {
         return json({ error: 'Invalid request body' }, 400);
     }
 
-    const { assignmentId, submissionId, answers, startedAt, submittedAt, events, sectionPath, levelPath } = body;
+    const { assignmentId, submissionId, answers, startedAt, submittedAt, events, sectionPath, levelPath, testVersion } =
+        body;
     if (
         !assignmentId ||
         !submissionId ||
@@ -214,6 +218,9 @@ serve(async (req) => {
     // sanitizedAnswers filtered to only questions the trace actually asked, and validated for
     // score-consistency against the trace's own correct flags — see the generator branch below.
     let generatorAnswers: MinimalAnswer[] | null = null;
+    // The easier-cloze members this student was given, saved on the attempt so later edits to a
+    // family can't change what it is scored on. Derived here, never trusted from the client.
+    let deliveredVariants: string[] = [];
 
     if (assignment.mode === 'placement') {
         const { data: testRow, error: testErr } = await admin
@@ -223,6 +230,7 @@ serve(async (req) => {
             .single();
         if (testErr || !testRow) return json({ error: 'Test not found' }, 404);
         const test = testRow.data as MinimalTest;
+        deliveredVariants = deliveredVariantIds({ questions: test.questions ?? [] }, assignment.student_id);
 
         if (test.placementEngine === 'generator') {
             // A generator-engine run has no test.questions to replay answers against — every
@@ -275,7 +283,13 @@ serve(async (req) => {
             // throw is still treated as an invalid submission rather than an unhandled 500.
             try {
                 if (sectionPath) {
-                    const recomputed = recomputeSectionPath(test, sanitizedAnswers);
+                    const recomputed = recomputeSectionPath(
+                        {
+                            ...test,
+                            questions: deliveredQuestions({ questions: test.questions ?? [] }, assignment.student_id),
+                        },
+                        sanitizedAnswers
+                    );
                     if (!recomputed || !sectionPathsMatch(recomputed, sectionPath)) {
                         return json({ error: 'Invalid section path' }, 400);
                     }
@@ -323,6 +337,10 @@ serve(async (req) => {
                 return json({ error: 'Invalid submission' }, 400);
             }
         }
+    } else {
+        const { data: testRow } = await admin.from('tests').select('data').eq('id', assignment.test_id).single();
+        const questions = (testRow?.data as MinimalTest | undefined)?.questions;
+        if (questions) deliveredVariants = deliveredVariantIds({ questions }, assignment.student_id);
     }
 
     // Practice-mode assignments allow retakes: each attempt gets the next attempt_number so
@@ -365,6 +383,8 @@ serve(async (req) => {
                 events: events ?? [],
                 attemptNumber,
                 ...(sectionPath ? { sectionPath } : {}),
+                ...(deliveredVariants.length > 0 ? { deliveredVariantIds: deliveredVariants } : {}),
+                ...(typeof testVersion === 'string' && /^[A-D]$/.test(testVersion) ? { testVersion } : {}),
                 ...(generatorLevelPath
                     ? {
                           levelPath: generatorLevelPath,

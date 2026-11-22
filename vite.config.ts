@@ -5,7 +5,12 @@ import { visualizer } from 'rollup-plugin-visualizer';
 import { VitePWA } from 'vite-plugin-pwa';
 import { checkoutStamp } from './e2e/appUrl.ts';
 
+// The build identifier written into client_logs.app_version, so an error row maps to the source map
+// of the build that produced it. GITHUB_SHA is set by every Actions run; a local build is 'dev'.
+const appRelease = (process.env.VITE_APP_RELEASE || process.env.GITHUB_SHA || 'dev').slice(0, 12);
+
 export default defineConfig({
+    define: { __APP_RELEASE__: JSON.stringify(appRelease) },
     plugins: [
         react(),
         // Only emit the bundle-analysis page when explicitly requested (npm run build:analyze,
@@ -47,6 +52,10 @@ export default defineConfig({
                 ],
             },
             workbox: {
+                // Workbox would write its own sw.js.map and leave a sourceMappingURL comment pointing
+                // at it; the hidden app maps are moved out of dist/ (#870) and nothing reports errors
+                // from the service worker, so emit none and keep dist/ free of dangling references.
+                sourcemap: false,
                 // Belt-and-braces: stats.html is no longer emitted by default (see the ANALYZE
                 // gate above), but exclude it by name too in case a local `ANALYZE=1` build is
                 // ever accidentally deployed.
@@ -146,6 +155,9 @@ export default defineConfig({
     ],
     base: './',
     build: {
+        // 'hidden' writes the maps but leaves out the sourceMappingURL comment; scripts/extract-sourcemaps.mjs
+        // then moves them out of dist/ so they are never deployed, only kept as a CI artifact (#870).
+        sourcemap: 'hidden',
         rollupOptions: {
             output: {
                 // Emit `.mjs` assets (the pdf.js worker) as `.js`: plenty of servers have no `.mjs`

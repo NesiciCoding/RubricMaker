@@ -150,7 +150,7 @@ describe('QuestionEditor extended', () => {
     describe('multiple-choice options', () => {
         it('marks a different option as the single correct one', () => {
             const { onChange } = renderEditor();
-            const markButtons = screen.getAllByLabelText('tests.mark_correct_option');
+            const markButtons = screen.getAllByLabelText(/tests.mark_correct_option/);
             fireEvent.click(markButtons[1]);
             expect(onChange).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -201,7 +201,7 @@ describe('QuestionEditor extended', () => {
     describe('multiple-response', () => {
         it('toggles each option independently and the partial-credit flag', () => {
             const { onChange } = renderEditor(makeQuestion({ type: 'multiple-response', partialCredit: true }));
-            fireEvent.click(screen.getAllByLabelText('tests.mark_correct_option')[1]);
+            fireEvent.click(screen.getAllByLabelText(/tests.mark_correct_option/)[1]);
             expect(onChange).toHaveBeenCalledWith(
                 expect.objectContaining({
                     options: [
@@ -247,6 +247,36 @@ describe('QuestionEditor extended', () => {
             const updated = onChange.mock.calls.at(-1)![0] as TestQuestion;
             expect(updated.options).toHaveLength(2);
             expect(updated.type).toBe('multiple-response');
+        });
+
+        it('keeps one correct option when a multiple-response question becomes multiple-choice', () => {
+            const { onChange } = renderEditor(
+                makeQuestion({
+                    type: 'multiple-response',
+                    options: [
+                        { id: 'a', text: 'Option A', isCorrect: false },
+                        { id: 'b', text: 'Option B', isCorrect: true },
+                        { id: 'c', text: 'Option C', isCorrect: true },
+                    ],
+                })
+            );
+            chooseType('multiple-choice');
+            const updated = onChange.mock.calls.at(-1)![0] as TestQuestion;
+            expect(updated.options?.map((option) => option.isCorrect)).toEqual([false, true, false]);
+        });
+
+        it('leaves every correct option marked when switching to multiple-response', () => {
+            const { onChange } = renderEditor(
+                makeQuestion({
+                    options: [
+                        { id: 'a', text: 'Option A', isCorrect: true },
+                        { id: 'b', text: 'Option B', isCorrect: false },
+                    ],
+                })
+            );
+            chooseType('multiple-response');
+            const updated = onChange.mock.calls.at(-1)![0] as TestQuestion;
+            expect(updated.options?.map((option) => option.isCorrect)).toEqual([true, false]);
         });
     });
 

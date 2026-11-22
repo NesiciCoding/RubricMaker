@@ -412,7 +412,7 @@ groups:
       severity: warning
     annotations:
       summary: '{{ humanize $values.B.Value }} pg_net call(s) from a scheduled job failed in the last day'
-      description: pg_cron reports these jobs as succeeded even when the edge function they call fails (e.g. the teacher digest). Check net._http_response for the status and error.
+      description: pg_cron reports these jobs as succeeded even when the edge function they call fails (e.g. the teacher digest). Run SELECT created, status_code, timed_out, error_msg, left(content, 300) FROM net._http_response ORDER BY created DESC LIMIT 10; to see whether the call timed out (pg_net cancels at timeout_milliseconds, migration 106 sets 120 s for the digest), was rejected (401 = stale service-role key, see docs/SELF_HOSTING_OPS.md) or returned a 5xx from the function.
     data:
     - refId: A
       relativeTimeRange:
@@ -503,3 +503,57 @@ groups:
             type: gt
             params:
             - 25
+- orgId: 1
+  name: Client
+  folder: RubricMaker alerts
+  interval: 1m
+  rules:
+  - uid: rm-client-error-burst
+    title: Burst of browser errors
+    condition: C
+    for: 0s
+    noDataState: OK
+    execErrState: OK
+    labels:
+      severity: warning
+    annotations:
+      summary: '{{ humanize $values.B.Value }} browser sessions reported JavaScript errors in the last 15 minutes'
+      description: 'Errors-only reporting (VITE_ERROR_REPORTING, docs/ERROR_REPORTING.md). Open the Client Diagnostics dashboard, panel "Top error signatures", to see which failure and which release. Decode the frame with the sourcemaps-<sha> artifact of that release.'
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 900
+        to: 0
+      datasourceUid: client_logs_postgres
+      model:
+        refId: A
+        rawSql: SELECT CASE WHEN count(*) >= 10 THEN count(DISTINCT session_id) ELSE 0 END AS affected_sessions FROM public.client_logs WHERE category = 'error' AND created_at > now() - interval '15 minutes'
+        rawQuery: true
+        editorMode: code
+        format: table
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 0
+        to: 0
+      model:
+        refId: B
+        type: reduce
+        expression: A
+        reducer: last
+        settings:
+          mode: dropNN
+    - refId: C
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 0
+        to: 0
+      model:
+        refId: C
+        type: threshold
+        expression: B
+        conditions:
+        - evaluator:
+            type: gt
+            params:
+            - 4

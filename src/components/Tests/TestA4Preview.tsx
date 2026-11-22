@@ -59,6 +59,10 @@ export default function TestA4Preview({ test, onChange }: Props) {
     const viewportRef = useRef<HTMLDivElement>(null);
     const fit = useFitScale(viewportRef);
     const scale = Math.min(1.5, Math.max(0.3, fit + zoomStep * 0.1));
+    // The page is a miniature of the printed sheet, but its editing chrome is not: the toolbar is
+    // counter-scaled back to authored size so its buttons stay 26px on screen (WCAG 2.5.8) at any
+    // fit scale, while the page content keeps the print scale.
+    const pageStyle = { zoom: scale, '--a4-zoom': 1 / scale } as React.CSSProperties;
 
     const settled = useDebounced(test, RENDER_DEBOUNCE_MS);
     const sections = useMemo(() => buildTestPreviewSections(settled, options), [settled, options]);
@@ -153,9 +157,10 @@ export default function TestA4Preview({ test, onChange }: Props) {
                     .a4-preview-editable:focus-within { border-color: var(--accent); }
                     .a4-preview-editable-label { position: absolute; top: -9px; left: 8px; padding: 0 4px; background: #fff; font-size: 10px; color: #475569; text-transform: uppercase; letter-spacing: 0.04em; }
                     .a4-page .tiptap-editor-content { color: #1e293b; min-height: 28px; padding: 6px 8px; font-size: 13px; }
+                    .a4-page .tiptap-toolbar { zoom: var(--a4-zoom, 1); }
                 `}</style>
                 <div style={{ width: PAGE_WIDTH_PX * scale, margin: '0 auto' }}>
-                    <div className="a4-page" data-testid="a4-page" style={{ zoom: scale }}>
+                    <div className="a4-page" data-testid="a4-page" style={pageStyle}>
                         {editor(t('tests.a4_header_label'), 'printHeader', t('tests.a4_header_placeholder'))}
                         <div dangerouslySetInnerHTML={{ __html: sections.top }} />
                         {editor(t('tests.a4_intro_label'), 'printIntro', t('tests.a4_intro_placeholder'))}

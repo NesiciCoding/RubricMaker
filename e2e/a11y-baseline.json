@@ -65,42 +65,22 @@
     {
       "route": "/docs",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "landmark-unique",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/docs",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "landmark-unique",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/essays",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "aria-progressbar-name",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/essays",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "aria-progressbar-name",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/essays/essay-a11y-1",
@@ -175,30 +155,12 @@
     {
       "route": "/grade-comparative/class-a11y-1/rubric-a11y-1",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "label-title-only",
-          "nodes": 1
-        },
-        {
-          "rule": "select-name",
-          "nodes": 6
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/grade-comparative/class-a11y-1/rubric-a11y-1",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "label-title-only",
-          "nodes": 1
-        },
-        {
-          "rule": "select-name",
-          "nodes": 6
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/grammar-overview",
@@ -313,22 +275,12 @@
     {
       "route": "/portal/student-a11y-1",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "aria-prohibited-attr",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/portal/student-a11y-1",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "aria-prohibited-attr",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/portal/student-a11y-1/flashcards/deck-a11y-1",
@@ -383,22 +335,12 @@
     {
       "route": "/rubrics/rubric-a11y-1",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "label",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/rubrics/rubric-a11y-1",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "label",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/rubrics/rubric-a11y-1/grade",
@@ -413,30 +355,12 @@
     {
       "route": "/rubrics/rubric-a11y-1/grade/student-a11y-1",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "label",
-          "nodes": 3
-        },
-        {
-          "rule": "target-size",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/rubrics/rubric-a11y-1/grade/student-a11y-1",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "label",
-          "nodes": 3
-        },
-        {
-          "rule": "target-size",
-          "nodes": 1
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/rubrics/rubric-a11y-1/peer-review",
@@ -491,22 +415,12 @@
     {
       "route": "/statistics",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "label-title-only",
-          "nodes": 3
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/statistics",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "label-title-only",
-          "nodes": 3
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/students",
@@ -571,42 +485,22 @@
     {
       "route": "/tests/new",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "target-size",
-          "nodes": 12
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/tests/new",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "target-size",
-          "nodes": 12
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/tests/test-a11y-1",
       "theme": "dark",
-      "violations": [
-        {
-          "rule": "label-title-only",
-          "nodes": 12
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/tests/test-a11y-1",
       "theme": "light",
-      "violations": [
-        {
-          "rule": "label-title-only",
-          "nodes": 12
-        }
-      ]
+      "violations": []
     },
     {
       "route": "/tests/test-a11y-1/monitor",

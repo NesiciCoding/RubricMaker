@@ -429,6 +429,7 @@ export default function EssayEditor({
                             style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'none' }}
                             onChange={(e) => editor.chain().focus().setColor(e.target.value).run()}
                             title={t('editor.text_colour')}
+                            aria-label={t('editor.text_colour')}
                         />
                     </div>
                     <div
@@ -466,6 +467,7 @@ export default function EssayEditor({
                             style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'none' }}
                             onChange={(e) => editor.chain().focus().setHighlight({ color: e.target.value }).run()}
                             title={t('editor.highlight_colour')}
+                            aria-label={t('editor.highlight_colour')}
                         />
                     </div>
                     <ToolbarBtn

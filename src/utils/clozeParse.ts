@@ -90,7 +90,7 @@ export function addGapAlternative(prompt: string, gapIndex: number, word: string
  * (`gapCorrectAnswers` accepts them); only a fully unmarked legacy gap uses position — first correct,
  * the rest wrong.
  */
-function resolvedGapRoles(gap: ClozeGap): ClozeOptionRole[] {
+export function resolvedGapRoles(gap: ClozeGap): ClozeOptionRole[] {
     const marked = gap.roles?.some((role) => role !== null) ?? false;
     return gap.alternatives.map((_, i) => gap.roles?.[i] ?? (marked || i === 0 ? 'correct' : 'wrong'));
 }
@@ -123,6 +123,24 @@ export function addDropdownDistractor(prompt: string, gapIndex: number, word: st
             alternatives: [...target.alternatives, text],
             roles: [...resolvedGapRoles(target), 'wrong'],
         })
+    );
+}
+
+/** Marks one alternative of a dropdown gap correct or wrong, rewriting the gap with explicit roles. */
+export function setDropdownAlternativeRole(
+    prompt: string,
+    gapIndex: number,
+    alternativeIndex: number,
+    correct: boolean
+): string {
+    const target = parseClozeGaps(prompt)[gapIndex];
+    if (!target || alternativeIndex < 0 || alternativeIndex >= target.alternatives.length) return prompt;
+    const roles = resolvedGapRoles(target);
+    roles[alternativeIndex] = correct ? 'correct' : 'wrong';
+    return replaceGap(
+        prompt,
+        gapIndex,
+        clozeGapToSyntax({ index: gapIndex, alternatives: target.alternatives, roles })
     );
 }
 

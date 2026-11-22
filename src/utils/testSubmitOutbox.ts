@@ -26,6 +26,7 @@ export interface OutboxSubmission {
     events?: ProctorEvent[];
     sectionPath?: string[];
     levelPath?: StaircaseStep[];
+    testVersion?: string;
     queuedAt: string;
 }
 

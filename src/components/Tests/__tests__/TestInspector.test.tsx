@@ -172,20 +172,26 @@ describe('TestInspector', () => {
         expect(document.getElementById('test-inspector-question')).not.toHaveAttribute('hidden');
 
         fireEvent.keyDown(studentTab, { key: 'ArrowRight' });
+        const answersTab = screen.getByRole('tab', { name: /tests.inspector_answers/ });
+        expect(answersTab).toHaveAttribute('aria-selected', 'true');
+        expect(answersTab).toHaveFocus();
+        expect(document.getElementById('test-inspector-answers')).not.toHaveAttribute('hidden');
+
+        fireEvent.keyDown(answersTab, { key: 'ArrowRight' });
         expect(paper).toHaveAttribute('aria-selected', 'true');
         expect(paper).toHaveFocus();
 
         fireEvent.keyDown(paper, { key: 'ArrowLeft' });
-        expect(studentTab).toHaveAttribute('aria-selected', 'true');
-        expect(studentTab).toHaveFocus();
+        expect(answersTab).toHaveAttribute('aria-selected', 'true');
+        expect(answersTab).toHaveFocus();
 
-        fireEvent.keyDown(studentTab, { key: 'Home' });
+        fireEvent.keyDown(answersTab, { key: 'Home' });
         expect(paper).toHaveAttribute('aria-selected', 'true');
         expect(paper).toHaveFocus();
 
         fireEvent.keyDown(paper, { key: 'End' });
-        expect(studentTab).toHaveAttribute('aria-selected', 'true');
-        expect(studentTab).toHaveFocus();
+        expect(answersTab).toHaveAttribute('aria-selected', 'true');
+        expect(answersTab).toHaveFocus();
     });
 
     it('leaves other keys to the browser', () => {
@@ -202,5 +208,90 @@ describe('TestInspector', () => {
         fireEvent.click(screen.getByRole('tab', { name: /tests.inspector_question/ }));
         expect(screen.getByTestId('inspector-student-view')).toHaveTextContent('tests.inspector_no_question');
         expect(screen.queryByTestId('a4-preview-mock')).toBeInTheDocument();
+    });
+
+    it('shows the answer key, hint and explanation of the open question', () => {
+        renderInspector({
+            question: {
+                ...question,
+                expectedAnswers: ['went', 'gone'],
+                explanation: '<p>“Go” is irregular.</p>',
+            },
+        });
+        fireEvent.click(screen.getByRole('tab', { name: /tests.inspector_answers/ }));
+
+        const panel = screen.getByTestId('inspector-answers');
+        expect(panel).toHaveTextContent('tests.inspector_answers_key');
+        expect(panel).toHaveTextContent('went / gone');
+        expect(panel).toHaveTextContent('tests.inspector_answers_hint');
+        expect(panel).toHaveTextContent('It is an irregular verb.');
+        expect(panel).toHaveTextContent('tests.inspector_answers_explanation');
+        expect(panel).toHaveTextContent('“Go” is irregular.');
+    });
+
+    it('says a hand-graded question has no single answer instead of showing an empty key', () => {
+        renderInspector({ question: { ...question, type: 'open', hint: undefined } });
+        fireEvent.click(screen.getByRole('tab', { name: /tests.inspector_answers/ }));
+
+        const panel = screen.getByTestId('inspector-answers');
+        expect(panel).toHaveTextContent('tests.inspector_answers_none');
+        expect(panel).not.toHaveTextContent('tests.inspector_answers_hint');
+        expect(panel).not.toHaveTextContent('tests.inspector_answers_explanation');
+    });
+
+    it('asks for a question on the key tab too', () => {
+        renderInspector({ question: null, questionNumber: undefined });
+        fireEvent.click(screen.getByRole('tab', { name: /tests.inspector_answers/ }));
+        expect(screen.getByTestId('inspector-answers')).toHaveTextContent('tests.inspector_no_question');
+    });
+
+    it('lists a cloze key per gap instead of reprinting the sentence', () => {
+        renderInspector({
+            question: {
+                ...question,
+                type: 'cloze',
+                hint: undefined,
+                prompt: '<p>Yesterday he {{went|goes}} to school and {{saw|seen}} his teacher.</p>',
+            },
+        });
+        fireEvent.click(screen.getByRole('tab', { name: /tests.inspector_answers/ }));
+
+        const panel = screen.getByTestId('inspector-answers');
+        expect(panel).toHaveTextContent('1. went / goes');
+        expect(panel).toHaveTextContent('2. saw / seen');
+        expect(panel).not.toHaveTextContent('to school and');
+    });
+
+    it('marks a choice answer by its letter, then the option text', () => {
+        renderInspector({
+            question: {
+                ...question,
+                type: 'multiple-response',
+                expectedAnswers: undefined,
+                options: [
+                    { id: 'o1', text: 'went', isCorrect: true },
+                    { id: 'o2', text: 'goed', isCorrect: false },
+                    { id: 'o3', text: 'saw', isCorrect: true },
+                ],
+            },
+        });
+        fireEvent.click(screen.getByRole('tab', { name: /tests.inspector_answers/ }));
+        expect(screen.getByTestId('inspector-answers')).toHaveTextContent('A, C — went, saw');
+    });
+
+    it('names a missing key instead of calling an auto-scored question hand-graded', () => {
+        renderInspector({ question: { ...question, expectedAnswers: [], hint: undefined } });
+        fireEvent.click(screen.getByRole('tab', { name: /tests.inspector_answers/ }));
+        const panel = screen.getByTestId('inspector-answers');
+        expect(panel).toHaveTextContent('tests.inspector_answers_missing');
+        expect(panel).not.toHaveTextContent('tests.inspector_answers_none');
+    });
+
+    it('translates a true/false key rather than printing English', () => {
+        renderInspector({
+            question: { ...question, type: 'true-false', correctBoolean: false, expectedAnswers: undefined },
+        });
+        fireEvent.click(screen.getByRole('tab', { name: /tests.inspector_answers/ }));
+        expect(screen.getByTestId('inspector-answers')).toHaveTextContent('tests.true_false_false');
     });
 });

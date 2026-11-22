@@ -1,4 +1,4 @@
-import { memo, useId } from 'react';
+import React, { memo, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     Plus,
@@ -28,6 +28,9 @@ import { saveCriterionClipboard } from '../../store/storage';
 import { useToast } from '../../hooks/useToast';
 import { createSubItem, splitIntoSubItemLabels, subItemMode } from '../../utils/subItems';
 import SubItemListEditor from './SubItemListEditor';
+import { criterionCardMenuItems } from './criterionCardMenuItems';
+import ContextMenu, { useContextMenu } from '../ui/ContextMenu';
+import MenuButton from '../ui/MenuButton';
 import TieredCriterionGrid from './TieredCriterionGrid';
 import CardGrip from '../ui/CardGrip';
 
@@ -67,6 +70,10 @@ interface CriterionCardProps {
     onUnlinkLegacyStandard: (cid: string) => void;
     onRemoveCefrDescriptor: (cid: string, descriptorId: string) => void;
     onRemoveFrameworkDescriptor: (cid: string, descriptorId: string) => void;
+    /** Pastes the copied criterion at the end of the rubric; the menu's Paste item stays disabled without it. */
+    onPasteCriterion?: () => void;
+    /** Read when the menu opens, so Paste reflects the clipboard at that moment. */
+    canPasteCriterion?: () => boolean;
     /** Tiered rubrics: levels come from the rubric's bands and statements sit in a band × tier grid. */
     tiered?: TieredConfig;
 }
@@ -99,9 +106,12 @@ export default memo(function CriterionCard({
     onRemoveFrameworkDescriptor,
     onRemoveSubItemCefrDescriptor,
     onRemoveSubItemFrameworkDescriptor,
+    onPasteCriterion,
+    canPasteCriterion,
     tiered,
 }: CriterionCardProps) {
     const { t, i18n } = useTranslation();
+    const menu = useContextMenu();
     const { showToast } = useToast();
     const uid = useId();
     const mode = subItemMode(criterion);
@@ -122,6 +132,39 @@ export default memo(function CriterionCard({
         });
     }
 
+    function openMenu(event: React.MouseEvent) {
+        menu.open(
+            event,
+            criterionCardMenuItems({
+                labels: {
+                    duplicate: t('rubricBuilder.action_duplicate_criterion'),
+                    copy: t('rubricBuilder.action_copy_criterion'),
+                    paste: t('rubricBuilder.action_paste_criterion'),
+                    moveUp: t('rubricBuilder.action_move_criterion_up'),
+                    moveDown: t('rubricBuilder.action_move_criterion_down'),
+                    expand: t('rubricBuilder.action_expand_criterion'),
+                    collapse: t('rubricBuilder.action_collapse_criterion'),
+                    linkStandard: t('rubricBuilder.action_link_standard'),
+                    linkDescriptor: t('framework.action_link_descriptor'),
+                    remove: t('rubricBuilder.action_delete_criterion'),
+                },
+                isFirst,
+                isLast,
+                collapsed,
+                canPaste: !!onPasteCriterion && (canPasteCriterion?.() ?? true),
+                duplicate: () => onDuplicateCriterion(cIdx),
+                copy: () => copyToClipboard(criterion),
+                paste: () => onPasteCriterion?.(),
+                move: (dir) => onMoveCriterion(cIdx, dir),
+                toggleCollapse: () => onToggleCollapse(criterion.id),
+                linkStandard: () => onPickStandard({ type: 'criterion', cid: criterion.id }),
+                linkDescriptor: () => onPickCefr(criterion.id),
+                remove: () => onDeleteCriterion(criterion.id),
+            }),
+            t('rubricBuilder.criterion_menu_label')
+        );
+    }
+
     function copyToClipboard(criterion: RubricCriterion) {
         try {
             saveCriterionClipboard(criterion);
@@ -138,11 +181,14 @@ export default memo(function CriterionCard({
                     ref={provided.innerRef}
                     {...provided.draggableProps}
                     className="card print-criterion"
+                    data-longpress
+                    onContextMenu={openMenu}
                     style={{
                         marginBottom: 16,
                         ...provided.draggableProps.style,
                     }}
                 >
+                    <ContextMenu {...menu.menuProps} />
                     {/* Criterion header */}
                     <div
                         className="criterion-header"
@@ -653,6 +699,7 @@ export default memo(function CriterionCard({
                             >
                                 <Trash2 size={15} />
                             </button>
+                            <MenuButton label={t('rubricBuilder.criterion_menu_label')} onOpen={openMenu} />
                         </div>
                     </div>
 
@@ -853,6 +900,10 @@ export default memo(function CriterionCard({
                                                                                 color: 'var(--text-dim)',
                                                                                 flexShrink: 0,
                                                                                 display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                justifyContent: 'center',
+                                                                                minWidth: 44,
+                                                                                minHeight: 44,
                                                                             }}
                                                                         >
                                                                             <GripHorizontal size={13} />

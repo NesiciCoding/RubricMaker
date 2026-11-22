@@ -260,6 +260,25 @@
           "rawSql": "SELECT created_at AS time, role, school_id, category, name, level, meta FROM client_logs WHERE $__timeFilter(created_at) AND level IN ('warn', 'error') ORDER BY created_at DESC LIMIT 100"
         }
       ]
+    },
+    {
+      "id": 11,
+      "type": "table",
+      "title": "Top error signatures",
+      "description": "Errors-only reporting groups one failure by signature (error name, message hash, top frame). Decode the frame with the sourcemaps artifact of the release shown here (docs/ERROR_REPORTING.md).",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 22 },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "options": {},
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT meta->>'signature' AS signature, name, meta->>'errorName' AS error, count(*) AS occurrences, count(DISTINCT session_id) AS sessions, max(created_at) AS last_seen, max(app_version) AS release, (array_agg(meta->'frames'->>0 ORDER BY created_at DESC))[1] AS top_frame, mode() WITHIN GROUP (ORDER BY path) AS route FROM client_logs WHERE $__timeFilter(created_at) AND category = 'error' AND meta->>'signature' IS NOT NULL GROUP BY 1, 2, 3 ORDER BY occurrences DESC LIMIT 50"
+        }
+      ]
     }
   ]
 }

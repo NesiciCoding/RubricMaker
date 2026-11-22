@@ -2,6 +2,7 @@ import type { StudentTest, Test, TestAnswer, TestQuestion } from '../types';
 import Papa from 'papaparse';
 import { CSV_UNPARSE_OPTIONS } from './csvOptions';
 import { calcStudentTestRawPoints } from './testCalc';
+import { deliveredQuestions, deliveredVariantIds } from './variantDelivery';
 import { nanoid } from './nanoid';
 
 /** "4,5" and "4.5" both read as 4.5; blank is null; anything else is NaN so the cell can flag it. */
@@ -28,11 +29,13 @@ export function parsePastedGrid(text: string): string[][] {
     return lines.map((line) => line.split('\t'));
 }
 
-function emptyManualTest(testId: string, studentId: string, now: string): StudentTest {
+function emptyManualTest(test: Test, studentId: string, now: string): StudentTest {
+    const variants = deliveredVariantIds(test, studentId);
     return {
         id: nanoid(),
-        testId,
+        testId: test.id,
         studentId,
+        ...(variants.length > 0 ? { deliveredVariantIds: variants } : {}),
         answers: [],
         status: 'in_progress',
         startedAt: now,
@@ -43,7 +46,7 @@ function emptyManualTest(testId: string, studentId: string, now: string): Studen
 /** Every question has a score: online answers count when auto-scorable, manual cells when typed in. */
 export function isSheetComplete(test: Test, st: StudentTest): boolean {
     const answered = new Set(st.answers.map((a) => a.questionId));
-    return test.questions.every((q) => answered.has(q.id));
+    return deliveredQuestions(test, st.studentId, st.deliveredVariantIds).every((q) => answered.has(q.id));
 }
 
 function withTotals(test: Test, st: StudentTest, now: string): StudentTest {
@@ -72,7 +75,7 @@ export function applyCellEdit(
     points: number | null,
     now: string = new Date().toISOString()
 ): StudentTest {
-    const base = existing ?? emptyManualTest(test.id, studentId, now);
+    const base = existing ?? emptyManualTest(test, studentId, now);
     const question = test.questions.find((q) => q.id === questionId);
     const answers: TestAnswer[] = base.answers.filter((a) => a.questionId !== questionId);
     const prior = [...base.answers].reverse().find((a) => a.questionId === questionId);
@@ -94,7 +97,7 @@ export function setAbsent(
     absent: boolean,
     now: string = new Date().toISOString()
 ): StudentTest {
-    const base = existing ?? emptyManualTest(test.id, studentId, now);
+    const base = existing ?? emptyManualTest(test, studentId, now);
     return { ...base, absent: absent || undefined, updatedAt: now };
 }
 
