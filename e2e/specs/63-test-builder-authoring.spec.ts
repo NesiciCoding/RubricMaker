@@ -16,8 +16,17 @@ test.describe('test builder — question authoring', () => {
 
         const editor = clozeEditor(appPage);
         await editor.fill('The cat sat on the mat');
-        // Double-clicking a word selects exactly that word.
-        await editor.getByText('The cat sat on the mat').dblclick({ position: { x: 28, y: 8 } });
+        // Select "cat" through the DOM rather than by clicking a pixel offset, which depends on the runner's fonts.
+        await editor.evaluate((el) => {
+            const text = el.querySelector('p')!.firstChild as Text;
+            const start = text.data.indexOf('cat');
+            const range = document.createRange();
+            range.setStart(text, start);
+            range.setEnd(text, start + 3);
+            const selection = window.getSelection()!;
+            selection.removeAllRanges();
+            selection.addRange(range);
+        });
         await appPage
             .getByRole('button', { name: /insert gap/i })
             .first()
