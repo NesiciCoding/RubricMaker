@@ -5617,7 +5617,7 @@
         "es_creating_item_projector": "Proyecta un borrador en una segunda ventana para hablar de una frase mientras el monitor sigue observando al resto de la clase.",
         "rb_live_monitor_item_session_export": "Exporta la sesión como CSV con los recuentos, minutos estancados, antigüedad del texto, palabras escritas y el registro de avisos por estudiante — más un resumen PDF de una página — para adjuntarlo si más adelante surge una duda de integridad.",
         "rb_live_monitor_item_shortcuts": "Supervisa con el teclado mientras estás de pie: j/k cambia de estudiante, espacio abre o cierra el seguimiento, n envía un aviso y f marca al estudiante actual, sin tocar el ratón.",
-        "gr_test_rich_authoring_item_gap_weights": "Preguntas con huecos: dé más peso a un hueco en la lista bajo el texto (por ejemplo 2 para el hueco clave) para que aporte una parte mayor de los puntos. Cambiar el número de huecos restablece pesos iguales."
+        "gr_test_rich_authoring_item_gap_weights": "Preguntas con huecos: dé más peso a un hueco en la lista bajo el texto (por ejemplo 2 para el hueco clave) para que aporte una parte mayor de los puntos cuando el crédito parcial está activado (si no, todos los huecos deben seguir siendo correctos). Cambiar el número de huecos restablece pesos iguales."
     },
     "studentProfile": {
         "tab_overview": "Resumen",

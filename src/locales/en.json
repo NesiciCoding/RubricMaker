@@ -5617,7 +5617,7 @@
         "es_creating_item_projector": "Spotlight a draft on the projector in a second window to talk about one sentence, while the monitor keeps watching the rest of the class.",
         "rb_live_monitor_item_session_export": "Export the session as a CSV of per-student counts, stall minutes, draft ages, words written and the nudge log — plus a one-page PDF summary — to attach when an integrity question arrives later.",
         "rb_live_monitor_item_shortcuts": "Proctor from the keyboard while standing up: j/k move between students, space opens or closes the spotlight, n nudges and f flags the student you are on, without reaching for the mouse.",
-        "gr_test_rich_authoring_item_gap_weights": "Fill-in questions: give a gap more weight in the gap list below the passage (for example 2 for the key gap) so it earns a bigger share of the question's points. Changing the number of gaps resets the weights to equal."
+        "gr_test_rich_authoring_item_gap_weights": "Fill-in questions: give a gap more weight in the gap list below the passage (for example 2 for the key gap) so it earns a bigger share of the question's points when partial credit is on (with it off, every gap must still be right). Changing the number of gaps resets the weights to equal."
     },
     "studentProfile": {
         "tab_overview": "Overview",

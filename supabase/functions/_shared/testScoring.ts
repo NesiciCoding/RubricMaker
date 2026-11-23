@@ -422,11 +422,17 @@ export function scoreCloze(question: ScorableQuestion, response: string): number
     const correct = clozeGapCorrectness(question, response);
     if (correct.length === 0) return 0;
     const weights = effectiveGapWeights(question, correct.length);
-    const earned = weights.reduce((sum, weight, i) => sum + (correct[i] ? weight : 0), 0);
+    if (question.partialCredit === false) {
+        return correct.every((ok, i) => ok || weights[i] === 0) ? question.points : 0;
+    }
+    // Scaled by the largest weight so huge authored values cannot overflow the sum to Infinity.
+    const peak = Math.max(...weights);
+    const scaled = weights.map((weight) => weight / peak);
+    const earned = scaled.reduce((sum, weight, i) => sum + (correct[i] ? weight : 0), 0);
     return partialOrAll(
         question,
         earned,
-        weights.reduce((sum, weight) => sum + weight, 0)
+        scaled.reduce((sum, weight) => sum + weight, 0)
     );
 }
 

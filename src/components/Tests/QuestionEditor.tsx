@@ -168,7 +168,17 @@ export default function QuestionEditor({
     const [clozeLevel, setClozeLevel] = React.useState<CefrLevel>('B2');
 
     function update(patch: Partial<TestQuestion>) {
-        onChange({ ...question, ...patch });
+        const next = { ...question, ...patch };
+        // Weights are positional, so a different gap count would leave them applying to the wrong gaps.
+        if (
+            patch.prompt !== undefined &&
+            !('gapWeights' in patch) &&
+            next.gapWeights &&
+            next.gapWeights.length !== parseClozeGaps(patch.prompt).length
+        ) {
+            delete next.gapWeights;
+        }
+        onChange(next);
     }
 
     function generateGaps() {

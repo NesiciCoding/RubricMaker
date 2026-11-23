@@ -658,6 +658,18 @@ describe('scoreCloze gap weights', () => {
         expect(scoreCloze({ ...cloze, gapWeights: [-1, 1, 1] }, answers('one', 'x', 'x'))).toBeCloseTo(8 / 3);
     });
 
+    it('does not overflow when the authored weights are huge', () => {
+        const huge = { ...cloze, gapWeights: [1e308, 1e308, 1e308] };
+        expect(scoreCloze(huge, answers('one', 'two', 'three'))).toBe(8);
+        expect(scoreCloze(huge, answers('one', 'x', 'x'))).toBeCloseTo(8 / 3);
+    });
+
+    it('does not let rounding hide a wrong gap without partial credit', () => {
+        const lopsided = { ...cloze, gapWeights: [1e16, 1, 1], partialCredit: false };
+        expect(scoreCloze(lopsided, answers('one', 'x', 'x'))).toBe(0);
+        expect(scoreCloze(lopsided, answers('one', 'two', 'three'))).toBe(8);
+    });
+
     it('lets a zero-weight gap cost nothing and still needs every weighted gap without partial credit', () => {
         const noPartial = { ...cloze, gapWeights: [0, 1, 1], partialCredit: false };
         expect(scoreCloze(noPartial, answers('x', 'two', 'three'))).toBe(8);

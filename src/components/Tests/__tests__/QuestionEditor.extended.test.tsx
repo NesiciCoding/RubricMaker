@@ -318,6 +318,19 @@ describe('QuestionEditor extended', () => {
         });
     });
 
+    describe('cloze gap weights', () => {
+        it('drops the weights when an edit changes the gap count and keeps them otherwise', () => {
+            const { onChange } = renderEditor(
+                makeQuestion({ type: 'cloze', prompt: 'A {{one}} and {{two}}.', gapWeights: [3, 1] })
+            );
+            const prompt = screen.getAllByLabelText('tests.question_prompt_label')[0];
+            fireEvent.change(prompt, { target: { value: 'A {{one}} and {{two}} and {{three}}.' } });
+            expect(onChange.mock.calls.at(-1)?.[0]).not.toHaveProperty('gapWeights');
+            fireEvent.change(prompt, { target: { value: 'An {{one}} and {{two}}.' } });
+            expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ gapWeights: [3, 1] }));
+        });
+    });
+
     describe('rubric-scored tasks', () => {
         it('offers a rubric on open and audio-response questions only', () => {
             const { onChange, view } = renderEditor(makeQuestion({ type: 'open' }));
