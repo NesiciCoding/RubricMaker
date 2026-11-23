@@ -8,7 +8,7 @@ import {
     type ClozeGap as ClozeGapSyntax,
     type ClozeOptionRole,
 } from '../../utils/clozeParse';
-import { openPillPopover } from './pillPopover';
+import { makePillAccessible, openPillPopover } from './pillPopover';
 
 export interface ClozeGapOptions {
     /** Label shown above the alternatives input in the click-to-edit popover. */
@@ -27,6 +27,8 @@ export interface ClozeGapOptions {
     addLabel: string;
     /** Accessible label for removing a chip; `{{value}}` is replaced with the option text. */
     removeLabel: string;
+    /** Accessible name of a gap pill; `{{value}}` is replaced with the gap's answer. */
+    pillLabel: string;
 }
 
 // Parentheses delimit the stem in the stored `{{answer}}(STEM)` form (see gapStems), so one inside it would end the stem early.
@@ -64,6 +66,7 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
             wrongLabel: 'Wrong options',
             addLabel: 'Add',
             removeLabel: 'Remove {{value}}',
+            pillLabel: 'Edit gap: {{value}}',
         };
     },
 
@@ -122,12 +125,22 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
     },
 
     addNodeView() {
-        const { editLabel, saveLabel, cancelLabel, stemLabel, correctLabel, wrongLabel, addLabel, removeLabel } =
-            this.options;
+        const {
+            editLabel,
+            saveLabel,
+            cancelLabel,
+            stemLabel,
+            correctLabel,
+            wrongLabel,
+            addLabel,
+            removeLabel,
+            pillLabel,
+        } = this.options;
         return ({ node, editor, getPos }) => {
             const pill = document.createElement('span');
             pill.className = 'cloze-gap-pill';
             pill.contentEditable = 'false';
+            const setPillLabel = makePillAccessible(pill);
 
             // The node view is built before the editor's DOM is mounted, so read the host attribute through
             // the pill itself (null while detached, which only affects the badge's initial primary answer).
@@ -144,6 +157,7 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
                 pill.textContent = '';
                 const primary = gapCorrectAnswers(gap(), isDropdown())[0] ?? alternatives()[0] ?? '—';
                 pill.textContent = primary;
+                setPillLabel(pillLabel.replace('{{value}}', primary));
                 if (alternatives().length > 1) {
                     const badge = document.createElement('sup');
                     badge.textContent = `+${alternatives().length - 1}`;
@@ -287,82 +301,87 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
 
             pill.addEventListener('click', (e) => {
                 e.stopPropagation();
-                closePopover = openPillPopover(pill, 'cloze-gap-popover', (popover, close) => {
-                    const dropdown = isDropdown();
+                closePopover = openPillPopover(
+                    pill,
+                    'cloze-gap-popover',
+                    (popover, close) => {
+                        const dropdown = isDropdown();
 
-                    if (!dropdown) {
-                        const label = document.createElement('div');
-                        label.className = 'cloze-gap-popover-label';
-                        label.textContent = editLabel;
+                        if (!dropdown) {
+                            const label = document.createElement('div');
+                            label.className = 'cloze-gap-popover-label';
+                            label.textContent = editLabel;
 
-                        const input = document.createElement('input');
-                        input.type = 'text';
-                        input.className = 'cloze-gap-popover-input';
-                        // Markers stay visible, so opening and saving a marked gap round-trips unchanged.
-                        input.value = alternatives()
-                            .map((alternative, i) => {
-                                const role = roles()?.[i];
-                                return role === 'wrong'
-                                    ? `~${alternative}`
-                                    : role === 'correct'
-                                      ? `=${alternative}`
-                                      : alternative;
+                            const input = document.createElement('input');
+                            input.type = 'text';
+                            input.className = 'cloze-gap-popover-input';
+                            // Markers stay visible, so opening and saving a marked gap round-trips unchanged.
+                            input.value = alternatives()
+                                .map((alternative, i) => {
+                                    const role = roles()?.[i];
+                                    return role === 'wrong'
+                                        ? `~${alternative}`
+                                        : role === 'correct'
+                                          ? `=${alternative}`
+                                          : alternative;
+                                })
+                                .join('|');
+                            input.addEventListener('keydown', (ke) => {
+                                if (ke.key === 'Enter') {
+                                    ke.preventDefault();
+                                    saveAlternatives();
+                                } else if (ke.key === 'Escape') {
+                                    ke.preventDefault();
+                                    close();
+                                }
+                            });
+                            popover.append(label, input);
+                            const stem = stemInput(popover);
+                            const saveAlternatives = () => {
+                                const parsed = splitClozeOptions(input.value);
+                                if (parsed.alternatives.length === 0) {
+                                    close();
+                                    return;
+                                }
+                                applyNode(
+                                    parsed.alternatives,
+                                    parsed.roles.some(Boolean) ? parsed.roles : null,
+                                    stem ? cleanStem(stem.value) || null : (node.attrs.stem as string | null)
+                                );
+                                close();
+                            };
+                            popover.append(actions(saveAlternatives));
+                            input.focus();
+                            input.select();
+                            return;
+                        }
+
+                        const currentRoles = roles();
+                        const isCorrect = (i: number) => (currentRoles ? currentRoles[i] !== 'wrong' : i === 0);
+                        const correct = alternatives().filter((_, i) => isCorrect(i));
+                        const wrong = alternatives().filter((_, i) => !isCorrect(i));
+
+                        popover.append(optionSection(correctLabel, correct), optionSection(wrongLabel, wrong));
+                        popover.append(
+                            actions(() => {
+                                if (correct.length === 0) {
+                                    close();
+                                    return;
+                                }
+                                applyNode(
+                                    [...correct, ...wrong],
+                                    [
+                                        ...correct.map((): ClozeOptionRole => 'correct'),
+                                        ...wrong.map((): ClozeOptionRole => 'wrong'),
+                                    ],
+                                    node.attrs.stem as string | null
+                                );
+                                close();
                             })
-                            .join('|');
-                        input.addEventListener('keydown', (ke) => {
-                            if (ke.key === 'Enter') {
-                                ke.preventDefault();
-                                saveAlternatives();
-                            } else if (ke.key === 'Escape') {
-                                ke.preventDefault();
-                                close();
-                            }
-                        });
-                        popover.append(label, input);
-                        const stem = stemInput(popover);
-                        const saveAlternatives = () => {
-                            const parsed = splitClozeOptions(input.value);
-                            if (parsed.alternatives.length === 0) {
-                                close();
-                                return;
-                            }
-                            applyNode(
-                                parsed.alternatives,
-                                parsed.roles.some(Boolean) ? parsed.roles : null,
-                                stem ? cleanStem(stem.value) || null : (node.attrs.stem as string | null)
-                            );
-                            close();
-                        };
-                        popover.append(actions(saveAlternatives));
-                        input.focus();
-                        input.select();
-                        return;
-                    }
-
-                    const currentRoles = roles();
-                    const isCorrect = (i: number) => (currentRoles ? currentRoles[i] !== 'wrong' : i === 0);
-                    const correct = alternatives().filter((_, i) => isCorrect(i));
-                    const wrong = alternatives().filter((_, i) => !isCorrect(i));
-
-                    popover.append(optionSection(correctLabel, correct), optionSection(wrongLabel, wrong));
-                    popover.append(
-                        actions(() => {
-                            if (correct.length === 0) {
-                                close();
-                                return;
-                            }
-                            applyNode(
-                                [...correct, ...wrong],
-                                [
-                                    ...correct.map((): ClozeOptionRole => 'correct'),
-                                    ...wrong.map((): ClozeOptionRole => 'wrong'),
-                                ],
-                                node.attrs.stem as string | null
-                            );
-                            close();
-                        })
-                    );
-                });
+                        );
+                    },
+                    editLabel
+                );
             });
 
             return {

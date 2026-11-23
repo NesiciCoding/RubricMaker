@@ -2400,7 +2400,10 @@
         "card_more_actions": "More actions",
         "card_menu_teaching": "Teaching",
         "card_menu_organise": "Organise",
-        "card_menu_sharing": "Sharing"
+        "card_menu_sharing": "Sharing",
+        "cloze_gap_pill_label": "Edit gap: {{value}}",
+        "hot_text_fragment_pill_label": "Edit fragment: {{value}}",
+        "error_fragment_pill_label": "Edit fragment: {{value}}"
     },
     "classShare": {
         "menu_item": "Share with co-teachers…",
@@ -5614,7 +5617,8 @@
         "route_essay_projector_desc": "Read-only view of one draft for the classroom projector, without controls or a class list.",
         "es_creating_item_projector": "Spotlight a draft on the projector in a second window to talk about one sentence, while the monitor keeps watching the rest of the class.",
         "rb_live_monitor_item_session_export": "Export the session as a CSV of per-student counts, stall minutes, draft ages, words written and the nudge log — plus a one-page PDF summary — to attach when an integrity question arrives later.",
-        "rb_live_monitor_item_shortcuts": "Proctor from the keyboard while standing up: j/k move between students, space opens or closes the spotlight, n nudges and f flags the student you are on, without reaching for the mouse."
+        "rb_live_monitor_item_shortcuts": "Proctor from the keyboard while standing up: j/k move between students, space opens or closes the spotlight, n nudges and f flags the student you are on, without reaching for the mouse.",
+        "gr_test_rich_authoring_item_pill_keyboard": "Gap, hot-text and error-correction pills in the editor can be reached with Tab and opened with Enter or Space; Escape closes the editing box and returns you to the pill."
     },
     "studentProfile": {
         "tab_overview": "Overview",
