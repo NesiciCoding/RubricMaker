@@ -1,3 +1,4 @@
+import ItemImage from './ItemImage';
 import { useId, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { seededShuffle } from '../../utils/seededShuffle';
@@ -35,6 +36,7 @@ export default function MatchingAnswer({ question, value, onChange, code, lang }
         <div lang={lang ?? 'en'} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {pairs.map((pair) => (
                 <div key={pair.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <ItemImage url={pair.leftImageUrl} alt={pair.left} />
                     <span id={`${labelBase}-${pair.id}`} style={{ flex: 1, color: 'var(--text)' }}>
                         {pair.left}
                     </span>

@@ -1478,6 +1478,7 @@ function GradingTab() {
                         t('docs.gr_test_rich_authoring_item_duplicate_undo'),
                         t('docs.gr_test_rich_authoring_item_paste_list'),
                         t('docs.gr_test_rich_authoring_item_collapse_issues'),
+                        t('docs.gr_test_rich_authoring_item_item_images'),
                     ]}
                 />
 

@@ -1395,6 +1395,8 @@ export interface MatchingPair {
     id: string;
     left: string;
     right: string;
+    /** Picture shown with the left-hand item (the right-hand side lives in a dropdown, which cannot show one) */
+    leftImageUrl?: string;
 }
 
 /** A shared answer column of a matrix question (e.g. True / False / Doesn't say, or A / B / C) */
@@ -1414,6 +1416,7 @@ export interface MatrixRow {
 export interface OrderItem {
     id: string;
     text: string;
+    imageUrl?: string;
 }
 
 export type TestOrderItem = OrderItem;
@@ -1429,6 +1432,7 @@ export interface CategorizeItem {
     id: string;
     text: string;
     categoryId: string;
+    imageUrl?: string;
 }
 
 export interface TestSection {
