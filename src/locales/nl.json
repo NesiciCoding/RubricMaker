@@ -5614,7 +5614,8 @@
         "route_essay_projector_desc": "Alleen-lezen weergave van één tekst voor het projectiescherm in de klas, zonder knoppen of klasselijst.",
         "es_creating_item_projector": "Zet één tekst in een tweede venster op het projectiescherm om over één zin te praten, terwijl de monitor de rest van de klas blijft volgen.",
         "rb_live_monitor_item_session_export": "Exporteer de sessie als CSV met per leerling de aantallen, stilgevallen minuten, leeftijd van de tekst, geschreven woorden en het logboek van zetjes — plus een PDF-samenvatting van één pagina — om later bij een integriteitsvraag bij te voegen.",
-        "rb_live_monitor_item_shortcuts": "Monitor vanuit het toetsenbord terwijl je staat: j/k wisselt van leerling, spatie opent of sluit de volgweergave, n stuurt een zetje en f markeert de leerling waar je op staat, zonder de muis te pakken."
+        "rb_live_monitor_item_shortcuts": "Monitor vanuit het toetsenbord terwijl je staat: j/k wisselt van leerling, spatie opent of sluit de volgweergave, n stuurt een zetje en f markeert de leerling waar je op staat, zonder de muis te pakken.",
+        "gr_test_rich_authoring_item_rich_notes": "Hints en uitleg zijn opgemaakte tekst: gebruik vet, lijsten, links en afbeeldingen. Eerder als platte tekst geschreven notities behouden hun regeleinden. Leerlingen zien de hint als ze erom vragen en de uitleg na het inleveren van een oefentoets."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",

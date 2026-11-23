@@ -6,6 +6,7 @@ import RichContent from '../Editor/RichContent';
 import TestA4Preview, { type PrintTextFields } from './TestA4Preview';
 import StudentAnswerSurface from './StudentAnswerSurface';
 import QuestionStimulus from './QuestionStimulus';
+import RichNote from './RichNote';
 import { clozeInstructionKey } from '../../utils/questionTypeKey';
 import { gapCorrectAnswers, renderClozeSegments } from '../../utils/clozeParse';
 import { stripHtmlTags } from '../../utils/exportDataPrep';
@@ -306,12 +307,12 @@ export default function TestInspector({
                         </AnswerLine>
                         {question.hint && (
                             <AnswerLine label={t('tests.inspector_answers_hint')}>
-                                <span>{question.hint}</span>
+                                <RichNote text={question.hint} lang={lang ?? 'en'} />
                             </AnswerLine>
                         )}
                         {question.explanation && (
                             <AnswerLine label={t('tests.inspector_answers_explanation')}>
-                                <RichContent html={question.explanation} lang={lang ?? 'en'} />
+                                <RichNote text={question.explanation} lang={lang ?? 'en'} />
                             </AnswerLine>
                         )}
                     </div>

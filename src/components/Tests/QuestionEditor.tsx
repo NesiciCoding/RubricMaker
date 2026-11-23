@@ -49,6 +49,8 @@ import PipeListInput from './PipeListInput';
 import { splitPastedList, spreadPastedLines, spreadPastedPairs } from '../../utils/pastedList';
 import type { TestQuestionIssue } from '../../utils/testQuestionIssues';
 import { gapStems, suggestDerivedForms } from '../../utils/wordFormation';
+import { isBlankHtml } from '../../utils/isBlankHtml';
+import { promptToHtml } from '../../utils/exportDataPrep';
 import ErrorCorrectionFields from './ErrorCorrectionFields';
 import SentenceBuilderFields from './SentenceBuilderFields';
 import KeyWordTransformationFields from './KeyWordTransformationFields';
@@ -1835,32 +1837,36 @@ export default function QuestionEditor({
                             <>
                                 <div>
                                     <label
-                                        htmlFor={`question-hint-${question.id}`}
+                                        id={`question-hint-label-${question.id}`}
                                         style={{ display: 'flex', alignItems: 'center', gap: 6 }}
                                     >
                                         <Lightbulb size={14} /> {t('tests.question_hint_label')}
                                     </label>
-                                    <input
-                                        id={`question-hint-${question.id}`}
-                                        type="text"
-                                        value={question.hint ?? ''}
-                                        onChange={(e) => update({ hint: e.target.value || undefined })}
-                                        placeholder={t('tests.question_hint_placeholder')}
+                                    <EssayEditor
+                                        content={promptToHtml(question.hint ?? '')}
+                                        onChange={(html) => update({ hint: isBlankHtml(html) ? undefined : html })}
+                                        minHeight={48}
+                                        allowPageMode={false}
+                                        allowImageEmbedding
+                                        ariaLabelledBy={`question-hint-label-${question.id}`}
                                     />
                                 </div>
                                 <div>
                                     <label
-                                        htmlFor={`question-explanation-${question.id}`}
+                                        id={`question-explanation-label-${question.id}`}
                                         style={{ display: 'flex', alignItems: 'center', gap: 6 }}
                                     >
                                         <MessageCircle size={14} /> {t('tests.question_explanation_label')}
                                     </label>
-                                    <textarea
-                                        id={`question-explanation-${question.id}`}
-                                        value={question.explanation ?? ''}
-                                        onChange={(e) => update({ explanation: e.target.value || undefined })}
-                                        placeholder={t('tests.question_explanation_placeholder')}
-                                        rows={2}
+                                    <EssayEditor
+                                        content={promptToHtml(question.explanation ?? '')}
+                                        onChange={(html) =>
+                                            update({ explanation: isBlankHtml(html) ? undefined : html })
+                                        }
+                                        minHeight={64}
+                                        allowPageMode={false}
+                                        allowImageEmbedding
+                                        ariaLabelledBy={`question-explanation-label-${question.id}`}
                                     />
                                     <p className="text-muted text-xs" style={{ marginTop: 4 }}>
                                         {t('tests.question_explanation_help')}
