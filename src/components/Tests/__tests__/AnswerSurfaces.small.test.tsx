@@ -101,3 +101,23 @@ describe('typed cloze gaps', () => {
         expect(first.closest('p')).toHaveStyle({ whiteSpace: 'pre-wrap' });
     });
 });
+
+describe('true-false labels in the printed booklet', () => {
+    it('prints the custom wording next to A and B', async () => {
+        const { buildExamBookletHtml } = await import('../../../utils/testExamExportHtml');
+        const { DEFAULT_EXAM_EXPORT_OPTIONS } = await import('../../../utils/testExamContent');
+        const html = buildExamBookletHtml(
+            {
+                id: 't',
+                name: 'T',
+                requireSEB: false,
+                shuffleQuestions: false,
+                createdAt: '2026-01-01',
+                questions: [q({ trueLabel: 'Yes', falseLabel: 'No <b>' })],
+            },
+            DEFAULT_EXAM_EXPORT_OPTIONS
+        );
+        expect(html).toContain('&nbsp;&nbsp;Yes</div>');
+        expect(html).toContain('No &lt;b&gt;');
+    });
+});
