@@ -1479,6 +1479,7 @@ function GradingTab() {
                         t('docs.gr_test_rich_authoring_item_paste_list'),
                         t('docs.gr_test_rich_authoring_item_collapse_issues'),
                         t('docs.gr_test_rich_authoring_item_pill_keyboard'),
+                        t('docs.gr_test_rich_authoring_item_typed_gap_chips'),
                     ]}
                 />
 
