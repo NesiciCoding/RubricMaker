@@ -28,6 +28,7 @@ export interface ScorableQuestion {
     expectedNumericValue?: number;
     numericTolerance?: number;
     partialCredit?: boolean;
+    gapWeights?: number[];
     correctBoolean?: boolean;
     answerTolerance?: AnswerTolerance;
     dictationText?: string;
@@ -419,7 +420,28 @@ export function scoreMultipleResponse(question: ScorableQuestion, response: stri
  */
 export function scoreCloze(question: ScorableQuestion, response: string): number {
     const correct = clozeGapCorrectness(question, response);
-    return correct.length === 0 ? 0 : partialOrAll(question, correct.filter(Boolean).length, correct.length);
+    if (correct.length === 0) return 0;
+    const weights = effectiveGapWeights(question, correct.length);
+    const earned = weights.reduce((sum, weight, i) => sum + (correct[i] ? weight : 0), 0);
+    return partialOrAll(
+        question,
+        earned,
+        weights.reduce((sum, weight) => sum + weight, 0)
+    );
+}
+
+/** Each gap's relative worth: the authored weights when there is one per gap and all are usable, otherwise 1 each. */
+export function effectiveGapWeights(question: Pick<ScorableQuestion, 'gapWeights'>, gapCount: number): number[] {
+    const weights = question.gapWeights;
+    if (
+        !weights ||
+        weights.length !== gapCount ||
+        !weights.every((w) => Number.isFinite(w) && w >= 0) ||
+        weights.every((w) => w === 0)
+    ) {
+        return Array.from({ length: gapCount }, () => 1);
+    }
+    return weights;
 }
 
 /** Per-gap correctness of a cloze response, in gap order — also feeds per-gap item analysis. */

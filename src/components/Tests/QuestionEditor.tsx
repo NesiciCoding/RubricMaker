@@ -873,6 +873,8 @@ export default function QuestionEditor({
                             prompt={question.prompt}
                             rolesEditable={question.type === 'cloze-dropdown'}
                             onChange={(prompt) => update({ prompt })}
+                            weights={question.gapWeights}
+                            onWeightsChange={(gapWeights) => update({ gapWeights })}
                         />
                     </>
                 ) : (

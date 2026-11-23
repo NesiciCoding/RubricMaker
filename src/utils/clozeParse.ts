@@ -10,6 +10,7 @@ import {
 } from '../../supabase/functions/_shared/testScoring.ts';
 
 export {
+    effectiveGapWeights,
     parseClozeGaps,
     matchClozeGaps,
     parseHotTextFragments,

@@ -39,4 +39,35 @@ describe('ClozeGapList', () => {
         fireEvent.click(screen.getAllByRole('checkbox')[0]);
         expect(onChange).toHaveBeenLastCalledWith('Pick {{~Paris|=London|~Berlin}}.');
     });
+
+    it('offers a weight per gap and reports a change, clearing the weights when all are equal again', () => {
+        const onWeightsChange = vi.fn();
+        const { rerender } = render(
+            <ClozeGapList
+                prompt={'I {{went}} and {{saw}}.'}
+                onChange={vi.fn()}
+                rolesEditable={false}
+                onWeightsChange={onWeightsChange}
+            />
+        );
+        const first = screen.getAllByRole('spinbutton')[0];
+        fireEvent.change(first, { target: { value: '3' } });
+        expect(onWeightsChange).toHaveBeenLastCalledWith([3, 1]);
+        rerender(
+            <ClozeGapList
+                prompt={'I {{went}} and {{saw}}.'}
+                onChange={vi.fn()}
+                rolesEditable={false}
+                weights={[3, 1]}
+                onWeightsChange={onWeightsChange}
+            />
+        );
+        fireEvent.change(screen.getAllByRole('spinbutton')[0], { target: { value: '1' } });
+        expect(onWeightsChange).toHaveBeenLastCalledWith(undefined);
+    });
+
+    it('shows no weight inputs unless a handler is given', () => {
+        render(<ClozeGapList prompt={'I {{went}}.'} onChange={vi.fn()} rolesEditable={false} />);
+        expect(screen.queryByRole('spinbutton')).toBeNull();
+    });
 });
