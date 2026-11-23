@@ -32,6 +32,7 @@ function json(body: unknown, status = 200) {
 }
 
 interface RawOption {
+    feedback?: unknown;
     isCorrect?: boolean;
     [key: string]: unknown;
 }
@@ -124,7 +125,13 @@ function toStudentSafeTest(test: { questions?: RawQuestion[]; [key: string]: unk
             } = q;
             return {
                 ...rest,
-                ...(options ? { options: options.map(({ isCorrect: _ic, ...opt }) => opt) } : {}),
+                ...(options
+                    ? {
+                          options: options.map(({ isCorrect: _ic, feedback, ...opt }) =>
+                              practice && feedback !== undefined ? { ...opt, feedback } : opt
+                          ),
+                      }
+                    : {}),
                 ...(categorizeItems
                     ? { categorizeItems: categorizeItems.map(({ categoryId: _cid, ...item }) => item) }
                     : {}),
