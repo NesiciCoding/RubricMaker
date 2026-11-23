@@ -5616,7 +5616,7 @@
         "es_creating_item_projector": "Einen Entwurf in einem zweiten Fenster auf den Beamer legen, um über einen Satz zu sprechen, während der Monitor den Rest der Klasse weiter beobachtet.",
         "rb_live_monitor_item_session_export": "Exportiere die Sitzung als CSV mit Zählungen, Stock-Minuten, Alter des Textes, geschriebenen Wörtern und dem Hinweisprotokoll pro Schülerin oder Schüler — plus einer einseitigen PDF-Zusammenfassung —, um sie später bei einer Integritätsfrage beizulegen.",
         "rb_live_monitor_item_shortcuts": "Aufsicht per Tastatur im Stehen: j/k wechselt zwischen Schülerinnen und Schülern, Leertaste öffnet oder schließt die Verfolgung, n sendet einen Hinweis und f markiert die aktuelle Person, ohne zur Maus zu greifen.",
-        "gr_test_rich_authoring_item_item_images": "Zuordnen, Ordnen und Kategorisieren: Zu einem Element lässt sich ein Bild hinzufügen (Bild-Schaltfläche in der Zeile). Beim Zuordnen gehört das Bild zum linken Element; Auswahlmöglichkeiten rechts bestehen nur aus Text. Bilder erscheinen am Bildschirm, noch nicht im gedruckten Heft."
+        "gr_test_rich_authoring_item_item_images": "Zuordnen, Ordnen und Kategorisieren: Zu einem Element lässt sich ein Bild hinzufügen (Bild-Schaltfläche in der Zeile). Beim Zuordnen gehört das Bild zum linken Element; Auswahlmöglichkeiten rechts bestehen nur aus Text. Bilder erscheinen am Bildschirm und im gedruckten Heft (HTML und Word)."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",

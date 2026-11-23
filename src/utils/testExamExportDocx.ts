@@ -212,12 +212,31 @@ function clozeRuns(question: TestQuestion): TextRun[] {
     );
 }
 
-function matchingTable(question: TestQuestion): Table {
+/** A small picture run for a matching / ordering / categorize item, or nothing when it has none or cannot be loaded. */
+async function itemImageRuns(url: string | undefined): Promise<ImageRun[]> {
+    if (!url) return [];
+    const run = await questionImageRun(url, 90);
+    return run ? [run] : [];
+}
+
+async function matchingTable(question: TestQuestion): Promise<Table> {
     const data = matchingBookletData(question);
+    const leftParagraphs = await Promise.all(
+        data.left.map(
+            async (t, i) =>
+                new Paragraph({
+                    children: [
+                        new TextRun(`${i + 1}.  `),
+                        ...(await itemImageRuns(data.leftImages[i])),
+                        new TextRun(t),
+                    ],
+                })
+        )
+    );
     const leftCell = new TableCell({
         borders: NO_BORDER,
         width: { size: 50, type: WidthType.PERCENTAGE },
-        children: data.left.map((t, i) => new Paragraph({ text: `${i + 1}.  ${t}` })),
+        children: leftParagraphs,
     });
     const rightCell = new TableCell({
         borders: NO_BORDER,
@@ -235,19 +254,37 @@ function matchingTable(question: TestQuestion): Table {
     });
 }
 
-function orderingParagraphs(question: TestQuestion): Paragraph[] {
-    return orderingBookletItems(question).map(
-        (it) =>
-            new Paragraph({
-                children: [new TextRun({ text: `${it.letter}  `, bold: true }), new TextRun(it.text)],
-                indent: { left: 360 },
-            })
+async function orderingParagraphs(question: TestQuestion): Promise<Paragraph[]> {
+    return Promise.all(
+        orderingBookletItems(question).map(
+            async (it) =>
+                new Paragraph({
+                    children: [
+                        new TextRun({ text: `${it.letter}  `, bold: true }),
+                        ...(await itemImageRuns(it.imageUrl)),
+                        new TextRun(it.text),
+                    ],
+                    indent: { left: 360 },
+                })
+        )
     );
 }
 
-function categorizeParagraphs(question: TestQuestion): Paragraph[] {
+async function categorizeParagraphs(question: TestQuestion): Promise<Paragraph[]> {
     const data = categorizeBookletData(question);
-    const items = data.items.map((t, i) => new Paragraph({ text: `${i + 1}.  ${t}`, indent: { left: 360 } }));
+    const items = await Promise.all(
+        data.items.map(
+            async (t, i) =>
+                new Paragraph({
+                    children: [
+                        new TextRun(`${i + 1}.  `),
+                        ...(await itemImageRuns(data.itemImages[i])),
+                        new TextRun(t),
+                    ],
+                    indent: { left: 360 },
+                })
+        )
+    );
     const categoryLine = new Paragraph({
         children: [
             new TextRun({ text: `${tx('categories_label')}: `, bold: true }),
@@ -474,13 +511,13 @@ async function questionParagraphs(
             break;
         }
         case 'matching':
-            blocks.push(matchingTable(question));
+            blocks.push(await matchingTable(question));
             break;
         case 'ordering':
-            blocks.push(...orderingParagraphs(question));
+            blocks.push(...(await orderingParagraphs(question)));
             break;
         case 'categorize':
-            blocks.push(...categorizeParagraphs(question));
+            blocks.push(...(await categorizeParagraphs(question)));
             break;
         case 'hot-text':
             if (options.hotTextMirror) {

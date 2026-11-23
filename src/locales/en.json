@@ -5616,7 +5616,7 @@
         "es_creating_item_projector": "Spotlight a draft on the projector in a second window to talk about one sentence, while the monitor keeps watching the rest of the class.",
         "rb_live_monitor_item_session_export": "Export the session as a CSV of per-student counts, stall minutes, draft ages, words written and the nudge log — plus a one-page PDF summary — to attach when an integrity question arrives later.",
         "rb_live_monitor_item_shortcuts": "Proctor from the keyboard while standing up: j/k move between students, space opens or closes the spotlight, n nudges and f flags the student you are on, without reaching for the mouse.",
-        "gr_test_rich_authoring_item_item_images": "Matching, ordering and categorize: add a picture to an item (image button on its row). In matching the picture goes with the left-hand item; right-hand choices are text only. Pictures show on screen but not yet in the printed booklet."
+        "gr_test_rich_authoring_item_item_images": "Matching, ordering and categorize: add a picture to an item (image button on its row). In matching the picture goes with the left-hand item; right-hand choices are text only. Pictures show on screen and in the printed booklet (HTML and Word)."
     },
     "studentProfile": {
         "tab_overview": "Overview",

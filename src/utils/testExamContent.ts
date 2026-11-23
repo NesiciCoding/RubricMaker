@@ -168,6 +168,8 @@ function nonIdentityShuffle<T>(items: T[], seed: string): T[] {
 export interface MatchingBookletData {
     /** Left-hand terms, in their stored (numbered) order. */
     left: string[];
+    /** Picture of each left-hand term (same order); undefined where it has none. */
+    leftImages: (string | undefined)[];
     /** Right-hand descriptions as a lettered word bank, shuffled so column position doesn't reveal the pairing. */
     rightOptions: { letter: string; text: string }[];
 }
@@ -178,6 +180,7 @@ export function matchingBookletData(question: TestQuestion): MatchingBookletData
     const shuffledRight = nonIdentityShuffle(pairs, `${question.id}:right`);
     return {
         left: pairs.map((p) => p.left),
+        leftImages: pairs.map((p) => p.leftImageUrl),
         rightOptions: shuffledRight.map((p, i) => ({ letter: optionLetter(i), text: p.right })),
     };
 }
@@ -229,9 +232,9 @@ function bankCorrectLetterKey(question: TestQuestion): string {
 }
 
 /** Ordering items shuffled for booklet display — the stored array order IS the correct order, so printing it as-is would leak the answer. */
-export function orderingBookletItems(question: TestQuestion): { letter: string; text: string }[] {
+export function orderingBookletItems(question: TestQuestion): { letter: string; text: string; imageUrl?: string }[] {
     const items = nonIdentityShuffle(question.orderItems ?? [], question.id);
-    return items.map((item, i) => ({ letter: optionLetter(i), text: item.text }));
+    return items.map((item, i) => ({ letter: optionLetter(i), text: item.text, imageUrl: item.imageUrl }));
 }
 
 /** For each left-hand item (by row), the letter of its correct match in the booklet's shuffled right-hand word bank — e.g. "1→C; 2→A" — matching what a student actually writes, for the grading key. */
@@ -287,6 +290,8 @@ export function answerKeyText(question: TestQuestion): string {
 
 export interface CategorizeBookletData {
     items: string[];
+    /** Picture of each item (same order); undefined where it has none. */
+    itemImages: (string | undefined)[];
     categories: string[];
 }
 
@@ -294,6 +299,7 @@ export interface CategorizeBookletData {
 export function categorizeBookletData(question: TestQuestion): CategorizeBookletData {
     return {
         items: (question.categorizeItems ?? []).map((i) => i.text),
+        itemImages: (question.categorizeItems ?? []).map((i) => i.imageUrl),
         categories: (question.categories ?? []).map((c) => c.label),
     };
 }
