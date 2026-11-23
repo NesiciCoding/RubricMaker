@@ -19,6 +19,11 @@ describe('cloze intro', () => {
         expect(speakableQuestionText(question, 'blank')).toBe('Read the rules first.. The blank sat.');
     });
 
+    it('is not read aloud for a question that is no longer a cloze', () => {
+        const retyped: TestQuestion = { ...question, type: 'short-answer', prompt: 'Name it' };
+        expect(speakableQuestionText(retyped, 'blank')).toBe('Name it');
+    });
+
     it('is shown to students above the gaps, formatted', () => {
         render(<StudentQuestionCard question={question} index={0} total={1} value="" onChange={vi.fn()} code="c" />);
         expect(screen.getByText('rules').tagName).toBe('STRONG');
