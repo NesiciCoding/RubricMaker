@@ -5,6 +5,7 @@ import QRCode from 'qrcode';
 import type { Student, Test, TestQuestion } from '../types';
 import { PRINT_MARGIN_MM, printHtml, withoutBrowserPrintChrome } from './pdfExport';
 import { safeImgSrc } from './safeMediaSrc';
+import { inlineScriptHtml } from './inlineScript';
 import { escapeHtml, hasRichContent, promptToHtml, sanitizeFilename } from './exportDataPrep';
 import { plainQuestionPromptText } from './clozeParse';
 import { calcTestMaxPoints } from './testCalc';
@@ -62,6 +63,11 @@ function clozeBookletHtml(question: TestQuestion): string {
         .join('');
 }
 
+/** Option / item text with `_{sub}` and `^{sup}` printed as real sub- and superscript. */
+function scriptHtml(text: string): string {
+    return inlineScriptHtml(text, escapeHtml);
+}
+
 /** A small picture beside a matching / ordering / categorize item; an unsafe or missing URL prints nothing. */
 function itemImageHtml(url: string | undefined): string {
     const src = safeImgSrc(url);
@@ -73,10 +79,10 @@ function itemImageHtml(url: string | undefined): string {
 function matchingBookletHtml(question: TestQuestion): string {
     const data = matchingBookletData(question);
     const left = data.left
-        .map((t, i) => `<div style="margin:2px 0">${i + 1}. ${itemImageHtml(data.leftImages[i])}${escapeHtml(t)}</div>`)
+        .map((t, i) => `<div style="margin:2px 0">${i + 1}. ${itemImageHtml(data.leftImages[i])}${scriptHtml(t)}</div>`)
         .join('');
     const right = data.rightOptions
-        .map((o) => `<div style="margin:2px 0"><strong>${o.letter}</strong>&nbsp;&nbsp;${escapeHtml(o.text)}</div>`)
+        .map((o) => `<div style="margin:2px 0"><strong>${o.letter}</strong>&nbsp;&nbsp;${scriptHtml(o.text)}</div>`)
         .join('');
     return `<div style="margin-top:6px;display:flex;gap:24px">
     <div style="flex:1">${left}</div>
@@ -89,7 +95,7 @@ function orderingBookletHtml(question: TestQuestion): string {
     return `<div style="margin-top:6px">${items
         .map(
             (it) =>
-                `<div style="margin:2px 0"><strong>${it.letter}</strong>&nbsp;&nbsp;${itemImageHtml(it.imageUrl)}${escapeHtml(it.text)}</div>`
+                `<div style="margin:2px 0"><strong>${it.letter}</strong>&nbsp;&nbsp;${itemImageHtml(it.imageUrl)}${scriptHtml(it.text)}</div>`
         )
         .join('')}</div>`;
 }
@@ -97,7 +103,7 @@ function orderingBookletHtml(question: TestQuestion): string {
 function categorizeBookletHtml(question: TestQuestion): string {
     const data = categorizeBookletData(question);
     const items = data.items
-        .map((t, i) => `<div style="margin:2px 0">${i + 1}. ${itemImageHtml(data.itemImages[i])}${escapeHtml(t)}</div>`)
+        .map((t, i) => `<div style="margin:2px 0">${i + 1}. ${itemImageHtml(data.itemImages[i])}${scriptHtml(t)}</div>`)
         .join('');
     const categories = data.categories.map((c) => escapeHtml(c)).join(' / ');
     return `<div style="margin-top:6px">${items}</div>
@@ -139,7 +145,7 @@ function questionBodyHtml(
             extra += `<div style="margin-top:6px">${(question.options ?? [])
                 .map(
                     (o, i) =>
-                        `<div style="margin:3px 0"><strong>${optionLetter(i)}</strong>&nbsp;&nbsp;${escapeHtml(o.text)}${
+                        `<div style="margin:3px 0"><strong>${optionLetter(i)}</strong>&nbsp;&nbsp;${scriptHtml(o.text)}${
                             o.imageUrl
                                 ? `<div style="margin:4px 0 4px 22px"><img src="${escapeHtml(o.imageUrl)}" alt="${o.text ? '' : escapeHtml(tx('option_image_alt'))}" style="max-width:100%;max-height:120px" /></div>`
                                 : ''

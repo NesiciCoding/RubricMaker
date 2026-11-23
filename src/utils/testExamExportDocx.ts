@@ -22,6 +22,7 @@ import { buildDocxStyles } from './docxExport';
 import { hasRichContent, promptToHtml, sanitizeFilename } from './exportDataPrep';
 import { htmlToDocxChildren, htmlToDocxLead, type DocxImageMap } from './essayExport';
 import { plainQuestionPromptText } from './clozeParse';
+import { parseInlineScript } from './inlineScript';
 import { calcTestMaxPoints } from './testCalc';
 import { examPapers } from './variantDelivery';
 import {
@@ -212,6 +213,18 @@ function clozeRuns(question: TestQuestion): TextRun[] {
     );
 }
 
+/** Option / item text as runs, with `_{sub}` and `^{sup}` as real sub- and superscript. */
+function scriptRuns(text: string): TextRun[] {
+    return parseInlineScript(text).map(
+        (part) =>
+            new TextRun({
+                text: part.text,
+                subScript: part.kind === 'sub' || undefined,
+                superScript: part.kind === 'sup' || undefined,
+            })
+    );
+}
+
 /** A small picture run for a matching / ordering / categorize item, or nothing when it has none or cannot be loaded. */
 async function itemImageRuns(url: string | undefined): Promise<ImageRun[]> {
     if (!url) return [];
@@ -228,7 +241,7 @@ async function matchingTable(question: TestQuestion): Promise<Table> {
                     children: [
                         new TextRun(`${i + 1}.  `),
                         ...(await itemImageRuns(data.leftImages[i])),
-                        new TextRun(t),
+                        ...scriptRuns(t),
                     ],
                 })
         )
@@ -244,7 +257,7 @@ async function matchingTable(question: TestQuestion): Promise<Table> {
         children: data.rightOptions.map(
             (o) =>
                 new Paragraph({
-                    children: [new TextRun({ text: `${o.letter}  `, bold: true }), new TextRun(o.text)],
+                    children: [new TextRun({ text: `${o.letter}  `, bold: true }), ...scriptRuns(o.text)],
                 })
         ),
     });
@@ -262,7 +275,7 @@ async function orderingParagraphs(question: TestQuestion): Promise<Paragraph[]> 
                     children: [
                         new TextRun({ text: `${it.letter}  `, bold: true }),
                         ...(await itemImageRuns(it.imageUrl)),
-                        new TextRun(it.text),
+                        ...scriptRuns(it.text),
                     ],
                     indent: { left: 360 },
                 })
@@ -279,7 +292,7 @@ async function categorizeParagraphs(question: TestQuestion): Promise<Paragraph[]
                     children: [
                         new TextRun(`${i + 1}.  `),
                         ...(await itemImageRuns(data.itemImages[i])),
-                        new TextRun(t),
+                        ...scriptRuns(t),
                     ],
                     indent: { left: 360 },
                 })
@@ -423,7 +436,7 @@ async function questionParagraphs(
             for (const [i, o] of (question.options ?? []).entries()) {
                 blocks.push(
                     new Paragraph({
-                        children: [new TextRun({ text: `${optionLetter(i)}  `, bold: true }), new TextRun(o.text)],
+                        children: [new TextRun({ text: `${optionLetter(i)}  `, bold: true }), ...scriptRuns(o.text)],
                         indent: { left: 360 },
                     })
                 );

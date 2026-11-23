@@ -1,3 +1,5 @@
+import InlineScript from './InlineScript';
+import { plainInlineScript } from '../../utils/inlineScript';
 import ItemImage from './ItemImage';
 import { useId, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -38,7 +40,7 @@ export default function MatchingAnswer({ question, value, onChange, code, lang }
                 <div key={pair.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <ItemImage url={pair.leftImageUrl} alt={pair.left} />
                     <span id={`${labelBase}-${pair.id}`} style={{ flex: 1, color: 'var(--text)' }}>
-                        {pair.left}
+                        <InlineScript text={pair.left} />
                     </span>
                     <select
                         aria-labelledby={`${labelBase}-${pair.id}`}
@@ -57,7 +59,7 @@ export default function MatchingAnswer({ question, value, onChange, code, lang }
                         <option value="">{t('tests.taking.matching_select_placeholder')}</option>
                         {shuffledPairs.map((p) => (
                             <option key={p.id} value={p.id}>
-                                {p.right}
+                                {plainInlineScript(p.right)}
                             </option>
                         ))}
                     </select>

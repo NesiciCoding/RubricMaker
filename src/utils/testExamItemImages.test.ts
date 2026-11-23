@@ -106,3 +106,34 @@ describe('item pictures in the printed booklet', () => {
         expect(withoutImages).toContain('Seed');
     });
 });
+
+describe('sub- and superscript in option text', () => {
+    const chem: TestQuestion = {
+        id: 'mc',
+        type: 'multiple-choice',
+        points: 1,
+        prompt: '<p>Water?</p>',
+        options: [
+            { id: 'a', text: 'H_{2}O', isCorrect: true },
+            { id: 'b', text: 'x^{2} < 3', isCorrect: false },
+        ],
+    };
+
+    it('prints real <sub>/<sup> tags in the HTML booklet and escapes the rest', () => {
+        const html = buildExamBookletHtml(test([chem]), DEFAULT_EXAM_EXPORT_OPTIONS);
+        expect(html).toContain('H<sub>2</sub>O');
+        expect(html).toContain('x<sup>2</sup> &lt; 3');
+    });
+
+    it('marks the runs as sub- and superscript in the DOCX booklet', async () => {
+        saved.length = 0;
+        await exportExamDocx(test([chem]), { attachmentMode: 'inline', hotTextMirror: false, scanMarkers: false });
+        const zip = await JSZip.loadAsync(saved[0]);
+        const name = Object.keys(zip.files).find((f) => f.endsWith('-booklet.docx'))!;
+        const xml = await (
+            await JSZip.loadAsync(await zip.files[name].async('arraybuffer'))
+        ).files['word/document.xml'].async('string');
+        expect(xml).toContain('w:val="subscript"');
+        expect(xml).toContain('w:val="superscript"');
+    });
+});

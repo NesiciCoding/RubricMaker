@@ -7,6 +7,7 @@ import RichContent from '../Editor/RichContent';
 import { renderClozeSegments } from '../../utils/clozeParse';
 import { clozeInstructionKey, questionTypeHelpKey } from '../../utils/questionTypeKey';
 import { htmlToPlainText } from '../../hooks/useTTS';
+import { plainInlineScript } from '../../utils/inlineScript';
 import type { TestQuestion } from '../../types';
 
 export interface StudentQuestionCardProps {
@@ -35,7 +36,7 @@ export function speakableQuestionText(question: TestQuestion, blankWord: string)
               .map((s) => (s.type === 'gap' ? blankWord : s.text))
               .join('')
         : htmlToPlainText(question.prompt);
-    const optionsText = (question.options ?? []).map((o) => o.text).join('. ');
+    const optionsText = (question.options ?? []).map((o) => plainInlineScript(o.text)).join('. ');
     return [promptText, optionsText].filter(Boolean).join('. ');
 }
 

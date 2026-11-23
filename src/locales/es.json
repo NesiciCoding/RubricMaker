@@ -2401,7 +2401,8 @@
         "card_menu_teaching": "Enseñanza",
         "card_menu_organise": "Organizar",
         "card_menu_sharing": "Compartir",
-        "item_image_label": "Imagen para este elemento (URL)"
+        "item_image_label": "Imagen para este elemento (URL)",
+        "option_script_hint": "Consejo: escriba H_{2}O para subíndice y x^{2} para superíndice en una opción."
     },
     "classShare": {
         "menu_item": "Compartir con co-docentes…",
@@ -5616,7 +5617,8 @@
         "es_creating_item_projector": "Proyecta un borrador en una segunda ventana para hablar de una frase mientras el monitor sigue observando al resto de la clase.",
         "rb_live_monitor_item_session_export": "Exporta la sesión como CSV con los recuentos, minutos estancados, antigüedad del texto, palabras escritas y el registro de avisos por estudiante — más un resumen PDF de una página — para adjuntarlo si más adelante surge una duda de integridad.",
         "rb_live_monitor_item_shortcuts": "Supervisa con el teclado mientras estás de pie: j/k cambia de estudiante, espacio abre o cierra el seguimiento, n envía un aviso y f marca al estudiante actual, sin tocar el ratón.",
-        "gr_test_rich_authoring_item_item_images": "Emparejar, ordenar y clasificar: añada una imagen a un elemento (botón de imagen en su fila). En emparejar, la imagen acompaña al elemento de la izquierda; las opciones de la derecha son solo texto. Las imágenes se ven en pantalla y en el cuadernillo impreso (HTML y Word)."
+        "gr_test_rich_authoring_item_item_images": "Emparejar, ordenar y clasificar: añada una imagen a un elemento (botón de imagen en su fila). En emparejar, la imagen acompaña al elemento de la izquierda; las opciones de la derecha son solo texto. Las imágenes se ven en pantalla y en el cuadernillo impreso (HTML y Word).",
+        "gr_test_answer_options_item_scripts": "El texto de opciones y elementos puede mostrar subíndices y superíndices: escriba H_{2}O o x^{2} (las llaves son obligatorias, así que un texto normal como snake_case o 2^10 nunca cambia). Se ve en pantalla, en el cuadernillo impreso (HTML y Word) y como Unicode en resultados y claves de respuesta."
     },
     "studentProfile": {
         "tab_overview": "Resumen",
