@@ -194,6 +194,17 @@ describe('ClozeGapExtension node view', () => {
         editor.destroy();
     });
 
+    it('refuses a selection that contains a line break and leaves the text untouched', () => {
+        const editor = makeEditor({
+            type: 'doc',
+            content: [{ type: 'paragraph', content: [{ type: 'text', text: 'one\ntwo' }] }],
+        });
+        editor.commands.setTextSelection({ from: 1, to: 8 });
+        expect(editor.commands.insertClozeGap(['answer'])).toBe(false);
+        expect(clozeContentToPrompt(editor)).toBe('one\ntwo');
+        editor.destroy();
+    });
+
     it('keeps the spaces around a selection outside the gap', () => {
         const editor = makeEditor('<p>The cat sat</p>');
         editor.commands.setTextSelection({ from: 4, to: 9 });

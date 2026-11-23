@@ -490,7 +490,14 @@ describe('parseTestJson — full fidelity', () => {
                         expectedAnswers: ['a', 'b'],
                         answerTolerance: { punctuation: true, spelling: true, slips: true },
                     },
-                    { prompt: 'How many?', type: 'numeric', points: 1, expectedNumericValue: 42, numericTolerance: 2 },
+                    {
+                        prompt: 'How many?',
+                        type: 'numeric',
+                        points: 1,
+                        expectedNumericValue: 42,
+                        numericTolerance: 2,
+                        numericTolerancePercent: 5,
+                    },
                     {
                         prompt: 'Sort {{apple}} here',
                         type: 'cloze-bank',
@@ -674,7 +681,11 @@ describe('parseTestJson — full fidelity', () => {
         expect(test.questions[0].linkedCefrDescriptors).toHaveLength(1);
         expect(test.questions[0].frameworkDescriptors).toEqual([{ id: 'f1' }]);
         expect(test.questions[3].answerTolerance).toEqual({ punctuation: true, spelling: true, slips: true });
-        expect(test.questions[4]).toMatchObject({ expectedNumericValue: 42, numericTolerance: 2 });
+        expect(test.questions[4]).toMatchObject({
+            expectedNumericValue: 42,
+            numericTolerance: 2,
+            numericTolerancePercent: 5,
+        });
         expect(test.questions[5]).toMatchObject({ bankDistractors: ['pear'], bankUniqueUse: false });
         expect(test.questions[7].wordFormation).toBe(true);
         expect(test.questions[8].matrixRows?.map((r) => r.correctColumnId)).toEqual([

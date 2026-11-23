@@ -2413,7 +2413,8 @@
         "matching_distractors_label": "Extra right-hand choices with no partner (optional, one per line)",
         "matching_distractors_placeholder": "One distractor per line",
         "cloze_points_per_gap": "Each gap is worth {{points}} point(s).",
-        "cloze_generate_replace_confirm": "This replaces the gaps you already made, including their alternatives and wrong options. Continue?"
+        "cloze_generate_replace_confirm": "This replaces the gaps you already made, including their alternatives and wrong options. Continue?",
+        "cloze_points_all_or_nothing": "All gaps must be right to earn the {{points}} point(s)."
     },
     "classShare": {
         "menu_item": "Share with co-teachers…",

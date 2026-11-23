@@ -119,6 +119,7 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
                     const { from, to, $from, $to } = state.selection;
                     const selected = from !== to && $from.sameParent($to) ? state.doc.textBetween(from, to) : '';
                     const word = selected.trim();
+                    if (/[\n\r\u2028\u2029]/.test(word)) return false;
                     if (!word) {
                         return commands.insertContent({
                             type: this.name,

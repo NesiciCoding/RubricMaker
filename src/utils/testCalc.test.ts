@@ -216,6 +216,11 @@ describe('scoreNumeric', () => {
         expect(scoreNumeric(both, '109')).toBe(0);
     });
 
+    it('lets the percentage margin win when it is wider than the absolute one', () => {
+        const q = { ...numericQuestion, expectedNumericValue: 100, numericTolerance: 2, numericTolerancePercent: 5 };
+        expect(scoreNumeric(q, '104')).toBe(3);
+    });
+
     it('defaults tolerance to 0 (exact match) when unset', () => {
         const exact = { ...numericQuestion, numericTolerance: undefined };
         expect(scoreNumeric(exact, '3.14')).toBe(3);

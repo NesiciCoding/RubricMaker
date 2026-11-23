@@ -2413,7 +2413,8 @@
         "matching_distractors_label": "Zusätzliche Auswahlmöglichkeiten rechts ohne Partner (optional, eine pro Zeile)",
         "matching_distractors_placeholder": "Ein Ablenker pro Zeile",
         "cloze_points_per_gap": "Jede Lücke ist {{points}} Punkt(e) wert.",
-        "cloze_generate_replace_confirm": "Dadurch werden die bereits erstellten Lücken samt Alternativen und falschen Optionen ersetzt. Fortfahren?"
+        "cloze_generate_replace_confirm": "Dadurch werden die bereits erstellten Lücken samt Alternativen und falschen Optionen ersetzt. Fortfahren?",
+        "cloze_points_all_or_nothing": "Alle Lücken müssen stimmen, um die {{points}} Punkt(e) zu erhalten."
     },
     "classShare": {
         "menu_item": "Mit Kolleg:innen teilen…",

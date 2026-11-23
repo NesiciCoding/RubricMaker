@@ -1244,10 +1244,13 @@ export default function QuestionEditor({
                     })()}
                     {parseClozeGaps(question.prompt).length > 0 && (
                         <p className="text-muted text-xs" style={{ margin: 0 }} data-testid="cloze-points-per-gap">
-                            {t('tests.cloze_points_per_gap', {
-                                points:
-                                    Math.round((question.points / parseClozeGaps(question.prompt).length) * 100) / 100,
-                            })}
+                            {question.partialCredit === false
+                                ? t('tests.cloze_points_all_or_nothing', { points: question.points })
+                                : t('tests.cloze_points_per_gap', {
+                                      points:
+                                          Math.round((question.points / parseClozeGaps(question.prompt).length) * 100) /
+                                          100,
+                                  })}
                         </p>
                     )}
                     {question.type === 'cloze' && (
