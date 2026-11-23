@@ -49,6 +49,7 @@ import PipeListInput from './PipeListInput';
 import { splitPastedList, spreadPastedLines, spreadPastedPairs } from '../../utils/pastedList';
 import type { TestQuestionIssue } from '../../utils/testQuestionIssues';
 import { gapStems, suggestDerivedForms } from '../../utils/wordFormation';
+import { isBlankHtml } from '../../utils/isBlankHtml';
 import ErrorCorrectionFields from './ErrorCorrectionFields';
 import SentenceBuilderFields from './SentenceBuilderFields';
 import KeyWordTransformationFields from './KeyWordTransformationFields';
@@ -119,11 +120,6 @@ interface Props {
     showSaveToBank?: boolean;
     /** Hide the drag grip where the card cannot be dragged (the builder's focus pane, which moves with buttons). Defaults to true. */
     showGrip?: boolean;
-}
-
-/** An editor that was emptied still reports `<p></p>`; that is no content at all. */
-function isBlankHtml(html: string): boolean {
-    return !/<img\b/i.test(html) && html.replace(/<[^>]*>/g, '').trim() === '';
 }
 
 // One line per gap strategy: the strategies measure different things, and the builder only showed
