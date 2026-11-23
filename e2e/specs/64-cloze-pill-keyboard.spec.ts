@@ -22,7 +22,9 @@ test.describe('cloze editor — keyboard access to gap pills', () => {
         await expect(pill).toHaveAttribute('role', 'button');
         await expect(pill).toHaveAccessibleName(/edit gap/i);
 
-        await pill.focus();
+        // From the text editor, one Tab reaches the pill: it is a tab stop, not just focusable by script.
+        await editor.focus();
+        await appPage.keyboard.press('Tab');
         await expect(pill).toBeFocused();
         await appPage.keyboard.press('Enter');
 
