@@ -121,6 +121,11 @@ interface Props {
     showGrip?: boolean;
 }
 
+/** An editor that was emptied still reports `<p></p>`; that is no content at all. */
+function isBlankHtml(html: string): boolean {
+    return !/<img\b/i.test(html) && html.replace(/<[^>]*>/g, '').trim() === '';
+}
+
 // One line per gap strategy: the strategies measure different things, and the builder only showed
 // their names.
 const CLOZE_STRATEGY_HELP: Record<ClozeStrategy, string> = {
@@ -163,6 +168,7 @@ export default function QuestionEditor({
     // Every panel starts closed: nothing here is needed to write the question itself.
     const [morePanel, setMorePanel] = React.useState<MorePanelId | null>(null);
     const [typePickerOpen, setTypePickerOpen] = React.useState(false);
+    const [introOpen, setIntroOpen] = React.useState(false);
     const [clozeStrategy, setClozeStrategy] = React.useState<ClozeStrategy>('fixedRatio');
     const [clozeEveryNth, setClozeEveryNth] = React.useState(7);
     const [clozeLevel, setClozeLevel] = React.useState<CefrLevel>('B2');
@@ -856,6 +862,30 @@ export default function QuestionEditor({
                                     <Sparkles size={14} /> {t('tests.cloze_variant_bank_button')}
                                 </button>
                             </div>
+                        )}
+                        {introOpen || question.clozeIntro ? (
+                            <div style={{ marginBottom: 8 }}>
+                                <span id={`cloze-intro-label-${question.id}`} className="text-muted text-xs">
+                                    {t('tests.cloze_intro_label')}
+                                </span>
+                                <EssayEditor
+                                    content={question.clozeIntro ?? ''}
+                                    onChange={(html) => update({ clozeIntro: isBlankHtml(html) ? undefined : html })}
+                                    minHeight={60}
+                                    allowPageMode={false}
+                                    allowImageEmbedding
+                                    ariaLabelledBy={`cloze-intro-label-${question.id}`}
+                                />
+                            </div>
+                        ) : (
+                            <button
+                                type="button"
+                                className="btn btn-ghost btn-sm"
+                                style={{ marginBottom: 8 }}
+                                onClick={() => setIntroOpen(true)}
+                            >
+                                <Plus size={14} /> {t('tests.cloze_intro_add')}
+                            </button>
                         )}
                         {/* Cloze/cloze-dropdown gaps are authored as {{gap|alt}} syntax directly in the
                             prompt string (see clozeParse.ts) — ClozeGapEditor edits that string via

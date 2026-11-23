@@ -35,8 +35,9 @@ export function speakableQuestionText(question: TestQuestion, blankWord: string)
               .map((s) => (s.type === 'gap' ? blankWord : s.text))
               .join('')
         : htmlToPlainText(question.prompt);
+    const introText = question.clozeIntro ? htmlToPlainText(question.clozeIntro) : '';
     const optionsText = (question.options ?? []).map((o) => o.text).join('. ');
-    return [promptText, optionsText].filter(Boolean).join('. ');
+    return [introText, promptText, optionsText].filter(Boolean).join('. ');
 }
 
 /**
@@ -117,6 +118,12 @@ export default function StudentQuestionCard({
                     </HelpPopover>
                 )}
             </div>
+
+            {isCloze && question.clozeIntro && (
+                <div style={{ margin: '0 0 16px', color: 'var(--text)' }}>
+                    <RichContent html={question.clozeIntro} className="rm-question-prompt" lang={lang ?? 'en'} />
+                </div>
+            )}
 
             <QuestionStimulus question={question} lang={lang} plays={audioPlays} onPlay={onAudioPlay} />
 

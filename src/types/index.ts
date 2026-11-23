@@ -1477,6 +1477,8 @@ export interface TestQuestion {
     matrixRows?: MatrixRow[];
     /** Shared answer columns for matrix questions */
     matrixColumns?: MatrixColumn[];
+    /** Cloze types: rich-text (HTML) instructions or context shown above the gap text */
+    clozeIntro?: string;
     /** Extra tiles with no gap, for cloze-bank questions */
     bankDistractors?: string[];
     /** cloze-bank: every tile can fill at most one gap (default true) */
