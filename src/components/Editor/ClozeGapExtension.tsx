@@ -111,13 +111,39 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
 
     addCommands() {
         return {
+            // A selection inside one paragraph becomes the gap's first (correct) answer, so marking
+            // an existing word needs no retyping; with no selection the given alternatives go in at the caret.
             insertClozeGap:
                 (alternatives: string[], roles?: (ClozeOptionRole | null)[]) =>
-                ({ commands }) =>
-                    commands.insertContent({
-                        type: this.name,
-                        attrs: { alternatives, roles: roles ?? null, stem: null },
-                    }),
+                ({ state, commands }) => {
+                    const { from, to, $from, $to } = state.selection;
+                    const selected = from !== to && $from.sameParent($to) ? state.doc.textBetween(from, to) : '';
+                    const word = selected.trim();
+                    if (!word) {
+                        return commands.insertContent({
+                            type: this.name,
+                            attrs: { alternatives, roles: roles ?? null, stem: null },
+                        });
+                    }
+                    const start = from + (selected.length - selected.trimStart().length);
+                    const end = to - (selected.length - selected.trimEnd().length);
+                    return commands.insertContentAt(
+                        { from: start, to: end },
+                        {
+                            type: this.name,
+                            attrs: { alternatives: [word, ...alternatives.slice(1)], roles: roles ?? null, stem: null },
+                        }
+                    );
+                },
+        };
+    },
+
+    addKeyboardShortcuts() {
+        return {
+            'Mod-Shift-g': ({ editor }) =>
+                editor.view.dom.getAttribute('data-cloze-dropdown') === 'true'
+                    ? editor.commands.insertClozeGap(['correct', 'wrong1', 'wrong2'], ['correct', 'wrong', 'wrong'])
+                    : editor.commands.insertClozeGap(['answer']),
         };
     },
 

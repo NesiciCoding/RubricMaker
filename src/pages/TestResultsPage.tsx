@@ -134,7 +134,8 @@ function formatStudentResponse(
         }
     }
     if (question.type === 'true-false') {
-        return t(`tests.true_false_${response}`);
+        const custom = response === 'true' ? question.trueLabel : question.falseLabel;
+        return custom?.trim() || t(`tests.true_false_${response}`);
     }
     if (isClozeType(question.type)) {
         let answers: Record<string, string> = {};

@@ -3,10 +3,13 @@ import { useTranslation } from 'react-i18next';
 interface Props {
     value: string;
     onChange: (value: string) => void;
+    /** Custom wording for the two buttons; blank falls back to True / False. */
+    trueLabel?: string;
+    falseLabel?: string;
 }
 
 /** Two wide buttons; the chosen one is outlined in the accent colour and bold. */
-export default function TrueFalseAnswer({ value, onChange }: Props) {
+export default function TrueFalseAnswer({ value, onChange, trueLabel, falseLabel }: Props) {
     const { t } = useTranslation();
     return (
         <div style={{ display: 'flex', gap: 10 }}>
@@ -29,7 +32,7 @@ export default function TrueFalseAnswer({ value, onChange }: Props) {
                         cursor: 'pointer',
                     }}
                 >
-                    {t(`tests.true_false_${option}`)}
+                    {(option === 'true' ? trueLabel : falseLabel)?.trim() || t(`tests.true_false_${option}`)}
                 </button>
             ))}
         </div>

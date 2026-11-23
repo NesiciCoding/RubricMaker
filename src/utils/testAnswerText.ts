@@ -55,7 +55,7 @@ export function formatGivenAnswer(question: TestQuestion, answer: TestAnswer | u
             return texts.length > 0 ? texts.join(', ') : NO_RESPONSE;
         }
         case 'true-false':
-            return response === 'true' ? 'True' : 'False';
+            return response === 'true' ? question.trueLabel?.trim() || 'True' : question.falseLabel?.trim() || 'False';
         case 'cloze':
         case 'cloze-dropdown':
         case 'cloze-bank': {
@@ -134,16 +134,24 @@ export function formatCorrectAnswer(question: TestQuestion): string {
                 .join(', ');
         case 'true-false':
             // Match autoScoreResponse: an unset correctBoolean scores `true` as correct.
-            return (question.correctBoolean ?? true) ? 'True' : 'False';
+            return (question.correctBoolean ?? true)
+                ? question.trueLabel?.trim() || 'True'
+                : question.falseLabel?.trim() || 'False';
         case 'short-answer': {
             const accepted = question.expectedAnswers ?? (question.expectedAnswer ? [question.expectedAnswer] : []);
             return accepted.join(' / ');
         }
         case 'numeric':
             if (question.expectedNumericValue === undefined) return '';
-            return question.numericTolerance
-                ? `${question.expectedNumericValue} ± ${question.numericTolerance}`
-                : String(question.expectedNumericValue);
+            return [
+                question.numericTolerance
+                    ? `${question.expectedNumericValue} ± ${question.numericTolerance}`
+                    : String(question.expectedNumericValue),
+                question.numericTolerancePercent ? `± ${question.numericTolerancePercent}%` : '',
+                question.numericUnit?.trim() ?? '',
+            ]
+                .filter(Boolean)
+                .join(' ');
         case 'cloze':
         case 'cloze-dropdown':
         case 'cloze-bank':

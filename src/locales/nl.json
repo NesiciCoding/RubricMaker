@@ -2400,7 +2400,20 @@
         "card_more_actions": "Meer acties",
         "card_menu_teaching": "Lesgeven",
         "card_menu_organise": "Ordenen",
-        "card_menu_sharing": "Delen"
+        "card_menu_sharing": "Delen",
+        "shuffle_options_label": "Antwoordopties per leerling door elkaar husselen",
+        "shuffle_options_help": "Elke leerling ziet de opties in een eigen, vaste willekeurige volgorde. Uitzetten behoudt de volgorde die je zelf schreef.",
+        "pin_last_option_label": "Houd de laatste optie onderaan (bijv. \"Geen van bovenstaande\")",
+        "true_false_true_label_placeholder": "Eigen tekst voor de eerste knop (standaard: Waar)",
+        "true_false_false_label_placeholder": "Eigen tekst voor de tweede knop (standaard: Onwaar)",
+        "numeric_tolerance_percent_label": "Tolerantie (%)",
+        "numeric_unit_label": "Eenheid",
+        "numeric_unit_placeholder": "bijv. cm",
+        "numeric_tolerance_help": "Als beide toleranties zijn ingesteld, geldt de ruimste marge. De eenheid staat alleen naast het antwoordvak en wordt niet beoordeeld.",
+        "matching_distractors_label": "Extra keuzes rechts zonder partner (optioneel, één per regel)",
+        "matching_distractors_placeholder": "Eén afleider per regel",
+        "cloze_points_per_gap": "Elk gat is {{points}} punt(en) waard.",
+        "cloze_generate_replace_confirm": "Dit vervangt de gaten die je al hebt gemaakt, inclusief alternatieven en foute opties. Doorgaan?"
     },
     "classShare": {
         "menu_item": "Delen met collega's…",
@@ -5614,7 +5627,14 @@
         "route_essay_projector_desc": "Alleen-lezen weergave van één tekst voor het projectiescherm in de klas, zonder knoppen of klasselijst.",
         "es_creating_item_projector": "Zet één tekst in een tweede venster op het projectiescherm om over één zin te praten, terwijl de monitor de rest van de klas blijft volgen.",
         "rb_live_monitor_item_session_export": "Exporteer de sessie als CSV met per leerling de aantallen, stilgevallen minuten, leeftijd van de tekst, geschreven woorden en het logboek van zetjes — plus een PDF-samenvatting van één pagina — om later bij een integriteitsvraag bij te voegen.",
-        "rb_live_monitor_item_shortcuts": "Monitor vanuit het toetsenbord terwijl je staat: j/k wisselt van leerling, spatie opent of sluit de volgweergave, n stuurt een zetje en f markeert de leerling waar je op staat, zonder de muis te pakken."
+        "rb_live_monitor_item_shortcuts": "Monitor vanuit het toetsenbord terwijl je staat: j/k wisselt van leerling, spatie opent of sluit de volgweergave, n stuurt een zetje en f markeert de leerling waar je op staat, zonder de muis te pakken.",
+        "gr_test_answer_options_title": "Antwoordopties en weergave",
+        "gr_test_answer_options_item_cloze_select": "Invuloefening: selecteer een woord en klik op Gat invoegen (of druk op Ctrl/Cmd+Shift+G) om er een gat van te maken. Gaten zijn genummerd in de editor, de editor toont wat elk gat waard is en Genereren vraagt bevestiging voordat het bestaande gaten vervangt.",
+        "gr_test_answer_options_item_cloze_paste": "Invuloefening: plak tekst uit een werkblad en elke reeks van drie of meer underscores (____) wordt een gat. De invulvakken van leerlingen hebben een nummerlabel, behouden alinea-einden en passen op telefoons geen hoofdletters of autocorrectie meer toe.",
+        "gr_test_answer_options_item_shuffle": "Meerkeuze en meerdere antwoorden: vink Opties husselen aan zodat elke leerling een eigen vaste willekeurige volgorde ziet, en houd eventueel de laatste optie (bijv. \"Geen van bovenstaande\") onderaan.",
+        "gr_test_answer_options_item_true_false": "Waar/onwaar: geef de twee knoppen je eigen tekst, zoals Ja / Nee of Eens / Oneens. Resultaten en antwoordsleutels gebruiken dezelfde tekst.",
+        "gr_test_answer_options_item_numeric": "Numeriek: stel naast de absolute tolerantie ook een procentuele tolerantie in (de ruimste marge geldt) en een eenheid die naast het antwoordvak staat maar niet wordt beoordeeld.",
+        "gr_test_answer_options_item_matching": "Koppelen: voeg extra keuzes rechts zonder partner toe zodat leerlingen niet door uitsluiting kunnen afronden. Ze staan ook in de afgedrukte woordenlijst."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",

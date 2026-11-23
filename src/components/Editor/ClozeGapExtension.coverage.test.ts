@@ -185,4 +185,28 @@ describe('ClozeGapExtension node view', () => {
         expect(pill.textContent).toBe('fresh');
         editor.destroy();
     });
+
+    it('turns a selected word into the gap instead of inserting a placeholder', () => {
+        const editor = makeEditor('<p>The cat sat</p>');
+        editor.commands.setTextSelection({ from: 5, to: 9 });
+        editor.commands.insertClozeGap(['answer']);
+        expect(clozeContentToPrompt(editor)).toBe('The {{cat}} sat');
+        editor.destroy();
+    });
+
+    it('keeps the spaces around a selection outside the gap', () => {
+        const editor = makeEditor('<p>The cat sat</p>');
+        editor.commands.setTextSelection({ from: 4, to: 9 });
+        editor.commands.insertClozeGap(['answer']);
+        expect(clozeContentToPrompt(editor)).toBe('The {{cat}} sat');
+        editor.destroy();
+    });
+
+    it('keeps the extra options of a dropdown gap and uses the selection as the correct one', () => {
+        const editor = makeEditor('<p>The cat sat</p>');
+        editor.commands.setTextSelection({ from: 5, to: 8 });
+        editor.commands.insertClozeGap(['correct', 'wrong1'], ['correct', 'wrong']);
+        expect(clozeContentToPrompt(editor)).toBe('The {{=cat|~wrong1}} sat');
+        editor.destroy();
+    });
 });
