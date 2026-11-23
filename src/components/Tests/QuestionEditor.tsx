@@ -160,7 +160,8 @@ export default function QuestionEditor({
     const [pickingCefr, setPickingCefr] = React.useState(false);
     const [expandedOptionImages, setExpandedOptionImages] = React.useState<Set<string>>(new Set());
     const [expandedOptionAudio, setExpandedOptionAudio] = React.useState<Set<string>>(new Set());
-    const [expandedOptionFeedback, setExpandedOptionFeedback] = React.useState<Set<string>>(new Set());
+    // An explicit choice wins; until the teacher toggles, an option that already has feedback shows its field.
+    const [optionFeedbackOpen, setOptionFeedbackOpen] = React.useState<Record<string, boolean>>({});
     // Every panel starts closed: nothing here is needed to write the question itself.
     const [morePanel, setMorePanel] = React.useState<MorePanelId | null>(null);
     const [typePickerOpen, setTypePickerOpen] = React.useState(false);
@@ -900,7 +901,7 @@ export default function QuestionEditor({
                         const showImageField = expandedOptionImages.has(option.id) || !!option.imageUrl;
                         const showAudioField =
                             expandedOptionAudio.has(option.id) || !!option.audioUrl || !!option.spokenText;
-                        const showFeedbackField = expandedOptionFeedback.has(option.id) || !!option.feedback;
+                        const showFeedbackField = optionFeedbackOpen[option.id] ?? !!option.feedback;
                         return (
                             <div key={option.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1005,12 +1006,10 @@ export default function QuestionEditor({
                                         aria-pressed={showFeedbackField}
                                         title={t('tests.option_feedback_label')}
                                         onClick={() =>
-                                            setExpandedOptionFeedback((prev) => {
-                                                const next = new Set(prev);
-                                                if (next.has(option.id)) next.delete(option.id);
-                                                else next.add(option.id);
-                                                return next;
-                                            })
+                                            setOptionFeedbackOpen((prev) => ({
+                                                ...prev,
+                                                [option.id]: !showFeedbackField,
+                                            }))
                                         }
                                         style={{
                                             color: option.feedback ? 'var(--accent-text)' : 'var(--text-muted)',
