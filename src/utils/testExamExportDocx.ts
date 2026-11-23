@@ -21,7 +21,8 @@ import type { Student, Test, TestQuestion } from '../types';
 import { buildDocxStyles } from './docxExport';
 import { hasRichContent, promptToHtml, sanitizeFilename } from './exportDataPrep';
 import { htmlToDocxChildren, htmlToDocxLead, type DocxImageMap } from './essayExport';
-import { plainQuestionPromptText } from './clozeParse';
+import { isRichClozePrompt, plainQuestionPromptText } from './clozeParse';
+import { richClozeHtmlWithBlanks } from './clozeHtml';
 import { calcTestMaxPoints } from './testCalc';
 import { examPapers } from './variantDelivery';
 import {
@@ -358,7 +359,13 @@ async function questionParagraphs(
     options: TestExamExportOptions
 ): Promise<(Paragraph | Table)[]> {
     const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown' || question.type === 'cloze-bank';
-    const rich = isCloze ? null : await richPromptToDocx(plainQuestionPromptText(question));
+    const richCloze =
+        isCloze && isRichClozePrompt(question.prompt)
+            ? await richPromptToDocx(
+                  richClozeHtmlWithBlanks(question.prompt, (index) => `<u><strong>(${index + 1})</strong></u>`)
+              )
+            : null;
+    const rich = isCloze ? richCloze : await richPromptToDocx(plainQuestionPromptText(question));
     const promptRuns = rich ? rich.leadRuns : clozeRuns(question);
 
     const blocks: (Paragraph | Table)[] = [

@@ -1,9 +1,37 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useEditor, EditorContent } from '@tiptap/react';
-import { Plus } from 'lucide-react';
-import { ClozeGap, promptToClozeContent, clozeContentToPrompt } from '../Editor/ClozeGapExtension';
-import { FLAT_PILL_STARTER_KIT, FlatPillEditorFrame } from '../Editor/flatPillEditor';
+import StarterKit from '@tiptap/starter-kit';
+import Subscript from '@tiptap/extension-subscript';
+import Superscript from '@tiptap/extension-superscript';
+import {
+    Bold,
+    Italic,
+    List,
+    ListOrdered,
+    Plus,
+    Subscript as SubscriptIcon,
+    Superscript as SuperscriptIcon,
+    Underline as UnderlineIcon,
+} from 'lucide-react';
+import { ClozeGap, clozeEditorContent, clozeEditorToPrompt } from '../Editor/ClozeGapExtension';
+import { FlatPillEditorFrame } from '../Editor/flatPillEditor';
+
+// Inline formatting and lists only. No headings, tables, images or links: the gap text is a sentence or a short
+// passage, and anything structural belongs in the instructions field above it. The gaps themselves stay `{{…}}`
+// text in the stored value whatever formatting surrounds them (see clozeEditorToPrompt).
+const CLOZE_RICH_KIT = StarterKit.configure({
+    heading: false,
+    code: false,
+    codeBlock: false,
+    blockquote: false,
+    horizontalRule: false,
+    strike: false,
+    link: false,
+    dropcursor: false,
+    gapcursor: false,
+    trailingNode: false,
+});
 
 interface Props {
     value: string;
@@ -15,10 +43,10 @@ interface Props {
 }
 
 /**
- * Minimal rich editor for cloze/cloze-dropdown prompts: plain text plus clickable gap pills that
- * insert/edit {{alt1|alt2}} syntax without hand-typing it. Deliberately restricted to
- * Document/Paragraph/Text/ClozeGap — no bold/tables/etc — since the stored value must stay a flat
- * string that clozeParse.ts can parse unchanged.
+ * Editor for cloze/cloze-dropdown prompts: text with clickable gap pills that insert/edit {{alt1|alt2}} syntax
+ * without hand-typing it, plus basic formatting (bold, italic, underline, sub/superscript, lists). Unformatted text is
+ * stored as the flat `{{gap}}` string it always was; formatted text is stored as HTML with the gaps left as `{{…}}`
+ * in the text, so clozeParse.ts and the scorer read both unchanged.
  */
 export default function ClozeGapEditor({
     value,
@@ -31,7 +59,9 @@ export default function ClozeGapEditor({
     const { t } = useTranslation();
     const extensions = useMemo(
         () => [
-            FLAT_PILL_STARTER_KIT,
+            CLOZE_RICH_KIT,
+            Subscript,
+            Superscript,
             ClozeGap.configure({
                 editLabel: t('tests.cloze_gap_alternatives_label'),
                 saveLabel: t('tests.cloze_gap_save'),
@@ -49,8 +79,8 @@ export default function ClozeGapEditor({
     const appliedMode = useRef(wordFormation);
     const editor = useEditor({
         extensions,
-        content: promptToClozeContent(value, wordFormation),
-        onUpdate: ({ editor }) => onChange(clozeContentToPrompt(editor)),
+        content: clozeEditorContent(value, wordFormation),
+        onUpdate: ({ editor }) => onChange(clozeEditorToPrompt(editor)),
         editorProps: {
             attributes: {
                 class: 'cloze-gap-editor-content',
@@ -76,17 +106,84 @@ export default function ClozeGapEditor({
         });
         const modeChanged = appliedMode.current !== wordFormation;
         appliedMode.current = wordFormation;
-        if (!modeChanged && clozeContentToPrompt(editor) === value) return;
-        editor.commands.setContent(promptToClozeContent(value, wordFormation));
+        if (!modeChanged && clozeEditorToPrompt(editor) === value) return;
+        editor.commands.setContent(clozeEditorContent(value, wordFormation));
     }, [editor, value, wordFormation, allowDropdown]);
 
     /* v8 ignore next -- useEditor initializes synchronously in this environment */
     if (!editor) return null;
 
+    const formats = [
+        {
+            key: 'bold',
+            icon: Bold,
+            label: t('editor.bold'),
+            active: editor.isActive('bold'),
+            run: () => editor.chain().focus().toggleBold().run(),
+        },
+        {
+            key: 'italic',
+            icon: Italic,
+            label: t('editor.italic'),
+            active: editor.isActive('italic'),
+            run: () => editor.chain().focus().toggleItalic().run(),
+        },
+        {
+            key: 'underline',
+            icon: UnderlineIcon,
+            label: t('editor.underline'),
+            active: editor.isActive('underline'),
+            run: () => editor.chain().focus().toggleUnderline().run(),
+        },
+        {
+            key: 'sup',
+            icon: SuperscriptIcon,
+            label: t('editor.superscript'),
+            active: editor.isActive('superscript'),
+            run: () => editor.chain().focus().toggleSuperscript().run(),
+        },
+        {
+            key: 'sub',
+            icon: SubscriptIcon,
+            label: t('editor.subscript'),
+            active: editor.isActive('subscript'),
+            run: () => editor.chain().focus().toggleSubscript().run(),
+        },
+        {
+            key: 'bullets',
+            icon: List,
+            label: t('editor.bullet_list'),
+            active: editor.isActive('bulletList'),
+            run: () => editor.chain().focus().toggleBulletList().run(),
+        },
+        {
+            key: 'numbers',
+            icon: ListOrdered,
+            label: t('editor.ordered_list'),
+            active: editor.isActive('orderedList'),
+            run: () => editor.chain().focus().toggleOrderedList().run(),
+        },
+    ];
+
     return (
         <FlatPillEditorFrame
             toolbar={
                 <>
+                    {formats.map(({ key, icon: Icon, label, active, run }) => (
+                        <button
+                            key={key}
+                            type="button"
+                            className={`btn btn-sm ${active ? 'btn-primary' : 'btn-secondary'}`}
+                            aria-label={label}
+                            aria-pressed={active}
+                            title={label}
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={run}
+                        >
+                            <Icon size={14} />
+                        </button>
+                    ))}
+                    <span aria-hidden="true" style={{ width: 1, background: 'var(--border)' }} />
                     <button
                         type="button"
                         className="btn btn-secondary btn-sm"
@@ -120,6 +217,14 @@ export default function ClozeGapEditor({
                     outline: none;
                     min-height: 1.5em;
                     line-height: 1.6;
+                }
+                .cloze-gap-editor-content p {
+                    margin: 0 0 4px;
+                }
+                .cloze-gap-editor-content ul,
+                .cloze-gap-editor-content ol {
+                    margin: 2px 0;
+                    padding-left: 1.4em;
                 }
                 .cloze-gap-pill {
                     display: inline-flex;

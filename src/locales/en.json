@@ -5614,7 +5614,8 @@
         "route_essay_projector_desc": "Read-only view of one draft for the classroom projector, without controls or a class list.",
         "es_creating_item_projector": "Spotlight a draft on the projector in a second window to talk about one sentence, while the monitor keeps watching the rest of the class.",
         "rb_live_monitor_item_session_export": "Export the session as a CSV of per-student counts, stall minutes, draft ages, words written and the nudge log — plus a one-page PDF summary — to attach when an integrity question arrives later.",
-        "rb_live_monitor_item_shortcuts": "Proctor from the keyboard while standing up: j/k move between students, space opens or closes the spotlight, n nudges and f flags the student you are on, without reaching for the mouse."
+        "rb_live_monitor_item_shortcuts": "Proctor from the keyboard while standing up: j/k move between students, space opens or closes the spotlight, n nudges and f flags the student you are on, without reaching for the mouse.",
+        "gr_test_rich_authoring_item_cloze_formatting": "Fill-in, dropdown and word-bank questions can be formatted: bold, italic, underline, sub/superscript and lists around and inside the gap text. Text without formatting is stored as before; formatted text is stored as HTML with the gaps still written {{like this}}, so scoring, imports and the question bank read both. The student view, the printed booklet (HTML and Word) and read-aloud keep the formatting and the gaps. Generating gaps from a passage flattens the formatting."
     },
     "studentProfile": {
         "tab_overview": "Overview",

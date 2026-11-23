@@ -110,6 +110,29 @@ export function splitClozeOptions(raw: string): { alternatives: string[]; roles:
     return { alternatives, roles };
 }
 
+/**
+ * A cloze prompt that was formatted in the editor is stored as HTML with the `{{…}}` gaps left in the text, so a gap's
+ * own text is entity-escaped there (`a&amp;b`). A plain prompt never contains tags, which is how the two are told apart.
+ */
+const HTML_PROMPT_PATTERN = /<\/?(?:p|br|strong|em|b|i|u|s|ul|ol|li|sub|sup|span|div|a)\b[^>]*>/i;
+
+export function isRichClozePrompt(prompt: string): boolean {
+    return HTML_PROMPT_PATTERN.test(prompt);
+}
+
+const HTML_ENTITIES: Record<string, string> = {
+    '&amp;': '&',
+    '&lt;': '<',
+    '&gt;': '>',
+    '&quot;': '"',
+    '&#39;': "'",
+    '&#x27;': "'",
+};
+
+function decodeEntities(text: string): string {
+    return text.replace(/&(?:amp|lt|gt|quot|#39|#x27);/g, (entity) => HTML_ENTITIES[entity]);
+}
+
 function gapFromSyntax(index: number, inner: string): ClozeGap {
     const { alternatives, roles } = splitClozeOptions(inner);
     return { index, alternatives, ...(roles.some(Boolean) ? { roles } : {}) };
@@ -125,10 +148,11 @@ export interface ClozeGapMatch {
 export function matchClozeGaps(prompt: string): ClozeGapMatch[] {
     const matches: ClozeGapMatch[] = [];
     const pattern = new RegExp(CLOZE_GAP_PATTERN.source, 'g');
+    const rich = isRichClozePrompt(prompt);
     let match: RegExpExecArray | null;
     while ((match = pattern.exec(prompt)) !== null) {
         matches.push({
-            gap: gapFromSyntax(matches.length, match[1]),
+            gap: gapFromSyntax(matches.length, rich ? decodeEntities(match[1]) : match[1]),
             start: match.index,
             end: match.index + match[0].length,
         });

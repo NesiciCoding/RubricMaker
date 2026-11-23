@@ -1,3 +1,4 @@
+import { escapeForPrompt } from './clozeHtml';
 import { nanoid } from './nanoid';
 import { clozeGapToSyntax, gapCorrectAnswers, matchClozeGaps, parseClozeGaps } from './clozeParse';
 import { suggestDistractors } from './distractorSuggestions';
@@ -46,7 +47,7 @@ export function buildEasierClozeVariant(question: TestQuestion, kind: ClozeVaria
         const shouldKeep = i % 2 === 0 && kept < maxGaps;
         const gapDistractors = shouldKeep ? distractorsFor(correct[0] ?? '', correct) : [];
         if (!shouldKeep || gapDistractors.length === 0) {
-            prompt = `${prompt.slice(0, start)}${correct[0] ?? ''}${prompt.slice(end)}`;
+            prompt = `${prompt.slice(0, start)}${escapeForPrompt(question.prompt, correct[0] ?? '')}${prompt.slice(end)}`;
             continue;
         }
         kept += 1;
@@ -57,11 +58,14 @@ export function buildEasierClozeVariant(question: TestQuestion, kind: ClozeVaria
         const roles = alternatives.map((_, index) =>
             index < correct.length ? ('correct' as const) : ('wrong' as const)
         );
-        prompt = `${prompt.slice(0, start)}${clozeGapToSyntax({
-            index: i,
-            alternatives,
-            ...(kind === 'dropdown' ? { roles } : {}),
-        })}${prompt.slice(end)}`;
+        prompt = `${prompt.slice(0, start)}${escapeForPrompt(
+            question.prompt,
+            clozeGapToSyntax({
+                index: i,
+                alternatives,
+                ...(kind === 'dropdown' ? { roles } : {}),
+            })
+        )}${prompt.slice(end)}`;
     }
 
     if (kept === 0) return null;

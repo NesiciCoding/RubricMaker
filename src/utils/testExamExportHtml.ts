@@ -5,7 +5,8 @@ import QRCode from 'qrcode';
 import type { Student, Test, TestQuestion } from '../types';
 import { PRINT_MARGIN_MM, printHtml, withoutBrowserPrintChrome } from './pdfExport';
 import { escapeHtml, hasRichContent, promptToHtml, sanitizeFilename } from './exportDataPrep';
-import { plainQuestionPromptText } from './clozeParse';
+import { isRichClozePrompt, plainQuestionPromptText } from './clozeParse';
+import { richClozeHtmlWithBlanks } from './clozeHtml';
 import { calcTestMaxPoints } from './testCalc';
 import { examPapers } from './variantDelivery';
 import {
@@ -51,13 +52,18 @@ import {
 const tx = (key: string, opts?: Record<string, unknown>) =>
     opts ? i18n.t(`tests.export.exam.${key}`, opts) : i18n.t(`tests.export.exam.${key}`);
 
+const BLANK_STYLE = 'display:inline-block;border-bottom:1px solid #000;min-width:50px;text-align:center;padding:0 4px';
+
 function clozeBookletHtml(question: TestQuestion): string {
+    if (isRichClozePrompt(question.prompt)) {
+        // Formatted text keeps its formatting; each gap becomes the numbered blank.
+        return richClozeHtmlWithBlanks(
+            question.prompt,
+            (index) => `<span style="${BLANK_STYLE}">(${index + 1})</span>`
+        );
+    }
     return clozeBookletParts(question)
-        .map((p) =>
-            p.blankNumber
-                ? `<span style="display:inline-block;border-bottom:1px solid #000;min-width:50px;text-align:center;padding:0 4px">(${p.blankNumber})</span>`
-                : escapeHtml(p.text)
-        )
+        .map((p) => (p.blankNumber ? `<span style="${BLANK_STYLE}">(${p.blankNumber})</span>` : escapeHtml(p.text)))
         .join('');
 }
 
@@ -108,7 +114,9 @@ function questionBodyHtml(
 ): string {
     const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown' || question.type === 'cloze-bank';
     const prompt = isCloze
-        ? `<div style="line-height:1.8;white-space:pre-line">${clozeBookletHtml(question)}</div>`
+        ? isRichClozePrompt(question.prompt)
+            ? `${RICH_CONTENT_CSS}<div class="exam-rich" style="line-height:1.8">${clozeBookletHtml(question)}</div>`
+            : `<div style="line-height:1.8;white-space:pre-line">${clozeBookletHtml(question)}</div>`
         : richPromptHtml(question);
     let extra = '';
 
