@@ -1,3 +1,4 @@
+import { plainInlineScript } from './inlineScript';
 import i18n from 'i18next';
 import type { CefrLevel, Student, StudentTest, Test, TestAnswer, TestQuestion } from '../types';
 import { stripHtmlTags } from './exportDataPrep';
@@ -7,6 +8,7 @@ import { keyWordChunks, parseErrorPassage, sentenceBuilderText } from '../../sup
 import { parseAudioResponse } from './audioResponseCode';
 import { autoScoreResponse, calcStudentTestRawPoints, calcTestMaxPoints, calcTestPercentage } from './testCalc';
 import { estimatePlacement, type PlacementPathStep } from './placementResult';
+import { clamp } from './clamp';
 import { summarizeProctorFlags } from './proctorAggregator';
 
 /** Shorthand for the test-summary-export string namespace. */
@@ -46,15 +48,16 @@ export function formatGivenAnswer(question: TestQuestion, answer: TestAnswer | u
 
     switch (question.type) {
         case 'multiple-choice':
-            return question.options?.find((o) => o.id === response)?.text ?? NO_RESPONSE;
+            return plainInlineScript(question.options?.find((o) => o.id === response)?.text ?? NO_RESPONSE);
         case 'multiple-response': {
             const texts = parseJson<string[]>(response, [])
                 .map((id) => question.options?.find((o) => o.id === id)?.text)
+                .map((text) => (text ? plainInlineScript(text) : text))
                 .filter((text): text is string => !!text);
             return texts.length > 0 ? texts.join(', ') : NO_RESPONSE;
         }
         case 'true-false':
-            return response === 'true' ? 'True' : 'False';
+            return response === 'true' ? question.trueLabel?.trim() || 'True' : question.falseLabel?.trim() || 'False';
         case 'cloze':
         case 'cloze-dropdown':
         case 'cloze-bank': {
@@ -89,15 +92,19 @@ export function formatGivenAnswer(question: TestQuestion, answer: TestAnswer | u
             const pairs = question.matchingPairs ?? [];
             if (pairs.length === 0) return NO_RESPONSE;
             const answers = parseJson<Record<string, string>>(response, {});
-            const byId = new Map(pairs.map((p) => [p.id, p]));
-            return pairs.map((p) => `${p.left} → ${byId.get(answers[p.id])?.right ?? '___'}`).join('; ');
+            const rightById = matchingRightById(question);
+            return pairs
+                .map(
+                    (p) => `${plainInlineScript(p.left)} → ${plainInlineScript(rightById.get(answers[p.id]) ?? '___')}`
+                )
+                .join('; ');
         }
         case 'ordering': {
             const items = question.orderItems ?? [];
             if (items.length === 0) return NO_RESPONSE;
             const byId = new Map(items.map((i) => [i.id, i]));
             return parseJson<string[]>(response, [])
-                .map((id) => byId.get(id)?.text ?? '?')
+                .map((id) => plainInlineScript(byId.get(id)?.text ?? '?'))
                 .join(' → ');
         }
         case 'categorize': {
@@ -105,7 +112,7 @@ export function formatGivenAnswer(question: TestQuestion, answer: TestAnswer | u
             if (items.length === 0) return NO_RESPONSE;
             const answers = parseJson<Record<string, string>>(response, {});
             const cats = new Map((question.categories ?? []).map((c) => [c.id, c.label]));
-            return items.map((it) => `${it.text} → ${cats.get(answers[it.id]) ?? '___'}`).join('; ');
+            return items.map((it) => `${plainInlineScript(it.text)} → ${cats.get(answers[it.id]) ?? '___'}`).join('; ');
         }
         case 'hot-text': {
             const segments = parseHotTextFragments(stripHtmlTags(question.hotTextPassage ?? ''));
@@ -129,20 +136,28 @@ export function formatCorrectAnswer(question: TestQuestion): string {
         case 'multiple-response':
             return (question.options ?? [])
                 .filter((o) => o.isCorrect)
-                .map((o) => o.text)
+                .map((o) => plainInlineScript(o.text))
                 .join(', ');
         case 'true-false':
             // Match autoScoreResponse: an unset correctBoolean scores `true` as correct.
-            return (question.correctBoolean ?? true) ? 'True' : 'False';
+            return (question.correctBoolean ?? true)
+                ? question.trueLabel?.trim() || 'True'
+                : question.falseLabel?.trim() || 'False';
         case 'short-answer': {
             const accepted = question.expectedAnswers ?? (question.expectedAnswer ? [question.expectedAnswer] : []);
             return accepted.join(' / ');
         }
         case 'numeric':
             if (question.expectedNumericValue === undefined) return '';
-            return question.numericTolerance
-                ? `${question.expectedNumericValue} ± ${question.numericTolerance}`
-                : String(question.expectedNumericValue);
+            return [
+                question.numericTolerance
+                    ? `${question.expectedNumericValue} ± ${question.numericTolerance}`
+                    : String(question.expectedNumericValue),
+                question.numericTolerancePercent ? `± ${question.numericTolerancePercent}%` : '',
+                question.numericUnit?.trim() ?? '',
+            ]
+                .filter(Boolean)
+                .join(' ');
         case 'cloze':
         case 'cloze-dropdown':
         case 'cloze-bank':
@@ -174,13 +189,15 @@ export function formatCorrectAnswer(question: TestQuestion): string {
                 .join('; ');
         }
         case 'matching':
-            return (question.matchingPairs ?? []).map((p) => `${p.left} → ${p.right}`).join('; ');
+            return (question.matchingPairs ?? [])
+                .map((p) => `${plainInlineScript(p.left)} → ${plainInlineScript(p.right)}`)
+                .join('; ');
         case 'ordering':
-            return (question.orderItems ?? []).map((i) => i.text).join(' → ');
+            return (question.orderItems ?? []).map((i) => plainInlineScript(i.text)).join(' → ');
         case 'categorize': {
             const cats = new Map((question.categories ?? []).map((c) => [c.id, c.label]));
             return (question.categorizeItems ?? [])
-                .map((it) => `${it.text} → ${cats.get(it.categoryId) ?? '?'}`)
+                .map((it) => `${plainInlineScript(it.text)} → ${cats.get(it.categoryId) ?? '?'}`)
                 .join('; ');
         }
         case 'hot-text': {
@@ -296,48 +313,96 @@ export function describeTestMeta(studentTest: StudentTest): string[] {
     return lines;
 }
 
+/** One linked standard / CEFR descriptor / framework descriptor and the student's accuracy on it. */
+export interface LinkedItemAccuracy {
+    label: string;
+    /** Points earned on the questions linked to this item, as a percentage of their points, 0-100 */
+    accuracyPct: number;
+}
+
 /**
- * Plain-text "mini summary" of one student's test result — mirrors buildStudentSummary() for
- * rubrics (StudentsPage): score, CEFR estimate, and per-question given/correct answers.
+ * Rolls one student's per-question answers up into an accuracy percentage per linked standard, CEFR
+ * descriptor or framework descriptor (grammar items, IB, Bloom's, SLO). Unanswered linked questions
+ * count as zero credit, so the figure is the student's own result on that item, not a class average.
+ * Sorted strongest first.
+ */
+export function calcLinkedItemAccuracies(questions: TestQuestion[], rows: TestAnswerRow[]): LinkedItemAccuracy[] {
+    const groups = new Map<string, { label: string; earned: number; points: number }>();
+
+    const add = (key: string, label: string, row: TestAnswerRow) => {
+        const group = groups.get(key) ?? { label, earned: 0, points: 0 };
+        group.earned += clamp(row.pointsEarned, 0, row.points);
+        group.points += row.points;
+        groups.set(key, group);
+    };
+
+    questions.forEach((question, i) => {
+        const row = rows[i];
+        /* v8 ignore next 1 */
+        if (!row) return;
+        // Imports preserve repeated links; count each item once per question so its points are not
+        // added twice, while keeping contributions from different questions.
+        const seen = new Set<string>();
+        const addOnce = (key: string, label: string) => {
+            if (seen.has(key)) return;
+            seen.add(key);
+            add(key, label, row);
+        };
+        for (const standard of question.linkedStandards ?? []) {
+            addOnce(`standard:${standard.guid}`, standard.statementNotation ?? standard.description);
+        }
+        for (const descriptor of question.linkedCefrDescriptors ?? []) {
+            addOnce(`cefr:${descriptor.descriptorId}`, descriptor.descriptionEn);
+        }
+        for (const descriptor of question.frameworkDescriptors ?? []) {
+            addOnce(`framework:${descriptor.framework}:${descriptor.descriptorId}`, descriptor.descriptionEn);
+        }
+    });
+
+    return [...groups.values()]
+        .filter((group) => group.points > 0)
+        .map((group) => ({ label: group.label, accuracyPct: (group.earned / group.points) * 100 }))
+        .sort((a, b) => b.accuracyPct - a.accuracyPct);
+}
+
+export interface TestStudentSummaryOptions {
+    className?: string;
+    /** Result level shown in the summary — the student's VO track, or the school year for primary classes. */
+    level?: string;
+}
+
+/**
+ * Condensed plain-text summary of one student's test result: name, class, level, percentage correct
+ * and one accuracy line per linked standard / CEFR descriptor / grammar item. Deliberately has no
+ * question-by-question breakdown — the PDF and Word exports carry that detail.
  */
 export function buildTestStudentSummary(
     test: Test,
     studentTest: StudentTest,
     student: Student | undefined,
     questions: TestQuestion[],
-    achieveThreshold: number = DEFAULT_CEFR_ACHIEVE_THRESHOLD
+    options: TestStudentSummaryOptions = {}
 ): string {
-    const name = student?.name ?? tx('student');
-    const maxPoints = calcTestMaxPoints(test);
+    const maxPoints = calcTestMaxPoints(test) || questions.reduce((sum, q) => sum + (q.points ?? 0), 0);
     const rawPoints = studentTest.rawTotalPoints ?? calcStudentTestRawPoints(test, studentTest.answers);
-    const adjustment = studentTest.adjustmentPoints ?? 0;
-    const pct = calcTestPercentage(rawPoints + adjustment, maxPoints);
-    const pts = tx('pts');
+    const pct = calcTestPercentage(rawPoints + (studentTest.adjustmentPoints ?? 0), maxPoints);
 
-    const lines: string[] = [name, '─'.repeat(name.length), ''];
-    lines.push(`${tx('test')}: ${test.name}`);
-    if (maxPoints > 0) lines.push(`${tx('score')}: ${pct.toFixed(1)}% — ${rawPoints + adjustment}/${maxPoints} ${pts}`);
-    const cefr = describeTestCefr(test, studentTest, achieveThreshold);
-    if (cefr) lines.push(`${tx('cefr')}: ${cefr}`);
-    for (const line of describeTestMeta(studentTest)) lines.push(line);
+    const lines: string[] = [`${tx('name')}: ${student?.name ?? tx('student')}`];
+    if (options.className) lines.push(`${tx('class')}: ${options.className}`);
+    if (options.level) lines.push(`${tx('level')}: ${options.level}`);
+    if (maxPoints > 0) lines.push(`${tx('score')}: ${tx('score_correct', { pct: pct.toFixed(0) })}`);
 
-    const path = describePlacementPath(test, studentTest);
-    if (path.length > 0) {
-        lines.push('');
-        lines.push(`${tx('placement_path')}:`);
-        for (const step of path) {
-            lines.push(`  ${step.title}: ${step.level ?? '—'} — ${step.scorePct.toFixed(0)}%`);
-        }
+    const linked = calcLinkedItemAccuracies(questions, buildAnswerRows(test, studentTest, questions));
+    if (linked.length > 0) {
+        lines.push('', tx('frameworks_grammar'));
+        for (const item of linked) lines.push(`  ${item.accuracyPct.toFixed(0).padStart(3)}%  ${item.label}`);
     }
-    lines.push('');
-
-    buildAnswerRows(test, studentTest, questions).forEach((row, i) => {
-        const mark = ANSWER_STATUS_MARK[row.status];
-        lines.push(`${mark ? mark + ' ' : ''}Q${i + 1}. ${row.prompt} (${row.pointsEarned}/${row.points} ${pts})`);
-        lines.push(`  ${tx('given')}: ${row.given}`);
-        if (row.correct) lines.push(`  ${tx('correct')}: ${row.correct}`);
-        if (row.feedback) lines.push(`  ${tx('feedback')}: ${stripHtmlTags(row.feedback)}`);
-    });
 
     return lines.join('\n');
+}
+
+export function matchingRightById(question: TestQuestion): Map<string, string> {
+    const map = new Map<string, string>((question.matchingPairs ?? []).map((p) => [p.id, p.right]));
+    (question.matchingDistractors ?? []).filter(Boolean).forEach((text, i) => map.set(`distractor-${i}`, text));
+    return map;
 }

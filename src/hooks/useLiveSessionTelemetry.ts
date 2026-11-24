@@ -4,9 +4,20 @@ import { getMonitorClient, releaseStaleChannels } from '../utils/monitorClient';
 import type { ProctorEvent, CefrLevel } from '../types';
 
 const HEARTBEAT_INTERVAL_MS = 20_000;
+// One retry covers the monitor finishing its own subscribe; later monitors `probe` instead of the
+// whole class re-announcing.
+const JOIN_ANNOUNCE_RETRY_MS = 1_500;
 const IDLE_THRESHOLD_MS = 60_000;
 const SNAPSHOT_INTERVAL_MS = 5_000;
+// Every tick carries the cheap signals (word count, answers, questions asked), but full prose for a
+// whole class every 5s is far more traffic than a roster needs — so draft text rides along at most
+// once a minute. A teacher entering the spotlight view broadcasts `spotlight`, which lifts the
+// text throttle for that one student.
+const ROSTER_TEXT_INTERVAL_MS = 60_000;
 const TAB_SWITCH_DEDUPE_MS = 750;
+// Outlives one missed renewal of the teacher's 10s spotlight broadcast, so a brief hiccup keeps the
+// fast cadence but a monitor that went away stops it.
+const SPOTLIGHT_LEASE_MS = 15_000;
 
 interface BatteryManagerLike {
     level: number;
@@ -23,6 +34,10 @@ export interface LiveSessionSnapshot {
     text?: string;
     answers?: unknown;
     wordCount?: number;
+    /** Cumulative characters the student typed, never their content. */
+    typedChars?: number;
+    /** Cumulative characters inserted by paste — the cheapest honest integrity signal. */
+    pastedChars?: number;
     /** Current CEFR level/Elo anchor/progress of a generator-engine (roadmap 27.1) placement run in progress, for the Live Monitor's live level display (27.3). */
     generatorLevel?: CefrLevel;
     generatorEloAnchor?: number;
@@ -43,10 +58,18 @@ export interface UseLiveSessionTelemetryOptions {
     supabaseAnonKey?: string;
     /** Called when a teacher sends a "nudge" broadcast on this session's monitor channel. */
     onNudge?: (message: string) => void;
+    /**
+     * Called with the prose whenever a text-bearing snapshot actually goes out. The channel is
+     * ephemeral, so this is the caller's chance to keep the draft somewhere durable for the
+     * monitor to seed itself from after a reload or a dropped connection.
+     */
+    persistDraftText?: (snapshot: { text: string; wordCount?: number }) => void;
 }
 
 export interface UseLiveSessionTelemetryReturn {
     events: ProctorEvent[];
+    /** True while a teacher is watching this session in the spotlight view (fast snapshots). */
+    spotlighted: boolean;
     /** Returns the accumulated event log (excluding ephemeral snapshots) and clears it. */
     flush: () => ProctorEvent[];
     /** Appends an application-level event (e.g. an audio play) to the log and broadcasts it. */
@@ -69,13 +92,32 @@ export interface UseLiveSessionTelemetryReturn {
 function shallowEqualSnapshot(a: LiveSessionSnapshot | null, b: LiveSessionSnapshot): boolean {
     if (!a) return false;
     return (
-        a.text === b.text &&
+        // A snapshot without text says nothing about the text, so it only matches when the last
+        // sent one had no text either — a text-bearing snapshot arriving after a stats-only tick
+        // must still go out.
+        (b.text === undefined || a.text === b.text) &&
         a.wordCount === b.wordCount &&
+        a.typedChars === b.typedChars &&
+        a.pastedChars === b.pastedChars &&
         JSON.stringify(a.answers) === JSON.stringify(b.answers) &&
         a.generatorLevel === b.generatorLevel &&
         a.generatorEloAnchor === b.generatorEloAnchor &&
         a.questionsAsked === b.questionsAsked
     );
+}
+
+/** The same snapshot minus the draft prose, for the roster cadence's cheap ticks. */
+function withoutText(snapshot: LiveSessionSnapshot): LiveSessionSnapshot {
+    if (snapshot.text === undefined) return snapshot;
+    return {
+        answers: snapshot.answers,
+        wordCount: snapshot.wordCount,
+        typedChars: snapshot.typedChars,
+        pastedChars: snapshot.pastedChars,
+        generatorLevel: snapshot.generatorLevel,
+        generatorEloAnchor: snapshot.generatorEloAnchor,
+        questionsAsked: snapshot.questionsAsked,
+    };
 }
 
 /**
@@ -85,6 +127,13 @@ function shallowEqualSnapshot(a: LiveSessionSnapshot | null, b: LiveSessionSnaps
  * Realtime channel named `monitor:{kind}:{assignmentKey}` so a teacher-side
  * monitor page can subscribe.
  */
+function isEditableTarget(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement)) return false;
+    if (target instanceof HTMLTextAreaElement) return !target.readOnly && !target.disabled;
+    if (target instanceof HTMLInputElement) return !target.readOnly && !target.disabled;
+    return target.isContentEditable;
+}
+
 export function useLiveSessionTelemetry({
     kind,
     assignmentKey,
@@ -93,13 +142,39 @@ export function useLiveSessionTelemetry({
     supabaseUrl,
     supabaseAnonKey,
     onNudge,
+    persistDraftText,
 }: UseLiveSessionTelemetryOptions): UseLiveSessionTelemetryReturn {
     const [events, setEvents] = useState<ProctorEvent[]>([]);
     const [isBroadcasting, setIsBroadcasting] = useState(false);
+    const [spotlighted, setSpotlighted] = useState(false);
+    // A spotlight is a lease, not a latch: the teacher's monitor re-sends `on: true` every 10s while
+    // the student stays open in its spotlight view. A renewal that never arrives means that view is
+    // gone, and the `on: false` that would have cleared it was dropped with the teacher's
+    // connection — so expire it rather than keep sending five-second prose to nobody.
+    const spotlightLeaseRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const applySpotlight = useCallback((on: boolean) => {
+        if (spotlightLeaseRef.current) clearTimeout(spotlightLeaseRef.current);
+        spotlightLeaseRef.current = null;
+        setSpotlighted(on);
+        if (!on) return;
+        spotlightLeaseRef.current = setTimeout(() => {
+            spotlightLeaseRef.current = null;
+            setSpotlighted(false);
+        }, SPOTLIGHT_LEASE_MS);
+    }, []);
 
     const lastActivityRef = useRef<number>(Date.now());
     const lastTabSwitchAtRef = useRef(0);
     const lastSnapshotRef = useRef<LiveSessionSnapshot | null>(null);
+    const lastTextSentAtRef = useRef(0);
+    // Counts only — never the characters themselves.
+    const typedCharsRef = useRef(0);
+    const pastedCharsRef = useRef(0);
+    // Counts describe one assignment; a reconnect keeps them, a new assignment starts over.
+    useEffect(() => {
+        typedCharsRef.current = 0;
+        pastedCharsRef.current = 0;
+    }, [assignmentKey]);
     const channelRef = useRef<ReturnType<SupabaseClient['channel']> | null>(null);
     // Mirrors `events` so flush() can read the latest log synchronously —
     // setState updaters are not guaranteed to run before flush() returns.
@@ -109,6 +184,13 @@ export function useLiveSessionTelemetry({
     useEffect(() => {
         onNudgeRef.current = onNudge;
     }, [onNudge]);
+
+    // Same reason as onNudgeRef: persisting is a side channel, and a new callback identity per
+    // render must not tear down and rebuild the channel.
+    const persistDraftRef = useRef(persistDraftText);
+    useEffect(() => {
+        persistDraftRef.current = persistDraftText;
+    }, [persistDraftText]);
 
     const hasDb = !!(supabaseUrl && supabaseAnonKey);
 
@@ -171,6 +253,7 @@ export function useLiveSessionTelemetry({
         const topic = `monitor:${kind}:${assignmentKey}`;
         let cancelled = false;
         let channel: ReturnType<SupabaseClient['channel']> | null = null;
+        let announceTimer: ReturnType<typeof setTimeout> | undefined;
         const open = () => {
             if (cancelled) return;
             channel = joinChannel();
@@ -184,8 +267,27 @@ export function useLiveSessionTelemetry({
                 config: { broadcast: { ack: true, self: false } },
             });
             channel.on('broadcast', { event: 'nudge' }, ({ payload }) => {
-                onNudgeRef.current?.((payload as { message: string }).message);
+                const message = (payload as { message: string }).message;
+                // Log the nudge in the student's own event history, so the transcript the teacher
+                // reads afterwards matches what actually happened during the lesson.
+                pushEvent({ type: 'nudge', at: new Date().toISOString(), value: message });
+                onNudgeRef.current?.(message);
             });
+            channel.on('broadcast', { event: 'spotlight' }, ({ payload }) => {
+                applySpotlight((payload as { on?: boolean } | null)?.on === true);
+            });
+            // A student joining without announcing would read as disconnected until the next ~20s
+            // heartbeat. A probe reply keeps the idle rule so it cannot turn an idle student active.
+            const announce = (respectIdle: boolean) => {
+                if (channelRef.current !== channel) return; // channel already torn down
+                const idle = respectIdle && Date.now() - lastActivityRef.current >= IDLE_THRESHOLD_MS;
+                channel.send({
+                    type: 'broadcast',
+                    event: 'event',
+                    payload: { type: 'heartbeat', at: new Date().toISOString(), value: idle ? 'idle' : 'active' },
+                });
+            };
+            channel.on('broadcast', { event: 'probe' }, () => announce(true));
             channel.subscribe((status) => {
                 setIsBroadcasting(status === 'SUBSCRIBED');
                 if (status !== 'SUBSCRIBED') return;
@@ -197,29 +299,8 @@ export function useLiveSessionTelemetry({
                 for (const b of buffered) {
                     channel.send({ type: 'broadcast', event: b.event, payload: b.payload });
                 }
-                // Announce the join immediately — and a few times over the next seconds:
-                // the regular heartbeat only fires every ~20s, so without this the
-                // teacher's monitor would keep showing the student as disconnected for
-                // that whole window after they connect. The retries cover the teacher's
-                // monitor channel joining a moment later (its row renders before the
-                // channel finishes subscribing) — a one-shot broadcast at join would
-                // otherwise be silently missed and presence would lie until the first
-                // real heartbeat.
-                const announce = (delayMs: number) => {
-                    setTimeout(() => {
-                        if (channelRef.current !== channel) return; // channel already torn down
-                        channel.send({
-                            type: 'broadcast',
-                            event: 'event',
-                            payload: { type: 'heartbeat', at: new Date().toISOString(), value: 'active' },
-                        });
-                    }, delayMs);
-                };
-                announce(0);
-                announce(750);
-                announce(1500);
-                announce(3000);
-                announce(5000);
+                announce(false);
+                announceTimer = setTimeout(() => announce(false), JOIN_ANNOUNCE_RETRY_MS);
             });
             return channel;
         };
@@ -228,12 +309,17 @@ export function useLiveSessionTelemetry({
         else open();
         return () => {
             cancelled = true;
+            clearTimeout(announceTimer);
             channelRef.current = null;
             pendingBroadcastsRef.current = [];
+            // A different session's spotlight says nothing about this one.
+            if (spotlightLeaseRef.current) clearTimeout(spotlightLeaseRef.current);
+            spotlightLeaseRef.current = null;
+            setSpotlighted(false);
             if (channel) void client.removeChannel(channel);
             setIsBroadcasting(false);
         };
-    }, [enabled, hasDb, kind, assignmentKey, supabaseUrl, supabaseAnonKey]);
+    }, [enabled, hasDb, kind, assignmentKey, supabaseUrl, supabaseAnonKey, applySpotlight]);
 
     // ── tab_switch: visibilitychange + window blur ───────────────────────────
     useEffect(() => {
@@ -265,7 +351,15 @@ export function useLiveSessionTelemetry({
         if (!enabled) return;
         const onCopy = () => pushEvent({ type: 'copy', at: new Date().toISOString() });
         const onCut = () => pushEvent({ type: 'cut', at: new Date().toISOString() });
-        const onPaste = () => pushEvent({ type: 'paste', at: new Date().toISOString() });
+        const onPaste = (event: Event) => {
+            // The length only: a paste counter that stored clipboard text would be a privacy
+            // problem, while the size is exactly what tells pasted prose from typed prose.
+            // Outside an editable element the browser may fire `paste` without inserting anything.
+            if (isEditableTarget(event.target)) {
+                pastedCharsRef.current += ((event as ClipboardEvent).clipboardData?.getData('text') ?? '').length;
+            }
+            pushEvent({ type: 'paste', at: new Date().toISOString() });
+        };
         document.addEventListener('copy', onCopy);
         document.addEventListener('cut', onCut);
         document.addEventListener('paste', onPaste);
@@ -275,6 +369,35 @@ export function useLiveSessionTelemetry({
             document.removeEventListener('paste', onPaste);
         };
     }, [enabled, pushEvent]);
+
+    // ── typed characters — the other half of the typed/pasted split ──────────
+    // insertText is what a human keystroke or dictation produces; paste arrives as
+    // insertFromPaste and is counted by the paste handler instead, so the two never overlap.
+    // An IME rewrites its whole composition on every insertCompositionText ("a", "ab", "abc"), so
+    // only the committed result is counted, once, when the composition ends.
+    useEffect(() => {
+        if (!enabled) return;
+        let composingChars = 0;
+        const onInput = (event: Event) => {
+            const input = event as InputEvent;
+            if (input.inputType === 'insertCompositionText') {
+                composingChars = input.data?.length ?? composingChars;
+                return;
+            }
+            if (input.inputType !== 'insertText') return;
+            typedCharsRef.current += input.data?.length ?? 1;
+        };
+        const onCompositionEnd = (event: Event) => {
+            typedCharsRef.current += (event as CompositionEvent).data?.length ?? composingChars;
+            composingChars = 0;
+        };
+        document.addEventListener('input', onInput);
+        document.addEventListener('compositionend', onCompositionEnd);
+        return () => {
+            document.removeEventListener('input', onInput);
+            document.removeEventListener('compositionend', onCompositionEnd);
+        };
+    }, [enabled]);
 
     // ── battery status — initial reading + change events ─────────────────────
     useEffect(() => {
@@ -325,6 +448,9 @@ export function useLiveSessionTelemetry({
     // ── activity tracking for idle detection ─────────────────────────────────
     useEffect(() => {
         if (!enabled) return;
+        // Listeners attach only now, so the baseline must not predate this moment or a long wait
+        // on a start screen would read as idle the instant the student begins.
+        lastActivityRef.current = Date.now();
         const onActivity = () => {
             lastActivityRef.current = Date.now();
         };
@@ -350,21 +476,36 @@ export function useLiveSessionTelemetry({
 
     // ── throttled work-in-progress snapshots (ephemeral, broadcast only) ─────
     useEffect(() => {
-        if (!enabled || !getSnapshot || !hasDb) return;
-        const tick = () => {
-            const snapshot = getSnapshot();
-            if (!shallowEqualSnapshot(lastSnapshotRef.current, snapshot)) {
+        // Nothing can be sent before the channel joins, and a tick in that window would advance the
+        // text throttle for a snapshot the socket drops — pushing the first draft back to the next
+        // minute. Wait for SUBSCRIBED, then send a full baseline that ignores both the throttle and
+        // the dedupe, so the monitor starts from the real draft instead of waiting for a change.
+        if (!enabled || !getSnapshot || !hasDb || !isBroadcasting) return;
+        const tick = (baseline = false) => {
+            const full: LiveSessionSnapshot = {
+                ...getSnapshot(),
+                typedChars: typedCharsRef.current,
+                pastedChars: pastedCharsRef.current,
+            };
+            const now = Date.now();
+            const withText = baseline || spotlighted || now - lastTextSentAtRef.current >= ROSTER_TEXT_INTERVAL_MS;
+            if (withText) lastTextSentAtRef.current = now;
+            const snapshot = withText ? full : withoutText(full);
+            if (baseline || !shallowEqualSnapshot(lastSnapshotRef.current, snapshot)) {
                 lastSnapshotRef.current = snapshot;
+                if (withText && snapshot.text !== undefined) {
+                    persistDraftRef.current?.({ text: snapshot.text, wordCount: snapshot.wordCount });
+                }
                 wsSend('snapshot', snapshot);
             }
         };
         // Fire once right away (re-runs when isBroadcasting flips true, i.e. the channel just
-        // subscribed) so the teacher's first snapshot lands immediately instead of after a full
-        // SNAPSHOT_INTERVAL_MS — the initial-signal lag point 2 called out.
-        if (isBroadcasting) tick();
-        const interval = setInterval(tick, SNAPSHOT_INTERVAL_MS);
+        // subscribed — and again when a spotlight starts) so the teacher's first snapshot lands
+        // immediately instead of after a full interval — the initial-signal lag point 2 called out.
+        tick(true);
+        const interval = setInterval(() => tick(), SNAPSHOT_INTERVAL_MS);
         return () => clearInterval(interval);
-    }, [enabled, getSnapshot, hasDb, isBroadcasting, wsSend]);
+    }, [enabled, getSnapshot, hasDb, isBroadcasting, spotlighted, wsSend]);
 
-    return { events, flush, recordEvent: pushEvent, isBroadcasting, broadcast };
+    return { events, flush, recordEvent: pushEvent, isBroadcasting, spotlighted, broadcast };
 }

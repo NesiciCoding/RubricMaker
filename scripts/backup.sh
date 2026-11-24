@@ -13,8 +13,12 @@
 # runs (db_migrate), so a restore never has to recreate them — see restore.sh.
 #
 # DB_EXEC overrides how pg_dump/psql reach the database (default: the compose `db` service, via
-# `docker compose` or the older `docker-compose`). STORAGE_VOLUME overrides the uploads volume,
-# which must already exist — the run aborts rather than archiving an empty one.
+# `docker compose` or the older `docker-compose`). STORAGE_VOLUME overrides the uploads named
+# volume; STORAGE_DIR instead points at a bind-mount path (the official Supabase self-hosting
+# stack's ./volumes/storage) and takes priority when both are set. Either way the source must
+# already exist — the run aborts rather than archiving an empty one. MIGRATIONS_TABLE/
+# MIGRATIONS_COLUMN override the auto-detected migrations bookkeeping table (public._migrations
+# or, on a stack migrated with the Supabase CLI, supabase_migrations.schema_migrations).
 
 set -euo pipefail
 
@@ -32,13 +36,10 @@ if [[ -z "${DB_EXEC:-}" ]]; then
     DB_EXEC="$(db_exec_default)"
 fi
 
-# Refuse to archive a volume that does not exist: `docker run -v` would create an empty one with
-# that name, and the backup would look complete while holding none of the uploaded files.
-if ! docker volume inspect "$STORAGE_VOLUME" >/dev/null 2>&1; then
-    echo "Error: uploads volume '$STORAGE_VOLUME' does not exist."
-    echo "       It is named <compose project>_storage-data, so start the stack (docker compose up -d)"
-    echo "       or set COMPOSE_PROJECT_NAME/STORAGE_VOLUME to the project it actually runs as."
-    echo "       See docs/SELF_HOSTING_OPS.md → Backup and Restore."
+# Refuse to archive a source that does not exist: `docker run -v` would create an empty named
+# volume on the fly, and the backup would look complete while holding none of the uploaded files.
+if ! storage_source_exists; then
+    storage_source_missing_message
     exit 1
 fi
 
@@ -49,7 +50,10 @@ echo ""
 
 # ── Database ──────────────────────────────────────────────────────────────────
 echo "▶  Dumping database..."
+read -r MIGRATIONS_TABLE_RESOLVED MIGRATIONS_COLUMN_RESOLVED <<< "$(migrations_source "$DB_EXEC")"
 # Migration bookkeeping stays with the stack; restore.sh compares it instead of loading it.
+# --schema restricts the dump to public/auth/storage, so supabase_migrations.schema_migrations
+# (used on a stack migrated with the Supabase CLI) is already out of scope without excluding it.
 $DB_EXEC pg_dump -U supabase_admin --data-only --disable-triggers \
     --schema=public --schema=auth --schema=storage \
     --exclude-table=public._migrations \
@@ -57,14 +61,14 @@ $DB_EXEC pg_dump -U supabase_admin --data-only --disable-triggers \
     --exclude-table=storage.migrations \
     postgres > "$OUT/data.sql"
 $DB_EXEC psql -U supabase_admin -d postgres -v ON_ERROR_STOP=1 -tA \
-    -c "SELECT name FROM public._migrations ORDER BY name" > "$OUT/migrations.txt"
+    -c "SELECT $MIGRATIONS_COLUMN_RESOLVED FROM $MIGRATIONS_TABLE_RESOLVED ORDER BY $MIGRATIONS_COLUMN_RESOLVED" > "$OUT/migrations.txt"
 echo "2" > "$OUT/FORMAT"
 echo "   ✓ data.sql ($(du -sh "$OUT/data.sql" | cut -f1)), $(wc -l < "$OUT/migrations.txt" | tr -d ' ') migrations recorded"
 
 # ── Storage (uploaded attachments and DOCX templates) ─────────────────────────
 echo "▶  Archiving uploaded files..."
 docker run --rm \
-    -v "$STORAGE_VOLUME":/data:ro \
+    -v "$STORAGE_SRC":/data:ro \
     alpine \
     tar czf - -C / data \
     > "$OUT/storage.tar.gz"

@@ -116,10 +116,12 @@ export function accentTextFor(
  * Any data colour — a CEFR level, a grade from the school's own scale — used as *text*.
  *
  * Mixing it with the theme's body text darkens it on the light palette and lightens it on the dark
- * one, so one expression is legible in both themes without a second per-theme map. A third of the
- * source colour leaves every app-owned colour at 7:1 or better on every surface (#533).
+ * one, so one expression is legible in both themes without a second per-theme map. A quarter of the
+ * source colour leaves every app-owned colour at 7:1 or better on every surface (#533); amber
+ * `#eab308` (the "developing" mastery band, voTracks, grammar standards) is the weakest one, and a
+ * third of it still lands at 6.8:1 on the body background.
  */
-export function textOnTheme(color: string, weight = 35): string {
+export function textOnTheme(color: string, weight = 25): string {
     return `color-mix(in srgb, ${color} ${weight}%, var(--text))`;
 }
 

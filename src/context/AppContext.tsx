@@ -50,7 +50,7 @@ import { diffCollection } from '../utils/syncDiff';
 import { buildAccentScale, ACCENT_SCALE_STEPS } from '../utils/accentScale';
 import { isRtlLanguage } from '../utils/rtlLanguages';
 import { baseLanguage, chosenUiLanguage } from '../utils/uiLanguage';
-import { initClientLogger, setLoggerContext, STRESS_TEST_LOGGING_ENABLED } from '../services/logging/clientLogger';
+import { initClientLogger, setLoggerContext, CLIENT_LOGGING_ENABLED } from '../services/logging/clientLogger';
 import { initAuditLogger, clearAuditLogger } from '../services/database/AuditLogger';
 import type { DatabaseConfig } from '../services/database';
 
@@ -380,8 +380,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (client && userId) initAuditLogger(client, userId);
         else clearAuditLogger();
 
-        /* v8 ignore start -- only reachable when VITE_STRESS_TEST_LOGGING=true; test env keeps it off */
-        if (!STRESS_TEST_LOGGING_ENABLED) return;
+        /* v8 ignore start -- only reachable when VITE_STRESS_TEST_LOGGING or VITE_ERROR_REPORTING is true; test env keeps both off */
+        if (!CLIENT_LOGGING_ENABLED) return;
         const ctx = {
             role: state.settings.userRole,
             schoolId: state.settings.schoolId,

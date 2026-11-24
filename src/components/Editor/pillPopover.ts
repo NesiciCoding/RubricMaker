@@ -21,11 +21,25 @@ const EDGE = 8;
 export function openPillPopover(
     pill: HTMLElement,
     className: string,
-    build: (popover: HTMLDivElement, close: () => void) => void
+    build: (popover: HTMLDivElement, close: () => void) => void,
+    label?: string
 ): () => void {
     activeClose?.();
 
     const popover = document.createElement('div');
+    popover.setAttribute('role', 'dialog');
+    if (label) popover.setAttribute('aria-label', label);
+    // Remembered rather than read at close: Save refocuses the editor before it closes the popover.
+    let focusWasInside = false;
+    popover.addEventListener('focusin', () => {
+        focusWasInside = true;
+    });
+    // On the panel rather than one input: Tab can move focus to a checkbox or button inside it.
+    popover.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        e.preventDefault();
+        close();
+    });
     // `.pill-popover` in index.css owns the panel itself; the caller's class styles its contents.
     popover.className = `pill-popover ${className}`;
 
@@ -61,6 +75,18 @@ export function openPillPopover(
         window.removeEventListener('resize', onScrollOrResize);
         popover.remove();
         if (activeClose === close) activeClose = null;
+        // A keyboard user opened this from the pill, so they land back on it instead of losing their place.
+        if (focusWasInside && pill.isConnected) {
+            pill.focus();
+            // Save runs editor.chain().focus() first, and tiptap applies that focus on the next frame —
+            // after this point — so take focus back unless the user has since moved somewhere else.
+            requestAnimationFrame(() => {
+                const active = document.activeElement;
+                const editorRoot = pill.closest('.ProseMirror');
+                const stolenByEditor = active === document.body || (!!editorRoot && editorRoot.contains(active));
+                if (pill.isConnected && active !== pill && stolenByEditor) pill.focus();
+            });
+        }
     }
 
     // Attach before build() runs — build() focuses/selects an input it creates, which only works
@@ -77,4 +103,23 @@ export function openPillPopover(
     window.addEventListener('resize', onScrollOrResize);
 
     return close;
+}
+
+/**
+ * Makes a pill (a non-editable atom inside the editor) operable from the keyboard: focusable, announced as a
+ * button that opens a dialog, and activated by Enter or Space like a click. Returns a function that updates the
+ * accessible name when the pill's content changes.
+ */
+export function makePillAccessible(pill: HTMLElement): (label: string) => void {
+    pill.setAttribute('role', 'button');
+    pill.setAttribute('aria-haspopup', 'dialog');
+    pill.tabIndex = 0;
+    pill.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        // Without this ProseMirror would treat Enter as "split the paragraph" instead of "open the pill".
+        e.preventDefault();
+        e.stopPropagation();
+        pill.click();
+    });
+    return (label) => pill.setAttribute('aria-label', label);
 }

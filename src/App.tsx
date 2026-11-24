@@ -17,9 +17,11 @@ import RouteSkeleton from './components/ui/RouteSkeleton';
 import { AppShellSkeleton } from './components/ui/AppShellSkeleton';
 import { TabbedPageSkeleton } from './components/ui/Skeleton';
 import { PageViewLogger } from './components/ui/PageViewLogger';
+import { SchoolHighlightsSync } from './components/ui/SchoolHighlightsSync';
 import { isLocalMode } from './store/storage';
 import { canOpenAdmin, resolveUserRole } from './utils/userRole';
 import { RemountOnParam } from './components/ui/RemountOnParam';
+import { useLongPressContextMenu } from './hooks/useLongPressContextMenu';
 
 // react-joyride only runs the onboarding tour inside the dashboard, never on the landing
 // page — lazy so its ~800KB isn't parsed on every load. No default export, so re-wrap it.
@@ -63,6 +65,7 @@ const TestResultsPage = lazy(() => import('./pages/TestResultsPage'));
 const TestScoreSheetPage = lazy(() => import('./pages/TestScoreSheetPage'));
 const TestGradingQueuePage = lazy(() => import('./pages/TestGradingQueuePage'));
 const LiveMonitorPage = lazy(() => import('./pages/LiveMonitorPage'));
+const EssayDraftProjectorPage = lazy(() => import('./pages/EssayDraftProjectorPage'));
 const StudentPortalPage = lazy(() => import('./pages/StudentPortalPage'));
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
@@ -104,6 +107,7 @@ export default function App() {
     const { showLanding, isCheckingSession, bootPhase, signOutFromDatabase, showMigrationPrompt } = usePlatform();
 
     const { t } = useTranslation();
+    useLongPressContextMenu();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const steps = useMemo(
         () => (isMobileViewport() ? withMobileDrawer(getTutorialSteps(t), setMobileMenuOpen) : getTutorialSteps(t)),
@@ -280,6 +284,7 @@ export default function App() {
                     )}
                     <RouteAnnouncer />
                     <PageViewLogger />
+                    <SchoolHighlightsSync />
                     <Sidebar mobileOpen={mobileMenuOpen} onMobileClose={() => setMobileMenuOpen(false)} />
                     <main className="main-area" id="main-content" tabIndex={-1}>
                         <ErrorBoundary>
@@ -337,7 +342,14 @@ export default function App() {
                                     />
                                     <Route path="/tests/:testId/results/:studentTestId" element={<TestResultsPage />} />
                                     <Route path="/tests/:testId/grade" element={<TestGradingQueuePage />} />
-                                    <Route path="/tests/:testId/monitor" element={<LiveMonitorPage kind="test" />} />
+                                    <Route
+                                        path="/tests/:testId/monitor"
+                                        element={
+                                            <RemountOnParam param="testId">
+                                                <LiveMonitorPage kind="test" />
+                                            </RemountOnParam>
+                                        }
+                                    />
                                     <Route path="/tests/:id/scores" element={<TestScoreSheetPage />} />
                                     <Route path="/essays" element={<EssayListPage />} />
                                     <Route
@@ -358,7 +370,15 @@ export default function App() {
                                     />
                                     <Route
                                         path="/essays/:assignmentId/monitor"
-                                        element={<LiveMonitorPage kind="essay" />}
+                                        element={
+                                            <RemountOnParam param="assignmentId">
+                                                <LiveMonitorPage kind="essay" />
+                                            </RemountOnParam>
+                                        }
+                                    />
+                                    <Route
+                                        path="/essays/:assignmentId/monitor/project/:studentId"
+                                        element={<EssayDraftProjectorPage />}
                                     />
                                     <Route path="/live" element={<LiveWritingListPage />} />
                                     <Route path="/live/new" element={<LiveWritingSessionPage />} />

@@ -207,6 +207,14 @@ export function getRouteTree(t: TFunction): RouteNode[] {
                             label: t('docs.route_essay_monitor_label'),
                             description: t('docs.route_essay_monitor_desc'),
                             color: '#8b5cf6',
+                            children: [
+                                {
+                                    path: '/essays/:assignmentId/monitor/project/:studentId',
+                                    label: t('docs.route_essay_projector_label'),
+                                    description: t('docs.route_essay_projector_desc'),
+                                    color: '#8b5cf6',
+                                },
+                            ],
                         },
                     ],
                 },
@@ -1058,13 +1066,16 @@ function RubricsTab() {
                     {t('docs.rb_tests_inspector')}
                 </p>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    {t('docs.rb_tests_inspector_answers')}
+                </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     <strong>{t('docs.rb_tests_fillgap_label')}</strong> {t('docs.rb_tests_fillgap_uses')}{' '}
                     <code>{'{{...}}'}</code> {t('docs.rb_tests_fillgap_markers')} <code>{'{{Paris}}'}</code>{' '}
                     {t('docs.rb_tests_fillgap_blank')} <code>{'{{Paris|City of Paris}}'}</code>.{' '}
                     {t('docs.rb_tests_fillgap_dropdown_intro')}{' '}
                     <strong>{t('docs.rb_tests_fillgap_dropdown_type')}</strong>{' '}
                     {t('docs.rb_tests_fillgap_dropdown_list')} <code>{'{{Paris|London|Berlin}}'}</code>{' '}
-                    {t('docs.rb_tests_fillgap_body_suffix')}
+                    {t('docs.rb_tests_fillgap_body_suffix')} {t('docs.rb_tests_fillgap_gap_list')}
                 </p>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     <strong>{t('docs.rb_tests_matching_label')}</strong> {t('docs.rb_tests_matching_body')}{' '}
@@ -1129,6 +1140,8 @@ function RubricsTab() {
                         t('docs.rb_live_monitor_item_hide_names'),
                         t('docs.rb_live_monitor_item_proctoring'),
                         t('docs.rb_live_monitor_item_nudge'),
+                        t('docs.rb_live_monitor_item_session_export'),
+                        t('docs.rb_live_monitor_item_shortcuts'),
                     ]}
                 />
             </FeatureSection>
@@ -1200,6 +1213,14 @@ function GradingTab() {
                         t('docs.gr_tiered_item_feedback'),
                     ]}
                 />
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.gr_item_insight_title')}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
+                    {t('docs.gr_item_insight_body')}
+                </p>
+                <FeatureList items={[t('docs.gr_item_insight_thresholds'), t('docs.gr_item_insight_derived')]} />
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.gr_layout_title')}
@@ -1460,6 +1481,29 @@ function GradingTab() {
                         t('docs.gr_test_rich_authoring_item_duplicate_undo'),
                         t('docs.gr_test_rich_authoring_item_paste_list'),
                         t('docs.gr_test_rich_authoring_item_collapse_issues'),
+                        t('docs.gr_test_rich_authoring_item_cloze_formatting'),
+                        t('docs.gr_test_answer_options_item_scripts'),
+                        t('docs.gr_test_rich_authoring_item_rich_notes'),
+                        t('docs.gr_test_rich_authoring_item_pill_keyboard'),
+                        t('docs.gr_test_rich_authoring_item_typed_gap_chips'),
+                        t('docs.gr_test_rich_authoring_item_cloze_intro'),
+                        t('docs.gr_test_rich_authoring_item_item_images'),
+                        t('docs.gr_test_rich_authoring_item_option_feedback'),
+                        t('docs.gr_test_rich_authoring_item_gap_weights'),
+                    ]}
+                />
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.gr_test_answer_options_title')}
+                </h3>
+                <FeatureList
+                    items={[
+                        t('docs.gr_test_answer_options_item_cloze_select'),
+                        t('docs.gr_test_answer_options_item_cloze_paste'),
+                        t('docs.gr_test_answer_options_item_shuffle'),
+                        t('docs.gr_test_answer_options_item_true_false'),
+                        t('docs.gr_test_answer_options_item_numeric'),
+                        t('docs.gr_test_answer_options_item_matching'),
                     ]}
                 />
 
@@ -1490,6 +1534,13 @@ function GradingTab() {
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
                     {t('docs.gr_review_deck_body')}
+                </p>
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.gr_context_menus_title')}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
+                    {t('docs.gr_context_menus_body')}
                 </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
@@ -1920,6 +1971,7 @@ function EssaysTab() {
                         t('docs.es_creating_item_status'),
                         t('docs.es_creating_item_import'),
                         t('docs.es_creating_item_monitor'),
+                        t('docs.es_creating_item_projector'),
                     ]}
                 />
 
@@ -2249,6 +2301,20 @@ function DataTab() {
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
                     {t('docs.da_stress_body_prefix')} <code>VITE_STRESS_TEST_LOGGING=true</code>{' '}
                     {t('docs.da_stress_body_mid')} <code>client_logs</code> {t('docs.da_stress_body_suffix')}
+                </p>
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.da_highlights_title')}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    {t('docs.da_highlights_body')}
+                </p>
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.da_errors_title')}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    {t('docs.da_errors_body_prefix')} <code>VITE_ERROR_REPORTING=true</code>{' '}
+                    {t('docs.da_errors_body_suffix')}
                 </p>
             </FeatureSection>
 

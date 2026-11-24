@@ -76,6 +76,7 @@ function toStudentSafeQuestion(question: MinimalQuestion): MinimalQuestion {
         expectedAnswers: _eas,
         expectedNumericValue: _env,
         numericTolerance: _nt,
+        numericTolerancePercent: _ntp,
         correctBoolean: _cb,
         hotTextCorrectIndices: _hci,
         eloRating: _er,
@@ -92,7 +93,7 @@ function toStudentSafeQuestion(question: MinimalQuestion): MinimalQuestion {
     } = question;
     return {
         ...rest,
-        ...(options ? { options: options.map(({ isCorrect: _ic, ...opt }) => opt) } : {}),
+        ...(options ? { options: options.map(({ isCorrect: _ic, feedback: _fb, ...opt }) => opt) } : {}),
         ...(categorizeItems ? { categorizeItems: categorizeItems.map(({ categoryId: _cid, ...item }) => item) } : {}),
         // A TTS dictation needs its text on the client to be spoken; with an uploaded clip it's a pure answer key.
         ...(typeof errorPassage === 'string' ? { errorPassage: stripErrorKey(errorPassage) } : {}),

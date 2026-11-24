@@ -198,6 +198,29 @@ describe('scoreNumeric', () => {
         expect(scoreNumeric(numericQuestion, '3.20')).toBe(0);
     });
 
+    it('accepts a percentage margin of the expected value', () => {
+        const pct = {
+            ...numericQuestion,
+            expectedNumericValue: 200,
+            numericTolerance: undefined,
+            numericTolerancePercent: 5,
+        };
+        expect(scoreNumeric(pct, '210')).toBe(3);
+        expect(scoreNumeric(pct, '190')).toBe(3);
+        expect(scoreNumeric(pct, '211')).toBe(0);
+    });
+
+    it('applies the wider of the absolute and percentage margins', () => {
+        const both = { ...numericQuestion, expectedNumericValue: 100, numericTolerance: 8, numericTolerancePercent: 5 };
+        expect(scoreNumeric(both, '108')).toBe(3);
+        expect(scoreNumeric(both, '109')).toBe(0);
+    });
+
+    it('lets the percentage margin win when it is wider than the absolute one', () => {
+        const q = { ...numericQuestion, expectedNumericValue: 100, numericTolerance: 2, numericTolerancePercent: 5 };
+        expect(scoreNumeric(q, '104')).toBe(3);
+    });
+
     it('defaults tolerance to 0 (exact match) when unset', () => {
         const exact = { ...numericQuestion, numericTolerance: undefined };
         expect(scoreNumeric(exact, '3.14')).toBe(3);
@@ -241,18 +264,18 @@ describe('scoreMultipleResponse', () => {
         expect(scoreMultipleResponse(mrQuestion, JSON.stringify(['a', 'b']))).toBe(4);
     });
 
-    it('awards proportional credit by default', () => {
+    it('awards proportional credit for a partly correct selection', () => {
         expect(scoreMultipleResponse(mrQuestion, JSON.stringify(['a']))).toBe(3);
         expect(scoreMultipleResponse(mrQuestion, JSON.stringify(['a', 'c']))).toBe(2);
     });
 
     it('awards 0 for an empty selection', () => {
-        expect(scoreMultipleResponse(mrQuestion, JSON.stringify([]))).toBe(2);
+        expect(scoreMultipleResponse(mrQuestion, JSON.stringify([]))).toBe(0);
     });
 
     it('treats unparsable responses as no selection', () => {
-        expect(scoreMultipleResponse(mrQuestion, '')).toBe(2);
-        expect(scoreMultipleResponse(mrQuestion, 'not json')).toBe(2);
+        expect(scoreMultipleResponse(mrQuestion, '')).toBe(0);
+        expect(scoreMultipleResponse(mrQuestion, 'not json')).toBe(0);
     });
 
     it('awards 0 when the question has no options', () => {
@@ -473,13 +496,18 @@ describe('scoreHotText', () => {
         expect(scoreHotText(hotTextQuestion, JSON.stringify([0, 1]))).toBe(4);
     });
 
-    it('awards proportional credit by default', () => {
+    it('awards proportional credit for a partly correct selection', () => {
         expect(scoreHotText(hotTextQuestion, JSON.stringify([0]))).toBeCloseTo((4 * 2) / 3);
+        expect(scoreHotText(hotTextQuestion, JSON.stringify([0, 2]))).toBeCloseTo(4 / 3);
+    });
+
+    it('awards 0 for an empty selection', () => {
+        expect(scoreHotText(hotTextQuestion, JSON.stringify([]))).toBe(0);
     });
 
     it('treats unparsable responses as no selection', () => {
-        expect(scoreHotText(hotTextQuestion, '')).toBeCloseTo((4 * 1) / 3);
-        expect(scoreHotText(hotTextQuestion, 'not json')).toBeCloseTo((4 * 1) / 3);
+        expect(scoreHotText(hotTextQuestion, '')).toBe(0);
+        expect(scoreHotText(hotTextQuestion, 'not json')).toBe(0);
     });
 
     it('is all-or-nothing when partialCredit is false', () => {
@@ -625,5 +653,49 @@ describe('withAskedQuestionSnapshots', () => {
         expect(merged.questions).toHaveLength(4);
         expect(merged.questions[3]).toBe(snapshot);
         expect(merged.id).toBe(test.id);
+    });
+});
+
+describe('scoreCloze gap weights', () => {
+    const cloze = {
+        id: 'q-cloze',
+        prompt: 'A {{one}} B {{two}} C {{three}}',
+        type: 'cloze',
+        points: 8,
+    } as TestQuestion;
+    const answers = (a: string, b: string, c: string) => JSON.stringify({ 0: a, 1: b, 2: c });
+
+    it('weights gaps equally by default', () => {
+        expect(scoreCloze(cloze, answers('one', 'x', 'x'))).toBeCloseTo(8 / 3);
+    });
+
+    it('gives a heavier gap a bigger share', () => {
+        const weighted = { ...cloze, gapWeights: [2, 1, 1] };
+        expect(scoreCloze(weighted, answers('one', 'x', 'x'))).toBe(4);
+        expect(scoreCloze(weighted, answers('x', 'two', 'three'))).toBe(4);
+    });
+
+    it('ignores weights that no longer match the gap count or are unusable', () => {
+        expect(scoreCloze({ ...cloze, gapWeights: [5, 1] }, answers('one', 'x', 'x'))).toBeCloseTo(8 / 3);
+        expect(scoreCloze({ ...cloze, gapWeights: [0, 0, 0] }, answers('one', 'x', 'x'))).toBeCloseTo(8 / 3);
+        expect(scoreCloze({ ...cloze, gapWeights: [-1, 1, 1] }, answers('one', 'x', 'x'))).toBeCloseTo(8 / 3);
+    });
+
+    it('does not overflow when the authored weights are huge', () => {
+        const huge = { ...cloze, gapWeights: [1e308, 1e308, 1e308] };
+        expect(scoreCloze(huge, answers('one', 'two', 'three'))).toBe(8);
+        expect(scoreCloze(huge, answers('one', 'x', 'x'))).toBeCloseTo(8 / 3);
+    });
+
+    it('does not let rounding hide a wrong gap without partial credit', () => {
+        const lopsided = { ...cloze, gapWeights: [1e16, 1, 1], partialCredit: false };
+        expect(scoreCloze(lopsided, answers('one', 'x', 'x'))).toBe(0);
+        expect(scoreCloze(lopsided, answers('one', 'two', 'three'))).toBe(8);
+    });
+
+    it('lets a zero-weight gap cost nothing and still needs every weighted gap without partial credit', () => {
+        const noPartial = { ...cloze, gapWeights: [0, 1, 1], partialCredit: false };
+        expect(scoreCloze(noPartial, answers('x', 'two', 'three'))).toBe(8);
+        expect(scoreCloze(noPartial, answers('x', 'two', 'x'))).toBe(0);
     });
 });

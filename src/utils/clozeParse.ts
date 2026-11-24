@@ -1,4 +1,5 @@
 import type { TestQuestionType } from '../types';
+import { escapeForPrompt, isRichClozePrompt, richClozePieces } from './clozeHtml';
 import {
     CLOZE_GAP_PATTERN,
     clozeGapToSyntax,
@@ -10,6 +11,7 @@ import {
 } from '../../supabase/functions/_shared/testScoring.ts';
 
 export {
+    effectiveGapWeights,
     parseClozeGaps,
     matchClozeGaps,
     parseHotTextFragments,
@@ -18,6 +20,7 @@ export {
     splitClozeOptions,
 } from '../../supabase/functions/_shared/testScoring.ts';
 export type { ClozeGapMatch } from '../../supabase/functions/_shared/testScoring.ts';
+export { isRichClozePrompt } from './clozeHtml';
 export type {
     ClozeGap,
     ClozeOptionRole,
@@ -25,6 +28,14 @@ export type {
     HotTextTextSegment,
     HotTextFragmentSegment,
 } from '../../supabase/functions/_shared/testScoring.ts';
+
+/** What each gap earns of the question's points, in gap order. Scaled by the largest weight so huge authored weights cannot overflow the sum. */
+export function gapPointShares(points: number, weights: number[]): number[] {
+    const peak = Math.max(...weights);
+    const scaled = weights.map((weight) => weight / peak);
+    const total = scaled.reduce((sum, weight) => sum + weight, 0);
+    return scaled.map((weight) => Math.round(((points * weight) / total) * 100) / 100);
+}
 
 export interface ClozeTextSegment {
     type: 'text';
@@ -39,6 +50,12 @@ export interface ClozeGapSegment {
 export type ClozeSegment = ClozeTextSegment | ClozeGapSegment;
 
 export function renderClozeSegments(prompt: string): ClozeSegment[] {
+    // A formatted prompt is HTML: its text is the visible text, so no caller ever sees a tag.
+    if (isRichClozePrompt(prompt)) {
+        return richClozePieces(prompt).map((piece) =>
+            piece.type === 'text' ? { type: 'text', text: piece.text } : { type: 'gap', gap: piece.gap }
+        );
+    }
     const segments: ClozeSegment[] = [];
     let lastIndex = 0;
     for (const { gap, start, end } of matchClozeGaps(prompt)) {
@@ -76,7 +93,9 @@ export function plainQuestionPromptText(question: { type: TestQuestionType; prom
 export function addGapAlternative(prompt: string, gapIndex: number, word: string): string {
     let i = -1;
     return prompt.replace(new RegExp(CLOZE_GAP_PATTERN.source, 'g'), (match, inner: string) =>
-        ++i === gapIndex ? `{{${inner.trim() ? `${inner}|${word}` : word}}}` : match
+        ++i === gapIndex
+            ? `{{${inner.trim() ? `${inner}|${escapeForPrompt(prompt, word)}` : escapeForPrompt(prompt, word)}}}`
+            : match
     );
 }
 
@@ -90,7 +109,7 @@ export function addGapAlternative(prompt: string, gapIndex: number, word: string
  * (`gapCorrectAnswers` accepts them); only a fully unmarked legacy gap uses position — first correct,
  * the rest wrong.
  */
-function resolvedGapRoles(gap: ClozeGap): ClozeOptionRole[] {
+export function resolvedGapRoles(gap: ClozeGap): ClozeOptionRole[] {
     const marked = gap.roles?.some((role) => role !== null) ?? false;
     return gap.alternatives.map((_, i) => gap.roles?.[i] ?? (marked || i === 0 ? 'correct' : 'wrong'));
 }
@@ -126,9 +145,27 @@ export function addDropdownDistractor(prompt: string, gapIndex: number, word: st
     );
 }
 
+/** Marks one alternative of a dropdown gap correct or wrong, rewriting the gap with explicit roles. */
+export function setDropdownAlternativeRole(
+    prompt: string,
+    gapIndex: number,
+    alternativeIndex: number,
+    correct: boolean
+): string {
+    const target = parseClozeGaps(prompt)[gapIndex];
+    if (!target || alternativeIndex < 0 || alternativeIndex >= target.alternatives.length) return prompt;
+    const roles = resolvedGapRoles(target);
+    roles[alternativeIndex] = correct ? 'correct' : 'wrong';
+    return replaceGap(
+        prompt,
+        gapIndex,
+        clozeGapToSyntax({ index: gapIndex, alternatives: target.alternatives, roles })
+    );
+}
+
 function replaceGap(prompt: string, gapIndex: number, replacement: string): string {
     const matches = matchClozeGaps(prompt);
     const target = matches[gapIndex];
     if (!target) return prompt;
-    return `${prompt.slice(0, target.start)}${replacement}${prompt.slice(target.end)}`;
+    return `${prompt.slice(0, target.start)}${escapeForPrompt(prompt, replacement)}${prompt.slice(target.end)}`;
 }

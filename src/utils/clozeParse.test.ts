@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { renderClozeSegments, plainQuestionPromptText } from './clozeParse';
+import { renderClozeSegments, plainQuestionPromptText, gapPointShares } from './clozeParse';
 
 describe('renderClozeSegments', () => {
     it('returns a single text segment for plain text', () => {
@@ -70,5 +70,42 @@ describe('addGapAlternative on an empty gap', () => {
     it('sets the answer instead of leaving a leading bar', async () => {
         const { addGapAlternative } = await import('./clozeParse');
         expect(addGapAlternative('Her {{}}(HAPPY) showed.', 0, 'happiness')).toBe('Her {{happiness}}(HAPPY) showed.');
+    });
+});
+
+describe('setDropdownAlternativeRole', () => {
+    it('upgrades a legacy gap so the options it already had keep their meaning', async () => {
+        const { setDropdownAlternativeRole } = await import('./clozeParse');
+        expect(setDropdownAlternativeRole('Pick {{Paris|London}}.', 0, 1, true)).toBe('Pick {{=Paris|=London}}.');
+    });
+
+    it('turns a correct alternative into a distractor', async () => {
+        const { setDropdownAlternativeRole } = await import('./clozeParse');
+        expect(setDropdownAlternativeRole('Pick {{=Paris|=London|~Berlin}}.', 0, 0, false)).toBe(
+            'Pick {{~Paris|=London|~Berlin}}.'
+        );
+    });
+
+    it('rewrites only the requested gap and leaves the ones before it untouched', async () => {
+        const { setDropdownAlternativeRole } = await import('./clozeParse');
+        expect(setDropdownAlternativeRole('{{a|b}} then {{c|d}}.', 1, 1, true)).toBe('{{a|b}} then {{=c|=d}}.');
+    });
+
+    it('returns the prompt unchanged for a gap or alternative that does not exist', async () => {
+        const { setDropdownAlternativeRole } = await import('./clozeParse');
+        expect(setDropdownAlternativeRole('{{a|b}}', 3, 0, true)).toBe('{{a|b}}');
+        expect(setDropdownAlternativeRole('{{a|b}}', 0, 5, true)).toBe('{{a|b}}');
+    });
+});
+
+describe('gapPointShares', () => {
+    it('splits the points by weight, in gap order', () => {
+        expect(gapPointShares(4, [1, 1, 1, 1])).toEqual([1, 1, 1, 1]);
+        expect(gapPointShares(4, [3, 1])).toEqual([3, 1]);
+        expect(gapPointShares(1, [1, 1, 1])).toEqual([0.33, 0.33, 0.33]);
+    });
+
+    it('does not overflow on huge weights', () => {
+        expect(gapPointShares(2, [1e308, 1e308])).toEqual([1, 1]);
     });
 });

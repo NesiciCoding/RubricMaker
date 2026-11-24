@@ -24,7 +24,7 @@ import { useTranslation } from 'react-i18next';
 import PageTour from '../components/Tour/PageTour';
 import { getTestBuilderTourSteps } from '../data/TutorialSteps';
 import Topbar from '../components/Layout/Topbar';
-import { useAssessment, useAuthoring, useFlashcards, useSettings } from '../context/AppContext';
+import { useAssessment, useAuthoring, useFlashcards, useRoster, useSettings } from '../context/AppContext';
 import { htmlToPlainText } from '../hooks/useTTS';
 import { useToast } from '../hooks/useToast';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
@@ -41,6 +41,8 @@ import { cloneBankItemIntoTest, duplicateQuestion, newQuestion } from '../utils/
 import { buildEasierClozeVariant, type ClozeVariantKind } from '../utils/clozeVariant';
 import { testAssignBlockers } from '../utils/testQuestionIssues';
 import type {
+    Class,
+    Student,
     Test,
     TestQuestion,
     TestQuestionType,
@@ -57,6 +59,8 @@ import { plainQuestionPromptText } from '../utils/clozeParse';
 import { EmptyState } from '../components/ui/EmptyState';
 import QuestionTypePicker from '../components/Tests/QuestionTypePicker';
 import TestOutlineRail from '../components/Tests/TestOutlineRail';
+import { builderItemInsights } from '../utils/builderItemAnalysis';
+import { questionOutlineMenuItems } from '../components/Tests/questionOutlineMenuItems';
 import QuestionSwitcher from '../components/Tests/QuestionSwitcher';
 import ColumnResizer from '../components/Tests/ColumnResizer';
 import TestSettingsDrawer, {
@@ -103,12 +107,19 @@ export default function TestBuilderPage() {
     const { id } = useParams();
     const { t } = useTranslation();
     const { tests } = useAssessment();
+    // Read here rather than in the editor: the editor already subscribes to four domains, and the
+    // roster is only needed to name the classes a test's results came from.
+    const { students, classes } = useRoster();
     const found = !id || tests.some((tst) => tst.id === id);
     // A colleague's test is never in our own state; look it up among the shared ones instead.
     const shared = useSharedMaterials('test', !found);
-    if (found) return <TestBuilderEditor />;
+    if (found) return <TestBuilderEditor students={students} classes={classes} />;
     const sharedEntry = shared.items.find((e) => e.item.id === id);
-    if (sharedEntry) return <TestBuilderEditor key={sharedEntry.item.id} shared={sharedEntry} />;
+    if (sharedEntry) {
+        return (
+            <TestBuilderEditor key={sharedEntry.item.id} shared={sharedEntry} students={students} classes={classes} />
+        );
+    }
     if (shared.connected && (shared.status === 'idle' || shared.status === 'loading')) {
         return (
             <>
@@ -120,17 +131,25 @@ export default function TestBuilderPage() {
             </>
         );
     }
-    return <TestBuilderEditor />;
+    return <TestBuilderEditor students={students} classes={classes} />;
 }
 
-function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
+function TestBuilderEditor({
+    shared,
+    students = [],
+    classes = [],
+}: {
+    shared?: SharedEntry<Test>;
+    students?: Student[];
+    classes?: Class[];
+}) {
     const navigate = useNavigate();
     const { id } = useParams();
     const location = useLocation();
     const { t, i18n } = useTranslation();
     const { showToast } = useToast();
     const { gradeScales, addSectionBankItem, questionBank } = useAuthoring();
-    const { tests, addTest, updateTest } = useAssessment();
+    const { tests, studentTests, addTest, updateTest } = useAssessment();
     const { settings } = useSettings();
     const { addFlashcardDeck } = useFlashcards();
 
@@ -157,6 +176,7 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
     const [description, setDescription] = useState(existing?.description ?? '');
     const [questions, setQuestions] = useState<TestQuestion[]>(existing?.questions ?? generated?.questions ?? []);
     const [showBankModal, setShowBankModal] = useState(false);
+    const [bankInsertAfterId, setBankInsertAfterId] = useState<string | null>(null);
     /** Section the question being created belongs to; null while the type picker is closed. */
     const [newQuestionFor, setNewQuestionFor] = useState<{ sectionId?: string } | null>(null);
     /** Question open in the focus pane. At rail widths this is the only editor on screen. */
@@ -709,6 +729,14 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
         () => new Map((draftBlockers?.entries ?? []).map((entry) => [entry.questionId, entry.issues])),
         [draftBlockers]
     );
+    /** Read-only derivation from the results of the saved test; nothing here is stored. */
+    const itemInsights = React.useMemo(
+        () =>
+            existing
+                ? builderItemInsights({ test: existing, studentTests: studentTests ?? [], students, classes })
+                : undefined,
+        [existing, studentTests, students, classes]
+    );
 
     const previewTest: Test = {
         id: existing?.id ?? 'preview',
@@ -765,8 +793,24 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
     function insertFromBank(item: QuestionBankItem) {
         const { questions: cloned, section } = cloneBankItemIntoTest(item);
         if (section) setSections((prev) => [...prev, section]);
-        setQuestions((prev) => [...prev, ...cloned]);
+        // Chosen from a question's outline menu: land right after it, in its section unless the bank
+        // item brings a section of its own.
+        const anchor = bankInsertAfterId ? questions.find((q) => q.id === bankInsertAfterId) : undefined;
+        if (anchor) {
+            const placed = section ? cloned : cloned.map((q) => ({ ...q, sectionId: anchor.sectionId }));
+            setQuestions((prev) => {
+                const at = prev.findIndex((q) => q.id === anchor.id);
+                return at < 0 ? [...prev, ...placed] : [...prev.slice(0, at + 1), ...placed, ...prev.slice(at + 1)];
+            });
+        } else {
+            setQuestions((prev) => [...prev, ...cloned]);
+        }
+        setBankInsertAfterId(null);
         setShowBankModal(false);
+    }
+
+    function moveQuestionToSection(qid: string, sectionId: string | undefined) {
+        setQuestions((prev) => prev.map((q) => (q.id === qid ? { ...q, sectionId } : q)));
     }
 
     function saveSectionToBank(section: TestSection) {
@@ -1440,9 +1484,37 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                         questions={displayOrderedQuestions}
                         totalPoints={totalPoints}
                         issuesByQuestion={issuesByQuestion}
+                        insights={itemInsights}
                         activeId={selectedQuestionId}
                         activeSectionId={selectedSectionId}
                         onSelect={jumpToQuestion}
+                        questionMenu={
+                            readOnly
+                                ? undefined
+                                : (question) =>
+                                      questionOutlineMenuItems({
+                                          question,
+                                          sections,
+                                          labels: {
+                                              duplicate: t('tests.menu_duplicate_question'),
+                                              insertFromBank: t('tests.menu_insert_from_bank'),
+                                              moveTo: (title) => t('tests.menu_move_to_section', { section: title }),
+                                              noSection: t('tests.no_section'),
+                                              remove: t('tests.menu_delete_question'),
+                                          },
+                                          duplicate: () => {
+                                              setChecksOpen(false);
+                                              setSelectedSectionId(null);
+                                              copyQuestion(question.id);
+                                          },
+                                          insertFromBankAfter: () => {
+                                              setBankInsertAfterId(question.id);
+                                              setShowBankModal(true);
+                                          },
+                                          moveToSection: (sectionId) => moveQuestionToSection(question.id, sectionId),
+                                          remove: () => removeQuestion(question.id),
+                                      })
+                        }
                         onSelectSection={(sectionId) => {
                             setChecksOpen(false);
                             setSelectedSectionId(sectionId);
@@ -2486,7 +2558,15 @@ function TestBuilderEditor({ shared }: { shared?: SharedEntry<Test> }) {
                 durationError={durationError}
                 readOnly={readOnly}
             />
-            {showBankModal && <QuestionBankModal onClose={() => setShowBankModal(false)} onSelect={insertFromBank} />}
+            {showBankModal && (
+                <QuestionBankModal
+                    onClose={() => {
+                        setShowBankModal(false);
+                        setBankInsertAfterId(null);
+                    }}
+                    onSelect={insertFromBank}
+                />
+            )}
             {newQuestionFor && (
                 <QuestionTypePicker onSelect={createQuestionOfType} onClose={() => setNewQuestionFor(null)} />
             )}

@@ -357,6 +357,7 @@ export const A11Y_ROUTES: readonly A11yRoute[] = [
     { path: '/essays/new', label: 'Essay builder (new)' },
     { path: `/essays/${ESSAY_KEY}`, label: 'Essay builder (edit)' },
     { path: `/essays/${ESSAY_KEY}/monitor`, label: 'Essay live monitor' },
+    { path: `/essays/${ESSAY_KEY}/monitor/project/${STUDENT_ID}`, label: 'Essay draft projector' },
     { path: '/live', label: 'Live writing' },
     { path: '/live/new', label: 'Live writing console (new)' },
     { path: `/live/${LIVE_SESSION_ID}`, label: 'Live writing console' },

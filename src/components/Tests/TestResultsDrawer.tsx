@@ -12,6 +12,8 @@ import type { AppSettings, Class, GradeScale, Student, StudentTest, Test } from 
 import type { DocxStyleTemplateOverrides } from '../../utils/docxExport';
 import { calcClassAveragePercentage } from '../../utils/testCalc';
 import { resolveTestScale } from '../../utils/testGradingNorm';
+import { getEffectiveVoTrack, VO_TRACK_LABELS } from '../../data/voTracks';
+import { getEffectiveSchoolYear, SCHOOL_YEAR_LABELS } from '../../data/schoolYears';
 import {
     GRADEBOOK_PRESET_IDS,
     type DecimalSeparator,
@@ -33,6 +35,9 @@ export interface TestResultsDrawerProps {
     onOpenAnalysis: () => void;
     onOpenGradeQueue: () => void;
     onClose: () => void;
+    /** Owned by the page so closing the drawer mid-export does not re-arm the export buttons. */
+    exporting?: boolean;
+    onExportingChange?: (exporting: boolean) => void;
 }
 
 /**
@@ -56,6 +61,8 @@ export default function TestResultsDrawer({
     onOpenAnalysis,
     onOpenGradeQueue,
     onClose,
+    exporting: exportingProp,
+    onExportingChange,
 }: TestResultsDrawerProps) {
     const { t } = useTranslation();
     const { showToast } = useToast();
@@ -63,7 +70,9 @@ export default function TestResultsDrawer({
     const [exportStudentId, setExportStudentId] = useState('');
     const [gradebookPreset, setGradebookPreset] = useState<GradebookPresetId>('generic');
     const [gradebookDecimal, setGradebookDecimal] = useState<DecimalSeparator>('comma');
-    const [exporting, setExporting] = useState(false);
+    const [localExporting, setLocalExporting] = useState(false);
+    const exporting = exportingProp ?? localExporting;
+    const setExporting = onExportingChange ?? setLocalExporting;
 
     const relevantStudentTests = studentTests.filter((st) => st.testId === test.id);
     const submittedCount = new Set(relevantStudentTests.map((st) => st.studentId)).size;
@@ -75,16 +84,28 @@ export default function TestResultsDrawer({
         const { buildTestStudentSummary, pickLatestAttempt } = await import('../../utils/testAnswerText');
         const { effectiveTestQuestions } = await import('../../utils/testSummaryAggregator');
         const { saveAs } = await import('file-saver');
+        const { scoreStudentTest } = await import('../../utils/studentTestScore');
         const { sanitizeFilename } = await import('../../utils/exportDataPrep');
 
-        const summaryFor = (studentTest: StudentTest) =>
-            buildTestStudentSummary(
+        const summaryFor = (studentTest: StudentTest) => {
+            const student = students.find((s) => s.id === studentTest.studentId);
+            const studentClass = classes.find((c) => c.id === student?.classId);
+            const track = getEffectiveVoTrack(student, studentClass);
+            const year = getEffectiveSchoolYear(student, studentClass);
+            // Score against the questions this student was actually presented: a staged placement
+            // attempt never saw the other branch's questions, so they must not count as unanswered.
+            const presented = scoreStudentTest(test, studentTest).pathQuestions;
+            return buildTestStudentSummary(
                 test,
                 studentTest,
-                students.find((s) => s.id === studentTest.studentId),
-                effectiveTestQuestions(studentTest.studentId, [studentTest], test),
-                settings.cefrAchieveThreshold
+                student,
+                presented.length > 0 ? presented : effectiveTestQuestions(studentTest.studentId, [studentTest], test),
+                {
+                    className: studentClass?.name,
+                    level: track ? VO_TRACK_LABELS[track] : year ? SCHOOL_YEAR_LABELS[year] : undefined,
+                }
             );
+        };
 
         if (exportScope === 'single') {
             const studentTest = pickLatestAttempt(attempts.filter((st) => st.studentId === exportStudentId));
@@ -146,7 +167,13 @@ export default function TestResultsDrawer({
                 }
                 logAuditEvent('export', `export_test_summary_${format}`, 'test', test.id, { count: 1 });
             } else {
+                const seenStudentIds = new Set<string>();
                 const entries = relevantStudentTests
+                    .filter((st) => {
+                        if (seenStudentIds.has(st.studentId)) return false;
+                        seenStudentIds.add(st.studentId);
+                        return true;
+                    })
                     .map((st) => ({
                         studentId: st.studentId,
                         student: students.find((s) => s.id === st.studentId),

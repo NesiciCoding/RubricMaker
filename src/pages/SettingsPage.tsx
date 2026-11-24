@@ -1073,6 +1073,35 @@ export default function SettingsPage() {
                             </label>
                         </div>
 
+                        {/* School highlights wall display */}
+                        <div className="card" style={{ marginBottom: 24 }}>
+                            <h2 className="card-heading" style={{ marginBottom: 16 }}>
+                                {t('settings.school_highlights_section_title')}
+                            </h2>
+                            <label
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 10,
+                                    cursor: 'pointer',
+                                    userSelect: 'none',
+                                }}
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={settings.shareSchoolHighlights !== false}
+                                    onChange={(e) => updateSettings({ shareSchoolHighlights: e.target.checked })}
+                                    style={{ accentColor: 'var(--accent)' }}
+                                />
+                                <div>
+                                    <div style={{ fontWeight: 500 }}>{t('settings.school_highlights_label')}</div>
+                                    <div className="text-xs text-muted" style={{ marginTop: 2 }}>
+                                        {t('settings.school_highlights_help')}
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+
                         {/* Student portal scoping */}
                         <div className="card" style={{ marginBottom: 24 }}>
                             <h2 className="card-heading" style={{ marginBottom: 16 }}>

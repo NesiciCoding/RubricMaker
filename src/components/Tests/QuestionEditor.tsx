@@ -4,7 +4,6 @@ import {
     Trash2,
     Plus,
     X,
-    Check,
     BookOpen,
     GraduationCap,
     AlertCircle,
@@ -30,16 +29,20 @@ import { useToast } from '../../hooks/useToast';
 import { nanoid } from '../../utils/nanoid';
 import EssayEditor from '../Editor/EssayEditor';
 import ClozeGapEditor from './ClozeGapEditor';
+import ClozeGapList from './ClozeGapList';
 import HotTextEditor from './HotTextEditor';
 import StandardsPickerModal from '../Standards/StandardsPickerModal';
 import Modal from '../ui/Modal';
 import CefrPickerModal from '../CEFR/CefrPickerModal';
 import HelpPopover from './HelpPopover';
 import AudioUrlStatus from './AudioUrlStatus';
+import ItemImage from './ItemImage';
 import {
     addDropdownDistractor,
     addGapAlternative,
+    effectiveGapWeights,
     gapCorrectAnswers,
+    gapPointShares,
     parseClozeGaps,
     plainQuestionPromptText,
     renderClozeSegments,
@@ -49,6 +52,8 @@ import PipeListInput from './PipeListInput';
 import { splitPastedList, spreadPastedLines, spreadPastedPairs } from '../../utils/pastedList';
 import type { TestQuestionIssue } from '../../utils/testQuestionIssues';
 import { gapStems, suggestDerivedForms } from '../../utils/wordFormation';
+import { isBlankHtml } from '../../utils/isBlankHtml';
+import { promptToHtml } from '../../utils/exportDataPrep';
 import ErrorCorrectionFields from './ErrorCorrectionFields';
 import SentenceBuilderFields from './SentenceBuilderFields';
 import KeyWordTransformationFields from './KeyWordTransformationFields';
@@ -67,6 +72,7 @@ import {
 } from '../../utils/questionTypeDefaults';
 import AnswerToleranceFields from './AnswerToleranceFields';
 import DistractorSuggestions from './DistractorSuggestions';
+import { optionLetter } from '../../utils/testExamContent';
 import { generateCloze, type ClozeStrategy } from '../../utils/clozeGenerators';
 import type { ClozeVariantKind } from '../../utils/clozeVariant';
 import { CEFR_LEVELS } from '../../data/cefrDescriptors';
@@ -120,6 +126,19 @@ interface Props {
     showGrip?: boolean;
 }
 
+// One line per gap strategy: the strategies measure different things, and the builder only showed
+// their names.
+const CLOZE_STRATEGY_HELP: Record<ClozeStrategy, string> = {
+    fixedRatio: 'tests.cloze_generate_fixed_ratio_help',
+    cTest: 'tests.cloze_generate_c_test_help',
+    preposition: 'tests.cloze_generate_preposition_help',
+    article: 'tests.cloze_generate_article_help',
+    modal: 'tests.cloze_generate_modal_help',
+    pastTense: 'tests.cloze_generate_past_tense_help',
+    aboveLevel: 'tests.cloze_generate_above_level_help',
+    academic: 'tests.cloze_generate_academic_help',
+};
+
 export default function QuestionEditor({
     question,
     index,
@@ -145,22 +164,39 @@ export default function QuestionEditor({
     const [pickingStandard, setPickingStandard] = React.useState(false);
     const [pickingCefr, setPickingCefr] = React.useState(false);
     const [expandedOptionImages, setExpandedOptionImages] = React.useState<Set<string>>(new Set());
+    const [expandedItemImages, setExpandedItemImages] = React.useState<Set<string>>(new Set());
     const [expandedOptionAudio, setExpandedOptionAudio] = React.useState<Set<string>>(new Set());
+    // An explicit choice wins; until the teacher toggles, an option that already has feedback shows its field.
+    const [optionFeedbackOpen, setOptionFeedbackOpen] = React.useState<Record<string, boolean>>({});
     // Every panel starts closed: nothing here is needed to write the question itself.
     const [morePanel, setMorePanel] = React.useState<MorePanelId | null>(null);
     const [typePickerOpen, setTypePickerOpen] = React.useState(false);
+    const [introOpen, setIntroOpen] = React.useState(false);
     const [clozeStrategy, setClozeStrategy] = React.useState<ClozeStrategy>('fixedRatio');
     const [clozeEveryNth, setClozeEveryNth] = React.useState(7);
     const [clozeLevel, setClozeLevel] = React.useState<CefrLevel>('B2');
 
     function update(patch: Partial<TestQuestion>) {
-        onChange({ ...question, ...patch });
+        const next = { ...question, ...patch };
+        // Weights are positional, so a different gap count would leave them applying to the wrong gaps.
+        if (
+            patch.prompt !== undefined &&
+            !('gapWeights' in patch) &&
+            next.gapWeights &&
+            next.gapWeights.length !== parseClozeGaps(patch.prompt).length
+        ) {
+            delete next.gapWeights;
+        }
+        onChange(next);
     }
 
     function generateGaps() {
         const plainText = plainQuestionPromptText(question).trim();
         if (!plainText) {
             showToast(t('tests.cloze_generate_empty'), 'info');
+            return;
+        }
+        if (parseClozeGaps(question.prompt).length > 0 && !window.confirm(t('tests.cloze_generate_replace_confirm'))) {
             return;
         }
         const prompt = generateCloze(plainText, clozeStrategy, { everyNth: clozeEveryNth, cefrLevel: clozeLevel });
@@ -239,12 +275,17 @@ export default function QuestionEditor({
         const { linkedGrammarItemId, linkedGrammarItemIds, frameworkDescriptors } = base;
 
         if (type === 'multiple-choice' || type === 'multiple-response') {
+            const existing = question.options && question.options.length > 0 ? question.options : defaultOptions();
+            const firstCorrect = existing.findIndex((option) => option.isCorrect);
             update({
                 type,
                 linkedGrammarItemId,
                 linkedGrammarItemIds,
                 frameworkDescriptors,
-                options: question.options && question.options.length > 0 ? question.options : defaultOptions(),
+                options:
+                    type === 'multiple-choice'
+                        ? existing.map((option, index) => ({ ...option, isCorrect: index === firstCorrect }))
+                        : existing,
             });
         } else if (type === 'true-false') {
             update({
@@ -481,6 +522,47 @@ export default function QuestionEditor({
             /* v8 ignore next 2 -- item inputs only render when categorizeItems is non-empty */
             categorizeItems: (question.categorizeItems ?? []).map((i) => (i.id === itemId ? { ...i, ...patch } : i)),
         });
+    }
+
+    function itemImageButton(id: string, url: string | undefined) {
+        const open = expandedItemImages.has(id) || !!url;
+        return (
+            <button
+                type="button"
+                className="btn btn-ghost btn-icon btn-sm"
+                aria-label={t('tests.item_image_label')}
+                aria-pressed={open}
+                title={t('tests.item_image_label')}
+                onClick={() =>
+                    setExpandedItemImages((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(id)) next.delete(id);
+                        else next.add(id);
+                        return next;
+                    })
+                }
+                style={{ color: url ? 'var(--accent-text)' : 'var(--text-muted)', flexShrink: 0 }}
+            >
+                <Image size={14} />
+            </button>
+        );
+    }
+
+    function itemImageField(id: string, url: string | undefined, onUrl: (url: string | undefined) => void) {
+        if (!expandedItemImages.has(id) && !url) return null;
+        return (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 28 }}>
+                <input
+                    type="url"
+                    value={url ?? ''}
+                    onChange={(e) => onUrl(e.target.value || undefined)}
+                    placeholder={t('tests.question_image_placeholder')}
+                    style={{ flex: 1 }}
+                    aria-label={t('tests.item_image_label')}
+                />
+                {url && <ItemImage url={url} />}
+            </div>
+        );
     }
 
     function renderPartialCreditToggle() {
@@ -809,6 +891,13 @@ export default function QuestionEditor({
                                 >
                                     <Sparkles size={14} /> {t('tests.cloze_generate_button')}
                                 </button>
+                                <p
+                                    className="text-muted"
+                                    data-testid="cloze-strategy-help"
+                                    style={{ flex: '1 1 100%', margin: 0, fontSize: '0.75rem' }}
+                                >
+                                    {t(CLOZE_STRATEGY_HELP[clozeStrategy])}
+                                </p>
                             </div>
                         )}
                         {onCreateVariant && (
@@ -831,6 +920,30 @@ export default function QuestionEditor({
                                 </button>
                             </div>
                         )}
+                        {introOpen || question.clozeIntro ? (
+                            <div style={{ marginBottom: 8 }}>
+                                <span id={`cloze-intro-label-${question.id}`} className="text-muted text-xs">
+                                    {t('tests.cloze_intro_label')}
+                                </span>
+                                <EssayEditor
+                                    content={question.clozeIntro ?? ''}
+                                    onChange={(html) => update({ clozeIntro: isBlankHtml(html) ? undefined : html })}
+                                    minHeight={60}
+                                    allowPageMode={false}
+                                    allowImageEmbedding
+                                    ariaLabelledBy={`cloze-intro-label-${question.id}`}
+                                />
+                            </div>
+                        ) : (
+                            <button
+                                type="button"
+                                className="btn btn-ghost btn-sm"
+                                style={{ marginBottom: 8 }}
+                                onClick={() => setIntroOpen(true)}
+                            >
+                                <Plus size={14} /> {t('tests.cloze_intro_add')}
+                            </button>
+                        )}
                         {/* Cloze/cloze-dropdown gaps are authored as {{gap|alt}} syntax directly in the
                             prompt string (see clozeParse.ts) — ClozeGapEditor edits that string via
                             clickable pills instead of hand-typed syntax, but the stored format and the
@@ -842,6 +955,13 @@ export default function QuestionEditor({
                             insertGapLabel={t('tests.cloze_insert_gap')}
                             insertDropdownGapLabel={t('tests.cloze_insert_dropdown_gap')}
                             wordFormation={question.type === 'cloze' && !!question.wordFormation}
+                        />
+                        <ClozeGapList
+                            prompt={question.prompt}
+                            rolesEditable={question.type === 'cloze-dropdown'}
+                            onChange={(prompt) => update({ prompt })}
+                            weights={question.gapWeights}
+                            onWeightsChange={(gapWeights) => update({ gapWeights })}
                         />
                     </>
                 ) : (
@@ -864,31 +984,46 @@ export default function QuestionEditor({
                             {t(questionTypeHelpKey(question.type, 'teacher', 'body'))}
                         </HelpPopover>
                     </label>
-                    {(question.options ?? []).map((option) => {
+                    {(question.options ?? []).map((option, index) => {
                         const showImageField = expandedOptionImages.has(option.id) || !!option.imageUrl;
                         const showAudioField =
                             expandedOptionAudio.has(option.id) || !!option.audioUrl || !!option.spokenText;
+                        const showFeedbackField = optionFeedbackOpen[option.id] ?? !!option.feedback;
                         return (
                             <div key={option.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <button
-                                        type="button"
-                                        className="btn btn-ghost btn-icon btn-sm"
-                                        aria-label={t('tests.mark_correct_option')}
-                                        aria-pressed={option.isCorrect}
-                                        title={t('tests.mark_correct_option')}
-                                        onClick={() =>
-                                            question.type === 'multiple-response'
-                                                ? toggleOptionCorrect(option.id)
-                                                : setCorrectOption(option.id)
-                                        }
-                                        style={{
-                                            color: option.isCorrect ? 'var(--green-text)' : 'var(--text-muted)',
-                                            flexShrink: 0,
-                                        }}
-                                    >
-                                        <Check size={16} />
-                                    </button>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                                        <input
+                                            type={question.type === 'multiple-response' ? 'checkbox' : 'radio'}
+                                            name={`correct-option-${question.id}`}
+                                            checked={option.isCorrect}
+                                            aria-label={`${t('tests.mark_correct_option')} ${optionLetter(index)}`}
+                                            title={t('tests.mark_correct_option')}
+                                            onChange={() =>
+                                                question.type === 'multiple-response'
+                                                    ? toggleOptionCorrect(option.id)
+                                                    : setCorrectOption(option.id)
+                                            }
+                                            style={{
+                                                flexShrink: 0,
+                                                width: 16,
+                                                height: 16,
+                                                accentColor: 'var(--accent-text)',
+                                            }}
+                                        />
+                                        <span
+                                            aria-hidden="true"
+                                            style={{
+                                                flexShrink: 0,
+                                                minWidth: 14,
+                                                fontSize: '0.85rem',
+                                                fontWeight: 600,
+                                                color: option.isCorrect ? 'var(--green-text)' : 'var(--text-muted)',
+                                            }}
+                                        >
+                                            {optionLetter(index)}
+                                        </span>
+                                    </label>
                                     <input
                                         type="text"
                                         value={option.text}
@@ -954,6 +1089,25 @@ export default function QuestionEditor({
                                     <button
                                         type="button"
                                         className="btn btn-ghost btn-icon btn-sm"
+                                        aria-label={t('tests.option_feedback_label')}
+                                        aria-pressed={showFeedbackField}
+                                        title={t('tests.option_feedback_label')}
+                                        onClick={() =>
+                                            setOptionFeedbackOpen((prev) => ({
+                                                ...prev,
+                                                [option.id]: !showFeedbackField,
+                                            }))
+                                        }
+                                        style={{
+                                            color: option.feedback ? 'var(--accent-text)' : 'var(--text-muted)',
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        <MessageCircle size={14} />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-ghost btn-icon btn-sm"
                                         aria-label={t('tests.remove_option')}
                                         style={{ color: 'var(--red-text)' }}
                                         disabled={question.options!.length <= 1}
@@ -996,6 +1150,20 @@ export default function QuestionEditor({
                                         )}
                                     </div>
                                 )}
+                                {showFeedbackField && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 32 }}>
+                                        <input
+                                            type="text"
+                                            value={option.feedback ?? ''}
+                                            onChange={(e) =>
+                                                updateOption(option.id, { feedback: e.target.value || undefined })
+                                            }
+                                            placeholder={t('tests.option_feedback_placeholder')}
+                                            style={{ flex: 1 }}
+                                            aria-label={t('tests.option_feedback_label')}
+                                        />
+                                    </div>
+                                )}
                                 {showAudioField && (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 32 }}>
                                         <input
@@ -1026,6 +1194,9 @@ export default function QuestionEditor({
                     <button type="button" className="btn btn-secondary btn-sm" onClick={addOption}>
                         <Plus size={14} /> {t('tests.add_option')}
                     </button>
+                    <p className="text-muted text-xs" style={{ margin: 0 }}>
+                        {t('tests.option_script_hint')}
+                    </p>
                     <DistractorSuggestions
                         answer={(question.options ?? []).find((o) => o.isCorrect)?.text ?? ''}
                         exclude={(question.options ?? []).map((o) => o.text)}
@@ -1035,6 +1206,40 @@ export default function QuestionEditor({
                             })
                         }
                     />
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem', marginTop: 4 }}>
+                        <input
+                            type="checkbox"
+                            checked={!!question.shuffleOptions}
+                            onChange={(e) =>
+                                update({
+                                    shuffleOptions: e.target.checked || undefined,
+                                    pinLastOption: e.target.checked ? question.pinLastOption : undefined,
+                                })
+                            }
+                        />
+                        {t('tests.shuffle_options_label')}
+                        <HelpPopover title={t('tests.shuffle_options_label')}>
+                            {t('tests.shuffle_options_help')}
+                        </HelpPopover>
+                    </label>
+                    {question.shuffleOptions && (
+                        <label
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 8,
+                                fontSize: '0.85rem',
+                                marginLeft: 22,
+                            }}
+                        >
+                            <input
+                                type="checkbox"
+                                checked={!!question.pinLastOption}
+                                onChange={(e) => update({ pinLastOption: e.target.checked || undefined })}
+                            />
+                            {t('tests.pin_last_option_label')}
+                        </label>
+                    )}
                     {question.type === 'multiple-response' && (
                         <label
                             style={{
@@ -1087,7 +1292,7 @@ export default function QuestionEditor({
                                 fontWeight: question.correctBoolean === true ? 700 : 400,
                             }}
                         >
-                            {t('tests.true_false_true')}
+                            {question.trueLabel?.trim() || t('tests.true_false_true')}
                         </button>
                         <button
                             type="button"
@@ -1108,8 +1313,26 @@ export default function QuestionEditor({
                                 fontWeight: question.correctBoolean === false ? 700 : 400,
                             }}
                         >
-                            {t('tests.true_false_false')}
+                            {question.falseLabel?.trim() || t('tests.true_false_false')}
                         </button>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        <input
+                            type="text"
+                            value={question.trueLabel ?? ''}
+                            onChange={(e) => update({ trueLabel: e.target.value || undefined })}
+                            placeholder={t('tests.true_false_true_label_placeholder')}
+                            aria-label={t('tests.true_false_true_label_placeholder')}
+                            style={{ flex: 1, minWidth: 120 }}
+                        />
+                        <input
+                            type="text"
+                            value={question.falseLabel ?? ''}
+                            onChange={(e) => update({ falseLabel: e.target.value || undefined })}
+                            placeholder={t('tests.true_false_false_label_placeholder')}
+                            aria-label={t('tests.true_false_false_label_placeholder')}
+                            style={{ flex: 1, minWidth: 120 }}
+                        />
                     </div>
                 </div>
             )}
@@ -1139,6 +1362,22 @@ export default function QuestionEditor({
                                         gapCorrectAnswers(gap, question.type === 'cloze-dropdown').join(' / ')
                                     )
                                     .join(', ')}
+                            </p>
+                        );
+                    })()}
+                    {(() => {
+                        const gapCount = parseClozeGaps(question.prompt).length;
+                        if (gapCount === 0) return null;
+                        const weights = effectiveGapWeights(question, gapCount);
+                        const shares = gapPointShares(question.points, weights);
+                        const equal = weights.every((weight) => weight === weights[0]);
+                        return (
+                            <p className="text-muted text-xs" style={{ margin: 0 }} data-testid="cloze-points-per-gap">
+                                {question.partialCredit === false
+                                    ? t('tests.cloze_points_all_or_nothing', { points: question.points })
+                                    : equal
+                                      ? t('tests.cloze_points_per_gap', { points: shares[0] })
+                                      : t('tests.cloze_points_by_weight', { points: shares.join(', ') })}
                             </p>
                         );
                     })()}
@@ -1323,41 +1562,58 @@ export default function QuestionEditor({
                         </HelpPopover>
                     </label>
                     {(question.matchingPairs ?? []).map((pair, pairIndex) => (
-                        <div key={pair.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <input
-                                type="text"
-                                value={pair.left}
-                                onChange={(e) => updateMatchingPair(pair.id, { left: e.target.value })}
-                                onPaste={pastePairs(pairIndex)}
-                                placeholder={t('tests.matching_left_placeholder')}
-                                style={{ flex: 1 }}
-                                aria-label={t('tests.matching_left_placeholder')}
-                            />
-                            <span style={{ color: 'var(--text-muted)' }}>↔</span>
-                            <input
-                                type="text"
-                                value={pair.right}
-                                onChange={(e) => updateMatchingPair(pair.id, { right: e.target.value })}
-                                onPaste={pastePairs(pairIndex)}
-                                placeholder={t('tests.matching_right_placeholder')}
-                                style={{ flex: 1 }}
-                                aria-label={t('tests.matching_right_placeholder')}
-                            />
-                            <button
-                                type="button"
-                                className="btn btn-ghost btn-icon btn-sm"
-                                aria-label={t('tests.remove_option')}
-                                style={{ color: 'var(--red-text)' }}
-                                disabled={question.matchingPairs!.length <= 1}
-                                onClick={() => removeMatchingPair(pair.id)}
-                            >
-                                <X size={14} />
-                            </button>
+                        <div key={pair.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <input
+                                    type="text"
+                                    value={pair.left}
+                                    onChange={(e) => updateMatchingPair(pair.id, { left: e.target.value })}
+                                    onPaste={pastePairs(pairIndex)}
+                                    placeholder={t('tests.matching_left_placeholder')}
+                                    style={{ flex: 1 }}
+                                    aria-label={t('tests.matching_left_placeholder')}
+                                />
+                                {itemImageButton(pair.id, pair.leftImageUrl)}
+                                <span style={{ color: 'var(--text-muted)' }}>↔</span>
+                                <input
+                                    type="text"
+                                    value={pair.right}
+                                    onChange={(e) => updateMatchingPair(pair.id, { right: e.target.value })}
+                                    onPaste={pastePairs(pairIndex)}
+                                    placeholder={t('tests.matching_right_placeholder')}
+                                    style={{ flex: 1 }}
+                                    aria-label={t('tests.matching_right_placeholder')}
+                                />
+                                <button
+                                    type="button"
+                                    className="btn btn-ghost btn-icon btn-sm"
+                                    aria-label={t('tests.remove_option')}
+                                    style={{ color: 'var(--red-text)' }}
+                                    disabled={question.matchingPairs!.length <= 1}
+                                    onClick={() => removeMatchingPair(pair.id)}
+                                >
+                                    <X size={14} />
+                                </button>
+                            </div>
+                            {itemImageField(pair.id, pair.leftImageUrl, (leftImageUrl) =>
+                                updateMatchingPair(pair.id, { leftImageUrl })
+                            )}
                         </div>
                     ))}
                     <button type="button" className="btn btn-secondary btn-sm" onClick={addMatchingPair}>
                         <Plus size={14} /> {t('tests.add_matching_pair')}
                     </button>
+                    <div>
+                        <label htmlFor={`matching-distractors-${question.id}`}>
+                            {t('tests.matching_distractors_label')}
+                        </label>
+                        <LineListTextarea
+                            id={`matching-distractors-${question.id}`}
+                            value={question.matchingDistractors ?? []}
+                            onChange={(items) => update({ matchingDistractors: items.length ? items : undefined })}
+                            placeholder={t('tests.matching_distractors_placeholder')}
+                        />
+                    </div>
                     {renderPartialCreditToggle()}
                 </div>
             )}
@@ -1371,55 +1627,65 @@ export default function QuestionEditor({
                         </HelpPopover>
                     </label>
                     {(question.orderItems ?? []).map((item, idx) => (
-                        <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span className="text-muted text-xs" style={{ width: 20, flexShrink: 0 }}>
-                                {idx + 1}.
-                            </span>
-                            <input
-                                type="text"
-                                value={item.text}
-                                onChange={(e) => updateOrderItem(item.id, e.target.value)}
-                                onPaste={(e) =>
-                                    pasteList(
-                                        e,
-                                        question.orderItems ?? [],
-                                        idx,
-                                        (text) => ({ id: nanoid(), text }),
-                                        (orderItems) => update({ orderItems })
-                                    )
-                                }
-                                placeholder={t('tests.ordering_item_placeholder')}
-                                style={{ flex: 1 }}
-                                aria-label={t('tests.ordering_item_placeholder')}
-                            />
-                            <button
-                                type="button"
-                                className="btn btn-ghost btn-icon btn-sm"
-                                aria-label={t('tests.move_question_up')}
-                                disabled={idx === 0}
-                                onClick={() => moveOrderItem(idx, idx - 1)}
-                            >
-                                <ChevronUp size={14} />
-                            </button>
-                            <button
-                                type="button"
-                                className="btn btn-ghost btn-icon btn-sm"
-                                aria-label={t('tests.move_question_down')}
-                                disabled={idx === question.orderItems!.length - 1}
-                                onClick={() => moveOrderItem(idx, idx + 1)}
-                            >
-                                <ChevronDown size={14} />
-                            </button>
-                            <button
-                                type="button"
-                                className="btn btn-ghost btn-icon btn-sm"
-                                aria-label={t('tests.remove_option')}
-                                style={{ color: 'var(--red-text)' }}
-                                disabled={question.orderItems!.length <= 1}
-                                onClick={() => removeOrderItem(item.id)}
-                            >
-                                <X size={14} />
-                            </button>
+                        <div key={item.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span className="text-muted text-xs" style={{ width: 20, flexShrink: 0 }}>
+                                    {idx + 1}.
+                                </span>
+                                <input
+                                    type="text"
+                                    value={item.text}
+                                    onChange={(e) => updateOrderItem(item.id, e.target.value)}
+                                    onPaste={(e) =>
+                                        pasteList(
+                                            e,
+                                            question.orderItems ?? [],
+                                            idx,
+                                            (text) => ({ id: nanoid(), text }),
+                                            (orderItems) => update({ orderItems })
+                                        )
+                                    }
+                                    placeholder={t('tests.ordering_item_placeholder')}
+                                    style={{ flex: 1 }}
+                                    aria-label={t('tests.ordering_item_placeholder')}
+                                />
+                                {itemImageButton(item.id, item.imageUrl)}
+                                <button
+                                    type="button"
+                                    className="btn btn-ghost btn-icon btn-sm"
+                                    aria-label={t('tests.move_question_up')}
+                                    disabled={idx === 0}
+                                    onClick={() => moveOrderItem(idx, idx - 1)}
+                                >
+                                    <ChevronUp size={14} />
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn btn-ghost btn-icon btn-sm"
+                                    aria-label={t('tests.move_question_down')}
+                                    disabled={idx === question.orderItems!.length - 1}
+                                    onClick={() => moveOrderItem(idx, idx + 1)}
+                                >
+                                    <ChevronDown size={14} />
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn btn-ghost btn-icon btn-sm"
+                                    aria-label={t('tests.remove_option')}
+                                    style={{ color: 'var(--red-text)' }}
+                                    disabled={question.orderItems!.length <= 1}
+                                    onClick={() => removeOrderItem(item.id)}
+                                >
+                                    <X size={14} />
+                                </button>
+                            </div>
+                            {itemImageField(item.id, item.imageUrl, (imageUrl) =>
+                                update({
+                                    orderItems: (question.orderItems ?? []).map((i) =>
+                                        i.id === item.id ? { ...i, imageUrl } : i
+                                    ),
+                                })
+                            )}
                         </div>
                     ))}
                     <button type="button" className="btn btn-secondary btn-sm" onClick={addOrderItem}>
@@ -1467,37 +1733,43 @@ export default function QuestionEditor({
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         <label>{t('tests.categorize_items_label')}</label>
                         {(question.categorizeItems ?? []).map((item) => (
-                            <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <input
-                                    type="text"
-                                    value={item.text}
-                                    onChange={(e) => updateCategorizeItem(item.id, { text: e.target.value })}
-                                    placeholder={t('tests.categorize_item_placeholder')}
-                                    style={{ flex: 1, minWidth: 0 }}
-                                    aria-label={t('tests.categorize_item_placeholder')}
-                                />
-                                <select
-                                    value={item.categoryId}
-                                    onChange={(e) => updateCategorizeItem(item.id, { categoryId: e.target.value })}
-                                    aria-label={t('tests.categorize_item_category_label')}
-                                    style={{ width: 'auto', maxWidth: '40%', flexShrink: 0 }}
-                                >
-                                    {(question.categories ?? []).map((cat) => (
-                                        <option key={cat.id} value={cat.id}>
-                                            {cat.label || '—'}
-                                        </option>
-                                    ))}
-                                </select>
-                                <button
-                                    type="button"
-                                    className="btn btn-ghost btn-icon btn-sm"
-                                    aria-label={t('tests.remove_option')}
-                                    style={{ color: 'var(--red-text)' }}
-                                    disabled={question.categorizeItems!.length <= 1}
-                                    onClick={() => removeCategorizeItem(item.id)}
-                                >
-                                    <X size={14} />
-                                </button>
+                            <div key={item.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <input
+                                        type="text"
+                                        value={item.text}
+                                        onChange={(e) => updateCategorizeItem(item.id, { text: e.target.value })}
+                                        placeholder={t('tests.categorize_item_placeholder')}
+                                        style={{ flex: 1, minWidth: 0 }}
+                                        aria-label={t('tests.categorize_item_placeholder')}
+                                    />
+                                    {itemImageButton(item.id, item.imageUrl)}
+                                    <select
+                                        value={item.categoryId}
+                                        onChange={(e) => updateCategorizeItem(item.id, { categoryId: e.target.value })}
+                                        aria-label={t('tests.categorize_item_category_label')}
+                                        style={{ width: 'auto', maxWidth: '40%', flexShrink: 0 }}
+                                    >
+                                        {(question.categories ?? []).map((cat) => (
+                                            <option key={cat.id} value={cat.id}>
+                                                {cat.label || '—'}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <button
+                                        type="button"
+                                        className="btn btn-ghost btn-icon btn-sm"
+                                        aria-label={t('tests.remove_option')}
+                                        style={{ color: 'var(--red-text)' }}
+                                        disabled={question.categorizeItems!.length <= 1}
+                                        onClick={() => removeCategorizeItem(item.id)}
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                </div>
+                                {itemImageField(item.id, item.imageUrl, (imageUrl) =>
+                                    updateCategorizeItem(item.id, { imageUrl })
+                                )}
                             </div>
                         ))}
                         <button type="button" className="btn btn-secondary btn-sm" onClick={addCategorizeItem}>
@@ -1596,6 +1868,46 @@ export default function QuestionEditor({
                             placeholder="0"
                         />
                     </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label htmlFor={`question-numeric-percent-${question.id}`}>
+                            {t('tests.numeric_tolerance_percent_label')}{' '}
+                            <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
+                                ({t('essay_assignment.optional')})
+                            </span>
+                        </label>
+                        <input
+                            id={`question-numeric-percent-${question.id}`}
+                            type="number"
+                            step="any"
+                            min={0}
+                            value={question.numericTolerancePercent ?? ''}
+                            onChange={(e) =>
+                                update({
+                                    numericTolerancePercent: e.target.value === '' ? undefined : Number(e.target.value),
+                                })
+                            }
+                            placeholder="0"
+                        />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label htmlFor={`question-numeric-unit-${question.id}`}>
+                            {t('tests.numeric_unit_label')}{' '}
+                            <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
+                                ({t('essay_assignment.optional')})
+                            </span>
+                        </label>
+                        <input
+                            id={`question-numeric-unit-${question.id}`}
+                            type="text"
+                            value={question.numericUnit ?? ''}
+                            onChange={(e) => update({ numericUnit: e.target.value || undefined })}
+                            placeholder={t('tests.numeric_unit_placeholder')}
+                            style={{ width: 120 }}
+                        />
+                    </div>
+                    <p className="text-muted text-xs" style={{ flex: '1 1 100%', margin: 0 }}>
+                        {t('tests.numeric_tolerance_help')}
+                    </p>
                 </div>
             )}
 
@@ -1790,32 +2102,36 @@ export default function QuestionEditor({
                             <>
                                 <div>
                                     <label
-                                        htmlFor={`question-hint-${question.id}`}
+                                        id={`question-hint-label-${question.id}`}
                                         style={{ display: 'flex', alignItems: 'center', gap: 6 }}
                                     >
                                         <Lightbulb size={14} /> {t('tests.question_hint_label')}
                                     </label>
-                                    <input
-                                        id={`question-hint-${question.id}`}
-                                        type="text"
-                                        value={question.hint ?? ''}
-                                        onChange={(e) => update({ hint: e.target.value || undefined })}
-                                        placeholder={t('tests.question_hint_placeholder')}
+                                    <EssayEditor
+                                        content={promptToHtml(question.hint ?? '')}
+                                        onChange={(html) => update({ hint: isBlankHtml(html) ? undefined : html })}
+                                        minHeight={48}
+                                        allowPageMode={false}
+                                        allowImageEmbedding
+                                        ariaLabelledBy={`question-hint-label-${question.id}`}
                                     />
                                 </div>
                                 <div>
                                     <label
-                                        htmlFor={`question-explanation-${question.id}`}
+                                        id={`question-explanation-label-${question.id}`}
                                         style={{ display: 'flex', alignItems: 'center', gap: 6 }}
                                     >
                                         <MessageCircle size={14} /> {t('tests.question_explanation_label')}
                                     </label>
-                                    <textarea
-                                        id={`question-explanation-${question.id}`}
-                                        value={question.explanation ?? ''}
-                                        onChange={(e) => update({ explanation: e.target.value || undefined })}
-                                        placeholder={t('tests.question_explanation_placeholder')}
-                                        rows={2}
+                                    <EssayEditor
+                                        content={promptToHtml(question.explanation ?? '')}
+                                        onChange={(html) =>
+                                            update({ explanation: isBlankHtml(html) ? undefined : html })
+                                        }
+                                        minHeight={64}
+                                        allowPageMode={false}
+                                        allowImageEmbedding
+                                        ariaLabelledBy={`question-explanation-label-${question.id}`}
                                     />
                                     <p className="text-muted text-xs" style={{ marginTop: 4 }}>
                                         {t('tests.question_explanation_help')}

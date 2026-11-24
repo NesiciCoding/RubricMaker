@@ -39,6 +39,11 @@ test.describe('Testing environment — full lifecycle (offline)', () => {
         seedStorage: (d: Record<string, unknown>) => Promise<void>;
         browser: Browser;
     }) => {
+        // One test walks the whole lifecycle (build, assign, a cold student context, import, grade,
+        // adjust, two reloads) against the unbundled dev server. It needs ~12s idle in chromium but
+        // ~30s on a CI runner in webkit, which is exactly the default test timeout, so it passed or
+        // failed on a coin flip at whichever step the clock ran out.
+        test.setTimeout(90_000);
         const klass: Class = buildClass({ name: 'E2E Class' });
         const student: Student = buildStudent(klass.id, { name: 'Eva Example' });
         await seedStorage({ rm_classes: [klass], rm_students: [student] });
@@ -186,8 +191,8 @@ test.describe('Testing environment — full lifecycle (offline)', () => {
 
         // Current average is 87.5% — target a lower average to get a negative
         // adjustment that's easy to assert on the results page.
-        await list.setTargetAverage('E2E Vocabulary Quiz', 75);
-        await list.applyAdjustment('E2E Vocabulary Quiz');
+        await list.setTargetAverage(75);
+        await list.applyAdjustment();
         await appExpect(appPage.getByText(/adjustment to apply/i)).toBeVisible();
 
         // ── Results page reflects the adjustment ─────────────────────────────

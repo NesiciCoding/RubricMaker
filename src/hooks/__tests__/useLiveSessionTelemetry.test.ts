@@ -22,10 +22,13 @@ describe('useLiveSessionTelemetry', () => {
     beforeEach(() => {
         __resetMonitorClientForTests();
         vi.mocked(createClient).mockClear();
+        mockChannel.on.mockClear();
+        mockChannel.send.mockClear();
     });
     afterEach(() => {
         vi.useRealTimers();
         vi.unstubAllGlobals();
+        Object.assign(mockChannel, { state: undefined });
     });
 
     it('captures a tab_switch event on document visibilitychange → hidden', () => {
@@ -215,14 +218,212 @@ describe('useLiveSessionTelemetry', () => {
         expect(result.current.events).toHaveLength(0);
     });
 
-    it('throttles snapshot publishing — only sends when getSnapshot output changes', () => {
+    it('samples every 5s but sends fresh draft text at most once a minute', () => {
         vi.useFakeTimers();
-        let snapshotValue = { text: 'a' };
-        const getSnapshot = vi.fn(() => snapshotValue);
+        Object.assign(mockChannel, { state: 'joined' });
+        let words = 1;
+        const getSnapshot = vi.fn(() => ({ text: `draft ${words}`, wordCount: words }));
 
         renderHook(() =>
             useLiveSessionTelemetry({
-                kind: 'test',
+                kind: 'essay',
+                assignmentKey: 'key1',
+                enabled: true,
+                getSnapshot,
+                supabaseUrl: 'https://example.supabase.co',
+                supabaseAnonKey: 'anon-key',
+            })
+        );
+
+        // The join announce flushes the first snapshot straight away, text included.
+        act(() => {
+            (mockChannel.subscribe.mock.calls.at(-1)?.[0] as (status: string) => void)('SUBSCRIBED');
+        });
+        const sentSnapshots = () =>
+            mockChannel.send.mock.calls
+                .map(([message]) => message as { event: string; payload: Record<string, unknown> })
+                .filter((message) => message.event === 'snapshot')
+                .map((message) => message.payload);
+        expect(sentSnapshots().at(-1)).toMatchObject({ text: 'draft 1', wordCount: 1 });
+
+        // The next tick carries the new word count but leaves the prose out until the minute is up.
+        words = 2;
+        act(() => {
+            vi.advanceTimersByTime(5_000);
+        });
+        expect(sentSnapshots().at(-1)).toEqual({ wordCount: 2, typedChars: 0, pastedChars: 0 });
+
+        words = 3;
+        act(() => {
+            vi.advanceTimersByTime(55_000);
+        });
+        expect(sentSnapshots().at(-1)).toMatchObject({ text: 'draft 3', wordCount: 3 });
+    });
+
+    function inputEvent(inputType: string, data: string) {
+        const event = new Event('input');
+        Object.defineProperty(event, 'inputType', { value: inputType });
+        Object.defineProperty(event, 'data', { value: data });
+        return event;
+    }
+
+    function pasteEvent(text: string) {
+        const event = new Event('paste', { bubbles: true });
+        Object.defineProperty(event, 'clipboardData', { value: { getData: () => text } });
+        return event;
+    }
+
+    function renderEssayTelemetry(initialKey: string) {
+        return renderHook(
+            ({ assignmentKey }: { assignmentKey: string }) =>
+                useLiveSessionTelemetry({
+                    kind: 'essay',
+                    assignmentKey,
+                    enabled: true,
+                    getSnapshot: () => ({ text: 'draft', wordCount: 1 }),
+                    supabaseUrl: 'https://example.supabase.co',
+                    supabaseAnonKey: 'anon-key',
+                }),
+            { initialProps: { assignmentKey: initialKey } }
+        );
+    }
+
+    function lastSnapshotPayload() {
+        act(() => {
+            (mockChannel.subscribe.mock.calls.at(-1)?.[0] as (status: string) => void)('SUBSCRIBED');
+            vi.advanceTimersByTime(6_000);
+        });
+        return mockChannel.send.mock.calls
+            .map(([message]) => message as { event: string; payload: Record<string, unknown> })
+            .filter((message) => message.event === 'snapshot')
+            .at(-1)?.payload;
+    }
+
+    it('counts typed and pasted characters without ever recording their content', () => {
+        vi.useFakeTimers();
+        Object.assign(mockChannel, { state: 'joined' });
+        const getSnapshot = vi.fn(() => ({ text: 'draft', wordCount: 1 }));
+
+        renderHook(() =>
+            useLiveSessionTelemetry({
+                kind: 'essay',
+                assignmentKey: 'key1',
+                enabled: true,
+                getSnapshot,
+                supabaseUrl: 'https://example.supabase.co',
+                supabaseAnonKey: 'anon-key',
+            })
+        );
+
+        const typed = new Event('input') as Event & { inputType?: string; data?: string };
+        Object.defineProperty(typed, 'inputType', { value: 'insertText' });
+        Object.defineProperty(typed, 'data', { value: 'hello' });
+        act(() => {
+            document.dispatchEvent(typed);
+        });
+
+        const editor = document.createElement('textarea');
+        document.body.appendChild(editor);
+        act(() => {
+            editor.dispatchEvent(pasteEvent('pasted!'));
+        });
+        editor.remove();
+
+        const snapshot = lastSnapshotPayload();
+        expect(snapshot).toMatchObject({ typedChars: 5, pastedChars: 7 });
+        expect(JSON.stringify(snapshot)).not.toContain('pasted!');
+    });
+
+    it('ignores a paste that landed outside an editable element', () => {
+        vi.useFakeTimers();
+        Object.assign(mockChannel, { state: 'joined' });
+        renderEssayTelemetry('key1');
+
+        act(() => {
+            document.dispatchEvent(pasteEvent('x'.repeat(80)));
+        });
+
+        expect(lastSnapshotPayload()).toMatchObject({ pastedChars: 0 });
+    });
+
+    it('counts an IME composition once, when it is committed, not on every rewrite', () => {
+        vi.useFakeTimers();
+        Object.assign(mockChannel, { state: 'joined' });
+        renderEssayTelemetry('key1');
+
+        act(() => {
+            for (const data of ['a', 'ab', 'abc']) document.dispatchEvent(inputEvent('insertCompositionText', data));
+            const end = new Event('compositionend');
+            Object.defineProperty(end, 'data', { value: 'abc' });
+            document.dispatchEvent(end);
+        });
+
+        expect(lastSnapshotPayload()).toMatchObject({ typedChars: 3 });
+    });
+
+    it('restarts the typed and pasted counts when the assignment changes, not on a re-render', () => {
+        vi.useFakeTimers();
+        Object.assign(mockChannel, { state: 'joined' });
+        const { rerender } = renderEssayTelemetry('assignment-a');
+
+        act(() => {
+            document.dispatchEvent(inputEvent('insertText', 'x'.repeat(1000)));
+        });
+        rerender({ assignmentKey: 'assignment-a' });
+        expect(lastSnapshotPayload()).toMatchObject({ typedChars: 1000 });
+
+        rerender({ assignmentKey: 'assignment-b' });
+        expect(lastSnapshotPayload()).toMatchObject({ typedChars: 0, pastedChars: 0 });
+    });
+
+    it('hands the prose to persistDraftText only on the ticks that actually carry it', () => {
+        vi.useFakeTimers();
+        Object.assign(mockChannel, { state: 'joined' });
+        let words = 1;
+        const persistDraftText = vi.fn();
+        const getSnapshot = vi.fn(() => ({ text: `draft ${words}`, wordCount: words }));
+
+        renderHook(() =>
+            useLiveSessionTelemetry({
+                kind: 'essay',
+                assignmentKey: 'key1',
+                enabled: true,
+                getSnapshot,
+                persistDraftText,
+                supabaseUrl: 'https://example.supabase.co',
+                supabaseAnonKey: 'anon-key',
+            })
+        );
+
+        act(() => {
+            (mockChannel.subscribe.mock.calls.at(-1)?.[0] as (status: string) => void)('SUBSCRIBED');
+        });
+        expect(persistDraftText).toHaveBeenLastCalledWith({ text: 'draft 1', wordCount: 1 });
+
+        // A stats-only tick must not store the same prose a second time.
+        words = 2;
+        act(() => {
+            vi.advanceTimersByTime(5_000);
+        });
+        expect(persistDraftText).toHaveBeenCalledTimes(1);
+
+        words = 3;
+        act(() => {
+            vi.advanceTimersByTime(60_000);
+        });
+        expect(persistDraftText).toHaveBeenLastCalledWith({ text: 'draft 3', wordCount: 3 });
+        expect(persistDraftText).toHaveBeenCalledTimes(2);
+    });
+
+    it('lifts the draft-text throttle only while a teacher spotlight is on', () => {
+        vi.useFakeTimers();
+        Object.assign(mockChannel, { state: 'joined' });
+        let words = 1;
+        const getSnapshot = vi.fn(() => ({ text: `draft ${words}`, wordCount: words }));
+
+        const { result } = renderHook(() =>
+            useLiveSessionTelemetry({
+                kind: 'essay',
                 assignmentKey: 'key1',
                 enabled: true,
                 getSnapshot,
@@ -232,22 +433,181 @@ describe('useLiveSessionTelemetry', () => {
         );
 
         act(() => {
-            vi.advanceTimersByTime(5_000);
+            (mockChannel.subscribe.mock.calls.at(-1)?.[0] as (status: string) => void)('SUBSCRIBED');
         });
-        expect(getSnapshot).toHaveBeenCalled();
+        const sentSnapshots = () =>
+            mockChannel.send.mock.calls
+                .map(([message]) => message as { event: string; payload: Record<string, unknown> })
+                .filter((message) => message.event === 'snapshot')
+                .map((message) => message.payload);
 
-        const callsAfterFirst = getSnapshot.mock.calls.length;
+        words = 2;
         act(() => {
             vi.advanceTimersByTime(5_000);
         });
-        // getSnapshot is polled again even when unchanged
-        expect(getSnapshot.mock.calls.length).toBeGreaterThan(callsAfterFirst);
+        expect(sentSnapshots().at(-1)).not.toHaveProperty('text');
 
-        snapshotValue = { text: 'b' };
+        const spotlightHandler = mockChannel.on.mock.calls
+            .filter(([type, opts]) => type === 'broadcast' && (opts as { event: string }).event === 'spotlight')
+            .at(-1)?.[2] as ((msg: { payload: unknown }) => void) | undefined;
+        expect(spotlightHandler).toBeDefined();
+
+        words = 3;
         act(() => {
+            spotlightHandler!({ payload: { on: true } });
             vi.advanceTimersByTime(5_000);
         });
-        expect(getSnapshot).toHaveBeenCalled();
+        expect(result.current.spotlighted).toBe(true);
+        expect(sentSnapshots().at(-1)).toMatchObject({ text: 'draft 3', wordCount: 3 });
+
+        act(() => {
+            spotlightHandler!({ payload: { on: false } });
+        });
+        expect(result.current.spotlighted).toBe(false);
+    });
+
+    it('expires the spotlight lease when the teacher stops renewing it', () => {
+        vi.useFakeTimers();
+        Object.assign(mockChannel, { state: 'joined' });
+        const { result } = renderHook(() =>
+            useLiveSessionTelemetry({
+                kind: 'essay',
+                assignmentKey: 'key1',
+                enabled: true,
+                getSnapshot: () => ({ wordCount: 1 }),
+                supabaseUrl: 'https://example.supabase.co',
+                supabaseAnonKey: 'anon-key',
+            })
+        );
+        act(() => {
+            (mockChannel.subscribe.mock.calls.at(-1)?.[0] as (status: string) => void)('SUBSCRIBED');
+        });
+        const spotlightHandler = mockChannel.on.mock.calls
+            .filter(([type, opts]) => type === 'broadcast' && (opts as { event: string }).event === 'spotlight')
+            .at(-1)?.[2] as (msg: { payload: unknown }) => void;
+
+        act(() => {
+            spotlightHandler({ payload: { on: true } });
+        });
+        expect(result.current.spotlighted).toBe(true);
+
+        // The monitor re-sends every 10s while the view stays open, which keeps the lease alive.
+        act(() => {
+            vi.advanceTimersByTime(10_000);
+            spotlightHandler({ payload: { on: true } });
+            vi.advanceTimersByTime(10_000);
+        });
+        expect(result.current.spotlighted).toBe(true);
+
+        // A monitor whose connection dropped never sends `on: false`, so the lease runs out.
+        act(() => {
+            vi.advanceTimersByTime(20_000);
+        });
+        expect(result.current.spotlighted).toBe(false);
+    });
+
+    it('holds snapshot ticks until the channel joins, then sends a full baseline', () => {
+        vi.useFakeTimers();
+        Object.assign(mockChannel, { state: 'joining' });
+        const getSnapshot = vi.fn(() => ({ text: 'draft', wordCount: 4 }));
+        renderHook(() =>
+            useLiveSessionTelemetry({
+                kind: 'essay',
+                assignmentKey: 'key1',
+                enabled: true,
+                getSnapshot,
+                supabaseUrl: 'https://example.supabase.co',
+                supabaseAnonKey: 'anon-key',
+            })
+        );
+        const sentSnapshots = () =>
+            mockChannel.send.mock.calls
+                .map(([message]) => message as { event: string; payload: Record<string, unknown> })
+                .filter((message) => message.event === 'snapshot')
+                .map((message) => message.payload);
+
+        // A slow join must not burn the once-a-minute text throttle on a snapshot the socket drops.
+        act(() => {
+            vi.advanceTimersByTime(20_000);
+        });
+        expect(sentSnapshots()).toHaveLength(0);
+
+        Object.assign(mockChannel, { state: 'joined' });
+        act(() => {
+            (mockChannel.subscribe.mock.calls.at(-1)?.[0] as (status: string) => void)('SUBSCRIBED');
+        });
+        expect(sentSnapshots().at(-1)).toEqual({ text: 'draft', wordCount: 4, typedChars: 0, pastedChars: 0 });
+    });
+
+    it('answers a monitor probe with one heartbeat that keeps an idle student idle', () => {
+        vi.useFakeTimers();
+        Object.assign(mockChannel, { state: 'joined' });
+        renderHook(() =>
+            useLiveSessionTelemetry({
+                kind: 'test',
+                assignmentKey: 'key1',
+                enabled: true,
+                supabaseUrl: 'https://example.supabase.co',
+                supabaseAnonKey: 'anon-key',
+            })
+        );
+        act(() => {
+            (mockChannel.subscribe.mock.calls.at(-1)?.[0] as (status: string) => void)('SUBSCRIBED');
+        });
+        const probe = mockChannel.on.mock.calls
+            .filter(([type, opts]) => type === 'broadcast' && (opts as { event: string }).event === 'probe')
+            .at(-1)?.[2] as (() => void) | undefined;
+        expect(probe).toBeDefined();
+        const heartbeats = () =>
+            mockChannel.send.mock.calls
+                .map(([message]) => message as { event: string; payload: { type: string; value: string } })
+                .filter((message) => message.event === 'event' && message.payload.type === 'heartbeat');
+
+        mockChannel.send.mockClear();
+        act(() => {
+            probe!();
+        });
+        expect(heartbeats().map((message) => message.payload.value)).toEqual(['active']);
+
+        act(() => {
+            vi.setSystemTime(Date.now() + 61_000);
+        });
+        mockChannel.send.mockClear();
+        act(() => {
+            probe!();
+        });
+        expect(heartbeats().map((message) => message.payload.value)).toEqual(['idle']);
+    });
+
+    it('announces active on join even after a long wait before the session was enabled', () => {
+        vi.useFakeTimers();
+        Object.assign(mockChannel, { state: 'joined' });
+        const { rerender } = renderHook(
+            ({ enabled }: { enabled: boolean }) =>
+                useLiveSessionTelemetry({
+                    kind: 'test',
+                    assignmentKey: 'key1',
+                    enabled,
+                    supabaseUrl: 'https://example.supabase.co',
+                    supabaseAnonKey: 'anon-key',
+                }),
+            { initialProps: { enabled: false } }
+        );
+        act(() => {
+            vi.advanceTimersByTime(90_000);
+        });
+        mockChannel.send.mockClear();
+
+        rerender({ enabled: true });
+        act(() => {
+            (mockChannel.subscribe.mock.calls.at(-1)?.[0] as (status: string) => void)('SUBSCRIBED');
+        });
+
+        const values = mockChannel.send.mock.calls
+            .map(([message]) => message as { event: string; payload: { type: string; value: string } })
+            .filter((message) => message.event === 'event' && message.payload.type === 'heartbeat')
+            .map((message) => message.payload.value);
+        expect(values).toEqual(['active']);
     });
 
     it('forwards nudge broadcasts to the onNudge callback', () => {
@@ -263,12 +623,12 @@ describe('useLiveSessionTelemetry', () => {
             })
         );
 
-        const broadcasts = mockChannel.on.mock.calls.filter(([type]) => type === 'broadcast');
-        expect(broadcasts.length).toBeGreaterThan(0);
+        const nudgeHandler = mockChannel.on.mock.calls
+            .filter(([type, opts]) => type === 'broadcast' && (opts as { event: string }).event === 'nudge')
+            .at(-1)?.[2] as ((msg: { payload: unknown }) => void) | undefined;
+        expect(nudgeHandler).toBeDefined();
         act(() => {
-            (broadcasts[broadcasts.length - 1][2] as (payload: unknown) => void)({
-                payload: { message: 'nudge!' },
-            });
+            nudgeHandler!({ payload: { message: 'nudge!' } });
         });
         expect(onNudge).toHaveBeenCalledWith('nudge!');
     });

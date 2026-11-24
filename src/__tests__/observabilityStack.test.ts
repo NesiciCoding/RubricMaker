@@ -163,13 +163,26 @@ describe('alerting (#869)', () => {
         expect(service('grafana')).toMatch(/ALERT_EMAIL: "\$\{ALERT_EMAIL:-[^}\s]+@[^}\s]+\}"/);
     });
 
+    const rawQueries = () => [...rules.matchAll(/rawSql: (.+)/g)].map((m) => m[1]);
+
     it('reads scheduled-job failures through monitoring.failed_jobs(), not tables RLS hides', () => {
-        const queries = [...rules.matchAll(/rawSql: (.+)/g)].map((m) => m[1]);
+        const queries = rawQueries().filter((query) => !/\bclient_logs\b/.test(query));
         expect(queries).toHaveLength(2);
         for (const query of queries) {
             expect(query).toContain('FROM monitoring.failed_jobs()');
             expect(query).not.toMatch(/\b(cron|net)\./);
         }
+    });
+
+    it('reads browser errors from client_logs, which pg_monitor may select (migration 092)', () => {
+        const queries = rawQueries().filter((query) => /\bclient_logs\b/.test(query));
+        expect(queries).toHaveLength(1);
+        expect(queries[0]).toContain("category = 'error'");
+        // Counts only: the rule must not pull `meta` (or any row content) into an alert.
+        expect(queries[0]).not.toMatch(/\bmeta\b/);
+        const policy = read('supabase/migrations/092_monitoring_dashboard_reads.sql');
+        expect(policy).toContain('grant select on public.client_logs to pg_monitor;');
+        expect(policy).toContain('client_logs_monitor_select');
     });
 });
 
@@ -237,5 +250,119 @@ describe('Application Usage reads (migration 092)', () => {
         expect(migration).toContain('grant select on public.client_logs to pg_monitor;');
         expect(migration).toMatch(/on public\.client_logs for select\s+to pg_monitor\s+using \(true\);/);
         expect(read('.env.observability.example')).not.toMatch(/^#\s+GRANT SELECT ON public\.client_logs/m);
+    });
+});
+
+describe('School Highlights reads (migration 109)', () => {
+    const migration = read('supabase/migrations/109_school_highlights.sql');
+    const dashboard = JSON.parse(read('docker/observability/dashboards/school-highlights.json'));
+    const queries: string[] = [
+        ...dashboard.panels.flatMap((p: { targets?: { rawSql: string }[] }) => (p.targets ?? []).map((t) => t.rawSql)),
+        ...dashboard.templating.list.map((v: { query: string }) => v.query),
+    ];
+    const functions = [...migration.matchAll(/create or replace function (monitoring\.\w+)\(([^)]*)\)/gi)];
+
+    it('queries only the monitoring.hl_* functions, never the tables row-level security hides', () => {
+        expect(queries.length).toBeGreaterThanOrEqual(10);
+        for (const query of queries) {
+            expect(query).toMatch(/monitoring\.hl_\w+\(/);
+            expect(query).not.toMatch(/\b(FROM|JOIN)\s+(public\.)?(?!monitoring\.|\(|lv\b)[a-z_]+(\s|$)/i);
+        }
+    });
+
+    it('defines every function a panel calls', () => {
+        const defined = new Set(functions.map((m) => m[1]));
+        for (const query of queries) {
+            for (const [, name] of query.matchAll(/(monitoring\.hl_\w+)\(/g)) expect(defined, name).toContain(name);
+        }
+    });
+
+    const reporting = [
+        'monitoring.hl_cefr_distribution(text)',
+        'monitoring.hl_cefr_trend(timestamptz, timestamptz)',
+        'monitoring.hl_grammar_items(text)',
+        'monitoring.hl_student_coverage()',
+        'monitoring.hl_week_activity()',
+    ];
+
+    it('pins search_path on every definer function', () => {
+        const bodies = migration.split(/create or replace function /i).slice(1);
+        const definers = bodies.filter((b) => /security definer/i.test(b));
+        expect(definers.length).toBeGreaterThanOrEqual(7);
+        for (const body of definers) expect(body).toMatch(/security definer\s+set search_path = ''/i);
+    });
+
+    it('grants only the suppressed reporting functions to pg_monitor and revokes every helper', () => {
+        for (const sig of reporting) expect(migration).toContain(`GRANT EXECUTE ON FUNCTION ${sig} TO pg_monitor;`);
+        for (const [, sig] of migration.matchAll(/GRANT EXECUTE ON FUNCTION ([^;]+?) TO /g)) {
+            expect(reporting, `${sig} returns unsuppressed data`).toContain(sig);
+        }
+        for (const [, name, params] of functions.map((m) => [m[0], m[1], m[2]])) {
+            const types = params
+                .split(',')
+                .map((p) => p.trim().split(/\s+/)[1] ?? p.trim().split(/\s+/)[0])
+                .filter(Boolean)
+                .join(', ');
+            expect(migration).toContain(`REVOKE ALL ON FUNCTION ${name}(${types}) FROM PUBLIC;`);
+        }
+        expect(migration).not.toMatch(/GRANT EXECUTE[^;]*TO (anon|authenticated|service_role|public)\b/i);
+    });
+
+    it('holds every reporting function to the minimum cohort', () => {
+        expect(migration).toMatch(/hl_min_cohort\(\)\s*RETURNS integer[\s\S]*?SELECT 5/i);
+        const bodies = migration.split(/create or replace function /i).slice(1);
+        const reads = bodies.filter((b) => /^monitoring\.hl_(cefr|grammar|student|week)/i.test(b));
+        expect(reads.length).toBe(5);
+        for (const body of reads) expect(body).toContain('monitoring.hl_min_cohort()');
+    });
+
+    it('groups by school id, never by display name', () => {
+        const bodies = migration.split(/create or replace function /i).slice(1);
+        for (const body of bodies.filter((b) => /^monitoring\.hl_(cefr|grammar|student|week|current)/i.test(b))) {
+            if (/GROUP BY/i.test(body)) expect(body).toMatch(/GROUP BY[^\n]*school_id/i);
+        }
+    });
+
+    it('never shows a suppressed cell as zero', () => {
+        for (const query of queries) expect(query).not.toMatch(/coalesce\(\s*(\(\s*SELECT|max\()/i);
+    });
+
+    it('takes weekly shares over the visible levels only, so a share cannot reveal hidden students', () => {
+        const trend = migration
+            .split(/create or replace function /i)
+            .find((b) => b.startsWith('monitoring.hl_cefr_trend'));
+        expect(trend, 'hl_cefr_trend not found').toBeDefined();
+        const totals = /totals AS \(([\s\S]*?)\n {2}\)/.exec(trend as string)?.[1] ?? '';
+        expect(totals).toContain('hl_min_cohort()');
+    });
+
+    it('reports weekly activity only for five distinct students, from teachers who share', () => {
+        const week = migration
+            .split(/create or replace function /i)
+            .find((b) => b.startsWith('monitoring.hl_week_activity'));
+        expect(week, 'hl_week_activity not found').toBeDefined();
+        expect(week).toMatch(/count\(DISTINCT e\.student\)[^\n]*>= monitoring\.hl_min_cohort\(\)/);
+        expect(week).toContain('school_highlight_snapshots');
+        expect(week).not.toMatch(/coalesce\(\s*sum\(/i);
+    });
+
+    it('excludes a teacher who opted out from every reporting path, snapshots already pushed included', () => {
+        expect(migration).toMatch(/hl_shares\(p_owner uuid\)[\s\S]*?shareSchoolHighlights'\s*=\s*'false'/);
+        const bodies = migration.split(/create or replace function /i).slice(1);
+        for (const name of ['hl_current_snapshots', 'hl_cefr_trend', 'hl_week_activity']) {
+            const body = bodies.find((b) => b.startsWith(`monitoring.${name}`));
+            expect(body, `${name} not found`).toBeDefined();
+            expect(body, `${name} must honour the opt-out`).toContain('monitoring.hl_shares(');
+        }
+        expect(migration).toContain('REVOKE ALL ON FUNCTION monitoring.hl_shares(uuid) FROM PUBLIC;');
+    });
+
+    it('keeps student identifiers out of the snapshot table', () => {
+        const table = /CREATE TABLE IF NOT EXISTS public\.school_highlight_snapshots \(([\s\S]*?)\n\);/.exec(
+            migration
+        )?.[1];
+        expect(table, 'snapshot table definition not found').toBeDefined();
+        const columns = [...(table as string).matchAll(/^\s{2}([a-z_]+)\s+(?!KEY)[A-Z]/gm)].map((m) => m[1]);
+        expect(columns.sort()).toEqual(['cefr', 'grammar', 'owner_id', 'snapshot_date', 'student_count', 'updated_at']);
     });
 });

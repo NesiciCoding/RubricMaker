@@ -1,0 +1,2505 @@
+From 0374c651a5dd14a10df77467e11a51a6c43f21b6 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Thu, 19 Nov 2026 09:50:22 +0000
+Subject: [PATCH 1/4] =?UTF-8?q?docs:=20audit=20pass=20=E2=80=94=20fix=20st?=
+ =?UTF-8?q?ale=20sharing/migration/FSRS=20info,=20split=20Features=20into?=
+ =?UTF-8?q?=20deep-dive=20articles,=20add=20question-type,=20placement,=20?=
+ =?UTF-8?q?live-writing=20and=20research=20pages?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01HFRQRtQF3AF1WTUxbKkCgw
+---
+ Admin-Dashboard.md                       |  22 +
+ Architecture.md                          |   8 +-
+ CEFR-and-Learning-Paths.md               |  36 ++
+ Development-Guide.md                     |   1 +
+ Exporting.md                             |  37 ++
+ FAQ.md                                   |  18 +-
+ Features.md                              | 587 +++--------------------
+ Flashcards.md                            |   2 +-
+ Grading.md                               | 117 +++++
+ Home.md                                  |  14 +-
+ Live-Writing-Sessions.md                 |  26 +
+ Placement-Testing.md                     |  65 +++
+ Question-Type-Audio-response.md          |  26 +
+ Question-Type-Categorize.md              |  25 +
+ Question-Type-Cloze-bank.md              |  26 +
+ Question-Type-Cloze-dropdown.md          |  26 +
+ Question-Type-Cloze.md                   |  28 ++
+ Question-Type-Dictation.md               |  26 +
+ Question-Type-Error-correction.md        |  26 +
+ Question-Type-Hot-text.md                |  25 +
+ Question-Type-Key-word-transformation.md |  27 ++
+ Question-Type-Matching.md                |  25 +
+ Question-Type-Matrix.md                  |  25 +
+ Question-Type-Multiple-choice.md         |  28 ++
+ Question-Type-Multiple-response.md       |  25 +
+ Question-Type-Numeric.md                 |  25 +
+ Question-Type-Open.md                    |  25 +
+ Question-Type-Ordering.md                |  25 +
+ Question-Type-Sentence-builder.md        |  27 ++
+ Question-Type-Short-answer.md            |  27 ++
+ Question-Type-True-False.md              |  25 +
+ Question-Types.md                        |  49 ++
+ Research-Agenda.md                       | 153 ++++++
+ Rubric-Builder.md                        |  94 ++++
+ Screenshots.md                           |  54 +--
+ Sharing-and-Co-teaching.md               |  40 ++
+ Student-Portal.md                        |   2 +-
+ Supabase-Sync.md                         |  11 +-
+ Tests-and-Practice.md                    |  37 +-
+ Writing-and-Document-Analysis.md         |  34 ++
+ _Sidebar.md                              |  12 +-
+ 41 files changed, 1315 insertions(+), 596 deletions(-)
+ create mode 100644 Admin-Dashboard.md
+ create mode 100644 CEFR-and-Learning-Paths.md
+ create mode 100644 Exporting.md
+ create mode 100644 Grading.md
+ create mode 100644 Live-Writing-Sessions.md
+ create mode 100644 Placement-Testing.md
+ create mode 100644 Question-Type-Audio-response.md
+ create mode 100644 Question-Type-Categorize.md
+ create mode 100644 Question-Type-Cloze-bank.md
+ create mode 100644 Question-Type-Cloze-dropdown.md
+ create mode 100644 Question-Type-Cloze.md
+ create mode 100644 Question-Type-Dictation.md
+ create mode 100644 Question-Type-Error-correction.md
+ create mode 100644 Question-Type-Hot-text.md
+ create mode 100644 Question-Type-Key-word-transformation.md
+ create mode 100644 Question-Type-Matching.md
+ create mode 100644 Question-Type-Matrix.md
+ create mode 100644 Question-Type-Multiple-choice.md
+ create mode 100644 Question-Type-Multiple-response.md
+ create mode 100644 Question-Type-Numeric.md
+ create mode 100644 Question-Type-Open.md
+ create mode 100644 Question-Type-Ordering.md
+ create mode 100644 Question-Type-Sentence-builder.md
+ create mode 100644 Question-Type-Short-answer.md
+ create mode 100644 Question-Type-True-False.md
+ create mode 100644 Question-Types.md
+ create mode 100644 Research-Agenda.md
+ create mode 100644 Rubric-Builder.md
+ create mode 100644 Sharing-and-Co-teaching.md
+ create mode 100644 Writing-and-Document-Analysis.md
+
+diff --git a/Admin-Dashboard.md b/Admin-Dashboard.md
+new file mode 100644
+index 0000000..8a25fd4
+--- /dev/null
++++ b/Admin-Dashboard.md
+@@ -0,0 +1,22 @@
++# Admin Dashboard
++
++> For users with the `admin` role. Short overview: [Features](Features).
++
++**Access:** Main menu → Admin (admin role required; Settings → Administration for admins too)
++
++| Tab | What it does |
++|---|---|
++| **Users** | Manage user accounts and roles |
++| **Schools** | School records used by the marketplace and department sharing |
++| **Database** | Supabase connection, **Push local → database**, **Pull database → local**, sharing management |
++| **Integrations** | Standards API key (Common Standards Project) with CORS setup instructions |
++| **Data** | Search students and permanently delete or **anonymize** (scrub PII from) individual records |
++| **Retention** | Data-retention configuration (see below) |
++| **Audit** | Searchable, category-filterable log of role changes, deletions, grade saves, rubric edits, exports, and auth events, with CSV export (backed by the `audit_logs` table + `pg_cron` retention job) |
++| **Archive** | Archived students can be **restored**, **anonymized** (PII scrubbed, aggregate grade history kept) or **erased permanently** (student and everything linked, from the device and the database; earlier backups are not affected). Also lists **Recently deleted grades** for restoring |
++
++**Roles:** `teacher` (renamed from `user`), `admin`, and `student`, enforced via Supabase RLS. The last admin can't be demoted from the app; if no admin can sign in, an operator restores one in the database (see *Admin recovery* in `docs/SELF_HOSTING_OPS.md`).
++
++**Sign-in options:** Google, Microsoft (personal or school account) and an emailed one-time code; admins choose which buttons appear via the `auth_providers` setting.
++
++**Roster sync:** CSV upsert updates existing students by email on re-import; an optional "remove students not in this file" mode keeps a class roster in lockstep with a school's SIS export.
+diff --git a/Architecture.md b/Architecture.md
+index fc3033d..e1efd07 100644
+--- a/Architecture.md
++++ b/Architecture.md
+@@ -183,7 +183,7 @@ Components call the hooks for the data they read. Pages that need slices from ma
+ 
+ ## Persistence layer
+ 
+-`src/store/storage.ts` provides typed read/write functions over `localStorage`, serialised as JSON. There is no versioned migration system on the localStorage side (structural changes ship with the app); the Supabase schema, by contrast, has a **sequential migration system — 92 files** in `supabase/migrations/` as of October 2026 (`NNN_description.sql`; a few CLI-generated timestamped files exist too). Migrations are idempotent (`IF NOT EXISTS`), never modified once applied, and verified with `npm run db:reset`. See [Supabase Sync](Supabase-Sync).
++`src/store/storage.ts` provides typed read/write functions over `localStorage`, serialised as JSON. There is no versioned migration system on the localStorage side (structural changes ship with the app); the Supabase schema, by contrast, has a **sequential migration system — over 100 files** in `supabase/migrations/` (`NNN_description.sql`, numbered up to 105 at the time of writing, plus one legacy timestamped file). Migrations are idempotent (`IF NOT EXISTS`), never modified once applied, and verified with `npm run db:reset`. See [Supabase Sync](Supabase-Sync).
+ 
+ `localStorage` has a browser-imposed limit of roughly 5–10 MB. Attachments stored as base64 can approach this quickly; the app warns when storage runs low. The **PWA service worker** (vite-plugin-pwa) precaches the app shell and lazily caches non-English locale chunks; Supabase API routes are explicitly `NetworkOnly` so a cached response never masks a failed sync.
+ 
+@@ -230,9 +230,9 @@ All exports are generated entirely in the browser. File exports download via `fi
+ 
+ ---
+ 
+-## Design System — "Option B" UI Conventions
++## Design system — UI conventions
+ 
+-A design mockup ("RubricMaker Option B," Claude Design project) proposed a page-content-level visual pass across most of the app. Research before adopting any of it found the mockup's foundational layer — colors, fonts, and the two-tier nav shell — **already shipped** (the "Warm Scholar" re-skin and two-tier navigation redesign). What the mockup actually adds is a set of smaller, reusable content patterns. This section is the canonical reference for those patterns so roadmap phases implement the same shape instead of re-deriving it per PR.
++These are the shared UI patterns the app follows. Reuse them rather than inventing a variant per page.
+ 
+ - **Color tokens & fonts** — tokens live in `src/index.css` (`--bg`, `--bg-raised`, `--bg-elevated`, `--bg-card`, `--border`, `--border-light`, `--text`/`--text-muted`/`--text-dim`, `--accent`/`--accent-hover`/`--accent-fg`/`--accent-soft`, `--green`/`--yellow`/`--red`/`--purple`), toggled via `data-theme` on `<html>`. Fonts (Bricolage Grotesque for display/headings via `--font-display`, Hanken Grotesk for body via `--font`) are preloaded in `index.html`.
+ - **Two-tier nav shell** — `src/components/Layout/Sidebar.tsx` (icon rail of top-level domains + a contextual sub-panel) and `Topbar.tsx` (search, notifications, theme toggle) are the canonical implementation.
+@@ -259,7 +259,7 @@ A design mockup ("RubricMaker Option B," Claude Design project) proposed a page-
+ | Document rendering | PDF.js (pdfjs-dist), Mammoth, docx-preview | — |
+ | OCR | Tesseract.js | 7 |
+ | NLP | compromise.js | 14 |
+-| Spaced repetition | ts-fsrs (FSRS v6) | 5 |
++| Spaced repetition | ts-fsrs (FSRS v6) | 6 |
+ | Export (Word) | docx | 9 |
+ | Export (CSV) | PapaParse | 5 |
+ | Icons | lucide-react | 1 |
+diff --git a/CEFR-and-Learning-Paths.md b/CEFR-and-Learning-Paths.md
+new file mode 100644
+index 0000000..6e66c20
+--- /dev/null
++++ b/CEFR-and-Learning-Paths.md
+@@ -0,0 +1,36 @@
++# CEFR, Mastery & Learning Paths
++
++> How proficiency levels, grammar mastery and recommendations are calculated and shown.  
++> Short overview: [Features](Features).
++
++---
++
++## CEFR & Language Assessment
++
++**Access:** Students → CEFR Overview (whole class) · a student's profile → CEFR
++
++- **CEFR overview:** per-student and whole-class proficiency across Reading, Writing, Speaking, and Listening. A track/year **expected-range band** (per-track, per-school-year Dutch curriculum benchmarks) shows a student's level as ahead, on track, or behind for their specific class year and VO track.
++- **Standard mastery targets:** set an expected mastery percentage for a linked standard (CCSS, NGSS, Dutch kerndoelen, or custom) per school year/VO track from **Settings → Teaching**; surfaces the same ahead/on-track/behind status on learning-goal views.
++- **Learning paths & interventions:** rule-based (no AI) rubric recommendations for CEFR skills where a student trails the class average, plus flags for three or more consecutive low scores on the same criterion or skill — from each student's profile. A separate **Grammar practice** section suggests a matching flashcard deck and practice test after repeated low scores on grammar-linked items.
++- **Grammar Mastery Profile:** one row per grammar item merging evidence from test accuracy, flashcard spaced-repetition progress, and rubric criteria linked to that grammar point.
++- **Placement testing:** author a placement test (Test Builder → Mode: Placement) with multistage, staircase, or generator engines — see [Tests & Practice](Tests-and-Practice).
++
++![Whole-class CEFR overview grid](images/cefr-overview.png)
++
++*Whole-class CEFR overview grid.*
++
++![Per-student CEFR detail with track/year band](images/student-cefr-detail.png)
++
++*Per-student CEFR detail with track/year band.*
++
++![Student learning path with recommendations](images/learning-path.png)
++
++*Student learning path with recommendations.*
++
++## Vocabulary Profiling Dashboard
++
++**Access:** Students → Vocabulary
++
++Aggregates document-analysis data across a class or student into **CEFR-banded vocabulary distribution charts** (A1 → C2 stacked bars), backed by a bundled, validated 64k-word CEFR index, plus an estimated CEFR **reading level** and **academic vocabulary** coverage against the AWL (Coxhead) and NAWL. Export the filtered word list to CSV. All matching is rule-based and offline.
++
++**Text screening** (*Is this text right for my class?*): paste a text or upload a PDF, Word, plain-text or image file to see its estimated CEFR level, which words sit above the class's target level, and seed a pre-teaching flashcard deck from them. Definitions come from a bundled WordNet pack first; only words it can't answer go to the free Dictionary API, and optional translations to MyMemory (no key; only the word is sent).
+diff --git a/Development-Guide.md b/Development-Guide.md
+index 81e36bc..900667a 100644
+--- a/Development-Guide.md
++++ b/Development-Guide.md
+@@ -30,6 +30,7 @@ Vite starts a local server at [http://localhost:5173](http://localhost:5173) wit
+ | Edge-shared type-check | `npm run typecheck:edge-shared` | Type-checks `supabase/functions/_shared/` under Deno (also runs in CI) |
+ | E2E | `npm run e2e` | Playwright specs, chromium + firefox (needs the dev server running) |
+ | E2E (Chromium only) | `npm run e2e:chromium` | Faster local loop |
++| E2E (wide screens) | `npm run e2e:wide` | The `wide` Playwright project |
+ | E2E (accessibility) | `npm run e2e:a11y` · `e2e:a11y:baseline` | axe gate over every route in light + dark mode; regenerate the baseline JSON |
+ | E2E (Supabase) | `npm run e2e:supabase` | The DB-dependent specs (needs `npm run db:start`) |
+ | E2E helpers | `npm run e2e:ui` · `e2e:headed` · `e2e:debug` · `e2e:codegen` · `e2e:report` | Playwright UI/headed/debug/codegen/report |
+diff --git a/Exporting.md b/Exporting.md
+new file mode 100644
+index 0000000..e86495c
+--- /dev/null
++++ b/Exporting.md
+@@ -0,0 +1,37 @@
++# Exporting & Reports
++
++> Every export format: PDF, Word templates, CSV, gradebook presets, calendar and backups.  
++> Short overview: [Features](Features).
++
++---
++
++## Export
++
++**Access:** Insights → Export (or from within a graded rubric)
++
++| Format | Content |
++|---|---|
++| **PDF** | Formatted student report with rubric grid, scores, and feedback — one student or the whole class (printed through the browser's *Save as PDF*) |
++| **Period report / report card** | One DOCX per student for a date range; the report card adds toggleable sections (rubric grades, standards coverage, learning goals, CEFR overview, test summary) and a grade-trend chart, and can batch-export a file per student |
++| **Word (.docx)** | Raw rubric data; or upload a custom `.docx` template with mail-merge fields for a branded report |
++| **CSV** | Flat table of scores per student per criterion, for Excel or a gradebook; test results add points, max points, grade and status |
++| **Markdown** | Essay content export (separate or combined files) |
++| **JSON backup** | Full export of all app data (rubrics, students, grades, comments, settings) |
++| **Gradebook presets** | Magister / SOMtoday column formats |
++| **Calendar** | Essay and test due dates as `.ics` |
++
++**Word mail-merge templates:** upload a `.docx` with placeholders like `{{studentName}}`, `{{totalScore}}`, `{{criterion_1}}`; the engine fills them per student. A sample template is at `public/sample-template.docx`. **Style templates** can also set heading/body fonts and colours for essay and period-report exports.
++
++**Printing directly:** **Print Rubric** triggers `window.print()` — a `@media print` stylesheet hides chrome, enforces page-break rules, and applies portrait/landscape from the rubric's format setting.
++
++![Export page with format selection](images/export-page.png)
++
++*The Export page with format selection.*
++
++## Backup & Restore
++
++**Access:** Settings → Teaching (export backup, teachers) · Settings → Administration (export and import, admins)
++
++- **Export backup:** downloads `rubric-maker-backup.json` containing all rubrics, students, grades, comment bank, question bank, and settings.
++- **Import backup:** upload a previously exported JSON file to restore (this **overwrites** existing data — export first; a preview modal shows a summary of the file, including which settings would change, before applying).
++- Running your own server? Server-side backups are covered in [HestiaCP Maintenance](HestiaCP-Maintenance).
+diff --git a/FAQ.md b/FAQ.md
+index fa9978b..1009550 100644
+--- a/FAQ.md
++++ b/FAQ.md
+@@ -26,7 +26,7 @@ Yes — the grading interface is optimised for tablets (iPad portrait/landscape)
+ 
+ ### What scoring modes are available?
+ 
+-Total points, weighted percentage, and single-point rubric. See [Features](Features) → Rubric Builder.
++Total points, weighted percentage, and single-point rubric. See [Rubric Builder](Rubric-Builder).
+ 
+ ### Can I grade a group project with one grade?
+ 
+@@ -34,11 +34,11 @@ Yes — select 2+ students from the Rubrics list and grade them as a group; scor
+ 
+ ### Can students review each other?
+ 
+-Yes — peer review, plus self-assessment. See [Features](Features) → Self-Assessment & Peer Review.
++Yes — peer review, plus self-assessment. See [Features](Features#self-assessment--peer-review).
+ 
+ ### Can I get a second opinion on a grade?
+ 
+-Yes — send a graded submission to a colleague for co-grading; disputes surface in the Moderation queue. See [Features](Features) → Co-grading & Moderation.
++Yes — send a graded submission to a colleague for co-grading; disputes surface in the Moderation queue. See [Grading](Grading#co-grading--moderation).
+ 
+ ## Tests, flashcards & practice
+ 
+@@ -52,7 +52,7 @@ No. Practice-mode results appear in a separate panel and never blend into the gr
+ 
+ ### How does the placement test know a student's level?
+ 
+-With three calibration-free engines (multistage, staircase, generator) that adapt from the answers the student gives during the test — no historical data needed. See [Tests & Practice](Tests-and-Practice) → Placement.
++With one of three engines (multistage, staircase, generator) that adapt from the answers the student gives during the test — no historical data needed. The result is a *provisional* estimate. See [Placement testing](Placement-Testing) for exactly how it is calculated, and the [Research Agenda](Research-Agenda) for what is still unvalidated.
+ 
+ ## Sync, sharing & the student portal
+ 
+@@ -62,17 +62,17 @@ Connect Supabase, add students, then generate share links/QR codes from the Rubr
+ 
+ ### Can I share a rubric with a colleague?
+ 
+-Yes — share a rubric or class with another teacher (viewer or editor), publish to the school Marketplace, or use department sharing. See [Supabase Sync](Supabase-Sync).
++Yes. Set a rubric, test or folder to be visible to your co-teachers or your whole school (view or edit), co-teach a class, or publish a copy to the school Marketplace. See [Sharing & Co-teaching](Sharing-and-Co-teaching).
+ 
+-### What's the difference between the Marketplace and department sharing?
++### What's the difference between the Marketplace and sharing?
+ 
+-The Marketplace publishes a **cloned snapshot** colleagues can browse, clone, and upvote. Department sharing makes the **live rubric** read-only-visible to every teacher in your school.
++The Marketplace publishes a **cloned snapshot** colleagues can browse, clone and upvote. Sharing gives colleagues the **live** rubric, test or folder, so your later edits reach them.
+ 
+ ## Exports & backups
+ 
+ ### What can I export?
+ 
+-PDF and Word (.docx) reports (including branded mail-merge templates), CSV score tables, Markdown (essays), JSON backups, Magister/SOMtoday gradebook presets, and `.ics` calendar files for due dates. See [Features](Features) → Export.
++PDF and Word (.docx) reports (including branded mail-merge templates), CSV score tables, Markdown (essays), JSON backups, Magister/SOMtoday gradebook presets, and `.ics` calendar files for due dates. See [Exporting](Exporting).
+ 
+ ### How often should I back up?
+ 
+@@ -86,7 +86,7 @@ They download as a JSON file to your device. With Supabase connected, the server
+ 
+ ### What do the roles mean?
+ 
+-`teacher` (default for staff), `admin` (full control — users, schools, database, retention, audit), and `student` (portal access). Roles are enforced via Supabase Row-Level Security. See [Features](Features) → Admin Dashboard.
++`teacher` (default for staff), `admin` (full control — users, schools, database, retention, audit), and `student` (portal access). Roles are enforced via Supabase Row-Level Security. See [Admin Dashboard](Admin-Dashboard).
+ 
+ ### Can I delete a student permanently?
+ 
+diff --git a/Features.md b/Features.md
+index c604100..1909536 100644
+--- a/Features.md
++++ b/Features.md
+@@ -1,335 +1,51 @@
+ # Features
+ 
+-A detailed, educator-focused reference for every major tool in Rubric Maker.
++A short tour of what Rubric Maker can do. Each area links to a **detailed article** — start here, then click through to what you need.
+ 
+-> **Finding your way:** each section notes where the tool lives in the app. Captured screenshots appear inline as images; any remaining 📷 marker means the screenshot still needs a manual capture (see [Screenshots](Screenshots) and [Manual Capture](Manual-Capture)).
++> **Where is it?** Each section notes where the tool lives in the app. Missing screenshots are listed on [Screenshots](Screenshots).
+ 
+ ---
+ 
+-## Onboarding & first run
++## Build & grade
+ 
+-When you open Rubric Maker for the first time (or in a new browser), you see the **landing page**, then a short **onboarding wizard** that asks for your role (teacher/student/other) and, for teachers, school context. Everything set there can be changed later in **Settings → General**.
++| Area | In one sentence | Details |
++|---|---|---|
++| **Rubric Builder** | Create rubrics with criteria and levels; total-points, weighted or single-point scoring; link criteria to CEFR, IB, Bloom, standards and grammar; import from Word/PDF; version history. | [Rubric Builder](Rubric-Builder) |
++| **Grading** | Click a level per criterion, add comments from your bank, dictate feedback, view the student's work beside the rubric, grade groups, compare two students, get a second marking. | [Grading](Grading) |
++| **Self-assessment & peer review** | Students score themselves or each other with the same rubric; you see everything side by side. | [below](#self-assessment--peer-review) |
++| **Speaking sessions** | Structured oral assessment with recordings. | [below](#speaking-sessions) |
+ 
+-A one-time **guided tour** (React Joyride) walks you through the main screens. It never returns after you skip or finish it, but most pages also have a **"Tour this page"** button — see [Help & page tours](#help--page-tours).
++## Tests & practice
+ 
+-![First-run onboarding welcome step](images/onboarding-welcome.png)
++| Area | In one sentence | Details |
++|---|---|---|
++| **Tests, practice & placement** | Build tests from 19 question types, run ungraded practice, or find a student's level with an adaptive placement test. | [Tests & Practice](Tests-and-Practice) |
++| **Question types** | One short article per type: how to build it and exactly how it is scored. | [Question types](Question-Types) |
++| **Placement testing** | Staircase, multistage and generator engines, and how the estimate is made. | [Placement testing](Placement-Testing) |
++| **Question bank** | Save, tag and reuse questions and whole reading/listening sections. | [Tests & Practice](Tests-and-Practice#question-bank) |
++| **Flashcards** | Spaced-repetition decks for vocabulary and grammar. | [Flashcards](Flashcards) |
+ 
+-*The first onboarding step.*
++## Writing
+ 
+----
+-
+-## Rubric Builder
+-
+-**Access:** Assessments → Rubrics → *New rubric* (or open an existing one)
+-
+-### Starting, importing and organising rubrics
+-
+-- **New rubric chooser** — start from a blank form, one of your saved templates (**Export → Save as Template** in the builder) or a built-in starter, or import a file or a share code.
+-- **Import** — a Word (`.docx`) or PDF rubric laid out as a table (criteria in the first column, one level per column, level names in the header row), or a RubricMaker JSON export. Points are read from headers such as "Good (3 pts)" or "Weak (1-2 pts)", and "Content 40%" next to a criterion becomes its weight. The preview shows every level's points and every weight, and warns about anything it had to guess.
+-- **Export & share** — PDF rubric document, DOCX, or JSON; the copy-code button on a rubric card copies the whole rubric as a text code a colleague pastes under *Import from code*, and the preview button copies a read-only preview link for students.
+-- **Rubrics page** — Cards / List toggle (the list is a compact table with subject, criteria/level counts, students graded and CEFR target), a cohort filter, and drag-to-reorder in card view (also on the Tests, Essays and Activity Dashboard lists; order is per teacher).
+-
+-### Criteria and levels
+-
+-A rubric consists of one or more **criteria** (rows) and **performance levels** (columns). Add as many of each as you need. Every cell can contain a description, a point value, and optional sub-items. Criteria can be dragged to reorder.
+-
+-![Rubric Builder with criteria and level columns](images/rubric-builder-criteria.png)
+-
+-*Rubric Builder with two criteria and the level columns.*
+-
+-### Scoring modes
+-
+-| Mode | How it works |
+-|---|---|
+-| **Total Points** | Each criterion has a raw point value. The final score is the sum of the selected levels. |
+-| **Weighted Score** | Each criterion has a weight (percentage). The final score is a weighted average, shown as a percentage. |
+-| **Single-Point Rubric** | Each criterion has three columns: *below expectations*, *meets expectations* (the criterion descriptor itself), and *exceeds expectations*. The below/exceeds columns carry comments instead of separate level text. |
+-
+-### Advanced level options
+-
+-- **Sub-items:** attach a checklist to any level. Students can be scored on individual items inside the level, giving finer feedback without changing the rubric structure.
+-- **Point ranges:** instead of a fixed point value, define a minimum and maximum. The grader picks the exact score with a slider.
+-
+-![Expanded level options: sub-items and point-range slider](images/rubric-builder-level-options.png)
+-
+-*The expanded level options: sub-items and a point-range slider.*
+-
+-### Standards integration
+-
+-Link any criterion to educational standards (CCSS, NGSS, state standards, and more) via the **Common Standards Project API**. The picker needs an API key configured once by an admin (**Admin → Integrations**); saved favourites appear at the top of the picker for quick access.
+-
+-![Standards picker modal](images/standards-picker.png)
+-
+-*The standards picker modal.*
+-
+-### Assessment frameworks
+-
+-Criteria can be linked to one of three descriptor frameworks:
+-
+-| Framework | Use case |
+-|---|---|
+-| **CEFR** (A1 → C2) | Language proficiency — dominant in European language education |
+-| **IB Learner Profile** | 10 IB attributes (inquirer, thinker, communicator, …) |
+-| **Bloom's Taxonomy** | 6 cognitive levels (remember, understand, apply, analyse, evaluate, create) |
+-
+-A framework selector in the Rubric Builder chooses which descriptors are offered. CEFR badges appear in the grading interface and on exported reports.
+-
+-![CEFR descriptor picker linked to a criterion](images/cefr-framework-link.png)
+-
+-*CEFR descriptor picker linked to a criterion.*
+-
+-### Grammar linker
+-
+-Beyond frameworks, criteria can be tagged with **English grammar standards** grouped by topic (e.g. *Past Simple → regular/irregular verbs*), each with a CEFR level (CEFR-J Grammar Profile). Linked grammar is **auto-checked in scanned essays during grading** — a per-criterion pass/fail breakdown that can be applied as a comment (rule/NLP-based detection, no AI).
+-
+-### Cambridge English exam labels
+-
+-**Access:** Settings → General → "Show Cambridge exam labels"
+-
+-When enabled, every CEFR badge (A2 → C2) gains a second label naming the matching Cambridge English Qualification main-suite exam, e.g. a B2 badge shows **"B2 · FCE"**.
+-
+-| CEFR level | Cambridge exam |
+-|---|---|
+-| A2 | A2 Key (KET) |
+-| B1 | B1 Preliminary (PET) |
+-| B2 | B2 First (FCE) |
+-| C1 | C1 Advanced (CAE) |
+-| C2 | C2 Proficiency (CPE) |
+-
+-A1 has no main-suite exam, so no label appears at A1. Labels show up wherever a CEFR badge is rendered (CEFR overview, student profiles, reports) — no other configuration needed.
+-
+-**Vocabulary lookups (optional):** in the Rubric Builder's vocabulary panel, each word gets a **"Look up"** button that fetches its definition, phonetic transcription, and part of speech from the **free Dictionary API** (`dictionaryapi.dev`) — no key or account required. CEFR level comes from the bundled 64k-word CEFR index, not the dictionary. Lookup only fills empty fields, fails silently offline, and never overwrites teacher-entered values.
+-
+-### Rubric versioning
+-
+-Every save snapshots the rubric automatically (capped at 20 + any manual versions). Open the version history to compare and restore any previous version. Versions are stored separately from the rubric record so they don't bloat sync traffic.
+-
+-**Graded work keeps its rubric version.** A saved grade keeps the rubric and grade scale it was given with, so later edits never silently change a grade or the letter a student sees. Reopening such a grade shows a banner: *Show changes* lists the differences, and *Regrade on latest version* moves the grade to the current rubric and scale (scores carry over where the criterion and level still exist; nothing changes until you save). To move every grade of a rubric at once, choose *Update grades* when the builder asks after saving a change.
+-
+----
+-
+-## Grading Interface
+-
+-**Access:** Rubrics list → select a rubric → *Grade* (pick a student)
+-
+-### Student selection
+-
+-Pick a student from the class roster before grading. Manage students from the **Students** page; you can also select **two or more students to grade as a group** (see [Group grading](#group-grading) below).
+-
+-### Scoring interactions
+-
+-- **Click a level cell** to select it as the student's score for that criterion.
+-- **Toggle sub-item checkboxes** to score checklist items within a level.
+-- **Drag the slider** (point-range levels) to set an exact score.
+-- **Card or grid layout:** toggle between the stacked criterion cards and a compact **criterion × level grid** (multi-level rubrics). In the grid, selecting a cell opens a per-criterion detail panel with a fine-tune points slider, sub-item chips, a manual override, and the comment composer. Single-point rubrics keep the card layout.
+-- **Score modifiers:** apply a percentage, point, or level adjustment with a reason (e.g. late penalty) — the reason is stored with the grade.
+-
+-![Grading interface with level cells, sub-item chips, and feedback composer](images/grading-interface.png)
+-
+-*Grading with level cells, sub-item chips, and the feedback composer.*
+-
+-![Criterion × level grid layout](images/grading-grid-layout.png)
+-
+-*The criterion × level grid layout (multi-level rubrics).*
+-
+-![Single-point rubric layout during grading](images/grading-single-point.png)
+-
+-*Single-point rubric layout during grading.*
+-
+-### Keyboard shortcuts
+-
+-| Shortcut | Action |
+-|---|---|
+-| `1` – `5` | Select a performance level for the focused criterion |
+-| `A`–`Z` then `1`–`5` | Jump straight to a criterion's level (e.g. `B` + `2`) |
+-| `Tab` / `Shift+Tab` | Move focus between criteria |
+-| `Ctrl+S` | Save and advance to the next student |
+-| `?` | Open the shortcut cheat-sheet overlay |
+-
+-![Keyboard-shortcut cheat-sheet overlay](images/keyboard-shortcuts.png)
+-
+-*The `?` cheat-sheet overlay.*
+-
+-### Comment bank
+-
+-Pre-write feedback snippets and tag them by criterion, topic, or CEFR skill/level. While grading, open the bank and click a snippet to insert it into the feedback field. When a criterion has a run of low scores, the bank opens with a **Suggested** group of comments tagged with that criterion's CEFR skill or level. Insertions are counted, so the Comment Bank page's *Sort* control can surface your most-used comments first.
+-
+-![Comment bank open during grading](images/comment-bank-modal.png)
+-
+-*Comment bank open during grading.*
+-
+-### Voice grading
++| Area | In one sentence | Details |
++|---|---|---|
++| **Essays & document analysis** | Essay assignments, focus-mode writing, and rule-based vocabulary and grammar analysis (no AI). | [Essays & Document Analysis](Writing-and-Document-Analysis) |
++| **Live writing sessions** | A timed whole-class writing sprint with a projector view, self-check and anonymous voting. | [Live Writing Sessions](Live-Writing-Sessions) |
+ 
+-Click the microphone button in the feedback field to dictate feedback by voice. Uses the browser's built-in Speech Recognition API (Chrome or Edge).
++## Understand progress
+ 
+-### Attachments & document viewing
++| Area | In one sentence | Details |
++|---|---|---|
++| **CEFR, mastery & learning paths** | Per-skill CEFR levels against year and track expectations, grammar mastery, and rule-based recommendations. | [CEFR, Mastery & Learning Paths](CEFR-and-Learning-Paths) |
++| **Statistics & Activity Dashboard** | Class charts and a cohort-wide "who has submitted what" grid. | [below](#statistics--analytics) |
+ 
+-Attach a student's work to the graded rubric:
++## Share & export
+ 
+-- **Word documents (.docx)** — rendered inline (Mammoth → formatted view, with a "view as sent" toggle to the original rendering)
+-- **PDFs** — rendered inline via PDF.js; text layer searchable
+-- **Images** — displayed directly; scanned images without a text layer go through Tesseract.js OCR
+-
+-Select any text in the document view to leave an **inline document comment** (anchored note with resolve/delete), shown in a sidebar below the document. Commenting is grading-side only and never modifies the submission.
+-
+-### Scan handwritten work
+-
+-In a criterion's feedback panel, **Scan handwriting** photographs a paper answer (or imports a photo or scanned PDF), recognises the text on your device with Tesseract.js, highlights the least-confident words for you to correct, and inserts the result into your feedback. Nothing is uploaded and the image isn't stored. The recognition engine and language data are downloaded once from `cdn.jsdelivr.net` on the first scan, so that first scan needs internet access (ask IT to allow the site if the school network blocks it). For paper tests, see *Scan answer sheet* in [Tests & Practice](Tests-and-Practice#paper-and-offline-submissions).
+-
+-### Overall feedback
+-
+-Below the rubric grid, add a general comment for the whole submission. It appears on the exported PDF report.
+-
+-### Deleting a grade
+-
+-**Delete grade** in the settings-cog menu of a grading page removes the grade after a confirmation; for a group grade you choose between this student's copy and the whole group. Deleted grades can be restored from **Admin → Archive → Recently deleted grades**.
+-
+-### Phones and tablets
+-
+-On phones and iPad portrait the grading view is touch-optimised: point-range and sub-item sliders gain a **− / +** stepper, level cards and score pickers have larger tap targets, and the Save bar stays pinned to the bottom of the screen. Swiping left on an empty part of the page offers to save and move to the next student (swipes starting on a slider, stepper, text field or scrollable table never count). Comparative grading stacks into one column.
+-
+-### Group grading
+-
+-**Access:** Rubrics list → select a rubric → pick 2+ students → grade
+-
+-Saving any group member's grade fans scores and comments out to the rest of the group (each student keeps their own record). In the Rubric Builder, individual criteria can be excluded from the fan-out with a per-criterion **"Group grading"** toggle — so a mixed rubric (shared project score + individual participation criterion) grades correctly.
+-
+-![Group-grading student multi-select](images/group-grading-selector.png)
+-
+-*The group-grading student multi-select on the Rubrics list.*
+-
+----
+-
+-## Comparative Grading
+-
+-**Access:** Rubrics list → select a rubric → *Compare*
+-
+-Grade two students side-by-side in a split-screen view — useful for calibrating scoring consistency. On phones/small tablets the split view reflows to a single stacked column.
+-
+-![Split-screen comparative grading](images/comparative-grading.png)
+-
+-*Split-screen comparative grading.*
+-
+----
+-
+-## Co-grading & Moderation
+-
+-**Access:** from a graded submission → send for second marking · Moderation queue: Assessments → Moderation
+-
+-- Send a graded submission to a colleague for an independent second marking (reuses the peer-review screen and math, teacher-to-teacher).
+-- Disputes above a configurable point threshold surface in the **Moderation queue** with a per-criterion delta breakdown and a keep/accept resolution. The sidebar shows a pending-dispute count; the queue sorts oldest-first with a days-pending badge.
+-
+-![Moderation queue with per-criterion delta breakdown](images/moderation-queue.png)
+-
+-*Moderation queue with per-criterion delta breakdown.*
+-
+----
+-
+-## Tests, Practice & Placement
+-
+-**Access:** Assessments → Tests
+-
+-Rubric Maker includes a full test engine separate from rubrics and essays: multiple question types, practice vs. assessment modes, adaptive placement testing, a live proctoring monitor, and a reusable question bank.
+-
+-→ **Full documentation:** [Tests & Practice](Tests-and-Practice)
+-
+----
+-
+-## Question Bank
+-
+-**Access:** Library → Question Bank
+-
+-Save any test question to a reusable bank (bookmark icon in the Test Builder), then insert it into other tests. Bank items carry a structured CEFR level and optional tags; whole reading/listening passages (content, audio, and questions) can be bundled as one reusable **section** item. Import a set of questions from JSON (a downloadable sample shows the shape), export the bank as JSON for backup or sharing, and bulk-manage items (delete, tag, CEFR level) from the bank page.
+-
+-→ **Full documentation:** [Tests & Practice](Tests-and-Practice)
+-
+----
+-
+-## Flashcards
+-
+-**Access:** Assessments → Flashcards
+-
+-Anki-style flashcard decks scheduled with the **FSRS spaced-repetition algorithm**:
+-
+-- **Deck types:** Vocabulary or Grammar. Grammar decks tag each card with a grammar item, feeding the grammar practice recommendations on learning paths.
+-- **Cards:** front/back, optional phonetic (IPA) and part-of-speech fields; import from `.csv`, `.xlsx`, `.docx`, or `.txt` (`.xls` is not supported — save as `.xlsx`/CSV).
+-- **Assignment:** assign a deck to a class; students study it in their portal with Again/Hard/Good/Easy ratings.
+-- **Insights:** per-student progress by learning stage, focus items ranked by lapses/difficulty.
+-- Students can also create their **own decks** (private by default, optionally shared read-only with their teacher).
+-
+-→ **Full documentation:** [Flashcards](Flashcards)
+-
+----
+-
+-## News Flashes
+-
+-**Access:** Assessments → News Flashes
+-
+-Write short articles (rich-text editor) with a summary teaser, optional CEFR level, tags, and an optional link to an existing flashcard deck, test, or rubric. Flashes broadcast to every student of the creating teacher and appear as a chronological timeline in the student portal with an unread badge. The teacher-side list shows a **read-receipt count** per flash with an expandable list of who has read it.
+-
+-![News Flashes list with read-receipt counts](images/news-flashes.png)
+-
+-*News Flashes list with read-receipt counts.*
+-
+----
+-
+-## Marketplace & Department Sharing
+-
+-**Access:** Assessments → Marketplace (requires cloud sync and a school)
+-
+-- **Marketplace:** publish a rubric, test, flashcard deck, or question-bank item for colleagues at your school to browse, clone, and upvote — filterable by type.
+-- **Department sharing:** mark a rubric or comment-bank item read-only-visible to every teacher in your school with one toggle. Unlike the Marketplace, this shares the **live** rubric, not a cloned snapshot.
+-
+----
+-
+-## Student Management
+-
+-**Access:** Students
+-
+-- Add students individually or import a class list from **CSV** (re-importing updates existing students by email; optional "remove students not in this file" mode keeps the roster in lockstep with an SIS export).
+-- Organise students into **classes** with a Dutch school year (groep 7/8, jaar 1–6) and **VO track** (VMBO-BB/KB/TL, HAVO, VWO — groep 7/8 classes have no track). A student's own track can differ from their class default by at most one adjacent level.
+-- Classes can carry a **custom color or picture** for fast visual scanning.
+-- View a student's full grading history on their **profile page**, which links to their CEFR overview, learning path, vocabulary, and flashcard data. The **Portfolio** tab is a chronological timeline of rubric grades, speaking sessions and self-assessments, each linking to the full record.
+-- Per-student options include a **read-aloud accommodation** for tests and a student password (set or reset by the teacher when school mail filters block sign-in codes).
+-- Generate **share codes and QR codes** for student-facing features (self-assessment, essay submission, feedback, test links).
+-
+-![Students roster with class tabs](images/students-roster.png)
+-
+-*Students roster with class tabs.*
+-
+-![Student profile with history, CEFR badges, and links](images/student-profile.png)
+-
+-*Student profile: history, CEFR badges, links.*
+-
+----
+-
+-## Essay Management
+-
+-**Access:** Assessments → Essays
+-
+-A standalone essay workspace parallel to Tests:
+-
+-- **Builder:** prompt (rich-text), optional CEFR-linked rubric, word/time limits, assignment to a class, per-student share links, submission-code import, and a live monitor link.
+-- **Student side:** anonymous share-code submission with a distraction-free **focus mode** (exit control, draft-saved badge, sidebar with prompt/tips). With Supabase connected, essays hand in automatically; the code is the fallback for local mode.
+-- **Import:** paste a submission code to pull the essay from the database, or import essay text from an uploaded DOCX/PDF.
+-- **Exports:** from the Export page, export one or several essays as Markdown, DOCX, or PDF — separate files or combined — optionally with the rubric grade and grammar/vocabulary analysis attached.
+-- **Calendar:** due dates export as `.ics` so they land in a shared calendar.
+-
+-### Document analysis
+-
+-When a graded submission has an essay attachment, an **Analyse Document** button appears in the grading interface. It runs the built-in NLP pipeline (no AI):
+-
+-- **Vocabulary highlighting** — target vocabulary items highlighted inline
+-- **Grammar flagging** — common errors flagged with suggestions
+-- **Comment bank insertion** — detected vocabulary items added to the bank in one click
+-- **Writing statistics** — word and sentence counts, average sentence length and its variance, transition words by type, Flesch-Kincaid grade and Reading Ease
+-- **Grammar range** — constructions used (tenses, passive, relative clauses, conditionals…) banded by CEFR-J level, with the typical and highest level reached. This needs the English UD parser model, which is **not bundled** (it is CC BY-NC-SA, non-commercial): self-hosters download it once into `public/models/` (see the README there); without it the panel stays hidden. With the model present, more rubric-linked grammar structures are checked automatically.
+-
+-Results persist with the grade. Everything runs in the browser and is rule-based; treat the grammar range as an indicator, not a grade.
+-
+-### Writing trends
+-
+-On a student's profile (Overview tab) and on the Statistics page for a class, each rubric criterion is followed across the student's graded, handed-in essays, and criteria that are persistently weak (last three essays all at or below 60%) or declining are flagged.
++| Area | In one sentence | Details |
++|---|---|---|
++| **Exporting** | PDF, Word (with your own template), CSV, gradebook presets, calendar files and backups. | [Exporting](Exporting) |
++| **Sharing & co-teaching** | Share rubrics, tests and folders; co-teach a class; publish to the marketplace. | [Sharing & Co-teaching](Sharing-and-Co-teaching) |
++| **Student portal** | What students see and do. | [Student Portal](Student-Portal) |
+ 
+ ---
+ 
+@@ -349,86 +65,54 @@ Structured oral assessment with six pre-built dimensions aligned to Dutch VO CEF
+ 
+ ---
+ 
+-## CEFR & Language Assessment
+-
+-**Access:** Students → CEFR Overview (whole class) · a student's profile → CEFR
+-
+-- **CEFR overview:** per-student and whole-class proficiency across Reading, Writing, Speaking, and Listening. A track/year **expected-range band** (per-track, per-school-year Dutch curriculum benchmarks) shows a student's level as ahead, on track, or behind for their specific class year and VO track.
+-- **Standard mastery targets:** set an expected mastery percentage for a linked standard (CCSS, NGSS, Dutch kerndoelen, or custom) per school year/VO track from **Settings → Teaching**; surfaces the same ahead/on-track/behind status on learning-goal views.
+-- **Learning paths & interventions:** rule-based (no AI) rubric recommendations for CEFR skills where a student trails the class average, plus flags for three or more consecutive low scores on the same criterion or skill — from each student's profile. A separate **Grammar practice** section suggests a matching flashcard deck and practice test after repeated low scores on grammar-linked items.
+-- **Grammar Mastery Profile:** one row per grammar item merging evidence from test accuracy, flashcard spaced-repetition progress, and rubric criteria linked to that grammar point.
+-- **Placement testing:** author a placement test (Test Builder → Mode: Placement) with multistage, staircase, or generator engines — see [Tests & Practice](Tests-and-Practice).
++## Student Management
+ 
+-![Whole-class CEFR overview grid](images/cefr-overview.png)
++**Access:** Students
+ 
+-*Whole-class CEFR overview grid.*
++- Add students one at a time or import a class list from CSV (re-importing updates existing students by email).
++- Organise students into **classes** with a Dutch school year (groep 7/8, jaar 1–6) and **VO track** (VMBO-BB/KB/TL, HAVO, VWO).
++- Open a student's **profile** for grading history, CEFR overview, learning path, vocabulary, flashcards and a chronological **Portfolio**.
++- Per-student options: **read-aloud accommodation** for tests, and a password for sign-in (when school mail filters block sign-in codes).
++- Create **share codes and QR codes** for student-facing activities.
++![Students roster with class tabs](images/students-roster.png)
+ 
+-![Per-student CEFR detail with track/year band](images/student-cefr-detail.png)
++*Students roster with class tabs.*
+ 
+-*Per-student CEFR detail with track/year band.*
++![Student profile with history, CEFR badges, and links](images/student-profile.png)
+ 
+-![Student learning path with recommendations](images/learning-path.png)
++*Student profile: history, CEFR badges, links.*
+ 
+-*Student learning path with recommendations.*
+ 
+ ---
+ 
+-## Vocabulary Profiling Dashboard
++## News Flashes
+ 
+-**Access:** Students → Vocabulary
++**Access:** Assessments → News Flashes
+ 
+-Aggregates document-analysis data across a class or student into **CEFR-banded vocabulary distribution charts** (A1 → C2 stacked bars), backed by a bundled, validated 64k-word CEFR index, plus an estimated CEFR **reading level** and **academic vocabulary** coverage against the AWL (Coxhead) and NAWL. Export the filtered word list to CSV. All matching is rule-based and offline.
++Short articles (with optional CEFR level, tags and a link to a deck, test or rubric) broadcast to all your students' portals, with read receipts.
++![News Flashes list with read-receipt counts](images/news-flashes.png)
++
++*News Flashes list with read-receipt counts.*
+ 
+-**Text screening** (*Is this text right for my class?*): paste a text or upload a PDF, Word, plain-text or image file to see its estimated CEFR level, which words sit above the class's target level, and seed a pre-teaching flashcard deck from them. Definitions come from a bundled WordNet pack first; only words it can't answer go to the free Dictionary API, and optional translations to MyMemory (no key; only the word is sent).
+ 
+ ---
+ 
+ ## Statistics & Analytics
+ 
+-**Access:** Insights → Statistics
+-
+-### Overview
+-
+-- Class average, median, highest, and lowest scores (raw points or percentage depending on the scoring mode).
+-- A **Custom Views** gallery offers curated chart combinations you can show/hide and recolour, each exportable as PNG.
+-
+-### Charts
+-
+-| Chart | What it shows |
+-|---|---|
+-| Score histogram | Distribution of grades across the class |
+-| Criterion heatmap | Which criteria students perform best and worst on |
+-| Criterion radar | Per-criterion performance on a radar/spider chart |
+-| CEFR progress | How many students are at each CEFR level |
+-| Class trend | Average score over time across grading sessions |
+-| Learning goal chart | Aggregate attainment per learning goal |
+-| Placement progress | Estimated CEFR level across placement attempts (Elo-scaled, student view) |
+-
+-All charts update in real time as grading data changes.
+-
+-![Statistics dashboard with class average card and charts](images/statistics-dashboard.png)
+-
+-*Statistics: class average card and charts.*
+-
+-### Multi-class comparison
+-
+-The **Compare** view lets you select up to 4 classes on the same rubric: grouped average bars, a per-criterion gap chart, and a multi-class trend line. A collapsible **Insights** panel flags a struggling class (<55% avg), a weak criterion (≥15 pp below the class average), or the largest inter-class divergence (≥20 pp gap). Track (VMBO/HAVO/VWO) and school-year dropdowns filter the class selector.
++**Access:** Insights → Statistics · Insights → Activity Dashboard
+ 
++- Class average, median, highest and lowest; score histogram, criterion heatmap and radar, CEFR progress, class trend, learning-goal chart and placement progress.
++- **Compare** up to four classes on one rubric, with an insights panel that flags a struggling class or weak criterion.
++- **Activity Dashboard:** a grid of what has been assigned and submitted per class, with quick actions.
++- **Vocabulary profiling:** see [CEFR, Mastery & Learning Paths](CEFR-and-Learning-Paths#vocabulary-profiling-dashboard).
+ ![Multi-class Compare view with insights panel](images/statistics-compare.png)
+ 
+ *Multi-class Compare view with insights panel.*
+ 
+----
+ 
+-## Activity Dashboard
+-
+-**Access:** Insights → Activity Dashboard
+-
+-A single grid tracking what's been assigned and submitted across a whole cohort:
++![Statistics dashboard with class average card and charts](images/statistics-dashboard.png)
+ 
+-- Rows grouped by activity type (Rubrics / Tests / Essays); columns are classes, filtered by school year and track.
+-- Each cell shows a `submitted/total` count badge.
+-- Act directly from the grid: link/unlink a rubric to a class, bulk-assign an essay to everyone not yet enrolled, assign ungraded students to a colleague, or jump into a test's builder. Rows can be drag-reordered (per teacher, persists).
++*Statistics: class average card and charts.*
+ 
+ ![Activity Dashboard grid](images/activity-dashboard.png)
+ 
+@@ -436,14 +120,11 @@ A single grid tracking what's been assigned and submitted across a whole cohort:
+ 
+ ---
+ 
+-## Messages & Notification Center
+-
+-**Access:** Students → Messages (inbox) · Topbar bell → Notifications
++## Messages & Notifications
+ 
+-- **Messages:** portal-authenticated students can ask a question about a rubric grade, test, essay, or anything else; teachers reply from the Messages inbox or start threads themselves. Requires Supabase.
+-- **Notification Center:** the bell shows overdue grading, unread messages, and pending moderation reviews; `/notifications` has the full, filterable history. Dismissing an overdue-grading or moderation item snoozes it and syncs across devices; unread messages can only be cleared by reading them.
+-- **Email digests:** each of the three categories has its own opt-in nightly digest (**Settings → Administration → Email Digest**, self-hosted deployments only — needs the server-side digest job and SMTP).
++**Access:** Students → Messages · the bell in the top bar
+ 
++Students (signed in to the portal) can ask questions about a grade, test or essay; you reply from the inbox. The notification centre shows overdue grading, unread messages and pending moderation. Optional nightly email digests exist on self-hosted deployments.
+ ![Messages inbox with a student thread](images/messages-inbox.png)
+ 
+ *Messages inbox with a student thread.*
+@@ -452,156 +133,38 @@ A single grid tracking what's been assigned and submitted across a whole cohort:
+ 
+ *Notification Center with the three categories.*
+ 
+----
+-
+-## Export
+-
+-**Access:** Insights → Export (or from within a graded rubric)
+-
+-| Format | Content |
+-|---|---|
+-| **PDF** | Formatted student report with rubric grid, scores, and feedback — one student or the whole class (printed through the browser's *Save as PDF*) |
+-| **Period report / report card** | One DOCX per student for a date range; the report card adds toggleable sections (rubric grades, standards coverage, learning goals, CEFR overview, test summary) and a grade-trend chart, and can batch-export a file per student |
+-| **Word (.docx)** | Raw rubric data; or upload a custom `.docx` template with mail-merge fields for a branded report |
+-| **CSV** | Flat table of scores per student per criterion, for Excel or a gradebook; test results add points, max points, grade and status |
+-| **Markdown** | Essay content export (separate or combined files) |
+-| **JSON backup** | Full export of all app data (rubrics, students, grades, comments, settings) |
+-| **Gradebook presets** | Magister / SOMtoday column formats |
+-| **Calendar** | Essay and test due dates as `.ics` |
+-
+-**Word mail-merge templates:** upload a `.docx` with placeholders like `{{studentName}}`, `{{totalScore}}`, `{{criterion_1}}`; the engine fills them per student. A sample template is at `public/sample-template.docx`. **Style templates** can also set heading/body fonts and colours for essay and period-report exports.
+-
+-**Printing directly:** **Print Rubric** triggers `window.print()` — a `@media print` stylesheet hides chrome, enforces page-break rules, and applies portrait/landscape from the rubric's format setting.
+-
+-![Export page with format selection](images/export-page.png)
+-
+-*The Export page with format selection.*
+-
+----
+-
+-## Supabase Sync
+-
+-**Access:** Settings → Administration → Database → Connect & Sync
+-
+-An optional backend that mirrors your data to Supabase (PostgreSQL + Storage + Auth). Enables:
+-
+-- Syncing rubrics, students, and grades across devices
+-- Sharing rubrics/classes with colleagues (viewer or editor) plus the Marketplace and department sharing
+-- The **student portal** (self-assessment, essays, tests, flashcards, messaging)
+-- Storing attachments and templates in Supabase Storage, removing the localStorage size limit for files
+-
+-The app continues to work offline (with reduced capabilities) when Supabase is configured. See [Supabase Sync](Supabase-Sync) for full setup.
+-
+----
+-
+-## Privacy Page
+-
+-**Access:** Sidebar → Privacy (shield icon) or `/privacy`
+-
+-An in-app GDPR/AVG page covering all data categories and where they're stored, the legal basis for processing student data, and rights (erasure, portability), plus contact info for the Dutch supervisory authority (Autoriteit Persoonsgegevens).
+-
+-![The in-app privacy page](images/privacy-page.png)
+-
+-*The in-app /privacy page.*
+-
+----
+-
+-## Backup & Restore
+-
+-**Access:** Settings → Teaching (export backup, teachers) · Settings → Administration (export and import, admins)
+-
+-- **Export backup:** downloads `rubric-maker-backup.json` containing all rubrics, students, grades, comment bank, question bank, and settings.
+-- **Import backup:** upload a previously exported JSON file to restore (this **overwrites** existing data — export first; a preview modal shows a summary of the file, including which settings would change, before applying).
+-- Running your own server? Server-side backups are covered in [HestiaCP Maintenance](HestiaCP-Maintenance).
+ 
+ ---
+ 
+-## Themes & Appearance
+-
+-**Access:** Settings → General
+-
+-### Theme bundles
+-
+-One-click bundles that set accent color, UI font, and export styling together (single atomic update; overriding the accent afterwards clears the bundle):
+-
+-| Bundle | Accent | UI font | Export style |
+-|---|---|---|---|
+-| **Academy** | Blue | Inter | Calibri, blue headers |
+-| **Nature** | Green | Nunito | Calibri, green headers |
+-| **Midnight** | Indigo | Source Sans 3 | Calibri |
+-| **Warm** | Orange | Lato | Calibri, orange headers |
+-| **Slate** | Teal | Roboto | Calibri, teal headers |
+-| **Rose** | Rose | Inter | Calibri, rose headers |
++## Settings, accessibility & admin
+ 
++- **Themes & appearance** (Settings → General): six theme bundles, light/dark, a dyslexia-friendly reading mode, five languages (EN, NL, FR, DE, ES). Fonts are bundled — nothing calls out to Google Fonts.
++- **Cambridge exam labels** (Settings → General): shows e.g. "B2 · FCE" beside CEFR badges.
+ ![Theme bundle picker](images/settings-theme-bundles.png)
+ 
+ *Theme bundle picker.*
+ 
+-### Tonal accent scale
+-
+-The active accent generates a full tonal scale (`--accent-50` … `--accent-900`) via CSS `color-mix()`, driving hovers, badges, charts, and borders consistently in light and dark mode.
+-
+-### Export fonts & reading mode
+-
+-Five decorative fonts (Playfair Display, Oswald, Bebas Neue, Special Elite, Courier Prime) are available for PDF/DOCX exports via the rubric's **Format** tab, with a live preview. All fonts are bundled with the app, so no page or print calls out to Google Fonts. A **dyslexia-friendly reading mode** and light/dark themes round out the appearance options.
+-
+-**Language:** English, Dutch, French, German or Spanish, or **Automatic** to follow the browser language. Students have the same picker in the portal header.
+-
+ ![Settings → General with language, theme, and Cambridge labels](images/settings-general.png)
+ 
+ *Settings → General (language, theme, Cambridge labels).*
+ 
+----
+-
+-## PWA & Offline
+-
+-Rubric Maker is an installable **PWA**: open it in a browser, choose "Install app" (on iPhone/iPad: Share → *Add to Home Screen*), and it runs like a desktop app with an offline-capable service worker. While data loads, pages show page-shaped placeholders instead of a spinner. Without Supabase, everything still works from `localStorage` (single device); with Supabase, the service worker never caches API requests so a cached response can't mask a failed sync.
+-
+----
+-
+-## Admin Dashboard
+-
+-**Access:** Main menu → Admin (admin role required; Settings → Administration for admins too)
+-
+-| Tab | What it does |
+-|---|---|
+-| **Users** | Manage user accounts and roles |
+-| **Schools** | School records used by the marketplace and department sharing |
+-| **Database** | Supabase connection, **Push local → database**, **Pull database → local**, sharing management |
+-| **Integrations** | Standards API key (Common Standards Project) with CORS setup instructions |
+-| **Data** | Search students and permanently delete or **anonymize** (scrub PII from) individual records |
+-| **Retention** | Data-retention configuration (see below) |
+-| **Audit** | Searchable, category-filterable log of role changes, deletions, grade saves, rubric edits, exports, and auth events, with CSV export (backed by the `audit_logs` table + `pg_cron` retention job) |
+-| **Archive** | Archived students can be **restored**, **anonymized** (PII scrubbed, aggregate grade history kept) or **erased permanently** (student and everything linked, from the device and the database; earlier backups are not affected). Also lists **Recently deleted grades** for restoring |
+-
+-**Roles:** `teacher` (renamed from `user`), `admin`, and `student`, enforced via Supabase RLS. The last admin can't be demoted from the app; if no admin can sign in, an operator restores one in the database (see *Admin recovery* in `docs/SELF_HOSTING_OPS.md`).
+-
+-**Sign-in options:** Google, Microsoft (personal or school account) and an emailed one-time code; admins choose which buttons appear via the `auth_providers` setting.
+-
+-**Roster sync:** CSV upsert updates existing students by email on re-import; an optional "remove students not in this file" mode keeps a class roster in lockstep with a school's SIS export.
+-
+----
+-
+-## Accessibility
+-
+-Rubric Maker targets **WCAG 2.1 AAA** contrast where physically possible (button/large-text contrast uses the 4.5:1 bar; link/body text targets 7:1). `src/utils/contrastCheck.ts` audits every theme bundle, accent preset, and CEFR badge color in the unit tests.
++- **Accessibility:** targets WCAG 2.1 AA (AAA contrast where physically possible) with an automated axe-core gate in CI, full keyboard use of the Rubric Builder, skip link, focus management, screen-reader labels, and read-aloud for feedback.
++- **PWA & offline:** installable; without Supabase it runs from the browser's storage on one device.
++- **Backup & restore:** Settings → Teaching → export/import JSON — details in [Exporting](Exporting#backup--restore).
++- **Admin dashboard** (admin role): Users, Schools, Database, Integrations, Data, Retention, Audit and Archive tabs. Roles are `teacher`, `admin` and `student`. Details: [Admin Dashboard](Admin-Dashboard), [Supabase Sync](Supabase-Sync) and [Data & Privacy](Data-and-Privacy).
++- **Privacy page:** in the app at `/privacy`.
++![The in-app privacy page](images/privacy-page.png)
+ 
+-- **Automated gate:** CI runs axe-core (WCAG 2.0/2.1/2.2 A + AA and best practices) against every route in light and dark mode and fails on new serious or critical violations; remaining known issues are tracked in a baseline file until fixed.
+-- **Keyboard:** full keyboard dragging in the Rubric Builder, a global `:focus-visible` outline, and a translated skip-to-content link.
+-- **Focus management:** modals trap focus and restore it to the triggering element on close.
+-- **Screen readers:** drag handles and proctoring flags carry translatable `aria-label`s, the page `lang` follows the chosen interface language, and English test/essay content is marked as English so it is read with the right voice.
+-- **Reading support:** a dyslexia-friendly display mode, **Read aloud** buttons on every piece of teacher feedback in the portal and on shared feedback links (browser voice, works offline), and a per-student read-aloud accommodation for tests.
++*The in-app /privacy page.*
+ 
+----
+ 
+ ## Help & Page Tours
+ 
+-- **"Tour this page"** — an interactive Joyride walkthrough is available on most major pages (Rubric Builder, Export, Statistics, Grading, Comparative Grading, Essays, Tests, Activity Dashboard, CEFR Overview, Speaking, Student Profile, Students, and more).
+-- **Contextual tooltips** — a hover/click help icon (`HelpPopover`) next to less-obvious controls, including the score modifier, the LWW sync indicator (Admin → Database), and proctoring flags on Test Results / Live Monitor.
+-- **In-app Docs page** — the sidebar question-mark icon opens the Docs page with a route map, glossary, and keyboard-shortcut reference.
+-- **Search** — `Ctrl/Cmd+K` (or the Topbar search icon) searches rubrics, tests, students, classes and essays at once. Narrow with `type:test`, `class:5A`, `year:jaar-3` or `track:havo`; typing a student's and a rubric's name together jumps straight to that grading page. The Topbar class selector sets an **active class** that the Dashboard, Students, Rubrics, Tests and Statistics pages follow. Students get their own search in the portal.
+-- All tour and tooltip text is translated across all 5 locales.
++- **Tour this page** — an interactive walkthrough on most major pages.
++- **Help icons** next to less obvious controls.
++- **Docs page** — the sidebar question-mark icon: route map, glossary and shortcuts.
++- **Search** — `Ctrl/Cmd+K` searches rubrics, tests, students, classes and essays. Narrow with `type:test`, `class:5A`, `year:jaar-3` or `track:havo`.
+ 
+ ---
+ 
+-*Something missing or out of date? This wiki is verified against the `main` branch of the repository — check the [Contributing](Contributing) page for how to report issues.*
++*Something missing or out of date? See [Contributing](Contributing) for how to report it.*
+diff --git a/Flashcards.md b/Flashcards.md
+index 4297c6c..ee51431 100644
+--- a/Flashcards.md
++++ b/Flashcards.md
+@@ -98,4 +98,4 @@ Students can create their **own decks** from the portal's **My own decks** secti
+ 
+ ## Grammar decks & learning paths
+ 
+-A grammar deck's cards reference grammar items, so repeated low scores on a grammar-linked criterion or question can auto-recommend the matching grammar deck (and a matching grammar practice test) on the student's learning path — see [Features](Features) → CEFR & Language Assessment.
++A grammar deck's cards reference grammar items, so repeated low scores on a grammar-linked criterion or question can auto-recommend the matching grammar deck (and a matching grammar practice test) on the student's learning path — see [CEFR, Mastery & Learning Paths](CEFR-and-Learning-Paths).
+diff --git a/Grading.md b/Grading.md
+new file mode 100644
+index 0000000..12b300b
+--- /dev/null
++++ b/Grading.md
+@@ -0,0 +1,117 @@
++# Grading
++
++> Grading with a rubric: scoring, comments, voice, attachments, groups, comparative grading and moderation.  
++> Short overview: [Features](Features).
++
++---
++
++## Grading Interface
++
++**Access:** Rubrics list → select a rubric → *Grade* (pick a student)
++
++### Student selection
++
++Pick a student from the class roster before grading. Manage students from the **Students** page; you can also select **two or more students to grade as a group** (see [Group grading](#group-grading) below).
++
++### Scoring interactions
++
++- **Click a level cell** to select it as the student's score for that criterion.
++- **Toggle sub-item checkboxes** to score checklist items within a level.
++- **Drag the slider** (point-range levels) to set an exact score.
++- **Card or grid layout:** toggle between the stacked criterion cards and a compact **criterion × level grid** (multi-level rubrics). In the grid, selecting a cell opens a per-criterion detail panel with a fine-tune points slider, sub-item chips, a manual override, and the comment composer. Single-point rubrics keep the card layout.
++- **Score modifiers:** apply a percentage, point, or level adjustment with a reason (e.g. late penalty) — the reason is stored with the grade.
++
++![Grading interface with level cells, sub-item chips, and feedback composer](images/grading-interface.png)
++
++*Grading with level cells, sub-item chips, and the feedback composer.*
++
++![Criterion × level grid layout](images/grading-grid-layout.png)
++
++*The criterion × level grid layout (multi-level rubrics).*
++
++![Single-point rubric layout during grading](images/grading-single-point.png)
++
++*Single-point rubric layout during grading.*
++
++### Keyboard shortcuts
++
++| Shortcut | Action |
++|---|---|
++| `1` – `5` | Select a performance level for the focused criterion |
++| `A`–`Z` then `1`–`5` | Jump straight to a criterion's level (e.g. `B` + `2`) |
++| `Tab` / `Shift+Tab` | Move focus between criteria |
++| `Ctrl+S` | Save and advance to the next student |
++| `?` | Open the shortcut cheat-sheet overlay |
++
++![Keyboard-shortcut cheat-sheet overlay](images/keyboard-shortcuts.png)
++
++*The `?` cheat-sheet overlay.*
++
++### Comment bank
++
++Pre-write feedback snippets and tag them by criterion, topic, or CEFR skill/level. While grading, open the bank and click a snippet to insert it into the feedback field. When a criterion has a run of low scores, the bank opens with a **Suggested** group of comments tagged with that criterion's CEFR skill or level. Insertions are counted, so the Comment Bank page's *Sort* control can surface your most-used comments first.
++
++![Comment bank open during grading](images/comment-bank-modal.png)
++
++*Comment bank open during grading.*
++
++### Voice grading
++
++Click the microphone button in the feedback field to dictate feedback by voice. Uses the browser's built-in Speech Recognition API (Chrome or Edge).
++
++### Attachments & document viewing
++
++Attach a student's work to the graded rubric:
++
++- **Word documents (.docx)** — rendered inline (Mammoth → formatted view, with a "view as sent" toggle to the original rendering)
++- **PDFs** — rendered inline via PDF.js; text layer searchable
++- **Images** — displayed directly; scanned images without a text layer go through Tesseract.js OCR
++
++Select any text in the document view to leave an **inline document comment** (anchored note with resolve/delete), shown in a sidebar below the document. Commenting is grading-side only and never modifies the submission.
++
++### Scan handwritten work
++
++In a criterion's feedback panel, **Scan handwriting** photographs a paper answer (or imports a photo or scanned PDF), recognises the text on your device with Tesseract.js, highlights the least-confident words for you to correct, and inserts the result into your feedback. Nothing is uploaded and the image isn't stored. The recognition engine and language data are downloaded once from `cdn.jsdelivr.net` on the first scan, so that first scan needs internet access (ask IT to allow the site if the school network blocks it). For paper tests, see *Scan answer sheet* in [Tests & Practice](Tests-and-Practice#paper-and-offline-submissions).
++
++### Overall feedback
++
++Below the rubric grid, add a general comment for the whole submission. It appears on the exported PDF report.
++
++### Deleting a grade
++
++**Delete grade** in the settings-cog menu of a grading page removes the grade after a confirmation; for a group grade you choose between this student's copy and the whole group. Deleted grades can be restored from **Admin → Archive → Recently deleted grades**.
++
++### Phones and tablets
++
++On phones and iPad portrait the grading view is touch-optimised: point-range and sub-item sliders gain a **− / +** stepper, level cards and score pickers have larger tap targets, and the Save bar stays pinned to the bottom of the screen. Swiping left on an empty part of the page offers to save and move to the next student (swipes starting on a slider, stepper, text field or scrollable table never count). Comparative grading stacks into one column.
++
++### Group grading
++
++**Access:** Rubrics list → select a rubric → pick 2+ students → grade
++
++Saving any group member's grade fans scores and comments out to the rest of the group (each student keeps their own record). In the Rubric Builder, individual criteria can be excluded from the fan-out with a per-criterion **"Group grading"** toggle — so a mixed rubric (shared project score + individual participation criterion) grades correctly.
++
++![Group-grading student multi-select](images/group-grading-selector.png)
++
++*The group-grading student multi-select on the Rubrics list.*
++
++## Comparative Grading
++
++**Access:** Rubrics list → select a rubric → *Compare*
++
++Grade two students side-by-side in a split-screen view — useful for calibrating scoring consistency. On phones/small tablets the split view reflows to a single stacked column.
++
++![Split-screen comparative grading](images/comparative-grading.png)
++
++*Split-screen comparative grading.*
++
++## Co-grading & Moderation
++
++**Access:** from a graded submission → send for second marking · Moderation queue: Assessments → Moderation
++
++- Send a graded submission to a colleague for an independent second marking (reuses the peer-review screen and math, teacher-to-teacher).
++- Disputes above a configurable point threshold surface in the **Moderation queue** with a per-criterion delta breakdown and a keep/accept resolution. The sidebar shows a pending-dispute count; the queue sorts oldest-first with a days-pending badge.
++
++![Moderation queue with per-criterion delta breakdown](images/moderation-queue.png)
++
++*Moderation queue with per-criterion delta breakdown.*
+diff --git a/Home.md b/Home.md
+index 4f4a6a3..9178a6a 100644
+--- a/Home.md
++++ b/Home.md
+@@ -6,7 +6,7 @@ Welcome to the Rubric Maker documentation. Use the sidebar to navigate, or jump
+ 
+ Rubric Maker is a **web application for educators** that lets you:
+ 
+-- **Design rubrics** with flexible criteria, scoring modes (total points, weighted, single-point), CEFR levels, IB Learner Profile attributes, and Bloom's Taxonomy.
++- **Design rubrics** with criteria and levels, three scoring modes, and CEFR, IB or Bloom links.
+ - **Grade interactively** with a comment bank, voice input, keyboard shortcuts, group grading, and a live attachment/document viewer with OCR.
+ - **Build tests and practice sets** — multiple-choice, cloze, hot-text, matching, audio-response and more, with adaptive placement testing and a live proctoring monitor.
+ - **Manage students** in classes with Dutch school years and VO tracks, plus a student portal for self-assessment, essays, tests, flashcards, and messaging.
+@@ -34,8 +34,15 @@ No account is required to start. The app runs fully in the browser and stores da
+ | [Development Guide](Development-Guide) | Dev server, scripts, testing, and linting |
+ | [Deployment](Deployment) | GitHub Pages, Docker, VPS/self-hosted, Vercel/Netlify |
+ | [HestiaCP Maintenance](HestiaCP-Maintenance) | Updating a HestiaCP VPS install, ops scripts, backups, and recommended cron jobs |
+-| [Features](Features) | Full feature reference for educators |
+-| [Tests & Practice](Tests-and-Practice) | Test builder, question types, practice & placement modes, live monitor, question bank |
++| [Features](Features) | Short tour of every area, with links to detailed articles |
++| [Tests & Practice](Tests-and-Practice) | Test builder, practice & placement modes, live monitor, question bank |
++| [Question types](Question-Types) | One article per question type: how to build it and how it is scored |
++| [Placement testing](Placement-Testing) | How the staircase, multistage and generator engines work |
++| [Rubric Builder](Rubric-Builder) · [Grading](Grading) | Detailed articles on designing rubrics and grading |
++| [Essays & Document Analysis](Writing-and-Document-Analysis) · [Live Writing Sessions](Live-Writing-Sessions) | Writing tasks and in-class writing sprints |
++| [CEFR, Mastery & Learning Paths](CEFR-and-Learning-Paths) | Levels, mastery, vocabulary profiling, recommendations |
++| [Exporting](Exporting) · [Sharing & Co-teaching](Sharing-and-Co-teaching) · [Admin Dashboard](Admin-Dashboard) | Reports and backups, sharing with colleagues, admin tools |
++| [Research Agenda](Research-Agenda) | Open educational and didactic questions still to research |
+ | [Flashcards](Flashcards) | Anki-style decks, FSRS scheduling, learner insights |
+ | [Student Portal](Student-Portal) | What students can see and do (self-assessment, essays, tests, flashcards, messages) |
+ | [Architecture](Architecture) | Project structure, data flow, and tech stack |
+@@ -45,7 +52,6 @@ No account is required to start. The app runs fully in the browser and stores da
+ | [Screenshots](Screenshots) | Central checklist of every screenshot used in this wiki |
+ | [Manual Capture](Manual-Capture) | Step-by-step instructions for the 13 screenshots that need a human or live services |
+ | [Contributing](Contributing) | How to contribute code or translations |
+-| Roadmap | Tracked in [GitHub issues](https://github.com/NesiciCoding/RubricMaker/issues) and the [project board](https://github.com/NesiciCoding/RubricMaker/projects) |
+ | [FAQ](FAQ) | Frequently asked questions |
+ 
+ ## Repository & live app
+diff --git a/Live-Writing-Sessions.md b/Live-Writing-Sessions.md
+new file mode 100644
+index 0000000..744c3ac
+--- /dev/null
++++ b/Live-Writing-Sessions.md
+@@ -0,0 +1,26 @@
++# Live Writing Sessions
++
++> A timed, whole-class writing sprint: students join with a code, pick their name, write against a shared timer, then self-check and vote on anonymous texts. No accounts and no AI.
++
++**Access:** Live writing (sidebar) → `/live`. Needs cloud sync (Supabase).
++
++## The loop
++
++1. **Set up** — write a prompt, choose the class, minutes per round, number of rounds (default 1, up to 3), and optional minimum/maximum words. Optionally switch on teacher-written hints, the leaderboard, and *lock joining after start*.
++2. **Open the lobby** — a join page shows a code and QR code for the projector. Students enter the code and choose their own name from the class list (or join from the portal, which skips the name picker).
++3. **Write** — students write in a focus-style editor with the prompt, timer and live word count. The projector shows the timer and progress.
++4. **Reflect** — at time-up the text is handed in automatically. Students self-evaluate (three emoji options) and, if enabled, read two anonymous texts and vote for the better one.
++5. **Finals** — anonymous finalists appear on the projector; the teacher can reveal names.
++
++A session moves through the stages *draft → lobby → writing → voting → finals → closed*.
++
++## Why it fits the classroom
++
++Because students join through the roster, the writing is linked to the real student record and can flow into your normal grading — it is not throwaway text.
++
++## Notes
++
++- A vocabulary-based CEFR estimate is shown as an **early indicator** only. It is never added to CEFR leveling and never graded.
++- The teacher monitor has since gained extras (triage strip, nudge presets, timeline, typed-vs-pasted signals, projector hand-off and session export). They are new, so check the in-app help for the current wording.
++- Draft snapshots are kept 30 days and then removed automatically.
++- Design decisions are recorded in `docs/PHASE_43_LIVE_WRITING_SESSION_PLAN.md` in the repository.
+diff --git a/Placement-Testing.md b/Placement-Testing.md
+new file mode 100644
+index 0000000..2da55ea
+--- /dev/null
++++ b/Placement-Testing.md
+@@ -0,0 +1,65 @@
++# Placement testing
++
++> Adaptive tests that estimate a student's CEFR level. Everything here is rule-based and deterministic — no AI, and no item-calibration data needed to start.
++
++[← Tests & Practice](Tests-and-Practice) · [Question types](Question-Types) · [Research Agenda](Research-Agenda)
++
++**Set up:** Assessments → Tests → Test Builder → **Mode: Placement**, then pick an engine.
++
++## Which engine?
++
++| Engine | You author | A student sees | Best when |
++|---|---|---|---|
++| **Multistage (MST)** | A routing section, then easy / medium / hard sections | One *section* at a time | You already have a fixed set of sections |
++| **Staircase** | Sections tagged with a CEFR level (each is a pool of questions) | One *question* at a time, no going back | You have a pool of questions per level |
++| **Generator** | Only a CEFR range, skills and min/max question count | One question at a time, pulled live from your [question bank](Tests-and-Practice#question-bank) | You keep a tagged question bank |
++
++All three end with a **provisional CEFR estimate** that feeds the student's CEFR overview and learning path until a real graded assessment replaces it.
++
++## How the staircase works
++
++The staircase is deliberately simple, so you can explain it to a student or a parent:
++
++1. The student starts at **A2**.
++2. **Two correct answers in a row** at a level → move **up** one level.
++3. **One wrong answer** → move **down** one level.
++4. A **reversal** is when the direction changes (up-then-down or down-then-up).
++5. After **two reversals** the run has *converged* and stops. A safety cap ends a run after **12 questions** so it cannot go on forever.
++6. The estimate is the **level the student is standing on when the run ends**.
++
++**Worked example.** A2 ✓ ✓ → B1 ✓ ✗ → A2 *(reversal 1: up then down)* ✓ ✓ → B1 ✗ → A2 *(reversal 2)* → stop. Estimate: **A2**.
++
++Notes:
++- Reversals only count when the level actually changes (a miss at A1 can't move down, so it is not a reversal).
++- A teacher **nudge** during a live run moves the level up or down for the next question and resets the "correct in a row" counter.
++- The generator engine uses the same stepping rule, but within your chosen CEFR range, and has its own min/max question count instead of the 12-question cap.
++- The step sizes (start at A2, 2-up, 1-down, 2 reversals, cap 12) are **fixed**, not configurable. They come from a classic up-down method, but nobody has yet checked how well they fit language-learner populations — see the [Research Agenda](Research-Agenda).
++
++## How multistage routing works
++
++Each stage has a **cut-off percentage**. Scoring at or above it sends the student to the "pass" section, otherwise to the "fail" section. The estimate is the **highest CEFR-tagged section on the path that the student passed** (a terminal section with no routing uses a 60% default). If nothing was passed, the lowest level on the path is used, so a struggling student still gets a starting estimate.
++
++## Elo ratings (question ordering)
++
++Within a level, which question is asked first is decided by an **Elo rating** per question:
++
++- Every question starts at **1200** unless you set one.
++- Each level has a fixed anchor: A1 600 · A2 900 · B1 1200 · B2 1500 · C1 1800 · C2 2100 (each level covers ±150 around its anchor).
++- After a submission, every asked question's rating is nudged (K-factor 24): a correct answer lowers the item's rating (it was easier than expected), a miss raises it. The update runs on the server so simultaneous submissions don't overwrite each other.
++- Elo ratings are **teacher-only**; students never see them. They only affect **which item in a level comes next** — the staircase still decides the level.
++
++## How sure is the estimate?
++
++The live monitor and results show a **confidence badge** that reads the run itself:
++
++| Badge | Meaning |
++|---|---|
++| Low | The student has only moved one way so far — the level is "where they were last pushed", not a bracketed level |
++| Medium | One reversal: the level is bracketed between two neighbours |
++| High | Two reversals: the run converged and the estimate stops moving |
++
++This badge describes how *settled* the run is. It is **not** a measured error or a validated accuracy figure. Treat a placement result as a starting point for a conversation, not a verdict. Collecting evidence on accuracy is on the [Research Agenda](Research-Agenda).
++
++## Rules enforced on the server
++
++When Supabase is connected, the server replays the student's path and rejects a forged or impossible one, and the generator picks questions on the server so the student's browser never receives the whole bank.
+diff --git a/Question-Type-Audio-response.md b/Question-Type-Audio-response.md
+new file mode 100644
+index 0000000..8f07316
+--- /dev/null
++++ b/Question-Type-Audio-response.md
+@@ -0,0 +1,26 @@
++# Audio-response
++
++> Students record a spoken answer in the browser.
++
++[← All question types](Question-Types) · [Tests & Practice](Tests-and-Practice)
++
++## Best for
++
++Speaking tasks and oral prompts.
++
++## How to build it
++
++- Set a recording cap. Optional **preparation time** with a visible cue card; recording starts automatically afterwards.
++- Optionally attach a rubric to score it per criterion.
++
++## How it is scored
++
++Manual. You play the recording back and grade it, with a rubric if attached.
++
++## Watch out for
++
++- Needs microphone permission. For fuller oral assessment, use [Speaking Sessions](Features#speaking-sessions).
++
++## Open research question
++
++*Reliability of speaking assessment and rater training.* — tracked in the [Research Agenda](Research-Agenda).
+diff --git a/Question-Type-Categorize.md b/Question-Type-Categorize.md
+new file mode 100644
+index 0000000..95dcb61
+--- /dev/null
++++ b/Question-Type-Categorize.md
+@@ -0,0 +1,25 @@
++# Categorize
++
++> Sort items into categories.
++
++[← All question types](Question-Types) · [Tests & Practice](Tests-and-Practice)
++
++## Best for
++
++Parts of speech, countries by region, fact vs. opinion.
++
++## How to build it
++
++- Define the categories and assign each item to its category.
++
++## How it is scored
++
++Automatic; each correctly placed item is a share of the points.
++
++## Watch out for
++
++- Ambiguous items (that fit two categories) will cause unfair marking — pre-test them.
++
++## Open research question
++
++*Item ambiguity and fairness.* — tracked in the [Research Agenda](Research-Agenda).
+diff --git a/Question-Type-Cloze-bank.md b/Question-Type-Cloze-bank.md
+new file mode 100644
+index 0000000..4c3c196
+--- /dev/null
++++ b/Question-Type-Cloze-bank.md
+@@ -0,0 +1,26 @@
++# Word-bank fill-in
++
++> Drag word or sentence tiles from a bank into gaps.
++
++[← All question types](Question-Types) · [Tests & Practice](Tests-and-Practice)
++
++## Best for
++
++A1–B1 word boxes and FCE Part 6 gapped texts.
++
++## How to build it
++
++- Write the gaps, then add the tiles. Add extra **distractor** tiles. Each tile is used once by default.
++- Students drag tiles, or select a tile then click a gap (keyboard-friendly).
++
++## How it is scored
++
++Automatic, per gap, with partial credit.
++
++## Watch out for
++
++- Distractor tiles keep it from becoming pure elimination.
++
++## Open research question
++
++*How many distractors keep a word-bank task discriminating.* — tracked in the [Research Agenda](Research-Agenda).
+diff --git a/Question-Type-Cloze-dropdown.md b/Question-Type-Cloze-dropdown.md
+new file mode 100644
+index 0000000..5313407
+--- /dev/null
++++ b/Question-Type-Cloze-dropdown.md
+@@ -0,0 +1,26 @@
++# Fill-the-gap with dropdowns
++
++> Choose the missing word from a dropdown in each gap.
++
++[← All question types](Question-Types) · [Tests & Practice](Tests-and-Practice)
++
++## Best for
++
++Grammar choices (tenses, prepositions, articles) where typing would add spelling noise.
++
++## How to build it
++
++- Write gaps as `{{right|wrong|wrong}}`. Mark correct answers with `=` and wrong options with `~` — you can mark several correct (e.g. "don't" and "do not").
++- Use **Suggest distractors** for plausible wrong options.
++
++## How it is scored
++
++Automatic, per gap. A dropdown gap accepts its first option unless you mark several with `=`. With partial credit on, each gap is one share of the points.
++
++## Watch out for
++
++- Shown options make this a recognition task, easier than typing the word ([Fill-the-gap](Question-Type-Cloze)).
++
++## Open research question
++
++*Recognition (dropdown) vs. production (typed) gaps and what each tells you about a level.* — tracked in the [Research Agenda](Research-Agenda).
+diff --git a/Question-Type-Cloze.md b/Question-Type-Cloze.md
+new file mode 100644
+index 0000000..2e881a6
+--- /dev/null
++++ b/Question-Type-Cloze.md
+@@ -0,0 +1,28 @@
++# Fill-the-gap (cloze)
++
++> Type the missing word into a gap in a passage.
++
++[← All question types](Question-Types) · [Tests & Practice](Tests-and-Practice)
++
++## Best for
++
++Grammar and vocabulary in context; FCE/CAE-style open cloze and word formation.
++
++## How to build it
++
++- Write gaps as `{{answer}}`, or click the **gap pill** in the rich-text prompt. Alternatives go in the gap separated by `|`.
++- Tick **Word formation** for FCE/CAE Part 3 style, with the stem in brackets: `her {{happiness}}(HAPPY)`.
++- **Generate gaps** can turn a pasted passage into gaps (fixed-ratio / C-test, part-of-speech, above-level vocabulary, academic words). Review before saving.
++- The dropdown variant has its own page: [Fill-the-gap with dropdowns](Question-Type-Cloze-dropdown).
++
++## How it is scored
++
++Automatic, per gap. Typed gaps accept every listed alternative. A dropdown gap accepts its first option unless you mark several with `=`. With partial credit on, each gap is one share of the points.
++
++## Watch out for
++
++- Per-gap results feed item analysis, so you can see which gap was hard.
++
++## Open research question
++
++*Cloze deletion method (rational vs. fixed-ratio vs. C-test) and what each measures.* — tracked in the [Research Agenda](Research-Agenda).
+diff --git a/Question-Type-Dictation.md b/Question-Type-Dictation.md
+new file mode 100644
+index 0000000..e378854
+--- /dev/null
++++ b/Question-Type-Dictation.md
+@@ -0,0 +1,26 @@
++# Dictation
++
++> Students type what they hear.
++
++[← All question types](Question-Types) · [Tests & Practice](Tests-and-Practice)
++
++## Best for
++
++Listening-to-writing, spelling, sentence-level accuracy.
++
++## How to build it
++
++- Write the target sentence. Attach audio, or let the browser voice read it (fine for practice; upload a clip for graded tests).
++- Set a **play limit** if wanted. The limit is enforced in the browser, so it deters rather than prevents replays.
++
++## How it is scored
++
++Automatic, **no speech recognition**. The response is aligned word-by-word to your text (edit distance over words). Score = 1 − (word errors ÷ target words), never below zero. Case and punctuation never count; opt-in tolerances apply.
++
++## Watch out for
++
++- Word-level scoring means one wrong word costs the same whether it is a typo or a wrong word.
++
++## Open research question
++
++*Dictation scoring schemes (word vs. character level, error weighting).* — tracked in the [Research Agenda](Research-Agenda).
+diff --git a/Question-Type-Error-correction.md b/Question-Type-Error-correction.md
+new file mode 100644
+index 0000000..f9b2609
+--- /dev/null
++++ b/Question-Type-Error-correction.md
+@@ -0,0 +1,26 @@
++# Error correction
++
++> Find and fix the errors in a passage.
++
++[← All question types](Question-Types) · [Tests & Practice](Tests-and-Practice)
++
++## Best for
++
++Proofreading and editing skills.
++
++## How to build it
++
++- Mark fragments as `[[wrong|right]]` for an error or `[[fine]]` for a decoy.
++- Students never receive the corrections — they are stripped before delivery (on Supabase-hosted assignments; offline share-code tests include the key).
++
++## How it is scored
++
++Automatic. One mark for *finding* each error and one for *fixing* it correctly. Optional **penalty** for selecting a fragment that was fine.
++
++## Watch out for
++
++- Decoys (`[[fine]]`) matter: without them students can mark everything.
++
++## Open research question
++
++*Penalising false positives in proofreading tasks.* — tracked in the [Research Agenda](Research-Agenda).
+diff --git a/Question-Type-Hot-text.md b/Question-Type-Hot-text.md
+new file mode 100644
+index 0000000..463dc3a
+--- /dev/null
++++ b/Question-Type-Hot-text.md
+@@ -0,0 +1,25 @@
++# Hot text
++
++> Click the right fragments inside a passage.
++
++[← All question types](Question-Types) · [Tests & Practice](Tests-and-Practice)
++
++## Best for
++
++Finding evidence, identifying parts of speech or errors in a text.
++
++## How to build it
++
++- Mark clickable fragments with `[[…]]` and mark which ones are correct.
++
++## How it is scored
++
++Automatic. With partial credit on, the score is the share of fragments judged correctly — selected when they should be, and left alone when they should be.
++
++## Watch out for
++
++- As with multiple-response, leaving a wrong fragment alone earns credit, so an empty answer is not zero.
++
++## Open research question
++
++*Same partial-credit question as multiple-response.* — tracked in the [Research Agenda](Research-Agenda).
+diff --git a/Question-Type-Key-word-transformation.md b/Question-Type-Key-word-transformation.md
+new file mode 100644
+index 0000000..6c67cad
+--- /dev/null
++++ b/Question-Type-Key-word-transformation.md
+@@ -0,0 +1,27 @@
++# Key word transformation
++
++> Complete a second sentence using a given key word, unchanged.
++
++[← All question types](Question-Types) · [Tests & Practice](Tests-and-Practice)
++
++## Best for
++
++FCE/CAE Part 4 style grammar and lexical transformation.
++
++## How to build it
++
++- Give the first sentence, the key word and the start of the second sentence.
++- Write accepted answers as `part one//part two` — each `//` part is one mark.
++- Set the **word limit** (default 2–5, key word included).
++
++## How it is scored
++
++Automatic. Each part is found as a contiguous run of words in the answer; part two must come after part one. An answer outside the word limit, or one that changes the key word, earns nothing. Each part earns an equal share.
++
++## Watch out for
++
++- A correct answer phrased differently from your accepted list scores zero — add alternatives, or check near-misses in the grading queue.
++
++## Open research question
++
++*How many accepted variants are needed before auto-marking is fair.* — tracked in the [Research Agenda](Research-Agenda).
+diff --git a/Question-Type-Matching.md b/Question-Type-Matching.md
+new file mode 100644
+index 0000000..6c610aa
+--- /dev/null
++++ b/Question-Type-Matching.md
+@@ -0,0 +1,25 @@
++# Matching
++
++> Pair items from two lists.
++
++[← All question types](Question-Types) · [Tests & Practice](Tests-and-Practice)
++
++## Best for
++
++Vocabulary–definition, word–picture, cause–effect.
++
++## How to build it
++
++- Add the pairs. Pairs can be shuffled per student.
++
++## How it is scored
++
++Automatic; each correctly matched pair is a share of the points (partial credit supported).
++
++## Watch out for
++
++- Unequal list lengths (extra distractors on one side) reduce guessing.
++
++## Open research question
++
++*Guessing rates in matching items.* — tracked in the [Research Agenda](Research-Agenda).
+diff --git a/Question-Type-Matrix.md b/Question-Type-Matrix.md
+new file mode 100644
+index 0000000..b46de10
+--- /dev/null
++++ b/Question-Type-Matrix.md
+@@ -0,0 +1,25 @@
++# Grid (matrix)
++
++> Several statements that share the same answer columns.
++
++[← All question types](Question-Types) · [Tests & Practice](Tests-and-Practice)
++
++## Best for
++
++True / False / Not given, A / B / C, or FCE Part 7 matching.
++
++## How to build it
++
++- Define the shared columns, then add the statements and pick the correct column for each.
++
++## How it is scored
++
++Automatic. Each statement is scored separately; partial credit supported.
++
++## Watch out for
++
++- More efficient than many separate items when the answer options are the same.
++
++## Open research question
++
++*Whether row-level scoring inflates scores through elimination.* — tracked in the [Research Agenda](Research-Agenda).
+diff --git a/Question-Type-Multiple-choice.md b/Question-Type-Multiple-choice.md
+new file mode 100644
+index 0000000..b909667
+--- /dev/null
++++ b/Question-Type-Multiple-choice.md
+@@ -0,0 +1,28 @@
++# Multiple-choice
++
++> Pick the one correct option.
++
++[← All question types](Question-Types) · [Tests & Practice](Tests-and-Practice)
++
++## Best for
++
++Quick checks of reading/listening comprehension, vocabulary and grammar recognition.
++
++## How to build it
++
++- Add options and tick the single correct one.
++- Options can carry an **image**, or **audio** (for minimal pairs / "which sound").
++- Use **Suggest distractors** to get plausible wrong options (other word forms, common confusables, same-level words).
++
++## How it is scored
++
++Automatic. Full points for the correct option, zero otherwise.
++
++## Watch out for
++
++- Recognition is easier than production — a B1 student can often *recognise* a form they cannot yet *produce*.
++- With 4 options, blind guessing gets 25%. Consider this when setting a pass mark.
++
++## Open research question
++
++*Guessing correction and how option count affects reliability.* — tracked in the [Research Agenda](Research-Agenda).
+diff --git a/Question-Type-Multiple-response.md b/Question-Type-Multiple-response.md
+new file mode 100644
+index 0000000..d0ccd5e
+--- /dev/null
++++ b/Question-Type-Multiple-response.md
+@@ -0,0 +1,25 @@
++# Multiple-response
++
++> "Select all that apply."
++
++[← All question types](Question-Types) · [Tests & Practice](Tests-and-Practice)
++
++## Best for
++
++Questions with more than one right answer, e.g. "Which of these are irregular verbs?"
++
++## How to build it
++
++- Add options and tick every correct one.
++
++## How it is scored
++
++Automatic. With partial credit on (the default), the score is the share of options the student got *right in either direction* — correctly ticked **and** correctly left blank. With it off, only an exact match scores.
++
++## Watch out for
++
++- Because correctly *leaving out* a wrong option earns credit, a student who ticks nothing still scores on the options that were meant to stay empty. If that is not what you want, switch partial credit off.
++
++## Open research question
++
++*Whether partial-credit rules for select-all items reward or distort knowledge (see the Research Agenda).* — tracked in the [Research Agenda](Research-Agenda).
+diff --git a/Question-Type-Numeric.md b/Question-Type-Numeric.md
+new file mode 100644
+index 0000000..7f763e9
+--- /dev/null
++++ b/Question-Type-Numeric.md
+@@ -0,0 +1,25 @@
++# Numeric
++
++> A number typed by the student.
++
++[← All question types](Question-Types) · [Tests & Practice](Tests-and-Practice)
++
++## Best for
++
++Maths and science, dates, quantities.
++
++## How to build it
++
++- Enter the expected value and a **tolerance** range (± value).
++
++## How it is scored
++
++Automatic. Full points when the answer is within ± the tolerance. An empty answer is zero; a response like `3,5` that is not a plain number is flagged for a human.
++
++## Watch out for
++
++- Decimal commas are not parsed as numbers automatically.
++
++## Open research question
++
++*Handling of decimal separators and units for Dutch-language classes.* — tracked in the [Research Agenda](Research-Agenda).
+diff --git a/Question-Type-Open.md b/Question-Type-Open.md
+new file mode 100644
+index 0000000..b92dae7
+--- /dev/null
++++ b/Question-Type-Open.md
+@@ -0,0 +1,25 @@
++# Open (essay)
++
++> A free-text answer that you grade yourself.
++
++[← All question types](Question-Types) · [Tests & Practice](Tests-and-Practice)
++
++## Best for
++
++Writing tasks, explanations, anything that needs judgement.
++
++## How to build it
++
++- Write the prompt (rich text). Optionally **attach a rubric** so you score it per criterion on the results page.
++
++## How it is scored
++
++Manual. If a rubric is attached, the rubric total maps onto the question's points and per-criterion CEFR levels feed the CEFR overview.
++
++## Watch out for
++
++- A teacher-only **Writing insights** panel shows word count, CEFR vocabulary profile and grammar profile. It never suggests a score.
++
++## Open research question
++
++*Inter-rater reliability for rubric-scored writing.* — tracked in the [Research Agenda](Research-Agenda).
+diff --git a/Question-Type-Ordering.md b/Question-Type-Ordering.md
+new file mode 100644
+index 0000000..fd7712e
+--- /dev/null
++++ b/Question-Type-Ordering.md
+@@ -0,0 +1,25 @@
++# Ordering
++
++> Drag items into the right sequence.
++
++[← All question types](Question-Types) · [Tests & Practice](Tests-and-Practice)
++
++## Best for
++
++Process steps, chronology, paragraph order.
++
++## How to build it
++
++- Add the items in the correct order; students see them shuffled. Optional images/hints.
++
++## How it is scored
++
++Automatic; each item in the right position is a share of the points.
++
++## Watch out for
++
++- Scoring is by position, so one early mistake can shift many items out of place.
++
++## Open research question
++
++*Position-based vs. adjacent-pair scoring for ordering items.* — tracked in the [Research Agenda](Research-Agenda).
+diff --git a/Question-Type-Sentence-builder.md b/Question-Type-Sentence-builder.md
+new file mode 100644
+index 0000000..c6a3cfd
+--- /dev/null
++++ b/Question-Type-Sentence-builder.md
+@@ -0,0 +1,27 @@
++# Sentence builder
++
++> Rebuild a sentence from shuffled word tiles.
++
++[← All question types](Question-Types) · [Tests & Practice](Tests-and-Practice)
++
++## Best for
++
++A1–A2 word order.
++
++## How to build it
++
++- Write the target sentence. Use square brackets to keep a phrase on one tile: `She [has been] waiting.`
++- Add alternative accepted orders if several are fine.
++- Choose all-or-nothing or longest-correct-run scoring.
++
++## How it is scored
++
++Automatic. All-or-nothing, or the share of the longest run of words in the right order (best accepted order wins).
++
++## Watch out for
++
++- A sentence only partly in order is flagged for a human, not confirmed automatically.
++
++## Open research question
++
++*Partial-credit schemes for word order.* — tracked in the [Research Agenda](Research-Agenda).
+diff --git a/Question-Type-Short-answer.md b/Question-Type-Short-answer.md
+new file mode 100644
+index 0000000..8ce0887
+--- /dev/null
++++ b/Question-Type-Short-answer.md
+@@ -0,0 +1,27 @@
++# Short-answer
++
++> A word or short phrase typed by the student.
++
++[← All question types](Question-Types) · [Tests & Practice](Tests-and-Practice)
++
++## Best for
++
++Vocabulary recall, spelling, one-word answers.
++
++## How to build it
++
++- Enter the expected answer. Add **alternative answers** separated by `|` (e.g. `colour|color`).
++- Optionally turn on **tolerant matching** (see below).
++
++## How it is scored
++
++Automatic. Case, leading/trailing spaces and repeated spaces are ignored. Opt-in tolerances: ignore punctuation and curly quotes, treat contractions as equal (*don't* = *do not*), accept British/American spelling, accept a one-letter slip in words of 5+ letters. The same rules run in the browser and on the server.
++
++## Watch out for
++
++- A near-miss that fails the match is not marked right automatically; in the grading queue it is flagged for a human to look at.
++- You can adopt a student's answer into the answer key in one click — identical answers from other students are then marked correct too.
++
++## Open research question
++
++*How lenient to be with spelling when the target is meaning versus accuracy.* — tracked in the [Research Agenda](Research-Agenda).
+diff --git a/Question-Type-True-False.md b/Question-Type-True-False.md
+new file mode 100644
+index 0000000..91691c4
+--- /dev/null
++++ b/Question-Type-True-False.md
+@@ -0,0 +1,25 @@
++# True / False
++
++> Decide whether a statement is true or false.
++
++[← All question types](Question-Types) · [Tests & Practice](Tests-and-Practice)
++
++## Best for
++
++Fast fact checks and reading comprehension (True / False / Not given is available as a Grid question).
++
++## How to build it
++
++- Write the statement and mark it true or false.
++
++## How it is scored
++
++Automatic, all-or-nothing.
++
++## Watch out for
++
++- A 50% guess rate makes single True/False items weak evidence. Use several, or use a [Grid](Question-Type-Matrix) with a third "Not given" column.
++
++## Open research question
++
++*Reliability of True/False items versus multiple-choice.* — tracked in the [Research Agenda](Research-Agenda).
+diff --git a/Question-Types.md b/Question-Types.md
+new file mode 100644
+index 0000000..d00508b
+--- /dev/null
++++ b/Question-Types.md
+@@ -0,0 +1,49 @@
++# Question types
++
++Rubric Maker has 19 question types. Pick one to see what it is for, how to build it and exactly how it is scored.
++
++Every type has an in-app **?** help button too. Auto-scoring runs the same code in the browser and on the server.
++
++## Choose an answer
++
++| Type | What it is |
++|---|---|
++| [Multiple-choice](Question-Type-Multiple-choice) | Pick the one correct option. |
++| [Multiple-response](Question-Type-Multiple-response) | "Select all that apply." |
++| [True / False](Question-Type-True-False) | Decide whether a statement is true or false. |
++| [Fill-the-gap with dropdowns](Question-Type-Cloze-dropdown) | Choose the missing word from a dropdown in each gap. |
++| [Grid (matrix)](Question-Type-Matrix) | Several statements that share the same answer columns. |
++| [Hot text](Question-Type-Hot-text) | Click the right fragments inside a passage. |
++
++## Type or record an answer
++
++| Type | What it is |
++|---|---|
++| [Short-answer](Question-Type-Short-answer) | A word or short phrase typed by the student. |
++| [Open (essay)](Question-Type-Open) | A free-text answer that you grade yourself. |
++| [Fill-the-gap (cloze)](Question-Type-Cloze) | Type the missing word into a gap in a passage. |
++| [Word-bank fill-in](Question-Type-Cloze-bank) | Drag word or sentence tiles from a bank into gaps. |
++| [Dictation](Question-Type-Dictation) | Students type what they hear. |
++| [Key word transformation](Question-Type-Key-word-transformation) | Complete a second sentence using a given key word, unchanged. |
++| [Error correction](Question-Type-Error-correction) | Find and fix the errors in a passage. |
++| [Numeric](Question-Type-Numeric) | A number typed by the student. |
++| [Audio-response](Question-Type-Audio-response) | Students record a spoken answer in the browser. |
++
++## Sort, match or order
++
++| Type | What it is |
++|---|---|
++| [Sentence builder](Question-Type-Sentence-builder) | Rebuild a sentence from shuffled word tiles. |
++| [Matching](Question-Type-Matching) | Pair items from two lists. |
++| [Ordering](Question-Type-Ordering) | Drag items into the right sequence. |
++| [Categorize](Question-Type-Categorize) | Sort items into categories. |
++
++## Scored by hand
++
++**Open** and **Audio-response** are always graded by a teacher (optionally with a rubric). Everything else is auto-scored, and you can override any score.
++
++## Related
++
++- [Tests & Practice](Tests-and-Practice) — modes, assigning, results, live monitor
++- [Placement testing](Placement-Testing) — how adaptive tests choose questions
++- [Research Agenda](Research-Agenda) — open questions about scoring and validity
+diff --git a/Research-Agenda.md b/Research-Agenda.md
+new file mode 100644
+index 0000000..9c3bcd2
+--- /dev/null
++++ b/Research-Agenda.md
+@@ -0,0 +1,153 @@
++# Research Agenda — educational, didactic & pedagogic questions
++
++> The app makes many design choices (thresholds, step sizes, weights, scoring rules). This page lists, per area, **what the app does today** (checked against the code on 2026-11-19) and **what still needs to be researched or validated** before those choices can be called evidence-based.
++>
++> Citations named here are **starting points to look up and verify**, not settled facts. Mark an item ✅ when it has been researched and the answer is written down somewhere teachers can find.
++
++**Priority:** 🔴 affects marks or placement decisions directly · 🟠 affects teacher judgement or feedback · 🟡 nice to know
++
++**Two ways to answer a question:** *desk research* (literature, exam-board and curriculum documents) and *pilot data* (collect real results from your own classes, then compare — see [Studies you can run](#studies-you-can-run-with-the-app)).
++
++---
++
++## 1. Placement tests & the staircase method
++
++How the staircase works is explained in [Placement testing](Placement-Testing). The open questions:
++
++| # | Question | What the app does today | Priority |
++|---|---|---|---|
++| 1.1 | **Is the staircase rule well-founded?** | Start A2; 2 correct → up one level; 1 miss → down one level; stop after 2 reversals or 12 questions. Fixed, not configurable. | 🔴 |
++| 1.2 | **What accuracy does a run converge to?** A 2-correct-up / 1-miss-down rule looks like Levitt's "transformed up-down" method, which settles near ~70.7% correct. Does that match "the level a student *has* mastered"? | Not stated anywhere in the app | 🔴 |
++| 1.3 | **Are 2 reversals and ≤ 12 items enough?** Staircase procedures in the literature usually average more reversals; what is the error of an estimate after so few items? | The confidence badge (low/medium/high) counts reversals only; it is not a measured error | 🔴 |
++| 1.4 | **How accurate is the estimate compared with a trusted measure?** (A full Cambridge/CEFR-aligned test, teacher judgement, or the student's later graded results.) Include test–retest stability. | Estimate is labelled *provisional*; no validation data exists | 🔴 |
++| 1.5 | **Does a wrong answer mean the student is below that level?** Slips, guessing (25% on 4-option MC), unfamiliar item formats and one-off fatigue all cause misses. Should a single miss move a student down? | One miss always moves down | 🔴 |
++| 1.6 | **Is A2 the right starting level** for every year and track (e.g. groep 8 vs jaar 5 VWO)? Should the start follow the class's expected range? | Fixed A2 for staircase; the generator starts mid-range | 🟠 |
++| 1.7 | **Are the CEFR-tagged question pools actually at the level they claim?** Who tags them, with what evidence (descriptor match, word-list profile, pre-testing)? | Teacher tags the level; a passage level check exists for text vocabulary only | 🔴 |
++| 1.8 | **Elo for item difficulty with small classes.** Elo ordering starts at 1200 and moves by K=24 per response; how many responses before a rating is trustworthy? Does it drift when the student mix changes? Compare with Rasch/IRT as the "proper" approach. (See Pelánek's review of Elo in educational systems.) | Fixed level anchors (A1 600 … C2 2100), K=24, atomic update after each submission | 🟠 |
++| 1.9 | **Multistage (MST) cut-offs.** What routing threshold (percent correct) is appropriate for easy/medium/hard stages? How many items per stage give acceptable misrouting rates? | Teacher-set cut-off per section; 60% default for a terminal section | 🔴 |
++| 1.10 | **Mixing question types in one pool.** Do production items (typed) and recognition items (MC) land on the same CEFR scale? | Any scorable type can be in a pool | 🟠 |
++| 1.11 | **Skill coverage.** A single adaptive run mixes reading, grammar and listening; is one overall level meaningful, or should each skill be estimated separately? | Generator can filter by skill; the estimate is one level | 🟠 |
++| 1.12 | **Accommodations.** Do read-aloud, extra time or the no-going-back rule change what the placement measures? | No going back in staircase/generator runs; read-aloud available | 🟡 |
++
++**Suggested sources:** Levitt (1971) on transformed up-down methods; Council of Europe, *CEFR Companion Volume* (2020); research on computerised-adaptive and multistage testing (e.g. Wainer); Pelánek (2016) on Elo in adaptive learning; the technical manuals of established online placement tests.
++
++---
++
++## 2. Grading with rubrics — proven practice
++
++| # | Question | What the app does today | Priority |
++|---|---|---|---|
++| 2.1 | **What does the evidence say about rubric reliability and validity?** Analytic vs holistic vs single-point; how many criteria and levels are optimal? (Start with Jonsson & Svingby's 2007 review of rubric reliability, and Brookhart's work on rubrics.) | Supports all three modes; no guidance on counts | 🟠 |
++| 2.2 | **Weighted vs total points.** Do weights distort or improve fairness? How to set weights defensibly? | Total, weighted (%) and single-point modes | 🟠 |
++| 2.3 | **Converting a rubric score into a mark.** Linear percentage vs "cut score" scales; what is defensible for Dutch VO (1–10 scale, N-term)? | Grade scales with percentage bands per letter/mark | 🔴 |
++| 2.4 | **Inter-rater reliability and calibration.** How much do two teachers differ with the same rubric? Is the default **moderation dispute threshold** sensible? Does comparative grading actually improve consistency? (Look at comparative-judgement research.) | Second marking, moderation queue with a configurable point threshold, comparative (side-by-side) grading | 🔴 |
++| 2.5 | **Effective feedback.** What kinds of written/voice feedback improve later work (e.g. Hattie & Timperley; Black & Wiliam on formative assessment)? Does a comment bank encourage generic feedback? | Comment bank, voice feedback, read-aloud of feedback | 🟠 |
++| 2.6 | **Late penalties and score modifiers.** Which are fair and motivating? Does the evidence support deducting for lateness at all? | Free-form percentage/point/level modifiers with a reason | 🟠 |
++| 2.7 | **Group grading.** How to be fair to individuals in a shared product? | Fan-out of group scores, with per-criterion exclusion for individual parts | 🟠 |
++| 2.8 | **Self- and peer assessment accuracy.** How closely do students' ratings track the teacher's, and under what training? (Panadero & Jonsson on rubrics and self-regulation.) | Self-scores and peer scores stored beside teacher scores; peer analytics show leniency and consistency | 🟠 |
++| 2.9 | **Do rubrics shown to students before the task improve performance?** | Preview links and student feedback pages exist | 🟡 |
++| 2.10 | **Bias.** Halo effect, order effects (grading the 30th paper), name/handwriting bias. Does anonymised grading help? | No blind-grading mode (names can only be hidden in the live monitor) | 🟠 |
++
++---
++
++## 3. Question types & scoring rules
++
++| # | Question | What the app does today | Priority |
++|---|---|---|---|
++| 3.1 | **Partial credit for "select all" and hot-text.** The score is the share of options judged correctly *including options correctly left unselected*, so a blank answer can score above zero. Is that fair, or should it be (correct − incorrect) / total, or all-or-nothing? | Partial credit on by default for [Multiple-response](Question-Type-Multiple-response) and [Hot text](Question-Type-Hot-text) | 🔴 |
++| 3.2 | **Guessing.** Should MC/True-False apply a correction for guessing or just have more items? | No guessing correction | 🟠 |
++| 3.3 | **How tolerant should typed answers be?** When do spelling slips mask what you want to measure? | Four opt-in tolerances; near-misses flagged for human review | 🟠 |
++| 3.4 | **Dictation scoring.** Word-level edit distance weighs every word equally; do character-level or error-type schemes track listening and spelling skill better? | Word-level alignment, no speech recognition | 🟡 |
++| 3.5 | **Key word transformation.** Marks per part and word limits follow the exam format; how well does automatic marking agree with trained markers? | Each `//` part = one mark, strict word limit, key word must appear | 🔴 |
++| 3.6 | **Cloze design.** What does each gap type measure — rational deletion, fixed-ratio, C-test? Which is valid for which CEFR level? | Several generators, teacher reviews | 🟠 |
++| 3.7 | **Ordering and matching.** Position-based scoring penalises one early slip heavily; alternatives? | Position-by-position scoring | 🟡 |
++| 3.8 | **Auto-mark vs human mark agreement.** Run a sample of short-answer and key-word items through both. | Auto-scores can be confirmed in one click when "confident" | 🔴 |
++| 3.9 | **Item analysis thresholds.** What discrimination index and distractor-pull values should make a teacher revise or drop an item? | Discrimination (upper/lower split) and distractor pull shown, no recommended cut-offs | 🟠 |
++| 3.10 | **Listening play limits.** Are limits enforced only in the browser a meaningful exam condition? | Play counter, logged, browser-enforced | 🟡 |
++| 3.11 | **Class-average adjustment ("curve").** When is curving defensible? | Reversible, audited adjustment | 🟠 |
++
++---
++
++## 4. CEFR levels, mastery and learning paths
++
++| # | Question | What the app does today | Priority |
++|---|---|---|---|
++| 4.1 | **Source of the expected CEFR ranges per school year and VO track.** The code describes them as coming from "the school's curriculum benchmark table". Are they backed by SLO, the Dutch reference frameworks or exam-board data? | A fixed table per (year, track) | 🔴 |
++| 4.2 | **When has a student "achieved" a level?** | Highest achieved level per skill, or the highest attempted level shown as "working toward" | 🔴 |
++| 4.3 | **Calibrating expectations from the cohort.** After ≥10 assessed students, a majority on one side can move the expectation by one sub-level. Is that statistically sound for small classes? | Gated ±1 sub-level calibration; the standard range always stays visible | 🟠 |
++| 4.4 | **Grammar mastery blend.** Writing 45%, tests 35%, flashcards 20% until at least 40 fully-observed items exist (fully data-driven at 120). What is the evidence for those weights and that sample size? | Deterministic fit, blended in gradually | 🟠 |
++| 4.5 | **Vocabulary profile validity.** The 64k-word CEFR index is built from open word lists (see `docs/VOCAB_WORDLISTS_PROVENANCE.md`). How well do the word levels agree with published lists (English Vocabulary Profile, CEFR-J)? How reliable are *reading-level estimates* from a short text? | Rule-based; indicator only | 🟠 |
++| 4.6 | **Readability formulas for learners.** Flesch-Kincaid was designed for native readers; is it meaningful for L2 texts? | Shown in the writing statistics | 🟡 |
++| 4.7 | **Grammar range detection (CEFR-J levels from a dependency parse).** How accurate is the parser on learner English, which has errors? | Shown as an indicator, "not a grade" | 🟠 |
++| 4.8 | **Learning-path triggers.** Three consecutive low scores, or trailing the class average, trigger recommendations. What false-positive rate is acceptable? Do such alerts change teacher actions or outcomes? | Rule-based, no AI | 🟠 |
++| 4.9 | **Writing-trend flag.** "Weak" = last three essays all ≤ 60%. Evidence for the threshold and window? | Fixed rule | 🟡 |
++| 4.10 | **Statistics insights.** Flags at class average < 55%, a criterion ≥ 15 points below average, or an inter-class gap ≥ 20 points. Where do these cut-offs come from? | Hard-coded thresholds | 🟡 |
++| 4.11 | **Language portfolio and self-assessment.** How reliable are learners' CEFR can-do self-ratings at different ages? | Self-assessment against can-do statements | 🟡 |
++
++---
++
++## 5. Flashcards & spaced repetition
++
++| # | Question | What the app does today | Priority |
++|---|---|---|---|
++| 5.1 | **FSRS in classrooms.** FSRS (the algorithm behind modern Anki, evaluated by Ye et al.) was tuned on adult self-study data. How does it behave with teenagers, with short term-time reviewing, and with fixed deadlines? | `ts-fsrs` with default settings | 🟠 |
++| 5.2 | **Desired retention.** What target (e.g. 90%) and daily review load suits a class? | Default parameters | 🟠 |
++| 5.3 | **Card design.** Single words vs sentences vs cloze; production vs recognition; how many new cards per day? | Front/back, optional phonetic and part of speech | 🟡 |
++| 5.4 | **Pre-teaching decks from a text.** Does pre-teaching the words above a student's level actually improve comprehension? | Words above target level seed a deck | 🟠 |
++| 5.5 | **Quizzing from the deck.** Testing effect vs. a deck that has been seen: does generated testing add learning value? | Generate questions from a deck | 🟡 |
++
++---
++
++## 6. Writing, live writing and peer review
++
++| # | Question | What the app does today | Priority |
++|---|---|---|---|
++| 6.1 | **Timed vs process writing.** What does a 5–15 minute sprint tell you about writing ability versus a drafted essay? | [Live Writing Sessions](Live-Writing-Sessions) | 🟠 |
++| 6.2 | **Vocabulary-based early level indicator.** How well does word-list profile predict a writing CEFR level for short texts? | Indicator only, never graded | 🟠 |
++| 6.3 | **Peer voting and anonymous reading.** Effects on motivation and on weaker writers? Risks of popularity voting or embarrassment? | One vote per pair, teacher can reveal or redistribute | 🟠 |
++| 6.4 | **Self-evaluation prompts.** Do three-option emoji self-checks produce usable information? | Included in the loop | 🟡 |
++| 6.5 | **Leaderboards and live word counts.** Motivation versus anxiety and quantity-over-quality. | Leaderboard is a teacher toggle | 🟠 |
++| 6.6 | **Typed vs pasted text signals** in monitoring: how reliable are they as integrity evidence, and how should teachers use them? | Shown to the teacher | 🟠 |
++
++---
++
++## 7. Fairness, accommodations and integrity
++
++| # | Question | Priority |
++|---|---|---|
++| 7.1 | Does the **read-aloud accommodation** change what a reading test measures? When is it appropriate for graded tests? | 🟠 |
++| 7.2 | Are **proctoring signals** (tab switches, copy/paste, battery) valid indicators of cheating, or do they penalise students with unreliable devices? Safe Exam Browser support here is advisory only. | 🔴 |
++| 7.3 | **Accessibility and dyslexia** — what do evidence-based reading supports look like for test pages and feedback? | 🟡 |
++| 7.4 | **Bias in item content and in auto-marking** across first-language groups. | 🟠 |
++| 7.5 | **Data protection of learning data** — lawful basis, retention periods (the app anonymises after a school-set number of years), minors' data. | 🟠 |
++
++---
++
++## 8. Practice with teachers
++
++| # | Question | Priority |
++|---|---|---|
++| 8.1 | How much **time** does the app save on grading and feedback, and where does it cost time (e.g. setting up rubrics, tagging bank questions)? | 🟠 |
++| 8.2 | Which **dashboards and alerts** do teachers act on, and which are ignored? | 🟠 |
++| 8.3 | Which **docs and help** do teachers actually read; where do they get stuck in first use? | 🟡 |
++| 8.4 | Do teachers **trust** provisional placement levels? What wording prevents over-reading a provisional estimate? | 🔴 |
++
++---
++
++## Studies you can run with the app
++
++1. **Placement validation.** Have 60+ students take a placement test and a trusted reference (for example a full level test or two teachers' independent judgement). Compare levels, report exact and ±1-level agreement and repeat after two weeks for test–retest.
++2. **Staircase rule experiment.** Replay recorded `levelPath` traces under alternative rules (3-correct-up, 2-miss-down, 4 reversals) and compare the final level with the reference.
++3. **Rater agreement.** Two teachers mark the same 20 essays with the same rubric; compute agreement per criterion, then repeat with comparative grading.
++4. **Auto-mark audit.** For 200 short-answer and key-word responses, compare auto-score with a teacher's mark; list the disagreements.
++5. **Item review.** After a class test, use item analysis to find items with low discrimination and read them for ambiguity.
++6. **Flashcard trial.** Two parallel classes use decks with different retention settings; compare delayed vocabulary tests.
++
++Because everything in the app is deterministic and stored, these studies can reuse the real answer traces (always handled under your school's data-protection rules).
++
++---
++
++## Where the app already documents its rules
++
++- [Placement testing](Placement-Testing) · [Question types](Question-Types) · [CEFR, mastery & learning paths](CEFR-and-Learning-Paths)
++- `docs/VOCAB_WORDLISTS_PROVENANCE.md` in the repository: where the vocabulary lists come from
+diff --git a/Rubric-Builder.md b/Rubric-Builder.md
+new file mode 100644
+index 0000000..80f2c6a
+--- /dev/null
++++ b/Rubric-Builder.md
+@@ -0,0 +1,94 @@
++# Rubric Builder
++
++> Designing rubrics: criteria, levels, scoring modes, frameworks and versioning.  
++> Short overview: [Features](Features).
++
++---
++
++## Rubric Builder
++
++**Access:** Assessments → Rubrics → *New rubric* (or open an existing one)
++
++### Starting, importing and organising rubrics
++
++- **New rubric chooser** — start from a blank form, one of your saved templates (**Export → Save as Template** in the builder) or a built-in starter, or import a file or a share code.
++- **Import** — a Word (`.docx`) or PDF rubric laid out as a table (criteria in the first column, one level per column, level names in the header row), or a RubricMaker JSON export. Points are read from headers such as "Good (3 pts)" or "Weak (1-2 pts)", and "Content 40%" next to a criterion becomes its weight. The preview shows every level's points and every weight, and warns about anything it had to guess.
++- **Export & share** — PDF rubric document, DOCX, or JSON; the copy-code button on a rubric card copies the whole rubric as a text code a colleague pastes under *Import from code*, and the preview button copies a read-only preview link for students.
++- **Rubrics page** — Cards / List toggle (the list is a compact table with subject, criteria/level counts, students graded and CEFR target), a cohort filter, and drag-to-reorder in card view (also on the Tests, Essays and Activity Dashboard lists; order is per teacher).
++
++### Criteria and levels
++
++A rubric consists of one or more **criteria** (rows) and **performance levels** (columns). Add as many of each as you need. Every cell can contain a description, a point value, and optional sub-items. Criteria can be dragged to reorder.
++
++![Rubric Builder with criteria and level columns](images/rubric-builder-criteria.png)
++
++*Rubric Builder with two criteria and the level columns.*
++
++### Scoring modes
++
++| Mode | How it works |
++|---|---|
++| **Total Points** | Each criterion has a raw point value. The final score is the sum of the selected levels. |
++| **Weighted Score** | Each criterion has a weight (percentage). The final score is a weighted average, shown as a percentage. |
++| **Single-Point Rubric** | Each criterion has three columns: *below expectations*, *meets expectations* (the criterion descriptor itself), and *exceeds expectations*. The below/exceeds columns carry comments instead of separate level text. |
++
++### Advanced level options
++
++- **Sub-items:** attach a checklist to any level. Students can be scored on individual items inside the level, giving finer feedback without changing the rubric structure.
++- **Point ranges:** instead of a fixed point value, define a minimum and maximum. The grader picks the exact score with a slider.
++
++![Expanded level options: sub-items and point-range slider](images/rubric-builder-level-options.png)
++
++*The expanded level options: sub-items and a point-range slider.*
++
++### Standards integration
++
++Link any criterion to educational standards (CCSS, NGSS, state standards, and more) via the **Common Standards Project API**. The picker needs an API key configured once by an admin (**Admin → Integrations**); saved favourites appear at the top of the picker for quick access.
++
++![Standards picker modal](images/standards-picker.png)
++
++*The standards picker modal.*
++
++### Assessment frameworks
++
++Criteria can be linked to one of three descriptor frameworks:
++
++| Framework | Use case |
++|---|---|
++| **CEFR** (A1 → C2) | Language proficiency — dominant in European language education |
++| **IB Learner Profile** | 10 IB attributes (inquirer, thinker, communicator, …) |
++| **Bloom's Taxonomy** | 6 cognitive levels (remember, understand, apply, analyse, evaluate, create) |
++
++A framework selector in the Rubric Builder chooses which descriptors are offered. CEFR badges appear in the grading interface and on exported reports.
++
++![CEFR descriptor picker linked to a criterion](images/cefr-framework-link.png)
++
++*CEFR descriptor picker linked to a criterion.*
++
++### Grammar linker
++
++Beyond frameworks, criteria can be tagged with **English grammar standards** grouped by topic (e.g. *Past Simple → regular/irregular verbs*), each with a CEFR level (CEFR-J Grammar Profile). Linked grammar is **auto-checked in scanned essays during grading** — a per-criterion pass/fail breakdown that can be applied as a comment (rule/NLP-based detection, no AI).
++
++### Cambridge English exam labels
++
++**Access:** Settings → General → "Show Cambridge exam labels"
++
++When enabled, every CEFR badge (A2 → C2) gains a second label naming the matching Cambridge English Qualification main-suite exam, e.g. a B2 badge shows **"B2 · FCE"**.
++
++| CEFR level | Cambridge exam |
++|---|---|
++| A2 | A2 Key (KET) |
++| B1 | B1 Preliminary (PET) |
++| B2 | B2 First (FCE) |
++| C1 | C1 Advanced (CAE) |
++| C2 | C2 Proficiency (CPE) |
++
++A1 has no main-suite exam, so no label appears at A1. Labels show up wherever a CEFR badge is rendered (CEFR overview, student profiles, reports) — no other configuration needed.
++
++**Vocabulary lookups (optional):** in the Rubric Builder's vocabulary panel, each word gets a **"Look up"** button that fetches its definition, phonetic transcription, and part of speech from the **free Dictionary API** (`dictionaryapi.dev`) — no key or account required. CEFR level comes from the bundled 64k-word CEFR index, not the dictionary. Lookup only fills empty fields, fails silently offline, and never overwrites teacher-entered values.
++
++### Rubric versioning
++
++Every save snapshots the rubric automatically (capped at 20 + any manual versions). Open the version history to compare and restore any previous version. Versions are stored separately from the rubric record so they don't bloat sync traffic.
++
++**Graded work keeps its rubric version.** A saved grade keeps the rubric and grade scale it was given with, so later edits never silently change a grade or the letter a student sees. Reopening such a grade shows a banner: *Show changes* lists the differences, and *Regrade on latest version* moves the grade to the current rubric and scale (scores carry over where the criterion and level still exist; nothing changes until you save). To move every grade of a rubric at once, choose *Update grades* when the builder asks after saving a change.
+diff --git a/Screenshots.md b/Screenshots.md
+index 9aa488b..9749ed0 100644
+--- a/Screenshots.md
++++ b/Screenshots.md
+@@ -45,27 +45,27 @@ Screenshots that are **not captured yet** stay in the docs as a marker line that
+ 
+ | # | Filename | Page | What to show | Status |
+ |---|---|---|---|---|
+-| 1 | `images/landing-page.png` | Home | The landing page hero with the feature cards | ✅ |
+-| 2 | `images/onboarding-welcome.png` | Home | First-run onboarding welcome step | ✅ |
+-| 3 | `images/two-tier-navigation.png` | Home | The two-tier sidebar: icon rail + contextual sub-panel | ✅ |
+-| 4 | `images/dashboard-overview.png` | Home | Dashboard with the stat cards and at-risk panel | ✅ |
++| 1 | `images/landing-page.png` | Getting-started | The landing page hero with the feature cards | ✅ |
++| 2 | `images/onboarding-welcome.png` | Getting-started | First-run onboarding welcome step | ✅ |
++| 3 | `images/two-tier-navigation.png` | Getting-started | The two-tier sidebar: icon rail + contextual sub-panel | ✅ |
++| 4 | `images/dashboard-overview.png` | Getting-started | Dashboard with the stat cards and at-risk panel | ✅ |
+ 
+ ### Rubric Builder & grading
+ 
+ | # | Filename | Page | What to show | Status |
+ |---|---|---|---|---|
+-| 5 | `images/rubric-builder-criteria.png` | Features | Rubric Builder: criteria rows, level columns, scoring-mode selector | ✅ |
+-| 6 | `images/rubric-builder-level-options.png` | Features | The expanded level-options panel: sub-items, point range slider | ✅ |
+-| 7 | `images/standards-picker.png` | Features | The standards picker modal (Common Standards Project) | ✅ |
+-| 8 | `images/cefr-framework-link.png` | Features | CEFR descriptor picker linked to a criterion | ✅ |
+-| 9 | `images/grading-interface.png` | Features | GradeStudent: level cells, sub-item chips, feedback composer | ✅ |
+-| 10 | `images/grading-grid-layout.png` | Features | The criterion × level grid layout (multi-level rubrics) | ✅ |
+-| 11 | `images/grading-single-point.png` | Features | Single-point rubric layout during grading | ✅ |
+-| 12 | `images/comment-bank-modal.png` | Features | Comment bank open during grading with a snippet inserted | ✅ |
+-| 13 | `images/keyboard-shortcuts.png` | Features | The `?` shortcut cheat-sheet overlay | ✅ |
+-| 14 | `images/comparative-grading.png` | Features | Split-screen comparative grading of two students | ✅ |
+-| 15 | `images/group-grading-selector.png` | Features | The group-grading student multi-select on the Rubrics list | ✅ |
+-| 16 | `images/voice-grading.png` | Features | Feedback field with the microphone button active | ⬜ |
++| 5 | `images/rubric-builder-criteria.png` | Rubric-Builder | Rubric Builder: criteria rows, level columns, scoring-mode selector | ✅ |
++| 6 | `images/rubric-builder-level-options.png` | Rubric-Builder | The expanded level-options panel: sub-items, point range slider | ✅ |
++| 7 | `images/standards-picker.png` | Rubric-Builder | The standards picker modal (Common Standards Project) | ✅ |
++| 8 | `images/cefr-framework-link.png` | Rubric-Builder | CEFR descriptor picker linked to a criterion | ✅ |
++| 9 | `images/grading-interface.png` | Grading | GradeStudent: level cells, sub-item chips, feedback composer | ✅ |
++| 10 | `images/grading-grid-layout.png` | Grading | The criterion × level grid layout (multi-level rubrics) | ✅ |
++| 11 | `images/grading-single-point.png` | Grading | Single-point rubric layout during grading | ✅ |
++| 12 | `images/comment-bank-modal.png` | Grading | Comment bank open during grading with a snippet inserted | ✅ |
++| 13 | `images/keyboard-shortcuts.png` | Grading | The `?` shortcut cheat-sheet overlay | ✅ |
++| 14 | `images/comparative-grading.png` | Grading | Split-screen comparative grading of two students | ✅ |
++| 15 | `images/group-grading-selector.png` | Grading | The group-grading student multi-select on the Rubrics list | ✅ |
++| 16 | `images/voice-grading.png` | Grading | Feedback field with the microphone button active | ⬜ |
+ 
+ ### Tests, practice & placement
+ 
+@@ -87,7 +87,7 @@ Screenshots that are **not captured yet** stay in the docs as a marker line that
+ | 25 | `images/flashcard-deck-editor.png` | Flashcards | Deck editor: card front/back, phonetic/POS fields, import | ⬜ |
+ | 26 | `images/student-flashcard-study.png` | Flashcards | Student study view with Again/Hard/Good/Easy buttons | ⬜ |
+ | 27 | `images/flashcard-insights.png` | Flashcards | Per-student deck insights panel | ✅ |
+-| 28 | `images/news-flashes.png` | Flashcards | News Flashes list with read-receipt counts | ✅ |
++| 28 | `images/news-flashes.png` | Features | News Flashes list with read-receipt counts | ✅ |
+ 
+ ### Students, analytics & admin
+ 
+@@ -95,18 +95,18 @@ Screenshots that are **not captured yet** stay in the docs as a marker line that
+ |---|---|---|---|---|
+ | 29 | `images/students-roster.png` | Features | Students roster with class tabs and CSV import | ✅ |
+ | 30 | `images/student-profile.png` | Features | Student profile: history, CEFR badges, links | ✅ |
+-| 31 | `images/cefr-overview.png` | Features | Whole-class CEFR overview grid | ✅ |
+-| 32 | `images/student-cefr-detail.png` | Features | Per-student CEFR detail with track/year band | ✅ |
+-| 33 | `images/learning-path.png` | Features | Student learning path with recommendations | ✅ |
++| 31 | `images/cefr-overview.png` | CEFR-and-Learning-Paths | Whole-class CEFR overview grid | ✅ |
++| 32 | `images/student-cefr-detail.png` | CEFR-and-Learning-Paths | Per-student CEFR detail with track/year band | ✅ |
++| 33 | `images/learning-path.png` | CEFR-and-Learning-Paths | Student learning path with recommendations | ✅ |
+ | 34 | `images/statistics-dashboard.png` | Features | Statistics: class average card and charts | ✅ |
+ | 35 | `images/statistics-compare.png` | Features | Multi-class Compare view with insights panel | ✅ |
+ | 36 | `images/activity-dashboard.png` | Features | Activity Dashboard grid | ✅ |
+-| 37 | `images/admin-users.png` | Features | Admin → Users tab (roles) | ⬜ |
+-| 38 | `images/admin-audit.png` | Features | Admin → Audit log with filters | ⬜ |
++| 37 | `images/admin-users.png` | Admin-Dashboard | Admin → Users tab (roles) | ⬜ |
++| 38 | `images/admin-audit.png` | Admin-Dashboard | Admin → Audit log with filters | ⬜ |
+ | 39 | `images/messages-inbox.png` | Features | Messages inbox with a student thread | ✅ |
+ | 40 | `images/notification-center.png` | Features | Notification Center with the three categories | ✅ |
+-| 41 | `images/marketplace.png` | Features | Marketplace with type filter and upvotes | ⬜ |
+-| 42 | `images/moderation-queue.png` | Features | Moderation queue with per-criterion delta breakdown | ✅ |
++| 41 | `images/marketplace.png` | Sharing-and-Co-teaching | Marketplace with type filter and upvotes | ⬜ |
++| 42 | `images/moderation-queue.png` | Grading | Moderation queue with per-criterion delta breakdown | ✅ |
+ 
+ ### Student portal & export
+ 
+@@ -115,8 +115,8 @@ Screenshots that are **not captured yet** stay in the docs as a marker line that
+ | 43 | `images/student-portal-overview.png` | Student-Portal | Student portal home with My Work and messages | ✅ |
+ | 44 | `images/student-essay-focus-mode.png` | Student-Portal | Essay focus-mode view with sidebar prompt/tips | ⬜ |
+ | 45 | `images/student-share-code.png` | Student-Portal | Teacher view of a share link/QR code dialog | ✅ |
+-| 46 | `images/export-page.png` | Features | Export page with format selection | ✅ |
+-| 47 | `images/export-pdf-report.png` | Features | A rendered PDF report | ⬜ |
++| 46 | `images/export-page.png` | Exporting | Export page with format selection | ✅ |
++| 47 | `images/export-pdf-report.png` | Exporting | A rendered PDF report | ⬜ |
+ 
+ ### Settings, sync & privacy
+ 
+@@ -125,7 +125,7 @@ Screenshots that are **not captured yet** stay in the docs as a marker line that
+ | 48 | `images/settings-general.png` | Features | Settings → General (language, theme, Cambridge labels) | ✅ |
+ | 49 | `images/settings-theme-bundles.png` | Features | Theme bundle picker | ✅ |
+ | 50 | `images/settings-database-connected.png` | Supabase-Sync | Settings/Admin database panel showing a connected instance | ⬜ |
+-| 51 | `images/privacy-page.png` | Data-and-Privacy | The in-app `/privacy` page | ✅ |
++| 51 | `images/privacy-page.png` | Features | The in-app `/privacy` page | ✅ |
+ 
+ ---
+ 
+diff --git a/Sharing-and-Co-teaching.md b/Sharing-and-Co-teaching.md
+new file mode 100644
+index 0000000..c05e78a
+--- /dev/null
++++ b/Sharing-and-Co-teaching.md
+@@ -0,0 +1,40 @@
++# Sharing & Co-teaching
++
++> Needs cloud sync (Supabase) and, for school-wide options, a school set up by an admin.
++
++## Four ways to share
++
++| Way | What colleagues get | Live or copy? |
++|---|---|---|
++| **Material sharing** | A rubric, test or whole **folder**, view-only or editable | **Live** |
++| **Co-teaching a class** | The class, its grades and test results, plus the rubrics and tests it uses | **Live** |
++| **Marketplace** | Browse, clone and upvote published rubrics, tests, decks and bank items | **Copy** (a snapshot) |
++| **Second marking** | One graded submission sent for an independent mark | Per submission |
++
++## Material sharing
++
++Each rubric, test or folder has a **visibility**:
++
++- **Private** — only you
++- **My co-teachers** — teachers you share a class with
++- **My school** — every teacher in your school, plus your co-teachers
++
++…and an **access** level: *view* or *edit*. A folder's setting applies to everything inside it unless an item overrides it, and you can set a default for new material. Students never get access to shared tests (they hold answer keys). Only the owner can change the sharing or move the item.
++
++## Co-teaching a class
++
++Students page → the class's options menu → **Share with co-teachers…** → add a colleague by email:
++
++- **Can view** — sees the class, its students, grades and test results.
++- **Can view & grade** — also changes any grade or test result in that class (including yours) and can assign your tests to it. Results stay yours, and the grade shows who last changed it.
++- The student list itself stays with the owner: co-teachers see it read-only.
++
++## Marketplace
++
++Publish a rubric, test, flashcard deck or question-bank item for colleagues at your school to clone. It is a snapshot — later edits to your original don't reach copies.
++
++## Good to know
++
++- Comment-bank items can still be shared with the whole school with a single toggle.
++- Sharing changes are written to the admin audit log.
++- Technical detail: [Supabase Sync](Supabase-Sync) and `supabase/CLAUDE.md` in the repository.
+diff --git a/Student-Portal.md b/Student-Portal.md
+index 27041cc..d7e374e 100644
+--- a/Student-Portal.md
++++ b/Student-Portal.md
+@@ -104,7 +104,7 @@ Some teachers share your CEFR overview and learning-path recommendations (which
+ 
+ ## For teachers: sharing and monitoring
+ 
+-- Generate **share links and QR codes** from the Rubrics/Students/Tests/Essays pages (see [Features](Features) → Student Management)
++- Generate **share links and QR codes** from the Rubrics/Students/Tests/Essays pages (see [Features](Features#student-management))
+ - Open a student's portal with **View portal** on the Students page, set or reset a student's password there, and turn on the read-aloud accommodation
+ - The **Live Monitor** shows presence and progress while students take tests or write essays
+ - Read **read receipts** for news flashes and **learner insights** for flashcards
+diff --git a/Supabase-Sync.md b/Supabase-Sync.md
+index d4a1a72..a9e7e54 100644
+--- a/Supabase-Sync.md
++++ b/Supabase-Sync.md
+@@ -3,7 +3,7 @@
+ Rubric Maker works entirely without a backend — everything runs from browser `localStorage` (reduced capabilities). Connecting an optional **Supabase** instance upgrades the app to its full feature set:
+ 
+ - **Cross-device sync** — rubrics, students, grades, essays, tests, flashcards, and settings available on every device you sign in to.
+-- **Colleague sharing** — share a rubric or class with another teacher account (viewer or editor), plus the school Marketplace and department sharing.
++- **Colleague sharing** — share rubrics, tests and folders (view or edit), co-teach a class, and publish to the school Marketplace — see [Sharing & Co-teaching](Sharing-and-Co-teaching).
+ - **Student portal** — self-assessment, essay submission, test-taking, flashcards, news flashes, and student→teacher messaging.
+ - **File storage offload** — attachments and templates live in Supabase Storage instead of base64 strings, removing the 5–10 MB browser limit for files.
+ 
+@@ -255,14 +255,9 @@ Which sign-in buttons appear is set by the `auth_providers` row in `public.site_
+ 
+ ## Sharing rubrics and classes
+ 
+-Once signed in with a named account:
++Once signed in with a named account, sharing works at three levels — material (rubrics, tests, folders), a whole class (co-teaching), and the school Marketplace. Step-by-step instructions are in [Sharing & Co-teaching](Sharing-and-Co-teaching).
+ 
+-1. Open a rubric or class in the app.
+-2. Go to **Share** and enter a colleague's email address.
+-3. Choose **Viewer** (read-only) or **Editor** access.
+-4. The colleague sees the shared item appear in their list on next sync.
+-
+-Sharing is managed via the `class_members` table and RLS policies that grant read access to shared rows. The **Marketplace** (publish/clone/upvote items school-wide) and **department sharing** (live, read-only visibility for the whole school) build on the same school-scoped model.
++Technical note: class access lives in the `class_members` table and material sharing in a `sharing` setting on each rubric, test and folder; both are enforced by row-level security (see `supabase/CLAUDE.md` in the repository).
+ 
+ ---
+ 
+diff --git a/Tests-and-Practice.md b/Tests-and-Practice.md
+index c91da33..3113cd7 100644
+--- a/Tests-and-Practice.md
++++ b/Tests-and-Practice.md
+@@ -24,26 +24,13 @@ The test engine is a full assessment tool, separate from rubrics and essays. It
+ 
+ ### Question types
+ 
+-| Type | Notes |
++There are **19 question types**. Each has its own article with how to build it and exactly how it is scored — see **[Question types](Question-Types)**.
++
++| Group | Types |
+ |---|---|
+-| Multiple-choice | One correct option; options can carry images |
+-| Multiple-response | "Select all that apply" |
+-| True / False | — |
+-| Short-answer | Auto-scored, case-insensitive; supports **alternative answers** (pipe-separated list) |
+-| Open (essay) | Graded manually |
+-| Fill-the-gap (cloze) | `{{gap}}` syntax or the click-to-insert **gap pill** in the rich-text prompt; a dropdown variant offers options per gap. Tick **Word formation** for FCE/CAE Part 3 style gaps with the stem in brackets, e.g. `her {{happiness}}(HAPPY)` |
+-| Word-bank fill-in | Students drag (or select-then-click, keyboard-friendly) word or sentence tiles into the gaps; extra distractor tiles, each tile used once by default. Suits A1–B1 word boxes and FCE Part 6 gapped texts |
+-| Grid (matrix) | Several statements sharing answer columns (True / False / Not given, A / B / C, or FCE Part 7 matching); each statement scored separately with partial credit |
+-| Dictation | Students type what they hear; scored by word-by-word alignment with your text (no speech recognition), case and punctuation ignored |
+-| Key word transformation | FCE/CAE Part 4: complete the second sentence using the key word unchanged, within a word limit (default 2–5) shown live; accepted answers written as `part one//part two`, each part earns half |
+-| Error correction | Proofreading: mark fragments as `[[wrong\|right]]` or `[[fine]]`; one mark for finding each error, one for fixing it, optional penalty for wrong picks. Students never receive the corrections |
+-| Sentence builder | A1–A2 word order: rebuild a sentence from shuffled word tiles; several orders can be accepted; all-or-nothing or longest-correct-run scoring |
+-| Hot text | `[[clickable fragment]]` passages |
+-| Matching | Pair items; pairs can be shuffled per student |
+-| Ordering | Drag to order; optional images/hints |
+-| Categorize | Group items into categories |
+-| Numeric | Auto-scored with a **tolerance** range |
+-| Audio-response | Student records a spoken answer in the browser (teacher-configurable recording cap); optional **preparation time** with a visible cue card, after which recording starts automatically. Played back and graded manually |
++| Choose | [Multiple-choice](Question-Type-Multiple-choice) · [Multiple-response](Question-Type-Multiple-response) · [True / False](Question-Type-True-False) · [Grid](Question-Type-Matrix) · [Hot text](Question-Type-Hot-text) · [Gap with dropdowns](Question-Type-Cloze-dropdown) |
++| Type or record | [Short-answer](Question-Type-Short-answer) · [Open (essay)](Question-Type-Open) · [Fill-the-gap](Question-Type-Cloze) · [Word-bank fill-in](Question-Type-Cloze-bank) · [Dictation](Question-Type-Dictation) · [Key word transformation](Question-Type-Key-word-transformation) · [Error correction](Question-Type-Error-correction) · [Numeric](Question-Type-Numeric) · [Audio-response](Question-Type-Audio-response) |
++| Sort, match or order | [Sentence builder](Question-Type-Sentence-builder) · [Matching](Question-Type-Matching) · [Ordering](Question-Type-Ordering) · [Categorize](Question-Type-Categorize) |
+ 
+ Question prompts and section passages use the same rich-text editor as essays (bold, tables, sub/superscript, links). Every question type has an in-context **help button** explaining how to author and answer it.
+ 
+@@ -79,17 +66,9 @@ Ungraded and **retakeable** (`allowMultipleAttempts`). Great for formative work:
+ 
+ ### Placement
+ 
+-Adaptive testing with three calibration-free engines (no IRT — designed to work from day one without item-calibration data):
+-
+-| Engine | How it works |
+-|---|---|
+-| **Multistage (MST)** | Author fixed stages: a routing section, then easy/medium/hard second stages; a score cut-off decides which section a student sees next. One section at a time. |
+-| **Staircase** | Tag sections with CEFR levels as question pools. Every student starts at A2, moves up after 2 correct in a row, down after a miss, and the run ends once the level settles. One question at a time, no going back. |
+-| **Generator** | Skip authoring sections entirely: set a CEFR range, skills, and min/max question count. Questions are pulled **live from the question bank** at runtime by the server-authoritative `next-placement-question` edge function, using staircase adaptivity plus **Elo item ordering**. |
+-
+-All engines produce a **provisional CEFR estimate** (with an uncertainty band), clearly badged as provisional, that feeds the student's CEFR overview and learning path until a real graded assessment replaces it. Results show the exact path taken. The Statistics page's student view plots placement progress across attempts on an Elo-scaled, CEFR-banded axis.
++Adaptive testing that estimates a student's CEFR level, using one of three engines: **Multistage**, **Staircase** or **Generator**. The result is a *provisional* CEFR estimate with a low/medium/high confidence badge. Elo ratings (teacher-only) decide which question comes next within a level.
+ 
+-**Elo ratings:** a question assigned to a CEFR-level pool can carry a teacher-set Elo rating that decides which question is served first within the pool; left blank, self-calibration adjusts it from real response data over time. Elo ratings are teacher-only — never exposed to students. During a generator run, the Live Monitor shows the student's current level and Elo score, and a teacher can nudge the level up or down for the next question.
++→ **Full explanation, with a worked example:** [Placement testing](Placement-Testing)
+ 
+ ![Placement mode selector](images/test-builder-placement-mode.png)
+ 
+diff --git a/Writing-and-Document-Analysis.md b/Writing-and-Document-Analysis.md
+new file mode 100644
+index 0000000..1d5e426
+--- /dev/null
++++ b/Writing-and-Document-Analysis.md
+@@ -0,0 +1,34 @@
++# Essays & Document Analysis
++
++> Essay assignments and the rule-based (no AI) analysis tools used while grading writing.  
++> Short overview: [Features](Features).
++
++---
++
++## Essay Management
++
++**Access:** Assessments → Essays
++
++A standalone essay workspace parallel to Tests:
++
++- **Builder:** prompt (rich-text), optional CEFR-linked rubric, word/time limits, assignment to a class, per-student share links, submission-code import, and a live monitor link.
++- **Student side:** anonymous share-code submission with a distraction-free **focus mode** (exit control, draft-saved badge, sidebar with prompt/tips). With Supabase connected, essays hand in automatically; the code is the fallback for local mode.
++- **Import:** paste a submission code to pull the essay from the database, or import essay text from an uploaded DOCX/PDF.
++- **Exports:** from the Export page, export one or several essays as Markdown, DOCX, or PDF — separate files or combined — optionally with the rubric grade and grammar/vocabulary analysis attached.
++- **Calendar:** due dates export as `.ics` so they land in a shared calendar.
++
++### Document analysis
++
++When a graded submission has an essay attachment, an **Analyse Document** button appears in the grading interface. It runs the built-in NLP pipeline (no AI):
++
++- **Vocabulary highlighting** — target vocabulary items highlighted inline
++- **Grammar flagging** — common errors flagged with suggestions
++- **Comment bank insertion** — detected vocabulary items added to the bank in one click
++- **Writing statistics** — word and sentence counts, average sentence length and its variance, transition words by type, Flesch-Kincaid grade and Reading Ease
++- **Grammar range** — constructions used (tenses, passive, relative clauses, conditionals…) banded by CEFR-J level, with the typical and highest level reached. This needs the English UD parser model, which is **not bundled** (it is CC BY-NC-SA, non-commercial): self-hosters download it once into `public/models/` (see the README there); without it the panel stays hidden. With the model present, more rubric-linked grammar structures are checked automatically.
++
++Results persist with the grade. Everything runs in the browser and is rule-based; treat the grammar range as an indicator, not a grade.
++
++### Writing trends
++
++On a student's profile (Overview tab) and on the Statistics page for a class, each rubric criterion is followed across the student's graded, handed-in essays, and criteria that are persistently weak (last three essays all at or below 60%) or declining are flagged.
+diff --git a/_Sidebar.md b/_Sidebar.md
+index b186efb..86f8e9b 100644
+--- a/_Sidebar.md
++++ b/_Sidebar.md
+@@ -3,7 +3,16 @@
+ **Using the app**
+ - [Getting started](Getting-started)
+ - [Features](Features)
++  - [Rubric Builder](Rubric-Builder)
++  - [Grading](Grading)
++  - [Essays & Document Analysis](Writing-and-Document-Analysis)
++  - [Live Writing Sessions](Live-Writing-Sessions)
++  - [CEFR & Learning Paths](CEFR-and-Learning-Paths)
++  - [Exporting](Exporting)
++  - [Sharing & Co-teaching](Sharing-and-Co-teaching)
+ - [Tests & Practice](Tests-and-Practice)
++  - [Question types](Question-Types)
++  - [Placement testing](Placement-Testing)
+ - [Flashcards](Flashcards)
+ - [Student Portal](Student-Portal)
+ - [FAQ](FAQ)
+@@ -20,7 +29,8 @@
+ - [Architecture](Architecture)
+ - [Internationalisation](Internationalisation)
+ - [Contributing](Contributing)
+-- [Roadmap (project board)](https://github.com/NesiciCoding/RubricMaker/projects)
++- [Research Agenda](Research-Agenda)
++- [Admin Dashboard](Admin-Dashboard)
+ 
+ **Wiki upkeep**
+ - [Screenshots](Screenshots)
+-- 
+2.43.0
+

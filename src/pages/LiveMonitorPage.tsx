@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import PageTour from '../components/Tour/PageTour';
 import { usePageTourState } from '../hooks/usePageTourState';
 import { useParams } from 'react-router-dom';
@@ -21,6 +21,8 @@ import {
     TrendingUp,
     TrendingDown,
     MoveRight,
+    Download,
+    FileText,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
@@ -29,19 +31,39 @@ import { InlineMonitorSkeleton } from '../components/ui/Skeleton';
 import { useAssessment, useEssays, useStudents, useClasses, useSettings } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { useDbStatus } from '../hooks/useDbStatus';
+import { useMonitorShortcuts } from '../hooks/useMonitorShortcuts';
 import { useOwnOrSharedItem } from '../hooks/useSharedMaterials';
 import { loadSupabaseConfig } from '../services/database';
+import { LiveDraftAdapter, type PersistedDraftSnapshot } from '../services/database/LiveDraftAdapter';
 import PresenceBadge from '../components/Monitor/PresenceBadge';
 import ResponsesGrid from '../components/Monitor/ResponsesGrid';
 import LevelResponsesGrid from '../components/Monitor/LevelResponsesGrid';
 import ColumnSortModal from '../components/Monitor/ColumnSortModal';
-import LiveDraftPanel from '../components/Monitor/LiveDraftPanel';
 import PlacementLevelPanel from '../components/Monitor/PlacementLevelPanel';
-import { derivePresence, summarizeProctorFlags, mergeProctorEvents } from '../utils/proctorAggregator';
+import NudgeMenu from '../components/Monitor/NudgeMenu';
+import EssayMonitorRoster from '../components/Monitor/EssayMonitorRoster';
+import EssaySpotlight from '../components/Monitor/EssaySpotlight';
+import {
+    derivePresence,
+    deriveConnectionState,
+    type ConnectionState,
+    summarizeProctorFlags,
+    mergeProctorEvents,
+} from '../utils/proctorAggregator';
 import { estimatePlacement, levelPathRunConfig } from '../utils/placementResult';
 import { MAX_QUESTIONS as STAIRCASE_MAX_QUESTIONS } from '../utils/placementStaircase';
-import { stripCommentHtml } from '../utils/exportDataPrep';
+import { sanitizeFilename, stripCommentHtml } from '../utils/exportDataPrep';
+import { downloadCsv } from '../utils/csvDownload';
+import {
+    buildSessionCsv,
+    buildSessionSummaryHtml,
+    type SessionExportStudent,
+    type SessionExportTranslate,
+} from '../utils/monitorSessionExport';
 import { studentCompletion, type StudentCompletion } from '../utils/responseCells';
+import { answeredQuestionIds, stuckQuestions } from '../utils/questionStuck';
+import { previousDistinctDraft } from '../utils/draftHighlights';
+import { TRIAGE_KEYS, triageCounts, triageMatches, type TriageKey } from '../utils/monitorTriage';
 import {
     appendWordSample,
     clampStallMinutes,
@@ -54,6 +76,7 @@ import {
 } from '../utils/monitorSignals';
 import type { ColumnSortRule } from '../utils/responseGridOrder';
 import type { ProctorEvent, TestAnswer, CefrLevel, StudentTest, StaircaseStep } from '../types';
+import { deliveredTest } from '../utils/variantDelivery';
 
 const TAB_SWITCH_WARNING_THRESHOLD = 3;
 
@@ -69,6 +92,9 @@ interface StudentLiveState {
         generatorLevel?: CefrLevel;
         generatorEloAnchor?: number;
         questionsAsked?: number;
+        /** Counts only — characters typed vs pasted, never the text. */
+        typedChars?: number;
+        pastedChars?: number;
         askedPrompts?: Record<string, string>;
     } | null;
     lastUpdateAt: string | null;
@@ -80,11 +106,18 @@ interface StudentLiveState {
     lastChangeAt?: number;
     /** Essay word-count history for the writing-pace readout. */
     wordSamples?: WordSample[];
+    /** Essay snapshot history, oldest first: word count plus the draft text when one was sent. */
+    snapshots?: { at: number; words?: number; text?: string }[];
 }
 
 function snapshotProgressKey(snapshot: StudentLiveState['snapshot']): string {
     if (!snapshot) return '';
-    return JSON.stringify([snapshot.answers ?? null, snapshot.text ?? null, snapshot.questionsAsked ?? null]);
+    return JSON.stringify([
+        snapshot.answers ?? null,
+        snapshot.text ?? null,
+        snapshot.wordCount ?? null,
+        snapshot.questionsAsked ?? null,
+    ]);
 }
 
 const PACE_BADGE: Record<PaceTrend, { className: string; Icon: typeof TrendingUp }> = {
@@ -97,8 +130,53 @@ function emptyLiveState(studentId: string): StudentLiveState {
     return { studentId, events: [], snapshot: null, lastUpdateAt: null };
 }
 
+/**
+ * Folds stored snapshots into a student's live state without overwriting anything the channels
+ * have already delivered: after a reload the roster shows the same draft, pace and age it would
+ * have shown had the tab never dropped.
+ */
+function applyPersistedSnapshots(current: StudentLiveState, history: PersistedDraftSnapshot[]): StudentLiveState {
+    const wordSamples = [
+        ...(current.wordSamples ?? []),
+        ...history.map((snapshot) => ({ at: snapshot.at, words: snapshot.wordCount })),
+    ]
+        .sort((a, b) => a.at - b.at)
+        .reduce<WordSample[]>(appendWordSample, []);
+    const byAt = new Map<number, NonNullable<StudentLiveState['snapshots']>[number]>();
+    for (const entry of current.snapshots ?? []) byAt.set(entry.at, entry);
+    for (const snapshot of history) {
+        // A live snapshot is stamped with the monitor's receipt time, a stored one with its own, so
+        // the same draft arrives under two timestamps; recognise it by its text instead.
+        const heldLive = [...byAt.values()].some((entry) => entry.text?.trim() === snapshot.text?.trim());
+        if (snapshot.text !== undefined && !byAt.has(snapshot.at) && !heldLive) {
+            byAt.set(snapshot.at, { at: snapshot.at, words: snapshot.wordCount, text: snapshot.text });
+        }
+    }
+    const snapshots = [...byAt.values()].sort((a, b) => a.at - b.at).slice(-8);
+    const latest = history[history.length - 1];
+    const latestWithText = [...history]
+        .reverse()
+        .find((snapshot): snapshot is PersistedDraftSnapshot & { text: string } => snapshot.text !== undefined);
+    const stored = latestWithText ? { text: latestWithText.text, wordCount: latestWithText.wordCount } : null;
+    return {
+        ...current,
+        wordSamples,
+        snapshots,
+        snapshot: current.snapshot
+            ? current.snapshot.text === undefined && stored
+                ? { ...current.snapshot, text: stored.text, wordCount: current.snapshot.wordCount ?? stored.wordCount }
+                : current.snapshot
+            : stored,
+        lastChangeAt: current.lastChangeAt ?? latest?.at,
+        lastUpdateAt: current.lastUpdateAt ?? (latest ? new Date(latest.at).toISOString() : null),
+        firstSeenAt: current.firstSeenAt ?? history[0]?.at,
+    };
+}
+
 interface MonitorStudent {
     studentId: string;
+    /** The student's own essay_assignments.id; a batch assignment stores each student's drafts under it, not under the route key. */
+    teacherKey?: string;
     name: string;
     classId?: string;
     className?: string;
@@ -142,9 +220,13 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     const [classFilter, setClassFilter] = useState<string>('all');
     // A class selected for one test may not exist in the next: reset so the new
     // test never opens with every student filtered out and no way to recover.
+    // A triage chip narrows the grid to the students the strip counted. It applies to one monitored
+    // assignment only, so it resets with the class filter below.
+    const [triageFilter, setTriageFilter] = useState<TriageKey | null>(null);
     const monitoredKey = kind === 'test' ? (params.testId ?? '') : (params.assignmentId ?? '');
     useEffect(() => {
         setClassFilter('all');
+        setTriageFilter(null);
     }, [monitoredKey]);
     const [startedOnly, setStartedOnly] = useState(false);
     const [columnSortRules, setColumnSortRules] = useState<ColumnSortRule[]>([{ key: 'original', dir: 'asc' }]);
@@ -156,6 +238,13 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         title: string;
     } | null>(null);
     const [essayAssignmentLoading, setEssayAssignmentLoading] = useState(kind === 'essay');
+    // The one student whose 5s spotlight view is open. A single-student assignment opens straight
+    // into it; a class roster starts on the per-minute roster.
+    const [focusedStudentId, setFocusedStudentId] = useState<string | null>(null);
+    // The row the proctoring keys act on. Kept apart from the spotlight so j/k can walk the class
+    // with the roster still on screen, and n/f can aim without opening a draft.
+    const [cursorStudentId, setCursorStudentId] = useState<string | null>(null);
+    const [flaggedStudentIds, setFlaggedStudentIds] = useState<Set<string>>(new Set());
     const [testTeacherKeys, setTestTeacherKeys] = useState<Record<string, string>>({});
     // Which test.id the teacher-key lookup has finished for. The lookup is what reveals
     // in-progress students (they have no `student_tests` row until hand-in), so until it
@@ -165,7 +254,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     // test's monitor to another's, where the page is not remounted.
     const [testTeacherKeysSettledFor, setTestTeacherKeysSettledFor] = useState<string | null>(null);
 
-    const { fetchEssayAssignmentByKey, fetchEssaySubmissions } = useEssays();
+    const { essayAssignments, fetchEssayAssignmentByKey, fetchAllEssaySubmissions } = useEssays();
 
     const hasDb = dbStatus.isConnected && !!config?.supabaseUrl && !!config?.supabaseAnonKey;
 
@@ -191,36 +280,6 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
             .then((result) => {
                 if (cancelled) return;
                 setEssayAssignment(result ?? null);
-                if (!result) return;
-                // A submission may already be persisted (the student handed in before
-                // the monitor opened) — reflect it immediately instead of waiting for
-                // a live 'submitted' broadcast from a still-open student tab.
-                void fetchEssaySubmissions(assignmentId)
-                    .then((rows) => {
-                        if (cancelled || rows.length === 0) return;
-                        setLiveStates((prev) => {
-                            const current = prev[result.studentId] ?? emptyLiveState(result.studentId);
-                            // Rows are newest-first; use the persisted hand-in time so a
-                            // submission made before the monitor opened shows its real age
-                            // (not "just now"), while never rewinding a fresher live update.
-                            const persistedAt = rows[0]?.submittedAt ?? null;
-                            const lastUpdateAt =
-                                persistedAt && (!current.lastUpdateAt || persistedAt > current.lastUpdateAt)
-                                    ? persistedAt
-                                    : (current.lastUpdateAt ?? new Date().toISOString());
-                            return {
-                                ...prev,
-                                [result.studentId]: {
-                                    ...current,
-                                    submitted: true,
-                                    lastUpdateAt,
-                                },
-                            };
-                        });
-                    })
-                    .catch(() => {
-                        // Non-fatal: the live broadcast path still covers an in-session submit.
-                    });
             })
             .catch(() => {
                 if (!cancelled) setEssayAssignment(null);
@@ -231,7 +290,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         return () => {
             cancelled = true;
         };
-    }, [kind, params.assignmentId, hasDb, fetchEssayAssignmentByKey, fetchEssaySubmissions]);
+    }, [kind, params.assignmentId, hasDb, fetchEssayAssignmentByKey]);
 
     // ── Test teacherKey lookup (Realtime channel name = the per-student teacherKey,
     // not a testId/studentId guess — see assignmentKeyFor below) ─────────────────
@@ -305,19 +364,125 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                 .filter((row) => students.some((s) => s.id === row.studentId));
         }
 
-        // Essay: a single assignment maps to exactly one student.
-        if (!essayAssignment) return [];
-        const student = students.find((s) => s.id === essayAssignment.studentId);
-        if (!student) return [];
-        return [
-            {
-                studentId: student.id,
-                name: student.name,
-                persistedEvents: [],
-                persistedAnswers: [],
-            },
-        ];
-    }, [kind, test, students, classes, studentTests, essayAssignment, testTeacherKeys]);
+        // Essay: one teacherKey can cover a whole class (a batch assignment writes a row per
+        // student under the same key), so every student holding a row for it is monitored. The
+        // single row fetched from Supabase is the fallback for a monitor opened before the
+        // hydrated roster arrived, which keeps a one-student assignment working on its own.
+        const essayStudentIds = new Set<string>();
+        const essayTeacherKeys = new Map<string, string>();
+        for (const assignment of essayAssignments ?? []) {
+            if (assignment.teacherKey !== params.assignmentId && assignment.sourceTeacherKey !== params.assignmentId)
+                continue;
+            essayStudentIds.add(assignment.studentId);
+            essayTeacherKeys.set(assignment.studentId, assignment.teacherKey);
+        }
+        if (essayAssignment) {
+            essayStudentIds.add(essayAssignment.studentId);
+            essayTeacherKeys.set(essayAssignment.studentId, params.assignmentId ?? '');
+        }
+        return Array.from(essayStudentIds)
+            .map((studentId): MonitorStudent | null => {
+                const student = students.find((s) => s.id === studentId);
+                if (!student) return null;
+                return {
+                    studentId: student.id,
+                    teacherKey: essayTeacherKeys.get(student.id),
+                    name: student.name,
+                    classId: student.classId,
+                    className: classes.find((c) => c.id === student.classId)?.name,
+                    persistedEvents: [],
+                    persistedAnswers: [],
+                };
+            })
+            .filter((row): row is MonitorStudent => row !== null);
+    }, [
+        kind,
+        test,
+        students,
+        classes,
+        studentTests,
+        essayAssignment,
+        essayAssignments,
+        params.assignmentId,
+        testTeacherKeys,
+    ]);
+
+    // A class essay roster reaches this monitor through `sourceTeacherKey` (a batch assignment wrote
+    // each student their own row), and a student's page broadcasts on ITS OWN row's teacherKey — so
+    // the channel has to follow the matched row, not the route param, or those students show up in
+    // the roster with no live data behind them.
+    const essayTeacherKeys = useMemo<Record<string, string>>(() => {
+        if (kind !== 'essay') return {};
+        const keys: Record<string, string> = {};
+        for (const assignment of essayAssignments ?? []) {
+            if (assignment.teacherKey !== params.assignmentId && assignment.sourceTeacherKey !== params.assignmentId)
+                continue;
+            keys[assignment.studentId] = assignment.teacherKey;
+        }
+        if (essayAssignment && params.assignmentId) keys[essayAssignment.studentId] ??= params.assignmentId;
+        return keys;
+    }, [kind, essayAssignments, essayAssignment, params.assignmentId]);
+
+    // ── Persisted essay hand-ins ───────────────────────────────────────────────────
+    // A submission may already exist before the monitor opens (the student handed in from a tab
+    // that is now closed), so seed each roster row's submitted flag instead of waiting for a live
+    // 'submitted' broadcast. One student uses the per-assignment fetch; a class roster needs the
+    // per-student attribution that only the full submission list carries.
+    const essayRosterKey = kind === 'essay' ? monitorStudents.map((row) => row.studentId).join(',') : '';
+    useEffect(() => {
+        if (kind !== 'essay' || !params.assignmentId || !hasDb || !essayRosterKey) return;
+        const assignmentId = params.assignmentId;
+        let cancelled = false;
+        const markSubmitted = (submitted: Map<string, string>) => {
+            if (cancelled || submitted.size === 0) return;
+            setLiveStates((prev) => {
+                const next = { ...prev };
+                for (const [studentId, persistedAt] of submitted) {
+                    const current = next[studentId] ?? emptyLiveState(studentId);
+                    const lastUpdateAt =
+                        persistedAt && (!current.lastUpdateAt || persistedAt > current.lastUpdateAt)
+                            ? persistedAt
+                            : (current.lastUpdateAt ?? new Date().toISOString());
+                    next[studentId] = { ...current, submitted: true, lastUpdateAt };
+                }
+                return next;
+            });
+        };
+        const finish = (promise: Promise<void>) => {
+            promise.catch(() => {
+                // Non-fatal: the live broadcast path still covers an in-session submit.
+            });
+        };
+        // Every roster size reads the same student-attributed source: a hand-in belongs to whoever
+        // the submission row's assignment names, and one teacherKey can cover a whole class — so a
+        // single-student roster must not adopt the newest hand-in of a key several students share.
+        finish(
+            fetchAllEssaySubmissions().then((rows) => {
+                const submitted = new Map<string, string>();
+                for (const row of rows) {
+                    if (row.assignmentId !== assignmentId || !row.studentId) continue;
+                    if (!submitted.has(row.studentId)) submitted.set(row.studentId, row.submittedAt);
+                }
+                markSubmitted(submitted);
+            })
+        );
+        return () => {
+            cancelled = true;
+        };
+        // `monitorStudents` itself is rebuilt on every roster read; keying the effect to the ids
+        // keeps it from refetching on unrelated state updates.
+    }, [kind, params.assignmentId, hasDb, essayRosterKey, fetchAllEssaySubmissions]);
+
+    // A one-student assignment is already the spotlight view — open it directly. A class
+    // roster starts on the per-minute roster and the teacher picks who to follow.
+    useEffect(() => {
+        if (kind !== 'essay') return;
+        setFocusedStudentId((current) => {
+            const stillThere = current !== null && monitorStudents.some((row) => row.studentId === current);
+            if (stillThere) return current;
+            return monitorStudents.length === 1 ? monitorStudents[0].studentId : null;
+        });
+    }, [kind, monitorStudents]);
 
     // ── Per-student assignmentKey derivation ──────────────────────────────────────
     // Essays: the route param IS the persisted teacherKey (essay_assignments.id), so
@@ -330,7 +495,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     // gets a key nothing will ever broadcast on — this page still works fully from
     // persisted StudentTest data in that case.
     const assignmentKeyFor = (studentId: string): string => {
-        if (kind === 'essay') return `${params.assignmentId}:${studentId}`;
+        if (kind === 'essay') return `${essayTeacherKeys[studentId] ?? params.assignmentId}:${studentId}`;
         return testTeacherKeys[studentId] ?? `no-teacher-key:${studentId}`;
     };
 
@@ -377,6 +542,35 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         }, 300);
     }
 
+    // Live state is per student *and* per assignment; a teacher moving from one assignment to the
+    // next on a mounted page must not carry the first one's heartbeat history or queued patches over.
+    const scopeKey = `${kind}:${params.testId ?? params.assignmentId ?? ''}`;
+    const scopeKeyRef = useRef(scopeKey);
+    useEffect(() => {
+        if (scopeKeyRef.current === scopeKey) return;
+        scopeKeyRef.current = scopeKey;
+        if (flushTimerRef.current) {
+            clearTimeout(flushTimerRef.current);
+            flushTimerRef.current = null;
+        }
+        pendingPatchesRef.current = {};
+        setLiveStates({});
+    }, [scopeKey]);
+
+    // The student echoes every nudge back as an event of its own; remember what was just sent so
+    // that echo is recognised instead of showing one send twice.
+    const sentNudgesRef = useRef<Map<string, { message: string; at: number }[]>>(new Map());
+    const consumeNudgeEcho = useCallback((studentId: string, message: string) => {
+        const pending = sentNudgesRef.current.get(studentId) ?? [];
+        const index = pending.findIndex((sent) => sent.message === message && Date.now() - sent.at <= 60_000);
+        if (index < 0) return false;
+        sentNudgesRef.current.set(
+            studentId,
+            pending.filter((_, i) => i !== index)
+        );
+        return true;
+    }, []);
+
     const channelsRef = useRef<Map<string, RealtimeChannel>>(new Map());
     useEffect(() => {
         if (!hasDb || monitorStudents.length === 0) return;
@@ -394,9 +588,11 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
             channel
                 .on('broadcast', { event: 'event' }, ({ payload }) => {
                     const at = Date.now();
+                    const incoming = payload as ProctorEvent;
+                    const isEcho = incoming.type === 'nudge' && consumeNudgeEcho(row.studentId, String(incoming.value));
                     updateLiveState(row.studentId, (current) => ({
                         ...current,
-                        events: [...current.events, payload as ProctorEvent],
+                        events: isEcho ? current.events : [...current.events, incoming],
                         lastUpdateAt: new Date(at).toISOString(),
                         firstSeenAt: current.firstSeenAt ?? at,
                     }));
@@ -404,7 +600,14 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                 .on('broadcast', { event: 'snapshot' }, ({ payload }) => {
                     const at = Date.now();
                     updateLiveState(row.studentId, (current) => {
-                        const snapshot = payload as StudentLiveState['snapshot'];
+                        const incoming = payload as StudentLiveState['snapshot'];
+                        // The roster cadence sends word counts and answers every few seconds but fresh
+                        // prose at most once a minute, so a snapshot without text keeps the last draft
+                        // the monitor received rather than blanking the preview.
+                        const snapshot =
+                            incoming?.text === undefined && current.snapshot?.text !== undefined
+                                ? { ...incoming, text: current.snapshot.text }
+                                : incoming;
                         const changed =
                             current.snapshot === null ||
                             snapshotProgressKey(current.snapshot) !== snapshotProgressKey(snapshot);
@@ -419,6 +622,19 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                 typeof words === 'number'
                                     ? appendWordSample(current.wordSamples ?? [], { at, words })
                                     : current.wordSamples,
+                            // Only a text-bearing snapshot is a draft snapshot — stats-only ticks would
+                            // otherwise log rows that all show the same prose.
+                            snapshots:
+                                incoming?.text !== undefined
+                                    ? [
+                                          ...(current.snapshots ?? []),
+                                          {
+                                              at,
+                                              words: typeof words === 'number' ? words : undefined,
+                                              text: incoming.text,
+                                          },
+                                      ].slice(-8)
+                                    : current.snapshots,
                         };
                     });
                 })
@@ -431,7 +647,12 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                         firstSeenAt: current.firstSeenAt ?? at,
                     }));
                 })
-                .subscribe();
+                .subscribe((status) => {
+                    // Ask the student to announce itself now: its own join announce landed before
+                    // this monitor channel existed, so without the probe the row would read as
+                    // disconnected until the next 20s heartbeat.
+                    if (status === 'SUBSCRIBED') channel.send({ type: 'broadcast', event: 'probe' });
+                });
             return channel;
         };
         for (let start = 0; start < monitorStudents.length; start += MONITOR_CHANNELS_PER_CLIENT) {
@@ -472,27 +693,118 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         params.assignmentId,
         monitorStudents.map((r) => r.studentId).join(','),
         testTeacherKeys,
+        essayTeacherKeys,
     ]);
 
-    function sendNudge(studentId: string) {
-        channelsRef.current.get(studentId)?.send({
-            type: 'broadcast',
-            event: 'nudge',
-            payload: { message: t('tests.monitor.nudge_message') },
-        });
-        if (hideNames) {
-            // Sharing the anonymized monitor must never leak a real name in the toast.
-            const index = monitorStudents.findIndex((r) => r.studentId === studentId);
-            const label =
-                index >= 0
-                    ? t('tests.monitor.anonymous_student', { index: index + 1 })
-                    : t('tests.monitor.nudge_sent_anonymous');
-            showToast(t('tests.monitor.nudge_sent_anonymous', { name: label }), 'success');
-        } else {
-            const name = monitorStudents.find((r) => r.studentId === studentId)?.name ?? '';
-            showToast(t('tests.monitor.nudge_sent', { name }), 'success');
-        }
-    }
+    // ── Essay spotlight: ask one student for the 5s cadence while their live view is open ──
+    // Re-sent every 10s rather than once: the student's channel may not have joined when the
+    // view opened, and a broadcast sent before then is silently dropped.
+    useEffect(() => {
+        if (kind !== 'essay' || !focusedStudentId) return;
+        const studentId = focusedStudentId;
+        const send = (on: boolean) => {
+            channelsRef.current.get(studentId)?.send({ type: 'broadcast', event: 'spotlight', payload: { on } });
+        };
+        send(true);
+        const interval = setInterval(() => send(true), 10_000);
+        return () => {
+            clearInterval(interval);
+            send(false);
+        };
+    }, [kind, focusedStudentId, monitorStudents.length, hasDb]);
+
+    // ── Persisted draft history ───────────────────────────────────────────────────
+    // A reload, a sleeping laptop or a dropped connection empties the channels, and the roster
+    // would know nothing until a student writes again. The once-a-minute essay snapshots are
+    // stored server-side, so seed from them instead of claiming to know less than the class
+    // already did. Tests store no draft history, so their monitors have nothing to seed from.
+    const essayAssignmentKey = kind === 'essay' ? (params.assignmentId ?? '') : '';
+    const rosterKey = monitorStudents.map((row) => row.studentId).join(',');
+    const hydratedRef = useRef('');
+    useEffect(() => {
+        const hydrationKey = `${essayAssignmentKey}|${rosterKey}`;
+        if (!hasDb || !essayAssignmentKey || rosterKey === '' || hydratedRef.current === hydrationKey) return;
+        const drafts = LiveDraftAdapter.forTeacher();
+        if (!drafts) return;
+        let cancelled = false;
+        const assignmentKeys = [
+            essayAssignmentKey,
+            ...monitorStudents.map((row) => row.teacherKey).filter((key): key is string => !!key),
+        ];
+        drafts
+            .listSnapshots(
+                assignmentKeys,
+                monitorStudents.map((row) => row.studentId)
+            )
+            .then((byStudent) => {
+                if (cancelled) return;
+                hydratedRef.current = hydrationKey;
+                if (byStudent.size === 0) return;
+                setLiveStates((prev) => {
+                    const next = { ...prev };
+                    for (const row of monitorStudents) {
+                        const history = byStudent.get(row.studentId);
+                        if (!history || history.length === 0) continue;
+                        next[row.studentId] = applyPersistedSnapshots(
+                            next[row.studentId] ?? emptyLiveState(row.studentId),
+                            history
+                        );
+                    }
+                    return next;
+                });
+            })
+            .catch(() => {
+                // History is a convenience; the live channels remain the primary path.
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [hasDb, essayAssignmentKey, rosterKey, monitorStudents]);
+
+    const sendNudge = useCallback(
+        (studentId: string, message: string) => {
+            sentNudgesRef.current.set(studentId, [
+                ...(sentNudgesRef.current.get(studentId) ?? []),
+                { message, at: Date.now() },
+            ]);
+            channelsRef.current.get(studentId)?.send({
+                type: 'broadcast',
+                event: 'nudge',
+                payload: { message },
+            });
+            // The teacher's own log keeps what was sent, so both sides tell the same story and the
+            // in-row history shows when a nudge went out.
+            setLiveStates((prev) => {
+                const current = prev[studentId] ?? emptyLiveState(studentId);
+                return {
+                    ...prev,
+                    [studentId]: {
+                        ...current,
+                        events: [...current.events, { type: 'nudge', at: new Date().toISOString(), value: message }],
+                    },
+                };
+            });
+            if (hideNames) {
+                // Sharing the anonymized monitor must never leak a real name in the toast.
+                const index = monitorStudents.findIndex((r) => r.studentId === studentId);
+                const label =
+                    index >= 0
+                        ? t('tests.monitor.anonymous_student', { index: index + 1 })
+                        : t('tests.monitor.nudge_sent_anonymous');
+                showToast(t('tests.monitor.nudge_sent_anonymous', { name: label }), 'success');
+            } else {
+                const name = monitorStudents.find((r) => r.studentId === studentId)?.name ?? '';
+                showToast(t('tests.monitor.nudge_sent', { name }), 'success');
+            }
+        },
+        [t, hideNames, monitorStudents, showToast]
+    );
+    const nudgeFocusedStudent = useCallback(
+        (message: string) => {
+            if (focusedStudentId) sendNudge(focusedStudentId, message);
+        },
+        [focusedStudentId, sendNudge]
+    );
 
     // ── Live level override (roadmap 27.2) — persists via the owner-scoped
     // set_placement_override RPC, consumed by the student's NEXT next-placement-question call;
@@ -540,6 +852,9 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         kind === 'test' &&
         test?.mode === 'placement' &&
         (test.placementEngine === 'staircase' || test.placementEngine === 'generator');
+    // The adaptive level grids (and a generator run without the placement mode flag) have no
+    // question matrix to fold proctoring into, so they keep the per-student cards.
+    const showsProctorCards = isLevelGrid || (kind === 'test' && test?.placementEngine === 'generator');
 
     const levelMaxQuestions = isLevelGrid
         ? test?.placementEngine === 'generator'
@@ -589,6 +904,23 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                 kind === 'test' && test && row.studentTest ? levelPathRunConfig(test, row.studentTest) : undefined;
             const sectionPath = kind === 'test' ? row.studentTest?.sectionPath : undefined;
             const finished = row.status === 'submitted' || row.status === 'late' || !!live.submitted;
+            // Presence alone shows a student who never opened the assignment and one whose laptop
+            // dropped as the same grey dot; the teacher needs to tell them apart.
+            const seen = live.firstSeenAt !== undefined || row.persistedEvents.length > 0;
+            const connection = deriveConnectionState({ presence, seen, finished });
+            const lastPersistedSignalAt = row.persistedEvents.reduce(
+                (latest, event) => Math.max(latest, new Date(event.at).getTime()),
+                0
+            );
+            const lastSignalAt = live.lastUpdateAt
+                ? new Date(live.lastUpdateAt).getTime()
+                : lastPersistedSignalAt > 0
+                  ? lastPersistedSignalAt
+                  : undefined;
+            const silentMinutes =
+                connection === 'lost' && lastSignalAt !== undefined
+                    ? Math.floor((now - lastSignalAt) / 60_000)
+                    : undefined;
             let completion: StudentCompletion | undefined;
             if (kind === 'test' && test && isLevelGrid) {
                 // A live 'submitted' broadcast can land before the persisted trace does.
@@ -598,7 +930,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                 const total = levelMaxQuestions ?? 0;
                 completion = { answered: finished ? Math.max(answered, total) : answered, total };
             } else if (kind === 'test' && test) {
-                completion = studentCompletion(test, mergedAnswers, sectionPath);
+                completion = studentCompletion(deliveredTest(test, row.studentId), mergedAnswers, sectionPath);
             }
 
             return {
@@ -617,10 +949,12 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                 // the monitor learns about a hand-in via the student's 'submitted'
                 // broadcast or the essay_submissions check on mount.
                 status: row.status ?? (live.submitted ? 'submitted' : undefined),
+                connection,
+                silentMinutes,
+                lastSignalAt,
             };
         });
         // `now` forces presence to be re-derived against the current time as heartbeats age.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [monitorStudents, liveStates, kind, now, test, isLevelGrid, levelMaxQuestions]);
 
     const paceByStudent = useMemo(
@@ -643,6 +977,10 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
 
     const sortedRows = useMemo(() => {
         const presenceRank: Record<string, number> = { active: 0, idle: 1, disconnected: 2 };
+        // A proctoring flag (tab-switch threshold or a stall) lifts the row to the top of the
+        // default order — the red edge on the row only helps if the teacher can see it.
+        const flagRank = (row: (typeof rows)[number]) =>
+            row.flags.tabSwitchCount >= TAB_SWITCH_WARNING_THRESHOLD || stalledFor(row) !== null ? 0 : 1;
         const copy = [...rows];
         switch (sortMode) {
             case 'name':
@@ -653,8 +991,12 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                 return copy.sort((a, b) => (a.status === 'submitted' ? 1 : 0) - (b.status === 'submitted' ? 1 : 0));
             case 'active':
             default:
-                return copy.sort((a, b) => presenceRank[a.presence] - presenceRank[b.presence]);
+                return copy.sort(
+                    (a, b) => flagRank(a) - flagRank(b) || presenceRank[a.presence] - presenceRank[b.presence]
+                );
         }
+        // stalledFor is derived from `now`/`stallMinutes`, both of which are in the deps below.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [rows, sortMode]);
 
     const filterClasses = useMemo(
@@ -672,6 +1014,90 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         });
     }, [sortedRows, classFilter, startedOnly]);
 
+    // The class triage strip: a worklist over the same rows the class/started filters left, so the
+    // counts and the grid's rows always describe the same students.
+    const triageRows = visibleRows.map((row) => {
+        // A cleared answer keeps its key in the snapshot, so count answered questions, not entries.
+        const answeredCount = test ? answeredQuestionIds(test.questions, row.mergedAnswers).size : 0;
+        return {
+            finished: row.finished,
+            tabSwitchCount: row.flags.tabSwitchCount,
+            stalledMinutes: stalledFor(row),
+            started:
+                row.live.snapshot !== null ||
+                row.live.firstSeenAt !== undefined ||
+                row.persistedEvents.length > 0 ||
+                row.mergedAnswers.length > 0,
+            progress: kind === 'essay' ? row.live.snapshot?.wordCount : answeredCount,
+            pace: paceByStudent.get(row.studentId),
+        };
+    });
+    const triage = triageCounts(triageRows);
+    const shownRows =
+        triageFilter && kind === 'test' && !isLevelGrid
+            ? visibleRows.filter((_, index) => triageMatches(triageRows[index], triageFilter))
+            : visibleRows;
+
+    // A row the filters removed can't hold the cursor, so it falls back to the first visible one.
+    const cursorId =
+        cursorStudentId && shownRows.some((row) => row.studentId === cursorStudentId)
+            ? cursorStudentId
+            : (shownRows[0]?.studentId ?? null);
+
+    // With a spotlight open, nudge and flag act on the student being watched, however it was opened.
+    const actionTargetId = focusedStudentId ?? cursorId;
+
+    const stepCursor = (delta: number) => {
+        if (shownRows.length === 0) return;
+        const current = shownRows.findIndex((row) => row.studentId === cursorId);
+        const nextIndex = Math.min(shownRows.length - 1, Math.max(0, (current < 0 ? 0 : current) + delta));
+        const nextId = shownRows[nextIndex].studentId;
+        setCursorStudentId(nextId);
+        // While the spotlight is open the cursor follows into it, so the teacher reads one draft
+        // after another instead of returning to the roster between students.
+        setFocusedStudentId((focused) => (focused === null ? null : nextId));
+    };
+
+    const toggleFlag = (studentId: string | null) => {
+        if (!studentId) return;
+        setFlaggedStudentIds((previous) => {
+            const next = new Set(previous);
+            if (next.has(studentId)) next.delete(studentId);
+            else next.add(studentId);
+            return next;
+        });
+    };
+
+    useMonitorShortcuts(
+        {
+            next: () => stepCursor(1),
+            previous: () => stepCursor(-1),
+            spotlight: () => {
+                if (!cursorId) return;
+                setFocusedStudentId((focused) => (focused === cursorId ? null : cursorId));
+            },
+            nudge: () => {
+                if (actionTargetId) sendNudge(actionTargetId, t('tests.monitor.nudge_message'));
+            },
+            flag: () => toggleFlag(actionTargetId),
+        },
+        kind === 'essay' && !sortModalOpen && shownRows.length > 0
+    );
+
+    // Where the class — not one student — is stuck: questions someone answered past but left blank.
+    const stuck = useMemo(() => {
+        if (kind !== 'test' || !test || isLevelGrid) return [];
+        const answersByStudent = new Map(
+            visibleRows
+                .filter((row) => !row.finished)
+                .map((row) => [row.studentId, answeredQuestionIds(test.questions, row.mergedAnswers)] as const)
+        );
+        return stuckQuestions(
+            test.questions.map((question) => question.id),
+            answersByStudent
+        );
+    }, [kind, test, isLevelGrid, visibleRows]);
+
     const statusSummary = (row: (typeof rows)[number], stalled: number | null, pace: PaceTrend | undefined) => {
         const parts: string[] = [];
         if (row.finished) parts.push(t('tests.monitor.summary.handed_in'));
@@ -687,8 +1113,89 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         return parts.length > 0 ? parts.join(' · ') : t('tests.monitor.summary.no_data');
     };
 
+    // One label per student for the monitor, the nudge toast and both exports: it follows the
+    // roster, not the current sort or class filter, so "Student 2" never becomes someone else.
+    const anonymousIndexByStudent = new Map(monitorStudents.map((row, rosterIndex) => [row.studentId, rosterIndex]));
     const displayName = (row: { studentId: string; name: string }, index: number) =>
-        hideNames ? t('tests.monitor.anonymous_student', { index: index + 1 }) : row.name;
+        hideNames
+            ? t('tests.monitor.anonymous_student', { index: (anonymousIndexByStudent.get(row.studentId) ?? index) + 1 })
+            : row.name;
+
+    // Badges flip silently for a screen-reader user, so say it once when a student drops out. Only
+    // transitions are spoken: the first read of the roster and the per-minute "silent for N min"
+    // counter would otherwise repeat for the whole class.
+    const announcedConnectionRef = useRef<Map<string, ConnectionState | undefined>>(new Map());
+    const [connectionAnnouncement, setConnectionAnnouncement] = useState('');
+    useEffect(() => {
+        const known = announcedConnectionRef.current;
+        const messages: string[] = [];
+        rows.forEach((row, index) => {
+            const hadPrevious = known.has(row.studentId);
+            const previous = known.get(row.studentId);
+            known.set(row.studentId, row.connection);
+            if (!hadPrevious || previous === row.connection) return;
+            if (row.connection === 'lost') {
+                messages.push(t('tests.monitor.signal.announce_lost', { name: displayName(row, index) }));
+            } else if (row.connection === 'never_opened') {
+                messages.push(t('tests.monitor.signal.announce_never_opened', { name: displayName(row, index) }));
+            }
+        });
+        if (messages.length > 0) setConnectionAnnouncement(messages.join('. '));
+        // displayName only varies with the anonymize toggle and the language, neither of which is a transition.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [rows]);
+
+    // ── Session export (the exam file) ────────────────────────────────────────────
+    // The proctoring picture is ephemeral by design, so this is the teacher's only chance to keep
+    // it: counts and ages that can sit next to a student's file without carrying their writing.
+    const sessionTitle = kind === 'test' ? (test?.name ?? '') : (essayAssignment?.title ?? '');
+    // i18next's overloads are narrower than the exporters' plain lookup, so adapt once here.
+    const exportT: SessionExportTranslate = (key, options) => t(key, options as Record<string, unknown>);
+    const exportStudents = (): SessionExportStudent[] =>
+        sortedRows.map((row, index) => {
+            const latestDraft = [...(row.live.snapshots ?? [])].reverse().find((snap) => snap.text !== undefined);
+            return {
+                name: displayName(row, index),
+                status: row.status,
+                finished: row.finished,
+                tabSwitchCount: row.flags.tabSwitchCount,
+                copyCount: row.flags.copyCount,
+                cutCount: row.flags.cutCount,
+                pasteCount: row.flags.pasteCount,
+                wordCount: row.live.snapshot?.wordCount,
+                draftAt: latestDraft?.at,
+                // Stalled time stops at hand-in, and a student who only ever sent signals is measured from the first one.
+                lastChangeAt: row.finished ? undefined : (row.live.lastChangeAt ?? row.live.firstSeenAt),
+                lastSignalAt: row.lastSignalAt,
+                nudges: mergeProctorEvents(row.persistedEvents, row.live.events)
+                    .filter((event) => event.type === 'nudge')
+                    .map((event) => ({ at: event.at, message: String(event.value ?? '') })),
+            };
+        });
+
+    const exportSessionCsv = () => {
+        const at = Date.now();
+        const students = exportStudents();
+        downloadCsv(
+            buildSessionCsv(students, { title: sessionTitle, kind, at }, exportT, at),
+            `${sanitizeFilename(sessionTitle || t('tests.monitor.export.filename_fallback'))}_session.csv`
+        );
+        showToast(t('tests.monitor.export.csv_saved'), 'success');
+    };
+
+    const exportSessionPdf = async () => {
+        const at = Date.now();
+        const students = exportStudents();
+        try {
+            const { printHtml } = await import('../utils/pdfExport');
+            await printHtml(
+                buildSessionSummaryHtml(students, { title: sessionTitle, kind, at }, exportT, at),
+                'portrait'
+            );
+        } catch {
+            showToast(t('tests.monitor.export.pdf_failed'), 'error');
+        }
+    };
 
     // ── Guard: no database configured ──────────────────────────────────────────────
     if (!hasDb) {
@@ -772,6 +1279,9 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                 }
             />
             <div className="page-content fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div role="status" aria-live="polite" className="sr-only" data-testid="monitor-connection-announcer">
+                    {connectionAnnouncement}
+                </div>
                 {/* Controls */}
                 <div
                     data-tour="lm-controls"
@@ -947,6 +1457,34 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                             {t('tests.monitor.writing_pace_toggle')}
                         </button>
                     )}
+                    <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={exportSessionCsv}
+                        disabled={testTeacherKeysLoading}
+                        data-testid="monitor-export-csv"
+                    >
+                        <Download size={14} />
+                        {t('tests.monitor.export.button_csv')}
+                    </button>
+                    <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => void exportSessionPdf()}
+                        disabled={testTeacherKeysLoading}
+                        data-testid="monitor-export-pdf"
+                    >
+                        <FileText size={14} />
+                        {t('tests.monitor.export.button_pdf')}
+                    </button>
+                    {kind === 'essay' && (
+                        <span
+                            data-testid="monitor-shortcuts-hint"
+                            style={{ fontSize: '0.78rem', color: 'var(--text-dim)' }}
+                        >
+                            {t('tests.monitor.shortcuts.hint')}
+                        </span>
+                    )}
                     <HelpPopover title={t('help.proctoring_title')}>{t('help.proctoring_body')}</HelpPopover>
                 </div>
 
@@ -958,6 +1496,83 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                     />
                 )}
 
+                {kind === 'test' && !isLevelGrid && visibleRows.length > 0 && (
+                    <div
+                        data-testid="monitor-triage"
+                        style={{
+                            position: 'sticky',
+                            top: 0,
+                            zIndex: 2,
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            alignItems: 'center',
+                            gap: 6,
+                            padding: '6px 0',
+                            background: 'var(--bg)',
+                            borderBottom: '1px solid var(--border)',
+                        }}
+                    >
+                        <span
+                            style={{
+                                fontSize: '0.72rem',
+                                letterSpacing: '0.04em',
+                                textTransform: 'uppercase',
+                                color: 'var(--text-dim)',
+                            }}
+                        >
+                            {t('tests.monitor.triage.label')}
+                        </span>
+                        {TRIAGE_KEYS.map((key) => {
+                            const count = triage[key];
+                            const active = triageFilter === key;
+                            return (
+                                <button
+                                    key={key}
+                                    type="button"
+                                    className={count > 0 ? 'badge badge-yellow' : 'badge'}
+                                    aria-pressed={active}
+                                    disabled={count === 0}
+                                    data-testid={`monitor-triage-${key}`}
+                                    onClick={() => setTriageFilter(active ? null : key)}
+                                    style={{
+                                        cursor: count > 0 ? 'pointer' : 'default',
+                                        color: count > 0 ? undefined : 'var(--text-dim)',
+                                        outline: active ? '2px solid var(--accent-text)' : undefined,
+                                    }}
+                                >
+                                    {t(`tests.monitor.triage.${key}`, { count, minutes: stallMinutes })}
+                                </button>
+                            );
+                        })}
+                        {triageFilter && (
+                            <button
+                                type="button"
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => setTriageFilter(null)}
+                            >
+                                {t('tests.monitor.triage.clear')}
+                            </button>
+                        )}
+                    </div>
+                )}
+
+                {stuck.length > 0 && (
+                    <p
+                        data-testid="monitor-stuck-questions"
+                        style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-muted)' }}
+                    >
+                        <strong style={{ color: 'var(--text)' }}>{t('tests.monitor.stuck.title')}:</strong>{' '}
+                        {stuck
+                            .map((question) =>
+                                t('tests.monitor.stuck.item', {
+                                    index: question.index,
+                                    count: question.reached,
+                                })
+                            )
+                            .join(' · ')}
+                    </p>
+                )}
+
                 {kind === 'test' && testTeacherKeysLoading ? (
                     // Teacher keys still resolving: in-progress students have no persisted
                     // row yet, so hold the skeleton instead of asserting "no students" — and
@@ -966,155 +1581,166 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                     <InlineMonitorSkeleton />
                 ) : visibleRows.length === 0 ? (
                     <p className="text-muted">{t('tests.monitor.no_students')}</p>
+                ) : shownRows.length === 0 ? (
+                    <p className="text-muted" data-testid="monitor-triage-empty">
+                        {t('tests.monitor.triage.empty')}
+                    </p>
                 ) : (
                     <>
-                        {/* Presence + proctoring summary */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                            {visibleRows.map((row, index) => {
-                                const stalled = stalledFor(row);
-                                const pace = paceByStudent.get(row.studentId);
-                                return (
-                                    <div
-                                        key={row.studentId}
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between',
-                                            gap: 12,
-                                            flexWrap: 'wrap',
-                                            background: 'var(--bg-elevated)',
-                                            border: '1px solid var(--border)',
-                                            borderRadius: 10,
-                                            padding: '10px 14px',
-                                        }}
-                                    >
+                        {/* Presence + proctoring summary — the adaptive level grids have no question
+                            matrix to fold it into, so they keep the card list. */}
+                        {showsProctorCards && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                {visibleRows.map((row, index) => {
+                                    const stalled = stalledFor(row);
+                                    const pace = paceByStudent.get(row.studentId);
+                                    return (
                                         <div
-                                            style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}
+                                            key={row.studentId}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                gap: 12,
+                                                flexWrap: 'wrap',
+                                                background: 'var(--bg-elevated)',
+                                                border: '1px solid var(--border)',
+                                                borderRadius: 10,
+                                                padding: '10px 14px',
+                                            }}
                                         >
-                                            <span style={{ display: 'flex', flexDirection: 'column', minWidth: 120 }}>
-                                                <span style={{ fontWeight: 600, color: 'var(--text)' }}>
-                                                    {displayName(row, index)}
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 12,
+                                                    flexWrap: 'wrap',
+                                                }}
+                                            >
+                                                <span
+                                                    style={{ display: 'flex', flexDirection: 'column', minWidth: 120 }}
+                                                >
+                                                    <span style={{ fontWeight: 600, color: 'var(--text)' }}>
+                                                        {displayName(row, index)}
+                                                    </span>
+                                                    {showStatusSummary && kind === 'test' && (
+                                                        <span
+                                                            data-testid="monitor-status-summary"
+                                                            style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}
+                                                        >
+                                                            {statusSummary(row, stalled, pace)}
+                                                        </span>
+                                                    )}
                                                 </span>
-                                                {showStatusSummary && kind === 'test' && (
+                                                <PresenceBadge presence={row.presence} status={row.status} />
+                                                {stalled !== null && (
                                                     <span
-                                                        data-testid="monitor-status-summary"
-                                                        style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}
+                                                        className="badge badge-yellow"
+                                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
                                                     >
-                                                        {statusSummary(row, stalled, pace)}
+                                                        <Hourglass size={11} aria-hidden="true" />
+                                                        {t('tests.monitor.stalled_badge', { count: stalled })}
                                                     </span>
                                                 )}
-                                            </span>
-                                            <PresenceBadge presence={row.presence} status={row.status} />
-                                            {stalled !== null && (
-                                                <span
-                                                    className="badge badge-yellow"
-                                                    style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                                                >
-                                                    <Hourglass size={11} aria-hidden="true" />
-                                                    {t('tests.monitor.stalled_badge', { count: stalled })}
-                                                </span>
-                                            )}
-                                            {pace &&
-                                                (() => {
-                                                    const { className, Icon } = PACE_BADGE[pace];
-                                                    return (
-                                                        <span
-                                                            className={className}
-                                                            style={{
-                                                                display: 'inline-flex',
-                                                                alignItems: 'center',
-                                                                gap: 4,
-                                                            }}
-                                                        >
-                                                            <Icon size={11} aria-hidden="true" />
-                                                            {t(`tests.monitor.pace.${pace}`)}
-                                                        </span>
-                                                    );
-                                                })()}
-                                            <button
-                                                type="button"
-                                                className="btn btn-ghost btn-sm"
-                                                onClick={() => sendNudge(row.studentId)}
-                                                title={t('tests.monitor.nudge_button')}
-                                                style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+                                                {pace &&
+                                                    (() => {
+                                                        const { className, Icon } = PACE_BADGE[pace];
+                                                        return (
+                                                            <span
+                                                                className={className}
+                                                                style={{
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    gap: 4,
+                                                                }}
+                                                            >
+                                                                <Icon size={11} aria-hidden="true" />
+                                                                {t(`tests.monitor.pace.${pace}`)}
+                                                            </span>
+                                                        );
+                                                    })()}
+                                                <NudgeMenu onSend={(message) => sendNudge(row.studentId, message)} />
+                                                {kind === 'test' && test?.placementEngine === 'generator' && (
+                                                    <PlacementLevelPanel
+                                                        level={row.placementLevel}
+                                                        eloAnchor={row.live.snapshot?.generatorEloAnchor}
+                                                        questionsAsked={row.live.snapshot?.questionsAsked}
+                                                        levelPath={row.levelPath}
+                                                        levelPathConfig={row.levelPathConfig}
+                                                        showConfidence={showEstimateConfidence}
+                                                        disabled={
+                                                            overridingStudentIds.has(row.studentId) ||
+                                                            row.status === 'submitted' ||
+                                                            row.status === 'late'
+                                                        }
+                                                        onNudge={(direction) =>
+                                                            void sendLevelOverride(row.studentId, direction)
+                                                        }
+                                                    />
+                                                )}
+                                            </div>
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 8,
+                                                    flexWrap: 'wrap',
+                                                }}
                                             >
-                                                <Send size={13} /> {t('tests.monitor.nudge_button')}
-                                            </button>
-                                            {kind === 'test' && test?.placementEngine === 'generator' && (
-                                                <PlacementLevelPanel
-                                                    level={row.placementLevel}
-                                                    eloAnchor={row.live.snapshot?.generatorEloAnchor}
-                                                    questionsAsked={row.live.snapshot?.questionsAsked}
-                                                    levelPath={row.levelPath}
-                                                    levelPathConfig={row.levelPathConfig}
-                                                    showConfidence={showEstimateConfidence}
-                                                    disabled={
-                                                        overridingStudentIds.has(row.studentId) ||
-                                                        row.status === 'submitted' ||
-                                                        row.status === 'late'
-                                                    }
-                                                    onNudge={(direction) =>
-                                                        void sendLevelOverride(row.studentId, direction)
-                                                    }
-                                                />
-                                            )}
+                                                {row.flags.tabSwitchCount > 0 && (
+                                                    <span
+                                                        className="badge"
+                                                        style={{
+                                                            background:
+                                                                row.flags.tabSwitchCount >= TAB_SWITCH_WARNING_THRESHOLD
+                                                                    ? 'color-mix(in srgb, var(--red) 15%, transparent)'
+                                                                    : 'color-mix(in srgb, var(--yellow) 15%, transparent)',
+                                                            color:
+                                                                row.flags.tabSwitchCount >= TAB_SWITCH_WARNING_THRESHOLD
+                                                                    ? 'var(--red)'
+                                                                    : 'var(--yellow)',
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: 4,
+                                                        }}
+                                                    >
+                                                        <AlertTriangle size={11} />
+                                                        {t('tests.monitor.flags.tabSwitch', {
+                                                            count: row.flags.tabSwitchCount,
+                                                        })}
+                                                    </span>
+                                                )}
+                                                {(row.flags.copyCount > 0 ||
+                                                    row.flags.cutCount > 0 ||
+                                                    row.flags.pasteCount > 0) && (
+                                                    <span className="badge badge-blue">
+                                                        {t('tests.monitor.flags.clipboard', {
+                                                            count:
+                                                                row.flags.copyCount +
+                                                                row.flags.cutCount +
+                                                                row.flags.pasteCount,
+                                                        })}
+                                                    </span>
+                                                )}
+                                                {row.flags.battery && (
+                                                    <span className="badge">
+                                                        {t('tests.monitor.flags.battery', {
+                                                            level: row.flags.battery.level,
+                                                            charging: row.flags.battery.charging ? '+' : '',
+                                                        })}
+                                                    </span>
+                                                )}
+                                                {row.flags.sebActive && (
+                                                    <span className="badge badge-green">
+                                                        {t('tests.monitor.flags.seb')}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
-                                        <div
-                                            style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}
-                                        >
-                                            {row.flags.tabSwitchCount > 0 && (
-                                                <span
-                                                    className="badge"
-                                                    style={{
-                                                        background:
-                                                            row.flags.tabSwitchCount >= TAB_SWITCH_WARNING_THRESHOLD
-                                                                ? 'color-mix(in srgb, var(--red) 15%, transparent)'
-                                                                : 'color-mix(in srgb, var(--yellow) 15%, transparent)',
-                                                        color:
-                                                            row.flags.tabSwitchCount >= TAB_SWITCH_WARNING_THRESHOLD
-                                                                ? 'var(--red)'
-                                                                : 'var(--yellow)',
-                                                        display: 'inline-flex',
-                                                        alignItems: 'center',
-                                                        gap: 4,
-                                                    }}
-                                                >
-                                                    <AlertTriangle size={11} />
-                                                    {t('tests.monitor.flags.tabSwitch', {
-                                                        count: row.flags.tabSwitchCount,
-                                                    })}
-                                                </span>
-                                            )}
-                                            {(row.flags.copyCount > 0 ||
-                                                row.flags.cutCount > 0 ||
-                                                row.flags.pasteCount > 0) && (
-                                                <span className="badge badge-blue">
-                                                    {t('tests.monitor.flags.clipboard', {
-                                                        count:
-                                                            row.flags.copyCount +
-                                                            row.flags.cutCount +
-                                                            row.flags.pasteCount,
-                                                    })}
-                                                </span>
-                                            )}
-                                            {row.flags.battery && (
-                                                <span className="badge">
-                                                    {t('tests.monitor.flags.battery', {
-                                                        level: row.flags.battery.level,
-                                                        charging: row.flags.battery.charging ? '+' : '',
-                                                    })}
-                                                </span>
-                                            )}
-                                            {row.flags.sebActive && (
-                                                <span className="badge badge-green">
-                                                    {t('tests.monitor.flags.seb')}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
 
                         {/* Kind-specific live view */}
                         {kind === 'test' && test && !isLevelGrid && test.questions.length === 0 && (
@@ -1122,22 +1748,41 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                 {t('tests.monitor.grid.no_questions')}
                             </p>
                         )}
-                        {kind === 'test' && test && !isLevelGrid && test.questions.length > 0 && (
+                        {kind === 'test' && test && !isLevelGrid && (
                             <ResponsesGrid
                                 test={test}
                                 sortRules={columnSortRules}
                                 showProgress={showProgress}
                                 showClassProgress={showClassProgress}
                                 showMilestones={showMilestones}
-                                rows={visibleRows.map((row, index) => ({
-                                    pace: paceByStudent.get(row.studentId),
-                                    studentId: row.studentId,
-                                    displayName: displayName(row, index),
-                                    classId: row.classId,
-                                    className: row.className,
-                                    sectionPath: row.sectionPath,
-                                    answers: row.mergedAnswers,
-                                }))}
+                                rows={shownRows.map((row, index) => {
+                                    const pace = paceByStudent.get(row.studentId);
+                                    const stalled = stalledFor(row);
+                                    return {
+                                        pace,
+                                        studentId: row.studentId,
+                                        displayName: displayName(row, index),
+                                        classId: row.classId,
+                                        className: row.className,
+                                        sectionPath: row.sectionPath,
+                                        answers: row.mergedAnswers,
+                                        // The proctoring list used to be a separate stack of
+                                        // cards; it now rides in the matrix row it belongs to.
+                                        proctor: {
+                                            presence: row.presence,
+                                            status: row.status,
+                                            connection: row.connection,
+                                            silentMinutes: row.silentMinutes,
+                                            flags: row.flags,
+                                            events: mergeProctorEvents(row.persistedEvents, row.live.events),
+                                            stalledMinutes: stalled,
+                                            statusSummary: showStatusSummary
+                                                ? statusSummary(row, stalled, pace)
+                                                : undefined,
+                                            onNudge: (message: string) => sendNudge(row.studentId, message),
+                                        },
+                                    };
+                                })}
                             />
                         )}
 
@@ -1175,25 +1820,99 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                         )}
 
                         {kind === 'essay' &&
-                            visibleRows.map((row, index) => (
-                                <LiveDraftPanel
-                                    key={row.studentId}
-                                    displayName={displayName(row, index)}
-                                    presence={row.presence}
-                                    status={row.status}
-                                    wordCount={row.live.snapshot?.wordCount}
-                                    lastActivityAt={row.live.lastUpdateAt ?? undefined}
-                                    showWritingPace={showWritingPace}
-                                    wordSamples={row.live.wordSamples}
-                                    lastChangeAt={row.live.lastChangeAt}
-                                    now={now}
-                                    draftText={
-                                        row.live.snapshot?.text !== undefined
-                                            ? stripCommentHtml(row.live.snapshot.text)
-                                            : undefined
-                                    }
-                                />
-                            ))}
+                            (() => {
+                                const focusedRow = focusedStudentId
+                                    ? visibleRows.find((row) => row.studentId === focusedStudentId)
+                                    : undefined;
+                                if (focusedRow) {
+                                    const index = visibleRows.indexOf(focusedRow);
+                                    const proseSnapshots = (focusedRow.live.snapshots ?? [])
+                                        .map((snap) => snap.text)
+                                        .filter((text): text is string => text !== undefined);
+                                    return (
+                                        <EssaySpotlight
+                                            displayName={displayName(focusedRow, index)}
+                                            presence={focusedRow.presence}
+                                            status={focusedRow.status}
+                                            wordCount={focusedRow.live.snapshot?.wordCount}
+                                            wordSamples={focusedRow.live.wordSamples}
+                                            lastChangeAt={focusedRow.live.lastChangeAt}
+                                            lastActivityAt={focusedRow.live.lastUpdateAt ?? undefined}
+                                            draftText={
+                                                focusedRow.live.snapshot?.text !== undefined
+                                                    ? stripCommentHtml(focusedRow.live.snapshot.text)
+                                                    : undefined
+                                            }
+                                            previousDraftText={previousDistinctDraft(
+                                                proseSnapshots.map(stripCommentHtml)
+                                            )}
+                                            snapshots={[...(focusedRow.live.snapshots ?? [])].reverse()}
+                                            events={mergeProctorEvents(
+                                                focusedRow.persistedEvents,
+                                                focusedRow.live.events
+                                            )}
+                                            flags={focusedRow.flags}
+                                            flagged={flaggedStudentIds.has(focusedRow.studentId)}
+                                            onToggleFlag={() => toggleFlag(focusedRow.studentId)}
+                                            showWritingPace={showWritingPace}
+                                            onNudge={nudgeFocusedStudent}
+                                            projectorHref={`/essays/${params.assignmentId ?? ''}/monitor/project/${focusedRow.studentId}${
+                                                focusedRow.teacherKey && focusedRow.teacherKey !== params.assignmentId
+                                                    ? `?key=${encodeURIComponent(focusedRow.teacherKey)}`
+                                                    : ''
+                                            }`}
+                                            onLeave={() => setFocusedStudentId(null)}
+                                            now={now}
+                                        />
+                                    );
+                                }
+                                return (
+                                    <EssayMonitorRoster
+                                        rows={visibleRows.map((row, index) => {
+                                            const texts = (row.live.snapshots ?? []).filter(
+                                                (snap) => snap.text !== undefined
+                                            );
+                                            const latest = texts[texts.length - 1];
+                                            const previousText = previousDistinctDraft(
+                                                texts.map((snap) => stripCommentHtml(snap.text ?? ''))
+                                            );
+                                            return {
+                                                studentId: row.studentId,
+                                                displayName: displayName(row, index),
+                                                presence: row.presence,
+                                                status: row.status,
+                                                connection: row.connection,
+                                                silentMinutes: row.silentMinutes,
+                                                selected: row.studentId === cursorId,
+                                                flagged: flaggedStudentIds.has(row.studentId),
+                                                typedChars: row.live.snapshot?.typedChars,
+                                                pastedChars: row.live.snapshot?.pastedChars,
+                                                wordCount: row.live.snapshot?.wordCount,
+                                                wordSamples: row.live.wordSamples,
+                                                lastChangeAt: row.live.lastChangeAt,
+                                                flags: row.flags,
+                                                draftText:
+                                                    latest?.text !== undefined
+                                                        ? stripCommentHtml(latest.text)
+                                                        : undefined,
+                                                previousText,
+                                                // Word counts land every few seconds, so the sparkline runs on
+                                                // those samples; only the prose is minute-grained.
+                                                snapshotWords: (row.live.wordSamples ?? []).map(
+                                                    (sample) => sample.words
+                                                ),
+                                                snapshotAgeAt: latest?.at,
+                                            };
+                                        })}
+                                        onWatch={(studentId) => {
+                                            setCursorStudentId(studentId);
+                                            setFocusedStudentId(studentId);
+                                        }}
+                                        showWritingPace={showWritingPace}
+                                        now={now}
+                                    />
+                                );
+                            })()}
                     </>
                 )}
 

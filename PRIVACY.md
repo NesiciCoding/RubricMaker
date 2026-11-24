@@ -51,6 +51,8 @@ All data is stored exclusively in the browser's `localStorage` under the origin 
 
 **Backup files:** The application can export all data to a JSON file written to the operator's local filesystem. This file is created on demand and is not uploaded anywhere. The operator is responsible for the security of this file.
 
+**Browser error reports (optional, off unless the operator enables it):** When the operator builds the application with `VITE_ERROR_REPORTING=true` and a Supabase database is connected, a JavaScript error in a browser tab is recorded in the operator's own database (`client_logs`, category `error`). A record holds technical data only: the error type, a one-way hash of the message (never the message itself, because a message can echo what a user typed), the file position in the application's own bundle, the page pattern (record ids and share codes are replaced by `:id`), the build identifier, the role, the school and account identifiers the table already stores, and a random per-tab session id. It never holds anything a user typed, student names, grades or document content. Nothing is sent to a third party, a session is capped at 20 records, and rows are deleted after 30 days by the `client-logs-cleanup` job. See `docs/ERROR_REPORTING.md`.
+
 ---
 
 ## 3. Data NOT Collected
@@ -58,7 +60,7 @@ All data is stored exclusively in the browser's `localStorage` under the origin 
 The following data is **never collected, stored, or transmitted** by this application:
 
 - Browser usage analytics (no Google Analytics, Mixpanel, or equivalent)
-- Error and crash reports (no Sentry or equivalent)
+- Error and crash reports sent to a third party (no Sentry or equivalent). The optional, operator-run error log described in §2 stays on the operator's own server
 - User session identifiers or tracking cookies
 - IP addresses or geolocation
 - Device fingerprints

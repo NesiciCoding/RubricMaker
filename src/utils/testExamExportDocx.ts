@@ -21,8 +21,11 @@ import type { Student, Test, TestQuestion } from '../types';
 import { buildDocxStyles } from './docxExport';
 import { hasRichContent, promptToHtml, sanitizeFilename } from './exportDataPrep';
 import { htmlToDocxChildren, htmlToDocxLead, type DocxImageMap } from './essayExport';
-import { plainQuestionPromptText } from './clozeParse';
+import { isRichClozePrompt, plainQuestionPromptText } from './clozeParse';
+import { richClozeHtmlWithBlanks } from './clozeHtml';
+import { parseInlineScript } from './inlineScript';
 import { calcTestMaxPoints } from './testCalc';
+import { examPapers } from './variantDelivery';
 import {
     ANSWER_LINE_SPACING_MM,
     CHOICE_CELL_GAP_MM,
@@ -211,12 +214,43 @@ function clozeRuns(question: TestQuestion): TextRun[] {
     );
 }
 
-function matchingTable(question: TestQuestion): Table {
+/** Option / item text as runs, with `_{sub}` and `^{sup}` as real sub- and superscript. */
+function scriptRuns(text: string): TextRun[] {
+    return parseInlineScript(text).map(
+        (part) =>
+            new TextRun({
+                text: part.text,
+                subScript: part.kind === 'sub' || undefined,
+                superScript: part.kind === 'sup' || undefined,
+            })
+    );
+}
+
+/** A small picture run for a matching / ordering / categorize item, or nothing when it has none or cannot be loaded. */
+async function itemImageRuns(url: string | undefined): Promise<ImageRun[]> {
+    if (!url) return [];
+    const run = await questionImageRun(url, 90);
+    return run ? [run] : [];
+}
+
+async function matchingTable(question: TestQuestion): Promise<Table> {
     const data = matchingBookletData(question);
+    const leftParagraphs = await Promise.all(
+        data.left.map(
+            async (t, i) =>
+                new Paragraph({
+                    children: [
+                        new TextRun(`${i + 1}.  `),
+                        ...(await itemImageRuns(data.leftImages[i])),
+                        ...scriptRuns(t),
+                    ],
+                })
+        )
+    );
     const leftCell = new TableCell({
         borders: NO_BORDER,
         width: { size: 50, type: WidthType.PERCENTAGE },
-        children: data.left.map((t, i) => new Paragraph({ text: `${i + 1}.  ${t}` })),
+        children: leftParagraphs,
     });
     const rightCell = new TableCell({
         borders: NO_BORDER,
@@ -224,7 +258,7 @@ function matchingTable(question: TestQuestion): Table {
         children: data.rightOptions.map(
             (o) =>
                 new Paragraph({
-                    children: [new TextRun({ text: `${o.letter}  `, bold: true }), new TextRun(o.text)],
+                    children: [new TextRun({ text: `${o.letter}  `, bold: true }), ...scriptRuns(o.text)],
                 })
         ),
     });
@@ -234,19 +268,37 @@ function matchingTable(question: TestQuestion): Table {
     });
 }
 
-function orderingParagraphs(question: TestQuestion): Paragraph[] {
-    return orderingBookletItems(question).map(
-        (it) =>
-            new Paragraph({
-                children: [new TextRun({ text: `${it.letter}  `, bold: true }), new TextRun(it.text)],
-                indent: { left: 360 },
-            })
+async function orderingParagraphs(question: TestQuestion): Promise<Paragraph[]> {
+    return Promise.all(
+        orderingBookletItems(question).map(
+            async (it) =>
+                new Paragraph({
+                    children: [
+                        new TextRun({ text: `${it.letter}  `, bold: true }),
+                        ...(await itemImageRuns(it.imageUrl)),
+                        ...scriptRuns(it.text),
+                    ],
+                    indent: { left: 360 },
+                })
+        )
     );
 }
 
-function categorizeParagraphs(question: TestQuestion): Paragraph[] {
+async function categorizeParagraphs(question: TestQuestion): Promise<Paragraph[]> {
     const data = categorizeBookletData(question);
-    const items = data.items.map((t, i) => new Paragraph({ text: `${i + 1}.  ${t}`, indent: { left: 360 } }));
+    const items = await Promise.all(
+        data.items.map(
+            async (t, i) =>
+                new Paragraph({
+                    children: [
+                        new TextRun(`${i + 1}.  `),
+                        ...(await itemImageRuns(data.itemImages[i])),
+                        ...scriptRuns(t),
+                    ],
+                    indent: { left: 360 },
+                })
+        )
+    );
     const categoryLine = new Paragraph({
         children: [
             new TextRun({ text: `${tx('categories_label')}: `, bold: true }),
@@ -257,7 +309,7 @@ function categorizeParagraphs(question: TestQuestion): Paragraph[] {
     return [...items, categoryLine];
 }
 
-/** Image MIME types docx can embed directly; anything else (e.g. webp, svg) is skipped rather than crash the export. */
+/** Image MIME types docx can embed directly; WebP is converted to PNG, anything else (e.g. svg) is skipped rather than crash the export. */
 const DOCX_IMAGE_TYPE: Record<string, 'jpg' | 'png' | 'gif' | 'bmp'> = {
     'image/jpeg': 'jpg',
     'image/jpg': 'jpg',
@@ -283,18 +335,32 @@ interface FetchedDocxImage {
     height: number;
 }
 
+/** docx cannot embed WebP, but the browser can decode it: redraw the bitmap on a canvas and take PNG bytes. */
+async function bitmapToPng(bitmap: ImageBitmap): Promise<ArrayBuffer | null> {
+    const canvas = document.createElement('canvas');
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const context = canvas.getContext('2d');
+    if (!context) return null;
+    context.drawImage(bitmap, 0, 0);
+    const png = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+    return png ? png.arrayBuffer() : null;
+}
+
 async function fetchDocxImage(imageUrl: string, maxWidthPx: number): Promise<FetchedDocxImage | null> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), IMAGE_FETCH_TIMEOUT_MS);
     try {
         const blob = await fetch(imageUrl, { signal: controller.signal }).then((r) => r.blob());
-        const type = DOCX_IMAGE_TYPE[blob.type];
-        if (!type) return null;
+        const direct = DOCX_IMAGE_TYPE[blob.type];
+        if (!direct && blob.type !== 'image/webp') return null;
         const bitmap = await createImageBitmap(blob);
+        const converted = direct ? null : await bitmapToPng(bitmap);
+        if (!direct && !converted) return null;
         const scale = Math.min(1, maxWidthPx / bitmap.width);
         return {
-            type,
-            data: await blob.arrayBuffer(),
+            type: direct ?? 'png',
+            data: converted ?? (await blob.arrayBuffer()),
             width: Math.round(bitmap.width * scale),
             height: Math.round(bitmap.height * scale),
         };
@@ -357,7 +423,14 @@ async function questionParagraphs(
     options: TestExamExportOptions
 ): Promise<(Paragraph | Table)[]> {
     const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown' || question.type === 'cloze-bank';
-    const rich = isCloze ? null : await richPromptToDocx(plainQuestionPromptText(question));
+    const intro = isCloze && question.clozeIntro ? await richPromptToDocx(question.clozeIntro) : null;
+    const richCloze =
+        isCloze && isRichClozePrompt(question.prompt)
+            ? await richPromptToDocx(
+                  richClozeHtmlWithBlanks(question.prompt, (index) => `<u><strong>(${index + 1})</strong></u>`)
+              )
+            : null;
+    const rich = isCloze ? (intro ?? richCloze) : await richPromptToDocx(plainQuestionPromptText(question));
     const promptRuns = rich ? rich.leadRuns : clozeRuns(question);
 
     const blocks: (Paragraph | Table)[] = [
@@ -371,6 +444,18 @@ async function questionParagraphs(
             spacing: { ...rich?.leadSpacing, after: 60 },
         }),
         ...(rich?.rest ?? []),
+        ...(intro
+            ? richCloze
+                ? [
+                      new Paragraph({
+                          bidirectional: richCloze.leadRtl || undefined,
+                          children: richCloze.leadRuns,
+                          spacing: { ...richCloze.leadSpacing, after: 60 },
+                      }),
+                      ...richCloze.rest,
+                  ]
+                : [new Paragraph({ children: clozeRuns(question), spacing: { after: 60 } })]
+            : []),
         ...(question.audioUrl ? [audioNoteParagraph()] : []),
     ];
 
@@ -385,7 +470,7 @@ async function questionParagraphs(
             for (const [i, o] of (question.options ?? []).entries()) {
                 blocks.push(
                     new Paragraph({
-                        children: [new TextRun({ text: `${optionLetter(i)}  `, bold: true }), new TextRun(o.text)],
+                        children: [new TextRun({ text: `${optionLetter(i)}  `, bold: true }), ...scriptRuns(o.text)],
                         indent: { left: 360 },
                     })
                 );
@@ -398,11 +483,17 @@ async function questionParagraphs(
         case 'true-false':
             blocks.push(
                 new Paragraph({
-                    children: [new TextRun({ text: 'A  ', bold: true }), new TextRun(tx('true'))],
+                    children: [
+                        new TextRun({ text: 'A  ', bold: true }),
+                        new TextRun(question.trueLabel?.trim() || tx('true')),
+                    ],
                     indent: { left: 360 },
                 }),
                 new Paragraph({
-                    children: [new TextRun({ text: 'B  ', bold: true }), new TextRun(tx('false'))],
+                    children: [
+                        new TextRun({ text: 'B  ', bold: true }),
+                        new TextRun(question.falseLabel?.trim() || tx('false')),
+                    ],
                     indent: { left: 360 },
                 })
             );
@@ -473,13 +564,13 @@ async function questionParagraphs(
             break;
         }
         case 'matching':
-            blocks.push(matchingTable(question));
+            blocks.push(await matchingTable(question));
             break;
         case 'ordering':
-            blocks.push(...orderingParagraphs(question));
+            blocks.push(...(await orderingParagraphs(question)));
             break;
         case 'categorize':
-            blocks.push(...categorizeParagraphs(question));
+            blocks.push(...(await categorizeParagraphs(question)));
             break;
         case 'hot-text':
             if (options.hotTextMirror) {
@@ -909,19 +1000,43 @@ interface ExportExamDocxOptions extends TestExamExportOptions {
  */
 export async function exportExamDocx(test: Test, options: ExportExamDocxOptions): Promise<void> {
     const base = sanitizeFilename(test.name);
+    // A test with easier-cloze variants needs one paper per set of questions; see examPapers().
+    const papers = examPapers(test, options.students);
+    const files: { name: string; blob: Blob }[] = [];
+    for (const [index, paper] of papers.entries()) {
+        const prefix = papers.length > 1 ? `${base}-paper${index + 1}` : base;
+        files.push(...(await examPaperFiles(paper.test, options, paper.students, prefix)));
+    }
+
+    if (files.length === 1) {
+        saveAs(files[0].blob, files[0].name);
+        return;
+    }
+    const JSZip = (await import('jszip')).default;
+    const zip = new JSZip();
+    for (const file of files) zip.file(file.name, file.blob);
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    saveAs(zipBlob, `${base}-exam.zip`);
+}
+
+async function examPaperFiles(
+    test: Test,
+    options: ExportExamDocxOptions,
+    students: Student[],
+    prefix: string
+): Promise<{ name: string; blob: Blob }[]> {
     const files: { name: string; blob: Blob }[] = [
         {
-            name: `${base}-booklet.docx`,
+            name: `${prefix}-booklet.docx`,
             blob: await buildDocxBlob(await buildBookletChildren(test, options), options),
         },
     ];
     if (options.attachmentMode === 'separate') {
         files.push({
-            name: `${base}-attachment.docx`,
+            name: `${prefix}-attachment.docx`,
             blob: await buildDocxBlob(await buildAttachmentChildren(test, options), options),
         });
     }
-    const students = options.students ?? [];
     const answerChildren: (Paragraph | Table)[] =
         students.length > 0
             ? (
@@ -933,17 +1048,8 @@ export async function exportExamDocx(test: Test, options: ExportExamDocxOptions)
                   )
               ).flat()
             : await answerSheetChildren(test, undefined, options.versionLabel);
-    files.push({ name: `${base}-answer-sheet.docx`, blob: await buildDocxBlob(answerChildren, options) });
-
-    if (files.length === 1) {
-        saveAs(files[0].blob, files[0].name);
-        return;
-    }
-    const JSZip = (await import('jszip')).default;
-    const zip = new JSZip();
-    for (const file of files) zip.file(file.name, file.blob);
-    const zipBlob = await zip.generateAsync({ type: 'blob' });
-    saveAs(zipBlob, `${base}-exam.zip`);
+    files.push({ name: `${prefix}-answer-sheet.docx`, blob: await buildDocxBlob(answerChildren, options) });
+    return files;
 }
 
 /** Exports only the grading key — kept as an explicit, separate action from exportExamDocx() so a teacher never bundles it with student-facing materials by default. */

@@ -53,7 +53,7 @@ export interface TestCardProps {
     onImportSubmission: () => void;
     onScan: () => void;
     onMonitor: () => void;
-    onExamExport: () => void;
+    onExamExport: (trigger: HTMLElement | null) => void;
     onShare: () => void;
     onDuplicate: () => void;
     onArchive: () => void;
@@ -187,13 +187,17 @@ const TestCard = React.forwardRef<HTMLDivElement, TestCardProps>(function TestCa
     const { t } = useTranslation();
     const [menuOpen, setMenuOpen] = useState(false);
     const menuButtonRef = useRef<HTMLButtonElement>(null);
+    const [menuTrigger, setMenuTrigger] = useState<HTMLButtonElement | null>(null);
     const isOverdue = !!test.dueDate && new Date(test.dueDate) < new Date();
-    const canAssign = test.questions.length > 0 || isGeneratorTest(test);
+    const canAssign = !test.scoreOnly && (test.questions.length > 0 || isGeneratorTest(test));
     const showScores = test.mode !== 'placement' && !test.scoreOnly;
 
-    const fromMenu = (action: () => void) => () => {
+    // The focused menu item unmounts with the menu, so hand focus back to the trigger first; an
+    // action that opens a modal or navigates then sets its own focus on top of that.
+    const fromMenu = (action: (trigger: HTMLElement | null) => void) => () => {
+        menuTrigger?.focus();
         setMenuOpen(false);
-        action();
+        action(menuTrigger);
     };
 
     return (
@@ -226,7 +230,10 @@ const TestCard = React.forwardRef<HTMLDivElement, TestCardProps>(function TestCa
                     {test.name}
                 </h2>
                 <button
-                    ref={menuButtonRef}
+                    ref={(el) => {
+                        menuButtonRef.current = el;
+                        setMenuTrigger(el);
+                    }}
                     type="button"
                     className="btn btn-ghost btn-icon btn-sm"
                     title={t('tests.card_more_actions')}

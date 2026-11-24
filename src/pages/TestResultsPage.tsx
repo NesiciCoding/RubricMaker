@@ -21,6 +21,7 @@ import { estimatePlacement } from '../utils/placementResult';
 import { isNumericNorm, normTierLabel, resolveTestGrade, resolveTestScale, testNorm } from '../utils/testGradingNorm';
 import { stripHtmlTags } from '../utils/exportDataPrep';
 import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse';
+import { matchingRightById } from '../utils/testAnswerText';
 import {
     alignDictation,
     answersMatch,
@@ -36,7 +37,6 @@ import OpenAnswerInsightsPanel from '../components/Tests/OpenAnswerInsightsPanel
 import { blankRubricEntries, rubricAnswerPoints } from '../utils/rubricTaskScoring';
 import { questionTypeLabelKey } from '../utils/questionTypeKey';
 import { buildReviewDeck } from '../utils/questionsToDeck';
-import { versionForStudent } from '../utils/testVersions';
 import CommentBankModal from '../components/Comments/CommentBankModal';
 import GrammarStandardsPanel from '../components/Grammar/GrammarStandardsPanel';
 import type { TestAnswer, TestQuestion, ProctorEventType, CommentBankItem, Rubric, ScoreEntry } from '../types';
@@ -135,7 +135,8 @@ function formatStudentResponse(
         }
     }
     if (question.type === 'true-false') {
-        return t(`tests.true_false_${response}`);
+        const custom = response === 'true' ? question.trueLabel : question.falseLabel;
+        return custom?.trim() || t(`tests.true_false_${response}`);
     }
     if (isClozeType(question.type)) {
         let answers: Record<string, string> = {};
@@ -219,12 +220,12 @@ function formatStudentResponse(
         } catch {
             answers = {};
         }
-        const pairsById = new Map(pairs.map((p) => [p.id, p]));
+        const rightById = matchingRightById(question);
         return (
             <>
                 {pairs.map((pair, i) => {
                     const chosenId = answers[pair.id];
-                    const chosen = chosenId ? pairsById.get(chosenId) : undefined;
+                    const chosen = chosenId ? rightById.get(chosenId) : undefined;
                     const correct = chosenId === pair.id;
                     return (
                         <div key={pair.id} style={{ marginTop: i === 0 ? 0 : 4 }}>
@@ -239,7 +240,7 @@ function formatStudentResponse(
                                           : 'var(--red-text)',
                                 }}
                             >
-                                {chosen?.right ?? '___'}
+                                {chosen ?? '___'}
                             </span>
                         </div>
                     );
@@ -473,7 +474,7 @@ export default function TestResultsPage() {
     );
     const studentTest = studentTests.find((st) => st.id === studentTestId && st.testId === testId);
     const student = students.find((s) => s.id === studentTest?.studentId);
-    const testVersion = versionForStudent(studentTest?.studentId ?? '', test?.versionCount);
+    const testVersion = studentTest?.testVersion;
     // A class shared with me as "Can view": results are readable, but the server refuses changes.
     const readOnly = !canEditStudentWork(student?.classId);
     const isLateSubmission = !!test?.dueDate && !!studentTest?.submittedAt && studentTest.submittedAt > test.dueDate;

@@ -126,7 +126,35 @@ describe('TestAssignmentModal', () => {
         expect(teacherKeys.size).toBe(classAStudents.length);
     });
 
-    it('saves one test_assignments row per student once the test is assigned to the chosen class', async () => {
+    it('keeps option feedback out of offline links unless the test is practice', async () => {
+        const { default: TestAssignmentModal } = await import('../TestAssignmentModal');
+        const withFeedback: RmTest = {
+            ...mockTest,
+            questions: [
+                {
+                    id: 'q1',
+                    prompt: 'Q1',
+                    type: 'multiple-choice',
+                    points: 1,
+                    options: [{ id: 'o1', text: 'A', isCorrect: true, feedback: 'Because.' }],
+                },
+            ],
+        };
+        const decodedOptions = (test: RmTest) => {
+            const view = renderWithRouter(
+                <TestAssignmentModal test={test} onClose={vi.fn()} {...modalCallbacks()} />
+            );
+            const input = screen.getByLabelText('tests.assignment_link_for:{"name":"Alice"}') as HTMLInputElement;
+            const options = decodeTestAssignment(input.value.split('#/test/')[1])?.test?.questions[0].options;
+            view.unmount();
+            return options;
+        };
+        expect(decodedOptions({ ...withFeedback, mode: 'assessment' })?.[0]).not.toHaveProperty('feedback');
+        expect(decodedOptions(withFeedback)?.[0]).not.toHaveProperty('feedback');
+        expect(decodedOptions({ ...withFeedback, mode: 'practice' })?.[0].feedback).toBe('Because.');
+    });
+
+    it('saves one test_assignments row per student when DB embedding is enabled', async () => {
         mockDbStatus.isConnected = true;
         const { default: TestAssignmentModal } = await import('../TestAssignmentModal');
         renderWithRouter(<TestAssignmentModal test={mockTest} onClose={vi.fn()} {...modalCallbacks()} />);

@@ -40,6 +40,30 @@ To restore, onto the same server or a new one:
 
 Backups made before format 2 (a single `database.sql` dumped with `--no-acl`) are refused. Replaying them dropped every GRANT. Take a new backup with the current script.
 
+### Running against the official Supabase stack
+
+Production typically runs the **official Supabase self-hosted Docker stack** (its own `docker compose` project, cloned next to `deploy/supabase/docker-compose.override.yml` — see that file), not this repository's `docker-compose.yml`. Two things differ, and the scripts above handle both once you export the right variables:
+
+|                    | This repo's compose                                   | Official stack                                                                                                                            |
+| ------------------ | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Uploaded files     | Docker named volume `<project>_storage-data`          | Bind mount, `./volumes/storage` next to the stack's own compose file                                                                      |
+| Applied migrations | `public._migrations` (written by `docker/migrate.sh`) | `public._migrations` if migrated the same way, otherwise `supabase_migrations.schema_migrations` (CLI `supabase db push`) — auto-detected |
+
+```bash
+export COMPOSE_FILE=/opt/supabase/docker/docker-compose.yml   # that stack's compose file
+export STORAGE_DIR=/opt/supabase/docker/volumes/storage        # bind mount, not a volume name
+./scripts/backup.sh
+./scripts/restore.sh backups/20260515_120000
+```
+
+`STORAGE_DIR` takes priority over `STORAGE_VOLUME` and is passed straight to `docker run -v`, which accepts a host path exactly like a volume name — nothing else changes. The migrations table is detected automatically from the live database; set `MIGRATIONS_TABLE`/`MIGRATIONS_COLUMN` only if that detection picks the wrong one. `restore-drill.sh` always drills into its own scratch named volume regardless of `STORAGE_DIR`, since it proves the backup _file_ restores, not that the official stack's directory layout matches — rehearsing a restore onto a throwaway VPS with the real stack remains the drill for that part.
+
+Nightly cron on the host running the official stack:
+
+```cron
+15 3 * * * cd /path/to/rubricmaker && COMPOSE_FILE=/opt/supabase/docker/docker-compose.yml STORAGE_DIR=/opt/supabase/docker/volumes/storage ./scripts/scheduled-backup.sh >> /var/log/rubricmaker-backup.log 2>&1 || logger -t rubricmaker-backup 'nightly backup FAILED - see /var/log/rubricmaker-backup.log'
+```
+
 ### Off-site backups
 
 `backup.sh` writes to `./backups` on the same disk as the database, so losing the server (hardware failure, ransomware, a provider incident, a mistaken `docker volume rm`) loses the backups with it. The off-site scripts keep encrypted copies in an S3-compatible bucket at **another provider** and prove regularly that they restore.
@@ -151,6 +175,30 @@ Admin → Archive → **Erase permanently** removes a student and everything lin
     Voice-feedback audio is referenced from inside grade records, so it is covered by the per-bucket counts only.
 
 If uploads fail (wrong `SITE_URL`, storage not running), fix the cause and run `./scripts/import-cloud.sh <dir> --storage-only` — uploads are idempotent. `--verify-only` prints the check again; `--skip-storage` imports rows only. Exports made with `--skip-storage`, or with the older script, have no files: the rows import, but every file they reference returns 404 until the objects are copied.
+
+---
+
+## Hardening the official stack
+
+Production runs the **official Supabase self-hosted Docker stack**, not this repo's `docker-compose.yml`. Two high-priority gaps in that setup:
+
+### Network exposure (#930)
+
+Upstream's `docker-compose.yml` publishes Supavisor (`5432`, `6543`) and the API gateway (`8000`/`8443`, service key `api-gw` — Envoy-based on newer checkouts, Kong on older ones) on **all interfaces**. Docker inserts its own iptables rules ahead of the host firewall, so a port blocked in HestiaCP or ufw is still reachable from the internet — and the pooler port accepts Postgres logins directly, a known brute-force target. HestiaCP's nginx already reverse-proxies the public API domain to the gateway on `127.0.0.1`, so the raw ports don't need to be public.
+
+1. Copy [`deploy/supabase/docker-compose.override.yml`](../deploy/supabase/docker-compose.override.yml) next to the stack's own `docker-compose.yml` (Compose loads an override file automatically) and `docker compose up -d` to apply it.
+2. Copy [`deploy/nginx-supabase-api-hestiacp.conf`](../deploy/nginx-supabase-api-hestiacp.conf) to the public API domain's vhost (`nginx.ssl.conf_after`) so `/project`, `/api/platform` and `/mcp` — Studio's dashboard and its SQL-executing MCP endpoint — 404 publicly instead of being reverse-proxied through. Reach them yourself over an SSH tunnel (`ssh -L 8000:127.0.0.1:8000 <vps>`) or WireGuard/Tailscale instead.
+3. Rotate `DASHBOARD_PASSWORD` in the stack's `.env` once both are live — it may have crossed the network in clear text before the lockdown (`.mcp.json`'s production endpoint is `https://`, fixed already).
+4. Verify from **outside** the VPS: `nmap -Pn -p 22,80,443,3000,5432,6543,8000,8443 <vps-ip>` should show only 22, 80 and 443 open.
+
+### Memory and OOM protection (#932)
+
+Nothing stops a memory-hungry sidecar (Studio, LanguageTool, Whisper) from pushing the kernel into OOM-killing Postgres mid-lesson. The same override file adds a `mem_limit` to every non-critical container and `oom_score_adj: -800` to `db`, so the kernel kills the container that overran instead. Two things it can't do from a compose file:
+
+- **Swap**: check `swapon --show`; if empty, add a 2–4 GB swapfile with `vm.swappiness=10` as an OOM buffer, not working memory.
+- **Trim what isn't needed**: `docker inspect supabase-analytics supabase-vector` — if either exists, the stack is still running Logflare/Vector (a second log pipeline duplicating Alloy + Loki, ~1–1.5 GB); remove them and Studio's `depends_on: analytics`. On a VPS that doesn't host mail or PHP sites, `v-list-sys-services` and disable ClamAV, SpamAssassin, Exim/Dovecot and MariaDB if HestiaCP enabled them.
+
+`scripts/audit-live-stack.sh` (below) checks all of the above — port exposure, Studio/MCP reachability, memory limits, swap, OOM events, and the leftover Logflare/Vector/HestiaCP services — on the live host and tells you exactly what's still open.
 
 ---
 
@@ -406,7 +454,7 @@ SELECT * FROM cron.job_run_details ORDER BY start_time DESC LIMIT 10;
 
 ### Diagnostic log cleanup (`client-logs-cleanup`)
 
-Migration `089_client_logs_bounds.sql` schedules `client-logs-cleanup` at 03:35 every night. It deletes `client_logs` rows (the stress-test diagnostics written when the client build sets `VITE_STRESS_TEST_LOGGING=true`) older than 30 days. The same migration adds a size check that rejects oversized rows. The client logger clamps its fields to fit, so normal logging never hits the limit.
+Migration `089_client_logs_bounds.sql` schedules `client-logs-cleanup` at 03:35 every night. It deletes `client_logs` rows (the stress-test diagnostics written when the client build sets `VITE_STRESS_TEST_LOGGING=true`, and the errors-only reports written with `VITE_ERROR_REPORTING=true`, see `docs/ERROR_REPORTING.md`) older than 30 days. The same migration adds a size check that rejects oversized rows. The client logger clamps its fields to fit, so normal logging never hits the limit.
 
 ### Teacher email digest job (`scheduled-digest`)
 
@@ -420,11 +468,31 @@ Migration `059_scheduled_digest.sql` schedules a `teacher-email-digest` cron job
     ALTER DATABASE postgres SET app.settings.service_role_key = '<service-role-key>';
     ```
 
-    Until both are set, `current_setting(..., true)` returns `NULL` and the job's `net.http_post` calls fail silently — check `cron.job_run_details` for the `teacher-email-digest` jobname to confirm it's actually reaching the function.
+    Until both are set, the job raises in `cron.job_run_details` (visible as a failed `teacher-email-digest` run, with the missing setting named in `return_message`) instead of calling the function with a bogus bearer token. Migration `106` replaced the original silent version.
+
+    The job gives its `net.http_post` a **two-minute** budget (`timeout_milliseconds := 120000`, migration `106`). `net.http_post` cancels the request after that window and records a `timed_out` failure in `net._http_response`, while the function itself keeps running — the default 5 seconds was shorter than a digest run that actually sends mail (synchronous SMTP sends plus the heartbeat ping), so the "Scheduled HTTP call failed" alert used to fire every morning a digest went out.
 
 3. **The `scheduled-digest` function deployed** — same deploy step as `nightly-backup` (copy `index.ts` into the official self-hosted stack's `volumes/functions/scheduled-digest/index.ts`, or deploy via Cloud).
 
 The job only emails teachers who opted in via Settings → Email Digest (`digestEmailEnabled`); it's a no-op for everyone else.
+
+**"Scheduled HTTP call failed" e-mails every morning.** Confirm which call failed before touching anything (run this soon after the alert — pg_net prunes responses after `pg_net.ttl`, 6 hours by default):
+
+```sql
+SELECT created, status_code, timed_out, error_msg, left(content, 300) AS body
+FROM net._http_response
+ORDER BY created DESC
+LIMIT 10;
+```
+
+| Row                                                                | Meaning                                                                                                                                                                                                 |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| empty `status_code`, `timed_out = true`, "Timeout of … ms reached" | pg_net gave up waiting (default 5 s, migration `106` sets 120 s). The function usually finished anyway, so teachers did get their digest; if it still times out at 120 s the run is genuinely too slow. |
+| `status_code` 401                                                  | `app.settings.service_role_key` is not this project's current service-role key (rotated, or copied from another deployment). Re-run the `ALTER DATABASE … SET app.settings.service_role_key` above.     |
+| `status_code` 500, body `"SMTP is not configured"`                 | The edge-runtime container has no `SMTP_*` variables (see `deploy/supabase/docker-compose.override.yml`).                                                                                               |
+| `status_code` 500, body `"Server misconfigured"`                   | The function container has no `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`.                                                                                                                             |
+
+A run can also be recorded as a _success_ while individual teachers failed to receive their mail: the function returns 200 with an `errors` array and skips its heartbeat ping, so the missing dead-man's-switch ping (not this alert) is what reports partial delivery failures.
 
 ---
 
@@ -600,6 +668,17 @@ UPDATE public.profiles SET role = 'admin' WHERE lower(email) = lower('teacher@sc
 ```
 
 The user gets admin rights after reloading the app (or signing out and back in).
+
+### Set a password when sign-in mail does not arrive
+
+When Outlook or a school relay drops the OTP/confirmation mail, an admin can give any account a password and mark its address confirmed (migration `108_admin_set_user_password.sql`). It works without the functions runtime, so it suits the Docker stack. Call it signed in as an admin (the SQL editor and `psql` have no user, so use the operator `UPDATE auth.users` fallback below instead):
+
+```sql
+SELECT public.admin_set_user_password('teacher@school.example', 'NewTempPassword123!');
+-- optional: p_confirm_email => false, p_revoke_sessions => false
+```
+
+It matches the email exactly, needs a password of 8 to 72 bytes, is limited to 20 calls a minute, ends the target's other sessions, and writes an `admin_set_user_password` row to `audit_logs` without the password. Ask the person to change the temporary password afterwards. Operator fallback from the SQL editor: `UPDATE auth.users SET encrypted_password = extensions.crypt('…', extensions.gen_salt('bf')), email_confirmed_at = coalesce(email_confirmed_at, now()) WHERE lower(email) = lower('teacher@school.example');`.
 
 **Deployments that have not applied migration 083 yet** still reject the update with "Only admins can change roles". Apply the migrations first (`docker compose up -d db_migrate`, or `supabase db push`). If that is not possible, wrap the update in a transaction that disables the trigger for that one statement:
 

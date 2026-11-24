@@ -168,6 +168,8 @@ function nonIdentityShuffle<T>(items: T[], seed: string): T[] {
 export interface MatchingBookletData {
     /** Left-hand terms, in their stored (numbered) order. */
     left: string[];
+    /** Picture of each left-hand term (same order); undefined where it has none. */
+    leftImages: (string | undefined)[];
     /** Right-hand descriptions as a lettered word bank, shuffled so column position doesn't reveal the pairing. */
     rightOptions: { letter: string; text: string }[];
 }
@@ -175,11 +177,20 @@ export interface MatchingBookletData {
 /** Matching question split into a numbered left column and a shuffled, lettered right-hand word bank — printing pairs in stored order would trivially leak the answer via row position. */
 export function matchingBookletData(question: TestQuestion): MatchingBookletData {
     const pairs = question.matchingPairs ?? [];
-    const shuffledRight = nonIdentityShuffle(pairs, `${question.id}:right`);
     return {
         left: pairs.map((p) => p.left),
-        rightOptions: shuffledRight.map((p, i) => ({ letter: optionLetter(i), text: p.right })),
+        leftImages: pairs.map((p) => p.leftImageUrl),
+        rightOptions: shuffledMatchingRight(question).map((p, i) => ({ letter: optionLetter(i), text: p.right })),
     };
+}
+
+/** Every right-hand choice (pairs plus distractors) in the booklet's shuffled order. */
+function shuffledMatchingRight(question: TestQuestion): { id: string; right: string }[] {
+    const choices = [
+        ...(question.matchingPairs ?? []).map((p) => ({ id: p.id, right: p.right })),
+        ...(question.matchingDistractors ?? []).filter(Boolean).map((right, i) => ({ id: `distractor-${i}`, right })),
+    ];
+    return nonIdentityShuffle(choices, `${question.id}:right`);
 }
 
 export interface MatrixBookletData {
@@ -229,16 +240,15 @@ function bankCorrectLetterKey(question: TestQuestion): string {
 }
 
 /** Ordering items shuffled for booklet display — the stored array order IS the correct order, so printing it as-is would leak the answer. */
-export function orderingBookletItems(question: TestQuestion): { letter: string; text: string }[] {
+export function orderingBookletItems(question: TestQuestion): { letter: string; text: string; imageUrl?: string }[] {
     const items = nonIdentityShuffle(question.orderItems ?? [], question.id);
-    return items.map((item, i) => ({ letter: optionLetter(i), text: item.text }));
+    return items.map((item, i) => ({ letter: optionLetter(i), text: item.text, imageUrl: item.imageUrl }));
 }
 
 /** For each left-hand item (by row), the letter of its correct match in the booklet's shuffled right-hand word bank — e.g. "1→C; 2→A" — matching what a student actually writes, for the grading key. */
 function matchingCorrectLetterKey(question: TestQuestion): string {
     const pairs = question.matchingPairs ?? [];
-    const shuffledRight = nonIdentityShuffle(pairs, `${question.id}:right`);
-    const letterByPairId = new Map(shuffledRight.map((p, i) => [p.id, optionLetter(i)]));
+    const letterByPairId = new Map(shuffledMatchingRight(question).map((p, i) => [p.id, optionLetter(i)]));
     return pairs.map((p, i) => `${i + 1}→${letterByPairId.get(p.id) ?? '?'}`).join('; ');
 }
 
@@ -287,6 +297,8 @@ export function answerKeyText(question: TestQuestion): string {
 
 export interface CategorizeBookletData {
     items: string[];
+    /** Picture of each item (same order); undefined where it has none. */
+    itemImages: (string | undefined)[];
     categories: string[];
 }
 
@@ -294,6 +306,7 @@ export interface CategorizeBookletData {
 export function categorizeBookletData(question: TestQuestion): CategorizeBookletData {
     return {
         items: (question.categorizeItems ?? []).map((i) => i.text),
+        itemImages: (question.categorizeItems ?? []).map((i) => i.imageUrl),
         categories: (question.categories ?? []).map((c) => c.label),
     };
 }
@@ -362,6 +375,8 @@ export function answerSpaceFor(question: TestQuestion): AnswerSpaceSpec {
 
 /** Options shared by every exam document builder/renderer. */
 export interface TestExamExportOptions {
+    /** Family members the paper being printed carries; written into the answer-sheet QR. */
+    variantIds?: string[];
     /** Base export font — mirrors RubricFormat.fontFamily / rubric export's font pipeline. */
     fontFamily?: string;
     /** Body text size in pt; every export section inherits it instead of picking its own. */
@@ -578,10 +593,13 @@ export interface AnswerSheetQrPayload {
     sheetType: 'answer';
     /** Total printed pages of this student's answer sheet, when known. */
     pages?: number;
+    /** Easier-cloze family members this paper was printed with, so a scan reads the printed layout. */
+    variants?: string[];
 }
 
 export interface AnswerSheetQrOptions {
     pages?: number;
+    variants?: string[];
 }
 
 /**
@@ -594,5 +612,6 @@ export interface AnswerSheetQrOptions {
 export function answerSheetQrPayload(testId: string, studentId?: string, opts: AnswerSheetQrOptions = {}): string {
     const payload: AnswerSheetQrPayload = { testId, studentId, sheetType: 'answer' };
     if (opts.pages !== undefined) payload.pages = opts.pages;
+    if (opts.variants?.length) payload.variants = opts.variants;
     return JSON.stringify(payload);
 }

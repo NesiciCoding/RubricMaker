@@ -1,3 +1,5 @@
+import InlineScript from './InlineScript';
+import ItemImage from './ItemImage';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronUp, ChevronDown } from 'lucide-react';
@@ -60,8 +62,9 @@ export default function OrderingAnswer({ question, value, onChange, code, lang }
                         background: 'var(--bg)',
                     }}
                 >
+                    <ItemImage url={itemsById.get(id)?.imageUrl} alt={itemsById.get(id)?.text} />
                     <span lang={lang ?? 'en'} style={{ flex: 1, color: 'var(--text)' }}>
-                        {itemsById.get(id)?.text}
+                        <InlineScript text={itemsById.get(id)?.text ?? ''} />
                     </span>
                     <button
                         type="button"

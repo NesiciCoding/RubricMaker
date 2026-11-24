@@ -39,7 +39,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+      - uses: actions/dependency-review-action@bbc44d14a204704ccc493733616cd1e93a0321ec # v5.0.1
         with:
           fail-on-severity: high
           comment-summary-in-pr: always
@@ -100,11 +100,17 @@ jobs:
         if: steps.nm-cache.outputs.cache-hit != 'true'
         run: npm ci
 
-      - name: Lint
-        run: npm run lint
-
-      - name: Format check
-        run: npm run format:check
+      # Lint and format:check are independent static passes over the same source tree —
+      # run them concurrently instead of back-to-back so the job's wall-clock is the
+      # slower of the two, not their sum.
+      - name: Lint & Format check
+        run: |
+          npm run lint & lint_pid=$!
+          npm run format:check & fmt_pid=$!
+          fail=0
+          wait "$lint_pid" || fail=1
+          wait "$fmt_pid" || fail=1
+          exit $fail
 
   ci-static-edge:
     name: Static — Deno, Nginx & Bootstrap
@@ -829,6 +835,20 @@ jobs:
           # variables → Actions → Variables (not a secret: it's a feature
           # flag, not sensitive data).
           VITE_STRESS_TEST_LOGGING: ${{ vars.VITE_STRESS_TEST_LOGGING }}
+          # Errors-only reporting to `client_logs` (#870): on for production builds. Set the repo
+          # variable VITE_ERROR_REPORTING to 'false' to switch it off.
+          VITE_ERROR_REPORTING: ${{ vars.VITE_ERROR_REPORTING || 'true' }}
+
+      # #870: the hidden source maps were moved out of dist/ by the build, so the deploy below never
+      # publishes them. Keep them for the commit that was built, to decode a production error frame.
+      - name: Keep the source maps (not deployed)
+        if: steps.changes.outputs.changed == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sourcemaps-${{ github.sha }}
+          path: sourcemaps/
+          retention-days: 90
+          if-no-files-found: warn
 
       # #404: the `rubricmaker` HestiaCP user is locked to SFTP at the server level — that
       # overrides anything in authorized_keys (a forced rsync command never gets a chance to

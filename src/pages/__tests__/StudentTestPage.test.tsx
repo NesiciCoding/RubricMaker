@@ -231,7 +231,7 @@ describe('StudentTestPage — answering and offline submission', () => {
         });
 
         expect(screen.getByText('4 is the sum of 2 and 2.')).toBeInTheDocument();
-        expect(screen.getByText('4 is the sum of 2 and 2.').getAttribute('lang')).toBe('en');
+        expect(screen.getByText('4 is the sum of 2 and 2.').closest('[lang]')?.getAttribute('lang')).toBe('en');
         expect(screen.getByText('What is 2 + 2?').getAttribute('lang')).toBe('en');
     });
 
@@ -614,8 +614,41 @@ describe('StudentTestPage — DB mode (TestAdapter, short-code link)', () => {
             expect.any(String),
             expect.any(Array),
             undefined,
+            undefined,
             undefined
         );
+    });
+
+    it('hands in answers for only one member of an easier-cloze family', async () => {
+        const base = makeTest();
+        const mc = base.questions[0];
+        const test = makeTest({
+            questions: [mc, { ...mc, id: 'q1v', variantOfQuestionId: 'q1' }, base.questions[1]],
+        });
+        mockEnsureSession.mockResolvedValue({ ok: true });
+        mockFetchAssignmentContent.mockResolvedValue({
+            ok: true,
+            data: { testId: 'test1', studentId: 's1', requireSEB: false, durationMinutes: null, expiresAt: null, test },
+        });
+        mockSubmitTest.mockResolvedValue({ success: true });
+
+        renderDbPage();
+        await waitFor(() => expect(screen.getByText('Sample Test')).toBeInTheDocument());
+
+        fireEvent.click(screen.getByRole('radio', { name: '4' }));
+        fireEvent.click(screen.getByText('tests.taking.next'));
+        fireEvent.change(screen.getByPlaceholderText('tests.taking.open_answer_placeholder'), {
+            target: { value: 'I love autumn.' },
+        });
+        await act(async () => {
+            fireEvent.click(screen.getByText('tests.taking.submit_btn'));
+        });
+
+        const answers = mockSubmitTest.mock.calls[0][2] as { questionId: string }[];
+        const ids = answers.map((a) => a.questionId);
+        expect(ids).toHaveLength(2);
+        expect(ids).toContain('q2');
+        expect(ids.filter((id) => id === 'q1' || id === 'q1v')).toHaveLength(1);
     });
 
     it('shows submitError and still offers the legacy code when submitTest fails', async () => {

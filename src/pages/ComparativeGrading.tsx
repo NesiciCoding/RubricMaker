@@ -884,6 +884,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                     onBlur={(e) => commitMatchupLimit(Math.max(0, parseInt(e.target.value) || 0))}
                                     style={{ width: 48, fontSize: '0.8rem', textAlign: 'center', padding: '2px 4px' }}
                                     title={t('comparativeGrading.per_student_limit_hint')}
+                                    aria-label={t('comparativeGrading.per_student_limit_hint')}
                                 />
                                 {matchupLimit === 0 && (
                                     <span className="text-xs text-muted" style={{ whiteSpace: 'nowrap' }}>
@@ -1161,6 +1162,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                             </div>
                                             <select
                                                 className="comparative-level-select"
+                                                aria-label={`${c.title} — ${t('comparativeGrading.label_score', { name: studentA.name })}`}
                                                 value={eA?.levelId || ''}
                                                 onChange={(e) => manuallyUpdateLevel(true, c.id, e.target.value)}
                                                 style={{ width: '100%', fontSize: '0.85rem', marginBottom: 8 }}
@@ -1217,6 +1219,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                                                 min={lvlA.minPoints}
                                                                 max={lvlA.maxPoints}
                                                                 step={0.5}
+                                                                aria-label={`${c.title} — ${t('comparativeGrading.label_score', { name: studentA.name })} ${t('comparativeGrading.label_points')}`}
                                                                 value={eA?.selectedPoints ?? lvlA.minPoints}
                                                                 onChange={(e) =>
                                                                     updateEntry(true, c.id, {
@@ -1425,6 +1428,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                             </div>
                                             <select
                                                 className="comparative-level-select"
+                                                aria-label={`${c.title} — ${t('comparativeGrading.label_score', { name: studentB.name })}`}
                                                 value={eB?.levelId || ''}
                                                 onChange={(e) => manuallyUpdateLevel(false, c.id, e.target.value)}
                                                 style={{ width: '100%', fontSize: '0.85rem', marginBottom: 8 }}
@@ -1481,6 +1485,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                                                 min={lvlB.minPoints}
                                                                 max={lvlB.maxPoints}
                                                                 step={0.5}
+                                                                aria-label={`${c.title} — ${t('comparativeGrading.label_score', { name: studentB.name })} ${t('comparativeGrading.label_points')}`}
                                                                 value={eB?.selectedPoints ?? lvlB.minPoints}
                                                                 onChange={(e) =>
                                                                     updateEntry(false, c.id, {

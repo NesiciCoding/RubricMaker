@@ -149,8 +149,10 @@ describe('LiveMonitorPage', () => {
                 },
             ],
             classes: [],
+            essayAssignments: [],
             fetchEssayAssignmentByKey: vi.fn().mockResolvedValue(null),
             fetchEssaySubmissions: vi.fn().mockResolvedValue([]),
+            fetchAllEssaySubmissions: vi.fn().mockResolvedValue([]),
             fetchTestAssignmentTeacherKeys: vi.fn().mockResolvedValue({}),
             setPlacementOverride: mockSetPlacementOverride,
         };
@@ -323,6 +325,19 @@ describe('LiveMonitorPage', () => {
                 status: 'in_progress' as const,
                 startedAt: '2026-01-01T00:00:00.000Z',
                 events: [],
+            });
+
+            it('does not count a cleared answer as progress in the class triage strip', async () => {
+                mockUseApp = {
+                    ...mockUseApp,
+                    tests: [fourQuestionTest],
+                    studentTests: [attempt('student-1', [{ questionId: 'q1', response: '' }])],
+                };
+                renderPage(['/tests/test-1/monitor']);
+                await settleTeacherKeys();
+
+                // Started, but nothing is answered: "not writing", not progress 1.
+                expect(screen.getByTestId('monitor-triage-not_writing')).not.toBeDisabled();
             });
 
             it('persists each new toggle to settings', async () => {
@@ -548,6 +563,45 @@ describe('LiveMonitorPage', () => {
             });
 
             expect(screen.getByText('tests.monitor.presence.disconnected')).toBeInTheDocument();
+
+            vi.useRealTimers();
+        });
+
+        it('announces a student dropping out through the polite live region, once', async () => {
+            vi.useFakeTimers();
+
+            mockUseApp = {
+                ...mockUseApp,
+                studentTests: [
+                    {
+                        id: 'st-1',
+                        testId: 'test-1',
+                        studentId: 'student-1',
+                        answers: [],
+                        status: 'in_progress',
+                        startedAt: '2026-06-13T10:00:00.000Z',
+                        events: [{ type: 'heartbeat', at: '2026-06-13T10:00:00.000Z', value: 'active' }],
+                    },
+                ],
+            };
+
+            const fixedNow = new Date('2026-06-13T10:00:00.000Z');
+            vi.setSystemTime(fixedNow);
+
+            renderPage(['/tests/test-1/monitor']);
+            await settleTeacherKeys();
+
+            const announcer = screen.getByTestId('monitor-connection-announcer');
+            expect(announcer).toHaveAttribute('role', 'status');
+            expect(announcer).toHaveAttribute('aria-live', 'polite');
+            expect(announcer).toBeEmptyDOMElement();
+
+            act(() => {
+                vi.setSystemTime(new Date(fixedNow.getTime() + 95_000));
+                vi.advanceTimersByTime(5_000);
+            });
+
+            expect(announcer.textContent).toContain('tests.monitor.signal.announce_lost');
 
             vi.useRealTimers();
         });
@@ -837,11 +891,13 @@ describe('LiveMonitorPage', () => {
         it('sends a nudge over the student channel', async () => {
             renderPage(['/tests/test-1/monitor']);
             await settleTeacherKeys();
+            // The nudge button opens the presets; sending is the second click.
             fireEvent.click(screen.getByTitle('tests.monitor.nudge_button'));
+            fireEvent.click(screen.getByRole('menuitem', { name: 'tests.monitor.nudge.preset_check' }));
             expect(mockSend).toHaveBeenCalledWith({
                 type: 'broadcast',
                 event: 'nudge',
-                payload: { message: 'tests.monitor.nudge_message' },
+                payload: { message: 'tests.monitor.nudge.preset_check' },
             });
         });
 
@@ -1007,6 +1063,83 @@ describe('LiveMonitorPage', () => {
             await waitFor(() => expect(mockClient.channel).toHaveBeenCalledWith('monitor:essay:assn-1:student-1'));
         });
 
+        it('monitors every student on a class-wide assignment and opens the spotlight on request', async () => {
+            const essayRow = {
+                rubricId: 'r1',
+                teacherKey: 'assn-1',
+                title: 'My Essay',
+                readOnlyAfterSubmit: true,
+                createdAt: '2026-01-01T00:00:00.000Z',
+            };
+            mockUseApp = {
+                ...mockUseApp,
+                students: [mockStudent, { id: 'student-2', name: 'Bob', classId: 'class-1' }],
+                essayAssignments: [
+                    { ...essayRow, studentId: 'student-1' },
+                    { ...essayRow, studentId: 'student-2' },
+                ],
+                fetchEssayAssignmentByKey: vi
+                    .fn()
+                    .mockResolvedValue({ rubricId: 'r1', studentId: 'student-1', title: 'My Essay' }),
+            };
+            renderPage(['/essays/assn-1/monitor']);
+            await screen.findByText('tests.monitor.title_essay: My Essay');
+
+            // Both students hold a row for this teacherKey, so both channels open and the
+            // roster — not a single draft card — is what the monitor shows.
+            expect(await screen.findByTestId('essay-monitor-roster')).toBeInTheDocument();
+            expect(screen.getByTestId('essay-roster-cadence')).toHaveTextContent(
+                'tests.monitor.essay.roster_header (2)'
+            );
+            await waitFor(() => expect(mockClient.channel).toHaveBeenCalledWith('monitor:essay:assn-1:student-1'));
+            expect(mockClient.channel).toHaveBeenCalledWith('monitor:essay:assn-1:student-2');
+
+            fireEvent.click(screen.getAllByText('tests.monitor.essay.watch_live')[1]);
+            expect(await screen.findByTestId('essay-spotlight')).toBeInTheDocument();
+            expect(screen.getByTestId('essay-draft-analysis')).toBeInTheDocument();
+
+            // The spotlight asks that student for the 5s cadence.
+            await waitFor(() =>
+                expect(mockSend).toHaveBeenCalledWith({
+                    type: 'broadcast',
+                    event: 'spotlight',
+                    payload: { on: true },
+                })
+            );
+        });
+
+        it('flags the student opened with the mouse, not the one the keyboard cursor started on', async () => {
+            const essayRow = {
+                rubricId: 'r1',
+                teacherKey: 'assn-1',
+                title: 'My Essay',
+                readOnlyAfterSubmit: true,
+                createdAt: '2026-01-01T00:00:00.000Z',
+            };
+            mockUseApp = {
+                ...mockUseApp,
+                students: [mockStudent, { id: 'student-2', name: 'Bob', classId: 'class-1' }],
+                essayAssignments: [
+                    { ...essayRow, studentId: 'student-1' },
+                    { ...essayRow, studentId: 'student-2' },
+                ],
+                fetchEssayAssignmentByKey: vi
+                    .fn()
+                    .mockResolvedValue({ rubricId: 'r1', studentId: 'student-1', title: 'My Essay' }),
+            };
+            renderPage(['/essays/assn-1/monitor']);
+            await screen.findByTestId('essay-monitor-roster');
+
+            fireEvent.click(screen.getAllByText('tests.monitor.essay.watch_live')[1]);
+            await screen.findByTestId('essay-spotlight');
+            fireEvent.keyDown(window, { key: 'f' });
+            expect(screen.getByTestId('essay-spotlight-flag')).toHaveAttribute('aria-pressed', 'true');
+
+            fireEvent.click(screen.getByText('tests.monitor.essay.back'));
+            expect(await screen.findByTestId('essay-flagged-student-2')).toBeInTheDocument();
+            expect(screen.queryByTestId('essay-flagged-student-1')).toBeNull();
+        });
+
         it('renders the live draft text from a snapshot broadcast', async () => {
             mockUseApp = {
                 ...mockUseApp,
@@ -1023,21 +1156,60 @@ describe('LiveMonitorPage', () => {
                 ch.handlers.snapshot({ payload: { text: '<p>Hello draft</p>', wordCount: 2 } });
             });
             // Snapshot updates are coalesced onto a short debounce (see LiveMonitorPage) so a
-            // burst of broadcasts from a full class only triggers one re-render.
+            // burst of broadcasts from a full class only triggers one re-render. A one-student
+            // assignment opens straight into the spotlight, which shows the draft without a click.
             await waitFor(() => expect(screen.queryByLabelText('tests.monitor.draft.toggle_preview')).not.toBeNull());
-            fireEvent.click(screen.getByLabelText('tests.monitor.draft.toggle_preview'));
-            expect(screen.getByText('Hello draft')).toBeInTheDocument();
+            expect(await screen.findByText('Hello draft')).toBeInTheDocument();
             expect(screen.getByText('tests.monitor.draft.word_count (2)')).toBeInTheDocument();
+
+            // A stats-only tick (the roster cadence's cheap snapshot) updates the word count but
+            // must keep the last draft the monitor received.
+            act(() => {
+                ch.handlers.snapshot({ payload: { wordCount: 6 } });
+            });
+            expect(await screen.findByText('tests.monitor.draft.word_count (6)')).toBeInTheDocument();
+            expect(screen.getByText('Hello draft')).toBeInTheDocument();
+        });
+
+        it("subscribes a sourceTeacherKey-matched student on that row's own teacherKey", async () => {
+            const essayRow = {
+                rubricId: 'r1',
+                teacherKey: 'assn-1',
+                title: 'My Essay',
+                readOnlyAfterSubmit: true,
+                createdAt: '2026-01-01T00:00:00.000Z',
+            };
+            mockUseApp = {
+                ...mockUseApp,
+                students: [mockStudent, { id: 'student-2', name: 'Bob', classId: 'class-1' }],
+                essayAssignments: [
+                    { ...essayRow, studentId: 'student-1' },
+                    // A batch assignment wrote this student their own row, reachable from the
+                    // class monitor only through sourceTeacherKey — and that row is the key their
+                    // page publishes on.
+                    { ...essayRow, teacherKey: 'batch-row-2', sourceTeacherKey: 'assn-1', studentId: 'student-2' },
+                ],
+                fetchEssayAssignmentByKey: vi
+                    .fn()
+                    .mockResolvedValue({ rubricId: 'r1', studentId: 'student-1', title: 'My Essay' }),
+            };
+            renderPage(['/essays/assn-1/monitor']);
+            await screen.findByText('tests.monitor.title_essay: My Essay');
+
+            await waitFor(() => expect(mockClient.channel).toHaveBeenCalledWith('monitor:essay:assn-1:student-1'));
+            expect(mockClient.channel).toHaveBeenCalledWith('monitor:essay:batch-row-2:student-2');
         });
 
         it('preserves a submitted flag set while a snapshot patch is still queued (debounce-flush race)', async () => {
-            let resolveSubmissions: (rows: { submittedAt: string }[]) => void = () => {};
+            let resolveSubmissions: (
+                rows: { assignmentId: string; studentId: string; submittedAt: string }[]
+            ) => void = () => {};
             mockUseApp = {
                 ...mockUseApp,
                 fetchEssayAssignmentByKey: vi
                     .fn()
                     .mockResolvedValue({ rubricId: 'r1', studentId: 'student-1', title: 'My Essay' }),
-                fetchEssaySubmissions: vi.fn(() => new Promise((resolve) => (resolveSubmissions = resolve))),
+                fetchAllEssaySubmissions: vi.fn(() => new Promise((resolve) => (resolveSubmissions = resolve))),
             };
             renderPage(['/essays/assn-1/monitor']);
             await screen.findByText('tests.monitor.title_essay: My Essay');
@@ -1053,7 +1225,9 @@ describe('LiveMonitorPage', () => {
             // The persisted-submission fetch resolves and sets submitted:true directly on
             // state, landing before the debounced snapshot patch flushes.
             await act(async () => {
-                resolveSubmissions([{ submittedAt: '2026-01-01T00:00:05.000Z' }]);
+                resolveSubmissions([
+                    { assignmentId: 'assn-1', studentId: 'student-1', submittedAt: '2026-01-01T00:00:05.000Z' },
+                ]);
             });
 
             // Confirm the submitted badge landed before the debounce window elapses — a

@@ -1,7 +1,7 @@
 import { Node, mergeAttributes } from '@tiptap/core';
 import type { Editor, JSONContent } from '@tiptap/core';
 import { parseErrorPassage } from '../../../supabase/functions/_shared/testScoring';
-import { openPillPopover } from './pillPopover';
+import { makePillAccessible, openPillPopover } from './pillPopover';
 
 // `[`, `]` and `|` are the passage grammar, so none of them may survive inside a fragment or its
 // corrections: a stray one would be reparsed as a boundary or an extra alternative on the next load.
@@ -17,6 +17,8 @@ export interface ErrorFragmentOptions {
     removeCorrectionLabel: string;
     saveLabel: string;
     cancelLabel: string;
+    /** Accessible name of a fragment pill; `{{value}}` is replaced with the fragment text. */
+    pillLabel: string;
 }
 
 declare module '@tiptap/core' {
@@ -51,6 +53,7 @@ export const ErrorFragment = Node.create<ErrorFragmentOptions>({
             removeCorrectionLabel: 'Remove',
             saveLabel: 'Save',
             cancelLabel: 'Cancel',
+            pillLabel: 'Edit fragment: {{value}}',
         };
     },
 
@@ -113,18 +116,21 @@ export const ErrorFragment = Node.create<ErrorFragmentOptions>({
         return ({ node, editor, getPos }) => {
             const pill = document.createElement('span');
             pill.contentEditable = 'false';
+            const setPillLabel = makePillAccessible(pill);
 
             const render = () => {
                 const missing = !!node.attrs.isError && !hasCorrection(node.attrs.corrections as string[]);
                 pill.className = `${ERROR_PILL_CLASS}${node.attrs.isError ? ' error' : ' fine'}${missing ? ' missing' : ''}`;
                 const corrections = (node.attrs.corrections as string[]).filter(Boolean);
                 pill.textContent = (node.attrs.text as string) || '—';
+                const pillText = pill.textContent;
                 if (node.attrs.isError) {
                     const hint = document.createElement('span');
                     hint.className = 'error-fragment-hint';
                     hint.textContent = corrections.length ? `→ ${corrections.join(' / ')}` : '→ ?';
                     pill.append(hint);
                 }
+                setPillLabel(o.pillLabel.replace('{{value}}', pillText));
             };
             render();
 
@@ -132,116 +138,121 @@ export const ErrorFragment = Node.create<ErrorFragmentOptions>({
 
             pill.addEventListener('click', (e) => {
                 e.stopPropagation();
-                closePopover = openPillPopover(pill, 'error-fragment-popover pill-popover--wide', (popover, close) => {
-                    const textLabel = document.createElement('div');
-                    textLabel.className = 'error-fragment-popover-label';
-                    textLabel.textContent = o.textLabel;
-                    const textInput = document.createElement('input');
-                    textInput.type = 'text';
-                    textInput.className = 'error-fragment-popover-input';
-                    textInput.value = node.attrs.text as string;
+                closePopover = openPillPopover(
+                    pill,
+                    'error-fragment-popover pill-popover--wide',
+                    (popover, close) => {
+                        const textLabel = document.createElement('div');
+                        textLabel.className = 'error-fragment-popover-label';
+                        textLabel.textContent = o.textLabel;
+                        const textInput = document.createElement('input');
+                        textInput.type = 'text';
+                        textInput.className = 'error-fragment-popover-input';
+                        textInput.value = node.attrs.text as string;
 
-                    const errorRow = document.createElement('label');
-                    errorRow.className = 'error-fragment-popover-checkbox-row';
-                    const errorBox = document.createElement('input');
-                    errorBox.type = 'checkbox';
-                    errorBox.checked = !!node.attrs.isError;
-                    errorRow.append(errorBox, document.createTextNode(o.isErrorLabel));
+                        const errorRow = document.createElement('label');
+                        errorRow.className = 'error-fragment-popover-checkbox-row';
+                        const errorBox = document.createElement('input');
+                        errorBox.type = 'checkbox';
+                        errorBox.checked = !!node.attrs.isError;
+                        errorRow.append(errorBox, document.createTextNode(o.isErrorLabel));
 
-                    const corrLabel = document.createElement('div');
-                    corrLabel.className = 'error-fragment-popover-label';
-                    corrLabel.textContent = o.correctionsLabel;
-                    const corrList = document.createElement('div');
-                    corrList.className = 'error-fragment-popover-list';
-                    const addRow = (value: string) => {
-                        const row = document.createElement('div');
-                        row.className = 'error-fragment-popover-row';
-                        const input = document.createElement('input');
-                        input.type = 'text';
-                        input.className = 'error-fragment-popover-input';
-                        input.value = value;
-                        input.setAttribute('aria-label', o.correctionsLabel);
-                        const remove = document.createElement('button');
-                        remove.type = 'button';
-                        remove.textContent = '×';
-                        remove.setAttribute('aria-label', o.removeCorrectionLabel);
-                        remove.addEventListener('click', () => row.remove());
-                        row.append(input, remove);
-                        corrList.append(row);
-                        return input;
-                    };
-                    const initial = (node.attrs.corrections as string[]).length
-                        ? (node.attrs.corrections as string[])
-                        : [''];
-                    initial.forEach(addRow);
-                    const addBtn = document.createElement('button');
-                    addBtn.type = 'button';
-                    addBtn.className = 'error-fragment-popover-add';
-                    addBtn.textContent = o.addCorrectionLabel;
-                    addBtn.addEventListener('click', () => addRow('').focus());
-                    const corrSection = document.createElement('div');
-                    corrSection.className = 'error-fragment-popover-section';
-                    corrSection.append(corrLabel, corrList, addBtn);
-                    const syncVisibility = () => {
-                        corrSection.style.display = errorBox.checked ? '' : 'none';
-                    };
-                    errorBox.addEventListener('change', syncVisibility);
-                    syncVisibility();
+                        const corrLabel = document.createElement('div');
+                        corrLabel.className = 'error-fragment-popover-label';
+                        corrLabel.textContent = o.correctionsLabel;
+                        const corrList = document.createElement('div');
+                        corrList.className = 'error-fragment-popover-list';
+                        const addRow = (value: string) => {
+                            const row = document.createElement('div');
+                            row.className = 'error-fragment-popover-row';
+                            const input = document.createElement('input');
+                            input.type = 'text';
+                            input.className = 'error-fragment-popover-input';
+                            input.value = value;
+                            input.setAttribute('aria-label', o.correctionsLabel);
+                            const remove = document.createElement('button');
+                            remove.type = 'button';
+                            remove.textContent = '×';
+                            remove.setAttribute('aria-label', o.removeCorrectionLabel);
+                            remove.addEventListener('click', () => row.remove());
+                            row.append(input, remove);
+                            corrList.append(row);
+                            return input;
+                        };
+                        const initial = (node.attrs.corrections as string[]).length
+                            ? (node.attrs.corrections as string[])
+                            : [''];
+                        initial.forEach(addRow);
+                        const addBtn = document.createElement('button');
+                        addBtn.type = 'button';
+                        addBtn.className = 'error-fragment-popover-add';
+                        addBtn.textContent = o.addCorrectionLabel;
+                        addBtn.addEventListener('click', () => addRow('').focus());
+                        const corrSection = document.createElement('div');
+                        corrSection.className = 'error-fragment-popover-section';
+                        corrSection.append(corrLabel, corrList, addBtn);
+                        const syncVisibility = () => {
+                            corrSection.style.display = errorBox.checked ? '' : 'none';
+                        };
+                        errorBox.addEventListener('change', syncVisibility);
+                        syncVisibility();
 
-                    const save = () => {
-                        const text = stripSyntax(textInput.value).trim();
-                        /* v8 ignore next -- provably dead: tiptap always provides getPos for node views */
-                        const pos = typeof getPos === 'function' ? getPos() : undefined;
-                        if (!text || pos === undefined) {
+                        const save = () => {
+                            const text = stripSyntax(textInput.value).trim();
+                            /* v8 ignore next -- provably dead: tiptap always provides getPos for node views */
+                            const pos = typeof getPos === 'function' ? getPos() : undefined;
+                            if (!text || pos === undefined) {
+                                close();
+                                return;
+                            }
+                            const corrections = errorBox.checked
+                                ? Array.from(corrList.querySelectorAll('input'))
+                                      .map((i) => stripSyntax(i.value).trim())
+                                      .filter(Boolean)
+                                : [];
+                            editor
+                                .chain()
+                                .focus()
+                                .command(({ tr }) => {
+                                    tr.setNodeMarkup(pos, undefined, {
+                                        text,
+                                        isError: errorBox.checked,
+                                        corrections: errorBox.checked && corrections.length === 0 ? [''] : corrections,
+                                    });
+                                    return true;
+                                })
+                                .run();
                             close();
-                            return;
-                        }
-                        const corrections = errorBox.checked
-                            ? Array.from(corrList.querySelectorAll('input'))
-                                  .map((i) => stripSyntax(i.value).trim())
-                                  .filter(Boolean)
-                            : [];
-                        editor
-                            .chain()
-                            .focus()
-                            .command(({ tr }) => {
-                                tr.setNodeMarkup(pos, undefined, {
-                                    text,
-                                    isError: errorBox.checked,
-                                    corrections: errorBox.checked && corrections.length === 0 ? [''] : corrections,
-                                });
-                                return true;
-                            })
-                            .run();
-                        close();
-                    };
+                        };
 
-                    popover.addEventListener('keydown', (ke) => {
-                        if (ke.key === 'Enter') {
-                            ke.preventDefault();
-                            save();
-                        } else if (ke.key === 'Escape') {
-                            ke.preventDefault();
-                            close();
-                        }
-                    });
+                        popover.addEventListener('keydown', (ke) => {
+                            if (ke.key === 'Enter') {
+                                ke.preventDefault();
+                                save();
+                            } else if (ke.key === 'Escape') {
+                                ke.preventDefault();
+                                close();
+                            }
+                        });
 
-                    const actions = document.createElement('div');
-                    actions.className = 'error-fragment-popover-actions';
-                    const cancelBtn = document.createElement('button');
-                    cancelBtn.type = 'button';
-                    cancelBtn.textContent = o.cancelLabel;
-                    cancelBtn.addEventListener('click', () => close());
-                    const saveBtn = document.createElement('button');
-                    saveBtn.type = 'button';
-                    saveBtn.className = 'error-fragment-popover-save';
-                    saveBtn.textContent = o.saveLabel;
-                    saveBtn.addEventListener('click', save);
-                    actions.append(cancelBtn, saveBtn);
+                        const actions = document.createElement('div');
+                        actions.className = 'error-fragment-popover-actions';
+                        const cancelBtn = document.createElement('button');
+                        cancelBtn.type = 'button';
+                        cancelBtn.textContent = o.cancelLabel;
+                        cancelBtn.addEventListener('click', () => close());
+                        const saveBtn = document.createElement('button');
+                        saveBtn.type = 'button';
+                        saveBtn.className = 'error-fragment-popover-save';
+                        saveBtn.textContent = o.saveLabel;
+                        saveBtn.addEventListener('click', save);
+                        actions.append(cancelBtn, saveBtn);
 
-                    popover.append(textLabel, textInput, errorRow, corrSection, actions);
-                    (errorBox.checked ? (corrList.querySelector('input') as HTMLInputElement) : textInput).focus();
-                });
+                        popover.append(textLabel, textInput, errorRow, corrSection, actions);
+                        (errorBox.checked ? (corrList.querySelector('input') as HTMLInputElement) : textInput).focus();
+                    },
+                    o.textLabel
+                );
             });
 
             return {

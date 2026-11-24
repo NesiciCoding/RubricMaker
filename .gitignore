@@ -1,5 +1,8 @@
 node_modules
 dist
+.cache/
+# Hidden source maps moved out of dist/ after the build (scripts/extract-sourcemaps.mjs)
+sourcemaps
 dist-ssr
 coverage
 *.local

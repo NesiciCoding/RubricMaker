@@ -32,6 +32,7 @@ function json(body: unknown, status = 200) {
 }
 
 interface RawOption {
+    feedback?: unknown;
     isCorrect?: boolean;
     [key: string]: unknown;
 }
@@ -59,6 +60,7 @@ interface RawQuestion {
     expectedAnswers?: unknown;
     expectedNumericValue?: unknown;
     numericTolerance?: unknown;
+    numericTolerancePercent?: unknown;
     correctBoolean?: unknown;
     hotTextCorrectIndices?: unknown;
     eloRating?: unknown;
@@ -66,7 +68,7 @@ interface RawQuestion {
 }
 
 // Removes fields that only exist to score an answer or calibrate item difficulty, not to render
-// the question — options[].isCorrect, expectedAnswer(s), expectedNumericValue, numericTolerance,
+// the question — options[].isCorrect, expectedAnswer(s), expectedNumericValue, numericTolerance(Percent),
 // correctBoolean, hotTextCorrectIndices, categorizeItems[].categoryId, matrixRows[].correctColumnId, and eloRating (roadmap
 // Phase 25.4/25.5 staircase self-calibration, teacher-only) are read server/teacher-side only, so
 // a student reading this response (e.g. via devtools) must never see them.
@@ -109,6 +111,7 @@ function toStudentSafeTest(test: { questions?: RawQuestion[]; [key: string]: unk
                 expectedAnswers: _eas,
                 expectedNumericValue: _env,
                 numericTolerance: _nt,
+                numericTolerancePercent: _ntp,
                 correctBoolean: _cb,
                 hotTextCorrectIndices: _hci,
                 eloRating: _er,
@@ -124,7 +127,13 @@ function toStudentSafeTest(test: { questions?: RawQuestion[]; [key: string]: unk
             } = q;
             return {
                 ...rest,
-                ...(options ? { options: options.map(({ isCorrect: _ic, ...opt }) => opt) } : {}),
+                ...(options
+                    ? {
+                          options: options.map(({ isCorrect: _ic, feedback, ...opt }) =>
+                              practice && feedback !== undefined ? { ...opt, feedback } : opt
+                          ),
+                      }
+                    : {}),
                 ...(categorizeItems
                     ? { categorizeItems: categorizeItems.map(({ categoryId: _cid, ...item }) => item) }
                     : {}),

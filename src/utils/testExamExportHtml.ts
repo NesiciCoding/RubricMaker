@@ -4,9 +4,13 @@ import DOMPurify from 'dompurify';
 import QRCode from 'qrcode';
 import type { Student, Test, TestQuestion } from '../types';
 import { PRINT_MARGIN_MM, printHtml, withoutBrowserPrintChrome } from './pdfExport';
+import { safeImgSrc } from './safeMediaSrc';
+import { inlineScriptHtml } from './inlineScript';
 import { escapeHtml, hasRichContent, promptToHtml, sanitizeFilename } from './exportDataPrep';
-import { plainQuestionPromptText } from './clozeParse';
+import { isRichClozePrompt, plainQuestionPromptText } from './clozeParse';
+import { richClozeHtmlWithBlanks } from './clozeHtml';
 import { calcTestMaxPoints } from './testCalc';
+import { examPapers } from './variantDelivery';
 import {
     ANSWER_BLOCK_PADDING_MM,
     ANSWER_LINE_SPACING_MM,
@@ -50,21 +54,41 @@ import {
 const tx = (key: string, opts?: Record<string, unknown>) =>
     opts ? i18n.t(`tests.export.exam.${key}`, opts) : i18n.t(`tests.export.exam.${key}`);
 
+const BLANK_STYLE = 'display:inline-block;border-bottom:1px solid #000;min-width:50px;text-align:center;padding:0 4px';
+
 function clozeBookletHtml(question: TestQuestion): string {
+    if (isRichClozePrompt(question.prompt)) {
+        // Formatted text keeps its formatting; each gap becomes the numbered blank.
+        return richClozeHtmlWithBlanks(
+            question.prompt,
+            (index) => `<span style="${BLANK_STYLE}">(${index + 1})</span>`
+        );
+    }
     return clozeBookletParts(question)
-        .map((p) =>
-            p.blankNumber
-                ? `<span style="display:inline-block;border-bottom:1px solid #000;min-width:50px;text-align:center;padding:0 4px">(${p.blankNumber})</span>`
-                : escapeHtml(p.text)
-        )
+        .map((p) => (p.blankNumber ? `<span style="${BLANK_STYLE}">(${p.blankNumber})</span>` : escapeHtml(p.text)))
         .join('');
+}
+
+/** Option / item text with `_{sub}` and `^{sup}` printed as real sub- and superscript. */
+function scriptHtml(text: string): string {
+    return inlineScriptHtml(text, escapeHtml);
+}
+
+/** A small picture beside a matching / ordering / categorize item; an unsafe or missing URL prints nothing. */
+function itemImageHtml(url: string | undefined): string {
+    const src = safeImgSrc(url);
+    return src
+        ? `<img src="${escapeHtml(src)}" alt="" style="max-width:90px;max-height:60px;vertical-align:middle;margin-right:6px" />`
+        : '';
 }
 
 function matchingBookletHtml(question: TestQuestion): string {
     const data = matchingBookletData(question);
-    const left = data.left.map((t, i) => `<div style="margin:2px 0">${i + 1}. ${escapeHtml(t)}</div>`).join('');
+    const left = data.left
+        .map((t, i) => `<div style="margin:2px 0">${i + 1}. ${itemImageHtml(data.leftImages[i])}${scriptHtml(t)}</div>`)
+        .join('');
     const right = data.rightOptions
-        .map((o) => `<div style="margin:2px 0"><strong>${o.letter}</strong>&nbsp;&nbsp;${escapeHtml(o.text)}</div>`)
+        .map((o) => `<div style="margin:2px 0"><strong>${o.letter}</strong>&nbsp;&nbsp;${scriptHtml(o.text)}</div>`)
         .join('');
     return `<div style="margin-top:6px;display:flex;gap:24px">
     <div style="flex:1">${left}</div>
@@ -75,13 +99,18 @@ function matchingBookletHtml(question: TestQuestion): string {
 function orderingBookletHtml(question: TestQuestion): string {
     const items = orderingBookletItems(question);
     return `<div style="margin-top:6px">${items
-        .map((it) => `<div style="margin:2px 0"><strong>${it.letter}</strong>&nbsp;&nbsp;${escapeHtml(it.text)}</div>`)
+        .map(
+            (it) =>
+                `<div style="margin:2px 0"><strong>${it.letter}</strong>&nbsp;&nbsp;${itemImageHtml(it.imageUrl)}${scriptHtml(it.text)}</div>`
+        )
         .join('')}</div>`;
 }
 
 function categorizeBookletHtml(question: TestQuestion): string {
     const data = categorizeBookletData(question);
-    const items = data.items.map((t, i) => `<div style="margin:2px 0">${i + 1}. ${escapeHtml(t)}</div>`).join('');
+    const items = data.items
+        .map((t, i) => `<div style="margin:2px 0">${i + 1}. ${itemImageHtml(data.itemImages[i])}${scriptHtml(t)}</div>`)
+        .join('');
     const categories = data.categories.map((c) => escapeHtml(c)).join(' / ');
     return `<div style="margin-top:6px">${items}</div>
   <div style="margin-top:4px;font-size:11px;color:#6b7280">${tx('categories_label')}: ${categories}</div>`;
@@ -107,7 +136,11 @@ function questionBodyHtml(
 ): string {
     const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown' || question.type === 'cloze-bank';
     const prompt = isCloze
-        ? `<div style="line-height:1.8;white-space:pre-line">${clozeBookletHtml(question)}</div>`
+        ? `${question.clozeIntro ? `${RICH_CONTENT_CSS}<div class="exam-rich" style="margin-bottom:6px">${DOMPurify.sanitize(promptToHtml(question.clozeIntro))}</div>` : ''}${
+              isRichClozePrompt(question.prompt)
+                  ? `${RICH_CONTENT_CSS}<div class="exam-rich" style="line-height:1.8">${clozeBookletHtml(question)}</div>`
+                  : `<div style="line-height:1.8;white-space:pre-line">${clozeBookletHtml(question)}</div>`
+          }`
         : richPromptHtml(question);
     let extra = '';
 
@@ -122,7 +155,7 @@ function questionBodyHtml(
             extra += `<div style="margin-top:6px">${(question.options ?? [])
                 .map(
                     (o, i) =>
-                        `<div style="margin:3px 0"><strong>${optionLetter(i)}</strong>&nbsp;&nbsp;${escapeHtml(o.text)}${
+                        `<div style="margin:3px 0"><strong>${optionLetter(i)}</strong>&nbsp;&nbsp;${scriptHtml(o.text)}${
                             o.imageUrl
                                 ? `<div style="margin:4px 0 4px 22px"><img src="${escapeHtml(o.imageUrl)}" alt="${o.text ? '' : escapeHtml(tx('option_image_alt'))}" style="max-width:100%;max-height:120px" /></div>`
                                 : ''
@@ -131,7 +164,7 @@ function questionBodyHtml(
                 .join('')}</div>`;
             break;
         case 'true-false':
-            extra += `<div style="margin-top:6px"><div><strong>A</strong>&nbsp;&nbsp;${tx('true')}</div><div><strong>B</strong>&nbsp;&nbsp;${tx('false')}</div></div>`;
+            extra += `<div style="margin-top:6px"><div><strong>A</strong>&nbsp;&nbsp;${escapeHtml(question.trueLabel?.trim() || tx('true'))}</div><div><strong>B</strong>&nbsp;&nbsp;${escapeHtml(question.falseLabel?.trim() || tx('false'))}</div></div>`;
             break;
         case 'error-correction':
             extra += `<div style="margin-top:6px;padding:8px;background:#f8fafc;border-left:3px solid #94a3b8;line-height:1.8;white-space:pre-line">${errorBookletParts(
@@ -354,8 +387,13 @@ export function buildExamAttachmentHtml(test: Test, versionLabel?: string): stri
 }
 
 /** Fiducials + QR for one answer sheet, as offsets inside withoutBrowserPrintChrome()'s repeated header (page coordinates minus the side margin), so they print on every page of that sheet. */
-async function scanMarkerHtml(test: Test, studentId?: string, pageCount?: number): Promise<string> {
-    const dataUrl = await QRCode.toDataURL(answerSheetQrPayload(test.id, studentId, { pages: pageCount }), {
+async function scanMarkerHtml(
+    test: Test,
+    studentId?: string,
+    pageCount?: number,
+    variants?: string[]
+): Promise<string> {
+    const dataUrl = await QRCode.toDataURL(answerSheetQrPayload(test.id, studentId, { pages: pageCount, variants }), {
         width: 96,
         margin: 0,
     });
@@ -469,7 +507,9 @@ export async function buildAnswerSheetHtml(
     const pages = await Promise.all(
         sheets.map(async (student, i) =>
             withoutBrowserPrintChrome(await answerSheetPagesHtml(test, options, student), {
-                headerExtra: options.scanMarkers ? await scanMarkerHtml(test, student?.id, pageCount) : '',
+                headerExtra: options.scanMarkers
+                    ? await scanMarkerHtml(test, student?.id, pageCount, options.variantIds)
+                    : '',
                 breakAfter: i < sheets.length - 1,
                 headerHeightMm: band.top,
                 footerHeightMm: band.bottom,
@@ -529,6 +569,14 @@ interface ExportExamPdfOptions extends TestExamExportOptions {
  * handed out as a unit. Export the grading key separately via exportExamGradingKeyPdf().
  */
 export async function exportExamPdf(test: Test, options: ExportExamPdfOptions): Promise<void> {
+    // A test with easier-cloze variants needs one paper per set of questions: named students share a
+    // paper only when they are given the same members, an unnamed stack gets one paper per member.
+    for (const paper of examPapers(test, options.students)) {
+        await exportExamPaperPdf(paper.test, { ...options, students: paper.students, variantIds: paper.variantIds });
+    }
+}
+
+async function exportExamPaperPdf(test: Test, options: ExportExamPdfOptions): Promise<void> {
     const orientation = 'portrait';
     const print = (html: string) =>
         printHtml(html, orientation, options.fontFamily, options.styleTemplate, {

@@ -63,11 +63,11 @@ export function newBuilderDraftKey(draftId: string): string {
 
 /**
  * Edits that keep this signature are one undo step, so typing a prompt is one step rather than one
- * per keystroke. A question added, removed, reordered or retyped always starts a new step.
+ * per keystroke. A question added, removed, reordered, retyped or moved between sections always starts a new step.
  */
 export function builderFormSignature(form: TestBuilderForm): string {
     return [
-        form.questions.map((question) => `${question.id}:${question.type}`).join(','),
+        form.questions.map((question) => `${question.id}:${question.type}:${question.sectionId ?? ''}`).join(','),
         form.sections.map((section) => section.id).join(','),
     ].join('|');
 }

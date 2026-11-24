@@ -1,3 +1,6 @@
+import InlineScript from './InlineScript';
+import { plainInlineScript } from '../../utils/inlineScript';
+import ItemImage from './ItemImage';
 import { useId, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { seededShuffle } from '../../utils/seededShuffle';
@@ -18,7 +21,18 @@ export default function MatchingAnswer({ question, value, onChange, code, lang }
     const { t } = useTranslation();
     const labelBase = useId();
     const pairs = question.matchingPairs ?? [];
-    const shuffledPairs = useMemo(() => seededShuffle(pairs, `${code}-${question.id}`), [pairs, code, question.id]);
+    const distractors = question.matchingDistractors;
+    const choices = useMemo(
+        () =>
+            seededShuffle(
+                [
+                    ...pairs.map((p) => ({ id: p.id, right: p.right })),
+                    ...(distractors ?? []).filter(Boolean).map((right, i) => ({ id: `distractor-${i}`, right })),
+                ],
+                `${code}-${question.id}`
+            ),
+        [pairs, distractors, code, question.id]
+    );
     const answers: Record<string, string> = useMemo(() => {
         try {
             return value ? (JSON.parse(value) as Record<string, string>) : {};
@@ -35,8 +49,9 @@ export default function MatchingAnswer({ question, value, onChange, code, lang }
         <div lang={lang ?? 'en'} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {pairs.map((pair) => (
                 <div key={pair.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <ItemImage url={pair.leftImageUrl} alt={pair.left} />
                     <span id={`${labelBase}-${pair.id}`} style={{ flex: 1, color: 'var(--text)' }}>
-                        {pair.left}
+                        <InlineScript text={pair.left} />
                     </span>
                     <select
                         aria-labelledby={`${labelBase}-${pair.id}`}
@@ -53,9 +68,9 @@ export default function MatchingAnswer({ question, value, onChange, code, lang }
                         }}
                     >
                         <option value="">{t('tests.taking.matching_select_placeholder')}</option>
-                        {shuffledPairs.map((p) => (
+                        {choices.map((p) => (
                             <option key={p.id} value={p.id}>
-                                {p.right}
+                                {plainInlineScript(p.right)}
                             </option>
                         ))}
                     </select>

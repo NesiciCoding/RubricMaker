@@ -820,6 +820,8 @@ function RubricBuilderEditor({ shared }: { shared?: SharedEntry<Rubric> }) {
         );
     }
 
+    const canPasteCriterion = useCallback(() => loadCriterionClipboard() !== null, []);
+
     function pasteFromClipboard() {
         try {
             const source = loadCriterionClipboard();
@@ -839,6 +841,12 @@ function RubricBuilderEditor({ shared }: { shared?: SharedEntry<Rubric> }) {
             showToast(t('toast.copy_paste_failed'), 'warning');
         }
     }
+    // The card is memoized; a stable callback keeps pasting from re-rendering every card on each edit.
+    const pasteRef = useRef(pasteFromClipboard);
+    useEffect(() => {
+        pasteRef.current = pasteFromClipboard;
+    });
+    const pasteCriterion = useCallback(() => pasteRef.current(), []);
     const updateCriterion = useCallback(
         (cid: string, patch: Partial<RubricCriterion>) =>
             setCriteria((c) => c.map((x) => (x.id === cid ? { ...x, ...patch } : x))),
@@ -1645,6 +1653,7 @@ function RubricBuilderEditor({ shared }: { shared?: SharedEntry<Rubric> }) {
                                                     type="number"
                                                     min={1}
                                                     max={100}
+                                                    aria-label={t('cefr.achieve_threshold_label')}
                                                     value={cefrAchieveThreshold}
                                                     onChange={(e) =>
                                                         setCefrAchieveThreshold(
@@ -1928,6 +1937,8 @@ function RubricBuilderEditor({ shared }: { shared?: SharedEntry<Rubric> }) {
                                                 onUnlinkLegacyStandard={unlinkLegacyStandard}
                                                 onRemoveCefrDescriptor={removeCefrDescriptor}
                                                 onRemoveFrameworkDescriptor={removeFrameworkDescriptor}
+                                                onPasteCriterion={pasteCriterion}
+                                                canPasteCriterion={canPasteCriterion}
                                                 tiered={tiered}
                                             />
                                         ))}

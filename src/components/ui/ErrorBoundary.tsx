@@ -1,7 +1,8 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import i18n from 'i18next';
 import { AlertTriangle } from 'lucide-react';
-import { logEvent } from '../../services/logging/clientLogger';
+import { logError } from '../../services/logging/clientLogger';
+import { ownFrames } from '../../services/logging/errorSanitizer';
 import { forceReload } from '../../utils/forceReload';
 
 interface Props {
@@ -23,12 +24,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
     componentDidCatch(error: Error, info: ErrorInfo) {
         console.error('[ErrorBoundary]', error, info.componentStack);
-        logEvent(
-            'error',
-            'react_error_boundary',
-            { message: error.message, componentStack: info.componentStack },
-            'error'
-        );
+        logError('react_error_boundary', error, { componentFrames: ownFrames(info.componentStack ?? undefined, 3) });
     }
 
     handleReload = () => {

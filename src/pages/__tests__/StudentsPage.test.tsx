@@ -1,5 +1,5 @@
 import React from 'react';
-import { screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderWithRouter } from '../../test-utils/renderWithProviders';
 import { DEFAULT_FORMAT } from '../../types';
@@ -194,6 +194,11 @@ function renderPage() {
     return renderWithRouter(<StudentsPageComp />);
 }
 
+function chooseRowAction(row: HTMLElement, label: string) {
+    fireEvent.click(within(row).getByRole('button', { name: 'studentsPage.row_menu_label' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: label }));
+}
+
 describe('StudentsPage', () => {
     beforeEach(async () => {
         mockAddStudent.mockClear();
@@ -263,7 +268,7 @@ describe('StudentsPage', () => {
 
     it('deletes a student after confirming', () => {
         renderPage();
-        fireEvent.click(screen.getByLabelText('studentsPage.action_delete_student'));
+        chooseRowAction(document.querySelector('tbody tr') as HTMLElement, 'studentsPage.action_delete_student');
         // Inline confirm modal (not useConfirm hook) — no async needed.
         fireEvent.click(screen.getByText('common.delete'));
         expect(mockDeleteStudent).toHaveBeenCalledWith('s1');

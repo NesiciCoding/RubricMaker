@@ -1067,6 +1067,8 @@ export interface AppSettings {
     userEmail?: string;
     /** Default sharing for rubrics, tests and folders that have no setting of their own (undefined = private). */
     materialSharing?: MaterialSharing;
+    /** Contribute aggregate CEFR/grammar totals to the school wall display (Grafana). On unless explicitly `false`. */
+    shareSchoolHighlights?: boolean;
     /** Days since last grading before a student is considered overdue (default 7). */
     overdueReminderThreshold?: number;
     /**
@@ -1388,6 +1390,8 @@ export interface TestOption {
     audioUrl?: string;
     /** Option text read aloud by the browser voice when no audioUrl is set */
     spokenText?: string;
+    /** Why this option is right or wrong; shown to a student who picked it, only in practice mode */
+    feedback?: string;
 }
 
 /** A left/right pair for matching questions; correct match is left.id === right pair's id */
@@ -1395,6 +1399,8 @@ export interface MatchingPair {
     id: string;
     left: string;
     right: string;
+    /** Picture shown with the left-hand item (the right-hand side lives in a dropdown, which cannot show one) */
+    leftImageUrl?: string;
 }
 
 /** A shared answer column of a matrix question (e.g. True / False / Doesn't say, or A / B / C) */
@@ -1414,6 +1420,7 @@ export interface MatrixRow {
 export interface OrderItem {
     id: string;
     text: string;
+    imageUrl?: string;
 }
 
 export type TestOrderItem = OrderItem;
@@ -1429,6 +1436,7 @@ export interface CategorizeItem {
     id: string;
     text: string;
     categoryId: string;
+    imageUrl?: string;
 }
 
 export interface TestSection {
@@ -1471,12 +1479,29 @@ export interface TestQuestion {
     expectedNumericValue?: number;
     /** Accepted margin of error around expectedNumericValue (default 0 = exact match) */
     numericTolerance?: number;
+    /** Accepted margin as a percentage of expectedNumericValue; the wider of this and numericTolerance applies */
+    numericTolerancePercent?: number;
+    /** Unit shown next to the numeric answer box (display only, never scored) */
+    numericUnit?: string;
+    /** Custom wording for the two true-false buttons (e.g. Yes / No); blank falls back to True / False */
+    trueLabel?: string;
+    falseLabel?: string;
+    /** Show multiple-choice / multiple-response options in a per-student shuffled order (default: authored order) */
+    shuffleOptions?: boolean;
+    /** With shuffleOptions: keep the last option last (e.g. "None of the above") */
+    pinLastOption?: boolean;
+    /** Extra right-hand choices with no left-hand partner, for matching questions */
+    matchingDistractors?: string[];
     /** Correct answer for true-false questions */
     correctBoolean?: boolean;
     /** Statements for matrix questions, each answered by picking one of matrixColumns */
     matrixRows?: MatrixRow[];
     /** Shared answer columns for matrix questions */
     matrixColumns?: MatrixColumn[];
+    /** Cloze types: rich-text (HTML) instructions or context shown above the gap text */
+    clozeIntro?: string;
+    /** Cloze: relative worth of each gap in order (default 1 each). Ignored when its length no longer matches the gap count. */
+    gapWeights?: number[];
     /** Extra tiles with no gap, for cloze-bank questions */
     bankDistractors?: string[];
     /** cloze-bank: every tile can fill at most one gap (default true) */
@@ -1700,7 +1725,16 @@ export interface QuestionBankItem {
 }
 
 export type ProctorEventType =
-    'tab_switch' | 'copy' | 'paste' | 'cut' | 'battery' | 'heartbeat' | 'seb_status' | 'audio_play';
+    | 'tab_switch'
+    | 'copy'
+    | 'paste'
+    | 'cut'
+    | 'battery'
+    | 'heartbeat'
+    | 'seb_status'
+    | 'audio_play'
+    // A teacher's nudge, logged on both ends so student and teacher share one history.
+    | 'nudge';
 
 export interface ProctorEvent {
     type: ProctorEventType;
@@ -1772,6 +1806,10 @@ export interface StudentTest {
     source?: 'online' | 'import' | 'manual';
     /** Marked absent in the score sheet: kept for the record, but left out of totals, grades and analysis. */
     absent?: boolean;
+    /** Parallel paper version ('A'–'D') the student actually received. Absent means not recorded — never derive it from the current `versionCount`. */
+    testVersion?: string;
+    /** Family members (easier-cloze variants) this attempt was given, saved at delivery so later edits to a family never change what it was scored on. Absent on older attempts, which fall back to the hash. */
+    deliveredVariantIds?: string[];
 }
 
 export type TestStrengthBucket = 'strong' | 'developing' | 'weak';
@@ -1990,6 +2028,10 @@ export interface TestSubmissionPayload {
     sectionPath?: string[];
     /** The full adaptive question trace — only set for staircase-engine placement tests */
     levelPath?: StaircaseStep[];
+    /** Parallel paper version ('A'–'D') the student was shown; absent when the test has no versions */
+    testVersion?: string;
+    /** Family members the student was given; see `StudentTest.deliveredVariantIds` */
+    deliveredVariantIds?: string[];
 }
 
 /** A student's completed essay, encoded into a submission code for the teacher to import */

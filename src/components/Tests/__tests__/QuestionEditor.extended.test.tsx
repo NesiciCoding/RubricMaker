@@ -45,8 +45,22 @@ vi.mock('../../../hooks/useToast', () => ({
 }));
 
 vi.mock('../../Editor/EssayEditor', () => ({
-    default: ({ content, onChange }: { content: string; onChange: (html: string) => void }) => (
-        <textarea aria-label="tests.question_prompt_label" value={content} onChange={(e) => onChange(e.target.value)} />
+    default: ({
+        content,
+        onChange,
+        ariaLabelledBy,
+    }: {
+        content: string;
+        onChange: (html: string) => void;
+        ariaLabelledBy?: string;
+    }) => (
+        <textarea
+            {...(ariaLabelledBy?.startsWith('question-prompt')
+                ? { 'aria-label': 'tests.question_prompt_label' }
+                : { 'aria-labelledby': ariaLabelledBy })}
+            value={content}
+            onChange={(e) => onChange(e.target.value)}
+        />
     ),
 }));
 
@@ -150,7 +164,7 @@ describe('QuestionEditor extended', () => {
     describe('multiple-choice options', () => {
         it('marks a different option as the single correct one', () => {
             const { onChange } = renderEditor();
-            const markButtons = screen.getAllByLabelText('tests.mark_correct_option');
+            const markButtons = screen.getAllByLabelText(/tests.mark_correct_option/);
             fireEvent.click(markButtons[1]);
             expect(onChange).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -201,7 +215,7 @@ describe('QuestionEditor extended', () => {
     describe('multiple-response', () => {
         it('toggles each option independently and the partial-credit flag', () => {
             const { onChange } = renderEditor(makeQuestion({ type: 'multiple-response', partialCredit: true }));
-            fireEvent.click(screen.getAllByLabelText('tests.mark_correct_option')[1]);
+            fireEvent.click(screen.getAllByLabelText(/tests.mark_correct_option/)[1]);
             expect(onChange).toHaveBeenCalledWith(
                 expect.objectContaining({
                     options: [
@@ -248,6 +262,36 @@ describe('QuestionEditor extended', () => {
             expect(updated.options).toHaveLength(2);
             expect(updated.type).toBe('multiple-response');
         });
+
+        it('keeps one correct option when a multiple-response question becomes multiple-choice', () => {
+            const { onChange } = renderEditor(
+                makeQuestion({
+                    type: 'multiple-response',
+                    options: [
+                        { id: 'a', text: 'Option A', isCorrect: false },
+                        { id: 'b', text: 'Option B', isCorrect: true },
+                        { id: 'c', text: 'Option C', isCorrect: true },
+                    ],
+                })
+            );
+            chooseType('multiple-choice');
+            const updated = onChange.mock.calls.at(-1)![0] as TestQuestion;
+            expect(updated.options?.map((option) => option.isCorrect)).toEqual([false, true, false]);
+        });
+
+        it('leaves every correct option marked when switching to multiple-response', () => {
+            const { onChange } = renderEditor(
+                makeQuestion({
+                    options: [
+                        { id: 'a', text: 'Option A', isCorrect: true },
+                        { id: 'b', text: 'Option B', isCorrect: false },
+                    ],
+                })
+            );
+            chooseType('multiple-response');
+            const updated = onChange.mock.calls.at(-1)![0] as TestQuestion;
+            expect(updated.options?.map((option) => option.isCorrect)).toEqual([true, false]);
+        });
     });
 
     describe('key word transformation and word formation', () => {
@@ -285,6 +329,65 @@ describe('QuestionEditor extended', () => {
             expect(onChange).toHaveBeenLastCalledWith(
                 expect.objectContaining({ prompt: 'Her {{happiness}}(HAPPY) showed.' })
             );
+        });
+    });
+
+    describe('option feedback field', () => {
+        it('lets the toggle close a populated field without losing its text, then reopen it', () => {
+            const question = makeQuestion({
+                options: [
+                    { id: 'a', text: 'Option A', isCorrect: true, feedback: 'Because.' },
+                    { id: 'b', text: 'Option B', isCorrect: false },
+                ],
+            });
+            const { onChange } = renderEditor(question);
+            expect(screen.getAllByRole('textbox', { name: 'tests.option_feedback_label' })).toHaveLength(1);
+            const [firstToggle] = screen.getAllByRole('button', { name: 'tests.option_feedback_label' });
+            fireEvent.click(firstToggle);
+            expect(screen.queryByRole('textbox', { name: 'tests.option_feedback_label' })).toBeNull();
+            expect(onChange).not.toHaveBeenCalled();
+            fireEvent.click(firstToggle);
+            expect(screen.getByRole('textbox', { name: 'tests.option_feedback_label' })).toHaveValue('Because.');
+        });
+    });
+
+    describe('cloze points line', () => {
+        const pointsLine = () => screen.getByTestId('cloze-points-per-gap').textContent;
+
+        it('says each gap is worth the same, lists unequal weights, and explains all-or-nothing', () => {
+            const equal = renderEditor(makeQuestion({ type: 'cloze', prompt: 'A {{one}} and {{two}}.', points: 4 }));
+            expect(pointsLine()).toBe('tests.cloze_points_per_gap');
+            equal.view.unmount();
+
+            const weighted = renderEditor(
+                makeQuestion({ type: 'cloze', prompt: 'A {{one}} and {{two}}.', points: 4, gapWeights: [3, 1] })
+            );
+            expect(pointsLine()).toBe('tests.cloze_points_by_weight');
+            weighted.view.unmount();
+
+            renderEditor(
+                makeQuestion({
+                    type: 'cloze',
+                    prompt: 'A {{one}} and {{two}}.',
+                    points: 4,
+                    gapWeights: [3, 1],
+                    partialCredit: false,
+                })
+            );
+            expect(pointsLine()).toBe('tests.cloze_points_all_or_nothing');
+        });
+    });
+
+    describe('cloze gap weights', () => {
+        it('drops the weights when an edit changes the gap count and keeps them otherwise', () => {
+            const { onChange } = renderEditor(
+                makeQuestion({ type: 'cloze', prompt: 'A {{one}} and {{two}}.', gapWeights: [3, 1] })
+            );
+            const prompt = screen.getAllByLabelText('tests.question_prompt_label')[0];
+            fireEvent.change(prompt, { target: { value: 'A {{one}} and {{two}} and {{three}}.' } });
+            expect(onChange.mock.calls.at(-1)?.[0]).not.toHaveProperty('gapWeights');
+            fireEvent.change(prompt, { target: { value: 'An {{one}} and {{two}}.' } });
+            expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ gapWeights: [3, 1] }));
         });
     });
 

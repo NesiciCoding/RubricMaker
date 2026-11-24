@@ -31,6 +31,23 @@ function latestHeartbeat(events: ProctorEvent[]): ProctorEvent | null {
 }
 
 /**
+ * Why a student is quiet. Presence alone cannot tell "has not opened the assignment yet" from
+ * "opened it and then went silent", and the two call for different reactions from a teacher.
+ */
+export type ConnectionState = 'never_opened' | 'lost';
+
+export function deriveConnectionState(input: {
+    presence: PresenceState;
+    /** Any signal at all — a heartbeat, a proctoring event, or a progress snapshot. */
+    seen: boolean;
+    finished?: boolean;
+}): ConnectionState | undefined {
+    if (input.finished) return undefined;
+    if (!input.seen) return 'never_opened';
+    return input.presence === 'disconnected' ? 'lost' : undefined;
+}
+
+/**
  * Derives presence from the most recent heartbeat's age and reported value.
  * No heartbeat at all (e.g. student hasn't connected yet) is 'disconnected'.
  */
@@ -101,12 +118,32 @@ export function summarizeProctorFlags(events: ProctorEvent[]): ProctorFlagSummar
  * Merges a persisted event log with live broadcast events, deduping by `at`+`type`
  * so re-delivered or already-persisted heartbeats/events aren't double-counted.
  */
+/** A nudge is logged by the teacher when sent and again by the student on receipt, a moment apart. */
+const NUDGE_PAIR_MS = 15_000;
+
 export function mergeProctorEvents(persisted: ProctorEvent[], live: ProctorEvent[]): ProctorEvent[] {
     const seen = new Set(persisted.map((e) => `${e.type}:${e.at}`));
     const merged = [...persisted];
+    const pairedNudges = new Set<number>();
     for (const event of live) {
         const key = `${event.type}:${event.at}`;
         if (seen.has(key)) continue;
+        if (event.type === 'nudge') {
+            // One send, two records: pair each live nudge with at most one stored copy of the same
+            // message, so two separate sends of the same text stay two entries.
+            const liveAt = new Date(event.at).getTime();
+            const twin = persisted.findIndex(
+                (stored, index) =>
+                    stored.type === 'nudge' &&
+                    !pairedNudges.has(index) &&
+                    stored.value === event.value &&
+                    Math.abs(new Date(stored.at).getTime() - liveAt) <= NUDGE_PAIR_MS
+            );
+            if (twin >= 0) {
+                pairedNudges.add(twin);
+                continue;
+            }
+        }
         seen.add(key);
         merged.push(event);
     }

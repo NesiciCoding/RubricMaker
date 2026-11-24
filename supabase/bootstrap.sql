@@ -10438,6 +10438,846 @@ grant execute on function public.set_live_writing_grading_handoff(uuid, int, uui
 grant execute on function public.replace_live_writing_final_text(uuid, int, uuid, text) to authenticated;
 grant execute on function public.get_live_writing_finals(uuid, int) to authenticated;
 
+-- ── 105_live_draft_snapshots.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 105: keep the live monitor's draft snapshots (#1246 follow-up).
+--
+-- The monitor's per-student draft text has always been broadcast-only: every 5 s tick carries
+-- word count/answers, and the prose rides along at most once a minute. That is enough while the
+-- teacher's tab stays connected, but a reload, a sleeping laptop or a dropped Wi-Fi leaves the
+-- roster with no idea what it already knew — the rows either go blank or keep claiming "within
+-- the last minute" about an hour-old draft. This stores those once-a-minute snapshots so the
+-- monitor can seed itself on open, and so a teacher has something to look at after class.
+--
+-- Essays only. A test's answers already have a durable home (student_tests) and the test monitor
+-- reads that, so nothing writes test snapshots; a table that holds one kind of draft needs no kind
+-- column and no test/essay branch in its write path.
+--
+-- Students never get table access: rows arrive only through record_live_draft_snapshot(), which
+-- resolves the assignment (and therefore the owner and the student) server-side and refuses a
+-- caller who is not the assigned student.
+--
+-- Retention: a row per student per minute is far too much to keep forever, and export_owner_backup()
+-- would carry every lesson ever monitored into every nightly snapshot. The nightly sweep in section
+-- 3 drops drafts older than 30 days — long after the class they describe — while the roster only
+-- ever reads the last few minutes of them.
+
+-- ── 1. Table ────────────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS public.live_draft_snapshots (
+  id           BIGINT      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  assignment_id TEXT       NOT NULL,          -- essay_assignments.id (the teacherKey)
+  owner_id     UUID        NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  student_id   TEXT        NOT NULL,          -- local app student ID, as on the assignment row
+  captured_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  word_count   INTEGER     NOT NULL DEFAULT 0,
+  draft_text   TEXT                           -- student's own draft HTML; NULL on a words-only tick
+);
+
+CREATE INDEX IF NOT EXISTS live_draft_snapshots_assignment_idx
+  ON public.live_draft_snapshots (assignment_id, captured_at DESC);
+CREATE INDEX IF NOT EXISTS live_draft_snapshots_owner_idx
+  ON public.live_draft_snapshots (owner_id, captured_at DESC);
+CREATE INDEX IF NOT EXISTS live_draft_snapshots_student_idx
+  ON public.live_draft_snapshots (student_id);
+-- The nightly retention sweep deletes by age alone.
+CREATE INDEX IF NOT EXISTS live_draft_snapshots_captured_idx
+  ON public.live_draft_snapshots (captured_at);
+
+ALTER TABLE public.live_draft_snapshots ENABLE ROW LEVEL SECURITY;
+
+-- The teacher reads their own monitor history. There are deliberately no INSERT/UPDATE/DELETE
+-- policies: the only write path is the SECURITY DEFINER function below.
+DROP POLICY IF EXISTS "live_draft_snapshots_owner_select" ON public.live_draft_snapshots;
+CREATE POLICY "live_draft_snapshots_owner_select"
+  ON public.live_draft_snapshots FOR SELECT
+  USING ((SELECT auth.uid()) = owner_id);
+
+-- ── 2. Student write path ──────────────────────────────────────────────────────
+
+CREATE OR REPLACE FUNCTION public.record_live_draft_snapshot(
+  p_assignment_id TEXT,
+  p_word_count    INTEGER,
+  p_draft_text    TEXT
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_owner   UUID;
+  v_student TEXT;
+BEGIN
+  -- The same ceiling the essay editor and live writing use, so one paste cannot store a novel.
+  IF p_draft_text IS NOT NULL AND char_length(p_draft_text) > 20000 THEN
+    RAISE EXCEPTION 'draft_too_long';
+  END IF;
+
+  SELECT a.owner_id, a.student_id INTO v_owner, v_student
+  FROM public.essay_assignments a
+  WHERE a.id = p_assignment_id;
+
+  IF v_owner IS NULL THEN
+    RAISE EXCEPTION 'unknown_assignment';
+  END IF;
+  IF v_student NOT IN (SELECT public.get_my_student_ids()) THEN
+    RAISE EXCEPTION 'not_your_assignment';
+  END IF;
+
+  INSERT INTO public.live_draft_snapshots (assignment_id, owner_id, student_id, word_count, draft_text)
+  VALUES (p_assignment_id, v_owner, v_student, GREATEST(COALESCE(p_word_count, 0), 0), p_draft_text);
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.record_live_draft_snapshot(TEXT, INTEGER, TEXT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.record_live_draft_snapshot(TEXT, INTEGER, TEXT) TO authenticated;
+
+-- ── 3. Retention ───────────────────────────────────────────────────────────────
+-- Nightly (03:50, after the anonymization and client-log sweeps). Without it every teacher's
+-- nightly snapshot grows by a full class's minute-by-minute history for every lesson they ever
+-- monitored; with it the dumps stay bounded and a term's worth of history ages out on its own.
+
+SELECT cron.schedule(
+  'live-draft-snapshots-cleanup',
+  '50 3 * * *',
+  $$ DELETE FROM public.live_draft_snapshots WHERE captured_at < now() - interval '30 days' $$
+);
+
+-- ── 4. Registries ──────────────────────────────────────────────────────────────
+-- Nightly backups (owner_data_tables) and "erase this student" (student_data_tables) both read
+-- these lists; a table missing from either silently survives or silently disappears. Both are
+-- redefined from their latest version (103) with the new table added.
+
+CREATE OR REPLACE FUNCTION public.owner_data_tables()
+RETURNS TABLE (key text, table_name text, owner_filter text)
+LANGUAGE sql
+IMMUTABLE
+SET search_path = public
+AS $$
+  VALUES
+    ('rubrics',                   'rubrics',                   'owner_id = $1'),
+    ('folders',                   'folders',                   'owner_id = $1'),
+    ('rubric_versions',           'rubric_versions',           'owner_id = $1'),
+    ('rubric_shares',             'rubric_shares',             'rubric_id IN (SELECT id FROM public.rubrics WHERE owner_id = $1)'),
+    ('classes',                   'classes',                   'owner_id = $1'),
+    ('class_members',             'class_members',             'class_id IN (SELECT id FROM public.classes WHERE owner_id = $1)'),
+    ('students',                  'students',                  'owner_id = $1'),
+    ('student_rubrics',           'student_rubrics',           'grader_id = $1 AND is_peer_review = false'),
+    ('peer_reviews',              'student_rubrics',           'grader_id = $1 AND is_peer_review = true'),
+    ('attachments',               'attachments',               'owner_id = $1'),
+    ('grade_scales',              'grade_scales',               'owner_id = $1'),
+    ('comment_snippets',          'comment_snippets',          'owner_id = $1'),
+    ('comment_bank',              'comment_bank',              'owner_id = $1'),
+    ('export_templates',          'export_templates',          'owner_id = $1'),
+    ('favorite_standards',        'favorite_standards',        'owner_id = $1'),
+    ('standard_mastery_targets',  'standard_mastery_targets',  'owner_id = $1'),
+    ('self_assessments',          'self_assessments',          'owner_id = $1'),
+    ('speaking_sessions',         'speaking_sessions',         'owner_id = $1'),
+    ('recording_metadata',        'recording_metadata',        'owner_id = $1'),
+    ('scan_metadata',             'scan_metadata',             'owner_id = $1'),
+    ('analysis_results',          'analysis_results',          'owner_id = $1'),
+    ('tests',                     'tests',                     'owner_id = $1'),
+    ('test_assignments',          'test_assignments',          'owner_id = $1'),
+    ('student_tests',             'student_tests',             'owner_id = $1'),
+    ('placement_sessions',        'placement_sessions',        'owner_id = $1'),
+    ('essay_templates',           'essay_templates',           'owner_id = $1'),
+    ('essay_assignments',         'essay_assignments',         'owner_id = $1'),
+    ('essay_submissions',         'essay_submissions',         'assignment_id IN (SELECT id FROM public.essay_assignments WHERE owner_id = $1)'),
+    ('essay_batch_assignments',   'essay_batch_assignments',   'owner_id = $1'),
+    ('essay_offline_submissions', 'essay_offline_submissions', 'owner_id = $1'),
+    ('grading_tasks',             'grading_tasks',             'owner_id = $1'),
+    ('user_templates',            'user_templates',            'owner_id = $1'),
+    ('user_settings',             'user_settings',             'user_id = $1'),
+    ('flashcard_decks',           'flashcard_decks',           'owner_id = $1'),
+    ('flashcard_assignments',     'flashcard_assignments',     'owner_id = $1'),
+    ('flashcard_reviews',         'flashcard_reviews',         'owner_id = $1'),
+    ('news_flashes',              'news_flashes',              'owner_id = $1'),
+    ('news_flash_reads',          'news_flash_reads',          'owner_id = $1'),
+    ('messages',                  'messages',                  'owner_id = $1'),
+    ('question_bank_items',       'question_bank_items',       'owner_id = $1'),
+    ('document_comments',         'document_comments',         'owner_id = $1'),
+    ('notification_dismissals',   'notification_dismissals',   'owner_id = $1'),
+    ('comparative_matchups',      'comparative_matchups',      'owner_id = $1'),
+    ('marketplace_listings',      'marketplace_listings',      'published_by = $1'),
+    ('marketplace_upvotes',       'marketplace_upvotes',       'profile_id = $1'),
+    ('live_draft_snapshots',      'live_draft_snapshots',      'owner_id = $1'),
+    ('live_writing_peer_pairs',   'live_writing_peer_pairs',   'session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = $1)'),
+    ('live_writing_round_log',    'live_writing_round_log',    'session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = $1)'),
+    ('live_writing_votes',        'live_writing_votes',        'session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = $1)'),
+    ('live_writing_responses',    'live_writing_responses',    'session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = $1)'),
+    ('live_writing_participants', 'live_writing_participants', 'session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = $1)'),
+    ('live_writing_sessions',     'live_writing_sessions',     'owner_id = $1')
+$$;
+
+CREATE OR REPLACE FUNCTION public.student_data_tables()
+RETURNS TABLE (key text, table_name text, student_filter text, owner_filter text)
+LANGUAGE sql
+IMMUTABLE
+SET search_path = public
+AS $$
+  VALUES
+    ('document_comments',         'document_comments',         $f$data->>'attachmentId' IN (SELECT id FROM public.attachments WHERE data->>'studentId' = $1)$f$, 'owner_id = $2'),
+    ('attachments',               'attachments',               $f$data->>'studentId' = $1$f$,                                                              'owner_id = $2'),
+    ('recording_metadata',        'recording_metadata',        'session_id IN (SELECT id FROM public.speaking_sessions WHERE student_id = $1)',            'owner_id = $2'),
+    ('speaking_sessions',         'speaking_sessions',         'student_id = $1',                                                                          'owner_id = $2'),
+    ('self_assessments',          'self_assessments',          'student_id = $1',                                                                          'owner_id = $2'),
+    ('analysis_results',          'analysis_results',          'student_id = $1',                                                                          'owner_id = $2'),
+    ('scan_metadata',             'scan_metadata',             'student_id = $1',                                                                          'owner_id = $2'),
+    ('student_rubrics',           'student_rubrics',           'student_id = $1',                                                                          'grader_id = $2'),
+    ('essay_submissions',         'essay_submissions',         'assignment_id IN (SELECT id FROM public.essay_assignments WHERE student_id = $1)',         'assignment_id IN (SELECT id FROM public.essay_assignments WHERE owner_id = $2)'),
+    ('essay_assignments',         'essay_assignments',         'student_id = $1',                                                                          'owner_id = $2'),
+    ('essay_batch_assignments',   'essay_batch_assignments',   $f$data->>'studentId' = $1$f$,                                                              'owner_id = $2'),
+    ('essay_offline_submissions', 'essay_offline_submissions', $f$data->>'assignmentStudentId' = $1$f$,                                                    'owner_id = $2'),
+    ('placement_sessions',        'placement_sessions',        'assignment_id IN (SELECT id FROM public.test_assignments WHERE student_id = $1)',          'owner_id = $2'),
+    ('student_tests',             'student_tests',             $f$data->>'studentId' = $1 OR assignment_id IN (SELECT id FROM public.test_assignments WHERE student_id = $1)$f$, 'owner_id = $2'),
+    ('test_assignments',          'test_assignments',          'student_id = $1',                                                                          'owner_id = $2'),
+    ('messages',                  'messages',                  'student_id = $1',                                                                          'owner_id = $2'),
+    ('flashcard_reviews',         'flashcard_reviews',         'student_id = $1',                                                                          'owner_id = $2'),
+    ('flashcard_assignments',     'flashcard_assignments',     'student_id = $1',                                                                          'owner_id = $2'),
+    ('flashcard_decks',           'flashcard_decks',           'student_id = $1',                                                                          'owner_id = $2'),
+    ('news_flash_reads',          'news_flash_reads',          'student_id = $1',                                                                          'owner_id = $2'),
+    ('grading_tasks',             'grading_tasks',             $f$data->>'studentId' = $1$f$,                                                              'owner_id = $2'),
+    ('comparative_matchups',      'comparative_matchups',      $f$data->>'studentAId' = $1 OR data->>'studentBId' = $1$f$,                                 'owner_id = $2'),
+    ('live_writing_peer_pairs',   'live_writing_peer_pairs',   $f$voter_participant_id IN (SELECT id FROM public.live_writing_participants WHERE student_id = $1) OR option_a_participant_id IN (SELECT id FROM public.live_writing_participants WHERE student_id = $1) OR option_b_participant_id IN (SELECT id FROM public.live_writing_participants WHERE student_id = $1)$f$, 'session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = $2)'),
+    ('live_writing_votes',        'live_writing_votes',        'voter_participant_id IN (SELECT id FROM public.live_writing_participants WHERE student_id = $1)', 'session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = $2)'),
+    ('live_writing_responses',    'live_writing_responses',    'participant_id IN (SELECT id FROM public.live_writing_participants WHERE student_id = $1)',       'session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = $2)'),
+    ('live_writing_participants', 'live_writing_participants', 'student_id = $1',                                                                          'session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = $2)'),
+    ('live_draft_snapshots',      'live_draft_snapshots',      'student_id = $1',                                                                          'owner_id = $2'),
+    ('students',                  'students',                  'id = $1',                                                                                  'owner_id = $2')
+$$;
+
+-- ── 106_scheduled_digest_pg_net_timeout.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 106: give the nightly digest's pg_net call a realistic timeout.
+--
+-- net.http_post cancels its request after `timeout_milliseconds`, which defaults to 5000.
+-- On expiry pg_net writes a row to net._http_response with an empty status_code,
+-- timed_out = true and an "Timeout of … ms reached" error_msg, while the edge function keeps
+-- running server-side. So the digest still sends its email, but the run is counted as a
+-- failed HTTP call by monitoring.failed_jobs() (migration 091) and the "Scheduled HTTP call
+-- failed" alert fires every morning the digest had something to deliver: SMTP sends are
+-- synchronous and are followed by the heartbeat ping, which routinely takes longer than
+-- five seconds. Re-schedule the job with a two-minute budget.
+--
+-- The job also fails loudly in cron.job_run_details (with a message naming the missing
+-- setting) when app.settings.project_url / app.settings.service_role_key are unset, instead
+-- of sending "Bearer null" and showing up only as a 401 in net._http_response.
+
+select cron.schedule(
+  'teacher-email-digest',
+  '0 6 * * *',
+  $job$
+    do $digest$
+    declare
+      project_url text := nullif(current_setting('app.settings.project_url', true), '');
+      service_key text := nullif(current_setting('app.settings.service_role_key', true), '');
+    begin
+      if project_url is null or service_key is null then
+        raise exception 'teacher-email-digest: set app.settings.project_url and app.settings.service_role_key (docs/SELF_HOSTING_OPS.md -> Teacher email digest job)';
+      end if;
+      perform net.http_post(
+        url := project_url || '/functions/v1/scheduled-digest',
+        headers := jsonb_build_object(
+          'Authorization', 'Bearer ' || service_key,
+          'Content-Type', 'application/json'
+        ),
+        body := '{}'::jsonb,
+        timeout_milliseconds := 120000
+      );
+    end
+    $digest$;
+  $job$
+);
+
+-- ── 107_teacher_email_allowlist.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 107: only staff addresses may start as 'teacher'.
+--
+-- handle_new_user() (latest: 092-era bootstrap) gave role='teacher' to every sign-up that was not
+-- anonymous and not on a teacher's roster, so any student at a school whose address the teacher had
+-- not imported became a teacher. Teacher is now granted only when the email passes
+-- site_config 'teacher_email_rules':
+--   {"domains": ["academie-tien.nl"], "blockNumericLocalPart": true}
+-- Everyone else starts as 'student' (no data access until a roster row matches their verified
+-- email); an admin can still promote anybody by hand. With no rules row the old behaviour is kept,
+-- so self-hosted deployments that do not set the key are unaffected.
+
+CREATE OR REPLACE FUNCTION public.is_teacher_email(p_email text)
+RETURNS boolean
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_rules   jsonb;
+  v_email   text := lower(btrim(p_email));
+  v_local   text;
+  v_domain  text;
+BEGIN
+  SELECT value INTO v_rules FROM public.site_config WHERE key = 'teacher_email_rules';
+  IF v_rules IS NULL THEN
+    RETURN true;
+  END IF;
+
+  IF v_email IS NULL OR position('@' IN v_email) = 0 THEN
+    RETURN false;
+  END IF;
+
+  v_local  := split_part(v_email, '@', 1);
+  v_domain := split_part(v_email, '@', 2);
+
+  IF NOT EXISTS (
+    SELECT 1 FROM jsonb_array_elements_text(coalesce(v_rules->'domains', '[]'::jsonb)) d
+    WHERE lower(btrim(d)) = v_domain
+  ) THEN
+    RETURN false;
+  END IF;
+
+  IF coalesce((v_rules->>'blockNumericLocalPart')::boolean, true) AND v_local ~ '^[0-9]' THEN
+    RETURN false;
+  END IF;
+
+  RETURN true;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.is_teacher_email(text) FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_role TEXT;
+  v_name TEXT;
+BEGIN
+  v_name := COALESCE(
+    NULLIF(TRIM(new.raw_user_meta_data->>'full_name'), ''),
+    NULLIF(TRIM(new.raw_user_meta_data->>'name'), ''),
+    new.email
+  );
+
+  IF new.is_anonymous THEN
+    v_role := 'student';
+
+  ELSIF new.email IS NOT NULL AND EXISTS (
+    SELECT 1
+    FROM public.students s
+    JOIN public.profiles owner_p ON owner_p.id = s.owner_id
+    WHERE s.data->>'email' IS NOT NULL
+      AND lower(s.data->>'email') = lower(new.email)
+      AND owner_p.role IN ('teacher', 'admin')
+  ) THEN
+    v_role := 'student';
+
+  ELSE
+    PERFORM pg_advisory_xact_lock(hashtext('public.handle_new_user:first_admin'));
+
+    SELECT CASE
+      WHEN NOT EXISTS (
+        SELECT 1 FROM public.profiles WHERE NOT (role = 'student' AND email IS NULL) LIMIT 1
+      ) THEN 'admin'
+      WHEN public.is_teacher_email(new.email) THEN 'teacher'
+      ELSE 'student'
+    END INTO v_role;
+  END IF;
+
+  INSERT INTO public.profiles (id, email, display_name, role)
+  VALUES (new.id, new.email, v_name, v_role)
+  ON CONFLICT (id) DO NOTHING;
+
+  RETURN new;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM PUBLIC, anon, authenticated;
+
+-- ── 108_admin_set_user_password.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 108: admin_set_user_password() — an admin sets a login password and confirms the address.
+--
+-- Supabase's OTP/confirmation mail is often filtered (Outlook, school relays), which locks people
+-- out. set-student-password covers a teacher's own roster through an edge function, but the Docker
+-- stack has no functions runtime and teachers/admins are out of its scope, so this RPC lets an
+-- admin do the same from SQL or the client with the same guarantees: admin role only, exact-match
+-- email, rate limited, audited (the password itself is never logged).
+--
+-- Usage: SELECT public.admin_set_user_password('teacher@school.example', 'NewTempPassword123!');
+
+CREATE OR REPLACE FUNCTION public.admin_set_user_password(
+  p_email           text,
+  p_password        text,
+  p_confirm_email   boolean DEFAULT true,
+  p_revoke_sessions boolean DEFAULT true
+) RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth, extensions
+AS $$
+DECLARE
+  v_uid      uuid := auth.uid();
+  v_email    text := lower(btrim(p_email));
+  v_target   uuid;
+  v_matches  int;
+BEGIN
+  IF v_uid IS NULL
+     OR coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false)
+     OR coalesce(public.get_my_role(), '') <> 'admin' THEN
+    RAISE EXCEPTION 'Not allowed' USING ERRCODE = '42501';
+  END IF;
+
+  IF v_email IS NULL OR v_email = '' OR position('@' IN v_email) = 0 THEN
+    RAISE EXCEPTION 'Missing or invalid email' USING ERRCODE = '22023';
+  END IF;
+
+  -- bcrypt only reads the first 72 bytes, so a longer password would silently be truncated.
+  IF p_password IS NULL OR char_length(p_password) < 8 OR octet_length(p_password) > 72 THEN
+    RAISE EXCEPTION 'Password must be 8 to 72 bytes long' USING ERRCODE = '22023';
+  END IF;
+
+  PERFORM pg_advisory_xact_lock(hashtextextended('admin_set_user_password:' || v_uid::text, 0));
+
+  IF (
+    SELECT count(*) FROM public.audit_logs a
+    WHERE a.actor_id = v_uid AND a.action = 'admin_set_user_password' AND a.created_at > now() - interval '1 minute'
+  ) >= 20 THEN
+    RAISE EXCEPTION 'Too many requests, try again later' USING ERRCODE = '54000';
+  END IF;
+
+  SELECT count(*), min(u.id) INTO v_matches, v_target
+  FROM auth.users u
+  WHERE lower(u.email) = v_email;
+
+  IF v_matches <> 1 THEN
+    RAISE EXCEPTION 'No single account matches that email' USING ERRCODE = 'P0002';
+  END IF;
+
+  UPDATE auth.users
+  SET encrypted_password = extensions.crypt(p_password, extensions.gen_salt('bf')),
+      email_confirmed_at = CASE WHEN p_confirm_email THEN coalesce(email_confirmed_at, now()) ELSE email_confirmed_at END,
+      updated_at         = now()
+  WHERE id = v_target;
+
+  -- Signing the caller out of their own session would be a surprising side effect of resetting
+  -- someone else's password, and pointless when they reset their own.
+  IF p_revoke_sessions AND v_target <> v_uid THEN
+    DELETE FROM auth.sessions WHERE user_id = v_target;
+  END IF;
+
+  INSERT INTO public.audit_logs (actor_id, category, action, entity_type, entity_id, details)
+  VALUES (
+    v_uid, 'admin', 'admin_set_user_password', 'user', v_target::text,
+    jsonb_build_object('confirmed_email', p_confirm_email, 'revoked_sessions', p_revoke_sessions AND v_target <> v_uid)
+  );
+
+  RETURN jsonb_build_object('success', true, 'user_id', v_target);
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.admin_set_user_password(text, text, boolean, boolean) FROM PUBLIC, anon;
+GRANT  EXECUTE ON FUNCTION public.admin_set_user_password(text, text, boolean, boolean) TO authenticated;
+
+-- ── 109_school_highlights.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 109: school-level highlights for a wall display (Grafana).
+--
+-- A hallway screen wants numbers like "how many students are at B1 reading" and "which grammar
+-- topics does the school know best", but CEFR level and grammar mastery are computed in the
+-- browser (cefrStudentAggregator, masteryProfileAggregator) from jsonb documents, and the SQL side
+-- must not grow a second copy of that logic. Each teacher's client therefore pushes a small
+-- AGGREGATE snapshot of its own students — counts per CEFR level and a per-grammar-item score
+-- total — and the monitoring functions below sum them per school.
+--
+-- A snapshot holds no student id, name, email, class or free text: level counts and, per grammar
+-- item, "n students with evidence, sum of their scores". Rows are the teacher's own (RLS), one per
+-- teacher per day, and are part of that teacher's data: backed up with owner_data_tables(), erased
+-- by "Delete all my database data", pruned after two years.
+--
+-- Small-group suppression lives in the read functions, not the client: any figure (a CEFR level, a
+-- grammar item, a school's weekly activity) with fewer than monitoring.hl_min_cohort() students
+-- behind it is not returned, so a screen can never show a figure that points at a handful of
+-- identifiable children.
+
+-- ── 1. Table ────────────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS public.school_highlight_snapshots (
+  owner_id      UUID        NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  snapshot_date DATE        NOT NULL DEFAULT CURRENT_DATE,
+  student_count INTEGER     NOT NULL DEFAULT 0 CHECK (student_count >= 0),
+  cefr          JSONB       NOT NULL DEFAULT '{}'::jsonb,
+  grammar       JSONB       NOT NULL DEFAULT '[]'::jsonb,
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (owner_id, snapshot_date),
+  CONSTRAINT school_highlight_snapshots_shape CHECK (
+    jsonb_typeof(cefr) = 'object'
+    AND jsonb_typeof(grammar) = 'array'
+    AND (cefr->'overall' IS NULL OR jsonb_typeof(cefr->'overall') = 'object')
+    AND (cefr->'skills' IS NULL OR jsonb_typeof(cefr->'skills') = 'object')
+    AND pg_column_size(cefr) < 20000
+    AND pg_column_size(grammar) < 200000
+  )
+);
+
+CREATE INDEX IF NOT EXISTS school_highlight_snapshots_date_idx
+  ON public.school_highlight_snapshots (snapshot_date);
+
+ALTER TABLE public.school_highlight_snapshots ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "school_highlight_snapshots_owner_all" ON public.school_highlight_snapshots;
+CREATE POLICY "school_highlight_snapshots_owner_all"
+  ON public.school_highlight_snapshots FOR ALL
+  USING      ((SELECT auth.uid()) = owner_id)
+  WITH CHECK ((SELECT auth.uid()) = owner_id);
+
+-- Weekly trends need history, a wall display does not need more than two years of it.
+SELECT cron.schedule(
+  'school-highlight-snapshots-cleanup',
+  '55 3 * * *',
+  $$ DELETE FROM public.school_highlight_snapshots WHERE snapshot_date < current_date - 730 $$
+);
+
+-- ── 2. Read functions for Grafana ───────────────────────────────────────────────
+-- Same rules as 091/092: SECURITY DEFINER with a pinned search_path, in the monitoring schema the
+-- REST API does not expose, executable by pg_monitor only. Only the five reporting functions are
+-- granted; the helpers below return unsuppressed per-teacher data and stay owner-only, so a
+-- pg_monitor login can never read a small group's figures directly.
+--
+-- Suppression: every figure a function returns has at least monitoring.hl_min_cohort() students
+-- behind it. CEFR levels, grammar items and weekly activity are all held to it, and schools are
+-- grouped by id (two schools sharing a name are never merged; a duplicate name gets a short id
+-- suffix as its label).
+
+CREATE SCHEMA IF NOT EXISTS monitoring;
+REVOKE ALL ON SCHEMA monitoring FROM PUBLIC;
+GRANT USAGE ON SCHEMA monitoring TO pg_monitor;
+
+CREATE OR REPLACE FUNCTION monitoring.hl_min_cohort()
+RETURNS integer
+LANGUAGE sql
+IMMUTABLE
+AS $$ SELECT 5 $$;
+
+-- A non-object (a malformed snapshot) reads as empty instead of failing jsonb_each_text for everyone.
+CREATE OR REPLACE FUNCTION monitoring.hl_object(j jsonb)
+RETURNS jsonb
+LANGUAGE sql
+IMMUTABLE
+AS $$ SELECT CASE WHEN jsonb_typeof(j) = 'object' THEN j ELSE '{}'::jsonb END $$;
+
+-- A teacher who turned "School highlights" off in Settings (stored in user_settings, synced like every
+-- setting) is excluded everywhere at once, including the snapshots already pushed, so opting out does
+-- not wait for old rows to age out. Absent or any other value means the teacher shares.
+CREATE OR REPLACE FUNCTION monitoring.hl_shares(p_owner uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT NOT EXISTS (
+    SELECT 1 FROM public.user_settings us
+    WHERE us.user_id = p_owner AND us.settings->>'shareSchoolHighlights' = 'false'
+  )
+$$;
+
+-- Teacher -> school, labelled by name; a duplicate name (or a school literally called "No school")
+-- gets the first 8 characters of its id appended so labels stay unique.
+CREATE OR REPLACE FUNCTION monitoring.hl_owner_schools()
+RETURNS TABLE (owner_id uuid, school_id uuid, school text)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  WITH labels AS (
+    SELECT id AS school_id, name FROM public.schools
+    UNION ALL
+    SELECT NULL::uuid, 'No school'
+  ),
+  named AS (
+    SELECT
+      school_id,
+      CASE WHEN count(*) OVER (PARTITION BY name) > 1
+           THEN name || ' (' || coalesce(left(school_id::text, 8), 'none') || ')'
+           ELSE name END AS school
+    FROM labels
+  )
+  SELECT p.id, p.school_id, n.school
+  FROM public.profiles p
+  JOIN named n ON n.school_id IS NOT DISTINCT FROM p.school_id
+$$;
+
+-- Each teacher's newest snapshot from the last 60 days (a teacher who stopped syncing drops out),
+-- attributed to the school on their profile. Unsuppressed: internal to the functions below.
+CREATE OR REPLACE FUNCTION monitoring.hl_current_snapshots()
+RETURNS TABLE (school_id uuid, school text, student_count integer, cefr jsonb, grammar jsonb)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT os.school_id, os.school, n.student_count, n.cefr, n.grammar
+  FROM (
+    SELECT DISTINCT ON (owner_id) owner_id, student_count, cefr, grammar
+    FROM public.school_highlight_snapshots
+    WHERE snapshot_date >= current_date - 60 AND monitoring.hl_shares(owner_id)
+    ORDER BY owner_id, snapshot_date DESC
+  ) n
+  JOIN monitoring.hl_owner_schools() os ON os.owner_id = n.owner_id
+$$;
+
+-- Students per CEFR level for 'overall' or one skill ('reading', 'writing', …), per school. A level
+-- with fewer than the minimum cohort of students is left out, not shown as a small number.
+CREATE OR REPLACE FUNCTION monitoring.hl_cefr_distribution(skill text DEFAULT 'overall')
+RETURNS TABLE (school text, level text, students bigint)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT c.school, e.key, sum(e.value::bigint)
+  FROM monitoring.hl_current_snapshots() c,
+       LATERAL jsonb_each_text(
+         monitoring.hl_object(
+           CASE WHEN skill = 'overall' THEN c.cefr->'overall' ELSE c.cefr->'skills'->skill END
+         )
+       ) e
+  WHERE e.value ~ '^[0-9]{1,9}$'
+  GROUP BY c.school_id, c.school, e.key
+  HAVING sum(e.value::bigint) >= monitoring.hl_min_cohort()
+$$;
+
+-- Share of students per overall level, one point per ISO week: the latest snapshot each teacher
+-- made that week. A share, not a count, because the number of teachers who opened the app in a
+-- given week varies. A level under the minimum cohort that week is left out, and the shares are
+-- taken over the levels that remain, so a share can never reveal how many students are hidden.
+CREATE OR REPLACE FUNCTION monitoring.hl_cefr_trend(range_start timestamptz, range_end timestamptz)
+RETURNS TABLE (week timestamptz, school text, level text, share numeric)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  WITH weekly AS (
+    SELECT DISTINCT ON (h.owner_id, date_trunc('week', h.snapshot_date))
+      date_trunc('week', h.snapshot_date)::timestamptz AS week,
+      os.school_id,
+      os.school,
+      h.cefr->'overall' AS overall
+    FROM public.school_highlight_snapshots h
+    JOIN monitoring.hl_owner_schools() os ON os.owner_id = h.owner_id
+    WHERE h.snapshot_date BETWEEN range_start::date AND range_end::date AND monitoring.hl_shares(h.owner_id)
+    ORDER BY h.owner_id, date_trunc('week', h.snapshot_date), h.snapshot_date DESC
+  ),
+  counts AS (
+    SELECT w.week, w.school_id, w.school, e.key AS level, sum(e.value::bigint) AS n
+    FROM weekly w, LATERAL jsonb_each_text(monitoring.hl_object(w.overall)) e
+    WHERE e.value ~ '^[0-9]{1,9}$'
+    GROUP BY w.week, w.school_id, w.school, e.key
+  ),
+  totals AS (
+    SELECT week, school_id, sum(n) AS total
+    FROM counts
+    WHERE n >= monitoring.hl_min_cohort()
+    GROUP BY week, school_id
+  )
+  SELECT c.week, c.school, c.level, round(100.0 * c.n / t.total, 1)
+  FROM counts c
+  JOIN totals t ON t.week = c.week AND t.school_id IS NOT DISTINCT FROM c.school_id
+  WHERE c.n >= monitoring.hl_min_cohort()
+  ORDER BY 1, 2, 3
+$$;
+
+-- Average grammar score (0–100, the blend of test accuracy, flashcard mastery and rubric writing
+-- evidence the app shows teachers) per grammar item, weighted by how many students have evidence.
+CREATE OR REPLACE FUNCTION monitoring.hl_grammar_items(lang text DEFAULT 'en')
+RETURNS TABLE (school text, item_id text, label text, category text, level text, students bigint, avg_score numeric)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT
+    c.school,
+    g->>'id',
+    max(CASE WHEN lang = 'nl' THEN coalesce(g->>'ln', g->>'l') ELSE g->>'l' END),
+    max(CASE WHEN lang = 'nl' THEN coalesce(g->>'cn', g->>'c') ELSE g->>'c' END),
+    max(g->>'lv'),
+    sum((g->>'n')::bigint),
+    round(sum((g->>'sum')::numeric) / nullif(sum((g->>'n')::numeric), 0), 1)
+  FROM monitoring.hl_current_snapshots() c, LATERAL jsonb_array_elements(c.grammar) g
+  WHERE g->>'id' IS NOT NULL
+    AND g->>'n' ~ '^[0-9]{1,9}$'
+    AND g->>'sum' ~ '^[0-9]{1,9}(\.[0-9]+)?$'
+  GROUP BY c.school_id, c.school, g->>'id'
+  HAVING sum((g->>'n')::bigint) >= monitoring.hl_min_cohort()
+$$;
+
+-- Students the snapshots cover, per school — the "how many students does this screen speak for" line.
+CREATE OR REPLACE FUNCTION monitoring.hl_student_coverage()
+RETURNS TABLE (school text, students bigint)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT school, sum(student_count)::bigint
+  FROM monitoring.hl_current_snapshots()
+  GROUP BY school_id, school
+  HAVING sum(student_count) >= monitoring.hl_min_cohort()
+$$;
+
+-- This week against last week (rolling 7 days), per school and metric, read straight from the
+-- domain tables like 092's app_daily_activity. Three rules keep it consistent with the rest:
+--   * only teachers who share (a snapshot in the last 60 days and not opted out) are counted, so opting
+--     out removes their classes' activity from the screen at once;
+--   * a period is reported only when at least hl_min_cohort() distinct students produced it
+--     (counting students, not events), otherwise it is NULL, not 0;
+--   * the school's snapshots must cover at least that many students.
+-- Timestamps that do not parse are skipped (public.try_timestamptz, 078) rather than failing the
+-- query; the string comparison is a cheap pre-filter for ISO dates.
+CREATE OR REPLACE FUNCTION monitoring.hl_week_activity()
+RETURNS TABLE (school text, metric text, this_week bigint, last_week bigint)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  WITH events (owner_id, metric, student, at, amount) AS (
+    SELECT grader_id, 'grades', student_id,
+           public.try_timestamptz(coalesce(data->>'gradedAt', data->>'updatedAt')), 1
+      FROM public.student_rubrics
+      WHERE NOT is_peer_review
+        AND coalesce(data->>'gradedAt', data->>'updatedAt') >= to_char(now() - interval '15 days', 'YYYY-MM-DD') COLLATE "C"
+    UNION ALL
+    SELECT a.owner_id, 'essays', a.student_id, es.submitted_at, 1
+      FROM public.essay_submissions es
+      JOIN public.essay_assignments a ON a.id = es.assignment_id
+      WHERE es.submitted_at >= now() - interval '15 days'
+    UNION ALL
+    SELECT a.owner_id, 'words', a.student_id, es.submitted_at, es.word_count
+      FROM public.essay_submissions es
+      JOIN public.essay_assignments a ON a.id = es.assignment_id
+      WHERE es.submitted_at >= now() - interval '15 days'
+    UNION ALL
+    SELECT owner_id, 'test_attempts', data->>'studentId', public.try_timestamptz(data->>'startedAt'), 1
+      FROM public.student_tests
+      WHERE data->>'startedAt' >= to_char(now() - interval '15 days', 'YYYY-MM-DD') COLLATE "C"
+  ),
+  sharing AS (
+    SELECT DISTINCT owner_id
+    FROM public.school_highlight_snapshots
+    WHERE snapshot_date >= current_date - 60 AND monitoring.hl_shares(owner_id)
+  ),
+  covered AS (
+    SELECT school_id
+    FROM monitoring.hl_current_snapshots()
+    GROUP BY school_id
+    HAVING sum(student_count) >= monitoring.hl_min_cohort()
+  )
+  SELECT
+    os.school,
+    e.metric,
+    CASE WHEN count(DISTINCT e.student) FILTER (WHERE e.at >= now() - interval '7 days') >= monitoring.hl_min_cohort()
+         THEN sum(e.amount) FILTER (WHERE e.at >= now() - interval '7 days') END::bigint,
+    CASE WHEN count(DISTINCT e.student) FILTER (WHERE e.at >= now() - interval '14 days' AND e.at < now() - interval '7 days') >= monitoring.hl_min_cohort()
+         THEN sum(e.amount) FILTER (WHERE e.at >= now() - interval '14 days' AND e.at < now() - interval '7 days') END::bigint
+  FROM events e
+  JOIN sharing sh ON sh.owner_id = e.owner_id
+  JOIN monitoring.hl_owner_schools() os ON os.owner_id = e.owner_id
+  JOIN covered cv ON cv.school_id IS NOT DISTINCT FROM os.school_id
+  WHERE e.at >= now() - interval '14 days'
+  GROUP BY os.school_id, os.school, e.metric
+$$;
+
+REVOKE ALL ON FUNCTION monitoring.hl_min_cohort() FROM PUBLIC;
+REVOKE ALL ON FUNCTION monitoring.hl_object(jsonb) FROM PUBLIC;
+REVOKE ALL ON FUNCTION monitoring.hl_shares(uuid) FROM PUBLIC;
+REVOKE ALL ON FUNCTION monitoring.hl_owner_schools() FROM PUBLIC;
+REVOKE ALL ON FUNCTION monitoring.hl_current_snapshots() FROM PUBLIC;
+REVOKE ALL ON FUNCTION monitoring.hl_cefr_distribution(text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION monitoring.hl_cefr_trend(timestamptz, timestamptz) FROM PUBLIC;
+REVOKE ALL ON FUNCTION monitoring.hl_grammar_items(text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION monitoring.hl_student_coverage() FROM PUBLIC;
+REVOKE ALL ON FUNCTION monitoring.hl_week_activity() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION monitoring.hl_cefr_distribution(text) TO pg_monitor;
+GRANT EXECUTE ON FUNCTION monitoring.hl_cefr_trend(timestamptz, timestamptz) TO pg_monitor;
+GRANT EXECUTE ON FUNCTION monitoring.hl_grammar_items(text) TO pg_monitor;
+GRANT EXECUTE ON FUNCTION monitoring.hl_student_coverage() TO pg_monitor;
+GRANT EXECUTE ON FUNCTION monitoring.hl_week_activity() TO pg_monitor;
+
+-- ── 3. Registry ─────────────────────────────────────────────────────────────────
+-- Nightly backups and "Delete all my database data" read owner_data_tables(); redefined from its
+-- latest version (105) with the new table added. The snapshot has no student column, so
+-- student_data_tables() (erase one student) needs nothing: the figures are counts that cannot be
+-- traced to a child, and the next push drops an erased student from them anyway.
+
+CREATE OR REPLACE FUNCTION public.owner_data_tables()
+RETURNS TABLE (key text, table_name text, owner_filter text)
+LANGUAGE sql
+IMMUTABLE
+SET search_path = public
+AS $$
+  VALUES
+    ('rubrics',                   'rubrics',                   'owner_id = $1'),
+    ('folders',                   'folders',                   'owner_id = $1'),
+    ('rubric_versions',           'rubric_versions',           'owner_id = $1'),
+    ('rubric_shares',             'rubric_shares',             'rubric_id IN (SELECT id FROM public.rubrics WHERE owner_id = $1)'),
+    ('classes',                   'classes',                   'owner_id = $1'),
+    ('class_members',             'class_members',             'class_id IN (SELECT id FROM public.classes WHERE owner_id = $1)'),
+    ('students',                  'students',                  'owner_id = $1'),
+    ('student_rubrics',           'student_rubrics',           'grader_id = $1 AND is_peer_review = false'),
+    ('peer_reviews',              'student_rubrics',           'grader_id = $1 AND is_peer_review = true'),
+    ('attachments',               'attachments',               'owner_id = $1'),
+    ('grade_scales',              'grade_scales',               'owner_id = $1'),
+    ('comment_snippets',          'comment_snippets',          'owner_id = $1'),
+    ('comment_bank',              'comment_bank',              'owner_id = $1'),
+    ('export_templates',          'export_templates',          'owner_id = $1'),
+    ('favorite_standards',        'favorite_standards',        'owner_id = $1'),
+    ('standard_mastery_targets',  'standard_mastery_targets',  'owner_id = $1'),
+    ('self_assessments',          'self_assessments',          'owner_id = $1'),
+    ('speaking_sessions',         'speaking_sessions',         'owner_id = $1'),
+    ('recording_metadata',        'recording_metadata',        'owner_id = $1'),
+    ('scan_metadata',             'scan_metadata',             'owner_id = $1'),
+    ('analysis_results',          'analysis_results',          'owner_id = $1'),
+    ('tests',                     'tests',                     'owner_id = $1'),
+    ('test_assignments',          'test_assignments',          'owner_id = $1'),
+    ('student_tests',             'student_tests',             'owner_id = $1'),
+    ('placement_sessions',        'placement_sessions',        'owner_id = $1'),
+    ('essay_templates',           'essay_templates',           'owner_id = $1'),
+    ('essay_assignments',         'essay_assignments',         'owner_id = $1'),
+    ('essay_submissions',         'essay_submissions',         'assignment_id IN (SELECT id FROM public.essay_assignments WHERE owner_id = $1)'),
+    ('essay_batch_assignments',   'essay_batch_assignments',   'owner_id = $1'),
+    ('essay_offline_submissions', 'essay_offline_submissions', 'owner_id = $1'),
+    ('grading_tasks',             'grading_tasks',             'owner_id = $1'),
+    ('user_templates',            'user_templates',            'owner_id = $1'),
+    ('user_settings',             'user_settings',             'user_id = $1'),
+    ('flashcard_decks',           'flashcard_decks',           'owner_id = $1'),
+    ('flashcard_assignments',     'flashcard_assignments',     'owner_id = $1'),
+    ('flashcard_reviews',         'flashcard_reviews',         'owner_id = $1'),
+    ('news_flashes',              'news_flashes',              'owner_id = $1'),
+    ('news_flash_reads',          'news_flash_reads',          'owner_id = $1'),
+    ('messages',                  'messages',                  'owner_id = $1'),
+    ('question_bank_items',       'question_bank_items',       'owner_id = $1'),
+    ('document_comments',         'document_comments',         'owner_id = $1'),
+    ('notification_dismissals',   'notification_dismissals',   'owner_id = $1'),
+    ('comparative_matchups',      'comparative_matchups',      'owner_id = $1'),
+    ('marketplace_listings',      'marketplace_listings',      'published_by = $1'),
+    ('marketplace_upvotes',       'marketplace_upvotes',       'profile_id = $1'),
+    ('live_draft_snapshots',      'live_draft_snapshots',      'owner_id = $1'),
+    ('live_writing_peer_pairs',   'live_writing_peer_pairs',   'session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = $1)'),
+    ('live_writing_round_log',    'live_writing_round_log',    'session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = $1)'),
+    ('live_writing_votes',        'live_writing_votes',        'session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = $1)'),
+    ('live_writing_responses',    'live_writing_responses',    'session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = $1)'),
+    ('live_writing_participants', 'live_writing_participants', 'session_id IN (SELECT id FROM public.live_writing_sessions WHERE owner_id = $1)'),
+    ('live_writing_sessions',     'live_writing_sessions',     'owner_id = $1'),
+    ('school_highlight_snapshots','school_highlight_snapshots','owner_id = $1')
+$$;
+
 -- ── 20260617093844_delete_old_attachments_fn.sql ──────────────────────────────────────────────────────────────
 
 -- Returns attachments whose updated_at has passed the owner's school retention
@@ -10581,5 +11421,10 @@ insert into public._migrations (name) values
     ('102_live_writing_student_writing.sql'),
     ('103_live_writing_self_check_peer_voting.sql'),
     ('104_live_writing_finals_insights_grading.sql'),
+    ('105_live_draft_snapshots.sql'),
+    ('106_scheduled_digest_pg_net_timeout.sql'),
+    ('107_teacher_email_allowlist.sql'),
+    ('108_admin_set_user_password.sql'),
+    ('109_school_highlights.sql'),
     ('20260617093844_delete_old_attachments_fn.sql')
 on conflict (name) do nothing;

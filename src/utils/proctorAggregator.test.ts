@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { derivePresence, summarizeProctorFlags, mergeProctorEvents, calcTestTimeOnTask } from './proctorAggregator';
+import {
+    derivePresence,
+    deriveConnectionState,
+    summarizeProctorFlags,
+    mergeProctorEvents,
+    calcTestTimeOnTask,
+} from './proctorAggregator';
 import type { ProctorEvent, StudentTest, Test } from '../types';
 
 const NOW = new Date('2024-01-01T12:00:00.000Z').getTime();
@@ -7,6 +13,25 @@ const NOW = new Date('2024-01-01T12:00:00.000Z').getTime();
 function heartbeat(secondsAgo: number, value: 'active' | 'idle' = 'active'): ProctorEvent {
     return { type: 'heartbeat', at: new Date(NOW - secondsAgo * 1000).toISOString(), value };
 }
+
+describe('deriveConnectionState', () => {
+    it('calls a student who never signalled "never_opened"', () => {
+        expect(deriveConnectionState({ presence: 'disconnected', seen: false })).toBe('never_opened');
+    });
+
+    it('calls a student whose signal stopped "lost" rather than never opened', () => {
+        expect(deriveConnectionState({ presence: 'disconnected', seen: true })).toBe('lost');
+    });
+
+    it('says nothing while the student is connected', () => {
+        expect(deriveConnectionState({ presence: 'active', seen: true })).toBeUndefined();
+        expect(deriveConnectionState({ presence: 'idle', seen: true })).toBeUndefined();
+    });
+
+    it('says nothing about a student who already handed in', () => {
+        expect(deriveConnectionState({ presence: 'disconnected', seen: false, finished: true })).toBeUndefined();
+    });
+});
 
 describe('derivePresence', () => {
     it('returns disconnected when there are no heartbeats', () => {
@@ -146,6 +171,21 @@ describe('mergeProctorEvents', () => {
         const dup: ProctorEvent = { type: 'paste', at: '2024-01-01T12:00:00.000Z' };
         const merged = mergeProctorEvents(persisted, [dup, { ...dup }]);
         expect(merged).toHaveLength(1);
+    });
+    it('pairs a stored nudge with its live echo but keeps separate sends separate', () => {
+        const persisted: ProctorEvent[] = [
+            { type: 'nudge', at: '2024-01-01T12:00:03.000Z', value: 'Check your answer' },
+        ];
+        const live: ProctorEvent[] = [
+            { type: 'nudge', at: '2024-01-01T12:00:00.000Z', value: 'Check your answer' },
+            { type: 'nudge', at: '2024-01-01T12:00:04.000Z', value: 'Check your answer' },
+            { type: 'nudge', at: '2024-01-01T12:05:00.000Z', value: 'Check your answer' },
+        ];
+
+        const merged = mergeProctorEvents(persisted, live);
+
+        // One live copy is the persisted send's twin; the other two are different sends.
+        expect(merged.filter((e) => e.type === 'nudge')).toHaveLength(3);
     });
 });
 

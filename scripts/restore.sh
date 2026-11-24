@@ -13,7 +13,10 @@
 # created them, so the API keeps working after a restore.
 #
 # DB_EXEC overrides how psql reaches the database (default: the compose `db` service, via
-# `docker compose` or the older `docker-compose`). STORAGE_VOLUME overrides the uploads volume.
+# `docker compose` or the older `docker-compose`). STORAGE_VOLUME overrides the uploads named
+# volume; STORAGE_DIR instead points at a bind-mount path (the official Supabase self-hosting
+# stack's ./volumes/storage) and takes priority when both are set. MIGRATIONS_TABLE/
+# MIGRATIONS_COLUMN override the auto-detected migrations bookkeeping table.
 
 set -euo pipefail
 
@@ -71,7 +74,8 @@ psql_db() {
 }
 
 # ── Schema version check ──────────────────────────────────────────────────────
-applied=$(psql_db -tA -c "SELECT name FROM public._migrations ORDER BY name" < /dev/null)
+read -r MIGRATIONS_TABLE_RESOLVED MIGRATIONS_COLUMN_RESOLVED <<< "$(migrations_source "$DB_EXEC")"
+applied=$(psql_db -tA -c "SELECT $MIGRATIONS_COLUMN_RESOLVED FROM $MIGRATIONS_TABLE_RESOLVED ORDER BY $MIGRATIONS_COLUMN_RESOLVED" < /dev/null)
 missing=$(comm -23 <(sort "$BACKUP_DIR/migrations.txt") <(echo "$applied" | sort))
 if [ -n "$missing" ]; then
     echo "Error: this stack is missing migrations the backup was taken with:"
@@ -95,7 +99,7 @@ echo ""
 # the database is touched — and the live uploads are only replaced once it has unpacked cleanly.
 STAGING=.restore-staging
 storage_sh() {
-    docker run --rm -v "$STORAGE_VOLUME":/data "$@"
+    docker run --rm -v "$STORAGE_SRC":/data "$@"
 }
 cleanup_staging() {
     storage_sh alpine rm -rf "/data/$STAGING" >/dev/null 2>&1 || true

@@ -725,6 +725,84 @@ describe('TestBuilderPage extended', () => {
         }
     });
 
+    describe('outline right-click menu', () => {
+        const withWideRail = (run: () => void) => {
+            const originalWidth = window.innerWidth;
+            Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1500 });
+            try {
+                run();
+            } finally {
+                Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
+            }
+        };
+        const threeQuestions = () => {
+            mockTests = [
+                {
+                    id: 't1',
+                    name: 'Outline menu',
+                    questions: [
+                        { ...q1, id: 'qa', prompt: 'Alpha question' },
+                        { ...q1, id: 'qb', prompt: 'Beta question', sectionId: 's1' },
+                        { ...q1, id: 'qc', prompt: 'Gamma question' },
+                    ],
+                    sections: [s1],
+                    requireSEB: false,
+                    shuffleQuestions: false,
+                    createdAt: '2024-01-01T00:00:00Z',
+                },
+            ];
+        };
+        const savedQuestions = () => mockUpdateTest.mock.calls.at(-1)![0].questions as TestQuestion[];
+
+        it('inserts a bank item right after the clicked question, in its section', () => {
+            threeQuestions();
+            mockQuestionBank = [questionItem];
+            withWideRail(() => {
+                renderBuilder('/tests/t1');
+                const rail = screen.getByText('tests.outline_title').closest('nav') as HTMLElement;
+                fireEvent.contextMenu(within(rail).getByText('Beta question'));
+                fireEvent.click(screen.getByRole('menuitem', { name: 'tests.menu_insert_from_bank' }));
+                fireEvent.click(screen.getByText('Bank question prompt'));
+                fireEvent.click(screen.getByText('common.save'));
+                const order = savedQuestions();
+                const prompts = order.map((q) => q.prompt);
+                // Saving lists each part's questions together, so "right after" is within Beta's part.
+                expect(prompts.indexOf('Bank question prompt')).toBe(prompts.indexOf('Beta question') + 1);
+                expect(order.find((q) => q.prompt === 'Bank question prompt')?.sectionId).toBe('s1');
+                expect(order.find((q) => q.prompt === 'Gamma question')?.sectionId).toBeUndefined();
+            });
+        });
+
+        it('moves a question into another section and back out', () => {
+            threeQuestions();
+            withWideRail(() => {
+                renderBuilder('/tests/t1');
+                const rail = screen.getByText('tests.outline_title').closest('nav') as HTMLElement;
+                fireEvent.contextMenu(within(rail).getByText('Alpha question'));
+                fireEvent.click(
+                    screen.getByRole('menuitem', { name: 'tests.menu_move_to_section:{"section":"Reading"}' })
+                );
+                fireEvent.click(screen.getByText('common.save'));
+                expect(savedQuestions().find((q) => q.id === 'qa')?.sectionId).toBe('s1');
+            });
+        });
+
+        it('keeps the existing undo toast when deleting from the menu', () => {
+            threeQuestions();
+            withWideRail(() => {
+                renderBuilder('/tests/t1');
+                const rail = screen.getByText('tests.outline_title').closest('nav') as HTMLElement;
+                fireEvent.contextMenu(within(rail).getByText('Gamma question'));
+                fireEvent.click(screen.getByRole('menuitem', { name: 'tests.menu_delete_question' }));
+                expect(mockShowToast).toHaveBeenCalledWith(
+                    'tests.question_removed:{"number":3}',
+                    'info',
+                    expect.objectContaining({ action: expect.objectContaining({ label: 'common.undo' }) })
+                );
+            });
+        });
+    });
+
     it('reorders the open question with the focus pane move buttons', () => {
         mockTests = [
             {

@@ -27,7 +27,9 @@ export interface ScorableQuestion {
     expectedAnswers?: string[];
     expectedNumericValue?: number;
     numericTolerance?: number;
+    numericTolerancePercent?: number;
     partialCredit?: boolean;
+    gapWeights?: number[];
     correctBoolean?: boolean;
     answerTolerance?: AnswerTolerance;
     dictationText?: string;
@@ -110,6 +112,30 @@ export function splitClozeOptions(raw: string): { alternatives: string[]; roles:
     return { alternatives, roles };
 }
 
+/**
+ * A cloze prompt that was formatted in the editor is stored as HTML with the `{{…}}` gaps left in the text, so a gap's
+ * own text is entity-escaped there (`a&amp;b`). A plain prompt never contains tags, which is how the two are told apart.
+ */
+const HTML_PROMPT_PATTERN = /<\/?(?:p|br|strong|em|b|i|u|s|ul|ol|li|sub|sup|span|div|a)\b[^>]*>/i;
+
+export function isRichClozePrompt(prompt: string): boolean {
+    return HTML_PROMPT_PATTERN.test(prompt);
+}
+
+const HTML_ENTITIES: Record<string, string> = {
+    '&amp;': '&',
+    '&lt;': '<',
+    '&gt;': '>',
+    '&quot;': '"',
+    '&#39;': "'",
+    '&#x27;': "'",
+    '&nbsp;': '\u00a0',
+};
+
+function decodeEntities(text: string): string {
+    return text.replace(/&(?:amp|lt|gt|quot|nbsp|#39|#x27);/g, (entity) => HTML_ENTITIES[entity]);
+}
+
 function gapFromSyntax(index: number, inner: string): ClozeGap {
     const { alternatives, roles } = splitClozeOptions(inner);
     return { index, alternatives, ...(roles.some(Boolean) ? { roles } : {}) };
@@ -125,10 +151,11 @@ export interface ClozeGapMatch {
 export function matchClozeGaps(prompt: string): ClozeGapMatch[] {
     const matches: ClozeGapMatch[] = [];
     const pattern = new RegExp(CLOZE_GAP_PATTERN.source, 'g');
+    const rich = isRichClozePrompt(prompt);
     let match: RegExpExecArray | null;
     while ((match = pattern.exec(prompt)) !== null) {
         matches.push({
-            gap: gapFromSyntax(matches.length, match[1]),
+            gap: gapFromSyntax(matches.length, rich ? decodeEntities(match[1]) : match[1]),
             start: match.index,
             end: match.index + match[0].length,
         });
@@ -390,7 +417,10 @@ export function scoreNumeric(question: ScorableQuestion, response: string): numb
     if (trimmed === '') return 0;
     const value = Number(trimmed);
     if (Number.isNaN(value)) return 0;
-    const tolerance = question.numericTolerance ?? 0;
+    const tolerance = Math.max(
+        question.numericTolerance ?? 0,
+        (Math.abs(question.expectedNumericValue) * (question.numericTolerancePercent ?? 0)) / 100
+    );
     // Epsilon guards against float imprecision (e.g. 3.14 - 3.13 !== 0.01 exactly in IEEE 754)
     return Math.abs(value - question.expectedNumericValue) <= tolerance + 1e-9 ? question.points : 0;
 }
@@ -407,7 +437,7 @@ export function scoreMultipleResponse(question: ScorableQuestion, response: stri
         return exact ? question.points : 0;
     }
 
-    if (options.length === 0) return 0;
+    if (options.length === 0 || selectedSet.size === 0) return 0;
     const matches = options.filter((o) => selectedSet.has(o.id) === correctSet.has(o.id)).length;
     return question.points * (matches / options.length);
 }
@@ -419,7 +449,34 @@ export function scoreMultipleResponse(question: ScorableQuestion, response: stri
  */
 export function scoreCloze(question: ScorableQuestion, response: string): number {
     const correct = clozeGapCorrectness(question, response);
-    return correct.length === 0 ? 0 : partialOrAll(question, correct.filter(Boolean).length, correct.length);
+    if (correct.length === 0) return 0;
+    const weights = effectiveGapWeights(question, correct.length);
+    if (question.partialCredit === false) {
+        return correct.every((ok, i) => ok || weights[i] === 0) ? question.points : 0;
+    }
+    // Scaled by the largest weight so huge authored values cannot overflow the sum to Infinity.
+    const peak = Math.max(...weights);
+    const scaled = weights.map((weight) => weight / peak);
+    const earned = scaled.reduce((sum, weight, i) => sum + (correct[i] ? weight : 0), 0);
+    return partialOrAll(
+        question,
+        earned,
+        scaled.reduce((sum, weight) => sum + weight, 0)
+    );
+}
+
+/** Each gap's relative worth: the authored weights when there is one per gap and all are usable, otherwise 1 each. */
+export function effectiveGapWeights(question: Pick<ScorableQuestion, 'gapWeights'>, gapCount: number): number[] {
+    const weights = question.gapWeights;
+    if (
+        !weights ||
+        weights.length !== gapCount ||
+        !weights.every((w) => Number.isFinite(w) && w >= 0) ||
+        weights.every((w) => w === 0)
+    ) {
+        return Array.from({ length: gapCount }, () => 1);
+    }
+    return weights;
 }
 
 /** Per-gap correctness of a cloze response, in gap order — also feeds per-gap item analysis. */
@@ -754,6 +811,7 @@ export function scoreHotText(question: ScorableQuestion, response: string): numb
         return exact ? question.points : 0;
     }
 
+    if (selectedSet.size === 0) return 0;
     const matches = fragments.filter((f) => selectedSet.has(f.index) === correctSet.has(f.index)).length;
     return question.points * (matches / fragments.length);
 }

@@ -8,7 +8,8 @@ import type {
     TestStrengthBucket,
     TestStrongWeakSummary,
 } from '../types';
-import { autoScoreResponse, calcStudentTestRawPoints } from './testCalc';
+import { autoScoreResponse, calcStudentTestRawPoints, calcTestMaxPoints } from './testCalc';
+import { undeliveredQuestionIds } from './variantDelivery';
 import {
     clozeGapCorrectness,
     gapCorrectAnswers,
@@ -56,9 +57,12 @@ export function effectiveTestQuestions(
     return [...byId.values()];
 }
 
-function latestAnswerByQuestion(studentTest: StudentTest): Map<string, TestAnswer> {
+/** A student's latest answer per question, leaving out the sibling of a variant family they were not given. */
+function latestAnswerByQuestion(studentTest: StudentTest, test: Test): Map<string, TestAnswer> {
+    const undelivered = undeliveredQuestionIds(test, studentTest.studentId, studentTest.deliveredVariantIds);
     const byQuestion = new Map<string, TestAnswer>();
     for (const answer of studentTest.answers) {
+        if (undelivered.has(answer.questionId)) continue;
         byQuestion.set(answer.questionId, answer);
     }
     return byQuestion;
@@ -76,7 +80,7 @@ export function calcQuestionBreakdowns(
     test: Test
 ): TestQuestionBreakdown[] {
     const relevant = relevantStudentTests(studentId, studentTests, test);
-    const answersByStudent = relevant.map(latestAnswerByQuestion);
+    const answersByStudent = relevant.map((st) => latestAnswerByQuestion(st, test));
 
     return effectiveTestQuestions(studentId, studentTests, test).map((question) => {
         const samples: number[] = [];
@@ -108,8 +112,9 @@ function skillGroupsForTest(questions: TestQuestion[]): SkillGroup[] {
     for (const question of questions) {
         const standards = question.linkedStandards ?? [];
         const descriptors = question.linkedCefrDescriptors ?? [];
+        const frameworkDescriptors = question.frameworkDescriptors ?? [];
 
-        if (standards.length === 0 && descriptors.length === 0) continue;
+        if (standards.length === 0 && descriptors.length === 0 && frameworkDescriptors.length === 0) continue;
 
         for (const standard of standards) {
             const group = groups.get(standard.guid) ?? {
@@ -130,6 +135,19 @@ function skillGroupsForTest(questions: TestQuestion[]): SkillGroup[] {
             group.questionIds.push(question.id);
             groups.set(descriptor.descriptorId, group);
         }
+
+        // Grammar items and other framework descriptors (IB, Bloom's, SLO) are keyed per framework so
+        // the same descriptorId can't merge two different frameworks' groups.
+        for (const descriptor of frameworkDescriptors) {
+            const groupId = `framework:${descriptor.framework}:${descriptor.descriptorId}`;
+            const group = groups.get(groupId) ?? {
+                groupId,
+                label: descriptor.descriptionEn,
+                questionIds: [],
+            };
+            group.questionIds.push(question.id);
+            groups.set(groupId, group);
+        }
     }
 
     return Array.from(groups.values());
@@ -141,7 +159,7 @@ export function calcSkillBreakdowns(
     test: Test
 ): TestSkillBreakdown[] {
     const relevant = relevantStudentTests(studentId, studentTests, test);
-    const answersByStudent = relevant.map(latestAnswerByQuestion);
+    const answersByStudent = relevant.map((st) => latestAnswerByQuestion(st, test));
     const questions = effectiveTestQuestions(studentId, studentTests, test);
     const questionsById = new Map(questions.map((q) => [q.id, q]));
 
@@ -174,9 +192,9 @@ export function calcSkillBreakdowns(
 /**
  * Strong/weak-point summary for a test. studentId === null aggregates across
  * every StudentTest for the test (cohort mode); otherwise it is scoped to
- * that student's own submission(s). Questions with no linkedStandards or
- * linkedCefrDescriptors are excluded from the per-skill rollup entirely —
- * they remain visible in the per-question breakdown.
+ * that student's own submission(s). Questions with no linkedStandards,
+ * linkedCefrDescriptors or frameworkDescriptors are excluded from the per-skill
+ * rollup entirely — they remain visible in the per-question breakdown.
  */
 export function calcTestStrongWeakSummary(
     studentId: string | null,
@@ -288,11 +306,14 @@ const DISCRIMINATION_GROUP_RATIO = 0.27;
  */
 export function calcTestItemAnalysis(studentTests: StudentTest[], test: Test): QuestionItemAnalysis[] {
     const relevant = relevantStudentTests(null, studentTests, test).filter((st) => st.answers.length > 0);
-    const maxPoints = test.questions.reduce((sum, q) => sum + q.points, 0);
+    const maxPoints = calcTestMaxPoints(test);
 
-    const ranked = [...relevant].sort(
-        (a, b) => calcStudentTestRawPoints(test, b.answers) - calcStudentTestRawPoints(test, a.answers)
-    );
+    const deliveredAnswers = (st: StudentTest) => {
+        const undelivered = undeliveredQuestionIds(test, st.studentId, st.deliveredVariantIds);
+        return undelivered.size === 0 ? st.answers : st.answers.filter((a) => !undelivered.has(a.questionId));
+    };
+    const rankScore = new Map(relevant.map((st) => [st, calcStudentTestRawPoints(test, deliveredAnswers(st))]));
+    const ranked = [...relevant].sort((a, b) => rankScore.get(b)! - rankScore.get(a)!);
     const groupSize = Math.max(1, Math.round(ranked.length * DISCRIMINATION_GROUP_RATIO));
     const upperIds = new Set(ranked.slice(0, groupSize).map((st) => st.studentId));
     const lowerIds = new Set(ranked.slice(-groupSize).map((st) => st.studentId));
@@ -300,7 +321,7 @@ export function calcTestItemAnalysis(studentTests: StudentTest[], test: Test): Q
 
     const answersByStudent = relevant.map((st) => ({
         studentId: st.studentId,
-        byQuestion: latestAnswerByQuestion(st),
+        byQuestion: latestAnswerByQuestion(st, test),
     }));
 
     return test.questions.map((question) => {

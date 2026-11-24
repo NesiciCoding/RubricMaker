@@ -137,6 +137,14 @@ export default defineConfig({
             testMatch: ['**/61-test-builder-wide.spec.ts'],
             testIgnore: [...quarantinePatterns],
         },
+        // Same wide layout in Firefox: the A4 preview counter-scales its toolbar with a nested
+        // `zoom`, which is exactly the kind of layout the two engines can disagree on.
+        {
+            name: 'wide-firefox',
+            use: { ...devices['Desktop Firefox'], viewport: { width: 1500, height: 1000 } },
+            testMatch: ['**/61-test-builder-wide.spec.ts'],
+            testIgnore: [...quarantinePatterns],
+        },
         // Speaking session recording — needs a fake camera/mic so MediaRecorder
         // has a stream to capture instead of hanging on a permission prompt.
         {

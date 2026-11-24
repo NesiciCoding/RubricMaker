@@ -17,6 +17,8 @@ import StudentQuestionCard from '../components/Tests/StudentQuestionCard';
 import { safeAudioSrc } from '../utils/safeMediaSrc';
 import LimitedAudio from '../components/Tests/LimitedAudio';
 import CountdownTimer from '../components/ui/CountdownTimer';
+import RichNote from '../components/Tests/RichNote';
+import { pickedOptionFeedback } from '../utils/optionFeedback';
 import { useLiveSessionTelemetry } from '../hooks/useLiveSessionTelemetry';
 import { StudentTaskSkeleton } from '../components/ui/Skeleton';
 import { isStagedTest, entrySectionId, sectionQuestions, resolveNextSection } from '../utils/placementRouting';
@@ -32,6 +34,7 @@ import { autoScoreResponse } from '../utils/testCalc';
 import { enqueueSubmission, removeSubmission, pendingSubmissions, isAlreadySubmitted } from '../utils/testSubmitOutbox';
 import { clozeInstructionKey } from '../utils/questionTypeKey';
 import { versionForStudent, versionQuestion } from '../utils/testVersions';
+import { deliveredTest, deliveredVariantIds } from '../utils/variantDelivery';
 import SubmitReviewDialog from '../components/Tests/SubmitReviewDialog';
 import type {
     TestAnswer,
@@ -139,7 +142,18 @@ export default function StudentTestPage() {
             : undefined
     );
     const contentReady = resolvedContent !== undefined;
-    const test = resolvedContent?.test ?? null;
+    const fullTest = resolvedContent?.test ?? null;
+    const deliveryStudentId = resolvedContent?.studentId || assignment?.studentId || '';
+    // The runner, the answer payload and the progress counters all read this test, so a student only
+    // ever sees one member of an easier-cloze family.
+    const test = useMemo(
+        () => (fullTest ? deliveredTest(fullTest, deliveryStudentId) : null),
+        [fullTest, deliveryStudentId]
+    );
+    const deliveredVariants = useMemo(
+        () => (fullTest ? deliveredVariantIds(fullTest, deliveryStudentId) : []),
+        [fullTest, deliveryStudentId]
+    );
     // Test content keeps its own language (English unless set) rather than inheriting <html lang> from the
     // interface, so a student who picked Dutch doesn't get English passages read by a Dutch screen-reader voice.
     // Test default; per-section and per-question overrides resolve at each render site (#956).
@@ -448,7 +462,8 @@ export default function StudentTestPage() {
                 item.submittedAt,
                 item.events,
                 item.sectionPath,
-                item.levelPath
+                item.levelPath,
+                item.testVersion
             );
             if (res.success || isAlreadySubmitted(res.error)) {
                 removeSubmission(item.id);
@@ -567,6 +582,8 @@ export default function StudentTestPage() {
             events: telemetry.flush(),
             sectionPath: staged && sectionPath.length > 0 ? sectionPath : undefined,
             levelPath: isStaircase && effectiveLevelPath.length > 0 ? effectiveLevelPath : undefined,
+            testVersion: testVersion ?? undefined,
+            deliveredVariantIds: deliveredVariants.length > 0 ? deliveredVariants : undefined,
         };
         const legacyCode = encodeTestSubmission(submissionPayload);
 
@@ -580,7 +597,8 @@ export default function StudentTestPage() {
                 submittedAt,
                 submissionPayload.events,
                 submissionPayload.sectionPath,
-                submissionPayload.levelPath
+                submissionPayload.levelPath,
+                submissionPayload.testVersion
             );
             setSubmitting(false);
             if (!result.success) {
@@ -598,6 +616,7 @@ export default function StudentTestPage() {
                     events: submissionPayload.events,
                     sectionPath: submissionPayload.sectionPath,
                     levelPath: submissionPayload.levelPath,
+                    testVersion: submissionPayload.testVersion,
                     queuedAt: new Date().toISOString(),
                 });
                 setSubmitError(t('tests.taking.submit_error_db'));
@@ -1096,7 +1115,16 @@ export default function StudentTestPage() {
                                                         : q.prompt}
                                                 </div>
                                                 {q.explanation && (
+                                                    <div
+                                                        className="text-muted text-sm"
+                                                        style={{ marginTop: 8, marginBottom: 0 }}
+                                                    >
+                                                        <RichNote text={q.explanation} lang={qLang} />
+                                                    </div>
+                                                )}
+                                                {pickedOptionFeedback(q, response).map((line, i) => (
                                                     <p
+                                                        key={i}
                                                         lang={qLang}
                                                         className="text-muted text-sm"
                                                         style={{
@@ -1105,9 +1133,9 @@ export default function StudentTestPage() {
                                                             whiteSpace: 'pre-wrap',
                                                         }}
                                                     >
-                                                        {q.explanation}
+                                                        <strong>{line.text}</strong>: {line.feedback}
                                                     </p>
-                                                )}
+                                                ))}
                                                 {(() => {
                                                     const section = (test?.sections ?? []).find(
                                                         (sec) => sec.id === q.sectionId
