@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { OptionAudioButton } from './LimitedAudio';
 import { safeAudioSrc, safeImgSrc } from '../../utils/safeMediaSrc';
+import { displayOptions } from '../../utils/optionOrder';
 import type { TestOption, TestQuestion } from '../../types';
 
 interface Props {
@@ -9,6 +10,8 @@ interface Props {
     onChange: (value: string) => void;
     /** Effective content language of the question (BCP-47 base code). */
     lang?: string;
+    /** Seed for the per-student option shuffle. */
+    code?: string;
 }
 
 function rowStyle(selected: boolean) {
@@ -50,10 +53,10 @@ function OptionMedia({ option, lang }: { option: TestOption; lang?: string }) {
 }
 
 /** One answer from a radio list; each option can carry an image, audio, or a spoken label. */
-export function MultipleChoiceAnswer({ question, value, onChange, lang }: Props) {
+export function MultipleChoiceAnswer({ question, value, onChange, lang, code = '' }: Props) {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {(question.options ?? []).map((opt) => (
+            {displayOptions(question, code).map((opt) => (
                 <label key={opt.id} style={rowStyle(value === opt.id)}>
                     <input
                         type="radio"
@@ -70,11 +73,11 @@ export function MultipleChoiceAnswer({ question, value, onChange, lang }: Props)
 }
 
 /** Any number of correct answers from a checkbox list. */
-export function MultipleResponseAnswer({ question, value, onChange, lang }: Props) {
+export function MultipleResponseAnswer({ question, value, onChange, lang, code = '' }: Props) {
     const selected: string[] = value ? (JSON.parse(value) as string[]) : [];
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {(question.options ?? []).map((opt) => {
+            {displayOptions(question, code).map((opt) => {
                 const checked = selected.includes(opt.id);
                 return (
                     <label key={opt.id} style={rowStyle(checked)}>

@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface Props {
@@ -30,27 +31,38 @@ export function ShortAnswerInput({ value, onChange, lang }: Props) {
     );
 }
 
-/** A number, scored within the question's tolerance. */
-export function NumericInput({ value, onChange, lang }: Props) {
+/** A number, scored within the question's tolerance; an optional unit sits after the box. */
+export function NumericInput({ value, onChange, lang, unit }: Props & { unit?: string }) {
     const { t } = useTranslation();
+    const unitId = useId();
+    const trimmedUnit = unit?.trim();
     return (
-        <input
-            type="number"
-            step="any"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={t('tests.taking.numeric_placeholder')}
-            lang={lang ?? 'en'}
-            style={{
-                width: '100%',
-                padding: '10px 14px',
-                borderRadius: 8,
-                border: '1px solid var(--border)',
-                fontSize: '0.95rem',
-                background: 'var(--bg)',
-                color: 'var(--text)',
-            }}
-        />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <input
+                type="number"
+                step="any"
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                placeholder={t('tests.taking.numeric_placeholder')}
+                aria-describedby={trimmedUnit ? unitId : undefined}
+                lang={lang ?? 'en'}
+                style={{
+                    flex: 1,
+                    minWidth: 0,
+                    padding: '10px 14px',
+                    borderRadius: 8,
+                    border: '1px solid var(--border)',
+                    fontSize: '0.95rem',
+                    background: 'var(--bg)',
+                    color: 'var(--text)',
+                }}
+            />
+            {trimmedUnit && (
+                <span id={unitId} style={{ color: 'var(--text)', fontSize: '0.95rem' }}>
+                    {trimmedUnit}
+                </span>
+            )}
+        </div>
     );
 }
 

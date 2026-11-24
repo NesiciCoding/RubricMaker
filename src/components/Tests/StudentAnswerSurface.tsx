@@ -36,7 +36,14 @@ export default function StudentAnswerSurface({ question, value, onChange, code, 
         <div data-testid="answer-surface">
             {question.type === 'multiple-choice' && <MultipleChoiceAnswer {...answer} />}
             {question.type === 'multiple-response' && <MultipleResponseAnswer {...answer} />}
-            {question.type === 'true-false' && <TrueFalseAnswer value={value} onChange={onChange} />}
+            {question.type === 'true-false' && (
+                <TrueFalseAnswer
+                    value={value}
+                    onChange={onChange}
+                    trueLabel={question.trueLabel}
+                    falseLabel={question.falseLabel}
+                />
+            )}
             {isCloze && <ClozeAnswer {...answer} />}
             {question.type === 'matrix' && <MatrixAnswer {...answer} />}
             {question.type === 'matching' && <MatchingAnswer {...answer} />}
@@ -47,7 +54,9 @@ export default function StudentAnswerSurface({ question, value, onChange, code, 
             {question.type === 'sentence-builder' && <SentenceBuilderAnswer {...answer} />}
             {question.type === 'key-word-transformation' && <KeyWordAnswer {...answer} />}
             {question.type === 'short-answer' && <ShortAnswerInput value={value} onChange={onChange} lang={lang} />}
-            {question.type === 'numeric' && <NumericInput value={value} onChange={onChange} lang={lang} />}
+            {question.type === 'numeric' && (
+                <NumericInput value={value} onChange={onChange} lang={lang} unit={question.numericUnit} />
+            )}
             {question.type === 'open' && <OpenAnswer value={value} onChange={onChange} lang={lang} />}
             {question.type === 'ordering' && <OrderingAnswer {...answer} />}
             {question.type === 'audio-response' && (

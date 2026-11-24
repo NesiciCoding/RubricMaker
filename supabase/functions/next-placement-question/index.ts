@@ -76,6 +76,7 @@ function toStudentSafeQuestion(question: MinimalQuestion): MinimalQuestion {
         expectedAnswers: _eas,
         expectedNumericValue: _env,
         numericTolerance: _nt,
+        numericTolerancePercent: _ntp,
         correctBoolean: _cb,
         hotTextCorrectIndices: _hci,
         eloRating: _er,

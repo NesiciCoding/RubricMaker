@@ -21,6 +21,7 @@ import { estimatePlacement } from '../utils/placementResult';
 import { isNumericNorm, normTierLabel, resolveTestGrade, resolveTestScale, testNorm } from '../utils/testGradingNorm';
 import { stripHtmlTags } from '../utils/exportDataPrep';
 import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse';
+import { matchingRightById } from '../utils/testAnswerText';
 import {
     alignDictation,
     answersMatch,
@@ -134,7 +135,8 @@ function formatStudentResponse(
         }
     }
     if (question.type === 'true-false') {
-        return t(`tests.true_false_${response}`);
+        const custom = response === 'true' ? question.trueLabel : question.falseLabel;
+        return custom?.trim() || t(`tests.true_false_${response}`);
     }
     if (isClozeType(question.type)) {
         let answers: Record<string, string> = {};
@@ -218,12 +220,12 @@ function formatStudentResponse(
         } catch {
             answers = {};
         }
-        const pairsById = new Map(pairs.map((p) => [p.id, p]));
+        const rightById = matchingRightById(question);
         return (
             <>
                 {pairs.map((pair, i) => {
                     const chosenId = answers[pair.id];
-                    const chosen = chosenId ? pairsById.get(chosenId) : undefined;
+                    const chosen = chosenId ? rightById.get(chosenId) : undefined;
                     const correct = chosenId === pair.id;
                     return (
                         <div key={pair.id} style={{ marginTop: i === 0 ? 0 : 4 }}>
@@ -238,7 +240,7 @@ function formatStudentResponse(
                                           : 'var(--red-text)',
                                 }}
                             >
-                                {chosen?.right ?? '___'}
+                                {chosen ?? '___'}
                             </span>
                         </div>
                     );
