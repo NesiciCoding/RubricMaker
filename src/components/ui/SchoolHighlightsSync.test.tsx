@@ -5,6 +5,7 @@ import { StoreProvider, createSelectorStore } from '../../context/useStore';
 import type { StoreData } from '../../context/storeCore';
 import * as lazyDb from '../../services/database/lazyDb';
 import * as logger from '../../services/logging/clientLogger';
+import { isQuarantined } from '../../test-utils/quarantine';
 
 vi.mock('../../services/database/lazyDb', () => ({ getDb: vi.fn(), loadDb: vi.fn() }));
 vi.mock('../../services/logging/clientLogger', () => ({ logError: vi.fn() }));
@@ -76,12 +77,15 @@ describe('SchoolHighlightsSync', () => {
         expect(today).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     });
 
-    it('does not push again when nothing changed', async () => {
-        mount(makeState());
-        await flush(FIRST_PUSH_MS + 1);
-        await flush(SIX_HOURS_MS);
-        expect(push).toHaveBeenCalledTimes(1);
-    });
+    it.skipIf(isQuarantined('does not push again when nothing changed'))(
+        'does not push again when nothing changed',
+        async () => {
+            mount(makeState());
+            await flush(FIRST_PUSH_MS + 1);
+            await flush(SIX_HOURS_MS);
+            expect(push).toHaveBeenCalledTimes(1);
+        }
+    );
 
     it('does nothing once the teacher opted out', async () => {
         mount(makeState({ settings: { shareSchoolHighlights: false } }));

@@ -1,1 +1,8 @@
-[]
+[
+    {
+        "id": "does not push again when nothing changed",
+        "file": "src/components/ui/SchoolHighlightsSync.test.tsx",
+        "since": "2026-11-24",
+        "reason": "Fake-timer test advances 6h past the first push; `today` is derived from the real (faked) Date, so whenever the suite happens to start within 6h of UTC midnight the interval push lands on a new calendar day, the dedup key changes, and push fires a second time. Unrelated to PR #1324's roster-scope changes (neither this test nor the component it covers are touched by that diff); flakes only depending on wall-clock run time."
+    }
+]

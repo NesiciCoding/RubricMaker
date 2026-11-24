@@ -646,27 +646,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const appliedRosterFetch = useRef(rosterFetch);
     const rosterPull = useRef<Promise<void>>(Promise.resolve());
     useEffect(() => {
-        void loadDb().then(({ storageSync }) => {
-            storageSync.setRosterFetch(rosterFetch);
-            if (appliedRosterFetch.current === rosterFetch) return;
-            appliedRosterFetch.current = rosterFetch;
-            // Chained so two quick flips cannot land out of order.
-            rosterPull.current = rosterPull.current
-                .then(async () => {
-                    if (!storageSync.isConnected() || !navigator.onLine) return;
-                    const tables = new Set(['classes', 'students', 'student_rubrics']);
-                    const { data } = await storageSync.hydratePartial(tables);
-                    if (!data) return;
-                    const merged = mergeStoreData(currentStateRef.current, data, loadPendingQueue());
-                    const reconciled = applyHydrated(merged, true);
-                    try {
-                        await flushToLocalStorage(reconciled, new Set(Object.keys(data) as (keyof StoreData)[]));
-                    } catch {
-                        // A full quota only blocks the local cache; the in-memory snapshot is correct.
-                    }
-                })
-                .catch(() => undefined);
-        });
+        let cancelled = false;
+        void loadDb()
+            .then(({ storageSync }) => {
+                if (cancelled) return;
+                // Optional call: many unit tests double storageSync with only the subset of the
+                // interface their scenario needs, predating this method.
+                storageSync.setRosterFetch?.(rosterFetch);
+                if (appliedRosterFetch.current === rosterFetch) return;
+                appliedRosterFetch.current = rosterFetch;
+                // Chained so two quick flips cannot land out of order.
+                rosterPull.current = rosterPull.current
+                    .then(async () => {
+                        if (cancelled || !storageSync.isConnected() || !navigator.onLine) return;
+                        const tables = new Set(['classes', 'students', 'student_rubrics']);
+                        const { data } = await storageSync.hydratePartial(tables);
+                        if (cancelled || !data) return;
+                        const merged = mergeStoreData(currentStateRef.current, data, loadPendingQueue());
+                        const reconciled = applyHydrated(merged, true);
+                        try {
+                            await flushToLocalStorage(reconciled, new Set(Object.keys(data) as (keyof StoreData)[]));
+                        } catch {
+                            // A full quota only blocks the local cache; the in-memory snapshot is correct.
+                        }
+                    })
+                    .catch(() => undefined);
+            })
+            .catch((e) => {
+                if (!cancelled) console.error('[roster] failed to load database module for scope sync', e);
+            });
+        return () => {
+            cancelled = true;
+        };
     }, [rosterFetch, applyHydrated]);
     const scopedState = useMemo(() => {
         const slices = scopeRoster(
