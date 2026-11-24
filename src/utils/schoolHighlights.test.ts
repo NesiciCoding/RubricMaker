@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { buildSchoolHighlightsSnapshot, MAX_SNAPSHOT_STUDENTS } from './schoolHighlights';
 import type { SchoolHighlightsInput } from './schoolHighlights';
-import type { Class, FlashcardAssignment, FlashcardDeck, Student, StudentRubric, StudentTest, Test } from '../types';
+import { DEFAULT_FORMAT } from '../types';
+import type {
+    Class,
+    FlashcardAssignment,
+    FlashcardDeck,
+    Rubric,
+    Student,
+    StudentRubric,
+    StudentTest,
+    Test,
+} from '../types';
 
 const GRAMMAR_ITEM_ID = 'gr-present-simple-affirmative';
 
@@ -125,19 +135,64 @@ describe('buildSchoolHighlightsSnapshot', () => {
         expect(json).not.toContain('c1');
     });
 
-    it('ignores soft-deleted grades', () => {
-        const deleted = {
-            id: 'g1',
+    it('counts a live grade towards grammar evidence and ignores a soft-deleted one', () => {
+        const rubric: Rubric = {
+            id: 'r1',
+            name: 'Essay rubric',
+            subject: 'English',
+            description: '',
+            criteria: [
+                {
+                    id: 'crit1',
+                    title: 'Grammar accuracy',
+                    description: '',
+                    weight: 100,
+                    levels: [{ id: 'l1', label: 'Good', minPoints: 4, maxPoints: 4, description: '', subItems: [] }],
+                    frameworkDescriptors: [
+                        {
+                            descriptorId: GRAMMAR_ITEM_ID,
+                            framework: 'grammar',
+                            categoryId: 'present-simple',
+                            categoryLabelEn: 'Present Simple',
+                            categoryLabelNl: 'Tegenwoordige tijd',
+                            categoryColor: '#3b82f6',
+                            descriptionEn: 'Affirmative',
+                            descriptionNl: 'Bevestigend',
+                        },
+                    ],
+                },
+            ],
+            gradeScaleId: 'none',
+            format: DEFAULT_FORMAT,
+            attachmentIds: [],
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+            totalMaxPoints: 4,
+            scoringMode: 'weighted-percentage',
+        };
+        const grade = (id: string, over: Partial<StudentRubric> = {}): StudentRubric => ({
+            id,
             rubricId: 'r1',
             studentId: 's1',
-            entries: [],
+            entries: [{ criterionId: 'crit1', levelId: 'l1', checkedSubItems: [], comment: '' }],
+            overallComment: '',
             gradedAt: '2026-01-01T00:00:00.000Z',
-            deletedAt: '2026-02-01T00:00:00.000Z',
-        } as unknown as StudentRubric;
-        const withDeleted = buildSchoolHighlightsSnapshot(
-            input({ students: [student('s1')], studentRubrics: [deleted] })
-        );
-        const without = buildSchoolHighlightsSnapshot(input({ students: [student('s1')] }));
-        expect(withDeleted).toEqual(without);
+            isPeerReview: false,
+            ...over,
+        });
+        const snapshotFor = (studentRubrics: StudentRubric[]) =>
+            buildSchoolHighlightsSnapshot(input({ students: [student('s1')], rubrics: [rubric], studentRubrics }));
+
+        const live = snapshotFor([grade('live')]);
+        expect(live.grammar.find((g) => g.id === GRAMMAR_ITEM_ID)?.n).toBe(1);
+
+        const deleted = snapshotFor([grade('gone', { deletedAt: '2026-02-01T00:00:00.000Z' })]);
+        expect(deleted.grammar).toEqual([]);
+
+        const both = snapshotFor([
+            grade('live'),
+            grade('gone', { deletedAt: '2026-02-01T00:00:00.000Z', rubricId: 'r1' }),
+        ]);
+        expect(both).toEqual(live);
     });
 });
