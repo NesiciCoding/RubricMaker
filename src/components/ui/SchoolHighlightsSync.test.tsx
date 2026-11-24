@@ -48,6 +48,11 @@ describe('SchoolHighlightsSync', () => {
 
     beforeEach(() => {
         vi.useFakeTimers();
+        // Pinned well clear of a UTC day boundary: the component dedupes pushes by calendar day
+        // (`today + JSON.stringify(snapshot)`), and these tests advance the fake clock by 6+ hours,
+        // so starting from the real wall clock made "nothing changed" cross midnight UTC — and
+        // register as a second push — whenever a run happened to start late in the UTC day.
+        vi.setSystemTime(new Date('2024-01-01T00:00:00.000Z'));
         push.mockReset().mockResolvedValue(undefined);
         fetchOwnStudentIds.mockReset().mockResolvedValue(new Set(['s1']));
         forTeacher.mockReset().mockReturnValue({ push, fetchOwnStudentIds });
