@@ -231,7 +231,7 @@ describe('StudentTestPage — answering and offline submission', () => {
         });
 
         expect(screen.getByText('4 is the sum of 2 and 2.')).toBeInTheDocument();
-        expect(screen.getByText('4 is the sum of 2 and 2.').getAttribute('lang')).toBe('en');
+        expect(screen.getByText('4 is the sum of 2 and 2.').closest('[lang]')?.getAttribute('lang')).toBe('en');
         expect(screen.getByText('What is 2 + 2?').getAttribute('lang')).toBe('en');
     });
 

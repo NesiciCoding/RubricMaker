@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Lightbulb } from 'lucide-react';
 import LimitedAudio from './LimitedAudio';
+import RichNote from './RichNote';
 import { safeAudioSrc, safeImgSrc } from '../../utils/safeMediaSrc';
 import type { TestQuestion } from '../../types';
 
@@ -108,7 +109,7 @@ export default function QuestionStimulus({ question, lang, plays = 0, onPlay }: 
                                 lineHeight: 1.55,
                             }}
                         >
-                            {question.hint}
+                            <RichNote text={question.hint} lang={lang ?? 'en'} />
                         </div>
                     )}
                 </div>

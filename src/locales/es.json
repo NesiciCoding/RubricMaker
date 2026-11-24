@@ -5653,7 +5653,8 @@
         "gr_test_rich_authoring_item_cloze_intro": "Preguntas con huecos, desplegables y banco de palabras: añada instrucciones o contexto con formato (negrita, listas, imágenes) sobre el texto con huecos. Se muestran al alumnado, en el cuadernillo impreso y en la vista previa, y se leen en voz alta con la pregunta; el texto con huecos sigue siendo texto sin formato.",
         "gr_test_rich_authoring_item_gap_weights": "Preguntas con huecos: dé más peso a un hueco en la lista bajo el texto (por ejemplo 2 para el hueco clave) para que aporte una parte mayor de los puntos cuando el crédito parcial está activado (si no, todos los huecos deben seguir siendo correctos). Cambiar el número de huecos restablece pesos iguales.",
         "gr_test_rich_authoring_item_option_feedback": "Opción múltiple y respuesta múltiple: añada un comentario a cualquier opción (botón de bocadillo). En una prueba de práctica, el alumno que eligió esa opción lo ve en la revisión tras enviar; nunca se envía al alumnado en pruebas calificadas.",
-        "gr_test_rich_authoring_item_pill_keyboard": "Las pastillas de hueco, texto activo y corrección de errores del editor se alcanzan con Tab y se abren con Intro o Espacio; Esc cierra el cuadro de edición y le devuelve a la pastilla."
+        "gr_test_rich_authoring_item_pill_keyboard": "Las pastillas de hueco, texto activo y corrección de errores del editor se alcanzan con Tab y se abren con Intro o Espacio; Esc cierra el cuadro de edición y le devuelve a la pastilla.",
+        "gr_test_rich_authoring_item_rich_notes": "Las pistas y explicaciones son texto enriquecido: negrita, listas, enlaces e imágenes. Las notas escritas antes como texto sin formato conservan sus saltos de línea, salvo que contengan texto que parezca una etiqueta HTML. El alumnado ve la pista cuando la pide y la explicación tras enviar una prueba de práctica."
     },
     "studentProfile": {
         "tab_overview": "Resumen",
