@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import { Fragment, Slice } from '@tiptap/pm/model';
 import { Plus } from 'lucide-react';
 import { ClozeGap, promptToClozeContent, clozeContentToPrompt } from '../Editor/ClozeGapExtension';
 
@@ -82,6 +83,15 @@ export default function ClozeGapEditor({
                 'data-word-formation': String(wordFormation),
                 'data-cloze-dropdown': String(allowDropdown),
             },
+            // A worksheet pasted with ____ blanks arrives with the gaps already in place.
+            handlePaste: (view, event) => {
+                const text = event.clipboardData?.getData('text/plain') ?? '';
+                if (!/_{3,}/.test(text)) return false;
+                const inline = promptToClozeContent(text.replace(/_{3,}/g, '{{answer}}')).content?.[0]?.content ?? [];
+                const nodes = inline.map((node) => view.state.schema.nodeFromJSON(node));
+                view.dispatch(view.state.tr.replaceSelection(new Slice(Fragment.from(nodes), 0, 0)).scrollIntoView());
+                return true;
+            },
         },
     });
 
@@ -151,7 +161,15 @@ export default function ClozeGapEditor({
                 <EditorContent editor={editor} />
             </div>
             <style>{`
-                .cloze-gap-editor-content { outline: none; min-height: 1.5em; line-height: 1.6; }
+                .cloze-gap-editor-content { outline: none; min-height: 1.5em; line-height: 1.6; counter-reset: cloze-gap; }
+                .cloze-gap-pill::before {
+                    counter-increment: cloze-gap;
+                    content: counter(cloze-gap);
+                    font-size: 0.65em;
+                    font-weight: 700;
+                    opacity: 0.7;
+                    margin-right: 5px;
+                }
                 .cloze-gap-pill {
                     display: inline-flex;
                     align-items: center;
