@@ -1,7 +1,7 @@
 # Grafana Dashboards
 
 The standalone observability stack (`docker-compose.observability.yml`)
-auto-provisions six dashboards into a **RubricMaker** folder in Grafana, on
+auto-provisions seven dashboards into a **RubricMaker** folder in Grafana, on
 top of the Loki, Prometheus and Postgres datasources described in
 `README.md` → "Observability". This page explains what each panel shows and
 how to extend them.
@@ -221,6 +221,43 @@ shows DOWN and the other panels stay empty.
 | Connections by state      | `active`, `idle`, `idle in transaction`… against `max_connections`.                                                                                                     |
 | Transactions per second   | Commits and rollbacks.                                                                                                                                                  |
 | Locks by mode / Deadlocks | Lock contention; any deadlock is worth a look in the Postgres logs.                                                                                                     |
+
+## 7. School Highlights (wall display)
+
+**Source:** the "Supabase Postgres (client_logs)" datasource, through the `monitoring.hl_*` functions
+(migration `108_school_highlights.sql`). Built for a school-wide screen: large, anonymous, fun-but-useful
+numbers. Needs the same `pg_monitor` datasource role as Application Usage.
+
+CEFR level and grammar mastery are computed in the browser, so each teacher's client pushes a small
+**aggregate snapshot** of its own students (`school_highlight_snapshots`, one row per teacher per day,
+at most every 6 hours): students per CEFR level (overall and per skill) and, per grammar item, "how many
+students have evidence, and the sum of their scores". The row holds no student id, name, class or text.
+The functions sum each teacher's newest snapshot (from the last 60 days) per school, using the school on
+the teacher's profile (`No school` when unset). Teachers can opt out under Settings → School highlights;
+snapshots are part of the teacher's data (nightly backup, "Delete all my database data") and are pruned
+after two years.
+
+**Small-group suppression** happens in the functions, not the client: a school with fewer than
+`monitoring.hl_min_cohort()` (5) students returns nothing, and so does a grammar item with fewer than 5
+students behind it. Raise the number in a new migration if a school wants a stricter floor.
+
+| Panel                                      | What it shows                                                                                                     |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| Students represented                       | Students whose teachers share totals — the number the rest of the screen speaks for.                              |
+| Essays / words / grades / tests            | This week against last week (rolling 7 days), read straight from the domain tables.                               |
+| Students per CEFR level, by skill          | Distribution of the highest achieved level, overall and for reading, writing, listening and both speaking skills. |
+| Share of students per level, by week       | Stacked weekly shares from the snapshot history; a share, because the teachers who open the app each week vary.   |
+| Strongest / practise next / most practised | Grammar topics ranked by blended score (tests, flashcards, rubric writing evidence) and by number of students.    |
+| Average grammar score by CEFR level        | Whether the A1 topics are really stronger than the B2 ones.                                                       |
+
+**Showing it on a screen.** Pick the school with the `School` variable, or pin it in the URL, and use
+kiosk mode: `https://<grafana>/d/rubricmaker-school-highlights?kiosk&var-school=<school name>`. For a screen
+nobody logs in on, give Grafana a read-only viewer account for the display (or enable anonymous Viewer
+access, `GF_AUTH_ANONYMOUS_ENABLED=true` with `GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer`, only behind a proxy that
+limits access to the school network — anonymous viewers can open every dashboard in the org, including Client
+Diagnostics). The dashboard refreshes every 5 minutes; the data itself changes at most every 6 hours.
+
+---
 
 ## Metrics retention and sizing
 

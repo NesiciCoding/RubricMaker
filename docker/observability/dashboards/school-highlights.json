@@ -1,0 +1,613 @@
+{
+  "uid": "rubricmaker-school-highlights",
+  "title": "RubricMaker — School Highlights",
+  "tags": [
+    "rubricmaker",
+    "wallboard"
+  ],
+  "description": "Aggregate, anonymous highlights for a school-wide screen: CEFR levels, grammar strengths and this week's activity. Teachers' totals come from school_highlight_snapshots (migration 108) through the monitoring.hl_* functions; figures with fewer than 5 students behind them are hidden. Open it with ?kiosk&var-school=<school name>.",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5m",
+  "time": {
+    "from": "now-26w",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "school",
+        "label": "School",
+        "type": "query",
+        "datasource": {
+          "type": "postgres",
+          "uid": "client_logs_postgres"
+        },
+        "query": "SELECT school FROM monitoring.hl_student_coverage() ORDER BY 1",
+        "refresh": 2,
+        "sort": 1,
+        "multi": false,
+        "includeAll": false
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Students represented",
+      "datasource": {
+        "type": "postgres",
+        "uid": "client_logs_postgres"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 0,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "client_logs_postgres"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT students AS \"students\" FROM monitoring.hl_student_coverage() WHERE school = ${school:sqlstring}"
+        }
+      ],
+      "description": "Students whose teachers share their totals. Figures only appear once at least 5 students are behind them."
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Essays written this week",
+      "datasource": {
+        "type": "postgres",
+        "uid": "client_logs_postgres"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 5,
+        "x": 4,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "client_logs_postgres"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT coalesce(max(this_week), 0) AS \"this week\", coalesce(max(last_week), 0) AS \"last week\" FROM monitoring.hl_week_activity() WHERE school = ${school:sqlstring} AND metric = 'essays'"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Words written this week",
+      "datasource": {
+        "type": "postgres",
+        "uid": "client_logs_postgres"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 5,
+        "x": 9,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "client_logs_postgres"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT coalesce(max(this_week), 0) AS \"this week\", coalesce(max(last_week), 0) AS \"last week\" FROM monitoring.hl_week_activity() WHERE school = ${school:sqlstring} AND metric = 'words'"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Grades given this week",
+      "datasource": {
+        "type": "postgres",
+        "uid": "client_logs_postgres"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 5,
+        "x": 14,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "client_logs_postgres"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT coalesce(max(this_week), 0) AS \"this week\", coalesce(max(last_week), 0) AS \"last week\" FROM monitoring.hl_week_activity() WHERE school = ${school:sqlstring} AND metric = 'grades'"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Tests taken this week",
+      "datasource": {
+        "type": "postgres",
+        "uid": "client_logs_postgres"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 5,
+        "x": 19,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "client_logs_postgres"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT coalesce(max(this_week), 0) AS \"this week\", coalesce(max(last_week), 0) AS \"last week\" FROM monitoring.hl_week_activity() WHERE school = ${school:sqlstring} AND metric = 'test_attempts'"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "barchart",
+      "title": "Students per CEFR level (overall)",
+      "datasource": {
+        "type": "postgres",
+        "uid": "client_logs_postgres"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 0,
+        "y": 5
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "vertical",
+        "legend": {
+          "showLegend": false
+        },
+        "xTickLabelRotation": 0,
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": {
+          "mode": "single"
+        },
+        "xField": "level"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "client_logs_postgres"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT lv.level, coalesce((SELECT d.students FROM monitoring.hl_cefr_distribution('overall') d WHERE d.school = ${school:sqlstring} AND d.level = lv.level), 0) AS students FROM (VALUES ('A1'),('A2'),('B1'),('B2'),('C1'),('C2')) lv(level) ORDER BY 1"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "barchart",
+      "title": "CEFR level by skill",
+      "datasource": {
+        "type": "postgres",
+        "uid": "client_logs_postgres"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 16,
+        "x": 8,
+        "y": 5
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "vertical",
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "xTickLabelRotation": 0,
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": {
+          "mode": "single"
+        },
+        "xField": "level"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "client_logs_postgres"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT lv.level, coalesce((SELECT d.students FROM monitoring.hl_cefr_distribution('reading') d WHERE d.school = ${school:sqlstring} AND d.level = lv.level), 0) AS reading, coalesce((SELECT d.students FROM monitoring.hl_cefr_distribution('writing') d WHERE d.school = ${school:sqlstring} AND d.level = lv.level), 0) AS writing, coalesce((SELECT d.students FROM monitoring.hl_cefr_distribution('listening') d WHERE d.school = ${school:sqlstring} AND d.level = lv.level), 0) AS listening, coalesce((SELECT d.students FROM monitoring.hl_cefr_distribution('speaking_production') d WHERE d.school = ${school:sqlstring} AND d.level = lv.level), 0) AS speaking_production, coalesce((SELECT d.students FROM monitoring.hl_cefr_distribution('speaking_interaction') d WHERE d.school = ${school:sqlstring} AND d.level = lv.level), 0) AS speaking_interaction FROM (VALUES ('A1'),('A2'),('B1'),('B2'),('C1'),('C2')) lv(level) ORDER BY 1"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Share of students per CEFR level, by week",
+      "datasource": {
+        "type": "postgres",
+        "uid": "client_logs_postgres"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 15
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "custom": {
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            },
+            "fillOpacity": 60,
+            "drawStyle": "bars",
+            "lineWidth": 1
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "client_logs_postgres"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT week AS time, level AS metric, share FROM monitoring.hl_cefr_trend($__timeFrom(), $__timeTo()) WHERE school = ${school:sqlstring} ORDER BY 1"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "bargauge",
+      "title": "Strongest grammar topics",
+      "datasource": {
+        "type": "postgres",
+        "uid": "client_logs_postgres"
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 8,
+        "x": 0,
+        "y": 24
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "min": 0,
+          "max": 100,
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true,
+        "valueMode": "color",
+        "namePlacement": "left"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "client_logs_postgres"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT label || ' (' || level || ')' AS topic, avg_score AS score FROM monitoring.hl_grammar_items() WHERE school = ${school:sqlstring} ORDER BY avg_score DESC, students DESC LIMIT 8"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "bargauge",
+      "title": "Topics to practise next",
+      "datasource": {
+        "type": "postgres",
+        "uid": "client_logs_postgres"
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 8,
+        "x": 8,
+        "y": 24
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "min": 0,
+          "max": 100,
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true,
+        "valueMode": "color",
+        "namePlacement": "left"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "client_logs_postgres"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT label || ' (' || level || ')' AS topic, avg_score AS score FROM monitoring.hl_grammar_items() WHERE school = ${school:sqlstring} ORDER BY avg_score ASC, students DESC LIMIT 8"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "type": "bargauge",
+      "title": "Most practised grammar topics",
+      "datasource": {
+        "type": "postgres",
+        "uid": "client_logs_postgres"
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 8,
+        "x": 16,
+        "y": 24
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true,
+        "valueMode": "color",
+        "namePlacement": "left"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "client_logs_postgres"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT label || ' (' || level || ')' AS topic, students FROM monitoring.hl_grammar_items() WHERE school = ${school:sqlstring} ORDER BY students DESC, avg_score DESC LIMIT 8"
+        }
+      ],
+      "description": "Students with evidence for the topic: test answers, flashcard progress or graded writing."
+    },
+    {
+      "id": 12,
+      "type": "barchart",
+      "title": "Average grammar score by CEFR level",
+      "datasource": {
+        "type": "postgres",
+        "uid": "client_logs_postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 35
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "vertical",
+        "legend": {
+          "showLegend": false
+        },
+        "xTickLabelRotation": 0,
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": {
+          "mode": "single"
+        },
+        "xField": "level"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "client_logs_postgres"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT lv.level, (SELECT round(sum(g.avg_score * g.students) / nullif(sum(g.students), 0), 1) FROM monitoring.hl_grammar_items() g WHERE g.school = ${school:sqlstring} AND g.level = lv.level) AS \"average score\" FROM (VALUES ('A1'),('A2'),('B1'),('B2'),('C1'),('C2')) lv(level) ORDER BY 1"
+        }
+      ]
+    }
+  ]
+}

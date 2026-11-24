@@ -252,3 +252,61 @@ describe('Application Usage reads (migration 092)', () => {
         expect(read('.env.observability.example')).not.toMatch(/^#\s+GRANT SELECT ON public\.client_logs/m);
     });
 });
+
+describe('School Highlights reads (migration 108)', () => {
+    const migration = read('supabase/migrations/108_school_highlights.sql');
+    const dashboard = JSON.parse(read('docker/observability/dashboards/school-highlights.json'));
+    const queries: string[] = [
+        ...dashboard.panels.flatMap((p: { targets?: { rawSql: string }[] }) => (p.targets ?? []).map((t) => t.rawSql)),
+        ...dashboard.templating.list.map((v: { query: string }) => v.query),
+    ];
+    const functions = [...migration.matchAll(/create or replace function (monitoring\.\w+)\(([^)]*)\)/gi)];
+
+    it('queries only the monitoring.hl_* functions, never the tables row-level security hides', () => {
+        expect(queries.length).toBeGreaterThanOrEqual(10);
+        for (const query of queries) {
+            expect(query).toMatch(/monitoring\.hl_\w+\(/);
+            expect(query).not.toMatch(/\b(FROM|JOIN)\s+(public\.)?(?!monitoring\.|\(|lv\b)[a-z_]+(\s|$)/i);
+        }
+    });
+
+    it('defines every function a panel calls', () => {
+        const defined = new Set(functions.map((m) => m[1]));
+        for (const query of queries) {
+            for (const [, name] of query.matchAll(/(monitoring\.hl_\w+)\(/g)) expect(defined, name).toContain(name);
+        }
+    });
+
+    it('pins search_path on the data functions and lets only pg_monitor call them', () => {
+        const bodies = migration.split(/create or replace function /i).slice(1);
+        for (const body of bodies.filter((b) => /security definer/i.test(b))) {
+            expect(body).toMatch(/security definer\s+set search_path = ''/i);
+        }
+        for (const [, name, params] of functions) {
+            const types = params
+                .split(',')
+                .map((p) => p.trim().split(/\s+/)[1])
+                .filter(Boolean)
+                .join(', ');
+            expect(migration).toContain(`REVOKE ALL ON FUNCTION ${name}(${types}) FROM PUBLIC;`);
+            expect(migration).toContain(`GRANT EXECUTE ON FUNCTION ${name}(${types}) TO pg_monitor;`);
+        }
+        expect(migration).not.toMatch(/GRANT EXECUTE[^;]*TO (anon|authenticated|service_role|public)\b/i);
+    });
+
+    it('suppresses figures with fewer students behind them than the minimum cohort', () => {
+        expect(migration).toMatch(/hl_min_cohort\(\)\s*RETURNS integer[\s\S]*?SELECT 5/i);
+        const reads = migration
+            .split(/create or replace function /i)
+            .slice(1)
+            .filter((b) => /^monitoring\.hl_(cefr|grammar|student)/i.test(b));
+        expect(reads.length).toBe(4);
+        for (const body of reads) expect(body).toContain('monitoring.hl_min_cohort()');
+    });
+
+    it('keeps student identifiers out of the snapshot table', () => {
+        const table =
+            /CREATE TABLE IF NOT EXISTS public\.school_highlight_snapshots \([\s\S]*?\n\);/.exec(migration)?.[0] ?? '';
+        expect(table).not.toMatch(/student_id|email|name/i);
+    });
+});

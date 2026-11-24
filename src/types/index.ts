@@ -1067,6 +1067,8 @@ export interface AppSettings {
     userEmail?: string;
     /** Default sharing for rubrics, tests and folders that have no setting of their own (undefined = private). */
     materialSharing?: MaterialSharing;
+    /** Contribute aggregate CEFR/grammar totals to the school wall display (Grafana). On unless explicitly `false`. */
+    shareSchoolHighlights?: boolean;
     /** Days since last grading before a student is considered overdue (default 7). */
     overdueReminderThreshold?: number;
     /**

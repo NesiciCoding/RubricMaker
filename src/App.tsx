@@ -17,6 +17,7 @@ import RouteSkeleton from './components/ui/RouteSkeleton';
 import { AppShellSkeleton } from './components/ui/AppShellSkeleton';
 import { TabbedPageSkeleton } from './components/ui/Skeleton';
 import { PageViewLogger } from './components/ui/PageViewLogger';
+import { SchoolHighlightsSync } from './components/ui/SchoolHighlightsSync';
 import { isLocalMode } from './store/storage';
 import { canOpenAdmin, resolveUserRole } from './utils/userRole';
 import { RemountOnParam } from './components/ui/RemountOnParam';
@@ -283,6 +284,7 @@ export default function App() {
                     )}
                     <RouteAnnouncer />
                     <PageViewLogger />
+                    <SchoolHighlightsSync />
                     <Sidebar mobileOpen={mobileMenuOpen} onMobileClose={() => setMobileMenuOpen(false)} />
                     <main className="main-area" id="main-content" tabIndex={-1}>
                         <ErrorBoundary>
