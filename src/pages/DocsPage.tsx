@@ -1479,7 +1479,10 @@ function GradingTab() {
                         t('docs.gr_test_rich_authoring_item_paste_list'),
                         t('docs.gr_test_rich_authoring_item_collapse_issues'),
                         t('docs.gr_test_answer_options_item_scripts'),
+                        t('docs.gr_test_rich_authoring_item_cloze_intro'),
                         t('docs.gr_test_rich_authoring_item_item_images'),
+                        t('docs.gr_test_rich_authoring_item_option_feedback'),
+                        t('docs.gr_test_rich_authoring_item_gap_weights'),
                     ]}
                 />
 
