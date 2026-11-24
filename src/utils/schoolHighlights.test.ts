@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildSchoolHighlightsSnapshot, MAX_SNAPSHOT_STUDENTS } from './schoolHighlights';
 import type { SchoolHighlightsInput } from './schoolHighlights';
-import type { Class, FlashcardAssignment, FlashcardDeck, Student, StudentTest, Test } from '../types';
+import type { Class, FlashcardAssignment, FlashcardDeck, Student, StudentRubric, StudentTest, Test } from '../types';
 
 const GRAMMAR_ITEM_ID = 'gr-present-simple-affirmative';
 
@@ -123,5 +123,21 @@ describe('buildSchoolHighlightsSnapshot', () => {
         expect(json).not.toContain('example.test');
         expect(json).not.toContain('"s1"');
         expect(json).not.toContain('c1');
+    });
+
+    it('ignores soft-deleted grades', () => {
+        const deleted = {
+            id: 'g1',
+            rubricId: 'r1',
+            studentId: 's1',
+            entries: [],
+            gradedAt: '2026-01-01T00:00:00.000Z',
+            deletedAt: '2026-02-01T00:00:00.000Z',
+        } as unknown as StudentRubric;
+        const withDeleted = buildSchoolHighlightsSnapshot(
+            input({ students: [student('s1')], studentRubrics: [deleted] })
+        );
+        const without = buildSchoolHighlightsSnapshot(input({ students: [student('s1')] }));
+        expect(withDeleted).toEqual(without);
     });
 });

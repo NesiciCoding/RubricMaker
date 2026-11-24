@@ -13,10 +13,10 @@ import type {
     Test,
 } from '../types';
 import { CEFR_SKILLS } from '../data/cefrDescriptors';
-import { getCefrStudentOverview, overallLevel } from './cefrStudentAggregator';
-import { achievedLevelForSkill } from './masteryTargetAnalysis';
+import { getCefrStudentOverview, highestLevelForSkill, overallLevel } from './cefrStudentAggregator';
 import { getStudentMasteryProfile, grammarItemScore, withEvidenceOnly } from './masteryProfileAggregator';
 import { groupByStudentId } from './groupByStudentId';
+import { liveStudentRubrics } from './liveStudentRubrics';
 
 /** Bounds the work of one snapshot; a teacher with more students than this contributes the first slice by id. */
 export const MAX_SNAPSHOT_STUDENTS = 600;
@@ -72,7 +72,10 @@ export function buildSchoolHighlightsSnapshot(input: SchoolHighlightsInput): Sch
         .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
         .slice(0, MAX_SNAPSHOT_STUDENTS);
 
-    const srsByStudent = groupByStudentId(input.studentRubrics, (sr) => sr.studentId);
+    const srsByStudent = groupByStudentId(
+        liveStudentRubrics(input.studentRubrics, students, input.rubrics),
+        (sr) => sr.studentId
+    );
     const sasByStudent = groupByStudentId(input.selfAssessments, (sa) => sa.studentId);
     const stsByStudent = groupByStudentId(input.studentTests, (st) => st.studentId);
     const assignmentsByStudent = groupByStudentId(input.flashcardAssignments, (a) => a.studentId);
@@ -103,7 +106,7 @@ export function buildSchoolHighlightsSnapshot(input: SchoolHighlightsInput): Sch
         const level = overallLevel(overview.cells);
         if (level) overall[level] += 1;
         for (const skill of CEFR_SKILLS) {
-            const skillLevel = achievedLevelForSkill(overview.cells, skill);
+            const skillLevel = highestLevelForSkill(overview.cells, skill);
             if (!skillLevel) continue;
             const counts = (skills[skill] ??= emptyCounts());
             counts[skillLevel] += 1;

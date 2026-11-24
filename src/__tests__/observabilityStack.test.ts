@@ -277,36 +277,58 @@ describe('School Highlights reads (migration 108)', () => {
         }
     });
 
-    it('pins search_path on the data functions and lets only pg_monitor call them', () => {
+    const reporting = [
+        'monitoring.hl_cefr_distribution(text)',
+        'monitoring.hl_cefr_trend(timestamptz, timestamptz)',
+        'monitoring.hl_grammar_items(text)',
+        'monitoring.hl_student_coverage()',
+        'monitoring.hl_week_activity()',
+    ];
+
+    it('pins search_path on every definer function', () => {
         const bodies = migration.split(/create or replace function /i).slice(1);
-        for (const body of bodies.filter((b) => /security definer/i.test(b))) {
-            expect(body).toMatch(/security definer\s+set search_path = ''/i);
+        const definers = bodies.filter((b) => /security definer/i.test(b));
+        expect(definers.length).toBeGreaterThanOrEqual(7);
+        for (const body of definers) expect(body).toMatch(/security definer\s+set search_path = ''/i);
+    });
+
+    it('grants only the suppressed reporting functions to pg_monitor and revokes every helper', () => {
+        for (const sig of reporting) expect(migration).toContain(`GRANT EXECUTE ON FUNCTION ${sig} TO pg_monitor;`);
+        for (const [, sig] of migration.matchAll(/GRANT EXECUTE ON FUNCTION ([^;]+?) TO /g)) {
+            expect(reporting, `${sig} returns unsuppressed data`).toContain(sig);
         }
-        for (const [, name, params] of functions) {
+        for (const [, name, params] of functions.map((m) => [m[0], m[1], m[2]])) {
             const types = params
                 .split(',')
-                .map((p) => p.trim().split(/\s+/)[1])
+                .map((p) => p.trim().split(/\s+/)[1] ?? p.trim().split(/\s+/)[0])
                 .filter(Boolean)
                 .join(', ');
             expect(migration).toContain(`REVOKE ALL ON FUNCTION ${name}(${types}) FROM PUBLIC;`);
-            expect(migration).toContain(`GRANT EXECUTE ON FUNCTION ${name}(${types}) TO pg_monitor;`);
         }
         expect(migration).not.toMatch(/GRANT EXECUTE[^;]*TO (anon|authenticated|service_role|public)\b/i);
     });
 
-    it('suppresses figures with fewer students behind them than the minimum cohort', () => {
+    it('holds every reporting function to the minimum cohort', () => {
         expect(migration).toMatch(/hl_min_cohort\(\)\s*RETURNS integer[\s\S]*?SELECT 5/i);
-        const reads = migration
-            .split(/create or replace function /i)
-            .slice(1)
-            .filter((b) => /^monitoring\.hl_(cefr|grammar|student)/i.test(b));
-        expect(reads.length).toBe(4);
+        const bodies = migration.split(/create or replace function /i).slice(1);
+        const reads = bodies.filter((b) => /^monitoring\.hl_(cefr|grammar|student|week)/i.test(b));
+        expect(reads.length).toBe(5);
         for (const body of reads) expect(body).toContain('monitoring.hl_min_cohort()');
     });
 
+    it('groups by school id, never by display name', () => {
+        const bodies = migration.split(/create or replace function /i).slice(1);
+        for (const body of bodies.filter((b) => /^monitoring\.hl_(cefr|grammar|student|week|current)/i.test(b))) {
+            if (/GROUP BY/i.test(body)) expect(body).toMatch(/GROUP BY[^\n]*school_id/i);
+        }
+    });
+
     it('keeps student identifiers out of the snapshot table', () => {
-        const table =
-            /CREATE TABLE IF NOT EXISTS public\.school_highlight_snapshots \([\s\S]*?\n\);/.exec(migration)?.[0] ?? '';
-        expect(table).not.toMatch(/student_id|email|name/i);
+        const table = /CREATE TABLE IF NOT EXISTS public\.school_highlight_snapshots \(([\s\S]*?)\n\);/.exec(
+            migration
+        )?.[1];
+        expect(table, 'snapshot table definition not found').toBeDefined();
+        const columns = [...(table as string).matchAll(/^\s{2}([a-z_]+)\s+(?!KEY)[A-Z]/gm)].map((m) => m[1]);
+        expect(columns.sort()).toEqual(['cefr', 'grammar', 'owner_id', 'snapshot_date', 'student_count', 'updated_at']);
     });
 });

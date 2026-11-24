@@ -101,9 +101,29 @@ describe('SchoolHighlightsSync', () => {
         expect(push).not.toHaveBeenCalled();
     });
 
-    it('skips an empty roster', async () => {
+    it('pushes an empty snapshot so an earlier roster stops counting', async () => {
         mount(makeState({ students: [] }));
         await flush(FIRST_PUSH_MS + 1);
+        expect(push).toHaveBeenCalledTimes(1);
+        expect(push.mock.calls[0][1].studentCount).toBe(0);
+    });
+
+    it('re-checks consent after the idle wait', async () => {
+        const state = makeState();
+        const store = createSelectorStore(() => state, vi.fn());
+        let release: () => void = () => {};
+        vi.stubGlobal('requestIdleCallback', (cb: () => void) => {
+            release = cb;
+        });
+        render(
+            <StoreProvider store={store}>
+                <SchoolHighlightsSync />
+            </StoreProvider>
+        );
+        await flush(FIRST_PUSH_MS + 1);
+        state.settings = { ...state.settings, shareSchoolHighlights: false };
+        await act(async () => release());
+        vi.unstubAllGlobals();
         expect(push).not.toHaveBeenCalled();
     });
 

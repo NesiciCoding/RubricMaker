@@ -22,8 +22,11 @@ export function SchoolHighlightsSync() {
 
         const push = async () => {
             if (running) return;
-            const state = store.getState();
-            if (state.settings.shareSchoolHighlights === false || state.settings.userRole === 'student') return;
+            const mayShare = () => {
+                const { settings } = store.getState();
+                return settings.shareSchoolHighlights !== false && settings.userRole !== 'student';
+            };
+            if (!mayShare()) return;
             const db = getDb();
             const adapter = db?.SchoolHighlightsAdapter.forTeacher();
             const ownerId = db?.storageSync.getCurrentUserId();
@@ -32,8 +35,8 @@ export function SchoolHighlightsSync() {
             running = true;
             try {
                 await whenIdle();
+                if (!mayShare()) return;
                 const snapshot = buildSchoolHighlightsSnapshot(store.getState());
-                if (snapshot.studentCount === 0) return;
                 const today = new Date().toISOString().slice(0, 10);
                 const key = today + JSON.stringify(snapshot);
                 if (key === lastPushed) return;

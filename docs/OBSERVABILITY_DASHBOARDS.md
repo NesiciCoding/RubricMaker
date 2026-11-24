@@ -237,9 +237,14 @@ the teacher's profile (`No school` when unset). Teachers can opt out under Setti
 snapshots are part of the teacher's data (nightly backup, "Delete all my database data") and are pruned
 after two years.
 
-**Small-group suppression** happens in the functions, not the client: a school with fewer than
-`monitoring.hl_min_cohort()` (5) students returns nothing, and so does a grammar item with fewer than 5
-students behind it. Raise the number in a new migration if a school wants a stricter floor.
+**Small-group suppression** happens in the functions, not the client: every figure returned has at least
+`monitoring.hl_min_cohort()` (5) students behind it. A CEFR level (overall, per skill, per week) or grammar
+topic with fewer than 5 students is left out, and a school whose snapshots cover fewer than 5 students
+returns nothing, weekly activity included. Schools are grouped by id, so two schools with the same name are
+never merged (a duplicate name gets a short id suffix in the `School` list). Hidden levels show as 0 in the
+level charts. Only the five reporting functions are granted to `pg_monitor`; the helpers that return
+per-teacher snapshots are not, so the database role cannot read a small group's figures directly. Raise the
+number in a new migration if a school wants a stricter floor.
 
 | Panel                                      | What it shows                                                                                                     |
 | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
