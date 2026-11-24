@@ -1194,6 +1194,9 @@ export default function QuestionEditor({
                     <button type="button" className="btn btn-secondary btn-sm" onClick={addOption}>
                         <Plus size={14} /> {t('tests.add_option')}
                     </button>
+                    <p className="text-muted text-xs" style={{ margin: 0 }}>
+                        {t('tests.option_script_hint')}
+                    </p>
                     <DistractorSuggestions
                         answer={(question.options ?? []).find((o) => o.isCorrect)?.text ?? ''}
                         exclude={(question.options ?? []).map((o) => o.text)}

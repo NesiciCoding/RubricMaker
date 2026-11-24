@@ -2401,9 +2401,8 @@
         "card_menu_teaching": "Unterrichten",
         "card_menu_organise": "Organisieren",
         "card_menu_sharing": "Teilen",
-        "cloze_gap_pill_label": "Lücke bearbeiten: {{value}}",
-        "hot_text_fragment_pill_label": "Fragment bearbeiten: {{value}}",
-        "error_fragment_pill_label": "Fragment bearbeiten: {{value}}",
+        "item_image_label": "Bild zu diesem Element (URL)",
+        "option_script_hint": "Tipp: Schreiben Sie H_{2}O für tiefgestellt und x^{2} für hochgestellt in einer Option.",
         "shuffle_options_label": "Optionen für jede Schülerin und jeden Schüler mischen",
         "shuffle_options_help": "Jede Person sieht die Optionen in einer eigenen, festen Zufallsreihenfolge. Ohne Haken bleibt Ihre Reihenfolge erhalten.",
         "pin_last_option_label": "Letzte Option am Ende lassen (z. B. „Keine der genannten“)",
@@ -2418,14 +2417,16 @@
         "cloze_points_per_gap": "Jede Lücke ist {{points}} Punkt(e) wert.",
         "cloze_generate_replace_confirm": "Dadurch werden die bereits erstellten Lücken samt Alternativen und falschen Optionen ersetzt. Fortfahren?",
         "cloze_points_all_or_nothing": "Alle Lücken müssen stimmen, um die {{points}} Punkt(e) zu erhalten.",
+        "cloze_intro_add": "Anweisungen oder Kontext über dem Text hinzufügen",
+        "cloze_intro_label": "Anweisungen oder Kontext (Formatierung, Listen und Bilder möglich)",
         "cloze_gap_weight": "Gewicht",
         "cloze_gap_weight_aria": "Gewicht von Lücke {{gap}}",
         "cloze_points_by_weight": "Die Lücken sind der Reihe nach {{points}} Punkt(e) wert.",
         "option_feedback_label": "Rückmeldung zu dieser Option",
         "option_feedback_placeholder": "Warum diese Option richtig oder falsch ist (nur im Übungsmodus)",
-        "item_image_label": "Bild zu diesem Element (URL)",
-        "cloze_intro_add": "Anweisungen oder Kontext über dem Text hinzufügen",
-        "cloze_intro_label": "Anweisungen oder Kontext (Formatierung, Listen und Bilder möglich)"
+        "cloze_gap_pill_label": "Lücke bearbeiten: {{value}}",
+        "hot_text_fragment_pill_label": "Fragment bearbeiten: {{value}}",
+        "error_fragment_pill_label": "Fragment bearbeiten: {{value}}"
     },
     "classShare": {
         "menu_item": "Mit Kolleg:innen teilen…",
@@ -5651,10 +5652,11 @@
         "gr_test_rich_authoring_item_cloze_intro": "Lücken-, Dropdown- und Wortspeicher-Fragen: Über dem Lückentext lassen sich formatierte Anweisungen oder Kontext (fett, Listen, Bilder) ergänzen. Sie erscheinen für Lernende, im gedruckten Heft und in der Schülervorschau und werden mit der Frage vorgelesen; der Lückentext selbst bleibt einfacher Text.",
         "gr_test_rich_authoring_item_gap_weights": "Lückenfragen: In der Lückenliste unter dem Text lässt sich einer Lücke mehr Gewicht geben (z. B. 2 für die Schlüssellücke), sodass sie einen größeren Anteil der Punkte bringt, wenn Teilpunkte aktiviert sind (ohne Teilpunkte muss weiterhin jede Lücke stimmen). Ändert sich die Zahl der Lücken, werden die Gewichte auf gleich zurückgesetzt.",
         "gr_test_rich_authoring_item_option_feedback": "Multiple Choice und Mehrfachauswahl: Zu jeder Option lässt sich eine Rückmeldung hinzufügen (Sprechblasen-Schaltfläche). In einem Übungstest sieht eine Person, die diese Option gewählt hat, sie nach der Abgabe in der Auswertung; in benoteten Tests wird sie nie an Lernende gesendet.",
-        "gr_test_rich_authoring_item_item_images": "Zuordnen, Ordnen und Kategorisieren: Zu einem Element lässt sich ein Bild hinzufügen (Bild-Schaltfläche in der Zeile). Beim Zuordnen gehört das Bild zum linken Element; Auswahlmöglichkeiten rechts bestehen nur aus Text. Bilder erscheinen am Bildschirm, noch nicht im gedruckten Heft.",
+        "gr_test_rich_authoring_item_item_images": "Zuordnen, Ordnen und Kategorisieren: Zu einem Element lässt sich ein Bild hinzufügen (Bild-Schaltfläche in der Zeile). Beim Zuordnen gehört das Bild zum linken Element; Auswahlmöglichkeiten rechts bestehen nur aus Text. Bilder erscheinen am Bildschirm und im gedruckten Heft (HTML und Word).",
         "gr_test_rich_authoring_item_pill_keyboard": "Lücken-, Hot-Text- und Fehlerkorrektur-Pillen im Editor sind mit Tab erreichbar und lassen sich mit Enter oder Leertaste öffnen; Escape schließt das Bearbeitungsfeld und führt zur Pille zurück.",
         "gr_test_rich_authoring_item_rich_notes": "Hinweise und Erklärungen sind formatierter Text: fett, Listen, Links und Bilder sind möglich. Früher als einfacher Text geschriebene Notizen behalten ihre Zeilenumbrüche, außer sie enthalten Text, der wie ein HTML-Tag aussieht. Lernende sehen den Hinweis auf Anfrage und die Erklärung nach Abgabe eines Übungstests.",
-        "gr_test_rich_authoring_item_typed_gap_chips": "Frei auszufüllende Lücken zeigen ihre akzeptierten Antworten jetzt als Chips, wie Dropdown-Lücken: eine (oder mehrere auf einmal als a|b|c) hinzufügen, mit × entfernen und mit Enter im leeren Feld speichern. Die erste Antwort wird im Editor angezeigt."
+        "gr_test_rich_authoring_item_typed_gap_chips": "Frei auszufüllende Lücken zeigen ihre akzeptierten Antworten jetzt als Chips, wie Dropdown-Lücken: eine (oder mehrere auf einmal als a|b|c) hinzufügen, mit × entfernen und mit Enter im leeren Feld speichern. Die erste Antwort wird im Editor angezeigt.",
+        "gr_test_answer_options_item_scripts": "Options- und Elementtext kann Tief- und Hochstellung zeigen: H_{2}O oder x^{2} schreiben (die geschweiften Klammern sind Pflicht, gewöhnlicher Text wie snake_case oder 2^10 bleibt also unverändert). Es erscheint am Bildschirm, im gedruckten Heft (HTML und Word) und als Unicode in Ergebnissen und Lösungsschlüsseln."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",

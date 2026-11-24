@@ -1,3 +1,4 @@
+import InlineScript from './InlineScript';
 import ItemImage from './ItemImage';
 import { useId, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -39,7 +40,7 @@ export default function CategorizeAnswer({ question, value, onChange, code, lang
                 <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <ItemImage url={item.imageUrl} alt={item.text} />
                     <span id={`${labelBase}-${item.id}`} style={{ flex: 1, color: 'var(--text)' }}>
-                        {item.text}
+                        <InlineScript text={item.text} />
                     </span>
                     <select
                         aria-labelledby={`${labelBase}-${item.id}`}

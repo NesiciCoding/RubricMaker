@@ -1,3 +1,4 @@
+import { plainInlineScript } from './inlineScript';
 import i18n from 'i18next';
 import type { CefrLevel, Student, StudentTest, Test, TestAnswer, TestQuestion } from '../types';
 import { stripHtmlTags } from './exportDataPrep';
@@ -47,10 +48,11 @@ export function formatGivenAnswer(question: TestQuestion, answer: TestAnswer | u
 
     switch (question.type) {
         case 'multiple-choice':
-            return question.options?.find((o) => o.id === response)?.text ?? NO_RESPONSE;
+            return plainInlineScript(question.options?.find((o) => o.id === response)?.text ?? NO_RESPONSE);
         case 'multiple-response': {
             const texts = parseJson<string[]>(response, [])
                 .map((id) => question.options?.find((o) => o.id === id)?.text)
+                .map((text) => (text ? plainInlineScript(text) : text))
                 .filter((text): text is string => !!text);
             return texts.length > 0 ? texts.join(', ') : NO_RESPONSE;
         }
@@ -91,14 +93,18 @@ export function formatGivenAnswer(question: TestQuestion, answer: TestAnswer | u
             if (pairs.length === 0) return NO_RESPONSE;
             const answers = parseJson<Record<string, string>>(response, {});
             const rightById = matchingRightById(question);
-            return pairs.map((p) => `${p.left} → ${rightById.get(answers[p.id]) ?? '___'}`).join('; ');
+            return pairs
+                .map(
+                    (p) => `${plainInlineScript(p.left)} → ${plainInlineScript(rightById.get(answers[p.id]) ?? '___')}`
+                )
+                .join('; ');
         }
         case 'ordering': {
             const items = question.orderItems ?? [];
             if (items.length === 0) return NO_RESPONSE;
             const byId = new Map(items.map((i) => [i.id, i]));
             return parseJson<string[]>(response, [])
-                .map((id) => byId.get(id)?.text ?? '?')
+                .map((id) => plainInlineScript(byId.get(id)?.text ?? '?'))
                 .join(' → ');
         }
         case 'categorize': {
@@ -106,7 +112,7 @@ export function formatGivenAnswer(question: TestQuestion, answer: TestAnswer | u
             if (items.length === 0) return NO_RESPONSE;
             const answers = parseJson<Record<string, string>>(response, {});
             const cats = new Map((question.categories ?? []).map((c) => [c.id, c.label]));
-            return items.map((it) => `${it.text} → ${cats.get(answers[it.id]) ?? '___'}`).join('; ');
+            return items.map((it) => `${plainInlineScript(it.text)} → ${cats.get(answers[it.id]) ?? '___'}`).join('; ');
         }
         case 'hot-text': {
             const segments = parseHotTextFragments(stripHtmlTags(question.hotTextPassage ?? ''));
@@ -130,7 +136,7 @@ export function formatCorrectAnswer(question: TestQuestion): string {
         case 'multiple-response':
             return (question.options ?? [])
                 .filter((o) => o.isCorrect)
-                .map((o) => o.text)
+                .map((o) => plainInlineScript(o.text))
                 .join(', ');
         case 'true-false':
             // Match autoScoreResponse: an unset correctBoolean scores `true` as correct.
@@ -183,13 +189,15 @@ export function formatCorrectAnswer(question: TestQuestion): string {
                 .join('; ');
         }
         case 'matching':
-            return (question.matchingPairs ?? []).map((p) => `${p.left} → ${p.right}`).join('; ');
+            return (question.matchingPairs ?? [])
+                .map((p) => `${plainInlineScript(p.left)} → ${plainInlineScript(p.right)}`)
+                .join('; ');
         case 'ordering':
-            return (question.orderItems ?? []).map((i) => i.text).join(' → ');
+            return (question.orderItems ?? []).map((i) => plainInlineScript(i.text)).join(' → ');
         case 'categorize': {
             const cats = new Map((question.categories ?? []).map((c) => [c.id, c.label]));
             return (question.categorizeItems ?? [])
-                .map((it) => `${it.text} → ${cats.get(it.categoryId) ?? '?'}`)
+                .map((it) => `${plainInlineScript(it.text)} → ${cats.get(it.categoryId) ?? '?'}`)
                 .join('; ');
         }
         case 'hot-text': {
