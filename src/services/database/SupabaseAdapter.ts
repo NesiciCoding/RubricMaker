@@ -213,6 +213,17 @@ export class SupabaseAdapter {
         return error ? { error: error.message, code: error.code } : {};
     }
 
+    /** Admin-only: sets any account's password and marks its address confirmed (migration 108). */
+    async adminSetUserPassword(email: string, password: string, confirmEmail = true): Promise<SyncResult> {
+        if (!this.client) return { success: false, error: 'Not connected' };
+        const { error } = await this.client.rpc('admin_set_user_password', {
+            p_email: email,
+            p_password: password,
+            p_confirm_email: confirmEmail,
+        });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
     /**
      * Set (or reset) the login password for one of this teacher's own students, via the
      * set-student-password edge function — writing auth.users requires the service-role
