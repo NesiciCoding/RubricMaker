@@ -2401,6 +2401,8 @@
         "card_menu_teaching": "Teaching",
         "card_menu_organise": "Organise",
         "card_menu_sharing": "Sharing",
+        "cloze_gap_weight": "Weight",
+        "cloze_gap_weight_aria": "Weight of gap {{gap}}",
         "shuffle_options_label": "Shuffle options for each student",
         "shuffle_options_help": "Each student sees the options in their own fixed random order. Untick it to keep the order you wrote.",
         "pin_last_option_label": "Keep the last option last (e.g. \"None of the above\")",
@@ -2414,7 +2416,8 @@
         "matching_distractors_placeholder": "One distractor per line",
         "cloze_points_per_gap": "Each gap is worth {{points}} point(s).",
         "cloze_generate_replace_confirm": "This replaces the gaps you already made, including their alternatives and wrong options. Continue?",
-        "cloze_points_all_or_nothing": "All gaps must be right to earn the {{points}} point(s)."
+        "cloze_points_all_or_nothing": "All gaps must be right to earn the {{points}} point(s).",
+        "cloze_points_by_weight": "The gaps are worth {{points}} point(s), in order."
     },
     "classShare": {
         "menu_item": "Share with co-teachers…",
@@ -5636,7 +5639,8 @@
         "gr_test_answer_options_item_shuffle": "Multiple choice and multiple response: tick Shuffle options so each student sees their own fixed random order, and optionally keep the last option (e.g. \"None of the above\") last.",
         "gr_test_answer_options_item_true_false": "True/false: give the two buttons your own wording, such as Yes / No or Agree / Disagree. Results and answer keys use the same wording.",
         "gr_test_answer_options_item_numeric": "Numeric: besides the absolute tolerance, set a percentage tolerance (the wider margin applies) and a unit that is shown next to the answer box but never scored.",
-        "gr_test_answer_options_item_matching": "Matching: add extra right-hand choices with no partner so students cannot finish by elimination. They also appear in the printed word bank."
+        "gr_test_answer_options_item_matching": "Matching: add extra right-hand choices with no partner so students cannot finish by elimination. They also appear in the printed word bank.",
+        "gr_test_rich_authoring_item_gap_weights": "Fill-in questions: give a gap more weight in the gap list below the passage (for example 2 for the key gap) so it earns a bigger share of the question's points when partial credit is on (with it off, every gap must still be right). Changing the number of gaps resets the weights to equal."
     },
     "studentProfile": {
         "tab_overview": "Overview",

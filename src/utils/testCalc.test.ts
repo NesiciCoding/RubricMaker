@@ -655,3 +655,47 @@ describe('withAskedQuestionSnapshots', () => {
         expect(merged.id).toBe(test.id);
     });
 });
+
+describe('scoreCloze gap weights', () => {
+    const cloze = {
+        id: 'q-cloze',
+        prompt: 'A {{one}} B {{two}} C {{three}}',
+        type: 'cloze',
+        points: 8,
+    } as TestQuestion;
+    const answers = (a: string, b: string, c: string) => JSON.stringify({ 0: a, 1: b, 2: c });
+
+    it('weights gaps equally by default', () => {
+        expect(scoreCloze(cloze, answers('one', 'x', 'x'))).toBeCloseTo(8 / 3);
+    });
+
+    it('gives a heavier gap a bigger share', () => {
+        const weighted = { ...cloze, gapWeights: [2, 1, 1] };
+        expect(scoreCloze(weighted, answers('one', 'x', 'x'))).toBe(4);
+        expect(scoreCloze(weighted, answers('x', 'two', 'three'))).toBe(4);
+    });
+
+    it('ignores weights that no longer match the gap count or are unusable', () => {
+        expect(scoreCloze({ ...cloze, gapWeights: [5, 1] }, answers('one', 'x', 'x'))).toBeCloseTo(8 / 3);
+        expect(scoreCloze({ ...cloze, gapWeights: [0, 0, 0] }, answers('one', 'x', 'x'))).toBeCloseTo(8 / 3);
+        expect(scoreCloze({ ...cloze, gapWeights: [-1, 1, 1] }, answers('one', 'x', 'x'))).toBeCloseTo(8 / 3);
+    });
+
+    it('does not overflow when the authored weights are huge', () => {
+        const huge = { ...cloze, gapWeights: [1e308, 1e308, 1e308] };
+        expect(scoreCloze(huge, answers('one', 'two', 'three'))).toBe(8);
+        expect(scoreCloze(huge, answers('one', 'x', 'x'))).toBeCloseTo(8 / 3);
+    });
+
+    it('does not let rounding hide a wrong gap without partial credit', () => {
+        const lopsided = { ...cloze, gapWeights: [1e16, 1, 1], partialCredit: false };
+        expect(scoreCloze(lopsided, answers('one', 'x', 'x'))).toBe(0);
+        expect(scoreCloze(lopsided, answers('one', 'two', 'three'))).toBe(8);
+    });
+
+    it('lets a zero-weight gap cost nothing and still needs every weighted gap without partial credit', () => {
+        const noPartial = { ...cloze, gapWeights: [0, 1, 1], partialCredit: false };
+        expect(scoreCloze(noPartial, answers('x', 'two', 'three'))).toBe(8);
+        expect(scoreCloze(noPartial, answers('x', 'two', 'x'))).toBe(0);
+    });
+});
