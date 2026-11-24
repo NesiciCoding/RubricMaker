@@ -450,11 +450,17 @@ async function questionParagraphs(
         case 'true-false':
             blocks.push(
                 new Paragraph({
-                    children: [new TextRun({ text: 'A  ', bold: true }), new TextRun(tx('true'))],
+                    children: [
+                        new TextRun({ text: 'A  ', bold: true }),
+                        new TextRun(question.trueLabel?.trim() || tx('true')),
+                    ],
                     indent: { left: 360 },
                 }),
                 new Paragraph({
-                    children: [new TextRun({ text: 'B  ', bold: true }), new TextRun(tx('false'))],
+                    children: [
+                        new TextRun({ text: 'B  ', bold: true }),
+                        new TextRun(question.falseLabel?.trim() || tx('false')),
+                    ],
                     indent: { left: 360 },
                 })
             );

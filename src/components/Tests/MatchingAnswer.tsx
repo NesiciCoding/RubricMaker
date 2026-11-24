@@ -19,7 +19,18 @@ export default function MatchingAnswer({ question, value, onChange, code, lang }
     const { t } = useTranslation();
     const labelBase = useId();
     const pairs = question.matchingPairs ?? [];
-    const shuffledPairs = useMemo(() => seededShuffle(pairs, `${code}-${question.id}`), [pairs, code, question.id]);
+    const distractors = question.matchingDistractors;
+    const choices = useMemo(
+        () =>
+            seededShuffle(
+                [
+                    ...pairs.map((p) => ({ id: p.id, right: p.right })),
+                    ...(distractors ?? []).filter(Boolean).map((right, i) => ({ id: `distractor-${i}`, right })),
+                ],
+                `${code}-${question.id}`
+            ),
+        [pairs, distractors, code, question.id]
+    );
     const answers: Record<string, string> = useMemo(() => {
         try {
             return value ? (JSON.parse(value) as Record<string, string>) : {};
@@ -55,7 +66,7 @@ export default function MatchingAnswer({ question, value, onChange, code, lang }
                         }}
                     >
                         <option value="">{t('tests.taking.matching_select_placeholder')}</option>
-                        {shuffledPairs.map((p) => (
+                        {choices.map((p) => (
                             <option key={p.id} value={p.id}>
                                 {p.right}
                             </option>
