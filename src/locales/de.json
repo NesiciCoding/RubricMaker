@@ -2401,8 +2401,9 @@
         "card_menu_teaching": "Unterrichten",
         "card_menu_organise": "Organisieren",
         "card_menu_sharing": "Teilen",
-        "cloze_intro_add": "Anweisungen oder Kontext über dem Text hinzufügen",
-        "cloze_intro_label": "Anweisungen oder Kontext (Formatierung, Listen und Bilder möglich)",
+        "cloze_gap_pill_label": "Lücke bearbeiten: {{value}}",
+        "hot_text_fragment_pill_label": "Fragment bearbeiten: {{value}}",
+        "error_fragment_pill_label": "Fragment bearbeiten: {{value}}",
         "shuffle_options_label": "Optionen für jede Schülerin und jeden Schüler mischen",
         "shuffle_options_help": "Jede Person sieht die Optionen in einer eigenen, festen Zufallsreihenfolge. Ohne Haken bleibt Ihre Reihenfolge erhalten.",
         "pin_last_option_label": "Letzte Option am Ende lassen (z. B. „Keine der genannten“)",
@@ -2422,7 +2423,9 @@
         "cloze_points_by_weight": "Die Lücken sind der Reihe nach {{points}} Punkt(e) wert.",
         "option_feedback_label": "Rückmeldung zu dieser Option",
         "option_feedback_placeholder": "Warum diese Option richtig oder falsch ist (nur im Übungsmodus)",
-        "item_image_label": "Bild zu diesem Element (URL)"
+        "item_image_label": "Bild zu diesem Element (URL)",
+        "cloze_intro_add": "Anweisungen oder Kontext über dem Text hinzufügen",
+        "cloze_intro_label": "Anweisungen oder Kontext (Formatierung, Listen und Bilder möglich)"
     },
     "classShare": {
         "menu_item": "Mit Kolleg:innen teilen…",
@@ -5647,7 +5650,8 @@
         "gr_test_answer_options_item_matching": "Zuordnen: Zusätzliche Auswahlmöglichkeiten rechts ohne Partner verhindern, dass sich die Aufgabe durch Ausschluss lösen lässt. Sie erscheinen auch im gedruckten Wortspeicher.",
         "gr_test_rich_authoring_item_cloze_intro": "Lücken-, Dropdown- und Wortspeicher-Fragen: Über dem Lückentext lassen sich formatierte Anweisungen oder Kontext (fett, Listen, Bilder) ergänzen. Sie erscheinen für Lernende, im gedruckten Heft und in der Schülervorschau und werden mit der Frage vorgelesen; der Lückentext selbst bleibt einfacher Text.",
         "gr_test_rich_authoring_item_gap_weights": "Lückenfragen: In der Lückenliste unter dem Text lässt sich einer Lücke mehr Gewicht geben (z. B. 2 für die Schlüssellücke), sodass sie einen größeren Anteil der Punkte bringt, wenn Teilpunkte aktiviert sind (ohne Teilpunkte muss weiterhin jede Lücke stimmen). Ändert sich die Zahl der Lücken, werden die Gewichte auf gleich zurückgesetzt.",
-        "gr_test_rich_authoring_item_option_feedback": "Multiple Choice und Mehrfachauswahl: Zu jeder Option lässt sich eine Rückmeldung hinzufügen (Sprechblasen-Schaltfläche). In einem Übungstest sieht eine Person, die diese Option gewählt hat, sie nach der Abgabe in der Auswertung; in benoteten Tests wird sie nie an Lernende gesendet."
+        "gr_test_rich_authoring_item_option_feedback": "Multiple Choice und Mehrfachauswahl: Zu jeder Option lässt sich eine Rückmeldung hinzufügen (Sprechblasen-Schaltfläche). In einem Übungstest sieht eine Person, die diese Option gewählt hat, sie nach der Abgabe in der Auswertung; in benoteten Tests wird sie nie an Lernende gesendet.",
+        "gr_test_rich_authoring_item_pill_keyboard": "Lücken-, Hot-Text- und Fehlerkorrektur-Pillen im Editor sind mit Tab erreichbar und lassen sich mit Enter oder Leertaste öffnen; Escape schließt das Bearbeitungsfeld und führt zur Pille zurück."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",
