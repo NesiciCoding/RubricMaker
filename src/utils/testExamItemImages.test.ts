@@ -105,4 +105,28 @@ describe('item pictures in the printed booklet', () => {
         expect(withoutImages).not.toContain('<w:drawing>');
         expect(withoutImages).toContain('Seed');
     });
+
+    it('converts a WebP picture to PNG so the DOCX booklet still shows it', async () => {
+        const drawImage = vi.fn();
+        vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({ drawImage } as never);
+        vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation((callback) =>
+            callback(new Blob([new Uint8Array(4)], { type: 'image/png' }))
+        );
+        vi.stubGlobal(
+            'createImageBitmap',
+            vi.fn(async () => ({ width: 100, height: 50 }))
+        );
+        vi.stubGlobal(
+            'fetch',
+            vi.fn(async () => ({ blob: async () => new Blob([new Uint8Array(4)], { type: 'image/webp' }) }))
+        );
+        saved.length = 0;
+        await exportExamDocx(test(questions), { attachmentMode: 'inline', hotTextMirror: false, scanMarkers: false });
+        const zip = await JSZip.loadAsync(saved[0]);
+        const name = Object.keys(zip.files).find((f) => f.endsWith('-booklet.docx'))!;
+        const inner = await JSZip.loadAsync(await zip.files[name].async('arraybuffer'));
+        expect(drawImage).toHaveBeenCalled();
+        expect(await inner.files['word/document.xml'].async('string')).toContain('<w:drawing>');
+        expect(Object.keys(inner.files).some((f) => f.endsWith('.png'))).toBe(true);
+    });
 });
