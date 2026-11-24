@@ -318,6 +318,33 @@ describe('QuestionEditor extended', () => {
         });
     });
 
+    describe('cloze points line', () => {
+        const pointsLine = () => screen.getByTestId('cloze-points-per-gap').textContent;
+
+        it('says each gap is worth the same, lists unequal weights, and explains all-or-nothing', () => {
+            const equal = renderEditor(makeQuestion({ type: 'cloze', prompt: 'A {{one}} and {{two}}.', points: 4 }));
+            expect(pointsLine()).toBe('tests.cloze_points_per_gap');
+            equal.view.unmount();
+
+            const weighted = renderEditor(
+                makeQuestion({ type: 'cloze', prompt: 'A {{one}} and {{two}}.', points: 4, gapWeights: [3, 1] })
+            );
+            expect(pointsLine()).toBe('tests.cloze_points_by_weight');
+            weighted.view.unmount();
+
+            renderEditor(
+                makeQuestion({
+                    type: 'cloze',
+                    prompt: 'A {{one}} and {{two}}.',
+                    points: 4,
+                    gapWeights: [3, 1],
+                    partialCredit: false,
+                })
+            );
+            expect(pointsLine()).toBe('tests.cloze_points_all_or_nothing');
+        });
+    });
+
     describe('cloze gap weights', () => {
         it('drops the weights when an edit changes the gap count and keeps them otherwise', () => {
             const { onChange } = renderEditor(

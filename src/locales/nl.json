@@ -2416,7 +2416,8 @@
         "matching_distractors_placeholder": "Eén afleider per regel",
         "cloze_points_per_gap": "Elk gat is {{points}} punt(en) waard.",
         "cloze_generate_replace_confirm": "Dit vervangt de gaten die je al hebt gemaakt, inclusief alternatieven en foute opties. Doorgaan?",
-        "cloze_points_all_or_nothing": "Alle gaten moeten juist zijn voor de {{points}} punt(en)."
+        "cloze_points_all_or_nothing": "Alle gaten moeten juist zijn voor de {{points}} punt(en).",
+        "cloze_points_by_weight": "De gaten zijn {{points}} punt(en) waard, in volgorde."
     },
     "classShare": {
         "menu_item": "Delen met collega's…",

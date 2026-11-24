@@ -2416,7 +2416,8 @@
         "matching_distractors_placeholder": "One distractor per line",
         "cloze_points_per_gap": "Each gap is worth {{points}} point(s).",
         "cloze_generate_replace_confirm": "This replaces the gaps you already made, including their alternatives and wrong options. Continue?",
-        "cloze_points_all_or_nothing": "All gaps must be right to earn the {{points}} point(s)."
+        "cloze_points_all_or_nothing": "All gaps must be right to earn the {{points}} point(s).",
+        "cloze_points_by_weight": "The gaps are worth {{points}} point(s), in order."
     },
     "classShare": {
         "menu_item": "Share with co-teachers…",

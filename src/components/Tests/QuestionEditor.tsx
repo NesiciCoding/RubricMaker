@@ -39,7 +39,9 @@ import AudioUrlStatus from './AudioUrlStatus';
 import {
     addDropdownDistractor,
     addGapAlternative,
+    effectiveGapWeights,
     gapCorrectAnswers,
+    gapPointShares,
     parseClozeGaps,
     plainQuestionPromptText,
     renderClozeSegments,
@@ -1254,17 +1256,22 @@ export default function QuestionEditor({
                             </p>
                         );
                     })()}
-                    {parseClozeGaps(question.prompt).length > 0 && (
-                        <p className="text-muted text-xs" style={{ margin: 0 }} data-testid="cloze-points-per-gap">
-                            {question.partialCredit === false
-                                ? t('tests.cloze_points_all_or_nothing', { points: question.points })
-                                : t('tests.cloze_points_per_gap', {
-                                      points:
-                                          Math.round((question.points / parseClozeGaps(question.prompt).length) * 100) /
-                                          100,
-                                  })}
-                        </p>
-                    )}
+                    {(() => {
+                        const gapCount = parseClozeGaps(question.prompt).length;
+                        if (gapCount === 0) return null;
+                        const weights = effectiveGapWeights(question, gapCount);
+                        const shares = gapPointShares(question.points, weights);
+                        const equal = weights.every((weight) => weight === weights[0]);
+                        return (
+                            <p className="text-muted text-xs" style={{ margin: 0 }} data-testid="cloze-points-per-gap">
+                                {question.partialCredit === false
+                                    ? t('tests.cloze_points_all_or_nothing', { points: question.points })
+                                    : equal
+                                      ? t('tests.cloze_points_per_gap', { points: shares[0] })
+                                      : t('tests.cloze_points_by_weight', { points: shares.join(', ') })}
+                            </p>
+                        );
+                    })()}
                     {question.type === 'cloze' && (
                         <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem' }}>
                             <input
