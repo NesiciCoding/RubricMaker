@@ -332,6 +332,25 @@ describe('QuestionEditor extended', () => {
         });
     });
 
+    describe('option feedback field', () => {
+        it('lets the toggle close a populated field without losing its text, then reopen it', () => {
+            const question = makeQuestion({
+                options: [
+                    { id: 'a', text: 'Option A', isCorrect: true, feedback: 'Because.' },
+                    { id: 'b', text: 'Option B', isCorrect: false },
+                ],
+            });
+            const { onChange } = renderEditor(question);
+            expect(screen.getAllByRole('textbox', { name: 'tests.option_feedback_label' })).toHaveLength(1);
+            const [firstToggle] = screen.getAllByRole('button', { name: 'tests.option_feedback_label' });
+            fireEvent.click(firstToggle);
+            expect(screen.queryByRole('textbox', { name: 'tests.option_feedback_label' })).toBeNull();
+            expect(onChange).not.toHaveBeenCalled();
+            fireEvent.click(firstToggle);
+            expect(screen.getByRole('textbox', { name: 'tests.option_feedback_label' })).toHaveValue('Because.');
+        });
+    });
+
     describe('cloze points line', () => {
         const pointsLine = () => screen.getByTestId('cloze-points-per-gap').textContent;
 

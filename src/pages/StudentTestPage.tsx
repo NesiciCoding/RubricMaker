@@ -18,6 +18,7 @@ import { safeAudioSrc } from '../utils/safeMediaSrc';
 import LimitedAudio from '../components/Tests/LimitedAudio';
 import CountdownTimer from '../components/ui/CountdownTimer';
 import RichNote from '../components/Tests/RichNote';
+import { pickedOptionFeedback } from '../utils/optionFeedback';
 import { useLiveSessionTelemetry } from '../hooks/useLiveSessionTelemetry';
 import { StudentTaskSkeleton } from '../components/ui/Skeleton';
 import { isStagedTest, entrySectionId, sectionQuestions, resolveNextSection } from '../utils/placementRouting';
@@ -1121,6 +1122,20 @@ export default function StudentTestPage() {
                                                         <RichNote text={q.explanation} lang={qLang} />
                                                     </div>
                                                 )}
+                                                {pickedOptionFeedback(q, response).map((line, i) => (
+                                                    <p
+                                                        key={i}
+                                                        lang={qLang}
+                                                        className="text-muted text-sm"
+                                                        style={{
+                                                            marginTop: 8,
+                                                            marginBottom: 0,
+                                                            whiteSpace: 'pre-wrap',
+                                                        }}
+                                                    >
+                                                        <strong>{line.text}</strong>: {line.feedback}
+                                                    </p>
+                                                ))}
                                                 {(() => {
                                                     const section = (test?.sections ?? []).find(
                                                         (sec) => sec.id === q.sectionId
