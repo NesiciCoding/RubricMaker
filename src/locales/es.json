@@ -2400,7 +2400,21 @@
         "card_more_actions": "Más acciones",
         "card_menu_teaching": "Enseñanza",
         "card_menu_organise": "Organizar",
-        "card_menu_sharing": "Compartir"
+        "card_menu_sharing": "Compartir",
+        "shuffle_options_label": "Mezclar las opciones para cada alumno",
+        "shuffle_options_help": "Cada alumno ve las opciones en su propio orden aleatorio fijo. Desmarque la casilla para mantener el orden que escribió.",
+        "pin_last_option_label": "Mantener la última opción al final (p. ej. «Ninguna de las anteriores»)",
+        "true_false_true_label_placeholder": "Texto del primer botón (por defecto: Verdadero)",
+        "true_false_false_label_placeholder": "Texto del segundo botón (por defecto: Falso)",
+        "numeric_tolerance_percent_label": "Tolerancia (%)",
+        "numeric_unit_label": "Unidad",
+        "numeric_unit_placeholder": "p. ej. cm",
+        "numeric_tolerance_help": "Si se definen ambas tolerancias, se aplica el margen más amplio. La unidad solo se muestra junto al campo de respuesta; no se puntúa.",
+        "matching_distractors_label": "Opciones adicionales a la derecha sin pareja (opcional, una por línea)",
+        "matching_distractors_placeholder": "Un distractor por línea",
+        "cloze_points_per_gap": "Cada hueco vale {{points}} punto(s).",
+        "cloze_generate_replace_confirm": "Esto sustituye los huecos que ya creó, con sus alternativas y opciones incorrectas. ¿Continuar?",
+        "cloze_points_all_or_nothing": "Todos los huecos deben ser correctos para obtener los {{points}} punto(s)."
     },
     "classShare": {
         "menu_item": "Compartir con co-docentes…",
@@ -5615,7 +5629,14 @@
         "es_creating_item_projector": "Proyecta un borrador en una segunda ventana para hablar de una frase mientras el monitor sigue observando al resto de la clase.",
         "rb_live_monitor_item_session_export": "Exporta la sesión como CSV con los recuentos, minutos estancados, antigüedad del texto, palabras escritas y el registro de avisos por estudiante — más un resumen PDF de una página — para adjuntarlo si más adelante surge una duda de integridad.",
         "rb_live_monitor_item_shortcuts": "Supervisa con el teclado mientras estás de pie: j/k cambia de estudiante, espacio abre o cierra el seguimiento, n envía un aviso y f marca al estudiante actual, sin tocar el ratón.",
-        "gr_test_rich_authoring_item_rich_notes": "Las pistas y explicaciones son texto enriquecido: negrita, listas, enlaces e imágenes. Las notas escritas antes como texto sin formato conservan sus saltos de línea, salvo que contengan texto que parezca una etiqueta HTML. El alumnado ve la pista cuando la pide y la explicación tras enviar una prueba de práctica."
+        "gr_test_rich_authoring_item_rich_notes": "Las pistas y explicaciones son texto enriquecido: negrita, listas, enlaces e imágenes. Las notas escritas antes como texto sin formato conservan sus saltos de línea, salvo que contengan texto que parezca una etiqueta HTML. El alumnado ve la pista cuando la pide y la explicación tras enviar una prueba de práctica.",
+        "gr_test_answer_options_title": "Opciones de respuesta y visualización",
+        "gr_test_answer_options_item_cloze_select": "Texto con huecos: seleccione una palabra y haga clic en Insertar hueco (o pulse Ctrl/Cmd+Mayús+G) para convertirla en hueco. Los huecos están numerados en el editor, que muestra lo que vale cada uno, y Generar pide confirmación antes de sustituir huecos existentes.",
+        "gr_test_answer_options_item_cloze_paste": "Texto con huecos: pegue texto de una hoja de trabajo y cada serie de tres o más guiones bajos (____) se convierte en un hueco. Los campos del alumnado llevan una etiqueta numerada, conservan los saltos de párrafo y ya no aplican mayúsculas ni autocorrección en el móvil.",
+        "gr_test_answer_options_item_shuffle": "Opción múltiple y respuesta múltiple: marque Mezclar opciones para que cada alumno vea su propio orden aleatorio fijo y, si quiere, mantenga la última opción (p. ej. «Ninguna de las anteriores») al final.",
+        "gr_test_answer_options_item_true_false": "Verdadero/falso: ponga su propio texto a los dos botones, por ejemplo Sí / No o De acuerdo / En desacuerdo. Los resultados y las claves de respuesta usan el mismo texto.",
+        "gr_test_answer_options_item_numeric": "Numérica: además de la tolerancia absoluta, defina una tolerancia porcentual (se aplica el margen más amplio) y una unidad que se muestra junto al campo de respuesta pero nunca se puntúa.",
+        "gr_test_answer_options_item_matching": "Emparejar: añada opciones adicionales a la derecha sin pareja para que no se pueda resolver por eliminación. También aparecen en el banco de palabras impreso."
     },
     "studentProfile": {
         "tab_overview": "Resumen",
