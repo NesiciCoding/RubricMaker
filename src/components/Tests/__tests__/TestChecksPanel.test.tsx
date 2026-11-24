@@ -11,6 +11,12 @@ vi.mock('react-i18next', () => ({
     }),
 }));
 
+// A test-level hint names no question, so it must not render a jump link.
+function setNoQualityJump(quality: HTMLElement, key: string): boolean {
+    const row = Array.from(quality.querySelectorAll('li')).find((li) => li.textContent?.includes(key));
+    return Boolean(row) && row!.querySelector('button') === null;
+}
+
 const rows: TestCheckRow[] = [
     { questionId: 'q1', number: 1, label: 'First prompt', issues: ['empty_prompt', 'no_correct_option'] },
     { questionId: 'q3', number: 3, label: 'Third prompt', issues: ['no_model_answer'] },
@@ -66,6 +72,27 @@ describe('TestChecksPanel', () => {
         renderPanel({ rows: [], noQuestions: true, questionCount: 0, totalPoints: 0 });
         expect(screen.getByText('tests.issue_no_questions')).toBeInTheDocument();
         expect(screen.getByText('tests.issues_title')).toBeInTheDocument();
+    });
+
+    it('shows quality hints with a link to the question they name', () => {
+        const { onJump } = renderPanel({
+            quality: [
+                { id: 'time_over', questionIds: [], numbers: [], values: { estimated: 70, duration: 60 } },
+                { id: 'duplicate_options', questionIds: ['q3'], numbers: [3], values: { number: 3 } },
+            ],
+        });
+        const quality = screen.getByTestId('checks-quality');
+        expect(quality).toHaveTextContent('tests.quality_title');
+        expect(quality).toHaveTextContent(/tests\.quality_time_over/);
+        expect(quality).toHaveTextContent('70');
+        expect(setNoQualityJump(quality, 'tests.quality_time_over')).toBe(true);
+        fireEvent.click(screen.getByTestId('quality-jump-q3'));
+        expect(onJump).toHaveBeenCalledWith('q3');
+    });
+
+    it('shows no quality block when there is nothing to improve', () => {
+        renderPanel();
+        expect(screen.queryByTestId('checks-quality')).not.toBeInTheDocument();
     });
 
     it('lists what is already fine', () => {

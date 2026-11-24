@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
-import { AlertCircle, ArrowLeft, CheckCircle2, ClipboardCheck, Save } from 'lucide-react';
+import { AlertCircle, ArrowLeft, CheckCircle2, ClipboardCheck, Lightbulb, Save } from 'lucide-react';
 import type { TestQuestionIssue } from '../../utils/testQuestionIssues';
+import type { TestQualityFinding } from '../../utils/testQualityChecks';
 
 export interface TestCheckRow {
     questionId: string;
@@ -22,6 +23,8 @@ interface Props {
     questionCount: number;
     totalPoints: number;
     verified: VerifiedCheck[];
+    /** Non-blocking quality hints; absent when the test has none. */
+    quality?: TestQualityFinding[];
     onJump: (questionId: string) => void;
     onBack?: () => void;
     onSave: () => void;
@@ -31,8 +34,9 @@ interface Props {
 
 /**
  * The pre-assign screen: what stops the test being handed to students, one line per question with a
- * jump link, then what is already fine, then the save/assign footer. It only presents the issues
- * `testAssignBlockers` already computes — no validation lives here.
+ * jump link, then what could be better, then what is already fine, then the save/assign footer. It
+ * only presents the issues `testAssignBlockers` and `testQualityChecks` already compute — no
+ * validation lives here.
  */
 export default function TestChecksPanel({
     rows,
@@ -40,6 +44,7 @@ export default function TestChecksPanel({
     questionCount,
     totalPoints,
     verified,
+    quality = [],
     onJump,
     onBack,
     onSave,
@@ -153,6 +158,62 @@ export default function TestChecksPanel({
                         </li>
                     ))}
                 </ul>
+            )}
+
+            {quality.length > 0 && (
+                <div data-testid="checks-quality" style={{ display: 'grid', gap: 6 }}>
+                    <p
+                        className="text-muted text-xs"
+                        style={{ margin: 0, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}
+                    >
+                        {t('tests.quality_title')}
+                    </p>
+                    <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'grid', gap: 4 }}>
+                        {quality.map((finding) => (
+                            <li
+                                key={`${finding.id}-${finding.questionIds.join('-')}`}
+                                data-testid={`quality-${finding.id}-${finding.questionIds[0] ?? 'test'}`}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'baseline',
+                                    gap: 6,
+                                    flexWrap: 'wrap',
+                                    fontSize: '0.85rem',
+                                    color: 'var(--text-muted)',
+                                }}
+                            >
+                                <Lightbulb
+                                    size={14}
+                                    style={{ color: 'var(--yellow-text)', flexShrink: 0 }}
+                                    aria-hidden="true"
+                                />
+                                <span style={{ flex: 1, minWidth: 200 }}>
+                                    {finding.values
+                                        ? t(`tests.quality_${finding.id}`, finding.values)
+                                        : t(`tests.quality_${finding.id}`)}
+                                </span>
+                                {finding.questionIds[0] && (
+                                    <button
+                                        type="button"
+                                        data-testid={`quality-jump-${finding.questionIds[0]}`}
+                                        onClick={() => onJump(finding.questionIds[0])}
+                                        style={{
+                                            padding: 0,
+                                            border: 'none',
+                                            background: 'none',
+                                            color: 'var(--accent-text)',
+                                            font: 'inherit',
+                                            textDecoration: 'underline',
+                                            cursor: 'pointer',
+                                        }}
+                                    >
+                                        {t('tests.checks_jump')}
+                                    </button>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
             )}
 
             {verified.length > 0 && (

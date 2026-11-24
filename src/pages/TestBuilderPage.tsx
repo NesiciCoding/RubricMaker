@@ -69,6 +69,7 @@ import TestSettingsDrawer, {
     type TestSettingsValues,
 } from '../components/Tests/TestSettingsDrawer';
 import TestChecksPanel, { type TestCheckRow, type VerifiedCheck } from '../components/Tests/TestChecksPanel';
+import { testQualityChecks } from '../utils/testQualityChecks';
 import { questionTypeLabelKey } from '../utils/questionTypeKey';
 import { SkeletonRow } from '../components/ui/Skeleton';
 import { useSharedMaterials } from '../hooks/useSharedMaterials';
@@ -1206,6 +1207,18 @@ function TestBuilderEditor({
     const allQuestionsCollapsed = questions.length > 0 && questions.every((q) => collapsedQuestions.has(q.id));
     const focusQuestion = questions.find((q) => q.id === selectedQuestionId) ?? null;
 
+    // Quality hints read the unsaved draft too, so they answer "is this a good test?" while writing.
+    const qualityFindings = React.useMemo(
+        () =>
+            testQualityChecks({
+                questions: displayOrderedQuestions,
+                sections,
+                durationMinutes: Number(durationMinutes) > 0 ? Number(durationMinutes) : undefined,
+                cefrTargetLevel: cefrTargetLevel || undefined,
+            }),
+        [displayOrderedQuestions, sections, durationMinutes, cefrTargetLevel]
+    );
+
     const checkRows: TestCheckRow[] = (draftBlockers?.entries ?? []).map((entry) => {
         const question = displayOrderedQuestions.find((q) => q.id === entry.questionId);
         const label = question ? htmlToPlainText(plainQuestionPromptText(question)).trim() : '';
@@ -1240,6 +1253,7 @@ function TestBuilderEditor({
             questionCount={displayOrderedQuestions.length}
             totalPoints={totalPoints}
             verified={verifiedChecks}
+            quality={qualityFindings}
             onJump={jumpToQuestion}
             onBack={() => setChecksOpen(false)}
             onSave={() => void handleSave()}
