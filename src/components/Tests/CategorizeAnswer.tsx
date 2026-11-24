@@ -1,3 +1,4 @@
+import ItemImage from './ItemImage';
 import { useId, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { seededShuffle } from '../../utils/seededShuffle';
@@ -36,6 +37,7 @@ export default function CategorizeAnswer({ question, value, onChange, code, lang
         <div lang={lang ?? 'en'} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {shuffledItems.map((item) => (
                 <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <ItemImage url={item.imageUrl} alt={item.text} />
                     <span id={`${labelBase}-${item.id}`} style={{ flex: 1, color: 'var(--text)' }}>
                         {item.text}
                     </span>

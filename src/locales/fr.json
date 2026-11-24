@@ -2422,7 +2422,8 @@
         "cloze_gap_weight_aria": "Poids du trou {{gap}}",
         "cloze_points_by_weight": "Les trous valent {{points}} point(s), dans l'ordre.",
         "option_feedback_label": "Commentaire pour cette option",
-        "option_feedback_placeholder": "Pourquoi cette option est juste ou fausse (mode entraînement uniquement)"
+        "option_feedback_placeholder": "Pourquoi cette option est juste ou fausse (mode entraînement uniquement)",
+        "item_image_label": "Image pour cet élément (URL)"
     },
     "classShare": {
         "menu_item": "Partager avec des co-enseignants…",
@@ -5647,7 +5648,8 @@
         "gr_test_answer_options_item_numeric": "Numérique : en plus de la tolérance absolue, définissez une tolérance en pourcentage (la marge la plus large s'applique) et une unité affichée à côté du champ de réponse mais jamais notée.",
         "gr_test_answer_options_item_matching": "Association : ajoutez des choix supplémentaires à droite sans partenaire pour que les élèves ne terminent pas par élimination. Ils figurent aussi dans la banque de mots imprimée.",
         "gr_test_rich_authoring_item_gap_weights": "Questions à trous : donnez plus de poids à un trou dans la liste sous le texte (par exemple 2 pour le trou clé) pour qu'il rapporte une plus grande part des points de la question lorsque le crédit partiel est activé (sinon, chaque trou doit rester juste). Modifier le nombre de trous rétablit des poids égaux.",
-        "gr_test_rich_authoring_item_option_feedback": "Choix multiple et réponses multiples : ajoutez un commentaire à chaque option (bouton bulle). Dans un test d'entraînement, l'élève qui a choisi cette option le voit dans la correction après l'envoi ; il n'est jamais envoyé aux élèves dans les tests notés."
+        "gr_test_rich_authoring_item_option_feedback": "Choix multiple et réponses multiples : ajoutez un commentaire à chaque option (bouton bulle). Dans un test d'entraînement, l'élève qui a choisi cette option le voit dans la correction après l'envoi ; il n'est jamais envoyé aux élèves dans les tests notés.",
+        "gr_test_rich_authoring_item_item_images": "Association, classement et catégorisation : ajoutez une image à un élément (bouton image sur sa ligne). Dans l'association, l'image accompagne l'élément de gauche ; les choix de droite sont du texte seul. Les images s'affichent à l'écran mais pas encore dans le livret imprimé."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",

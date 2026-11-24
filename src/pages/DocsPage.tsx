@@ -1480,6 +1480,7 @@ function GradingTab() {
                         t('docs.gr_test_rich_authoring_item_collapse_issues'),
                         t('docs.gr_test_rich_authoring_item_pill_keyboard'),
                         t('docs.gr_test_rich_authoring_item_typed_gap_chips'),
+                        t('docs.gr_test_rich_authoring_item_item_images'),
                         t('docs.gr_test_rich_authoring_item_option_feedback'),
                         t('docs.gr_test_rich_authoring_item_gap_weights'),
                     ]}

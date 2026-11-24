@@ -36,6 +36,7 @@ import Modal from '../ui/Modal';
 import CefrPickerModal from '../CEFR/CefrPickerModal';
 import HelpPopover from './HelpPopover';
 import AudioUrlStatus from './AudioUrlStatus';
+import ItemImage from './ItemImage';
 import {
     addDropdownDistractor,
     addGapAlternative,
@@ -161,6 +162,7 @@ export default function QuestionEditor({
     const [pickingStandard, setPickingStandard] = React.useState(false);
     const [pickingCefr, setPickingCefr] = React.useState(false);
     const [expandedOptionImages, setExpandedOptionImages] = React.useState<Set<string>>(new Set());
+    const [expandedItemImages, setExpandedItemImages] = React.useState<Set<string>>(new Set());
     const [expandedOptionAudio, setExpandedOptionAudio] = React.useState<Set<string>>(new Set());
     // An explicit choice wins; until the teacher toggles, an option that already has feedback shows its field.
     const [optionFeedbackOpen, setOptionFeedbackOpen] = React.useState<Record<string, boolean>>({});
@@ -517,6 +519,47 @@ export default function QuestionEditor({
             /* v8 ignore next 2 -- item inputs only render when categorizeItems is non-empty */
             categorizeItems: (question.categorizeItems ?? []).map((i) => (i.id === itemId ? { ...i, ...patch } : i)),
         });
+    }
+
+    function itemImageButton(id: string, url: string | undefined) {
+        const open = expandedItemImages.has(id) || !!url;
+        return (
+            <button
+                type="button"
+                className="btn btn-ghost btn-icon btn-sm"
+                aria-label={t('tests.item_image_label')}
+                aria-pressed={open}
+                title={t('tests.item_image_label')}
+                onClick={() =>
+                    setExpandedItemImages((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(id)) next.delete(id);
+                        else next.add(id);
+                        return next;
+                    })
+                }
+                style={{ color: url ? 'var(--accent-text)' : 'var(--text-muted)', flexShrink: 0 }}
+            >
+                <Image size={14} />
+            </button>
+        );
+    }
+
+    function itemImageField(id: string, url: string | undefined, onUrl: (url: string | undefined) => void) {
+        if (!expandedItemImages.has(id) && !url) return null;
+        return (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 28 }}>
+                <input
+                    type="url"
+                    value={url ?? ''}
+                    onChange={(e) => onUrl(e.target.value || undefined)}
+                    placeholder={t('tests.question_image_placeholder')}
+                    style={{ flex: 1 }}
+                    aria-label={t('tests.item_image_label')}
+                />
+                {url && <ItemImage url={url} />}
+            </div>
+        );
     }
 
     function renderPartialCreditToggle() {
@@ -1489,36 +1532,42 @@ export default function QuestionEditor({
                         </HelpPopover>
                     </label>
                     {(question.matchingPairs ?? []).map((pair, pairIndex) => (
-                        <div key={pair.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <input
-                                type="text"
-                                value={pair.left}
-                                onChange={(e) => updateMatchingPair(pair.id, { left: e.target.value })}
-                                onPaste={pastePairs(pairIndex)}
-                                placeholder={t('tests.matching_left_placeholder')}
-                                style={{ flex: 1 }}
-                                aria-label={t('tests.matching_left_placeholder')}
-                            />
-                            <span style={{ color: 'var(--text-muted)' }}>↔</span>
-                            <input
-                                type="text"
-                                value={pair.right}
-                                onChange={(e) => updateMatchingPair(pair.id, { right: e.target.value })}
-                                onPaste={pastePairs(pairIndex)}
-                                placeholder={t('tests.matching_right_placeholder')}
-                                style={{ flex: 1 }}
-                                aria-label={t('tests.matching_right_placeholder')}
-                            />
-                            <button
-                                type="button"
-                                className="btn btn-ghost btn-icon btn-sm"
-                                aria-label={t('tests.remove_option')}
-                                style={{ color: 'var(--red-text)' }}
-                                disabled={question.matchingPairs!.length <= 1}
-                                onClick={() => removeMatchingPair(pair.id)}
-                            >
-                                <X size={14} />
-                            </button>
+                        <div key={pair.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <input
+                                    type="text"
+                                    value={pair.left}
+                                    onChange={(e) => updateMatchingPair(pair.id, { left: e.target.value })}
+                                    onPaste={pastePairs(pairIndex)}
+                                    placeholder={t('tests.matching_left_placeholder')}
+                                    style={{ flex: 1 }}
+                                    aria-label={t('tests.matching_left_placeholder')}
+                                />
+                                {itemImageButton(pair.id, pair.leftImageUrl)}
+                                <span style={{ color: 'var(--text-muted)' }}>↔</span>
+                                <input
+                                    type="text"
+                                    value={pair.right}
+                                    onChange={(e) => updateMatchingPair(pair.id, { right: e.target.value })}
+                                    onPaste={pastePairs(pairIndex)}
+                                    placeholder={t('tests.matching_right_placeholder')}
+                                    style={{ flex: 1 }}
+                                    aria-label={t('tests.matching_right_placeholder')}
+                                />
+                                <button
+                                    type="button"
+                                    className="btn btn-ghost btn-icon btn-sm"
+                                    aria-label={t('tests.remove_option')}
+                                    style={{ color: 'var(--red-text)' }}
+                                    disabled={question.matchingPairs!.length <= 1}
+                                    onClick={() => removeMatchingPair(pair.id)}
+                                >
+                                    <X size={14} />
+                                </button>
+                            </div>
+                            {itemImageField(pair.id, pair.leftImageUrl, (leftImageUrl) =>
+                                updateMatchingPair(pair.id, { leftImageUrl })
+                            )}
                         </div>
                     ))}
                     <button type="button" className="btn btn-secondary btn-sm" onClick={addMatchingPair}>
@@ -1548,55 +1597,65 @@ export default function QuestionEditor({
                         </HelpPopover>
                     </label>
                     {(question.orderItems ?? []).map((item, idx) => (
-                        <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span className="text-muted text-xs" style={{ width: 20, flexShrink: 0 }}>
-                                {idx + 1}.
-                            </span>
-                            <input
-                                type="text"
-                                value={item.text}
-                                onChange={(e) => updateOrderItem(item.id, e.target.value)}
-                                onPaste={(e) =>
-                                    pasteList(
-                                        e,
-                                        question.orderItems ?? [],
-                                        idx,
-                                        (text) => ({ id: nanoid(), text }),
-                                        (orderItems) => update({ orderItems })
-                                    )
-                                }
-                                placeholder={t('tests.ordering_item_placeholder')}
-                                style={{ flex: 1 }}
-                                aria-label={t('tests.ordering_item_placeholder')}
-                            />
-                            <button
-                                type="button"
-                                className="btn btn-ghost btn-icon btn-sm"
-                                aria-label={t('tests.move_question_up')}
-                                disabled={idx === 0}
-                                onClick={() => moveOrderItem(idx, idx - 1)}
-                            >
-                                <ChevronUp size={14} />
-                            </button>
-                            <button
-                                type="button"
-                                className="btn btn-ghost btn-icon btn-sm"
-                                aria-label={t('tests.move_question_down')}
-                                disabled={idx === question.orderItems!.length - 1}
-                                onClick={() => moveOrderItem(idx, idx + 1)}
-                            >
-                                <ChevronDown size={14} />
-                            </button>
-                            <button
-                                type="button"
-                                className="btn btn-ghost btn-icon btn-sm"
-                                aria-label={t('tests.remove_option')}
-                                style={{ color: 'var(--red-text)' }}
-                                disabled={question.orderItems!.length <= 1}
-                                onClick={() => removeOrderItem(item.id)}
-                            >
-                                <X size={14} />
-                            </button>
+                        <div key={item.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span className="text-muted text-xs" style={{ width: 20, flexShrink: 0 }}>
+                                    {idx + 1}.
+                                </span>
+                                <input
+                                    type="text"
+                                    value={item.text}
+                                    onChange={(e) => updateOrderItem(item.id, e.target.value)}
+                                    onPaste={(e) =>
+                                        pasteList(
+                                            e,
+                                            question.orderItems ?? [],
+                                            idx,
+                                            (text) => ({ id: nanoid(), text }),
+                                            (orderItems) => update({ orderItems })
+                                        )
+                                    }
+                                    placeholder={t('tests.ordering_item_placeholder')}
+                                    style={{ flex: 1 }}
+                                    aria-label={t('tests.ordering_item_placeholder')}
+                                />
+                                {itemImageButton(item.id, item.imageUrl)}
+                                <button
+                                    type="button"
+                                    className="btn btn-ghost btn-icon btn-sm"
+                                    aria-label={t('tests.move_question_up')}
+                                    disabled={idx === 0}
+                                    onClick={() => moveOrderItem(idx, idx - 1)}
+                                >
+                                    <ChevronUp size={14} />
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn btn-ghost btn-icon btn-sm"
+                                    aria-label={t('tests.move_question_down')}
+                                    disabled={idx === question.orderItems!.length - 1}
+                                    onClick={() => moveOrderItem(idx, idx + 1)}
+                                >
+                                    <ChevronDown size={14} />
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn btn-ghost btn-icon btn-sm"
+                                    aria-label={t('tests.remove_option')}
+                                    style={{ color: 'var(--red-text)' }}
+                                    disabled={question.orderItems!.length <= 1}
+                                    onClick={() => removeOrderItem(item.id)}
+                                >
+                                    <X size={14} />
+                                </button>
+                            </div>
+                            {itemImageField(item.id, item.imageUrl, (imageUrl) =>
+                                update({
+                                    orderItems: (question.orderItems ?? []).map((i) =>
+                                        i.id === item.id ? { ...i, imageUrl } : i
+                                    ),
+                                })
+                            )}
                         </div>
                     ))}
                     <button type="button" className="btn btn-secondary btn-sm" onClick={addOrderItem}>
@@ -1644,37 +1703,43 @@ export default function QuestionEditor({
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         <label>{t('tests.categorize_items_label')}</label>
                         {(question.categorizeItems ?? []).map((item) => (
-                            <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <input
-                                    type="text"
-                                    value={item.text}
-                                    onChange={(e) => updateCategorizeItem(item.id, { text: e.target.value })}
-                                    placeholder={t('tests.categorize_item_placeholder')}
-                                    style={{ flex: 1, minWidth: 0 }}
-                                    aria-label={t('tests.categorize_item_placeholder')}
-                                />
-                                <select
-                                    value={item.categoryId}
-                                    onChange={(e) => updateCategorizeItem(item.id, { categoryId: e.target.value })}
-                                    aria-label={t('tests.categorize_item_category_label')}
-                                    style={{ width: 'auto', maxWidth: '40%', flexShrink: 0 }}
-                                >
-                                    {(question.categories ?? []).map((cat) => (
-                                        <option key={cat.id} value={cat.id}>
-                                            {cat.label || '—'}
-                                        </option>
-                                    ))}
-                                </select>
-                                <button
-                                    type="button"
-                                    className="btn btn-ghost btn-icon btn-sm"
-                                    aria-label={t('tests.remove_option')}
-                                    style={{ color: 'var(--red-text)' }}
-                                    disabled={question.categorizeItems!.length <= 1}
-                                    onClick={() => removeCategorizeItem(item.id)}
-                                >
-                                    <X size={14} />
-                                </button>
+                            <div key={item.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <input
+                                        type="text"
+                                        value={item.text}
+                                        onChange={(e) => updateCategorizeItem(item.id, { text: e.target.value })}
+                                        placeholder={t('tests.categorize_item_placeholder')}
+                                        style={{ flex: 1, minWidth: 0 }}
+                                        aria-label={t('tests.categorize_item_placeholder')}
+                                    />
+                                    {itemImageButton(item.id, item.imageUrl)}
+                                    <select
+                                        value={item.categoryId}
+                                        onChange={(e) => updateCategorizeItem(item.id, { categoryId: e.target.value })}
+                                        aria-label={t('tests.categorize_item_category_label')}
+                                        style={{ width: 'auto', maxWidth: '40%', flexShrink: 0 }}
+                                    >
+                                        {(question.categories ?? []).map((cat) => (
+                                            <option key={cat.id} value={cat.id}>
+                                                {cat.label || '—'}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <button
+                                        type="button"
+                                        className="btn btn-ghost btn-icon btn-sm"
+                                        aria-label={t('tests.remove_option')}
+                                        style={{ color: 'var(--red-text)' }}
+                                        disabled={question.categorizeItems!.length <= 1}
+                                        onClick={() => removeCategorizeItem(item.id)}
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                </div>
+                                {itemImageField(item.id, item.imageUrl, (imageUrl) =>
+                                    updateCategorizeItem(item.id, { imageUrl })
+                                )}
                             </div>
                         ))}
                         <button type="button" className="btn btn-secondary btn-sm" onClick={addCategorizeItem}>
