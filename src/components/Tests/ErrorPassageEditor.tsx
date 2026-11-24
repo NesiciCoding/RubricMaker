@@ -30,6 +30,7 @@ export default function ErrorPassageEditor({ passage, onChange }: Props) {
                 removeCorrectionLabel: t('tests.error_fragment_remove_correction'),
                 saveLabel: t('tests.cloze_gap_save'),
                 cancelLabel: t('tests.cloze_gap_cancel'),
+                pillLabel: t('tests.error_fragment_pill_label'),
             }),
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps

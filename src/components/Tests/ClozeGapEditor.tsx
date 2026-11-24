@@ -72,6 +72,7 @@ export default function ClozeGapEditor({
                 wrongLabel: t('tests.cloze_gap_wrong_label'),
                 addLabel: t('tests.cloze_gap_add'),
                 removeLabel: t('tests.cloze_gap_remove'),
+                pillLabel: t('tests.cloze_gap_pill_label'),
             }),
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps

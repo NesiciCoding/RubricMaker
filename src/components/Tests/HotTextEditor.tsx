@@ -27,6 +27,7 @@ export default function HotTextEditor({ passage, correctIndices, onChange, inser
                 correctLabel: t('tests.hot_text_fragment_correct_label'),
                 saveLabel: t('tests.cloze_gap_save'),
                 cancelLabel: t('tests.cloze_gap_cancel'),
+                pillLabel: t('tests.hot_text_fragment_pill_label'),
             }),
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps

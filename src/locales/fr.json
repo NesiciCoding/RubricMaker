@@ -2401,8 +2401,9 @@
         "card_menu_teaching": "Enseigner",
         "card_menu_organise": "Organiser",
         "card_menu_sharing": "Partager",
-        "cloze_intro_add": "Ajouter des consignes ou un contexte au-dessus du texte",
-        "cloze_intro_label": "Consignes ou contexte (mise en forme, listes et images autorisées)",
+        "cloze_gap_pill_label": "Modifier le trou : {{value}}",
+        "hot_text_fragment_pill_label": "Modifier le fragment : {{value}}",
+        "error_fragment_pill_label": "Modifier le fragment : {{value}}",
         "shuffle_options_label": "Mélanger les options pour chaque élève",
         "shuffle_options_help": "Chaque élève voit les options dans son propre ordre aléatoire fixe. Décochez pour garder l'ordre que vous avez écrit.",
         "pin_last_option_label": "Garder la dernière option en dernier (p. ex. « Aucune de ces réponses »)",
@@ -2422,7 +2423,9 @@
         "cloze_points_by_weight": "Les trous valent {{points}} point(s), dans l'ordre.",
         "option_feedback_label": "Commentaire pour cette option",
         "option_feedback_placeholder": "Pourquoi cette option est juste ou fausse (mode entraînement uniquement)",
-        "item_image_label": "Image pour cet élément (URL)"
+        "item_image_label": "Image pour cet élément (URL)",
+        "cloze_intro_add": "Ajouter des consignes ou un contexte au-dessus du texte",
+        "cloze_intro_label": "Consignes ou contexte (mise en forme, listes et images autorisées)"
     },
     "classShare": {
         "menu_item": "Partager avec des co-enseignants…",
@@ -5648,7 +5651,8 @@
         "gr_test_rich_authoring_item_cloze_intro": "Questions à trous, à liste déroulante et à banque de mots : ajoutez des consignes ou un contexte mis en forme (gras, listes, images) au-dessus du texte à trous. Ils s'affichent pour les élèves, dans le livret imprimé et l'aperçu élève, et sont lus à voix haute avec la question ; le texte à trous lui-même reste du texte brut.",
         "gr_test_rich_authoring_item_gap_weights": "Questions à trous : donnez plus de poids à un trou dans la liste sous le texte (par exemple 2 pour le trou clé) pour qu'il rapporte une plus grande part des points de la question lorsque le crédit partiel est activé (sinon, chaque trou doit rester juste). Modifier le nombre de trous rétablit des poids égaux.",
         "gr_test_rich_authoring_item_option_feedback": "Choix multiple et réponses multiples : ajoutez un commentaire à chaque option (bouton bulle). Dans un test d'entraînement, l'élève qui a choisi cette option le voit dans la correction après l'envoi ; il n'est jamais envoyé aux élèves dans les tests notés.",
-        "gr_test_rich_authoring_item_item_images": "Association, classement et catégorisation : ajoutez une image à un élément (bouton image sur sa ligne). Dans l'association, l'image accompagne l'élément de gauche ; les choix de droite sont du texte seul. Les images s'affichent à l'écran mais pas encore dans le livret imprimé."
+        "gr_test_rich_authoring_item_item_images": "Association, classement et catégorisation : ajoutez une image à un élément (bouton image sur sa ligne). Dans l'association, l'image accompagne l'élément de gauche ; les choix de droite sont du texte seul. Les images s'affichent à l'écran mais pas encore dans le livret imprimé.",
+        "gr_test_rich_authoring_item_pill_keyboard": "Les pastilles de trou, de texte actif et de correction d'erreur de l'éditeur sont accessibles avec Tab et s'ouvrent avec Entrée ou Espace ; Échap ferme la zone d'édition et vous ramène à la pastille."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",
