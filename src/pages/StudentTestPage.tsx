@@ -17,6 +17,7 @@ import StudentQuestionCard from '../components/Tests/StudentQuestionCard';
 import { safeAudioSrc } from '../utils/safeMediaSrc';
 import LimitedAudio from '../components/Tests/LimitedAudio';
 import CountdownTimer from '../components/ui/CountdownTimer';
+import RichNote from '../components/Tests/RichNote';
 import { pickedOptionFeedback } from '../utils/optionFeedback';
 import { useLiveSessionTelemetry } from '../hooks/useLiveSessionTelemetry';
 import { StudentTaskSkeleton } from '../components/ui/Skeleton';
@@ -1114,17 +1115,12 @@ export default function StudentTestPage() {
                                                         : q.prompt}
                                                 </div>
                                                 {q.explanation && (
-                                                    <p
-                                                        lang={qLang}
+                                                    <div
                                                         className="text-muted text-sm"
-                                                        style={{
-                                                            marginTop: 8,
-                                                            marginBottom: 0,
-                                                            whiteSpace: 'pre-wrap',
-                                                        }}
+                                                        style={{ marginTop: 8, marginBottom: 0 }}
                                                     >
-                                                        {q.explanation}
-                                                    </p>
+                                                        <RichNote text={q.explanation} lang={qLang} />
+                                                    </div>
                                                 )}
                                                 {pickedOptionFeedback(q, response).map((line, i) => (
                                                     <p

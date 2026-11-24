@@ -1,33 +1,9 @@
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
 import { Plus } from 'lucide-react';
 import { HotTextFragment, passageToHotTextContent, hotTextContentToPassage } from '../Editor/HotTextFragmentExtension';
-
-// Deliberately disables everything except doc/paragraph/text/history — the stored value must stay
-// a flat [[word]]-annotated string that clozeParse.ts can parse unchanged, mirroring
-// ClozeGapEditor's CLOZE_STARTER_KIT restriction.
-const HOT_TEXT_STARTER_KIT = StarterKit.configure({
-    bold: false,
-    italic: false,
-    strike: false,
-    code: false,
-    codeBlock: false,
-    blockquote: false,
-    bulletList: false,
-    orderedList: false,
-    listItem: false,
-    listKeymap: false,
-    heading: false,
-    horizontalRule: false,
-    hardBreak: false,
-    link: false,
-    underline: false,
-    dropcursor: false,
-    gapcursor: false,
-    trailingNode: false,
-});
+import { FLAT_PILL_STARTER_KIT, FlatPillEditorFrame } from '../Editor/flatPillEditor';
 
 interface Props {
     passage: string;
@@ -45,7 +21,7 @@ export default function HotTextEditor({ passage, correctIndices, onChange, inser
     const { t } = useTranslation();
     const extensions = useMemo(
         () => [
-            HOT_TEXT_STARTER_KIT,
+            FLAT_PILL_STARTER_KIT,
             HotTextFragment.configure({
                 textLabel: t('tests.hot_text_fragment_text_label'),
                 correctLabel: t('tests.hot_text_fragment_correct_label'),
@@ -82,33 +58,27 @@ export default function HotTextEditor({ passage, correctIndices, onChange, inser
     if (!editor) return null;
 
     return (
-        <div style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
-            <div
-                style={{
-                    display: 'flex',
-                    gap: 8,
-                    flexWrap: 'wrap',
-                    padding: '6px 8px',
-                    borderBottom: '1px solid var(--border)',
-                    background: 'var(--bg-elevated)',
-                }}
-            >
-                <button
-                    type="button"
-                    className="btn btn-secondary btn-sm"
-                    // Prevents the contenteditable from blurring on click, which would otherwise
-                    // lose the selection and make the fragment wrap the wrong text.
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => editor.chain().focus().markSelectionAsFragment().run()}
-                >
-                    <Plus size={14} /> {insertFragmentLabel}
-                </button>
-            </div>
-            <div style={{ padding: '8px 10px' }}>
-                <EditorContent editor={editor} />
-            </div>
-            <style>{`
-                .hot-text-editor-content { outline: none; min-height: 1.5em; line-height: 1.6; }
+        <FlatPillEditorFrame
+            toolbar={
+                <>
+                    <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        // Prevents the contenteditable from blurring on click, which would otherwise
+                        // lose the selection and make the fragment wrap the wrong text.
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => editor.chain().focus().markSelectionAsFragment().run()}
+                    >
+                        <Plus size={14} /> {insertFragmentLabel}
+                    </button>
+                </>
+            }
+            css={`
+                .hot-text-editor-content {
+                    outline: none;
+                    min-height: 1.5em;
+                    line-height: 1.6;
+                }
                 .hot-text-fragment-pill {
                     display: inline-flex;
                     align-items: center;
@@ -125,7 +95,10 @@ export default function HotTextEditor({ passage, correctIndices, onChange, inser
                     background: color-mix(in srgb, var(--green) 18%, transparent);
                     color: var(--green);
                 }
-                .hot-text-popover-label { font-size: 0.75rem; color: var(--text-muted); }
+                .hot-text-popover-label {
+                    font-size: 0.75rem;
+                    color: var(--text-muted);
+                }
                 .hot-text-popover-input {
                     box-sizing: border-box;
                     width: 100%;
@@ -144,7 +117,11 @@ export default function HotTextEditor({ passage, correctIndices, onChange, inser
                     color: var(--text);
                     cursor: pointer;
                 }
-                .hot-text-popover-actions { display: flex; justify-content: flex-end; gap: 6px; }
+                .hot-text-popover-actions {
+                    display: flex;
+                    justify-content: flex-end;
+                    gap: 6px;
+                }
                 .hot-text-popover-actions button {
                     padding: 4px 10px;
                     font-size: 0.8rem;
@@ -154,8 +131,14 @@ export default function HotTextEditor({ passage, correctIndices, onChange, inser
                     border-radius: 6px;
                     cursor: pointer;
                 }
-                .hot-text-popover-save { background: var(--accent) !important; border-color: var(--accent) !important; color: #fff !important; }
-            `}</style>
-        </div>
+                .hot-text-popover-save {
+                    background: var(--accent) !important;
+                    border-color: var(--accent) !important;
+                    color: #fff !important;
+                }
+            `}
+        >
+            <EditorContent editor={editor} />
+        </FlatPillEditorFrame>
     );
 }

@@ -5652,7 +5652,8 @@
         "gr_test_rich_authoring_item_gap_weights": "Fill-in questions: give a gap more weight in the gap list below the passage (for example 2 for the key gap) so it earns a bigger share of the question's points when partial credit is on (with it off, every gap must still be right). Changing the number of gaps resets the weights to equal.",
         "gr_test_rich_authoring_item_option_feedback": "Multiple choice and multiple response: add feedback to any option (speech-bubble button). In a practice test, a student who picked that option sees it in the review after submitting; it is never sent to students in graded tests.",
         "gr_test_rich_authoring_item_item_images": "Matching, ordering and categorize: add a picture to an item (image button on its row). In matching the picture goes with the left-hand item; right-hand choices are text only. Pictures show on screen but not yet in the printed booklet.",
-        "gr_test_rich_authoring_item_cloze_intro": "Fill-in, dropdown and word-bank questions: add formatted instructions or context (bold, lists, pictures) above the gap text. It shows to students, in the printed booklet and in the student preview, and is read aloud with the question; the gap text itself stays plain."
+        "gr_test_rich_authoring_item_cloze_intro": "Fill-in, dropdown and word-bank questions: add formatted instructions or context (bold, lists, pictures) above the gap text. It shows to students, in the printed booklet and in the student preview, and is read aloud with the question; the gap text itself stays plain.",
+        "gr_test_rich_authoring_item_rich_notes": "Hints and explanations are rich text: use bold, lists, links and pictures. Notes written earlier as plain text keep their line breaks, unless they contain text that looks like an HTML tag. Students see the hint when they ask for it, and the explanation after submitting a practice test."
     },
     "studentProfile": {
         "tab_overview": "Overview",
