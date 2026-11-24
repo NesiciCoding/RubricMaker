@@ -1492,6 +1492,8 @@ export interface TestQuestion {
     matrixColumns?: MatrixColumn[];
     /** Cloze types: rich-text (HTML) instructions or context shown above the gap text */
     clozeIntro?: string;
+    /** Cloze: relative worth of each gap in order (default 1 each). Ignored when its length no longer matches the gap count. */
+    gapWeights?: number[];
     /** Extra tiles with no gap, for cloze-bank questions */
     bankDistractors?: string[];
     /** cloze-bank: every tile can fill at most one gap (default true) */
