@@ -77,7 +77,7 @@ describe('TestChecksPanel', () => {
     it('shows quality hints with a link to the question they name', () => {
         const { onJump } = renderPanel({
             quality: [
-                { id: 'time_over', questionIds: [], numbers: [], values: { estimated: 70, duration: 60 } },
+                { id: 'time_over', questionIds: [], numbers: [], values: { minutes: 70, duration: 60 } },
                 { id: 'duplicate_options', questionIds: ['q3'], numbers: [3], values: { number: 3 } },
             ],
         });
@@ -148,7 +148,7 @@ describe('TestChecksPanel', () => {
                     id: 'time_over',
                     questionIds: [],
                     numbers: [],
-                    values: { estimated: 70, duration: 60 },
+                    values: { minutes: 70, duration: 60 },
                     fixes: [{ control: 'action', labelKey: 'tests.fix_change_time_limit', value: '', apply }],
                 },
             ],

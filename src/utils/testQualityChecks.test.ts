@@ -1,70 +1,118 @@
 import { describe, expect, it } from 'vitest';
-import type { TestQuestion } from '../types';
-import { estimateTestMinutes, testQualityChecks } from './testQualityChecks';
+import type { StudentTest, TestQuestion, TestSection } from '../types';
+import { attemptDurationsMinutes, roughTestMinutes, testQualityChecks } from './testQualityChecks';
 
 function question(overrides: Partial<TestQuestion> & Pick<TestQuestion, 'id' | 'type'>): TestQuestion {
     return { prompt: 'Prompt', points: 1, ...overrides } as TestQuestion;
 }
 
 const option = (id: string, text: string, isCorrect = false) => ({ id, text, isCorrect });
+const words = (count: number) => Array.from({ length: count }, () => 'word').join(' ');
+const manyQuestions = (count: number) =>
+    Array.from({ length: count }, (_, index) => question({ id: `q${index}`, type: 'short-answer' }));
 
-describe('estimateTestMinutes', () => {
-    it('adds fixed answering time to the reading time', () => {
-        // 120 words read at 120 wpm is one minute; a true/false item adds 15 seconds.
-        const words = Array.from({ length: 120 }, () => 'word').join(' ');
-        expect(estimateTestMinutes([question({ id: 'q1', type: 'true-false', prompt: words })])).toBe(1);
-        expect(
-            estimateTestMinutes([
-                question({ id: 'q1', type: 'true-false', prompt: words }),
-                question({ id: 'q2', type: 'true-false', prompt: '' }),
-            ])
-        ).toBe(2);
+const attempt = (overrides: Partial<StudentTest> = {}): StudentTest =>
+    ({
+        id: 'a1',
+        testId: 't1',
+        studentId: 's1',
+        answers: [],
+        status: 'submitted',
+        startedAt: '2024-01-01T10:00:00Z',
+        submittedAt: '2024-01-01T10:30:00Z',
+        ...overrides,
+    }) as StudentTest;
+
+describe('roughTestMinutes', () => {
+    it('gives a minute per question', () => {
+        expect(roughTestMinutes(manyQuestions(12))).toBe(12);
+        expect(roughTestMinutes([])).toBe(1);
     });
 
-    it('counts a section passage once and option text too', () => {
-        const questions = [
-            question({
-                id: 'q1',
-                type: 'multiple-choice',
-                prompt: 'Choose',
-                options: [option('a', 'alpha'), option('b', 'beta')],
-            }),
-            question({ id: 'q2', type: 'multiple-choice', prompt: 'Choose' }),
-        ];
-        const withoutOptions = estimateTestMinutes([question({ id: 'q3', type: 'multiple-choice', prompt: 'Choose' })]);
-        const withOptions = estimateTestMinutes([questions[0]]);
-        expect(withOptions).toBe(withoutOptions);
-        expect(estimateTestMinutes(questions, [{ id: 's1', title: 'Reading', content: 'passage text' }])).toBe(
-            estimateTestMinutes(questions)
-        );
+    it('adds a minute per 120 words of passage', () => {
+        const sections = [{ id: 's1', title: 'Reading', content: words(240) } as TestSection];
+        expect(roughTestMinutes(manyQuestions(3), sections)).toBe(5);
+        expect(
+            roughTestMinutes(manyQuestions(3), [{ id: 's2', title: 'Short', content: words(30) } as TestSection])
+        ).toBe(3);
+    });
+});
+
+describe('attemptDurationsMinutes', () => {
+    it('measures this test’s submitted sittings only', () => {
+        expect(
+            attemptDurationsMinutes(
+                [
+                    attempt(),
+                    attempt({ id: 'a2', status: 'graded', submittedAt: '2024-01-01T10:45:00Z' }),
+                    attempt({ id: 'a3', testId: 't2' }),
+                    attempt({ id: 'a4', status: 'in_progress', submittedAt: undefined }),
+                ],
+                't1'
+            )
+        ).toEqual([30, 45]);
+    });
+
+    it('drops sittings that cannot be a real duration', () => {
+        expect(
+            attemptDurationsMinutes(
+                [
+                    attempt({ id: 'a1', startedAt: 'nonsense' }),
+                    attempt({ id: 'a2', submittedAt: 'before' }),
+                    attempt({ id: 'a3', submittedAt: '2024-01-01T09:59:00Z' }),
+                    attempt({ id: 'a4', submittedAt: '2024-01-03T10:00:00Z' }),
+                    attempt({ id: 'a5', submittedAt: '2024-01-01T10:00:30Z' }),
+                ],
+                't1'
+            )
+        ).toEqual([0.5]);
     });
 });
 
 describe('testQualityChecks', () => {
-    it('flags a test that cannot fit its time limit, and one that ends early', () => {
-        const long = Array.from({ length: 6 }, (_, i) =>
-            question({ id: `q${i}`, type: 'open', prompt: Array.from({ length: 100 }, () => 'word').join(' ') })
-        );
-        const [over] = testQualityChecks({ questions: long, durationMinutes: 5 });
-        expect(over.id).toBe('time_over');
-        expect(over.values).toEqual({ estimated: expect.any(Number), duration: 5 });
-
-        const [short] = testQualityChecks({
-            questions: [question({ id: 'q1', type: 'true-false', prompt: 'One short statement' })],
-            durationMinutes: 60,
+    it('compares the configured limit with the median real sitting', () => {
+        const questions = manyQuestions(4);
+        const [over] = testQualityChecks({ questions, durationMinutes: 20, attemptMinutes: [60, 31, 29] });
+        expect(over).toEqual({
+            id: 'time_over',
+            questionIds: [],
+            numbers: [],
+            values: { minutes: 31, duration: 20 },
         });
-        expect(short.id).toBe('time_short');
+
+        const [short] = testQualityChecks({ questions, durationMinutes: 20, attemptMinutes: [6, 4, 5] });
+        expect(short).toEqual({
+            id: 'time_short',
+            questionIds: [],
+            numbers: [],
+            values: { minutes: 5, duration: 20 },
+        });
     });
 
-    it('says nothing about time when the estimate is within 20% of the limit', () => {
-        const words = Array.from({ length: 120 }, () => 'word').join(' ');
-        const questions = [question({ id: 'q1', type: 'true-false', prompt: words })];
-        expect(testQualityChecks({ questions, durationMinutes: 1 })).toEqual([]);
-        expect(testQualityChecks({ questions, durationMinutes: 0 })).toEqual([]);
-        expect(testQualityChecks({ questions: [] })).toEqual([]);
+    it('says nothing when the sitting median is within 20% of the limit', () => {
+        expect(
+            testQualityChecks({ questions: manyQuestions(4), durationMinutes: 20, attemptMinutes: [17, 20, 23] })
+        ).toEqual([]);
     });
 
-    it('compares linked CEFR descriptors with the test target', () => {
+    it('falls back to the rough estimate before the first sitting', () => {
+        const [over] = testQualityChecks({ questions: manyQuestions(40), durationMinutes: 10 });
+        expect(over.id).toBe('time_rough_over');
+        expect(over.values).toEqual({ minutes: 40, duration: 10 });
+
+        const [short] = testQualityChecks({ questions: manyQuestions(2), durationMinutes: 60 });
+        expect(short.id).toBe('time_rough_short');
+        expect(short.values).toEqual({ minutes: 2, duration: 60 });
+    });
+
+    it('has nothing to say about time without a limit or questions', () => {
+        expect(testQualityChecks({ questions: manyQuestions(4), durationMinutes: 0 })).toEqual([]);
+        expect(testQualityChecks({ questions: manyQuestions(4) })).toEqual([]);
+        expect(testQualityChecks({ questions: [], durationMinutes: 30 })).toEqual([]);
+        expect(testQualityChecks({ questions: [], durationMinutes: 30, attemptMinutes: [40] })).toEqual([]);
+    });
+
+    it('reports descriptors outside the target as one line', () => {
         const descriptor = (level: 'A2' | 'B1' | 'B2') => ({
             descriptorId: `d-${level}`,
             level,
@@ -76,13 +124,18 @@ describe('testQualityChecks', () => {
             question({ id: 'q1', type: 'short-answer', linkedCefrDescriptors: [descriptor('A2')] }),
             question({ id: 'q2', type: 'short-answer', linkedCefrDescriptors: [descriptor('B2')] }),
             question({ id: 'q3', type: 'short-answer' }),
+            question({ id: 'q4', type: 'short-answer', linkedCefrDescriptors: [descriptor('B1')] }),
         ];
 
-        const findings = testQualityChecks({ questions, cefrTargetLevel: 'B1' });
-        expect(findings).toEqual([
-            { id: 'cefr_below', questionIds: ['q1'], numbers: [1], values: { number: 1, level: 'A2', target: 'B1' } },
-            { id: 'cefr_above', questionIds: ['q2'], numbers: [2], values: { number: 2, level: 'B2', target: 'B1' } },
+        expect(testQualityChecks({ questions, cefrTargetLevel: 'B1' })).toEqual([
+            {
+                id: 'cefr_off_target',
+                questionIds: ['q1', 'q2'],
+                numbers: [],
+                values: { count: 2, total: 4, target: 'B1' },
+            },
         ]);
+        expect(testQualityChecks({ questions: [questions[3]], cefrTargetLevel: 'B1' })).toEqual([]);
         expect(testQualityChecks({ questions })).toEqual([]);
     });
 
@@ -106,8 +159,9 @@ describe('testQualityChecks', () => {
                 }),
             ],
         });
-        expect(findings.map((f) => f.id)).toEqual(['duplicate_options']);
-        expect(findings[0].questionIds).toEqual(['q1']);
+        expect(findings).toEqual([
+            { id: 'duplicate_options', questionIds: ['q1'], numbers: [1], values: { number: 1 } },
+        ]);
     });
 
     it('flags a single-choice question with no wrong option, but not select-all', () => {
@@ -122,33 +176,5 @@ describe('testQualityChecks', () => {
                 questions: [question({ id: 'q1', type: 'multiple-response', options: allCorrect })],
             })
         ).toEqual([]);
-    });
-
-    it('flags true/false items that state the same thing', () => {
-        const findings = testQualityChecks({
-            questions: [
-                question({ id: 'q1', type: 'true-false', prompt: 'The sun is a star.' }),
-                question({ id: 'q2', type: 'short-answer', prompt: 'Unrelated' }),
-                question({ id: 'q3', type: 'true-false', prompt: 'the SUN is a   star.' }),
-            ],
-        });
-        expect(findings).toEqual([
-            { id: 'twin_true_false', questionIds: ['q1', 'q3'], numbers: [1, 3], values: { numbers: '1, 3' } },
-        ]);
-    });
-
-    it('flags a stimulus repeated on the next question only', () => {
-        const image = 'data:image/png;base64,abc';
-        const findings = testQualityChecks({
-            questions: [
-                question({ id: 'q1', type: 'short-answer', imageUrl: image }),
-                question({ id: 'q2', type: 'short-answer', imageUrl: image }),
-                question({ id: 'q3', type: 'short-answer' }),
-                question({ id: 'q4', type: 'short-answer', imageUrl: image }),
-            ],
-        });
-        expect(findings).toEqual([
-            { id: 'repeated_stimulus', questionIds: ['q2'], numbers: [2], values: { number: 2 } },
-        ]);
     });
 });

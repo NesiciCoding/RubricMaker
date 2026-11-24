@@ -74,7 +74,7 @@ import TestChecksPanel, {
     type TestQualityRow,
     type VerifiedCheck,
 } from '../components/Tests/TestChecksPanel';
-import { testQualityChecks, type TestQualityFinding } from '../utils/testQualityChecks';
+import { attemptDurationsMinutes, testQualityChecks, type TestQualityFinding } from '../utils/testQualityChecks';
 import { questionTypeLabelKey } from '../utils/questionTypeKey';
 import { SkeletonRow } from '../components/ui/Skeleton';
 import { useSharedMaterials } from '../hooks/useSharedMaterials';
@@ -1226,7 +1226,8 @@ function TestBuilderEditor({
     const allQuestionsCollapsed = questions.length > 0 && questions.every((q) => collapsedQuestions.has(q.id));
     const focusQuestion = questions.find((q) => q.id === selectedQuestionId) ?? null;
 
-    // Quality hints read the unsaved draft too, so they answer "is this a good test?" while writing.
+    // Quality hints read the unsaved draft too, so they answer "is this a good test?" while writing;
+    // the time hint compares against how long the saved test's sittings actually took.
     const qualityFindings = React.useMemo(
         () =>
             testQualityChecks({
@@ -1234,8 +1235,9 @@ function TestBuilderEditor({
                 sections,
                 durationMinutes: Number(durationMinutes) > 0 ? Number(durationMinutes) : undefined,
                 cefrTargetLevel: cefrTargetLevel || undefined,
+                attemptMinutes: existing ? attemptDurationsMinutes(studentTests ?? [], existing.id) : [],
             }),
-        [displayOrderedQuestions, sections, durationMinutes, cefrTargetLevel]
+        [displayOrderedQuestions, sections, durationMinutes, cefrTargetLevel, existing, studentTests]
     );
 
     /** The mechanical gaps the checks screen fixes in place instead of only linking to the question. */
@@ -1313,7 +1315,7 @@ function TestBuilderEditor({
             ];
         }
         // The limit and the target each need more than one value, so open the tab that holds them.
-        if (finding.id === 'time_over' || finding.id === 'time_short') {
+        if (finding.id.startsWith('time_')) {
             return [
                 {
                     control: 'action',
@@ -1326,7 +1328,7 @@ function TestBuilderEditor({
                 },
             ];
         }
-        if (finding.id === 'cefr_above' || finding.id === 'cefr_below') {
+        if (finding.id === 'cefr_off_target') {
             return [
                 {
                     control: 'action',
