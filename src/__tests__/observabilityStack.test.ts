@@ -346,6 +346,17 @@ describe('School Highlights reads (migration 108)', () => {
         expect(week).not.toMatch(/coalesce\(\s*sum\(/i);
     });
 
+    it('excludes a teacher who opted out from every reporting path, snapshots already pushed included', () => {
+        expect(migration).toMatch(/hl_shares\(p_owner uuid\)[\s\S]*?shareSchoolHighlights'\s*=\s*'false'/);
+        const bodies = migration.split(/create or replace function /i).slice(1);
+        for (const name of ['hl_current_snapshots', 'hl_cefr_trend', 'hl_week_activity']) {
+            const body = bodies.find((b) => b.startsWith(`monitoring.${name}`));
+            expect(body, `${name} not found`).toBeDefined();
+            expect(body, `${name} must honour the opt-out`).toContain('monitoring.hl_shares(');
+        }
+        expect(migration).toContain('REVOKE ALL ON FUNCTION monitoring.hl_shares(uuid) FROM PUBLIC;');
+    });
+
     it('keeps student identifiers out of the snapshot table', () => {
         const table = /CREATE TABLE IF NOT EXISTS public\.school_highlight_snapshots \(([\s\S]*?)\n\);/.exec(
             migration

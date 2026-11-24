@@ -10883,6 +10883,22 @@ LANGUAGE sql
 IMMUTABLE
 AS $$ SELECT CASE WHEN jsonb_typeof(j) = 'object' THEN j ELSE '{}'::jsonb END $$;
 
+-- A teacher who turned "School highlights" off in Settings (stored in user_settings, synced like every
+-- setting) is excluded everywhere at once, including the snapshots already pushed, so opting out does
+-- not wait for old rows to age out. Absent or any other value means the teacher shares.
+CREATE OR REPLACE FUNCTION monitoring.hl_shares(p_owner uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT NOT EXISTS (
+    SELECT 1 FROM public.user_settings us
+    WHERE us.user_id = p_owner AND us.settings->>'shareSchoolHighlights' = 'false'
+  )
+$$;
+
 -- Teacher -> school, labelled by name; a duplicate name (or a school literally called "No school")
 -- gets the first 8 characters of its id appended so labels stay unique.
 CREATE OR REPLACE FUNCTION monitoring.hl_owner_schools()
@@ -10923,7 +10939,7 @@ AS $$
   FROM (
     SELECT DISTINCT ON (owner_id) owner_id, student_count, cefr, grammar
     FROM public.school_highlight_snapshots
-    WHERE snapshot_date >= current_date - 60
+    WHERE snapshot_date >= current_date - 60 AND monitoring.hl_shares(owner_id)
     ORDER BY owner_id, snapshot_date DESC
   ) n
   JOIN monitoring.hl_owner_schools() os ON os.owner_id = n.owner_id
@@ -10969,7 +10985,7 @@ AS $$
       h.cefr->'overall' AS overall
     FROM public.school_highlight_snapshots h
     JOIN monitoring.hl_owner_schools() os ON os.owner_id = h.owner_id
-    WHERE h.snapshot_date BETWEEN range_start::date AND range_end::date
+    WHERE h.snapshot_date BETWEEN range_start::date AND range_end::date AND monitoring.hl_shares(h.owner_id)
     ORDER BY h.owner_id, date_trunc('week', h.snapshot_date), h.snapshot_date DESC
   ),
   counts AS (
@@ -11032,8 +11048,8 @@ $$;
 
 -- This week against last week (rolling 7 days), per school and metric, read straight from the
 -- domain tables like 092's app_daily_activity. Three rules keep it consistent with the rest:
---   * only teachers who share (a snapshot in the last 60 days) are counted, so opting out removes
---     their classes' activity from the screen too;
+--   * only teachers who share (a snapshot in the last 60 days and not opted out) are counted, so opting
+--     out removes their classes' activity from the screen at once;
 --   * a period is reported only when at least hl_min_cohort() distinct students produced it
 --     (counting students, not events), otherwise it is NULL, not 0;
 --   * the school's snapshots must cover at least that many students.
@@ -11070,7 +11086,7 @@ AS $$
   sharing AS (
     SELECT DISTINCT owner_id
     FROM public.school_highlight_snapshots
-    WHERE snapshot_date >= current_date - 60
+    WHERE snapshot_date >= current_date - 60 AND monitoring.hl_shares(owner_id)
   ),
   covered AS (
     SELECT school_id
@@ -11095,6 +11111,7 @@ $$;
 
 REVOKE ALL ON FUNCTION monitoring.hl_min_cohort() FROM PUBLIC;
 REVOKE ALL ON FUNCTION monitoring.hl_object(jsonb) FROM PUBLIC;
+REVOKE ALL ON FUNCTION monitoring.hl_shares(uuid) FROM PUBLIC;
 REVOKE ALL ON FUNCTION monitoring.hl_owner_schools() FROM PUBLIC;
 REVOKE ALL ON FUNCTION monitoring.hl_current_snapshots() FROM PUBLIC;
 REVOKE ALL ON FUNCTION monitoring.hl_cefr_distribution(text) FROM PUBLIC;

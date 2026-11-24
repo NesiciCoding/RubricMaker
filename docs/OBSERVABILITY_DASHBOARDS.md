@@ -233,7 +233,7 @@ CEFR level and grammar mastery are computed in the browser, so each teacher's cl
 at most every 6 hours): students per CEFR level (overall and per skill) and, per grammar item, "how many
 students have evidence, and the sum of their scores". The row holds no student id, name, class or text.
 The functions sum each teacher's newest snapshot (from the last 60 days) per school, using the school on
-the teacher's profile (`No school` when unset). Teachers can opt out under Settings → School highlights;
+the teacher's profile (`No school` when unset). Teachers can opt out under Settings → School highlights, and the functions read that setting from `user_settings`, so an opted-out teacher disappears from every panel as soon as the setting syncs, without waiting for their old snapshots to age out;
 snapshots are part of the teacher's data (nightly backup, "Delete all my database data") and are pruned
 after two years.
 
