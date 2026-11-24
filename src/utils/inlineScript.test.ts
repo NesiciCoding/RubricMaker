@@ -32,10 +32,13 @@ describe('plainInlineScript', () => {
         expect(plainInlineScript('H_{2}O')).toBe('H₂O');
         expect(plainInlineScript('x^{2}+y^{n}')).toBe('x²+yⁿ');
         expect(plainInlineScript('CO_{2}')).toBe('CO₂');
+        expect(plainInlineScript('x^{2a}')).toBe('x²ᵃ');
+        expect(plainInlineScript('x^{2a}')).not.toBe(plainInlineScript('x2a'));
     });
 
     it('falls back to the bare text when a character has no Unicode form', () => {
         expect(plainInlineScript('x^{q}')).toBe('xq');
+        expect(plainInlineScript('x^{2q}')).toBe('x2q');
         expect(plainInlineScript('SO_{4}^{2-}')).toBe('SO₄²⁻');
     });
 });
