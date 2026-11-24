@@ -30,13 +30,15 @@ export interface StudentQuestionCardProps {
 /** Plain read-aloud text for a question's prompt + options — cloze gaps become `blankWord` rather
  * than their answer, so a graded cloze's read-aloud accommodation can't hand out the answer. */
 export function speakableQuestionText(question: TestQuestion, blankWord: string): string {
-    const promptText = ['cloze', 'cloze-dropdown', 'cloze-bank'].includes(question.type)
+    const isCloze = ['cloze', 'cloze-dropdown', 'cloze-bank'].includes(question.type);
+    const promptText = isCloze
         ? renderClozeSegments(question.prompt)
               .map((s) => (s.type === 'gap' ? blankWord : s.text))
               .join('')
         : htmlToPlainText(question.prompt);
+    const introText = isCloze && question.clozeIntro ? htmlToPlainText(question.clozeIntro) : '';
     const optionsText = (question.options ?? []).map((o) => o.text).join('. ');
-    return [promptText, optionsText].filter(Boolean).join('. ');
+    return [introText, promptText, optionsText].filter(Boolean).join('. ');
 }
 
 /**
@@ -117,6 +119,12 @@ export default function StudentQuestionCard({
                     </HelpPopover>
                 )}
             </div>
+
+            {isCloze && question.clozeIntro && (
+                <div style={{ margin: '0 0 16px', color: 'var(--text)' }}>
+                    <RichContent html={question.clozeIntro} className="rm-question-prompt" lang={lang ?? 'en'} />
+                </div>
+            )}
 
             <QuestionStimulus question={question} lang={lang} plays={audioPlays} onPlay={onAudioPlay} />
 

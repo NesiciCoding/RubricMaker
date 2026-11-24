@@ -122,4 +122,24 @@ describe('formatted cloze in the printed booklet', () => {
         expect(html).toContain('(2)</span>');
         expect(html).not.toContain('{{');
     });
+
+    it('prints the intro above a formatted cloze, both formatted', () => {
+        const test: Test = {
+            id: 't',
+            name: 'T',
+            requireSEB: false,
+            shuffleQuestions: false,
+            createdAt: '2026-01-01',
+            questions: [
+                {
+                    ...question('<p>The <strong>{{cat}}</strong> sat.</p>'),
+                    clozeIntro: '<p>Read the <em>rules</em> first.</p>',
+                },
+            ],
+        };
+        const html = buildExamBookletHtml(test, DEFAULT_EXAM_EXPORT_OPTIONS);
+        expect(html).toContain('<em>rules</em>');
+        expect(html).toContain('(1)</span></strong>');
+        expect(html.indexOf('rules')).toBeLessThan(html.indexOf('(1)'));
+    });
 });

@@ -114,9 +114,11 @@ function questionBodyHtml(
 ): string {
     const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown' || question.type === 'cloze-bank';
     const prompt = isCloze
-        ? isRichClozePrompt(question.prompt)
-            ? `${RICH_CONTENT_CSS}<div class="exam-rich" style="line-height:1.8">${clozeBookletHtml(question)}</div>`
-            : `<div style="line-height:1.8;white-space:pre-line">${clozeBookletHtml(question)}</div>`
+        ? `${question.clozeIntro ? `${RICH_CONTENT_CSS}<div class="exam-rich" style="margin-bottom:6px">${DOMPurify.sanitize(promptToHtml(question.clozeIntro))}</div>` : ''}${
+              isRichClozePrompt(question.prompt)
+                  ? `${RICH_CONTENT_CSS}<div class="exam-rich" style="line-height:1.8">${clozeBookletHtml(question)}</div>`
+                  : `<div style="line-height:1.8;white-space:pre-line">${clozeBookletHtml(question)}</div>`
+          }`
         : richPromptHtml(question);
     let extra = '';
 
