@@ -2401,7 +2401,8 @@
         "card_menu_teaching": "Enseñanza",
         "card_menu_organise": "Organizar",
         "card_menu_sharing": "Compartir",
-        "item_image_label": "Imagen para este elemento (URL)",
+        "cloze_intro_add": "Añadir instrucciones o contexto sobre el texto",
+        "cloze_intro_label": "Instrucciones o contexto (se permiten formato, listas e imágenes)",
         "shuffle_options_label": "Mezclar las opciones para cada alumno",
         "shuffle_options_help": "Cada alumno ve las opciones en su propio orden aleatorio fijo. Desmarque la casilla para mantener el orden que escribió.",
         "pin_last_option_label": "Mantener la última opción al final (p. ej. «Ninguna de las anteriores»)",
@@ -2415,7 +2416,13 @@
         "matching_distractors_placeholder": "Un distractor por línea",
         "cloze_points_per_gap": "Cada hueco vale {{points}} punto(s).",
         "cloze_generate_replace_confirm": "Esto sustituye los huecos que ya creó, con sus alternativas y opciones incorrectas. ¿Continuar?",
-        "cloze_points_all_or_nothing": "Todos los huecos deben ser correctos para obtener los {{points}} punto(s)."
+        "cloze_points_all_or_nothing": "Todos los huecos deben ser correctos para obtener los {{points}} punto(s).",
+        "cloze_gap_weight": "Peso",
+        "cloze_gap_weight_aria": "Peso del hueco {{gap}}",
+        "cloze_points_by_weight": "Los huecos valen {{points}} punto(s), por orden.",
+        "option_feedback_label": "Comentario para esta opción",
+        "option_feedback_placeholder": "Por qué esta opción es correcta o incorrecta (solo en modo práctica)",
+        "item_image_label": "Imagen para este elemento (URL)"
     },
     "classShare": {
         "menu_item": "Compartir con co-docentes…",
@@ -5637,7 +5644,10 @@
         "gr_test_answer_options_item_shuffle": "Opción múltiple y respuesta múltiple: marque Mezclar opciones para que cada alumno vea su propio orden aleatorio fijo y, si quiere, mantenga la última opción (p. ej. «Ninguna de las anteriores») al final.",
         "gr_test_answer_options_item_true_false": "Verdadero/falso: ponga su propio texto a los dos botones, por ejemplo Sí / No o De acuerdo / En desacuerdo. Los resultados y las claves de respuesta usan el mismo texto.",
         "gr_test_answer_options_item_numeric": "Numérica: además de la tolerancia absoluta, defina una tolerancia porcentual (se aplica el margen más amplio) y una unidad que se muestra junto al campo de respuesta pero nunca se puntúa.",
-        "gr_test_answer_options_item_matching": "Emparejar: añada opciones adicionales a la derecha sin pareja para que no se pueda resolver por eliminación. También aparecen en el banco de palabras impreso."
+        "gr_test_answer_options_item_matching": "Emparejar: añada opciones adicionales a la derecha sin pareja para que no se pueda resolver por eliminación. También aparecen en el banco de palabras impreso.",
+        "gr_test_rich_authoring_item_cloze_intro": "Preguntas con huecos, desplegables y banco de palabras: añada instrucciones o contexto con formato (negrita, listas, imágenes) sobre el texto con huecos. Se muestran al alumnado, en el cuadernillo impreso y en la vista previa, y se leen en voz alta con la pregunta; el texto con huecos sigue siendo texto sin formato.",
+        "gr_test_rich_authoring_item_gap_weights": "Preguntas con huecos: dé más peso a un hueco en la lista bajo el texto (por ejemplo 2 para el hueco clave) para que aporte una parte mayor de los puntos cuando el crédito parcial está activado (si no, todos los huecos deben seguir siendo correctos). Cambiar el número de huecos restablece pesos iguales.",
+        "gr_test_rich_authoring_item_option_feedback": "Opción múltiple y respuesta múltiple: añada un comentario a cualquier opción (botón de bocadillo). En una prueba de práctica, el alumno que eligió esa opción lo ve en la revisión tras enviar; nunca se envía al alumnado en pruebas calificadas."
     },
     "studentProfile": {
         "tab_overview": "Resumen",

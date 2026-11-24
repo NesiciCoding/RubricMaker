@@ -409,7 +409,8 @@ async function questionParagraphs(
     options: TestExamExportOptions
 ): Promise<(Paragraph | Table)[]> {
     const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown' || question.type === 'cloze-bank';
-    const rich = isCloze ? null : await richPromptToDocx(plainQuestionPromptText(question));
+    const intro = isCloze && question.clozeIntro ? await richPromptToDocx(question.clozeIntro) : null;
+    const rich = isCloze ? intro : await richPromptToDocx(plainQuestionPromptText(question));
     const promptRuns = rich ? rich.leadRuns : clozeRuns(question);
 
     const blocks: (Paragraph | Table)[] = [
@@ -423,6 +424,7 @@ async function questionParagraphs(
             spacing: { ...rich?.leadSpacing, after: 60 },
         }),
         ...(rich?.rest ?? []),
+        ...(intro ? [new Paragraph({ children: clozeRuns(question), spacing: { after: 60 } })] : []),
         ...(question.audioUrl ? [audioNoteParagraph()] : []),
     ];
 

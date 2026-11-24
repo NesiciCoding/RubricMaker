@@ -40,7 +40,9 @@ import ItemImage from './ItemImage';
 import {
     addDropdownDistractor,
     addGapAlternative,
+    effectiveGapWeights,
     gapCorrectAnswers,
+    gapPointShares,
     parseClozeGaps,
     plainQuestionPromptText,
     renderClozeSegments,
@@ -50,6 +52,7 @@ import PipeListInput from './PipeListInput';
 import { splitPastedList, spreadPastedLines, spreadPastedPairs } from '../../utils/pastedList';
 import type { TestQuestionIssue } from '../../utils/testQuestionIssues';
 import { gapStems, suggestDerivedForms } from '../../utils/wordFormation';
+import { isBlankHtml } from '../../utils/isBlankHtml';
 import ErrorCorrectionFields from './ErrorCorrectionFields';
 import SentenceBuilderFields from './SentenceBuilderFields';
 import KeyWordTransformationFields from './KeyWordTransformationFields';
@@ -162,15 +165,28 @@ export default function QuestionEditor({
     const [expandedOptionImages, setExpandedOptionImages] = React.useState<Set<string>>(new Set());
     const [expandedItemImages, setExpandedItemImages] = React.useState<Set<string>>(new Set());
     const [expandedOptionAudio, setExpandedOptionAudio] = React.useState<Set<string>>(new Set());
+    // An explicit choice wins; until the teacher toggles, an option that already has feedback shows its field.
+    const [optionFeedbackOpen, setOptionFeedbackOpen] = React.useState<Record<string, boolean>>({});
     // Every panel starts closed: nothing here is needed to write the question itself.
     const [morePanel, setMorePanel] = React.useState<MorePanelId | null>(null);
     const [typePickerOpen, setTypePickerOpen] = React.useState(false);
+    const [introOpen, setIntroOpen] = React.useState(false);
     const [clozeStrategy, setClozeStrategy] = React.useState<ClozeStrategy>('fixedRatio');
     const [clozeEveryNth, setClozeEveryNth] = React.useState(7);
     const [clozeLevel, setClozeLevel] = React.useState<CefrLevel>('B2');
 
     function update(patch: Partial<TestQuestion>) {
-        onChange({ ...question, ...patch });
+        const next = { ...question, ...patch };
+        // Weights are positional, so a different gap count would leave them applying to the wrong gaps.
+        if (
+            patch.prompt !== undefined &&
+            !('gapWeights' in patch) &&
+            next.gapWeights &&
+            next.gapWeights.length !== parseClozeGaps(patch.prompt).length
+        ) {
+            delete next.gapWeights;
+        }
+        onChange(next);
     }
 
     function generateGaps() {
@@ -903,6 +919,30 @@ export default function QuestionEditor({
                                 </button>
                             </div>
                         )}
+                        {introOpen || question.clozeIntro ? (
+                            <div style={{ marginBottom: 8 }}>
+                                <span id={`cloze-intro-label-${question.id}`} className="text-muted text-xs">
+                                    {t('tests.cloze_intro_label')}
+                                </span>
+                                <EssayEditor
+                                    content={question.clozeIntro ?? ''}
+                                    onChange={(html) => update({ clozeIntro: isBlankHtml(html) ? undefined : html })}
+                                    minHeight={60}
+                                    allowPageMode={false}
+                                    allowImageEmbedding
+                                    ariaLabelledBy={`cloze-intro-label-${question.id}`}
+                                />
+                            </div>
+                        ) : (
+                            <button
+                                type="button"
+                                className="btn btn-ghost btn-sm"
+                                style={{ marginBottom: 8 }}
+                                onClick={() => setIntroOpen(true)}
+                            >
+                                <Plus size={14} /> {t('tests.cloze_intro_add')}
+                            </button>
+                        )}
                         {/* Cloze/cloze-dropdown gaps are authored as {{gap|alt}} syntax directly in the
                             prompt string (see clozeParse.ts) — ClozeGapEditor edits that string via
                             clickable pills instead of hand-typed syntax, but the stored format and the
@@ -919,6 +959,8 @@ export default function QuestionEditor({
                             prompt={question.prompt}
                             rolesEditable={question.type === 'cloze-dropdown'}
                             onChange={(prompt) => update({ prompt })}
+                            weights={question.gapWeights}
+                            onWeightsChange={(gapWeights) => update({ gapWeights })}
                         />
                     </>
                 ) : (
@@ -945,6 +987,7 @@ export default function QuestionEditor({
                         const showImageField = expandedOptionImages.has(option.id) || !!option.imageUrl;
                         const showAudioField =
                             expandedOptionAudio.has(option.id) || !!option.audioUrl || !!option.spokenText;
+                        const showFeedbackField = optionFeedbackOpen[option.id] ?? !!option.feedback;
                         return (
                             <div key={option.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1045,6 +1088,25 @@ export default function QuestionEditor({
                                     <button
                                         type="button"
                                         className="btn btn-ghost btn-icon btn-sm"
+                                        aria-label={t('tests.option_feedback_label')}
+                                        aria-pressed={showFeedbackField}
+                                        title={t('tests.option_feedback_label')}
+                                        onClick={() =>
+                                            setOptionFeedbackOpen((prev) => ({
+                                                ...prev,
+                                                [option.id]: !showFeedbackField,
+                                            }))
+                                        }
+                                        style={{
+                                            color: option.feedback ? 'var(--accent-text)' : 'var(--text-muted)',
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        <MessageCircle size={14} />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-ghost btn-icon btn-sm"
                                         aria-label={t('tests.remove_option')}
                                         style={{ color: 'var(--red-text)' }}
                                         disabled={question.options!.length <= 1}
@@ -1085,6 +1147,20 @@ export default function QuestionEditor({
                                                 }}
                                             />
                                         )}
+                                    </div>
+                                )}
+                                {showFeedbackField && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 32 }}>
+                                        <input
+                                            type="text"
+                                            value={option.feedback ?? ''}
+                                            onChange={(e) =>
+                                                updateOption(option.id, { feedback: e.target.value || undefined })
+                                            }
+                                            placeholder={t('tests.option_feedback_placeholder')}
+                                            style={{ flex: 1 }}
+                                            aria-label={t('tests.option_feedback_label')}
+                                        />
                                     </div>
                                 )}
                                 {showAudioField && (
@@ -1285,17 +1361,22 @@ export default function QuestionEditor({
                             </p>
                         );
                     })()}
-                    {parseClozeGaps(question.prompt).length > 0 && (
-                        <p className="text-muted text-xs" style={{ margin: 0 }} data-testid="cloze-points-per-gap">
-                            {question.partialCredit === false
-                                ? t('tests.cloze_points_all_or_nothing', { points: question.points })
-                                : t('tests.cloze_points_per_gap', {
-                                      points:
-                                          Math.round((question.points / parseClozeGaps(question.prompt).length) * 100) /
-                                          100,
-                                  })}
-                        </p>
-                    )}
+                    {(() => {
+                        const gapCount = parseClozeGaps(question.prompt).length;
+                        if (gapCount === 0) return null;
+                        const weights = effectiveGapWeights(question, gapCount);
+                        const shares = gapPointShares(question.points, weights);
+                        const equal = weights.every((weight) => weight === weights[0]);
+                        return (
+                            <p className="text-muted text-xs" style={{ margin: 0 }} data-testid="cloze-points-per-gap">
+                                {question.partialCredit === false
+                                    ? t('tests.cloze_points_all_or_nothing', { points: question.points })
+                                    : equal
+                                      ? t('tests.cloze_points_per_gap', { points: shares[0] })
+                                      : t('tests.cloze_points_by_weight', { points: shares.join(', ') })}
+                            </p>
+                        );
+                    })()}
                     {question.type === 'cloze' && (
                         <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem' }}>
                             <input

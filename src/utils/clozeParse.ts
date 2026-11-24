@@ -10,6 +10,7 @@ import {
 } from '../../supabase/functions/_shared/testScoring.ts';
 
 export {
+    effectiveGapWeights,
     parseClozeGaps,
     matchClozeGaps,
     parseHotTextFragments,
@@ -25,6 +26,14 @@ export type {
     HotTextTextSegment,
     HotTextFragmentSegment,
 } from '../../supabase/functions/_shared/testScoring.ts';
+
+/** What each gap earns of the question's points, in gap order. Scaled by the largest weight so huge authored weights cannot overflow the sum. */
+export function gapPointShares(points: number, weights: number[]): number[] {
+    const peak = Math.max(...weights);
+    const scaled = weights.map((weight) => weight / peak);
+    const total = scaled.reduce((sum, weight) => sum + weight, 0);
+    return scaled.map((weight) => Math.round(((points * weight) / total) * 100) / 100);
+}
 
 export interface ClozeTextSegment {
     type: 'text';

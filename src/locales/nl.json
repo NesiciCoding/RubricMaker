@@ -2401,7 +2401,8 @@
         "card_menu_teaching": "Lesgeven",
         "card_menu_organise": "Ordenen",
         "card_menu_sharing": "Delen",
-        "item_image_label": "Afbeelding bij dit item (URL)",
+        "cloze_intro_add": "Instructies of context boven de tekst toevoegen",
+        "cloze_intro_label": "Instructies of context (opmaak, lijsten en afbeeldingen toegestaan)",
         "shuffle_options_label": "Antwoordopties per leerling door elkaar husselen",
         "shuffle_options_help": "Elke leerling ziet de opties in een eigen, vaste willekeurige volgorde. Uitzetten behoudt de volgorde die je zelf schreef.",
         "pin_last_option_label": "Houd de laatste optie onderaan (bijv. \"Geen van bovenstaande\")",
@@ -2415,7 +2416,13 @@
         "matching_distractors_placeholder": "Eén afleider per regel",
         "cloze_points_per_gap": "Elk gat is {{points}} punt(en) waard.",
         "cloze_generate_replace_confirm": "Dit vervangt de gaten die je al hebt gemaakt, inclusief alternatieven en foute opties. Doorgaan?",
-        "cloze_points_all_or_nothing": "Alle gaten moeten juist zijn voor de {{points}} punt(en)."
+        "cloze_points_all_or_nothing": "Alle gaten moeten juist zijn voor de {{points}} punt(en).",
+        "cloze_gap_weight": "Gewicht",
+        "cloze_gap_weight_aria": "Gewicht van gat {{gap}}",
+        "cloze_points_by_weight": "De gaten zijn {{points}} punt(en) waard, in volgorde.",
+        "option_feedback_label": "Feedback bij deze optie",
+        "option_feedback_placeholder": "Waarom deze optie goed of fout is (alleen oefenmodus)",
+        "item_image_label": "Afbeelding bij dit item (URL)"
     },
     "classShare": {
         "menu_item": "Delen met collega's…",
@@ -5637,7 +5644,10 @@
         "gr_test_answer_options_item_shuffle": "Meerkeuze en meerdere antwoorden: vink Opties husselen aan zodat elke leerling een eigen vaste willekeurige volgorde ziet, en houd eventueel de laatste optie (bijv. \"Geen van bovenstaande\") onderaan.",
         "gr_test_answer_options_item_true_false": "Waar/onwaar: geef de twee knoppen je eigen tekst, zoals Ja / Nee of Eens / Oneens. Resultaten en antwoordsleutels gebruiken dezelfde tekst.",
         "gr_test_answer_options_item_numeric": "Numeriek: stel naast de absolute tolerantie ook een procentuele tolerantie in (de ruimste marge geldt) en een eenheid die naast het antwoordvak staat maar niet wordt beoordeeld.",
-        "gr_test_answer_options_item_matching": "Koppelen: voeg extra keuzes rechts zonder partner toe zodat leerlingen niet door uitsluiting kunnen afronden. Ze staan ook in de afgedrukte woordenlijst."
+        "gr_test_answer_options_item_matching": "Koppelen: voeg extra keuzes rechts zonder partner toe zodat leerlingen niet door uitsluiting kunnen afronden. Ze staan ook in de afgedrukte woordenlijst.",
+        "gr_test_rich_authoring_item_cloze_intro": "Invul-, keuzelijst- en woordbankvragen: voeg opgemaakte instructies of context (vet, lijsten, afbeeldingen) toe boven de gatentekst. Dit zien leerlingen, het staat in het afgedrukte boekje en in de leerlingweergave en wordt voorgelezen; de gatentekst zelf blijft platte tekst.",
+        "gr_test_rich_authoring_item_gap_weights": "Invulvragen: geef een gat meer gewicht in de gatenlijst onder de tekst (bijvoorbeeld 2 voor het sleutelgat) zodat het een groter deel van de punten van de vraag oplevert als deelpunten aan staan (staan die uit, dan moet elk gat nog steeds juist zijn). Het aantal gaten wijzigen zet de gewichten terug naar gelijk.",
+        "gr_test_rich_authoring_item_option_feedback": "Meerkeuze en meerdere antwoorden: voeg feedback toe aan elke optie (spraakballonknop). In een oefentoets ziet een leerling die die optie koos de feedback in het overzicht na het inleveren; in beoordeelde toetsen wordt deze nooit naar leerlingen gestuurd."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",
