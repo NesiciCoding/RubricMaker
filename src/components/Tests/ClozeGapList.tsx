@@ -1,11 +1,19 @@
 import { useTranslation } from 'react-i18next';
-import { gapCorrectAnswers, parseClozeGaps, setDropdownAlternativeRole } from '../../utils/clozeParse';
+import {
+    effectiveGapWeights,
+    gapCorrectAnswers,
+    parseClozeGaps,
+    setDropdownAlternativeRole,
+} from '../../utils/clozeParse';
 
 interface Props {
     prompt: string;
     onChange: (prompt: string) => void;
     /** Dropdown gaps give each alternative a correct/wrong role, so each one can be ticked. */
     rolesEditable: boolean;
+    /** Relative worth of each gap; shown as a per-gap input when `onWeightsChange` is given. */
+    weights?: number[];
+    onWeightsChange?: (weights: number[] | undefined) => void;
 }
 
 const CHIP: React.CSSProperties = {
@@ -30,10 +38,16 @@ const CHIP: React.CSSProperties = {
  * without opening each pill. Dropdown gaps tick the alternatives that count as correct; the marks
  * are written back into the stored `{{=correct|~wrong}}` syntax, which stays the only source of truth.
  */
-export default function ClozeGapList({ prompt, onChange, rolesEditable }: Props) {
+export default function ClozeGapList({ prompt, onChange, rolesEditable, weights, onWeightsChange }: Props) {
     const { t } = useTranslation();
     const gaps = parseClozeGaps(prompt);
     if (gaps.length === 0) return null;
+    const effective = effectiveGapWeights({ gapWeights: weights }, gaps.length);
+
+    function setWeight(index: number, value: number) {
+        const next = effective.map((w, i) => (i === index ? value : w));
+        onWeightsChange?.(next.every((w) => w === 1) ? undefined : next);
+    }
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
@@ -94,6 +108,30 @@ export default function ClozeGapList({ prompt, onChange, rolesEditable }: Props)
                                         </label>
                                     );
                                 })}
+                                {onWeightsChange && (
+                                    <label
+                                        style={{
+                                            ...CHIP,
+                                            marginLeft: 'auto',
+                                            background: 'transparent',
+                                            color: 'var(--text-muted)',
+                                        }}
+                                    >
+                                        {t('tests.cloze_gap_weight')}
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            step={0.5}
+                                            value={effective[gapIndex]}
+                                            aria-label={t('tests.cloze_gap_weight_aria', { gap: gapIndex + 1 })}
+                                            onChange={(e) => {
+                                                const value = Number(e.target.value);
+                                                if (Number.isFinite(value) && value >= 0) setWeight(gapIndex, value);
+                                            }}
+                                            style={{ width: 56, padding: '2px 4px' }}
+                                        />
+                                    </label>
+                                )}
                             </div>
                         </li>
                     );

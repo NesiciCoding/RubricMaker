@@ -225,7 +225,7 @@ shows DOWN and the other panels stay empty.
 ## 7. School Highlights (wall display)
 
 **Source:** the "Supabase Postgres (client_logs)" datasource, through the `monitoring.hl_*` functions
-(migration `108_school_highlights.sql`). Built for a school-wide screen: large, anonymous, fun-but-useful
+(migration `109_school_highlights.sql`). Built for a school-wide screen: large, anonymous, fun-but-useful
 numbers. Needs the same `pg_monitor` datasource role as Application Usage.
 
 CEFR level and grammar mastery are computed in the browser, so each teacher's client pushes a small

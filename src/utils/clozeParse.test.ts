@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { renderClozeSegments, plainQuestionPromptText } from './clozeParse';
+import { renderClozeSegments, plainQuestionPromptText, gapPointShares } from './clozeParse';
 
 describe('renderClozeSegments', () => {
     it('returns a single text segment for plain text', () => {
@@ -95,5 +95,17 @@ describe('setDropdownAlternativeRole', () => {
         const { setDropdownAlternativeRole } = await import('./clozeParse');
         expect(setDropdownAlternativeRole('{{a|b}}', 3, 0, true)).toBe('{{a|b}}');
         expect(setDropdownAlternativeRole('{{a|b}}', 0, 5, true)).toBe('{{a|b}}');
+    });
+});
+
+describe('gapPointShares', () => {
+    it('splits the points by weight, in gap order', () => {
+        expect(gapPointShares(4, [1, 1, 1, 1])).toEqual([1, 1, 1, 1]);
+        expect(gapPointShares(4, [3, 1])).toEqual([3, 1]);
+        expect(gapPointShares(1, [1, 1, 1])).toEqual([0.33, 0.33, 0.33]);
+    });
+
+    it('does not overflow on huge weights', () => {
+        expect(gapPointShares(2, [1e308, 1e308])).toEqual([1, 1]);
     });
 });

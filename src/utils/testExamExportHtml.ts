@@ -4,8 +4,11 @@ import DOMPurify from 'dompurify';
 import QRCode from 'qrcode';
 import type { Student, Test, TestQuestion } from '../types';
 import { PRINT_MARGIN_MM, printHtml, withoutBrowserPrintChrome } from './pdfExport';
+import { safeImgSrc } from './safeMediaSrc';
+import { inlineScriptHtml } from './inlineScript';
 import { escapeHtml, hasRichContent, promptToHtml, sanitizeFilename } from './exportDataPrep';
-import { plainQuestionPromptText } from './clozeParse';
+import { isRichClozePrompt, plainQuestionPromptText } from './clozeParse';
+import { richClozeHtmlWithBlanks } from './clozeHtml';
 import { calcTestMaxPoints } from './testCalc';
 import { examPapers } from './variantDelivery';
 import {
@@ -51,21 +54,41 @@ import {
 const tx = (key: string, opts?: Record<string, unknown>) =>
     opts ? i18n.t(`tests.export.exam.${key}`, opts) : i18n.t(`tests.export.exam.${key}`);
 
+const BLANK_STYLE = 'display:inline-block;border-bottom:1px solid #000;min-width:50px;text-align:center;padding:0 4px';
+
 function clozeBookletHtml(question: TestQuestion): string {
+    if (isRichClozePrompt(question.prompt)) {
+        // Formatted text keeps its formatting; each gap becomes the numbered blank.
+        return richClozeHtmlWithBlanks(
+            question.prompt,
+            (index) => `<span style="${BLANK_STYLE}">(${index + 1})</span>`
+        );
+    }
     return clozeBookletParts(question)
-        .map((p) =>
-            p.blankNumber
-                ? `<span style="display:inline-block;border-bottom:1px solid #000;min-width:50px;text-align:center;padding:0 4px">(${p.blankNumber})</span>`
-                : escapeHtml(p.text)
-        )
+        .map((p) => (p.blankNumber ? `<span style="${BLANK_STYLE}">(${p.blankNumber})</span>` : escapeHtml(p.text)))
         .join('');
+}
+
+/** Option / item text with `_{sub}` and `^{sup}` printed as real sub- and superscript. */
+function scriptHtml(text: string): string {
+    return inlineScriptHtml(text, escapeHtml);
+}
+
+/** A small picture beside a matching / ordering / categorize item; an unsafe or missing URL prints nothing. */
+function itemImageHtml(url: string | undefined): string {
+    const src = safeImgSrc(url);
+    return src
+        ? `<img src="${escapeHtml(src)}" alt="" style="max-width:90px;max-height:60px;vertical-align:middle;margin-right:6px" />`
+        : '';
 }
 
 function matchingBookletHtml(question: TestQuestion): string {
     const data = matchingBookletData(question);
-    const left = data.left.map((t, i) => `<div style="margin:2px 0">${i + 1}. ${escapeHtml(t)}</div>`).join('');
+    const left = data.left
+        .map((t, i) => `<div style="margin:2px 0">${i + 1}. ${itemImageHtml(data.leftImages[i])}${scriptHtml(t)}</div>`)
+        .join('');
     const right = data.rightOptions
-        .map((o) => `<div style="margin:2px 0"><strong>${o.letter}</strong>&nbsp;&nbsp;${escapeHtml(o.text)}</div>`)
+        .map((o) => `<div style="margin:2px 0"><strong>${o.letter}</strong>&nbsp;&nbsp;${scriptHtml(o.text)}</div>`)
         .join('');
     return `<div style="margin-top:6px;display:flex;gap:24px">
     <div style="flex:1">${left}</div>
@@ -76,13 +99,18 @@ function matchingBookletHtml(question: TestQuestion): string {
 function orderingBookletHtml(question: TestQuestion): string {
     const items = orderingBookletItems(question);
     return `<div style="margin-top:6px">${items
-        .map((it) => `<div style="margin:2px 0"><strong>${it.letter}</strong>&nbsp;&nbsp;${escapeHtml(it.text)}</div>`)
+        .map(
+            (it) =>
+                `<div style="margin:2px 0"><strong>${it.letter}</strong>&nbsp;&nbsp;${itemImageHtml(it.imageUrl)}${scriptHtml(it.text)}</div>`
+        )
         .join('')}</div>`;
 }
 
 function categorizeBookletHtml(question: TestQuestion): string {
     const data = categorizeBookletData(question);
-    const items = data.items.map((t, i) => `<div style="margin:2px 0">${i + 1}. ${escapeHtml(t)}</div>`).join('');
+    const items = data.items
+        .map((t, i) => `<div style="margin:2px 0">${i + 1}. ${itemImageHtml(data.itemImages[i])}${scriptHtml(t)}</div>`)
+        .join('');
     const categories = data.categories.map((c) => escapeHtml(c)).join(' / ');
     return `<div style="margin-top:6px">${items}</div>
   <div style="margin-top:4px;font-size:11px;color:#6b7280">${tx('categories_label')}: ${categories}</div>`;
@@ -108,7 +136,11 @@ function questionBodyHtml(
 ): string {
     const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown' || question.type === 'cloze-bank';
     const prompt = isCloze
-        ? `<div style="line-height:1.8;white-space:pre-line">${clozeBookletHtml(question)}</div>`
+        ? `${question.clozeIntro ? `${RICH_CONTENT_CSS}<div class="exam-rich" style="margin-bottom:6px">${DOMPurify.sanitize(promptToHtml(question.clozeIntro))}</div>` : ''}${
+              isRichClozePrompt(question.prompt)
+                  ? `${RICH_CONTENT_CSS}<div class="exam-rich" style="line-height:1.8">${clozeBookletHtml(question)}</div>`
+                  : `<div style="line-height:1.8;white-space:pre-line">${clozeBookletHtml(question)}</div>`
+          }`
         : richPromptHtml(question);
     let extra = '';
 
@@ -123,7 +155,7 @@ function questionBodyHtml(
             extra += `<div style="margin-top:6px">${(question.options ?? [])
                 .map(
                     (o, i) =>
-                        `<div style="margin:3px 0"><strong>${optionLetter(i)}</strong>&nbsp;&nbsp;${escapeHtml(o.text)}${
+                        `<div style="margin:3px 0"><strong>${optionLetter(i)}</strong>&nbsp;&nbsp;${scriptHtml(o.text)}${
                             o.imageUrl
                                 ? `<div style="margin:4px 0 4px 22px"><img src="${escapeHtml(o.imageUrl)}" alt="${o.text ? '' : escapeHtml(tx('option_image_alt'))}" style="max-width:100%;max-height:120px" /></div>`
                                 : ''

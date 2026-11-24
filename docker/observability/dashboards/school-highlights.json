@@ -5,7 +5,7 @@
     "rubricmaker",
     "wallboard"
   ],
-  "description": "Aggregate, anonymous highlights for a school-wide screen: CEFR levels, grammar strengths and this week's activity. Teachers' totals come from school_highlight_snapshots (migration 108) through the monitoring.hl_* functions; figures with fewer than 5 students behind them are hidden. Open it with ?kiosk&var-school=<school name>.",
+  "description": "Aggregate, anonymous highlights for a school-wide screen: CEFR levels, grammar strengths and this week's activity. Teachers' totals come from school_highlight_snapshots (migration 109) through the monitoring.hl_* functions; figures with fewer than 5 students behind them are hidden. Open it with ?kiosk&var-school=<school name>.",
   "timezone": "browser",
   "schemaVersion": 39,
   "version": 1,

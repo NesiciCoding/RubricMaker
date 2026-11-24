@@ -3,7 +3,7 @@ import { storageSync } from './StorageSync';
 import type { SchoolHighlightsSnapshot } from '../../utils/schoolHighlights';
 
 /**
- * Pushes the teacher's aggregate snapshot for the school wall display (migration 108). One row per
+ * Pushes the teacher's aggregate snapshot for the school wall display (migration 109). One row per
  * teacher per day, replaced on every push; RLS keeps it to the signed-in teacher's own row.
  */
 const PAGE = 1000;

@@ -21,6 +21,25 @@ describe('ClozeGapEditor', () => {
         });
     });
 
+    it('keeps the formatting buttons in step with the caret, without typing', async () => {
+        render(
+            <ClozeGapEditor
+                value="Hello"
+                onChange={vi.fn()}
+                allowDropdown={false}
+                insertGapLabel="+ gap"
+                insertDropdownGapLabel="+ dropdown"
+            />
+        );
+        await waitFor(() => expect(document.querySelector('.cloze-gap-editor-content')).toBeInTheDocument());
+        const bold = screen.getAllByRole('button').find((b) => /bold/i.test(b.getAttribute('aria-label') ?? ''))!;
+        expect(bold).toHaveAttribute('aria-pressed', 'false');
+        fireEvent.click(bold);
+        await waitFor(() => expect(bold).toHaveAttribute('aria-pressed', 'true'));
+        fireEvent.click(bold);
+        await waitFor(() => expect(bold).toHaveAttribute('aria-pressed', 'false'));
+    });
+
     it('renders the dropdown-gap button only when allowDropdown is set', () => {
         render(
             <ClozeGapEditor

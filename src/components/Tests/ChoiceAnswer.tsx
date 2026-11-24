@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { OptionAudioButton } from './LimitedAudio';
+import InlineScript from './InlineScript';
 import { safeAudioSrc, safeImgSrc } from '../../utils/safeMediaSrc';
 import { displayOptions } from '../../utils/optionOrder';
 import type { TestOption, TestQuestion } from '../../types';
@@ -40,7 +41,7 @@ function OptionMedia({ option, lang }: { option: TestOption; lang?: string }) {
                 />
             )}
             <span lang={lang ?? 'en'} style={{ color: 'var(--text)' }}>
-                {option.text}
+                <InlineScript text={option.text} />
             </span>
             <OptionAudioButton
                 src={safeAudioSrc(option.audioUrl)}

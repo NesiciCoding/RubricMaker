@@ -74,6 +74,11 @@ type Tab = 'users' | 'schools' | 'database' | 'integrations' | 'data' | 'retenti
 
 // ─── Users tab ───────────────────────────────────────────────────────────────
 
+// Mirrors the 8 to 72 byte rule in admin_set_user_password (migration 108); bcrypt ignores bytes past 72.
+function isValidPassword(password: string): boolean {
+    return password.length >= 8 && new TextEncoder().encode(password).length <= 72;
+}
+
 export function UsersTab() {
     const { t } = useTranslation();
     const { fetchAllUsers, updateUserRole, getCurrentDatabaseUserId } = usePlatform();
@@ -85,6 +90,10 @@ export function UsersTab() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState<string | null>(null);
     const [currentUserId] = useState<string | null>(() => getCurrentDatabaseUserId());
+    const [pwUserId, setPwUserId] = useState<string | null>(null);
+    const [pw, setPw] = useState('');
+    const [pwConfirmEmail, setPwConfirmEmail] = useState(true);
+    const [pwBusy, setPwBusy] = useState(false);
 
     useEffect(() => {
         if (!dbStatus.isConnected) {
@@ -136,6 +145,26 @@ export function UsersTab() {
         setSaving(null);
     }
 
+    function openPasswordForm(userId: string) {
+        setPwUserId(pwUserId === userId ? null : userId);
+        setPw('');
+        setPwConfirmEmail(true);
+    }
+
+    async function handleSetPassword(user: DbUser) {
+        if (!user.email) return;
+        setPwBusy(true);
+        const result = await storageSync.adapter.adminSetUserPassword(user.email, pw, pwConfirmEmail);
+        setPwBusy(false);
+        if (result.success) {
+            showToast(t('admin.set_password_done', { name: user.displayName ?? user.email }), 'success');
+            setPwUserId(null);
+            setPw('');
+        } else {
+            showToast(t('admin.set_password_failed', { error: result.error ?? t('common.unknown_error') }), 'error');
+        }
+    }
+
     if (!dbStatus.isConnected)
         return (
             <div style={{ padding: '24px 0', display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 480 }}>
@@ -151,7 +180,7 @@ export function UsersTab() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                     <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                        {['col_email', 'col_name', 'col_role'].map((k) => (
+                        {['col_email', 'col_name', 'col_role', 'col_actions'].map((k) => (
                             <th
                                 key={k}
                                 style={{
@@ -171,35 +200,115 @@ export function UsersTab() {
                 </thead>
                 <tbody>
                     {users.map((u) => (
-                        <tr key={u.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                            <td style={{ padding: '10px 12px', fontSize: '0.875rem', color: 'var(--text)' }}>
-                                {u.email ?? '—'}
-                            </td>
-                            <td style={{ padding: '10px 12px', fontSize: '0.875rem', color: 'var(--text)' }}>
-                                {u.displayName ?? '—'}
-                            </td>
-                            <td style={{ padding: '10px 12px' }}>
-                                {saving === u.id ? (
-                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                        {t('admin.role_saving')}
-                                    </span>
-                                ) : (
-                                    <select
-                                        className="input"
-                                        style={{ fontSize: '0.8rem', padding: '4px 8px' }}
-                                        value={u.role}
-                                        disabled={u.id === currentUserId}
-                                        onChange={(e) =>
-                                            handleRoleChange(u, e.target.value as 'admin' | 'teacher' | 'student')
-                                        }
+                        <React.Fragment key={u.id}>
+                            <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                                <td style={{ padding: '10px 12px', fontSize: '0.875rem', color: 'var(--text)' }}>
+                                    {u.email ?? '—'}
+                                </td>
+                                <td style={{ padding: '10px 12px', fontSize: '0.875rem', color: 'var(--text)' }}>
+                                    {u.displayName ?? '—'}
+                                </td>
+                                <td style={{ padding: '10px 12px' }}>
+                                    {saving === u.id ? (
+                                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                            {t('admin.role_saving')}
+                                        </span>
+                                    ) : (
+                                        <select
+                                            className="input"
+                                            style={{ fontSize: '0.8rem', padding: '4px 8px' }}
+                                            value={u.role}
+                                            disabled={u.id === currentUserId}
+                                            onChange={(e) =>
+                                                handleRoleChange(u, e.target.value as 'admin' | 'teacher' | 'student')
+                                            }
+                                        >
+                                            <option value="admin">{t('admin.role_admin')}</option>
+                                            <option value="teacher">{t('admin.role_teacher')}</option>
+                                            <option value="student">{t('admin.role_student')}</option>
+                                        </select>
+                                    )}
+                                </td>
+                                <td style={{ padding: '10px 12px' }}>
+                                    <button
+                                        className="btn btn-secondary btn-sm"
+                                        disabled={!u.email}
+                                        aria-expanded={pwUserId === u.id}
+                                        onClick={() => openPasswordForm(u.id)}
                                     >
-                                        <option value="admin">{t('admin.role_admin')}</option>
-                                        <option value="teacher">{t('admin.role_teacher')}</option>
-                                        <option value="student">{t('admin.role_student')}</option>
-                                    </select>
-                                )}
-                            </td>
-                        </tr>
+                                        <Key size={14} aria-hidden="true" /> {t('admin.set_password')}
+                                    </button>
+                                </td>
+                            </tr>
+                            {pwUserId === u.id && (
+                                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                                    <td colSpan={4} style={{ padding: '12px' }}>
+                                        <form
+                                            onSubmit={(e) => {
+                                                e.preventDefault();
+                                                void handleSetPassword(u);
+                                            }}
+                                            style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 480 }}
+                                        >
+                                            <p style={{ margin: 0, fontWeight: 600, color: 'var(--text)' }}>
+                                                {t('admin.set_password_title', { name: u.displayName ?? u.email })}
+                                            </p>
+                                            <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                                {t('admin.set_password_hint')}
+                                            </p>
+                                            <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                                    {t('admin.set_password_label')}
+                                                </span>
+                                                <input
+                                                    className="input"
+                                                    type="password"
+                                                    autoComplete="new-password"
+                                                    value={pw}
+                                                    onChange={(e) => setPw(e.target.value)}
+                                                />
+                                            </label>
+                                            <label
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 8,
+                                                    fontSize: '0.875rem',
+                                                }}
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={pwConfirmEmail}
+                                                    onChange={(e) => setPwConfirmEmail(e.target.checked)}
+                                                />
+                                                {t('admin.set_password_confirm_email')}
+                                            </label>
+                                            <div style={{ display: 'flex', gap: 8 }}>
+                                                <button
+                                                    type="submit"
+                                                    className="btn btn-primary btn-sm"
+                                                    disabled={pwBusy || !isValidPassword(pw)}
+                                                >
+                                                    {pwBusy ? (
+                                                        <Loader size={14} aria-hidden="true" />
+                                                    ) : (
+                                                        <Save size={14} aria-hidden="true" />
+                                                    )}{' '}
+                                                    {t('admin.set_password')}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-ghost btn-sm"
+                                                    onClick={() => setPwUserId(null)}
+                                                >
+                                                    {t('common.cancel')}
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </td>
+                                </tr>
+                            )}
+                        </React.Fragment>
                     ))}
                 </tbody>
             </table>

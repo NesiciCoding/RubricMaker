@@ -1,4 +1,4 @@
--- Migration 108: school-level highlights for a wall display (Grafana).
+-- Migration 109: school-level highlights for a wall display (Grafana).
 --
 -- A hallway screen wants numbers like "how many students are at B1 reading" and "which grammar
 -- topics does the school know best", but CEFR level and grammar mastery are computed in the

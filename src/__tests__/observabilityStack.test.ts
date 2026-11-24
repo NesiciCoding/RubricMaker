@@ -253,8 +253,8 @@ describe('Application Usage reads (migration 092)', () => {
     });
 });
 
-describe('School Highlights reads (migration 108)', () => {
-    const migration = read('supabase/migrations/108_school_highlights.sql');
+describe('School Highlights reads (migration 109)', () => {
+    const migration = read('supabase/migrations/109_school_highlights.sql');
     const dashboard = JSON.parse(read('docker/observability/dashboards/school-highlights.json'));
     const queries: string[] = [
         ...dashboard.panels.flatMap((p: { targets?: { rawSql: string }[] }) => (p.targets ?? []).map((t) => t.rawSql)),

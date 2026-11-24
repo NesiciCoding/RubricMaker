@@ -71,7 +71,13 @@ export class TestBuilderPage extends BasePage {
         // Phase 23.2: the prompt field is a TipTap rich-text editor (EssayEditor for most types,
         // ClozeGapEditor for cloze/cloze-dropdown), not a plain textarea — no placeholder attribute
         // to target. `.fill()` works on contenteditable elements.
-        const editor = this.questionCard(index).locator('.essay-editor-content, .cloze-gap-editor-content').first();
+        // An open cloze intro is also an .essay-editor-content and comes first in the DOM, so the
+        // gap editor wins whenever the card has one.
+        const card = this.questionCard(index);
+        const gapEditor = card.locator('.cloze-gap-editor-content');
+        const essayEditor = card.locator('.essay-editor-content');
+        await gapEditor.or(essayEditor).first().waitFor();
+        const editor = (await gapEditor.count()) > 0 ? gapEditor.first() : essayEditor.first();
         await editor.fill(prompt);
     }
 

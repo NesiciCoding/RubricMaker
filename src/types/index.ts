@@ -1390,6 +1390,8 @@ export interface TestOption {
     audioUrl?: string;
     /** Option text read aloud by the browser voice when no audioUrl is set */
     spokenText?: string;
+    /** Why this option is right or wrong; shown to a student who picked it, only in practice mode */
+    feedback?: string;
 }
 
 /** A left/right pair for matching questions; correct match is left.id === right pair's id */
@@ -1397,6 +1399,8 @@ export interface MatchingPair {
     id: string;
     left: string;
     right: string;
+    /** Picture shown with the left-hand item (the right-hand side lives in a dropdown, which cannot show one) */
+    leftImageUrl?: string;
 }
 
 /** A shared answer column of a matrix question (e.g. True / False / Doesn't say, or A / B / C) */
@@ -1416,6 +1420,7 @@ export interface MatrixRow {
 export interface OrderItem {
     id: string;
     text: string;
+    imageUrl?: string;
 }
 
 export type TestOrderItem = OrderItem;
@@ -1431,6 +1436,7 @@ export interface CategorizeItem {
     id: string;
     text: string;
     categoryId: string;
+    imageUrl?: string;
 }
 
 export interface TestSection {
@@ -1492,6 +1498,10 @@ export interface TestQuestion {
     matrixRows?: MatrixRow[];
     /** Shared answer columns for matrix questions */
     matrixColumns?: MatrixColumn[];
+    /** Cloze types: rich-text (HTML) instructions or context shown above the gap text */
+    clozeIntro?: string;
+    /** Cloze: relative worth of each gap in order (default 1 each). Ignored when its length no longer matches the gap count. */
+    gapWeights?: number[];
     /** Extra tiles with no gap, for cloze-bank questions */
     bankDistractors?: string[];
     /** cloze-bank: every tile can fill at most one gap (default true) */
