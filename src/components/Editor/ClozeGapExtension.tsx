@@ -323,6 +323,8 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
 
                 let saveOnEmptyEnter: () => void = () => {};
                 input.addEventListener('keydown', (ke) => {
+                    // An Enter that confirms an IME candidate must not also add the half-composed text as a chip.
+                    if (ke.isComposing || ke.keyCode === 229) return;
                     if (ke.key === 'Enter') {
                         ke.preventDefault();
                         if (input.value.trim()) {

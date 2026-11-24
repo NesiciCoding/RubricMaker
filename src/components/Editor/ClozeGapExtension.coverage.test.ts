@@ -80,6 +80,23 @@ describe('ClozeGapExtension node view', () => {
         editor.destroy();
     });
 
+    it('ignores Enter while an IME composition is active, and adds the answer once it ends', () => {
+        const editor = makeEditor(promptToClozeContent('Fill {{old}} here.'));
+        (editor.view.dom.querySelector('.cloze-gap-pill') as HTMLElement).click();
+        const popover = getPopover();
+        const input = popover.querySelector('.cloze-gap-popover-input') as HTMLInputElement;
+        const chipCount = () => popover.querySelectorAll('.cloze-gap-popover-chip').length;
+        input.value = 'に';
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', isComposing: true, bubbles: true }));
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', keyCode: 229, bubbles: true }));
+        expect(input.value).toBe('に');
+        expect(chipCount()).toBe(1);
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+        expect(input.value).toBe('');
+        expect(chipCount()).toBe(2);
+        editor.destroy();
+    });
+
     it('keeps =/~ markers typed into the answer box, and on gaps that already have them', () => {
         const editor = makeEditor(promptToClozeContent('Fill {{=yes|~no}} here.'));
         (editor.view.dom.querySelector('.cloze-gap-pill') as HTMLElement).click();
