@@ -57,6 +57,15 @@ describe('formatGivenAnswer / formatCorrectAnswer', () => {
         expect(formatCorrectAnswer(matching)).toBe('cat → kat; dog → hond');
     });
 
+    it('matching shows a distractor the student picked', () => {
+        const withDistractors = { ...matching, matchingDistractors: ['', 'vis'] };
+        const given = formatGivenAnswer(withDistractors, {
+            questionId: 'q2',
+            response: JSON.stringify({ p1: 'distractor-0', p2: 'p2' }),
+        });
+        expect(given).toBe('cat → vis; dog → hond');
+    });
+
     it('open-ended has no correct answer', () => {
         expect(formatCorrectAnswer({ id: 'q', prompt: '', type: 'open', points: 5 })).toBe('');
     });
