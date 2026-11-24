@@ -41,6 +41,16 @@ describe('formatted cloze prompts', () => {
         expect(scoreCloze(q, JSON.stringify({ 0: 'kitten', 1: 'a&amp;b', 2: 'x' }))).toBe(1);
     });
 
+    it('score a gap with a non-breaking space like the plain prompt does', () => {
+        const formatted = question('<p>Visit {{New&nbsp;York}}.</p>');
+        const plain = question('Visit {{New\u00a0York}}.');
+        const response = JSON.stringify({ 0: 'New\u00a0York' });
+        expect(parseClozeGaps(formatted.prompt)[0].alternatives).toEqual(['New\u00a0York']);
+        expect(scoreCloze(formatted, response)).toBe(scoreCloze(plain, response));
+        expect(scoreCloze(formatted, response)).toBe(formatted.points);
+        expect(parseClozeGaps('<p>{{a&amp;nbsp;b}}</p>')[0].alternatives).toEqual(['a&nbsp;b']);
+    });
+
     it('read as visible text and gaps through renderClozeSegments', () => {
         const segments = renderClozeSegments(RICH);
         expect(segments.map((s) => (s.type === 'text' ? s.text : `[${s.gap.alternatives[0]}]`)).join('')).toBe(

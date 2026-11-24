@@ -32,6 +32,23 @@ describe('cloze editor storage', () => {
         editor.destroy();
     });
 
+    it('keeps line boundaries through formatting, a reload and removing the formatting', () => {
+        const plain = 'A {{one}}\nB {{two}}';
+        const editor = load(plain);
+        editor.commands.setTextSelection({ from: 1, to: 2 });
+        editor.commands.toggleBold();
+        const formatted = clozeEditorToPrompt(editor);
+        expect(formatted).toBe('<p><strong>A</strong> {{one}}</p><p>B {{two}}</p>');
+        editor.destroy();
+
+        const reloaded = load(formatted);
+        expect(clozeEditorToPrompt(reloaded)).toBe(formatted);
+        reloaded.commands.setTextSelection({ from: 1, to: 2 });
+        reloaded.commands.toggleBold();
+        expect(clozeEditorToPrompt(reloaded)).toBe(plain);
+        reloaded.destroy();
+    });
+
     it('stores formatted text as HTML with the gaps still written as {{…}}', () => {
         const editor = load('The {{cat}} sat.');
         editor.commands.setTextSelection({ from: 1, to: 4 });

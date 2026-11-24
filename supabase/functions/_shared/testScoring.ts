@@ -127,10 +127,11 @@ const HTML_ENTITIES: Record<string, string> = {
     '&quot;': '"',
     '&#39;': "'",
     '&#x27;': "'",
+    '&nbsp;': '\u00a0',
 };
 
 function decodeEntities(text: string): string {
-    return text.replace(/&(?:amp|lt|gt|quot|#39|#x27);/g, (entity) => HTML_ENTITIES[entity]);
+    return text.replace(/&(?:amp|lt|gt|quot|nbsp|#39|#x27);/g, (entity) => HTML_ENTITIES[entity]);
 }
 
 function gapFromSyntax(index: number, inner: string): ClozeGap {

@@ -381,15 +381,16 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
     },
 });
 
-/** Builds TipTap JSON content for a single-paragraph doc from an existing {{gap|alt}} prompt string; with `wordFormation`, a `(STEM)` right after a gap becomes that gap's stem. */
+/** Builds TipTap JSON content (one paragraph per line) for a doc from an existing {{gap|alt}} prompt string; with `wordFormation`, a `(STEM)` right after a gap becomes that gap's stem. */
 export function promptToClozeContent(prompt: string, wordFormation = false): JSONContent {
     const segments = renderClozeSegments(prompt);
-    const content: JSONContent[] = [];
+    const paragraphs: JSONContent[][] = [[]];
+    const push = (node: JSONContent) => paragraphs[paragraphs.length - 1].push(node);
     segments.forEach((segment, i) => {
         if (segment.type === 'gap') {
             const next = segments[i + 1];
             const match = wordFormation && next?.type === 'text' ? /^\(([^()]+)\)/.exec(next.text) : null;
-            content.push({
+            push({
                 type: 'clozeGap',
                 attrs: {
                     alternatives: segment.gap.alternatives,
@@ -402,9 +403,19 @@ export function promptToClozeContent(prompt: string, wordFormation = false): JSO
         const prev = segments[i - 1];
         const consumed = wordFormation && prev?.type === 'gap' ? /^\(([^()]+)\)/.exec(segment.text) : null;
         const text = consumed ? segment.text.slice(consumed[0].length) : segment.text;
-        if (text) content.push({ type: 'text', text });
+        // One paragraph per line: a raw newline inside a paragraph is collapsed to a space once the prompt is saved as formatted HTML.
+        text.split('\n').forEach((line, lineIndex) => {
+            if (lineIndex > 0) paragraphs.push([]);
+            if (line) push({ type: 'text', text: line });
+        });
     });
-    return { type: 'doc', content: [{ type: 'paragraph', content: content.length > 0 ? content : undefined }] };
+    return {
+        type: 'doc',
+        content: paragraphs.map((content) => ({
+            type: 'paragraph',
+            content: content.length > 0 ? content : undefined,
+        })),
+    };
 }
 
 /** Reconstructs the flat {{gap|alt}} prompt string (with `(STEM)` after a gap that has one) from the editor's current document. */

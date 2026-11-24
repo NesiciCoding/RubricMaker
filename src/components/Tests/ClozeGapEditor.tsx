@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useEditor, EditorContent } from '@tiptap/react';
+import { useEditor, useEditorState, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Subscript from '@tiptap/extension-subscript';
 import Superscript from '@tiptap/extension-superscript';
@@ -110,6 +110,20 @@ export default function ClozeGapEditor({
         editor.commands.setContent(clozeEditorContent(value, wordFormation));
     }, [editor, value, wordFormation, allowDropdown]);
 
+    // useEditor does not re-render on transactions, so a caret move or a stored-mark toggle would leave the toolbar stale.
+    const active = useEditorState({
+        editor,
+        selector: ({ editor: current }) => ({
+            bold: !!current?.isActive('bold'),
+            italic: !!current?.isActive('italic'),
+            underline: !!current?.isActive('underline'),
+            sup: !!current?.isActive('superscript'),
+            sub: !!current?.isActive('subscript'),
+            bullets: !!current?.isActive('bulletList'),
+            numbers: !!current?.isActive('orderedList'),
+        }),
+    });
+
     /* v8 ignore next -- useEditor initializes synchronously in this environment */
     if (!editor) return null;
 
@@ -118,49 +132,49 @@ export default function ClozeGapEditor({
             key: 'bold',
             icon: Bold,
             label: t('editor.bold'),
-            active: editor.isActive('bold'),
+            active: active.bold,
             run: () => editor.chain().focus().toggleBold().run(),
         },
         {
             key: 'italic',
             icon: Italic,
             label: t('editor.italic'),
-            active: editor.isActive('italic'),
+            active: active.italic,
             run: () => editor.chain().focus().toggleItalic().run(),
         },
         {
             key: 'underline',
             icon: UnderlineIcon,
             label: t('editor.underline'),
-            active: editor.isActive('underline'),
+            active: active.underline,
             run: () => editor.chain().focus().toggleUnderline().run(),
         },
         {
             key: 'sup',
             icon: SuperscriptIcon,
             label: t('editor.superscript'),
-            active: editor.isActive('superscript'),
+            active: active.sup,
             run: () => editor.chain().focus().toggleSuperscript().run(),
         },
         {
             key: 'sub',
             icon: SubscriptIcon,
             label: t('editor.subscript'),
-            active: editor.isActive('subscript'),
+            active: active.sub,
             run: () => editor.chain().focus().toggleSubscript().run(),
         },
         {
             key: 'bullets',
             icon: List,
             label: t('editor.bullet_list'),
-            active: editor.isActive('bulletList'),
+            active: active.bullets,
             run: () => editor.chain().focus().toggleBulletList().run(),
         },
         {
             key: 'numbers',
             icon: ListOrdered,
             label: t('editor.ordered_list'),
-            active: editor.isActive('orderedList'),
+            active: active.numbers,
             run: () => editor.chain().focus().toggleOrderedList().run(),
         },
     ];
