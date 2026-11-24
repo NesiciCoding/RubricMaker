@@ -5652,7 +5652,8 @@
         "gr_test_rich_authoring_item_gap_weights": "Questions à trous : donnez plus de poids à un trou dans la liste sous le texte (par exemple 2 pour le trou clé) pour qu'il rapporte une plus grande part des points de la question lorsque le crédit partiel est activé (sinon, chaque trou doit rester juste). Modifier le nombre de trous rétablit des poids égaux.",
         "gr_test_rich_authoring_item_option_feedback": "Choix multiple et réponses multiples : ajoutez un commentaire à chaque option (bouton bulle). Dans un test d'entraînement, l'élève qui a choisi cette option le voit dans la correction après l'envoi ; il n'est jamais envoyé aux élèves dans les tests notés.",
         "gr_test_rich_authoring_item_item_images": "Association, classement et catégorisation : ajoutez une image à un élément (bouton image sur sa ligne). Dans l'association, l'image accompagne l'élément de gauche ; les choix de droite sont du texte seul. Les images s'affichent à l'écran mais pas encore dans le livret imprimé.",
-        "gr_test_rich_authoring_item_pill_keyboard": "Les pastilles de trou, de texte actif et de correction d'erreur de l'éditeur sont accessibles avec Tab et s'ouvrent avec Entrée ou Espace ; Échap ferme la zone d'édition et vous ramène à la pastille."
+        "gr_test_rich_authoring_item_pill_keyboard": "Les pastilles de trou, de texte actif et de correction d'erreur de l'éditeur sont accessibles avec Tab et s'ouvrent avec Entrée ou Espace ; Échap ferme la zone d'édition et vous ramène à la pastille.",
+        "gr_test_rich_authoring_item_rich_notes": "Les indices et explications sont du texte enrichi : gras, listes, liens et images. Les notes écrites auparavant en texte brut conservent leurs sauts de ligne, sauf si elles contiennent du texte qui ressemble à une balise HTML. Les élèves voient l'indice à leur demande et l'explication après l'envoi d'un test d'entraînement."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",
