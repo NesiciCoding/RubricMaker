@@ -2422,7 +2422,8 @@
         "cloze_gap_weight_aria": "Peso del hueco {{gap}}",
         "cloze_points_by_weight": "Los huecos valen {{points}} punto(s), por orden.",
         "option_feedback_label": "Comentario para esta opción",
-        "option_feedback_placeholder": "Por qué esta opción es correcta o incorrecta (solo en modo práctica)"
+        "option_feedback_placeholder": "Por qué esta opción es correcta o incorrecta (solo en modo práctica)",
+        "item_image_label": "Imagen para este elemento (URL)"
     },
     "classShare": {
         "menu_item": "Compartir con co-docentes…",
@@ -5646,7 +5647,8 @@
         "gr_test_answer_options_item_numeric": "Numérica: además de la tolerancia absoluta, defina una tolerancia porcentual (se aplica el margen más amplio) y una unidad que se muestra junto al campo de respuesta pero nunca se puntúa.",
         "gr_test_answer_options_item_matching": "Emparejar: añada opciones adicionales a la derecha sin pareja para que no se pueda resolver por eliminación. También aparecen en el banco de palabras impreso.",
         "gr_test_rich_authoring_item_gap_weights": "Preguntas con huecos: dé más peso a un hueco en la lista bajo el texto (por ejemplo 2 para el hueco clave) para que aporte una parte mayor de los puntos cuando el crédito parcial está activado (si no, todos los huecos deben seguir siendo correctos). Cambiar el número de huecos restablece pesos iguales.",
-        "gr_test_rich_authoring_item_option_feedback": "Opción múltiple y respuesta múltiple: añada un comentario a cualquier opción (botón de bocadillo). En una prueba de práctica, el alumno que eligió esa opción lo ve en la revisión tras enviar; nunca se envía al alumnado en pruebas calificadas."
+        "gr_test_rich_authoring_item_option_feedback": "Opción múltiple y respuesta múltiple: añada un comentario a cualquier opción (botón de bocadillo). En una prueba de práctica, el alumno que eligió esa opción lo ve en la revisión tras enviar; nunca se envía al alumnado en pruebas calificadas.",
+        "gr_test_rich_authoring_item_item_images": "Emparejar, ordenar y clasificar: añada una imagen a un elemento (botón de imagen en su fila). En emparejar, la imagen acompaña al elemento de la izquierda; las opciones de la derecha son solo texto. Las imágenes se ven en pantalla, pero aún no en el cuadernillo impreso."
     },
     "studentProfile": {
         "tab_overview": "Resumen",
