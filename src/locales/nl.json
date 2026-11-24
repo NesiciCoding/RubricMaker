@@ -1903,7 +1903,7 @@
         "cloze_generate_empty": "Typ of plak eerst een tekst.",
         "cloze_generate_none_found": "Geen passende woorden gevonden voor deze strategie.",
         "cloze_no_gaps": "Nog geen invulvakken. Klik op „Invulvak invoegen” om er een toe te voegen.",
-        "cloze_gap_alternatives_label": "Alternatieven (gescheiden door |), eerste = juiste antwoord:",
+        "cloze_gap_alternatives_label": "Antwoorden van het gat bewerken",
         "cloze_gap_save": "Opslaan",
         "cloze_gap_cancel": "Annuleren",
         "cloze_gap_correct_label": "Juiste antwoorden",
@@ -5640,7 +5640,8 @@
         "es_creating_item_projector": "Zet één tekst in een tweede venster op het projectiescherm om over één zin te praten, terwijl de monitor de rest van de klas blijft volgen.",
         "rb_live_monitor_item_session_export": "Exporteer de sessie als CSV met per leerling de aantallen, stilgevallen minuten, leeftijd van de tekst, geschreven woorden en het logboek van zetjes — plus een PDF-samenvatting van één pagina — om later bij een integriteitsvraag bij te voegen.",
         "rb_live_monitor_item_shortcuts": "Monitor vanuit het toetsenbord terwijl je staat: j/k wisselt van leerling, spatie opent of sluit de volgweergave, n stuurt een zetje en f markeert de leerling waar je op staat, zonder de muis te pakken.",
-        "gr_test_rich_authoring_item_rich_notes": "Hints en uitleg zijn opgemaakte tekst: gebruik vet, lijsten, links en afbeeldingen. Eerder als platte tekst geschreven notities behouden hun regeleinden, tenzij ze tekst bevatten die op een HTML-tag lijkt. Leerlingen zien de hint als ze erom vragen en de uitleg na het inleveren van een oefentoets.",
+        "gr_test_rich_authoring_item_pill_keyboard": "Gat-, hot-text- en foutcorrectiepillen in de editor zijn met Tab te bereiken en met Enter of spatie te openen; Escape sluit het bewerkvak en brengt je terug bij de pil.",
+        "gr_test_rich_authoring_item_typed_gap_chips": "Getypte invulgaten tonen hun geaccepteerde antwoorden nu als chips, net als keuzelijstgaten: voeg er een toe (of meerdere tegelijk als a|b|c), verwijder er een met ×, en druk op Enter in een leeg vak om op te slaan. Het eerste antwoord is dat wat in de editor wordt getoond.",
         "gr_test_answer_options_title": "Antwoordopties en weergave",
         "gr_test_answer_options_item_cloze_select": "Invuloefening: selecteer een woord en klik op Gat invoegen (of druk op Ctrl/Cmd+Shift+G) om er een gat van te maken. Gaten zijn genummerd in de editor, de editor toont wat elk gat waard is en Genereren vraagt bevestiging voordat het bestaande gaten vervangt.",
         "gr_test_answer_options_item_cloze_paste": "Invuloefening: plak tekst uit een werkblad en elke reeks van drie of meer underscores (____) wordt een gat. De invulvakken van leerlingen hebben een nummerlabel, behouden alinea-einden en passen op telefoons geen hoofdletters of autocorrectie meer toe.",
@@ -5652,7 +5653,7 @@
         "gr_test_rich_authoring_item_option_feedback": "Meerkeuze en meerdere antwoorden: voeg feedback toe aan elke optie (spraakballonknop). In een oefentoets ziet een leerling die die optie koos de feedback in het overzicht na het inleveren; in beoordeelde toetsen wordt deze nooit naar leerlingen gestuurd.",
         "gr_test_rich_authoring_item_item_images": "Koppelen, ordenen en indelen: voeg een afbeelding toe aan een item (afbeeldingsknop op de rij). Bij koppelen hoort de afbeelding bij het linkeritem; keuzes rechts zijn alleen tekst. Afbeeldingen staan op het scherm maar nog niet in het afgedrukte boekje.",
         "gr_test_rich_authoring_item_cloze_intro": "Invul-, keuzelijst- en woordbankvragen: voeg opgemaakte instructies of context (vet, lijsten, afbeeldingen) toe boven de gatentekst. Dit zien leerlingen, het staat in het afgedrukte boekje en in de leerlingweergave en wordt voorgelezen; de gatentekst zelf blijft platte tekst.",
-        "gr_test_rich_authoring_item_pill_keyboard": "Gat-, hot-text- en foutcorrectiepillen in de editor zijn met Tab te bereiken en met Enter of spatie te openen; Escape sluit het bewerkvak en brengt je terug bij de pil."
+        "gr_test_rich_authoring_item_rich_notes": "Hints en uitleg zijn opgemaakte tekst: gebruik vet, lijsten, links en afbeeldingen. Eerder als platte tekst geschreven notities behouden hun regeleinden, tenzij ze tekst bevatten die op een HTML-tag lijkt. Leerlingen zien de hint als ze erom vragen en de uitleg na het inleveren van een oefentoets."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",
