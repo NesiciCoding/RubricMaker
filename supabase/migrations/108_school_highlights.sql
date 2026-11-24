@@ -152,7 +152,8 @@ $$;
 
 -- Share of students per overall level, one point per ISO week: the latest snapshot each teacher
 -- made that week. A share, not a count, because the number of teachers who opened the app in a
--- given week varies. A level under the minimum cohort that week is left out.
+-- given week varies. A level under the minimum cohort that week is left out, and the shares are
+-- taken over the levels that remain, so a share can never reveal how many students are hidden.
 CREATE OR REPLACE FUNCTION monitoring.hl_cefr_trend(range_start timestamptz, range_end timestamptz)
 RETURNS TABLE (week timestamptz, school text, level text, share numeric)
 LANGUAGE sql
@@ -178,7 +179,10 @@ AS $$
     GROUP BY w.week, w.school_id, w.school, e.key
   ),
   totals AS (
-    SELECT week, school_id, sum(n) AS total FROM counts GROUP BY week, school_id
+    SELECT week, school_id, sum(n) AS total
+    FROM counts
+    WHERE n >= monitoring.hl_min_cohort()
+    GROUP BY week, school_id
   )
   SELECT c.week, c.school, c.level, round(100.0 * c.n / t.total, 1)
   FROM counts c

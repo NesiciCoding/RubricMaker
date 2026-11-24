@@ -323,6 +323,19 @@ describe('School Highlights reads (migration 108)', () => {
         }
     });
 
+    it('never shows a suppressed cell as zero', () => {
+        for (const query of queries) expect(query).not.toMatch(/coalesce\(\s*\(\s*SELECT/i);
+    });
+
+    it('takes weekly shares over the visible levels only, so a share cannot reveal hidden students', () => {
+        const trend = migration
+            .split(/create or replace function /i)
+            .find((b) => b.startsWith('monitoring.hl_cefr_trend'));
+        expect(trend, 'hl_cefr_trend not found').toBeDefined();
+        const totals = /totals AS \(([\s\S]*?)\n {2}\)/.exec(trend as string)?.[1] ?? '';
+        expect(totals).toContain('hl_min_cohort()');
+    });
+
     it('keeps student identifiers out of the snapshot table', () => {
         const table = /CREATE TABLE IF NOT EXISTS public\.school_highlight_snapshots \(([\s\S]*?)\n\);/.exec(
             migration

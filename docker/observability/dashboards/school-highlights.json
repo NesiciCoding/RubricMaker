@@ -306,9 +306,10 @@
           },
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT lv.level, coalesce((SELECT d.students FROM monitoring.hl_cefr_distribution('overall') d WHERE d.school = ${school:sqlstring} AND d.level = lv.level), 0) AS students FROM (VALUES ('A1'),('A2'),('B1'),('B2'),('C1'),('C2')) lv(level) ORDER BY 1"
+          "rawSql": "SELECT lv.level, (SELECT d.students FROM monitoring.hl_cefr_distribution('overall') d WHERE d.school = ${school:sqlstring} AND d.level = lv.level) AS students FROM (VALUES ('A1'),('A2'),('B1'),('B2'),('C1'),('C2')) lv(level) ORDER BY 1"
         }
-      ]
+      ],
+      "description": "Levels with fewer than 5 students are not shown."
     },
     {
       "id": 7,
@@ -354,9 +355,10 @@
           },
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT lv.level, coalesce((SELECT d.students FROM monitoring.hl_cefr_distribution('reading') d WHERE d.school = ${school:sqlstring} AND d.level = lv.level), 0) AS reading, coalesce((SELECT d.students FROM monitoring.hl_cefr_distribution('writing') d WHERE d.school = ${school:sqlstring} AND d.level = lv.level), 0) AS writing, coalesce((SELECT d.students FROM monitoring.hl_cefr_distribution('listening') d WHERE d.school = ${school:sqlstring} AND d.level = lv.level), 0) AS listening, coalesce((SELECT d.students FROM monitoring.hl_cefr_distribution('speaking_production') d WHERE d.school = ${school:sqlstring} AND d.level = lv.level), 0) AS speaking_production, coalesce((SELECT d.students FROM monitoring.hl_cefr_distribution('speaking_interaction') d WHERE d.school = ${school:sqlstring} AND d.level = lv.level), 0) AS speaking_interaction FROM (VALUES ('A1'),('A2'),('B1'),('B2'),('C1'),('C2')) lv(level) ORDER BY 1"
+          "rawSql": "SELECT lv.level, (SELECT d.students FROM monitoring.hl_cefr_distribution('reading') d WHERE d.school = ${school:sqlstring} AND d.level = lv.level) AS reading, (SELECT d.students FROM monitoring.hl_cefr_distribution('writing') d WHERE d.school = ${school:sqlstring} AND d.level = lv.level) AS writing, (SELECT d.students FROM monitoring.hl_cefr_distribution('listening') d WHERE d.school = ${school:sqlstring} AND d.level = lv.level) AS listening, (SELECT d.students FROM monitoring.hl_cefr_distribution('speaking_production') d WHERE d.school = ${school:sqlstring} AND d.level = lv.level) AS speaking_production, (SELECT d.students FROM monitoring.hl_cefr_distribution('speaking_interaction') d WHERE d.school = ${school:sqlstring} AND d.level = lv.level) AS speaking_interaction FROM (VALUES ('A1'),('A2'),('B1'),('B2'),('C1'),('C2')) lv(level) ORDER BY 1"
         }
-      ]
+      ],
+      "description": "Levels with fewer than 5 students are not shown."
     },
     {
       "id": 8,
@@ -410,7 +412,8 @@
           "rawQuery": true,
           "rawSql": "SELECT week AS time, level AS metric, share FROM monitoring.hl_cefr_trend($__timeFrom(), $__timeTo()) WHERE school = ${school:sqlstring} ORDER BY 1"
         }
-      ]
+      ],
+      "description": "Shares of the levels shown; levels with fewer than 5 students that week are left out of both the bars and the total."
     },
     {
       "id": 9,
