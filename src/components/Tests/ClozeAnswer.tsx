@@ -105,7 +105,7 @@ function ClozeBankAnswer({ question, value, onChange, code, lang }: Props) {
                     </button>
                 ))}
             </div>
-            <p style={{ margin: 0, fontSize: '1rem', lineHeight: 2.4, color: 'var(--text)' }}>
+            <p style={{ margin: 0, fontSize: '1rem', lineHeight: 2.4, color: 'var(--text)', whiteSpace: 'pre-wrap' }}>
                 {segments.map((segment, i) => {
                     if (segment.type === 'text') return <span key={i}>{segment.text}</span>;
                     const gapIndex = segment.gap.index;
@@ -178,7 +178,10 @@ function ClozeInlineAnswer({ question, value, onChange, code, lang }: Props) {
     }
 
     return (
-        <p lang={lang ?? 'en'} style={{ margin: 0, fontSize: '1rem', lineHeight: 2.4, color: 'var(--text)' }}>
+        <p
+            lang={lang ?? 'en'}
+            style={{ margin: 0, fontSize: '1rem', lineHeight: 2.4, color: 'var(--text)', whiteSpace: 'pre-wrap' }}
+        >
             {segments.map((segment, i) => {
                 if (segment.type === 'text') {
                     return <span key={i}>{segment.text}</span>;
@@ -222,6 +225,11 @@ function ClozeInlineAnswer({ question, value, onChange, code, lang }: Props) {
                         value={current}
                         onChange={(e) => setGapAnswer(gap.index, e.target.value)}
                         placeholder={t('tests.taking.cloze_gap_placeholder')}
+                        aria-label={t('tests.taking.cloze_bank_gap_label', { number: gap.index + 1 })}
+                        autoCapitalize="off"
+                        autoCorrect="off"
+                        autoComplete="off"
+                        spellCheck={false}
                         style={{
                             margin: '0 4px',
                             padding: '4px 8px',
@@ -230,7 +238,9 @@ function ClozeInlineAnswer({ question, value, onChange, code, lang }: Props) {
                             background: 'var(--bg)',
                             color: 'var(--text)',
                             fontSize: '0.95rem',
-                            width: 120,
+                            maxWidth: '100%',
+                            ...({ fieldSizing: 'content' } as object),
+                            minWidth: 120,
                         }}
                     />
                 );

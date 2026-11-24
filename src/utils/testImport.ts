@@ -80,6 +80,7 @@ interface RawQuestion {
     expectedAnswers?: unknown;
     expectedNumericValue?: unknown;
     numericTolerance?: unknown;
+    numericTolerancePercent?: unknown;
     correctBoolean?: unknown;
     matrixColumns?: RawMatrixColumn[];
     matrixRows?: RawMatrixRow[];
@@ -496,6 +497,9 @@ function normaliseQuestion(
     if (expectedNumericValue !== undefined) question.expectedNumericValue = expectedNumericValue;
     const numericTolerance = asFiniteNumber(q.numericTolerance);
     if (numericTolerance !== undefined && numericTolerance >= 0) question.numericTolerance = numericTolerance;
+    const numericTolerancePercent = asFiniteNumber(q.numericTolerancePercent);
+    if (numericTolerancePercent !== undefined && numericTolerancePercent >= 0)
+        question.numericTolerancePercent = numericTolerancePercent;
     if (typeof q.correctBoolean === 'boolean') question.correctBoolean = q.correctBoolean;
     else if (type === 'true-false')
         warnings.push({ key: 'importTest.warn_missing_correct_boolean', params: { item: label } });

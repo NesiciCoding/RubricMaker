@@ -2400,7 +2400,21 @@
         "card_more_actions": "Weitere Aktionen",
         "card_menu_teaching": "Unterrichten",
         "card_menu_organise": "Organisieren",
-        "card_menu_sharing": "Teilen"
+        "card_menu_sharing": "Teilen",
+        "shuffle_options_label": "Optionen für jede Schülerin und jeden Schüler mischen",
+        "shuffle_options_help": "Jede Person sieht die Optionen in einer eigenen, festen Zufallsreihenfolge. Ohne Haken bleibt Ihre Reihenfolge erhalten.",
+        "pin_last_option_label": "Letzte Option am Ende lassen (z. B. „Keine der genannten“)",
+        "true_false_true_label_placeholder": "Eigene Beschriftung für die erste Schaltfläche (Standard: Wahr)",
+        "true_false_false_label_placeholder": "Eigene Beschriftung für die zweite Schaltfläche (Standard: Falsch)",
+        "numeric_tolerance_percent_label": "Toleranz (%)",
+        "numeric_unit_label": "Einheit",
+        "numeric_unit_placeholder": "z. B. cm",
+        "numeric_tolerance_help": "Sind beide Toleranzen gesetzt, gilt der größere Spielraum. Die Einheit wird nur neben dem Antwortfeld angezeigt und nicht bewertet.",
+        "matching_distractors_label": "Zusätzliche Auswahlmöglichkeiten rechts ohne Partner (optional, eine pro Zeile)",
+        "matching_distractors_placeholder": "Ein Ablenker pro Zeile",
+        "cloze_points_per_gap": "Jede Lücke ist {{points}} Punkt(e) wert.",
+        "cloze_generate_replace_confirm": "Dadurch werden die bereits erstellten Lücken samt Alternativen und falschen Optionen ersetzt. Fortfahren?",
+        "cloze_points_all_or_nothing": "Alle Lücken müssen stimmen, um die {{points}} Punkt(e) zu erhalten."
     },
     "classShare": {
         "menu_item": "Mit Kolleg:innen teilen…",
@@ -5615,7 +5629,14 @@
         "es_creating_item_projector": "Einen Entwurf in einem zweiten Fenster auf den Beamer legen, um über einen Satz zu sprechen, während der Monitor den Rest der Klasse weiter beobachtet.",
         "rb_live_monitor_item_session_export": "Exportiere die Sitzung als CSV mit Zählungen, Stock-Minuten, Alter des Textes, geschriebenen Wörtern und dem Hinweisprotokoll pro Schülerin oder Schüler — plus einer einseitigen PDF-Zusammenfassung —, um sie später bei einer Integritätsfrage beizulegen.",
         "rb_live_monitor_item_shortcuts": "Aufsicht per Tastatur im Stehen: j/k wechselt zwischen Schülerinnen und Schülern, Leertaste öffnet oder schließt die Verfolgung, n sendet einen Hinweis und f markiert die aktuelle Person, ohne zur Maus zu greifen.",
-        "gr_test_rich_authoring_item_cloze_formatting": "Lücken-, Dropdown- und Wortspeicher-Fragen lassen sich formatieren: fett, kursiv, unterstrichen, tiefgestellt/hochgestellt und Listen um und im Lückentext. Text ohne Formatierung wird wie bisher gespeichert; formatierter Text wird als HTML gespeichert, die Lücken stehen weiterhin als {{so}} darin, sodass Bewertung, Importe und Fragenbank beides lesen. Schüleransicht, gedrucktes Heft (HTML und Word) und Vorlesen behalten Formatierung und Lücken. Das Erzeugen von Lücken aus einem Text entfernt die Formatierung."
+        "gr_test_rich_authoring_item_cloze_formatting": "Lücken-, Dropdown- und Wortspeicher-Fragen lassen sich formatieren: fett, kursiv, unterstrichen, tiefgestellt/hochgestellt und Listen um und im Lückentext. Text ohne Formatierung wird wie bisher gespeichert; formatierter Text wird als HTML gespeichert, die Lücken stehen weiterhin als {{so}} darin, sodass Bewertung, Importe und Fragenbank beides lesen. Schüleransicht, gedrucktes Heft (HTML und Word) und Vorlesen behalten Formatierung und Lücken. Das Erzeugen von Lücken aus einem Text entfernt die Formatierung.",
+        "gr_test_answer_options_title": "Antwortoptionen und Darstellung",
+        "gr_test_answer_options_item_cloze_select": "Lückentext: Wort markieren und auf Lücke einfügen klicken (oder Strg/Cmd+Umschalt+G), um daraus eine Lücke zu machen. Lücken sind im Editor nummeriert, der Editor zeigt ihren Punktwert, und Generieren fragt nach, bevor es vorhandene Lücken ersetzt.",
+        "gr_test_answer_options_item_cloze_paste": "Lückentext: Text aus einem Arbeitsblatt einfügen – jede Folge von drei oder mehr Unterstrichen (____) wird zur Lücke. Die Lückenfelder der Lernenden haben eine Nummernbeschriftung, behalten Absätze und nutzen auf Smartphones keine automatische Großschreibung oder Korrektur mehr.",
+        "gr_test_answer_options_item_shuffle": "Multiple Choice und Mehrfachauswahl: Mit Optionen mischen sieht jede Person ihre eigene feste Zufallsreihenfolge; die letzte Option (z. B. „Keine der genannten“) kann am Ende bleiben.",
+        "gr_test_answer_options_item_true_false": "Wahr/Falsch: Die beiden Schaltflächen lassen sich frei beschriften, etwa Ja / Nein oder Zustimmung / Ablehnung. Ergebnisse und Lösungsschlüssel verwenden dieselbe Beschriftung.",
+        "gr_test_answer_options_item_numeric": "Numerisch: Neben der absoluten Toleranz lässt sich eine prozentuale Toleranz festlegen (der größere Spielraum gilt) sowie eine Einheit, die neben dem Antwortfeld steht, aber nicht bewertet wird.",
+        "gr_test_answer_options_item_matching": "Zuordnen: Zusätzliche Auswahlmöglichkeiten rechts ohne Partner verhindern, dass sich die Aufgabe durch Ausschluss lösen lässt. Sie erscheinen auch im gedruckten Wortspeicher."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",
