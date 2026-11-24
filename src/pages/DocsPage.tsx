@@ -1478,6 +1478,21 @@ function GradingTab() {
                         t('docs.gr_test_rich_authoring_item_duplicate_undo'),
                         t('docs.gr_test_rich_authoring_item_paste_list'),
                         t('docs.gr_test_rich_authoring_item_collapse_issues'),
+                        t('docs.gr_test_rich_authoring_item_gap_weights'),
+                    ]}
+                />
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.gr_test_answer_options_title')}
+                </h3>
+                <FeatureList
+                    items={[
+                        t('docs.gr_test_answer_options_item_cloze_select'),
+                        t('docs.gr_test_answer_options_item_cloze_paste'),
+                        t('docs.gr_test_answer_options_item_shuffle'),
+                        t('docs.gr_test_answer_options_item_true_false'),
+                        t('docs.gr_test_answer_options_item_numeric'),
+                        t('docs.gr_test_answer_options_item_matching'),
                     ]}
                 />
 

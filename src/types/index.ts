@@ -1471,12 +1471,27 @@ export interface TestQuestion {
     expectedNumericValue?: number;
     /** Accepted margin of error around expectedNumericValue (default 0 = exact match) */
     numericTolerance?: number;
+    /** Accepted margin as a percentage of expectedNumericValue; the wider of this and numericTolerance applies */
+    numericTolerancePercent?: number;
+    /** Unit shown next to the numeric answer box (display only, never scored) */
+    numericUnit?: string;
+    /** Custom wording for the two true-false buttons (e.g. Yes / No); blank falls back to True / False */
+    trueLabel?: string;
+    falseLabel?: string;
+    /** Show multiple-choice / multiple-response options in a per-student shuffled order (default: authored order) */
+    shuffleOptions?: boolean;
+    /** With shuffleOptions: keep the last option last (e.g. "None of the above") */
+    pinLastOption?: boolean;
+    /** Extra right-hand choices with no left-hand partner, for matching questions */
+    matchingDistractors?: string[];
     /** Correct answer for true-false questions */
     correctBoolean?: boolean;
     /** Statements for matrix questions, each answered by picking one of matrixColumns */
     matrixRows?: MatrixRow[];
     /** Shared answer columns for matrix questions */
     matrixColumns?: MatrixColumn[];
+    /** Cloze: relative worth of each gap in order (default 1 each). Ignored when its length no longer matches the gap count. */
+    gapWeights?: number[];
     /** Extra tiles with no gap, for cloze-bank questions */
     bankDistractors?: string[];
     /** cloze-bank: every tile can fill at most one gap (default true) */

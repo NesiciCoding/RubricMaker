@@ -61,6 +61,7 @@ interface RawQuestion {
     expectedAnswers?: string[];
     expectedNumericValue?: number;
     numericTolerance?: number;
+    numericTolerancePercent?: number;
     correctBoolean?: boolean;
     matrixColumns?: Array<{ text?: string }>;
     /** `correctColumn` references a column by its 0-based index (as a string) or by text. */
@@ -188,6 +189,8 @@ function parseQuestion(q: unknown, label: string, warnings: ImportWarning[]): Te
 
     if (typeof raw.expectedNumericValue === 'number') question.expectedNumericValue = raw.expectedNumericValue;
     if (typeof raw.numericTolerance === 'number') question.numericTolerance = raw.numericTolerance;
+    if (typeof raw.numericTolerancePercent === 'number' && raw.numericTolerancePercent >= 0)
+        question.numericTolerancePercent = raw.numericTolerancePercent;
 
     if (typeof raw.correctBoolean === 'boolean') question.correctBoolean = raw.correctBoolean;
     else if (type === 'true-false')

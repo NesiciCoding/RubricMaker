@@ -39,7 +39,9 @@ import AudioUrlStatus from './AudioUrlStatus';
 import {
     addDropdownDistractor,
     addGapAlternative,
+    effectiveGapWeights,
     gapCorrectAnswers,
+    gapPointShares,
     parseClozeGaps,
     plainQuestionPromptText,
     renderClozeSegments,
@@ -168,13 +170,26 @@ export default function QuestionEditor({
     const [clozeLevel, setClozeLevel] = React.useState<CefrLevel>('B2');
 
     function update(patch: Partial<TestQuestion>) {
-        onChange({ ...question, ...patch });
+        const next = { ...question, ...patch };
+        // Weights are positional, so a different gap count would leave them applying to the wrong gaps.
+        if (
+            patch.prompt !== undefined &&
+            !('gapWeights' in patch) &&
+            next.gapWeights &&
+            next.gapWeights.length !== parseClozeGaps(patch.prompt).length
+        ) {
+            delete next.gapWeights;
+        }
+        onChange(next);
     }
 
     function generateGaps() {
         const plainText = plainQuestionPromptText(question).trim();
         if (!plainText) {
             showToast(t('tests.cloze_generate_empty'), 'info');
+            return;
+        }
+        if (parseClozeGaps(question.prompt).length > 0 && !window.confirm(t('tests.cloze_generate_replace_confirm'))) {
             return;
         }
         const prompt = generateCloze(plainText, clozeStrategy, { everyNth: clozeEveryNth, cefrLevel: clozeLevel });
@@ -873,6 +888,8 @@ export default function QuestionEditor({
                             prompt={question.prompt}
                             rolesEditable={question.type === 'cloze-dropdown'}
                             onChange={(prompt) => update({ prompt })}
+                            weights={question.gapWeights}
+                            onWeightsChange={(gapWeights) => update({ gapWeights })}
                         />
                     </>
                 ) : (
@@ -1080,6 +1097,40 @@ export default function QuestionEditor({
                             })
                         }
                     />
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem', marginTop: 4 }}>
+                        <input
+                            type="checkbox"
+                            checked={!!question.shuffleOptions}
+                            onChange={(e) =>
+                                update({
+                                    shuffleOptions: e.target.checked || undefined,
+                                    pinLastOption: e.target.checked ? question.pinLastOption : undefined,
+                                })
+                            }
+                        />
+                        {t('tests.shuffle_options_label')}
+                        <HelpPopover title={t('tests.shuffle_options_label')}>
+                            {t('tests.shuffle_options_help')}
+                        </HelpPopover>
+                    </label>
+                    {question.shuffleOptions && (
+                        <label
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 8,
+                                fontSize: '0.85rem',
+                                marginLeft: 22,
+                            }}
+                        >
+                            <input
+                                type="checkbox"
+                                checked={!!question.pinLastOption}
+                                onChange={(e) => update({ pinLastOption: e.target.checked || undefined })}
+                            />
+                            {t('tests.pin_last_option_label')}
+                        </label>
+                    )}
                     {question.type === 'multiple-response' && (
                         <label
                             style={{
@@ -1132,7 +1183,7 @@ export default function QuestionEditor({
                                 fontWeight: question.correctBoolean === true ? 700 : 400,
                             }}
                         >
-                            {t('tests.true_false_true')}
+                            {question.trueLabel?.trim() || t('tests.true_false_true')}
                         </button>
                         <button
                             type="button"
@@ -1153,8 +1204,26 @@ export default function QuestionEditor({
                                 fontWeight: question.correctBoolean === false ? 700 : 400,
                             }}
                         >
-                            {t('tests.true_false_false')}
+                            {question.falseLabel?.trim() || t('tests.true_false_false')}
                         </button>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        <input
+                            type="text"
+                            value={question.trueLabel ?? ''}
+                            onChange={(e) => update({ trueLabel: e.target.value || undefined })}
+                            placeholder={t('tests.true_false_true_label_placeholder')}
+                            aria-label={t('tests.true_false_true_label_placeholder')}
+                            style={{ flex: 1, minWidth: 120 }}
+                        />
+                        <input
+                            type="text"
+                            value={question.falseLabel ?? ''}
+                            onChange={(e) => update({ falseLabel: e.target.value || undefined })}
+                            placeholder={t('tests.true_false_false_label_placeholder')}
+                            aria-label={t('tests.true_false_false_label_placeholder')}
+                            style={{ flex: 1, minWidth: 120 }}
+                        />
                     </div>
                 </div>
             )}
@@ -1184,6 +1253,22 @@ export default function QuestionEditor({
                                         gapCorrectAnswers(gap, question.type === 'cloze-dropdown').join(' / ')
                                     )
                                     .join(', ')}
+                            </p>
+                        );
+                    })()}
+                    {(() => {
+                        const gapCount = parseClozeGaps(question.prompt).length;
+                        if (gapCount === 0) return null;
+                        const weights = effectiveGapWeights(question, gapCount);
+                        const shares = gapPointShares(question.points, weights);
+                        const equal = weights.every((weight) => weight === weights[0]);
+                        return (
+                            <p className="text-muted text-xs" style={{ margin: 0 }} data-testid="cloze-points-per-gap">
+                                {question.partialCredit === false
+                                    ? t('tests.cloze_points_all_or_nothing', { points: question.points })
+                                    : equal
+                                      ? t('tests.cloze_points_per_gap', { points: shares[0] })
+                                      : t('tests.cloze_points_by_weight', { points: shares.join(', ') })}
                             </p>
                         );
                     })()}
@@ -1403,6 +1488,17 @@ export default function QuestionEditor({
                     <button type="button" className="btn btn-secondary btn-sm" onClick={addMatchingPair}>
                         <Plus size={14} /> {t('tests.add_matching_pair')}
                     </button>
+                    <div>
+                        <label htmlFor={`matching-distractors-${question.id}`}>
+                            {t('tests.matching_distractors_label')}
+                        </label>
+                        <LineListTextarea
+                            id={`matching-distractors-${question.id}`}
+                            value={question.matchingDistractors ?? []}
+                            onChange={(items) => update({ matchingDistractors: items.length ? items : undefined })}
+                            placeholder={t('tests.matching_distractors_placeholder')}
+                        />
+                    </div>
                     {renderPartialCreditToggle()}
                 </div>
             )}
@@ -1641,6 +1737,46 @@ export default function QuestionEditor({
                             placeholder="0"
                         />
                     </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label htmlFor={`question-numeric-percent-${question.id}`}>
+                            {t('tests.numeric_tolerance_percent_label')}{' '}
+                            <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
+                                ({t('essay_assignment.optional')})
+                            </span>
+                        </label>
+                        <input
+                            id={`question-numeric-percent-${question.id}`}
+                            type="number"
+                            step="any"
+                            min={0}
+                            value={question.numericTolerancePercent ?? ''}
+                            onChange={(e) =>
+                                update({
+                                    numericTolerancePercent: e.target.value === '' ? undefined : Number(e.target.value),
+                                })
+                            }
+                            placeholder="0"
+                        />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label htmlFor={`question-numeric-unit-${question.id}`}>
+                            {t('tests.numeric_unit_label')}{' '}
+                            <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
+                                ({t('essay_assignment.optional')})
+                            </span>
+                        </label>
+                        <input
+                            id={`question-numeric-unit-${question.id}`}
+                            type="text"
+                            value={question.numericUnit ?? ''}
+                            onChange={(e) => update({ numericUnit: e.target.value || undefined })}
+                            placeholder={t('tests.numeric_unit_placeholder')}
+                            style={{ width: 120 }}
+                        />
+                    </div>
+                    <p className="text-muted text-xs" style={{ flex: '1 1 100%', margin: 0 }}>
+                        {t('tests.numeric_tolerance_help')}
+                    </p>
                 </div>
             )}
 
