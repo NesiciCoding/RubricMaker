@@ -1903,7 +1903,7 @@
         "cloze_generate_empty": "Zuerst einen Text eingeben oder einfügen.",
         "cloze_generate_none_found": "Keine passenden Wörter für diese Strategie gefunden.",
         "cloze_no_gaps": "Noch keine Lücken. Klicke auf „Lücke einfügen“, um eine hinzuzufügen.",
-        "cloze_gap_alternatives_label": "Alternativen (durch | getrennt), erste = richtige Antwort:",
+        "cloze_gap_alternatives_label": "Antworten der Lücke bearbeiten",
         "cloze_gap_save": "Speichern",
         "cloze_gap_cancel": "Abbrechen",
         "cloze_gap_correct_label": "Richtige Antworten",
@@ -5652,7 +5652,8 @@
         "gr_test_rich_authoring_item_gap_weights": "Lückenfragen: In der Lückenliste unter dem Text lässt sich einer Lücke mehr Gewicht geben (z. B. 2 für die Schlüssellücke), sodass sie einen größeren Anteil der Punkte bringt, wenn Teilpunkte aktiviert sind (ohne Teilpunkte muss weiterhin jede Lücke stimmen). Ändert sich die Zahl der Lücken, werden die Gewichte auf gleich zurückgesetzt.",
         "gr_test_rich_authoring_item_option_feedback": "Multiple Choice und Mehrfachauswahl: Zu jeder Option lässt sich eine Rückmeldung hinzufügen (Sprechblasen-Schaltfläche). In einem Übungstest sieht eine Person, die diese Option gewählt hat, sie nach der Abgabe in der Auswertung; in benoteten Tests wird sie nie an Lernende gesendet.",
         "gr_test_rich_authoring_item_pill_keyboard": "Lücken-, Hot-Text- und Fehlerkorrektur-Pillen im Editor sind mit Tab erreichbar und lassen sich mit Enter oder Leertaste öffnen; Escape schließt das Bearbeitungsfeld und führt zur Pille zurück.",
-        "gr_test_rich_authoring_item_rich_notes": "Hinweise und Erklärungen sind formatierter Text: fett, Listen, Links und Bilder sind möglich. Früher als einfacher Text geschriebene Notizen behalten ihre Zeilenumbrüche, außer sie enthalten Text, der wie ein HTML-Tag aussieht. Lernende sehen den Hinweis auf Anfrage und die Erklärung nach Abgabe eines Übungstests."
+        "gr_test_rich_authoring_item_rich_notes": "Hinweise und Erklärungen sind formatierter Text: fett, Listen, Links und Bilder sind möglich. Früher als einfacher Text geschriebene Notizen behalten ihre Zeilenumbrüche, außer sie enthalten Text, der wie ein HTML-Tag aussieht. Lernende sehen den Hinweis auf Anfrage und die Erklärung nach Abgabe eines Übungstests.",
+        "gr_test_rich_authoring_item_typed_gap_chips": "Frei auszufüllende Lücken zeigen ihre akzeptierten Antworten jetzt als Chips, wie Dropdown-Lücken: eine (oder mehrere auf einmal als a|b|c) hinzufügen, mit × entfernen und mit Enter im leeren Feld speichern. Die erste Antwort wird im Editor angezeigt."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",

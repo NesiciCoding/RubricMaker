@@ -1903,7 +1903,7 @@
         "cloze_generate_empty": "Saisissez ou collez d’abord un texte.",
         "cloze_generate_none_found": "Aucun mot correspondant trouvé pour cette stratégie.",
         "cloze_no_gaps": "Aucun trou pour l’instant. Cliquez sur « Insérer un trou » pour en ajouter un.",
-        "cloze_gap_alternatives_label": "Alternatives (séparées par |), la première = bonne réponse :",
+        "cloze_gap_alternatives_label": "Modifier les réponses du trou",
         "cloze_gap_save": "Enregistrer",
         "cloze_gap_cancel": "Annuler",
         "cloze_gap_correct_label": "Bonnes réponses",
@@ -5652,7 +5652,8 @@
         "gr_test_rich_authoring_item_gap_weights": "Questions à trous : donnez plus de poids à un trou dans la liste sous le texte (par exemple 2 pour le trou clé) pour qu'il rapporte une plus grande part des points de la question lorsque le crédit partiel est activé (sinon, chaque trou doit rester juste). Modifier le nombre de trous rétablit des poids égaux.",
         "gr_test_rich_authoring_item_option_feedback": "Choix multiple et réponses multiples : ajoutez un commentaire à chaque option (bouton bulle). Dans un test d'entraînement, l'élève qui a choisi cette option le voit dans la correction après l'envoi ; il n'est jamais envoyé aux élèves dans les tests notés.",
         "gr_test_rich_authoring_item_pill_keyboard": "Les pastilles de trou, de texte actif et de correction d'erreur de l'éditeur sont accessibles avec Tab et s'ouvrent avec Entrée ou Espace ; Échap ferme la zone d'édition et vous ramène à la pastille.",
-        "gr_test_rich_authoring_item_rich_notes": "Les indices et explications sont du texte enrichi : gras, listes, liens et images. Les notes écrites auparavant en texte brut conservent leurs sauts de ligne, sauf si elles contiennent du texte qui ressemble à une balise HTML. Les élèves voient l'indice à leur demande et l'explication après l'envoi d'un test d'entraînement."
+        "gr_test_rich_authoring_item_rich_notes": "Les indices et explications sont du texte enrichi : gras, listes, liens et images. Les notes écrites auparavant en texte brut conservent leurs sauts de ligne, sauf si elles contiennent du texte qui ressemble à une balise HTML. Les élèves voient l'indice à leur demande et l'explication après l'envoi d'un test d'entraînement.",
+        "gr_test_rich_authoring_item_typed_gap_chips": "Les trous à saisie libre listent désormais leurs réponses acceptées sous forme de puces, comme les trous à liste déroulante : ajoutez-en une (ou plusieurs d'un coup avec a|b|c), supprimez-en une avec ×, et appuyez sur Entrée dans un champ vide pour enregistrer. La première réponse est celle affichée dans l'éditeur."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",

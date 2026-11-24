@@ -1974,7 +1974,7 @@
         "cloze_generate_empty": "Type or paste a passage first.",
         "cloze_generate_none_found": "No matching words found to gap for this strategy.",
         "cloze_no_gaps": "No gaps yet. Click “Insert gap” to add one.",
-        "cloze_gap_alternatives_label": "Alternatives (pipe-separated), first = correct answer:",
+        "cloze_gap_alternatives_label": "Edit gap answers",
         "cloze_gap_save": "Save",
         "cloze_gap_cancel": "Cancel",
         "cloze_gap_correct_label": "Correct answers",
@@ -5652,7 +5652,8 @@
         "gr_test_rich_authoring_item_gap_weights": "Fill-in questions: give a gap more weight in the gap list below the passage (for example 2 for the key gap) so it earns a bigger share of the question's points when partial credit is on (with it off, every gap must still be right). Changing the number of gaps resets the weights to equal.",
         "gr_test_rich_authoring_item_option_feedback": "Multiple choice and multiple response: add feedback to any option (speech-bubble button). In a practice test, a student who picked that option sees it in the review after submitting; it is never sent to students in graded tests.",
         "gr_test_rich_authoring_item_pill_keyboard": "Gap, hot-text and error-correction pills in the editor can be reached with Tab and opened with Enter or Space; Escape closes the editing box and returns you to the pill.",
-        "gr_test_rich_authoring_item_rich_notes": "Hints and explanations are rich text: use bold, lists, links and pictures. Notes written earlier as plain text keep their line breaks, unless they contain text that looks like an HTML tag. Students see the hint when they ask for it, and the explanation after submitting a practice test."
+        "gr_test_rich_authoring_item_rich_notes": "Hints and explanations are rich text: use bold, lists, links and pictures. Notes written earlier as plain text keep their line breaks, unless they contain text that looks like an HTML tag. Students see the hint when they ask for it, and the explanation after submitting a practice test.",
+        "gr_test_rich_authoring_item_typed_gap_chips": "Typed fill-in gaps now list their accepted answers as chips, like dropdown gaps: add one (or several at once as a|b|c), remove one with its ×, and press Enter on an empty box to save. The first answer is the one shown in the editor."
     },
     "studentProfile": {
         "tab_overview": "Overview",

@@ -58,7 +58,7 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
 
     addOptions() {
         return {
-            editLabel: 'Alternatives (pipe-separated), first = correct answer:',
+            editLabel: 'Edit gap answers',
             saveLabel: 'Save',
             cancelLabel: 'Cancel',
             stemLabel: 'Stem word (word formation):',
@@ -290,6 +290,103 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
                 return section;
             };
 
+            interface TypedEntry {
+                text: string;
+                role: ClozeOptionRole | null;
+            }
+
+            /**
+             * The accepted answers of a typed gap as removable chips, like a dropdown gap's. Typing `a|b` adds both,
+             * and a leading `=`/`~` still sets a role, so pasted or older marked gaps survive a round trip.
+             */
+            const typedSection = (labelText: string, entries: TypedEntry[]) => {
+                const section = document.createElement('div');
+                section.className = 'cloze-gap-popover-section';
+                section.setAttribute('role', 'group');
+                section.setAttribute('aria-label', labelText);
+                const label = document.createElement('div');
+                label.className = 'cloze-gap-popover-label';
+                label.setAttribute('aria-hidden', 'true');
+                label.textContent = labelText;
+                const chips = document.createElement('div');
+                chips.className = 'cloze-gap-popover-chips';
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'cloze-gap-popover-input';
+                input.setAttribute('aria-label', labelText);
+
+                const renderChips = () =>
+                    chips.replaceChildren(
+                        ...entries.map((entry, index) => {
+                            const chip = document.createElement('span');
+                            chip.className = 'cloze-gap-popover-chip';
+                            const text = document.createElement('span');
+                            text.textContent = `${entry.role === 'wrong' ? '~' : entry.role === 'correct' ? '=' : ''}${entry.text}`;
+                            const remove = document.createElement('button');
+                            remove.type = 'button';
+                            remove.className = 'cloze-gap-popover-chip-remove';
+                            remove.setAttribute('aria-label', removeLabel.replace('{{value}}', entry.text));
+                            remove.textContent = '×';
+                            remove.addEventListener('click', () => {
+                                entries.splice(index, 1);
+                                renderChips();
+                                input.focus();
+                            });
+                            chip.append(text, remove);
+                            return chip;
+                        })
+                    );
+                renderChips();
+
+                const flush = () => {
+                    const parsed = splitClozeOptions(input.value);
+                    parsed.alternatives.forEach((text, i) => {
+                        if (entries.some((entry) => entry.text.toLowerCase() === text.toLowerCase())) return;
+                        entries.push({ text, role: parsed.roles[i] });
+                    });
+                    input.value = '';
+                    renderChips();
+                };
+
+                let saveOnEmptyEnter: () => void = () => {};
+                input.addEventListener('keydown', (ke) => {
+                    // An Enter that confirms an IME candidate must not also add the half-composed text as a chip.
+                    if (ke.isComposing || ke.keyCode === 229) return;
+                    if (ke.key === 'Enter') {
+                        ke.preventDefault();
+                        if (input.value.trim()) {
+                            flush();
+                            input.focus();
+                        } else {
+                            saveOnEmptyEnter();
+                        }
+                    } else if (ke.key === 'Escape') {
+                        ke.preventDefault();
+                        closePopover?.();
+                    }
+                });
+                const add = document.createElement('button');
+                add.type = 'button';
+                add.textContent = addLabel;
+                add.addEventListener('click', () => {
+                    flush();
+                    input.focus();
+                });
+                const row = document.createElement('div');
+                row.className = 'cloze-gap-popover-add';
+                row.append(input, add);
+                section.append(label, chips, row);
+
+                return {
+                    section,
+                    input,
+                    flush,
+                    onEmptyEnter: (save: () => void) => {
+                        saveOnEmptyEnter = save;
+                    },
+                };
+            };
+
             const stemInput = (popover: HTMLElement) => {
                 // Read at click time from the editor's DOM so toggling word formation needs no editor rebuild.
                 if (editor.view.dom.getAttribute('data-word-formation') !== 'true') return undefined;
@@ -335,51 +432,26 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
                         const dropdown = isDropdown();
 
                         if (!dropdown) {
-                            const label = document.createElement('div');
-                            label.className = 'cloze-gap-popover-label';
-                            label.textContent = editLabel;
-
-                            const input = document.createElement('input');
-                            input.type = 'text';
-                            input.className = 'cloze-gap-popover-input';
-                            // Markers stay visible, so opening and saving a marked gap round-trips unchanged.
-                            input.value = alternatives()
-                                .map((alternative, i) => {
-                                    const role = roles()?.[i];
-                                    return role === 'wrong'
-                                        ? `~${alternative}`
-                                        : role === 'correct'
-                                          ? `=${alternative}`
-                                          : alternative;
-                                })
-                                .join('|');
-                            input.addEventListener('keydown', (ke) => {
-                                if (ke.key === 'Enter') {
-                                    ke.preventDefault();
-                                    saveAlternatives();
-                                } else if (ke.key === 'Escape') {
-                                    ke.preventDefault();
-                                    close();
-                                }
-                            });
-                            popover.append(label, input);
+                            const entries = alternatives().map((text, i) => ({ text, role: roles()?.[i] ?? null }));
+                            const typed = typedSection(correctLabel, entries);
+                            popover.append(typed.section);
                             const stem = stemInput(popover);
                             const saveAlternatives = () => {
-                                const parsed = splitClozeOptions(input.value);
-                                if (parsed.alternatives.length === 0) {
+                                typed.flush();
+                                if (entries.length === 0) {
                                     close();
                                     return;
                                 }
                                 applyNode(
-                                    parsed.alternatives,
-                                    parsed.roles.some(Boolean) ? parsed.roles : null,
+                                    entries.map((entry) => entry.text),
+                                    entries.some((entry) => entry.role) ? entries.map((entry) => entry.role) : null,
                                     stem ? cleanStem(stem.value) || null : (node.attrs.stem as string | null)
                                 );
                                 close();
                             };
+                            typed.onEmptyEnter(saveAlternatives);
                             popover.append(actions(saveAlternatives));
-                            input.focus();
-                            input.select();
+                            typed.input.focus();
                             return;
                         }
 
