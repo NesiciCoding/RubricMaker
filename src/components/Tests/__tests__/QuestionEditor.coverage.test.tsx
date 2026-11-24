@@ -56,8 +56,22 @@ vi.mock('../../../hooks/useToast', () => ({
 }));
 
 vi.mock('../../Editor/EssayEditor', () => ({
-    default: ({ content, onChange }: { content: string; onChange: (html: string) => void }) => (
-        <textarea aria-label="tests.question_prompt_label" value={content} onChange={(e) => onChange(e.target.value)} />
+    default: ({
+        content,
+        onChange,
+        ariaLabelledBy,
+    }: {
+        content: string;
+        onChange: (html: string) => void;
+        ariaLabelledBy?: string;
+    }) => (
+        <textarea
+            {...(ariaLabelledBy?.startsWith('question-prompt')
+                ? { 'aria-label': 'tests.question_prompt_label' }
+                : { 'aria-labelledby': ariaLabelledBy })}
+            value={content}
+            onChange={(e) => onChange(e.target.value)}
+        />
     ),
 }));
 
