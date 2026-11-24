@@ -1484,6 +1484,20 @@ function GradingTab() {
                 />
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.gr_test_answer_options_title')}
+                </h3>
+                <FeatureList
+                    items={[
+                        t('docs.gr_test_answer_options_item_cloze_select'),
+                        t('docs.gr_test_answer_options_item_cloze_paste'),
+                        t('docs.gr_test_answer_options_item_shuffle'),
+                        t('docs.gr_test_answer_options_item_true_false'),
+                        t('docs.gr_test_answer_options_item_numeric'),
+                        t('docs.gr_test_answer_options_item_matching'),
+                    ]}
+                />
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.gr_cloze_generators_title')}
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
