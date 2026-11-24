@@ -141,9 +141,8 @@ describe('TestAssignmentModal', () => {
             ],
         };
         const decodedOptions = (test: RmTest) => {
-            const view = renderWithRouter(
-                <TestAssignmentModal test={test} onClose={vi.fn()} {...modalCallbacks()} />
-            );
+            const view = renderWithRouter(<TestAssignmentModal test={test} onClose={vi.fn()} {...modalCallbacks()} />);
+            selectClass('c1');
             const input = screen.getByLabelText('tests.assignment_link_for:{"name":"Alice"}') as HTMLInputElement;
             const options = decodeTestAssignment(input.value.split('#/test/')[1])?.test?.questions[0].options;
             view.unmount();
