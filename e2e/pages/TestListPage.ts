@@ -49,6 +49,13 @@ export class TestListPage extends BasePage {
         await this.assignmentModal().locator('#ta-class').selectOption({ label: className });
     }
 
+    /** Assigning is explicit: picking a class only previews it until this is clicked. */
+    async assignToClass(): Promise<void> {
+        await this.assignmentModal()
+            .getByRole('button', { name: /assign to this class/i })
+            .click();
+    }
+
     studentLinkInput(studentName: string): Locator {
         return this.assignmentModal().getByLabel(`Test link for ${studentName}`);
     }

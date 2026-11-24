@@ -62,6 +62,8 @@ const mockAddTest = vi.fn((t: Omit<RmTest, 'id' | 'createdAt' | 'updatedAt'>) =>
 }));
 const mockDeleteTest = vi.fn();
 const mockUpdateTest = vi.fn();
+const mockUpdateClass = vi.fn();
+const mockDeleteTestAssignments = vi.fn().mockResolvedValue({ success: true });
 const noop = vi.fn();
 
 const mockUseApp = {
@@ -79,6 +81,8 @@ const mockUseApp = {
     deleteTest: mockDeleteTest,
     saveStudentTest: noop,
     updateSettings: noop,
+    updateClass: mockUpdateClass,
+    deleteTestAssignments: mockDeleteTestAssignments,
 };
 
 vi.mock('../../context/AppContext', () => ({
@@ -191,6 +195,9 @@ describe('TestListPage', () => {
         mockDeleteTest.mockClear();
         mockNavigate.mockClear();
         capturedOnDragEnd = null;
+        mockUpdateClass.mockClear();
+        mockDeleteTestAssignments.mockClear();
+        mockClass.testIds = undefined;
         mockExportTestSummaryDocx.mockClear();
         mockExportBatchTestSummaryDocx.mockClear();
         mockExportTestSummaryPdf.mockClear();
@@ -202,6 +209,40 @@ describe('TestListPage', () => {
         (mockUseApp as Record<string, unknown>).exportTemplates = [];
         mockSettings.styleTemplateId = undefined;
         (mockUseApp as Record<string, unknown>).tests = [mockTest];
+    });
+
+    it('assigns a test to a class from the card menu', async () => {
+        await loadPage();
+        openCardMenu();
+
+        const item = screen.getByRole('menuitemcheckbox', { name: 'Class A' });
+        expect(item).toHaveAttribute('aria-checked', 'false');
+        fireEvent.click(item);
+
+        expect(mockUpdateClass).toHaveBeenCalledWith({ ...mockClass, testIds: ['t1'] });
+        expect(mockShowToast).toHaveBeenCalledWith(
+            'tests.class_linked_toast:{"name":"Vocabulary Quiz","className":"Class A"}',
+            'success'
+        );
+    });
+
+    it('unassigns a test from a class after confirmation and revokes its assignment rows', async () => {
+        mockClass.testIds = ['t1'];
+        await loadPage();
+        openCardMenu();
+
+        fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Class A' }));
+        fireEvent.click(await screen.findByText('tests.class_unlink_action'));
+
+        await waitFor(() => expect(mockUpdateClass).toHaveBeenCalledWith({ ...mockClass, testIds: [] }));
+        // Offline mode has no assignment rows to delete.
+        expect(mockDeleteTestAssignments).not.toHaveBeenCalled();
+        await waitFor(() =>
+            expect(mockShowToast).toHaveBeenCalledWith(
+                'tests.class_unlinked_toast:{"name":"Vocabulary Quiz","className":"Class A"}',
+                'success'
+            )
+        );
     });
 
     it('renders the test list with question count and total points', async () => {

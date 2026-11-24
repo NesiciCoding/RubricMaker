@@ -296,7 +296,12 @@ export function buildDashboardMatrix(
                 row[cls.id] = {
                     submittedCount: submitted.get(cls.id) ?? 0,
                     gradedCount: gradedRecords.length,
-                    isLinked: anyByClass.has(cls.id),
+                    // A test counts for a class once it is assigned there (`Class.testIds`, the same
+                    // explicit link rubrics use) OR once one of its students has actually taken it.
+                    // The second half keeps tests from before per-class assignment — assigned by
+                    // handing out links, never linked — inside the totals instead of silently
+                    // dropping their work when this link became the source of truth.
+                    isLinked: (cls.testIds ?? []).includes(activity.id) || anyByClass.has(cls.id),
                     averageScore: mean(scores),
                     mostCommonCefrLevel: mostCommonCefrLevel(levelCounts),
                     cefrLevelCounts: levelCounts,

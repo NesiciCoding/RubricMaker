@@ -1,9 +1,20 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { X, Copy, Check, ClipboardCheck, Database, ExternalLink, AlertCircle, Printer } from 'lucide-react';
+import {
+    X,
+    Copy,
+    Check,
+    ClipboardCheck,
+    Database,
+    ExternalLink,
+    AlertCircle,
+    Printer,
+    Send,
+    Unlink2,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Modal from '../ui/Modal';
 import TestSlipSheet from './TestSlipSheet';
-import { useAssessment, useClasses, useSettings, useStudents } from '../../context/AppContext';
+import { useAssessment, useClasses, useStudents } from '../../context/AppContext';
 import { useDbStatus } from '../../hooks/useDbStatus';
 import { loadSupabaseConfig } from '../../services/database';
 import { encodeTestAssignment, buildShareUrl } from '../../utils/shareCode';
@@ -17,20 +28,25 @@ interface Props {
     onClose: () => void;
     /** Set when assigning a colleague's test: the assignment rows are owned by the test's owner. */
     ownerId?: string;
+    /** Assigns the test to one class (adds it to `Class.testIds`). */
+    onAssignClass: (classId: string) => void;
+    /** Unassigns the test from one class; the caller also revokes its student assignment rows. */
+    onUnassignClass: (classId: string) => void;
 }
 
-export default function TestAssignmentModal({ test, onClose, ownerId }: Props) {
+export default function TestAssignmentModal({ test, onClose, ownerId, onAssignClass, onUnassignClass }: Props) {
     const { t } = useTranslation();
     const { students } = useStudents();
     const { classes } = useClasses();
 
     const { saveTestAssignment, fetchTestAssignmentTeacherKeys, updateTest } = useAssessment();
-    const { settings } = useSettings();
 
     const dbStatus = useDbStatus();
     const config = loadSupabaseConfig();
 
-    const [classId, setClassId] = useState(settings.activeClassId ?? classes[0]?.id ?? '');
+    // No remembered default: an assignment must name its class, or every test a teacher opens here
+    // would silently land on whichever class they happened to visit last.
+    const [classId, setClassId] = useState('');
     const [versionCount, setVersionCount] = useState(normalizeVersionCount(test.versionCount));
     const [expiresAt, setExpiresAt] = useState(test.dueDate ? toLocalDatetimeInput(test.dueDate) : '');
     const [embedDb, setEmbedDb] = useState(dbStatus.isConnected);
@@ -46,8 +62,11 @@ export default function TestAssignmentModal({ test, onClose, ownerId }: Props) {
 
     const savedKeyFor = useCallback((studentId: string) => `${studentId}::${expiresAt}`, [expiresAt]);
 
+    const selectedClass = classes.find((c) => c.id === classId);
+    const linkedToClass = !!selectedClass && (selectedClass.testIds ?? []).includes(test.id);
+
     const classStudents = useMemo(
-        () => students.filter((s) => (classId ? s.classId === classId : true)),
+        () => (classId ? students.filter((s) => s.classId === classId) : []),
         [students, classId]
     );
 
@@ -189,15 +208,16 @@ export default function TestAssignmentModal({ test, onClose, ownerId }: Props) {
 
     // Auto-save as soon as a DB-mode batch of links becomes shareable, same rationale as
     // EssayAssignmentModal: gating behind a separate button click leaves a window where a
-    // teacher could hand out a link before its row exists server-side. Re-runs when
-    // expiresAt changes too — savedKeyFor makes that a "new" payload per student, so
-    // editing the deadline after the first auto-save doesn't leave stale rows behind.
+    // teacher could hand out a link before its row exists server-side. Only an assigned class
+    // gets rows, so merely opening this dialog saves nothing. Re-runs when expiresAt changes
+    // too — savedKeyFor makes that a "new" payload per student, so editing the deadline after
+    // the first auto-save doesn't leave stale rows behind.
     useEffect(() => {
-        if (embedDb && keysReconciled && !saving) {
+        if (embedDb && keysReconciled && !saving && linkedToClass) {
             void handleSaveAllToDb();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [embedDb, classId, expiresAt, keysReconciled]);
+    }, [embedDb, classId, expiresAt, keysReconciled, linkedToClass]);
 
     async function handleCopyOne(studentId: string) {
         try {
@@ -266,12 +286,15 @@ export default function TestAssignmentModal({ test, onClose, ownerId }: Props) {
                     gap: 14,
                     maxHeight: '70vh',
                     overflowY: 'auto',
+                    // A 1px sub-pixel rounding overflow would otherwise show a horizontal scrollbar.
+                    overflowX: 'hidden',
                 }}
             >
-                {/* Class picker */}
+                {/* Class picker — pick the class this test is for, then assign or unassign it there */}
                 <div className="form-group" style={{ marginBottom: 0 }}>
                     <label htmlFor="ta-class">{t('tests.assignment_class_label')}</label>
                     <select id="ta-class" value={classId} onChange={(e) => setClassId(e.target.value)}>
+                        <option value="">{t('tests.assignment_class_placeholder')}</option>
                         {classes.map((c) => (
                             <option key={c.id} value={c.id}>
                                 {c.name}
@@ -279,6 +302,35 @@ export default function TestAssignmentModal({ test, onClose, ownerId }: Props) {
                         ))}
                     </select>
                 </div>
+
+                {selectedClass && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        {linkedToClass ? (
+                            <>
+                                <span className="badge badge-green">{t('tests.assignment_linked_class')}</span>
+                                <button
+                                    type="button"
+                                    className="btn btn-ghost btn-sm"
+                                    style={{ color: 'var(--red-text)' }}
+                                    onClick={() => onUnassignClass(selectedClass.id)}
+                                >
+                                    <Unlink2 size={13} /> {t('tests.assignment_unlink_class')}
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <button
+                                    type="button"
+                                    className="btn btn-primary btn-sm"
+                                    onClick={() => onAssignClass(selectedClass.id)}
+                                >
+                                    <Send size={13} /> {t('tests.assignment_link_class')}
+                                </button>
+                                <span className="text-muted text-xs">{t('tests.assignment_not_linked')}</span>
+                            </>
+                        )}
+                    </div>
+                )}
 
                 {/* Parallel paper versions */}
                 <div className="form-group" style={{ marginBottom: 0 }}>
@@ -322,7 +374,7 @@ export default function TestAssignmentModal({ test, onClose, ownerId }: Props) {
                 </div>
 
                 {/* DB integration toggle */}
-                {dbStatus.isConnected && (
+                {linkedToClass && dbStatus.isConnected && (
                     <div
                         style={{
                             background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
@@ -411,108 +463,116 @@ export default function TestAssignmentModal({ test, onClose, ownerId }: Props) {
                     </div>
                 )}
 
-                {/* Student links */}
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                    <div
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            marginBottom: 6,
-                        }}
-                    >
-                        <label style={{ marginBottom: 0 }}>{t('tests.assignment_links_label')}</label>
-                        <div style={{ display: 'flex', gap: 6 }}>
-                            {classStudents.length > 0 && (
-                                <button
-                                    className="btn btn-secondary btn-sm"
-                                    onClick={() => setShowSlips(true)}
-                                    disabled={embedDb && (saving || classSavedCount < classStudents.length)}
-                                    title={
-                                        embedDb && (saving || classSavedCount < classStudents.length)
-                                            ? t('tests.assignment_print_slips_wait')
-                                            : undefined
-                                    }
-                                >
-                                    <Printer size={14} /> {t('tests.assignment_print_slips')}
-                                </button>
-                            )}
-                            {classStudents.length > 1 && (
-                                <button
-                                    className="btn btn-secondary btn-sm"
-                                    onClick={handleCopyAll}
-                                    disabled={linkNeedsRow && classSavedCount < classStudents.length}
-                                >
-                                    {copiedAll ? <Check size={14} /> : <Copy size={14} />}
-                                    {copiedAll
-                                        ? t('essay_assignment.copied')
-                                        : t('tests.copy_all_links', { count: classStudents.length })}
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                    {classStudents.length === 0 ? (
-                        <p className="text-muted text-sm">{t('comparativeGrading.no_classes')}</p>
-                    ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                            {classStudents.map((s) => (
-                                <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <span style={{ flexShrink: 0, minWidth: 100, fontSize: '0.85rem' }}>
-                                        {s.name}
-                                        {(() => {
-                                            const version = versionForStudent(s.id, versionCount);
-                                            return version ? (
-                                                <span
-                                                    className="badge"
-                                                    style={{ marginLeft: 6 }}
-                                                    title={t('tests.versioning_badge', { version })}
-                                                >
-                                                    {version}
-                                                </span>
-                                            ) : null;
-                                        })()}
-                                    </span>
-                                    <input
-                                        readOnly
-                                        value={buildUrl(s.id)}
-                                        aria-label={t('tests.assignment_link_for', { name: s.name })}
-                                        style={{
-                                            flex: 1,
-                                            fontFamily: 'monospace',
-                                            fontSize: '0.75rem',
-                                            color: 'var(--text-muted)',
-                                        }}
-                                    />
+                {/* Student links — only once the test belongs to this class */}
+                {linkedToClass && (
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                        <div
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                flexWrap: 'wrap',
+                                gap: 6,
+                                marginBottom: 6,
+                            }}
+                        >
+                            <label style={{ marginBottom: 0 }}>{t('tests.assignment_links_label')}</label>
+                            <div style={{ display: 'flex', gap: 6 }}>
+                                {classStudents.length > 0 && (
                                     <button
                                         className="btn btn-secondary btn-sm"
-                                        style={{ flexShrink: 0 }}
-                                        onClick={() => handleCopyOne(s.id)}
-                                        disabled={!linkReady(s.id)}
-                                        title={linkReady(s.id) ? undefined : t('tests.assignment_print_slips_wait')}
+                                        onClick={() => setShowSlips(true)}
+                                        disabled={embedDb && (saving || classSavedCount < classStudents.length)}
+                                        title={
+                                            embedDb && (saving || classSavedCount < classStudents.length)
+                                                ? t('tests.assignment_print_slips_wait')
+                                                : undefined
+                                        }
                                     >
-                                        {copiedStudentId === s.id ? <Check size={14} /> : <Copy size={14} />}
-                                        {copiedStudentId === s.id
-                                            ? t('essay_assignment.copied')
-                                            : t('essay_assignment.copy')}
+                                        <Printer size={14} /> {t('tests.assignment_print_slips')}
                                     </button>
-                                    {import.meta.env.DEV && (
-                                        <a
-                                            className="btn btn-ghost btn-icon btn-sm"
-                                            style={{ flexShrink: 0 }}
-                                            title={t('tests.dev_open_as_student')}
-                                            aria-label={t('tests.dev_open_as_student')}
-                                            href={buildUrl(s.id)}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                        >
-                                            <ExternalLink size={14} />
-                                        </a>
-                                    )}
-                                </div>
-                            ))}
+                                )}
+                                {classStudents.length > 1 && (
+                                    <button
+                                        className="btn btn-secondary btn-sm"
+                                        onClick={handleCopyAll}
+                                        disabled={linkNeedsRow && classSavedCount < classStudents.length}
+                                    >
+                                        {copiedAll ? <Check size={14} /> : <Copy size={14} />}
+                                        {copiedAll
+                                            ? t('essay_assignment.copied')
+                                            : t('tests.copy_all_links', { count: classStudents.length })}
+                                    </button>
+                                )}
+                            </div>
                         </div>
-                    )}
-                </div>
+                        {classStudents.length === 0 ? (
+                            <p className="text-muted text-sm">{t('comparativeGrading.no_classes')}</p>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                {classStudents.map((s) => (
+                                    <div
+                                        key={s.id}
+                                        style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}
+                                    >
+                                        <span style={{ flexShrink: 0, minWidth: 100, fontSize: '0.85rem' }}>
+                                            {s.name}
+                                            {(() => {
+                                                const version = versionForStudent(s.id, versionCount);
+                                                return version ? (
+                                                    <span
+                                                        className="badge"
+                                                        style={{ marginLeft: 6 }}
+                                                        title={t('tests.versioning_badge', { version })}
+                                                    >
+                                                        {version}
+                                                    </span>
+                                                ) : null;
+                                            })()}
+                                        </span>
+                                        <input
+                                            readOnly
+                                            value={buildUrl(s.id)}
+                                            aria-label={t('tests.assignment_link_for', { name: s.name })}
+                                            style={{
+                                                flex: 1,
+                                                minWidth: 0,
+                                                fontFamily: 'monospace',
+                                                fontSize: '0.75rem',
+                                                color: 'var(--text-muted)',
+                                            }}
+                                        />
+                                        <button
+                                            className="btn btn-secondary btn-sm"
+                                            style={{ flexShrink: 0 }}
+                                            onClick={() => handleCopyOne(s.id)}
+                                            disabled={!linkReady(s.id)}
+                                            title={linkReady(s.id) ? undefined : t('tests.assignment_print_slips_wait')}
+                                        >
+                                            {copiedStudentId === s.id ? <Check size={14} /> : <Copy size={14} />}
+                                            {copiedStudentId === s.id
+                                                ? t('essay_assignment.copied')
+                                                : t('essay_assignment.copy')}
+                                        </button>
+                                        {import.meta.env.DEV && (
+                                            <a
+                                                className="btn btn-ghost btn-icon btn-sm"
+                                                style={{ flexShrink: 0 }}
+                                                title={t('tests.dev_open_as_student')}
+                                                aria-label={t('tests.dev_open_as_student')}
+                                                href={buildUrl(s.id)}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                            >
+                                                <ExternalLink size={14} />
+                                            </a>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
             <div

@@ -1281,6 +1281,8 @@ export interface AppContextValue extends StoreData {
     getEssaySignedUrl: (storagePath: string) => Promise<string | null>;
     // Test assignments (teacher side)
     saveTestAssignment: (a: TestAssignment) => Promise<SyncResult>;
+    /** Removes a test's assignment rows for the given students (unassigning it from their class). */
+    deleteTestAssignments: (testId: string, studentIds: string[]) => Promise<SyncResult>;
     fetchMyTestAssignments: () => Promise<Awaited<ReturnType<StorageSyncInstance['fetchMyTestAssignments']>>>;
     fetchAssignedTestContent: (testId: string) => Promise<Test | null>;
     fetchMyReadAloudAccommodation: (studentId: string) => Promise<boolean>;

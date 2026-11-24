@@ -19,7 +19,7 @@ interface Props {
     matrix: Record<string, Record<string, CellData>>;
     compact: boolean;
     onCompactChange: (compact: boolean) => void;
-    onToggleRubricLink: (classId: string, rubricId: string, linked: boolean) => void;
+    onToggleLink: (classId: string, activity: ActivityRow, linked: boolean) => void;
     onAssignRubric: (classId: string, rubricId: string) => void;
     onAssignEssay: (classId: string, teacherKey: string) => void;
     onOpenActivity: (activity: ActivityRow) => void;
@@ -41,7 +41,7 @@ export default function ActivityDashboardGrid({
     matrix,
     compact,
     onCompactChange,
-    onToggleRubricLink,
+    onToggleLink,
     onAssignRubric,
     onAssignEssay,
     onOpenActivity,
@@ -187,9 +187,9 @@ export default function ActivityDashboardGrid({
                                                                                     type="button"
                                                                                     className="btn btn-primary btn-sm ad-link-btn"
                                                                                     onClick={() =>
-                                                                                        onToggleRubricLink(
+                                                                                        onToggleLink(
                                                                                             cls.id,
-                                                                                            activity.id,
+                                                                                            activity,
                                                                                             false
                                                                                         )
                                                                                     }
@@ -319,27 +319,28 @@ export default function ActivityDashboardGrid({
                                                                                         {cell.setCefrLevel ?? '—'}
                                                                                     </span>
                                                                                 </span>
-                                                                                {isRubric && (
-                                                                                    <button
-                                                                                        type="button"
-                                                                                        className="ad-icon-btn"
-                                                                                        aria-label={t(
-                                                                                            'activityDashboard.unlink'
-                                                                                        )}
-                                                                                        title={t(
-                                                                                            'activityDashboard.unlink'
-                                                                                        )}
-                                                                                        onClick={() =>
-                                                                                            onToggleRubricLink(
-                                                                                                cls.id,
-                                                                                                activity.id,
-                                                                                                true
-                                                                                            )
-                                                                                        }
-                                                                                    >
-                                                                                        <Unlink2 size={12} />
-                                                                                    </button>
-                                                                                )}
+                                                                                {(isRubric || isTest) &&
+                                                                                    cell.isLinked && (
+                                                                                        <button
+                                                                                            type="button"
+                                                                                            className="ad-icon-btn"
+                                                                                            aria-label={t(
+                                                                                                'activityDashboard.unlink'
+                                                                                            )}
+                                                                                            title={t(
+                                                                                                'activityDashboard.unlink'
+                                                                                            )}
+                                                                                            onClick={() =>
+                                                                                                onToggleLink(
+                                                                                                    cls.id,
+                                                                                                    activity,
+                                                                                                    true
+                                                                                                )
+                                                                                            }
+                                                                                        >
+                                                                                            <Unlink2 size={12} />
+                                                                                        </button>
+                                                                                    )}
                                                                             </div>
 
                                                                             <div className="ad-cell-actions">
@@ -380,6 +381,21 @@ export default function ActivityDashboardGrid({
                                                                                             )}
                                                                                         </button>
                                                                                     )}
+                                                                                {isTest && !cell.isLinked && (
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        className="ad-action-btn"
+                                                                                        onClick={() =>
+                                                                                            onToggleLink(
+                                                                                                cls.id,
+                                                                                                activity,
+                                                                                                false
+                                                                                            )
+                                                                                        }
+                                                                                    >
+                                                                                        {t('activityDashboard.link')}
+                                                                                    </button>
+                                                                                )}
                                                                                 {isTest && (
                                                                                     <button
                                                                                         type="button"

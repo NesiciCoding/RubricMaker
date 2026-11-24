@@ -1609,6 +1609,20 @@ export class SupabaseAdapter {
     }
 
     /**
+     * Drop a test's assignment rows for a set of students — the undo of saveTestAssignment, used
+     * when a test is unassigned from a class, so the portal to-do list cannot keep a dead entry.
+     */
+    async deleteTestAssignments(testId: string, studentIds: string[]): Promise<SyncResult> {
+        if (studentIds.length === 0) return { success: true };
+        const { error } = await this.db()
+            .from('test_assignments')
+            .delete()
+            .eq('test_id', testId)
+            .in('student_id', studentIds);
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    /**
      * Fetch test assignments belonging to the currently logged-in student.
      * Scoped by RLS via get_my_test_assignment_ids() — students only see their own rows.
      * Submission status is looked up separately since student_tests stores studentId/testId

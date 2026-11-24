@@ -44,6 +44,7 @@ import TestImportModal from '../components/Tests/TestImportModal';
 import type { ImportedTest } from '../utils/testImport';
 import ExamBookletExportPanel from '../components/Tests/ExamBookletExportPanel';
 import type { Folder, MaterialSharing, Test, CohortFilter as CohortFilterValue } from '../types';
+import { toggleClassTest } from '../utils/classTests';
 import { useDbStatus } from '../hooks/useDbStatus';
 import {
     inheritedSharing,
@@ -103,6 +104,8 @@ export default function TestListPage() {
         addFolder,
         updateFolder,
         deleteFolder,
+        updateClass,
+        deleteTestAssignments,
     } = useStoreActions();
 
     const activeStyleTemplate = exportTemplates.find((t) => t.kind === 'style' && t.id === settings.styleTemplateId);
@@ -119,6 +122,13 @@ export default function TestListPage() {
         [students, classes, cohortFilter]
     );
     const testFolders = foldersForKind(folders, 'test');
+    const assignedClassIdsByTest = React.useMemo(() => {
+        const map = new Map<string, string[]>();
+        for (const cls of classes) {
+            for (const testId of cls.testIds ?? []) map.set(testId, [...(map.get(testId) ?? []), cls.id]);
+        }
+        return map;
+    }, [classes]);
     const visibleTests = React.useMemo(() => {
         const sorted = filterByFolder(sortByDisplayOrder(tests.filter((test) => !test.archivedAt)), activeFolder);
         if (allCohorts) return sorted;
@@ -296,6 +306,44 @@ export default function TestListPage() {
         const created = imported.map((draft) => addTest(folderId ? { ...draft, folderId } : draft));
         if (created.length === 1) navigate(`/tests/${created[0].id}`);
         else showToast(t('importTest.import_success_toast', { count: created.length }), 'success');
+    }
+
+    function assignTestToClass(test: Test, classId: string) {
+        const cls = classes.find((c) => c.id === classId);
+        if (!cls || (cls.testIds ?? []).includes(test.id)) return;
+        updateClass(toggleClassTest(cls, test.id, false));
+        showToast(t('tests.class_linked_toast', { name: test.name, className: cls.name }), 'success');
+    }
+
+    /** Unassigning also revokes the class's student assignment rows, not just the class link. */
+    async function unassignTestFromClass(test: Test, classId: string) {
+        const cls = classes.find((c) => c.id === classId);
+        if (!cls || !(cls.testIds ?? []).includes(test.id)) return;
+        const ok = await confirm({
+            title: t('tests.class_unlink_title'),
+            message: t('tests.class_unlink_message', { name: test.name, className: cls.name }),
+            confirmLabel: t('tests.class_unlink_action'),
+            danger: true,
+        });
+        if (!ok) return;
+        updateClass(toggleClassTest(cls, test.id, true));
+        const studentIds = students.filter((s) => s.classId === cls.id).map((s) => s.id);
+        const result = dbStatus.isConnected
+            ? await deleteTestAssignments(test.id, studentIds).catch(() => ({ success: false }) as const)
+            : ({ success: true } as const);
+        if (result.success) {
+            showToast(t('tests.class_unlinked_toast', { name: test.name, className: cls.name }), 'success');
+        } else {
+            showToast(t('tests.class_unlink_partial'), 'error');
+        }
+    }
+
+    async function toggleTestClass(test: Test, classId: string) {
+        if ((classes.find((c) => c.id === classId)?.testIds ?? []).includes(test.id)) {
+            await unassignTestFromClass(test, classId);
+        } else {
+            assignTestToClass(test, classId);
+        }
     }
 
     function requestAssign(test: Test, onReady: () => void = () => setAssigningTestId(test.id)) {
@@ -581,6 +629,9 @@ export default function TestListPage() {
                                                         shared={sharingOf(test)}
                                                         canReorder={reorderable}
                                                         folders={testFolders}
+                                                        classes={classes}
+                                                        assignedClassIds={assignedClassIdsByTest.get(test.id) ?? []}
+                                                        onToggleClass={(classId) => void toggleTestClass(test, classId)}
                                                         resultsOpen={resultsTestId === test.id}
                                                         onOpen={() => navigate(`/tests/${test.id}`)}
                                                         onOpenScores={() => navigate(`/tests/${test.id}/scores`)}
@@ -721,13 +772,29 @@ export default function TestListPage() {
                         const test = tests.find((tst) => tst.id === assigningTestId);
                         // v8 ignore next line — assign buttons only render for existing tests
                         if (!test) return null;
-                        return <TestAssignmentModal test={test} onClose={() => setAssigningTestId(null)} />;
+                        return (
+                            <TestAssignmentModal
+                                test={test}
+                                onAssignClass={(classId) => assignTestToClass(test, classId)}
+                                onUnassignClass={(classId) => {
+                                    setAssigningTestId(null);
+                                    void unassignTestFromClass(test, classId);
+                                }}
+                                onClose={() => setAssigningTestId(null)}
+                            />
+                        );
                     })()}
 
                 {assigningShared && (
                     <TestAssignmentModal
                         test={assigningShared.item}
                         ownerId={assigningShared.ownerId}
+                        onAssignClass={(classId) => assignTestToClass(assigningShared.item, classId)}
+                        onUnassignClass={(classId) => {
+                            const shared = assigningShared.item;
+                            setAssigningShared(null);
+                            void unassignTestFromClass(shared, classId);
+                        }}
                         onClose={() => setAssigningShared(null)}
                     />
                 )}

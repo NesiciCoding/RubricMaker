@@ -1,9 +1,9 @@
 import React from 'react';
-import { screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent, within, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderWithRouter } from '../../test-utils/renderWithProviders';
 import { DEFAULT_FORMAT } from '../../types';
-import type { AppSettings, Class, EssayAssignment, GradingTask, Rubric, Student } from '../../types';
+import type { AppSettings, Class, EssayAssignment, GradingTask, Rubric, Student, Test } from '../../types';
 
 const mockRubric: Rubric = {
     id: 'r1',
@@ -30,6 +30,16 @@ const mockRubric2: Rubric = {
 const mockClass: Class = { id: 'c1', name: 'Class A' };
 const mockStudent: Student = { id: 's1', name: 'Alice', classId: 'c1' };
 const mockStudent2: Student = { id: 's2', name: 'Bob', classId: 'c1' };
+
+const mockTestRow: Test = {
+    id: 'tst1',
+    name: 'Vocabulary Test',
+    questions: [],
+    requireSEB: false,
+    shuffleQuestions: false,
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+};
 
 const mockSettings: AppSettings = {
     defaultGradeScaleId: 'gs1',
@@ -86,6 +96,7 @@ const mockAppValue: Record<string, unknown> = {
     updateEssayGroup: mockUpdateEssayGroup,
     addGradingTasks: mockAddGradingTasks,
     deleteGradingTask: mockDeleteGradingTask,
+    deleteTestAssignments: vi.fn().mockResolvedValue({ success: true }),
     updateSettings: vi.fn(),
 };
 
@@ -161,7 +172,9 @@ describe('ActivityDashboardPage extended', () => {
         mockAppValue.gradingTasks = [pendingTask];
         mockAppValue.classes = [mockClass];
         mockAppValue.students = [mockStudent, mockStudent2];
+        mockAppValue.tests = [];
         mockClass.rubricIds = undefined;
+        mockClass.testIds = undefined;
         mockClass.year = undefined;
         mockClass.voTrack = undefined;
         const mod = await import('../ActivityDashboardPage');
@@ -219,6 +232,28 @@ describe('ActivityDashboardPage extended', () => {
         const unlinkBtn = screen.getByLabelText('activityDashboard.unlink');
         fireEvent.click(unlinkBtn);
         expect(mockUpdateClass).toHaveBeenCalledWith({ ...mockClass, rubricIds: [] });
+    });
+
+    it('links a test to a class from its dashboard cell', () => {
+        mockAppValue.tests = [mockTestRow];
+        mockClass.rubricIds = ['r1'];
+        renderPage();
+
+        const testRow = screen.getByText('Vocabulary Test').closest('tr')!;
+        fireEvent.click(within(testRow).getByText('activityDashboard.link'));
+        expect(mockUpdateClass).toHaveBeenCalledWith({ ...mockClass, testIds: ['tst1'] });
+    });
+
+    it('unlinks a test from a class after confirmation', async () => {
+        mockAppValue.tests = [mockTestRow];
+        mockClass.rubricIds = ['r1'];
+        mockClass.testIds = ['tst1'];
+        renderPage();
+
+        const testRow = screen.getByText('Vocabulary Test').closest('tr')!;
+        fireEvent.click(within(testRow).getByLabelText('activityDashboard.unlink'));
+        fireEvent.click(await screen.findByText('tests.class_unlink_action'));
+        await waitFor(() => expect(mockUpdateClass).toHaveBeenCalledWith({ ...mockClass, testIds: [] }));
     });
 
     it('assigns an essay template to unassigned students in the class', () => {

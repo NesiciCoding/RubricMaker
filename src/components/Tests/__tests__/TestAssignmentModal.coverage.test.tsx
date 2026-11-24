@@ -37,6 +37,8 @@ const mockTest: RmTest = {
 
 const mockSaveTestAssignment = vi.fn().mockResolvedValue({ success: true });
 const mockFetchTestAssignmentTeacherKeys = vi.fn().mockResolvedValue({});
+const mockOnAssignClass = vi.fn();
+const mockOnUnassignClass = vi.fn();
 
 // Mutated per test — the module-level mock reads the same object.
 const mockState = {
@@ -84,13 +86,25 @@ vi.mock('../../../services/database', () => ({
     loadSupabaseConfig: vi.fn(() => ({ supabaseUrl: 'https://x.supabase.co', supabaseAnonKey: 'anon-key' })),
 }));
 
+function selectClass(classId: string) {
+    fireEvent.change(screen.getByLabelText('tests.assignment_class_label'), { target: { value: classId } });
+}
+
 describe('TestAssignmentModal coverage', () => {
-    let TestAssignmentModalComp: React.ComponentType<{ test: RmTest; onClose: () => void; ownerId?: string }>;
+    let TestAssignmentModalComp: React.ComponentType<{
+        test: RmTest;
+        onClose: () => void;
+        ownerId?: string;
+        onAssignClass: (classId: string) => void;
+        onUnassignClass: (classId: string) => void;
+    }>;
 
     beforeEach(async () => {
         mockDbStatus.isConnected = false;
         mockSaveTestAssignment.mockClear();
         mockSaveTestAssignment.mockResolvedValue({ success: true });
+        mockOnAssignClass.mockClear();
+        mockOnUnassignClass.mockClear();
         mockWriteText.mockReset();
         mockWriteText.mockResolvedValue(undefined);
         Object.defineProperty(navigator, 'clipboard', {
@@ -98,6 +112,8 @@ describe('TestAssignmentModal coverage', () => {
             configurable: true,
         });
         mockState.students = mockStudents;
+        mockClassA.testIds = ['t1'];
+        mockClassB.testIds = ['t1'];
         mockState.classes = [mockClassA, mockClassB];
         mockState.settings = { ...baseSettings, activeClassId: 'c1' };
         const mod = await import('../TestAssignmentModal');
@@ -108,40 +124,61 @@ describe('TestAssignmentModal coverage', () => {
         vi.useRealTimers();
     });
 
-    it('defaults the class to the first class when no active class is set', () => {
-        delete (mockState.settings as Record<string, unknown>).activeClassId;
-        renderWithRouter(<TestAssignmentModalComp test={mockTest} onClose={vi.fn()} />);
-        expect(screen.getByLabelText('tests.assignment_class_label')).toHaveValue('c1');
+    function renderModal(ownerId?: string) {
+        renderWithRouter(
+            <TestAssignmentModalComp
+                test={mockTest}
+                ownerId={ownerId}
+                onAssignClass={mockOnAssignClass}
+                onUnassignClass={mockOnUnassignClass}
+                onClose={vi.fn()}
+            />
+        );
+    }
+
+    it('does not preselect the remembered active class', () => {
+        renderModal();
+        expect(screen.getByLabelText('tests.assignment_class_label')).toHaveValue('');
+        // Its links (and its students) stay hidden until a class is picked.
+        expect(screen.queryByLabelText('tests.assignment_link_for:{"name":"Alice"}')).not.toBeInTheDocument();
     });
 
-    it('shows the no-classes state when there is no class and no students', () => {
-        delete (mockState.settings as Record<string, unknown>).activeClassId;
+    it('shows the empty picker when there is no class and no students', () => {
         mockState.classes = [];
         mockState.students = [];
-        renderWithRouter(<TestAssignmentModalComp test={mockTest} onClose={vi.fn()} />);
-        // classId falls back to '' and the class filter passes everything (no students anyway).
-        expect(screen.getByText('comparativeGrading.no_classes')).toBeInTheDocument();
+        renderModal();
+        expect(screen.getByLabelText('tests.assignment_class_label')).toHaveValue('');
+        expect(screen.queryByText('tests.assignment_link_class')).not.toBeInTheDocument();
+        expect(screen.queryByText('comparativeGrading.no_classes')).not.toBeInTheDocument();
     });
 
-    it('shows all students when no class is selected', () => {
-        delete (mockState.settings as Record<string, unknown>).activeClassId;
-        mockState.classes = [];
-        renderWithRouter(<TestAssignmentModalComp test={mockTest} onClose={vi.fn()} />);
-        // classId '' → the class filter passes every student across all classes.
-        expect(screen.getByLabelText('tests.assignment_link_for:{"name":"Alice"}')).toBeInTheDocument();
-        expect(screen.getByLabelText('tests.assignment_link_for:{"name":"Carla"}')).toBeInTheDocument();
+    it('shows no student links until the test is assigned to the chosen class', () => {
+        mockClassA.testIds = [];
+        renderModal();
+        selectClass('c1');
+        expect(screen.queryByLabelText('tests.assignment_link_for:{"name":"Alice"}')).not.toBeInTheDocument();
+        fireEvent.click(screen.getByText('tests.assignment_link_class'));
+        expect(mockOnAssignClass).toHaveBeenCalledWith('c1');
     });
 
     it('prefills the deadline from the test due date and re-saves on edit', async () => {
         mockDbStatus.isConnected = true;
         const dueTest: RmTest = { ...mockTest, dueDate: '2024-06-15T10:00:00Z' };
-        renderWithRouter(<TestAssignmentModalComp test={dueTest} onClose={vi.fn()} />);
+        renderWithRouter(
+            <TestAssignmentModalComp
+                test={dueTest}
+                onAssignClass={mockOnAssignClass}
+                onUnassignClass={mockOnUnassignClass}
+                onClose={vi.fn()}
+            />
+        );
 
         const deadline = screen.getByLabelText(/tests\.assignment_deadline_label/);
         const input = deadline.closest('div')!.querySelector('input') as HTMLInputElement;
         expect(input.value).toBe(toLocalDatetimeInput('2024-06-15T10:00:00Z'));
 
         // Editing the deadline re-saves each student with the new expiry.
+        selectClass('c1');
         await waitFor(() => expect(mockSaveTestAssignment).toHaveBeenCalled());
         fireEvent.change(input, { target: { value: '2024-06-20T09:00:00' } });
         await waitFor(() =>
@@ -153,7 +190,8 @@ describe('TestAssignmentModal coverage', () => {
 
     it('saves a colleague’s test assignments under the test owner', async () => {
         mockDbStatus.isConnected = true;
-        renderWithRouter(<TestAssignmentModalComp test={mockTest} ownerId="ann" onClose={vi.fn()} />);
+        renderModal('ann');
+        selectClass('c1');
         await waitFor(() => expect(mockSaveTestAssignment).toHaveBeenCalled());
         expect(mockSaveTestAssignment).toHaveBeenCalledWith(expect.objectContaining({ ownerId: 'ann' }));
     });
@@ -161,7 +199,8 @@ describe('TestAssignmentModal coverage', () => {
     it('only lets a colleague’s test links be copied once their assignment rows are saved', async () => {
         mockDbStatus.isConnected = true;
         mockSaveTestAssignment.mockResolvedValue({ success: false, error: 'rls' });
-        renderWithRouter(<TestAssignmentModalComp test={mockTest} ownerId="ann" onClose={vi.fn()} />);
+        renderModal('ann');
+        selectClass('c1');
         await waitFor(() => expect(mockSaveTestAssignment).toHaveBeenCalled());
         await waitFor(() => expect(screen.getAllByRole('button', { name: /essay_assignment.copy/ })[0]).toBeDisabled());
         mockSaveTestAssignment.mockResolvedValue({ success: true });
@@ -169,7 +208,8 @@ describe('TestAssignmentModal coverage', () => {
 
     it('saves my own test without an owner override', async () => {
         mockDbStatus.isConnected = true;
-        renderWithRouter(<TestAssignmentModalComp test={mockTest} onClose={vi.fn()} />);
+        renderModal();
+        selectClass('c1');
         await waitFor(() => expect(mockSaveTestAssignment).toHaveBeenCalled());
         expect(mockSaveTestAssignment.mock.calls[0][0]).not.toHaveProperty('ownerId');
     });
@@ -177,13 +217,15 @@ describe('TestAssignmentModal coverage', () => {
     it('counts failed saves and shows the partial-error message', async () => {
         mockDbStatus.isConnected = true;
         mockSaveTestAssignment.mockResolvedValue({ success: false });
-        renderWithRouter(<TestAssignmentModalComp test={mockTest} onClose={vi.fn()} />);
+        renderModal();
+        selectClass('c1');
         expect(await screen.findByText('tests.assignment_save_partial_error:{"count":2}')).toBeInTheDocument();
     });
 
     it('copies a single link and reverts after 2.5s', async () => {
         vi.useFakeTimers();
-        renderWithRouter(<TestAssignmentModalComp test={mockTest} onClose={vi.fn()} />);
+        renderModal();
+        selectClass('c1');
         fireEvent.click(screen.getAllByText('essay_assignment.copy')[0]);
         await act(async () => {});
         expect(mockWriteText).toHaveBeenCalledTimes(1);
@@ -196,7 +238,8 @@ describe('TestAssignmentModal coverage', () => {
 
     it('handles clipboard failures for both copy actions', async () => {
         mockWriteText.mockRejectedValue(new Error('denied'));
-        renderWithRouter(<TestAssignmentModalComp test={mockTest} onClose={vi.fn()} />);
+        renderModal();
+        selectClass('c1');
         // Single copy: falls back to the default label.
         fireEvent.click(screen.getAllByText('essay_assignment.copy')[0]);
         await waitFor(() => expect(mockWriteText).toHaveBeenCalledTimes(1));
@@ -209,7 +252,8 @@ describe('TestAssignmentModal coverage', () => {
 
     it('copies all links and shows the copied state', async () => {
         vi.useFakeTimers();
-        renderWithRouter(<TestAssignmentModalComp test={mockTest} onClose={vi.fn()} />);
+        renderModal();
+        selectClass('c1');
         fireEvent.click(screen.getByText('tests.copy_all_links:{"count":2}'));
         await act(async () => {});
         expect(mockWriteText).toHaveBeenCalledTimes(1);
@@ -228,7 +272,8 @@ describe('TestAssignmentModal coverage', () => {
     it('unchecks DB embedding to fall back to embedded-test links', async () => {
         mockDbStatus.isConnected = true;
         mockSaveTestAssignment.mockResolvedValue({ success: true });
-        renderWithRouter(<TestAssignmentModalComp test={mockTest} onClose={vi.fn()} />);
+        renderModal();
+        selectClass('c1');
         await waitFor(() => expect(mockSaveTestAssignment).toHaveBeenCalled());
         expect(screen.getByText('tests.assignment_db_embed_help')).toBeInTheDocument();
 
