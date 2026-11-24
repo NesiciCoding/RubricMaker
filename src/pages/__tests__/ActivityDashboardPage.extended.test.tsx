@@ -221,17 +221,24 @@ describe('ActivityDashboardPage extended', () => {
         expect(screen.queryByText('gradingTasks.modal_title')).not.toBeInTheDocument();
     });
 
-    it('links and unlinks a rubric to a class', () => {
+    it('links a rubric to a class and unlinks it only after confirmation', async () => {
         renderPage();
         const linkBtn = screen.getByText('activityDashboard.link');
         fireEvent.click(linkBtn);
         expect(mockUpdateClass).toHaveBeenCalledWith({ ...mockClass, rubricIds: ['r1'] });
 
         mockClass.rubricIds = ['r1'];
+        mockUpdateClass.mockClear();
         renderPage();
-        const unlinkBtn = screen.getByLabelText('activityDashboard.unlink');
-        fireEvent.click(unlinkBtn);
-        expect(mockUpdateClass).toHaveBeenCalledWith({ ...mockClass, rubricIds: [] });
+
+        fireEvent.click(screen.getByLabelText('activityDashboard.unlink'));
+        expect(await screen.findByText('activityDashboard.unlink_rubric_title')).toBeInTheDocument();
+        fireEvent.click(screen.getByText('common.cancel'));
+        await waitFor(() => expect(mockUpdateClass).not.toHaveBeenCalled());
+
+        fireEvent.click(screen.getByLabelText('activityDashboard.unlink'));
+        fireEvent.click(await screen.findByText('activityDashboard.unlink_rubric_action'));
+        await waitFor(() => expect(mockUpdateClass).toHaveBeenCalledWith({ ...mockClass, rubricIds: [] }));
     });
 
     it('links a test to a class from its dashboard cell', () => {

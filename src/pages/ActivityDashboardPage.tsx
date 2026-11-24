@@ -174,14 +174,26 @@ export default function ActivityDashboardPage() {
     );
 
     /**
-     * Link or unlink an activity to a class. A test unlink also revokes that class's student
-     * assignment rows, so the portal to-do list cannot keep an assignment the class lost.
+     * Link or unlink an activity to a class, asking for confirmation before an unlink. A test
+     * unlink also revokes that class's student assignment rows, so the portal to-do list cannot
+     * keep an assignment the class lost.
      */
     async function toggleLink(classId: string, activity: ActivityRow, linked: boolean) {
         const cls = classes.find((c) => c.id === classId);
         /* v8 ignore next -- provably dead: the cell only renders for a visible class */
         if (!cls) return;
         if (activity.kind === 'rubric') {
+            if (linked) {
+                const ok = await confirm({
+                    title: t('activityDashboard.unlink_rubric_title'),
+                    message: t('activityDashboard.unlink_rubric_message', {
+                        name: activity.name,
+                        className: cls.name,
+                    }),
+                    confirmLabel: t('activityDashboard.unlink_rubric_action'),
+                });
+                if (!ok) return;
+            }
             const rubricIds = linked
                 ? (cls.rubricIds ?? []).filter((id) => id !== activity.id)
                 : [...(cls.rubricIds ?? []), activity.id];
