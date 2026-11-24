@@ -229,7 +229,7 @@ export function withEvidenceOnly(rows: GrammarItemMastery[]): GrammarItemMastery
 }
 
 /** Per-item 0–100 score: the mean of whichever evidence streams are present for that item. */
-function itemScore(row: GrammarItemMastery): number | null {
+export function grammarItemScore(row: GrammarItemMastery): number | null {
     const scores: number[] = [];
     if (row.test) scores.push(row.test.accuracyPct);
     if (row.flashcards && row.flashcards.cardCount > 0) {
@@ -248,7 +248,7 @@ function itemScore(row: GrammarItemMastery): number | null {
  */
 export function getStudentGrammarMasteryScore(studentId: string, deps: MasteryProfileDeps): number | null {
     const rows = withEvidenceOnly(getStudentMasteryProfile(studentId, deps));
-    const scores = rows.map(itemScore).filter((s): s is number => s !== null);
+    const scores = rows.map(grammarItemScore).filter((s): s is number => s !== null);
     if (scores.length === 0) return null;
     return scores.reduce((a, b) => a + b, 0) / scores.length;
 }
