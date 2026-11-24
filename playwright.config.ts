@@ -138,7 +138,9 @@ export default defineConfig({
             testIgnore: [...quarantinePatterns],
         },
         // Same wide layout in Firefox: the A4 preview counter-scales its toolbar with a nested
-        // `zoom`, which is exactly the kind of layout the two engines can disagree on.
+        // `zoom`, which is exactly the kind of layout the two engines can disagree on. Both wide
+        // projects run in CI's e2e shards, and locally via `npm run e2e:wide` /
+        // `npm run e2e:wide:firefox`.
         {
             name: 'wide-firefox',
             use: { ...devices['Desktop Firefox'], viewport: { width: 1500, height: 1000 } },

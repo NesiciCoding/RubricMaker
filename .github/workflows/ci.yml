@@ -319,6 +319,9 @@ jobs:
   # mirror, which at times took 23-27 min and got passing shards cancelled.
   # --user 1001 matches the runner's workspace/$HOME owner (Firefox refuses to
   # run as root with a $HOME owned by another user).
+  # The project list is explicit: a project named in neither this command nor an
+  # npm script this workflow runs never gates a PR. Add it here (or extend
+  # src/__tests__/playwrightProjects.test.ts) instead of leaving it local-only.
   e2e:
     name: E2E (${{ matrix.shard }}/4)
     needs: playwright-version
@@ -357,6 +360,7 @@ jobs:
           npx playwright test \
             --project=chromium --project=firefox --project=webkit \
             --project=chromium-fake-media --project=mobile-chrome \
+            --project=wide --project=wide-firefox \
             --shard=${{ matrix.shard }}/4 --reporter=blob,list
         env:
           CI: true
