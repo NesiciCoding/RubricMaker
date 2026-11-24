@@ -136,7 +136,18 @@ export default function TestAssignmentModal({ test, onClose, ownerId }: Props) {
                 base.supabaseUrl = config.supabaseUrl;
                 base.supabaseAnonKey = config.supabaseAnonKey;
             } else {
-                base.test = test;
+                // Feedback is practice-only, as in the server sanitizer; an assessment link must not carry it.
+                base.test =
+                    test.mode === 'practice'
+                        ? test
+                        : {
+                              ...test,
+                              questions: test.questions.map((q) =>
+                                  q.options
+                                      ? { ...q, options: q.options.map(({ feedback: _feedback, ...opt }) => opt) }
+                                      : q
+                              ),
+                          };
                 // Offline links have no live student record to re-check at test-taking time, so
                 // the accommodation is snapshotted here; DB-mode links resolve it fresh server-side.
                 base.readAloudAccommodation = students.find((s) => s.id === studentId)?.readAloudAccommodation;

@@ -2420,7 +2420,9 @@
         "cloze_points_all_or_nothing": "Alle Lücken müssen stimmen, um die {{points}} Punkt(e) zu erhalten.",
         "cloze_gap_weight": "Gewicht",
         "cloze_gap_weight_aria": "Gewicht von Lücke {{gap}}",
-        "cloze_points_by_weight": "Die Lücken sind der Reihe nach {{points}} Punkt(e) wert."
+        "cloze_points_by_weight": "Die Lücken sind der Reihe nach {{points}} Punkt(e) wert.",
+        "option_feedback_label": "Rückmeldung zu dieser Option",
+        "option_feedback_placeholder": "Warum diese Option richtig oder falsch ist (nur im Übungsmodus)"
     },
     "classShare": {
         "menu_item": "Mit Kolleg:innen teilen…",
@@ -5644,7 +5646,8 @@
         "gr_test_answer_options_item_true_false": "Wahr/Falsch: Die beiden Schaltflächen lassen sich frei beschriften, etwa Ja / Nein oder Zustimmung / Ablehnung. Ergebnisse und Lösungsschlüssel verwenden dieselbe Beschriftung.",
         "gr_test_answer_options_item_numeric": "Numerisch: Neben der absoluten Toleranz lässt sich eine prozentuale Toleranz festlegen (der größere Spielraum gilt) sowie eine Einheit, die neben dem Antwortfeld steht, aber nicht bewertet wird.",
         "gr_test_answer_options_item_matching": "Zuordnen: Zusätzliche Auswahlmöglichkeiten rechts ohne Partner verhindern, dass sich die Aufgabe durch Ausschluss lösen lässt. Sie erscheinen auch im gedruckten Wortspeicher.",
-        "gr_test_rich_authoring_item_gap_weights": "Lückenfragen: In der Lückenliste unter dem Text lässt sich einer Lücke mehr Gewicht geben (z. B. 2 für die Schlüssellücke), sodass sie einen größeren Anteil der Punkte bringt, wenn Teilpunkte aktiviert sind (ohne Teilpunkte muss weiterhin jede Lücke stimmen). Ändert sich die Zahl der Lücken, werden die Gewichte auf gleich zurückgesetzt."
+        "gr_test_rich_authoring_item_gap_weights": "Lückenfragen: In der Lückenliste unter dem Text lässt sich einer Lücke mehr Gewicht geben (z. B. 2 für die Schlüssellücke), sodass sie einen größeren Anteil der Punkte bringt, wenn Teilpunkte aktiviert sind (ohne Teilpunkte muss weiterhin jede Lücke stimmen). Ändert sich die Zahl der Lücken, werden die Gewichte auf gleich zurückgesetzt.",
+        "gr_test_rich_authoring_item_option_feedback": "Multiple Choice und Mehrfachauswahl: Zu jeder Option lässt sich eine Rückmeldung hinzufügen (Sprechblasen-Schaltfläche). In einem Übungstest sieht eine Person, die diese Option gewählt hat, sie nach der Abgabe in der Auswertung; in benoteten Tests wird sie nie an Lernende gesendet."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",

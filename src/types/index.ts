@@ -1388,6 +1388,8 @@ export interface TestOption {
     audioUrl?: string;
     /** Option text read aloud by the browser voice when no audioUrl is set */
     spokenText?: string;
+    /** Why this option is right or wrong; shown to a student who picked it, only in practice mode */
+    feedback?: string;
 }
 
 /** A left/right pair for matching questions; correct match is left.id === right pair's id */
