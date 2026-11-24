@@ -2418,7 +2418,9 @@
         "cloze_points_all_or_nothing": "All gaps must be right to earn the {{points}} point(s).",
         "cloze_gap_weight": "Weight",
         "cloze_gap_weight_aria": "Weight of gap {{gap}}",
-        "cloze_points_by_weight": "The gaps are worth {{points}} point(s), in order."
+        "cloze_points_by_weight": "The gaps are worth {{points}} point(s), in order.",
+        "option_feedback_label": "Feedback for this option",
+        "option_feedback_placeholder": "Why this option is right or wrong (practice mode only)"
     },
     "classShare": {
         "menu_item": "Share with co-teachers…",
@@ -5641,7 +5643,8 @@
         "gr_test_answer_options_item_true_false": "True/false: give the two buttons your own wording, such as Yes / No or Agree / Disagree. Results and answer keys use the same wording.",
         "gr_test_answer_options_item_numeric": "Numeric: besides the absolute tolerance, set a percentage tolerance (the wider margin applies) and a unit that is shown next to the answer box but never scored.",
         "gr_test_answer_options_item_matching": "Matching: add extra right-hand choices with no partner so students cannot finish by elimination. They also appear in the printed word bank.",
-        "gr_test_rich_authoring_item_gap_weights": "Fill-in questions: give a gap more weight in the gap list below the passage (for example 2 for the key gap) so it earns a bigger share of the question's points when partial credit is on (with it off, every gap must still be right). Changing the number of gaps resets the weights to equal."
+        "gr_test_rich_authoring_item_gap_weights": "Fill-in questions: give a gap more weight in the gap list below the passage (for example 2 for the key gap) so it earns a bigger share of the question's points when partial credit is on (with it off, every gap must still be right). Changing the number of gaps resets the weights to equal.",
+        "gr_test_rich_authoring_item_option_feedback": "Multiple choice and multiple response: add feedback to any option (speech-bubble button). In a practice test, a student who picked that option sees it in the review after submitting; it is never sent to students in graded tests."
     },
     "studentProfile": {
         "tab_overview": "Overview",
