@@ -2423,7 +2423,10 @@
         "cloze_gap_weight_aria": "Poids du trou {{gap}}",
         "cloze_points_by_weight": "Les trous valent {{points}} point(s), dans l'ordre.",
         "option_feedback_label": "Commentaire pour cette option",
-        "option_feedback_placeholder": "Pourquoi cette option est juste ou fausse (mode entraînement uniquement)"
+        "option_feedback_placeholder": "Pourquoi cette option est juste ou fausse (mode entraînement uniquement)",
+        "cloze_gap_pill_label": "Modifier le trou : {{value}}",
+        "hot_text_fragment_pill_label": "Modifier le fragment : {{value}}",
+        "error_fragment_pill_label": "Modifier le fragment : {{value}}"
     },
     "classShare": {
         "menu_item": "Partager avec des co-enseignants…",
@@ -5649,7 +5652,8 @@
         "gr_test_answer_options_item_matching": "Association : ajoutez des choix supplémentaires à droite sans partenaire pour que les élèves ne terminent pas par élimination. Ils figurent aussi dans la banque de mots imprimée.",
         "gr_test_rich_authoring_item_cloze_intro": "Questions à trous, à liste déroulante et à banque de mots : ajoutez des consignes ou un contexte mis en forme (gras, listes, images) au-dessus du texte à trous. Ils s'affichent pour les élèves, dans le livret imprimé et l'aperçu élève, et sont lus à voix haute avec la question ; le texte à trous lui-même reste du texte brut.",
         "gr_test_rich_authoring_item_gap_weights": "Questions à trous : donnez plus de poids à un trou dans la liste sous le texte (par exemple 2 pour le trou clé) pour qu'il rapporte une plus grande part des points de la question lorsque le crédit partiel est activé (sinon, chaque trou doit rester juste). Modifier le nombre de trous rétablit des poids égaux.",
-        "gr_test_rich_authoring_item_option_feedback": "Choix multiple et réponses multiples : ajoutez un commentaire à chaque option (bouton bulle). Dans un test d'entraînement, l'élève qui a choisi cette option le voit dans la correction après l'envoi ; il n'est jamais envoyé aux élèves dans les tests notés."
+        "gr_test_rich_authoring_item_option_feedback": "Choix multiple et réponses multiples : ajoutez un commentaire à chaque option (bouton bulle). Dans un test d'entraînement, l'élève qui a choisi cette option le voit dans la correction après l'envoi ; il n'est jamais envoyé aux élèves dans les tests notés.",
+        "gr_test_rich_authoring_item_pill_keyboard": "Les pastilles de trou, de texte actif et de correction d'erreur de l'éditeur sont accessibles avec Tab et s'ouvrent avec Entrée ou Espace ; Échap ferme la zone d'édition et vous ramène à la pastille."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",

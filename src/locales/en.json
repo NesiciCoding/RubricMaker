@@ -2423,7 +2423,10 @@
         "cloze_gap_weight_aria": "Weight of gap {{gap}}",
         "cloze_points_by_weight": "The gaps are worth {{points}} point(s), in order.",
         "option_feedback_label": "Feedback for this option",
-        "option_feedback_placeholder": "Why this option is right or wrong (practice mode only)"
+        "option_feedback_placeholder": "Why this option is right or wrong (practice mode only)",
+        "cloze_gap_pill_label": "Edit gap: {{value}}",
+        "hot_text_fragment_pill_label": "Edit fragment: {{value}}",
+        "error_fragment_pill_label": "Edit fragment: {{value}}"
     },
     "classShare": {
         "menu_item": "Share with co-teachers…",
@@ -5649,7 +5652,8 @@
         "gr_test_answer_options_item_matching": "Matching: add extra right-hand choices with no partner so students cannot finish by elimination. They also appear in the printed word bank.",
         "gr_test_rich_authoring_item_cloze_intro": "Fill-in, dropdown and word-bank questions: add formatted instructions or context (bold, lists, pictures) above the gap text. It shows to students, in the printed booklet and in the student preview, and is read aloud with the question; the gap text itself stays plain.",
         "gr_test_rich_authoring_item_gap_weights": "Fill-in questions: give a gap more weight in the gap list below the passage (for example 2 for the key gap) so it earns a bigger share of the question's points when partial credit is on (with it off, every gap must still be right). Changing the number of gaps resets the weights to equal.",
-        "gr_test_rich_authoring_item_option_feedback": "Multiple choice and multiple response: add feedback to any option (speech-bubble button). In a practice test, a student who picked that option sees it in the review after submitting; it is never sent to students in graded tests."
+        "gr_test_rich_authoring_item_option_feedback": "Multiple choice and multiple response: add feedback to any option (speech-bubble button). In a practice test, a student who picked that option sees it in the review after submitting; it is never sent to students in graded tests.",
+        "gr_test_rich_authoring_item_pill_keyboard": "Gap, hot-text and error-correction pills in the editor can be reached with Tab and opened with Enter or Space; Escape closes the editing box and returns you to the pill."
     },
     "studentProfile": {
         "tab_overview": "Overview",

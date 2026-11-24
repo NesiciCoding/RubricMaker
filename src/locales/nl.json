@@ -2423,7 +2423,10 @@
         "cloze_gap_weight_aria": "Gewicht van gat {{gap}}",
         "cloze_points_by_weight": "De gaten zijn {{points}} punt(en) waard, in volgorde.",
         "option_feedback_label": "Feedback bij deze optie",
-        "option_feedback_placeholder": "Waarom deze optie goed of fout is (alleen oefenmodus)"
+        "option_feedback_placeholder": "Waarom deze optie goed of fout is (alleen oefenmodus)",
+        "cloze_gap_pill_label": "Gat bewerken: {{value}}",
+        "hot_text_fragment_pill_label": "Fragment bewerken: {{value}}",
+        "error_fragment_pill_label": "Fragment bewerken: {{value}}"
     },
     "classShare": {
         "menu_item": "Delen met collega's…",
@@ -5649,7 +5652,8 @@
         "gr_test_answer_options_item_matching": "Koppelen: voeg extra keuzes rechts zonder partner toe zodat leerlingen niet door uitsluiting kunnen afronden. Ze staan ook in de afgedrukte woordenlijst.",
         "gr_test_rich_authoring_item_cloze_intro": "Invul-, keuzelijst- en woordbankvragen: voeg opgemaakte instructies of context (vet, lijsten, afbeeldingen) toe boven de gatentekst. Dit zien leerlingen, het staat in het afgedrukte boekje en in de leerlingweergave en wordt voorgelezen; de gatentekst zelf blijft platte tekst.",
         "gr_test_rich_authoring_item_gap_weights": "Invulvragen: geef een gat meer gewicht in de gatenlijst onder de tekst (bijvoorbeeld 2 voor het sleutelgat) zodat het een groter deel van de punten van de vraag oplevert als deelpunten aan staan (staan die uit, dan moet elk gat nog steeds juist zijn). Het aantal gaten wijzigen zet de gewichten terug naar gelijk.",
-        "gr_test_rich_authoring_item_option_feedback": "Meerkeuze en meerdere antwoorden: voeg feedback toe aan elke optie (spraakballonknop). In een oefentoets ziet een leerling die die optie koos de feedback in het overzicht na het inleveren; in beoordeelde toetsen wordt deze nooit naar leerlingen gestuurd."
+        "gr_test_rich_authoring_item_option_feedback": "Meerkeuze en meerdere antwoorden: voeg feedback toe aan elke optie (spraakballonknop). In een oefentoets ziet een leerling die die optie koos de feedback in het overzicht na het inleveren; in beoordeelde toetsen wordt deze nooit naar leerlingen gestuurd.",
+        "gr_test_rich_authoring_item_pill_keyboard": "Gat-, hot-text- en foutcorrectiepillen in de editor zijn met Tab te bereiken en met Enter of spatie te openen; Escape sluit het bewerkvak en brengt je terug bij de pil."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",
