@@ -2417,7 +2417,10 @@
         "matching_distractors_placeholder": "Un distractor por línea",
         "cloze_points_per_gap": "Cada hueco vale {{points}} punto(s).",
         "cloze_generate_replace_confirm": "Esto sustituye los huecos que ya creó, con sus alternativas y opciones incorrectas. ¿Continuar?",
-        "cloze_points_all_or_nothing": "Todos los huecos deben ser correctos para obtener los {{points}} punto(s)."
+        "cloze_points_all_or_nothing": "Todos los huecos deben ser correctos para obtener los {{points}} punto(s).",
+        "cloze_gap_weight": "Peso",
+        "cloze_gap_weight_aria": "Peso del hueco {{gap}}",
+        "cloze_points_by_weight": "Los huecos valen {{points}} punto(s), por orden."
     },
     "classShare": {
         "menu_item": "Compartir con co-docentes…",
@@ -5639,7 +5642,8 @@
         "gr_test_answer_options_item_shuffle": "Opción múltiple y respuesta múltiple: marque Mezclar opciones para que cada alumno vea su propio orden aleatorio fijo y, si quiere, mantenga la última opción (p. ej. «Ninguna de las anteriores») al final.",
         "gr_test_answer_options_item_true_false": "Verdadero/falso: ponga su propio texto a los dos botones, por ejemplo Sí / No o De acuerdo / En desacuerdo. Los resultados y las claves de respuesta usan el mismo texto.",
         "gr_test_answer_options_item_numeric": "Numérica: además de la tolerancia absoluta, defina una tolerancia porcentual (se aplica el margen más amplio) y una unidad que se muestra junto al campo de respuesta pero nunca se puntúa.",
-        "gr_test_answer_options_item_matching": "Emparejar: añada opciones adicionales a la derecha sin pareja para que no se pueda resolver por eliminación. También aparecen en el banco de palabras impreso."
+        "gr_test_answer_options_item_matching": "Emparejar: añada opciones adicionales a la derecha sin pareja para que no se pueda resolver por eliminación. También aparecen en el banco de palabras impreso.",
+        "gr_test_rich_authoring_item_gap_weights": "Preguntas con huecos: dé más peso a un hueco en la lista bajo el texto (por ejemplo 2 para el hueco clave) para que aporte una parte mayor de los puntos cuando el crédito parcial está activado (si no, todos los huecos deben seguir siendo correctos). Cambiar el número de huecos restablece pesos iguales."
     },
     "studentProfile": {
         "tab_overview": "Resumen",
