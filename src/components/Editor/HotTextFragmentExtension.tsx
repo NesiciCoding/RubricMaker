@@ -1,7 +1,7 @@
 import { Node, mergeAttributes } from '@tiptap/core';
 import type { Editor, JSONContent } from '@tiptap/core';
 import { parseHotTextFragments } from '../../utils/clozeParse';
-import { openPillPopover } from './pillPopover';
+import { makePillAccessible, openPillPopover } from './pillPopover';
 
 // A raw `[[`/`]]` anywhere in the serialized passage — whether typed as plain text or inside a
 // fragment's own text — would be reparsed as a fragment boundary by parseHotTextFragments on the
@@ -24,6 +24,8 @@ export interface HotTextFragmentOptions {
     saveLabel: string;
     /** Label for the popover's cancel button. */
     cancelLabel: string;
+    /** Accessible name of a fragment pill; `{{value}}` is replaced with the fragment text. */
+    pillLabel: string;
 }
 
 declare module '@tiptap/core' {
@@ -54,6 +56,7 @@ export const HotTextFragment = Node.create<HotTextFragmentOptions>({
             correctLabel: 'Correct answer',
             saveLabel: 'Save',
             cancelLabel: 'Cancel',
+            pillLabel: 'Edit fragment: {{value}}',
         };
     },
 
@@ -95,14 +98,16 @@ export const HotTextFragment = Node.create<HotTextFragmentOptions>({
     },
 
     addNodeView() {
-        const { textLabel, correctLabel, saveLabel, cancelLabel } = this.options;
+        const { textLabel, correctLabel, saveLabel, cancelLabel, pillLabel } = this.options;
         return ({ node, editor, getPos }) => {
             const pill = document.createElement('span');
             pill.contentEditable = 'false';
+            const setPillLabel = makePillAccessible(pill);
 
             const render = () => {
                 pill.className = node.attrs.correct ? 'hot-text-fragment-pill correct' : 'hot-text-fragment-pill';
                 pill.textContent = (node.attrs.text as string) || '—';
+                setPillLabel(pillLabel.replace('{{value}}', pill.textContent));
             };
             render();
 
@@ -134,50 +139,55 @@ export const HotTextFragment = Node.create<HotTextFragmentOptions>({
 
             pill.addEventListener('click', (e) => {
                 e.stopPropagation();
-                closePopover = openPillPopover(pill, 'hot-text-popover', (popover, close) => {
-                    const label = document.createElement('div');
-                    label.className = 'hot-text-popover-label';
-                    label.textContent = textLabel;
+                closePopover = openPillPopover(
+                    pill,
+                    'hot-text-popover',
+                    (popover, close) => {
+                        const label = document.createElement('div');
+                        label.className = 'hot-text-popover-label';
+                        label.textContent = textLabel;
 
-                    const input = document.createElement('input');
-                    input.type = 'text';
-                    input.className = 'hot-text-popover-input';
-                    input.value = node.attrs.text as string;
+                        const input = document.createElement('input');
+                        input.type = 'text';
+                        input.className = 'hot-text-popover-input';
+                        input.value = node.attrs.text as string;
 
-                    const checkboxRow = document.createElement('label');
-                    checkboxRow.className = 'hot-text-popover-checkbox-row';
-                    const checkbox = document.createElement('input');
-                    checkbox.type = 'checkbox';
-                    checkbox.checked = !!node.attrs.correct;
-                    checkboxRow.append(checkbox, document.createTextNode(correctLabel));
+                        const checkboxRow = document.createElement('label');
+                        checkboxRow.className = 'hot-text-popover-checkbox-row';
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.checked = !!node.attrs.correct;
+                        checkboxRow.append(checkbox, document.createTextNode(correctLabel));
 
-                    input.addEventListener('keydown', (ke) => {
-                        if (ke.key === 'Enter') {
-                            ke.preventDefault();
-                            save(input, checkbox);
-                        } else if (ke.key === 'Escape') {
-                            ke.preventDefault();
-                            close();
-                        }
-                    });
+                        input.addEventListener('keydown', (ke) => {
+                            if (ke.key === 'Enter') {
+                                ke.preventDefault();
+                                save(input, checkbox);
+                            } else if (ke.key === 'Escape') {
+                                ke.preventDefault();
+                                close();
+                            }
+                        });
 
-                    const actions = document.createElement('div');
-                    actions.className = 'hot-text-popover-actions';
-                    const cancelBtn = document.createElement('button');
-                    cancelBtn.type = 'button';
-                    cancelBtn.textContent = cancelLabel;
-                    cancelBtn.addEventListener('click', () => close());
-                    const saveBtn = document.createElement('button');
-                    saveBtn.type = 'button';
-                    saveBtn.className = 'hot-text-popover-save';
-                    saveBtn.textContent = saveLabel;
-                    saveBtn.addEventListener('click', () => save(input, checkbox));
-                    actions.append(cancelBtn, saveBtn);
+                        const actions = document.createElement('div');
+                        actions.className = 'hot-text-popover-actions';
+                        const cancelBtn = document.createElement('button');
+                        cancelBtn.type = 'button';
+                        cancelBtn.textContent = cancelLabel;
+                        cancelBtn.addEventListener('click', () => close());
+                        const saveBtn = document.createElement('button');
+                        saveBtn.type = 'button';
+                        saveBtn.className = 'hot-text-popover-save';
+                        saveBtn.textContent = saveLabel;
+                        saveBtn.addEventListener('click', () => save(input, checkbox));
+                        actions.append(cancelBtn, saveBtn);
 
-                    popover.append(label, input, checkboxRow, actions);
-                    input.focus();
-                    input.select();
-                });
+                        popover.append(label, input, checkboxRow, actions);
+                        input.focus();
+                        input.select();
+                    },
+                    textLabel
+                );
             });
 
             return {
