@@ -669,6 +669,17 @@ UPDATE public.profiles SET role = 'admin' WHERE lower(email) = lower('teacher@sc
 
 The user gets admin rights after reloading the app (or signing out and back in).
 
+### Set a password when sign-in mail does not arrive
+
+When Outlook or a school relay drops the OTP/confirmation mail, an admin can give any account a password and mark its address confirmed (migration `108_admin_set_user_password.sql`). It works without the functions runtime, so it suits the Docker stack. Call it signed in as an admin (the SQL editor and `psql` have no user, so use the operator `UPDATE auth.users` fallback below instead):
+
+```sql
+SELECT public.admin_set_user_password('teacher@school.example', 'NewTempPassword123!');
+-- optional: p_confirm_email => false, p_revoke_sessions => false
+```
+
+It matches the email exactly, needs a password of 8 to 72 bytes, is limited to 20 calls a minute, ends the target's other sessions, and writes an `admin_set_user_password` row to `audit_logs` without the password. Ask the person to change the temporary password afterwards. Operator fallback from the SQL editor: `UPDATE auth.users SET encrypted_password = extensions.crypt('…', extensions.gen_salt('bf')), email_confirmed_at = coalesce(email_confirmed_at, now()) WHERE lower(email) = lower('teacher@school.example');`.
+
 **Deployments that have not applied migration 083 yet** still reject the update with "Only admins can change roles". Apply the migrations first (`docker compose up -d db_migrate`, or `supabase db push`). If that is not possible, wrap the update in a transaction that disables the trigger for that one statement:
 
 ```sql
