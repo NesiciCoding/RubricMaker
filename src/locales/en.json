@@ -2401,8 +2401,8 @@
         "card_menu_teaching": "Teaching",
         "card_menu_organise": "Organise",
         "card_menu_sharing": "Sharing",
-        "cloze_gap_weight": "Weight",
-        "cloze_gap_weight_aria": "Weight of gap {{gap}}",
+        "option_feedback_label": "Feedback for this option",
+        "option_feedback_placeholder": "Why this option is right or wrong (practice mode only)",
         "shuffle_options_label": "Shuffle options for each student",
         "shuffle_options_help": "Each student sees the options in their own fixed random order. Untick it to keep the order you wrote.",
         "pin_last_option_label": "Keep the last option last (e.g. \"None of the above\")",
@@ -2417,6 +2417,8 @@
         "cloze_points_per_gap": "Each gap is worth {{points}} point(s).",
         "cloze_generate_replace_confirm": "This replaces the gaps you already made, including their alternatives and wrong options. Continue?",
         "cloze_points_all_or_nothing": "All gaps must be right to earn the {{points}} point(s).",
+        "cloze_gap_weight": "Weight",
+        "cloze_gap_weight_aria": "Weight of gap {{gap}}",
         "cloze_points_by_weight": "The gaps are worth {{points}} point(s), in order."
     },
     "classShare": {
@@ -5632,14 +5634,15 @@
         "es_creating_item_projector": "Spotlight a draft on the projector in a second window to talk about one sentence, while the monitor keeps watching the rest of the class.",
         "rb_live_monitor_item_session_export": "Export the session as a CSV of per-student counts, stall minutes, draft ages, words written and the nudge log — plus a one-page PDF summary — to attach when an integrity question arrives later.",
         "rb_live_monitor_item_shortcuts": "Proctor from the keyboard while standing up: j/k move between students, space opens or closes the spotlight, n nudges and f flags the student you are on, without reaching for the mouse.",
-        "gr_test_rich_authoring_item_gap_weights": "Fill-in questions: give a gap more weight in the gap list below the passage (for example 2 for the key gap) so it earns a bigger share of the question's points when partial credit is on (with it off, every gap must still be right). Changing the number of gaps resets the weights to equal.",
+        "gr_test_rich_authoring_item_option_feedback": "Multiple choice and multiple response: add feedback to any option (speech-bubble button). In a practice test, a student who picked that option sees it in the review after submitting; it is never sent to students in graded tests.",
         "gr_test_answer_options_title": "Answer options and display",
         "gr_test_answer_options_item_cloze_select": "Cloze: select a word and click Insert gap (or press Ctrl/Cmd+Shift+G) to turn it into a gap. Gaps are numbered in the editor, the editor shows what each gap is worth, and Generate asks before it replaces gaps you already made.",
         "gr_test_answer_options_item_cloze_paste": "Cloze: paste text from a worksheet and every run of three or more underscores (____) becomes a gap. Students' gap boxes carry a number label, keep paragraph breaks and no longer auto-capitalise or auto-correct on phones.",
         "gr_test_answer_options_item_shuffle": "Multiple choice and multiple response: tick Shuffle options so each student sees their own fixed random order, and optionally keep the last option (e.g. \"None of the above\") last.",
         "gr_test_answer_options_item_true_false": "True/false: give the two buttons your own wording, such as Yes / No or Agree / Disagree. Results and answer keys use the same wording.",
         "gr_test_answer_options_item_numeric": "Numeric: besides the absolute tolerance, set a percentage tolerance (the wider margin applies) and a unit that is shown next to the answer box but never scored.",
-        "gr_test_answer_options_item_matching": "Matching: add extra right-hand choices with no partner so students cannot finish by elimination. They also appear in the printed word bank."
+        "gr_test_answer_options_item_matching": "Matching: add extra right-hand choices with no partner so students cannot finish by elimination. They also appear in the printed word bank.",
+        "gr_test_rich_authoring_item_gap_weights": "Fill-in questions: give a gap more weight in the gap list below the passage (for example 2 for the key gap) so it earns a bigger share of the question's points when partial credit is on (with it off, every gap must still be right). Changing the number of gaps resets the weights to equal."
     },
     "studentProfile": {
         "tab_overview": "Overview",

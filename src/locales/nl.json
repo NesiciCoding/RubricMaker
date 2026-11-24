@@ -2401,8 +2401,8 @@
         "card_menu_teaching": "Lesgeven",
         "card_menu_organise": "Ordenen",
         "card_menu_sharing": "Delen",
-        "cloze_gap_weight": "Gewicht",
-        "cloze_gap_weight_aria": "Gewicht van gat {{gap}}",
+        "option_feedback_label": "Feedback bij deze optie",
+        "option_feedback_placeholder": "Waarom deze optie goed of fout is (alleen oefenmodus)",
         "shuffle_options_label": "Antwoordopties per leerling door elkaar husselen",
         "shuffle_options_help": "Elke leerling ziet de opties in een eigen, vaste willekeurige volgorde. Uitzetten behoudt de volgorde die je zelf schreef.",
         "pin_last_option_label": "Houd de laatste optie onderaan (bijv. \"Geen van bovenstaande\")",
@@ -2417,6 +2417,8 @@
         "cloze_points_per_gap": "Elk gat is {{points}} punt(en) waard.",
         "cloze_generate_replace_confirm": "Dit vervangt de gaten die je al hebt gemaakt, inclusief alternatieven en foute opties. Doorgaan?",
         "cloze_points_all_or_nothing": "Alle gaten moeten juist zijn voor de {{points}} punt(en).",
+        "cloze_gap_weight": "Gewicht",
+        "cloze_gap_weight_aria": "Gewicht van gat {{gap}}",
         "cloze_points_by_weight": "De gaten zijn {{points}} punt(en) waard, in volgorde."
     },
     "classShare": {
@@ -5632,14 +5634,15 @@
         "es_creating_item_projector": "Zet één tekst in een tweede venster op het projectiescherm om over één zin te praten, terwijl de monitor de rest van de klas blijft volgen.",
         "rb_live_monitor_item_session_export": "Exporteer de sessie als CSV met per leerling de aantallen, stilgevallen minuten, leeftijd van de tekst, geschreven woorden en het logboek van zetjes — plus een PDF-samenvatting van één pagina — om later bij een integriteitsvraag bij te voegen.",
         "rb_live_monitor_item_shortcuts": "Monitor vanuit het toetsenbord terwijl je staat: j/k wisselt van leerling, spatie opent of sluit de volgweergave, n stuurt een zetje en f markeert de leerling waar je op staat, zonder de muis te pakken.",
-        "gr_test_rich_authoring_item_gap_weights": "Invulvragen: geef een gat meer gewicht in de gatenlijst onder de tekst (bijvoorbeeld 2 voor het sleutelgat) zodat het een groter deel van de punten van de vraag oplevert als deelpunten aan staan (staan die uit, dan moet elk gat nog steeds juist zijn). Het aantal gaten wijzigen zet de gewichten terug naar gelijk.",
+        "gr_test_rich_authoring_item_option_feedback": "Meerkeuze en meerdere antwoorden: voeg feedback toe aan elke optie (spraakballonknop). In een oefentoets ziet een leerling die die optie koos de feedback in het overzicht na het inleveren; in beoordeelde toetsen wordt deze nooit naar leerlingen gestuurd.",
         "gr_test_answer_options_title": "Antwoordopties en weergave",
         "gr_test_answer_options_item_cloze_select": "Invuloefening: selecteer een woord en klik op Gat invoegen (of druk op Ctrl/Cmd+Shift+G) om er een gat van te maken. Gaten zijn genummerd in de editor, de editor toont wat elk gat waard is en Genereren vraagt bevestiging voordat het bestaande gaten vervangt.",
         "gr_test_answer_options_item_cloze_paste": "Invuloefening: plak tekst uit een werkblad en elke reeks van drie of meer underscores (____) wordt een gat. De invulvakken van leerlingen hebben een nummerlabel, behouden alinea-einden en passen op telefoons geen hoofdletters of autocorrectie meer toe.",
         "gr_test_answer_options_item_shuffle": "Meerkeuze en meerdere antwoorden: vink Opties husselen aan zodat elke leerling een eigen vaste willekeurige volgorde ziet, en houd eventueel de laatste optie (bijv. \"Geen van bovenstaande\") onderaan.",
         "gr_test_answer_options_item_true_false": "Waar/onwaar: geef de twee knoppen je eigen tekst, zoals Ja / Nee of Eens / Oneens. Resultaten en antwoordsleutels gebruiken dezelfde tekst.",
         "gr_test_answer_options_item_numeric": "Numeriek: stel naast de absolute tolerantie ook een procentuele tolerantie in (de ruimste marge geldt) en een eenheid die naast het antwoordvak staat maar niet wordt beoordeeld.",
-        "gr_test_answer_options_item_matching": "Koppelen: voeg extra keuzes rechts zonder partner toe zodat leerlingen niet door uitsluiting kunnen afronden. Ze staan ook in de afgedrukte woordenlijst."
+        "gr_test_answer_options_item_matching": "Koppelen: voeg extra keuzes rechts zonder partner toe zodat leerlingen niet door uitsluiting kunnen afronden. Ze staan ook in de afgedrukte woordenlijst.",
+        "gr_test_rich_authoring_item_gap_weights": "Invulvragen: geef een gat meer gewicht in de gatenlijst onder de tekst (bijvoorbeeld 2 voor het sleutelgat) zodat het een groter deel van de punten van de vraag oplevert als deelpunten aan staan (staan die uit, dan moet elk gat nog steeds juist zijn). Het aantal gaten wijzigen zet de gewichten terug naar gelijk."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",
