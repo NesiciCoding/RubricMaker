@@ -1,4 +1,5 @@
 import type { TestQuestionType } from '../types';
+import { escapeForPrompt, isRichClozePrompt, richClozePieces } from './clozeHtml';
 import {
     CLOZE_GAP_PATTERN,
     clozeGapToSyntax,
@@ -19,6 +20,7 @@ export {
     splitClozeOptions,
 } from '../../supabase/functions/_shared/testScoring.ts';
 export type { ClozeGapMatch } from '../../supabase/functions/_shared/testScoring.ts';
+export { isRichClozePrompt } from './clozeHtml';
 export type {
     ClozeGap,
     ClozeOptionRole,
@@ -48,6 +50,12 @@ export interface ClozeGapSegment {
 export type ClozeSegment = ClozeTextSegment | ClozeGapSegment;
 
 export function renderClozeSegments(prompt: string): ClozeSegment[] {
+    // A formatted prompt is HTML: its text is the visible text, so no caller ever sees a tag.
+    if (isRichClozePrompt(prompt)) {
+        return richClozePieces(prompt).map((piece) =>
+            piece.type === 'text' ? { type: 'text', text: piece.text } : { type: 'gap', gap: piece.gap }
+        );
+    }
     const segments: ClozeSegment[] = [];
     let lastIndex = 0;
     for (const { gap, start, end } of matchClozeGaps(prompt)) {
@@ -85,7 +93,9 @@ export function plainQuestionPromptText(question: { type: TestQuestionType; prom
 export function addGapAlternative(prompt: string, gapIndex: number, word: string): string {
     let i = -1;
     return prompt.replace(new RegExp(CLOZE_GAP_PATTERN.source, 'g'), (match, inner: string) =>
-        ++i === gapIndex ? `{{${inner.trim() ? `${inner}|${word}` : word}}}` : match
+        ++i === gapIndex
+            ? `{{${inner.trim() ? `${inner}|${escapeForPrompt(prompt, word)}` : escapeForPrompt(prompt, word)}}}`
+            : match
     );
 }
 
@@ -157,5 +167,5 @@ function replaceGap(prompt: string, gapIndex: number, replacement: string): stri
     const matches = matchClozeGaps(prompt);
     const target = matches[gapIndex];
     if (!target) return prompt;
-    return `${prompt.slice(0, target.start)}${replacement}${prompt.slice(target.end)}`;
+    return `${prompt.slice(0, target.start)}${escapeForPrompt(prompt, replacement)}${prompt.slice(target.end)}`;
 }

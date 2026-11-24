@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { renderClozeSegments } from '../../utils/clozeParse';
+import { isRichClozePrompt, renderClozeSegments } from '../../utils/clozeParse';
+import ClozeRichAnswer from './ClozeRichAnswer';
 import { seededShuffle } from '../../utils/seededShuffle';
 import type { TestQuestion } from '../../types';
 
@@ -15,6 +16,8 @@ interface Props {
 
 /** Fill each gap inline; the word-bank variant adds draggable tiles above the text. */
 export default function ClozeAnswer({ question, value, onChange, code, lang }: Props) {
+    if (isRichClozePrompt(question.prompt))
+        return <ClozeRichAnswer question={question} value={value} onChange={onChange} code={code} lang={lang} />;
     if (question.type === 'cloze-bank')
         return <ClozeBankAnswer question={question} value={value} onChange={onChange} code={code} lang={lang} />;
     return <ClozeInlineAnswer question={question} value={value} onChange={onChange} code={code} lang={lang} />;

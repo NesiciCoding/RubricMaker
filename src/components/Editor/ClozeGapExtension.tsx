@@ -7,6 +7,7 @@ import {
     splitClozeOptions,
     type ClozeGap as ClozeGapSyntax,
     type ClozeOptionRole,
+    isRichClozePrompt,
 } from '../../utils/clozeParse';
 import { makePillAccessible, openPillPopover } from './pillPopover';
 
@@ -500,15 +501,16 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
     },
 });
 
-/** Builds TipTap JSON content for a single-paragraph doc from an existing {{gap|alt}} prompt string; with `wordFormation`, a `(STEM)` right after a gap becomes that gap's stem. */
+/** Builds TipTap JSON content (one paragraph per line) for a doc from an existing {{gap|alt}} prompt string; with `wordFormation`, a `(STEM)` right after a gap becomes that gap's stem. */
 export function promptToClozeContent(prompt: string, wordFormation = false): JSONContent {
     const segments = renderClozeSegments(prompt);
-    const content: JSONContent[] = [];
+    const paragraphs: JSONContent[][] = [[]];
+    const push = (node: JSONContent) => paragraphs[paragraphs.length - 1].push(node);
     segments.forEach((segment, i) => {
         if (segment.type === 'gap') {
             const next = segments[i + 1];
             const match = wordFormation && next?.type === 'text' ? /^\(([^()]+)\)/.exec(next.text) : null;
-            content.push({
+            push({
                 type: 'clozeGap',
                 attrs: {
                     alternatives: segment.gap.alternatives,
@@ -521,9 +523,19 @@ export function promptToClozeContent(prompt: string, wordFormation = false): JSO
         const prev = segments[i - 1];
         const consumed = wordFormation && prev?.type === 'gap' ? /^\(([^()]+)\)/.exec(segment.text) : null;
         const text = consumed ? segment.text.slice(consumed[0].length) : segment.text;
-        if (text) content.push({ type: 'text', text });
+        // One paragraph per line: a raw newline inside a paragraph is collapsed to a space once the prompt is saved as formatted HTML.
+        text.split('\n').forEach((line, lineIndex) => {
+            if (lineIndex > 0) paragraphs.push([]);
+            if (line) push({ type: 'text', text: line });
+        });
     });
-    return { type: 'doc', content: [{ type: 'paragraph', content: content.length > 0 ? content : undefined }] };
+    return {
+        type: 'doc',
+        content: paragraphs.map((content) => ({
+            type: 'paragraph',
+            content: content.length > 0 ? content : undefined,
+        })),
+    };
 }
 
 /** Reconstructs the flat {{gap|alt}} prompt string (with `(STEM)` after a gap that has one) from the editor's current document. */
@@ -547,4 +559,93 @@ export function clozeContentToPrompt(editor: Editor): string {
         return true;
     });
     return result.trimEnd();
+}
+
+const GAP_WITH_STEM = /\{\{(.*?)\}\}/g;
+
+/**
+ * What to load into the editor for a stored prompt: a plain prompt as the flat paragraph document it always was, and a
+ * formatted one (HTML) as HTML with each `{{…}}` turned back into a gap pill. The text is parsed first, so a gap's own
+ * text is the decoded text and cannot be mistaken for markup.
+ */
+export function clozeEditorContent(prompt: string, wordFormation = false): JSONContent | string {
+    if (!isRichClozePrompt(prompt)) return promptToClozeContent(prompt, wordFormation);
+    const doc = new DOMParser().parseFromString(prompt, 'text/html');
+    const texts: Text[] = [];
+    const collect = (node: ChildNode) => {
+        if (node.nodeType === globalThis.Node.TEXT_NODE) texts.push(node as Text);
+        else node.childNodes.forEach(collect);
+    };
+    doc.body.childNodes.forEach(collect);
+    for (const text of texts) {
+        const value = text.nodeValue ?? '';
+        if (!value.includes('{{')) continue;
+        const fragment = doc.createDocumentFragment();
+        let last = 0;
+        let consumeStem = false;
+        const appendText = (chunk: string) => {
+            if (!chunk) return;
+            let rest = chunk;
+            if (consumeStem) {
+                consumeStem = false;
+                const stem = wordFormation ? /^\(([^()]+)\)/.exec(rest) : null;
+                if (stem) {
+                    (fragment.lastChild as HTMLElement).setAttribute('data-stem', stem[1].trim());
+                    rest = rest.slice(stem[0].length);
+                }
+            }
+            if (rest) fragment.append(doc.createTextNode(rest));
+        };
+        for (const match of value.matchAll(GAP_WITH_STEM)) {
+            appendText(value.slice(last, match.index));
+            const { alternatives, roles } = splitClozeOptions(match[1]);
+            const pill = doc.createElement('span');
+            pill.setAttribute('data-cloze-gap', '');
+            pill.setAttribute('data-alternatives', alternatives.join('|'));
+            if (roles.some(Boolean)) pill.setAttribute('data-roles', roles.map((r) => r ?? '').join('|'));
+            fragment.append(pill);
+            consumeStem = true;
+            last = match.index + match[0].length;
+        }
+        appendText(value.slice(last));
+        text.replaceWith(fragment);
+    }
+    return doc.body.innerHTML;
+}
+
+/** True when the document is only paragraphs of unformatted text and gaps — what a plain cloze prompt can express. */
+function isUnformatted(json: JSONContent): boolean {
+    return (json.content ?? []).every(
+        (block) =>
+            block.type === 'paragraph' &&
+            (block.content ?? []).every(
+                // A mark counts on a gap too: a gap that is the only thing in bold is still bold.
+                (inline) => (inline.type === 'clozeGap' || inline.type === 'text') && !inline.marks?.length
+            )
+    );
+}
+
+/**
+ * The prompt string for the editor's document. Unformatted text keeps the plain `{{gap}}` string it always was, so
+ * nothing changes for questions that never use formatting; formatted text is stored as HTML with the gaps left as
+ * `{{…}}` in the text, which is how the scorer and every other reader find them.
+ */
+export function clozeEditorToPrompt(editor: Editor): string {
+    if (isUnformatted(editor.getJSON())) return clozeContentToPrompt(editor);
+    const doc = new DOMParser().parseFromString(editor.getHTML(), 'text/html');
+    doc.querySelectorAll('span[data-cloze-gap]').forEach((pill) => {
+        const stem = pill.getAttribute('data-stem');
+        const roles = pill.getAttribute('data-roles');
+        const gap: ClozeGapSyntax = {
+            index: 0,
+            alternatives: (pill.getAttribute('data-alternatives') ?? 'answer').split('|'),
+            ...(roles
+                ? {
+                      roles: roles.split('|').map((role) => (role === 'correct' || role === 'wrong' ? role : null)),
+                  }
+                : {}),
+        };
+        pill.replaceWith(doc.createTextNode(`${clozeGapToSyntax(gap)}${stem ? `(${stem})` : ''}`));
+    });
+    return doc.body.innerHTML;
 }

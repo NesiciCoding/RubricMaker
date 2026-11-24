@@ -21,7 +21,8 @@ import type { Student, Test, TestQuestion } from '../types';
 import { buildDocxStyles } from './docxExport';
 import { hasRichContent, promptToHtml, sanitizeFilename } from './exportDataPrep';
 import { htmlToDocxChildren, htmlToDocxLead, type DocxImageMap } from './essayExport';
-import { plainQuestionPromptText } from './clozeParse';
+import { isRichClozePrompt, plainQuestionPromptText } from './clozeParse';
+import { richClozeHtmlWithBlanks } from './clozeHtml';
 import { parseInlineScript } from './inlineScript';
 import { calcTestMaxPoints } from './testCalc';
 import { examPapers } from './variantDelivery';
@@ -423,7 +424,13 @@ async function questionParagraphs(
 ): Promise<(Paragraph | Table)[]> {
     const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown' || question.type === 'cloze-bank';
     const intro = isCloze && question.clozeIntro ? await richPromptToDocx(question.clozeIntro) : null;
-    const rich = isCloze ? intro : await richPromptToDocx(plainQuestionPromptText(question));
+    const richCloze =
+        isCloze && isRichClozePrompt(question.prompt)
+            ? await richPromptToDocx(
+                  richClozeHtmlWithBlanks(question.prompt, (index) => `<u><strong>(${index + 1})</strong></u>`)
+              )
+            : null;
+    const rich = isCloze ? (intro ?? richCloze) : await richPromptToDocx(plainQuestionPromptText(question));
     const promptRuns = rich ? rich.leadRuns : clozeRuns(question);
 
     const blocks: (Paragraph | Table)[] = [
@@ -437,7 +444,18 @@ async function questionParagraphs(
             spacing: { ...rich?.leadSpacing, after: 60 },
         }),
         ...(rich?.rest ?? []),
-        ...(intro ? [new Paragraph({ children: clozeRuns(question), spacing: { after: 60 } })] : []),
+        ...(intro
+            ? richCloze
+                ? [
+                      new Paragraph({
+                          bidirectional: richCloze.leadRtl || undefined,
+                          children: richCloze.leadRuns,
+                          spacing: { ...richCloze.leadSpacing, after: 60 },
+                      }),
+                      ...richCloze.rest,
+                  ]
+                : [new Paragraph({ children: clozeRuns(question), spacing: { after: 60 } })]
+            : []),
         ...(question.audioUrl ? [audioNoteParagraph()] : []),
     ];
 
