@@ -80,6 +80,7 @@ describe.each([
         const dialog = document.querySelector('.pill-popover');
         expect(dialog?.getAttribute('role')).toBe('dialog');
         expect(dialog?.getAttribute('aria-label')).toBeTruthy();
+        expect(dialog?.contains(document.activeElement)).toBe(true);
         expect(editor.getHTML()).toBe(before);
     });
 
@@ -87,6 +88,30 @@ describe.each([
         const editor = mount(extension, content());
         press(editor.view.dom.querySelector(selector) as HTMLElement, 'a');
         expect(document.querySelector('.pill-popover')).toBeNull();
+    });
+
+    it('closes with Escape from a control other than the text input', () => {
+        const editor = mount(extension, content());
+        const pill = editor.view.dom.querySelector(selector) as HTMLElement;
+        press(pill, 'Enter');
+        const buttons = document.querySelectorAll<HTMLButtonElement>('.pill-popover button');
+        const last = buttons[buttons.length - 1];
+        last.focus();
+        press(last, 'Escape');
+        expect(document.querySelector('.pill-popover')).toBeNull();
+        expect(document.activeElement).toBe(pill);
+    });
+
+    it('leaves focus on the pill after Save, even though Save focuses the editor first', async () => {
+        const editor = mount(extension, content());
+        const pill = editor.view.dom.querySelector(selector) as HTMLElement;
+        press(pill, 'Enter');
+        const buttons = document.querySelectorAll<HTMLButtonElement>('.pill-popover button');
+        buttons[buttons.length - 1].click();
+        await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+        const savedPill = editor.view.dom.querySelector(selector) as HTMLElement;
+        expect(document.querySelector('.pill-popover')).toBeNull();
+        expect(document.activeElement).toBe(savedPill);
     });
 
     it('returns focus to the pill when the dialog is cancelled with Escape', () => {
@@ -98,5 +123,17 @@ describe.each([
         press(input, 'Escape');
         expect(document.querySelector('.pill-popover')).toBeNull();
         expect(document.activeElement).toBe(pill);
+    });
+});
+
+describe('dropdown gap keyboard access', () => {
+    it('starts inside the dialog when opened from the keyboard', () => {
+        const editor = mount(ClozeGap, promptToClozeContent('The {{cat|dog}} sat'));
+        editor.view.dom.setAttribute('data-cloze-dropdown', 'true');
+        const pill = editor.view.dom.querySelector('.cloze-gap-pill') as HTMLElement;
+        press(pill, 'Enter');
+        const dialog = document.querySelector('.pill-popover') as HTMLElement;
+        expect(dialog.contains(document.activeElement)).toBe(true);
+        expect(document.activeElement?.tagName).toBe('INPUT');
     });
 });

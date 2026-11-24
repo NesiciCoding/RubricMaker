@@ -34,6 +34,12 @@ export function openPillPopover(
     popover.addEventListener('focusin', () => {
         focusWasInside = true;
     });
+    // On the panel rather than one input: Tab can move focus to a checkbox or button inside it.
+    popover.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        e.preventDefault();
+        close();
+    });
     // `.pill-popover` in index.css owns the panel itself; the caller's class styles its contents.
     popover.className = `pill-popover ${className}`;
 
@@ -70,7 +76,17 @@ export function openPillPopover(
         popover.remove();
         if (activeClose === close) activeClose = null;
         // A keyboard user opened this from the pill, so they land back on it instead of losing their place.
-        if (focusWasInside && pill.isConnected) pill.focus();
+        if (focusWasInside && pill.isConnected) {
+            pill.focus();
+            // Save runs editor.chain().focus() first, and tiptap applies that focus on the next frame —
+            // after this point — so take focus back unless the user has since moved somewhere else.
+            requestAnimationFrame(() => {
+                const active = document.activeElement;
+                const editorRoot = pill.closest('.ProseMirror');
+                const stolenByEditor = active === document.body || (!!editorRoot && editorRoot.contains(active));
+                if (pill.isConnected && active !== pill && stolenByEditor) pill.focus();
+            });
+        }
     }
 
     // Attach before build() runs — build() focuses/selects an input it creates, which only works

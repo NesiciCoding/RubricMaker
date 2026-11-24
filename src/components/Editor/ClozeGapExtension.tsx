@@ -449,6 +449,8 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
                                 close();
                             })
                         );
+                        // Keyboard activation leaves focus on the pill; start inside the dialog like the typed-gap branch.
+                        popover.querySelector('input')?.focus();
                     },
                     editLabel
                 );
