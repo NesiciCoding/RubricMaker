@@ -39,7 +39,7 @@ import QuestionBankModal from '../components/Tests/QuestionBankModal';
 import TagFilterChips from '../components/Tests/TagFilterChips';
 import { cloneBankItemIntoTest, duplicateQuestion, newQuestion } from '../utils/testQuestionClone';
 import { buildEasierClozeVariant, type ClozeVariantKind } from '../utils/clozeVariant';
-import { testAssignBlockers } from '../utils/testQuestionIssues';
+import { testAssignBlockers, type TestQuestionIssue } from '../utils/testQuestionIssues';
 import type {
     Class,
     Student,
@@ -68,8 +68,13 @@ import TestSettingsDrawer, {
     type TestSettingsTab,
     type TestSettingsValues,
 } from '../components/Tests/TestSettingsDrawer';
-import TestChecksPanel, { type TestCheckRow, type VerifiedCheck } from '../components/Tests/TestChecksPanel';
-import { testQualityChecks } from '../utils/testQualityChecks';
+import TestChecksPanel, {
+    type TestCheckFix,
+    type TestCheckRow,
+    type TestQualityRow,
+    type VerifiedCheck,
+} from '../components/Tests/TestChecksPanel';
+import { testQualityChecks, type TestQualityFinding } from '../utils/testQualityChecks';
 import { questionTypeLabelKey } from '../utils/questionTypeKey';
 import { SkeletonRow } from '../components/ui/Skeleton';
 import { useSharedMaterials } from '../hooks/useSharedMaterials';
@@ -1219,6 +1224,108 @@ function TestBuilderEditor({
         [displayOrderedQuestions, sections, durationMinutes, cefrTargetLevel]
     );
 
+    /** The mechanical gaps the checks screen fixes in place instead of only linking to the question. */
+    function blockerFixes(question: TestQuestion, issues: TestQuestionIssue[]): TestCheckFix[] {
+        const patch = (next: Partial<TestQuestion>) => updateQuestion(question.id, { ...question, ...next });
+        const fixes: TestCheckFix[] = [];
+
+        if (issues.includes('no_correct_option')) {
+            const options = (question.options ?? []).filter(
+                (option) => option.text.trim() !== '' || option.imageUrl || option.audioUrl
+            );
+            if (options.length > 0) {
+                fixes.push({
+                    control: 'select',
+                    labelKey: 'tests.fix_correct_option',
+                    value: options[0].id,
+                    options: options.map((option, index) => ({
+                        value: option.id,
+                        label: option.text.trim() || t('tests.fix_option_number', { number: index + 1 }),
+                    })),
+                    apply: (optionId) =>
+                        patch({
+                            options: (question.options ?? []).map((option) =>
+                                option.id === optionId ? { ...option, isCorrect: true } : option
+                            ),
+                        }),
+                });
+            }
+        }
+        if (issues.includes('no_key_word')) {
+            fixes.push({
+                control: 'text',
+                labelKey: 'tests.fix_key_word',
+                value: question.keyWord ?? '',
+                apply: (value) => patch({ keyWord: value }),
+            });
+        }
+        if (
+            issues.includes('no_model_answer') &&
+            (question.type === 'short-answer' || question.type === 'key-word-transformation')
+        ) {
+            fixes.push({
+                control: 'text',
+                labelKey: 'tests.fix_model_answer',
+                value: question.expectedAnswer ?? '',
+                apply: (value) => patch({ expectedAnswer: value }),
+            });
+        }
+        if (issues.includes('no_numeric_answer')) {
+            fixes.push({
+                control: 'number',
+                labelKey: 'tests.fix_numeric_answer',
+                value: typeof question.expectedNumericValue === 'number' ? String(question.expectedNumericValue) : '',
+                apply: (value) => patch({ expectedNumericValue: Number(value) }),
+            });
+        }
+        return fixes;
+    }
+
+    /** A quality hint's own fix: the points of the question, or the setting that produced the hint. */
+    function qualityFixes(finding: TestQualityFinding): TestCheckFix[] {
+        const question = finding.questionIds[0]
+            ? displayOrderedQuestions.find((q) => q.id === finding.questionIds[0])
+            : undefined;
+        if (finding.id === 'no_points' && question) {
+            return [
+                {
+                    control: 'number',
+                    labelKey: 'tests.fix_points',
+                    value: question.points > 0 ? String(question.points) : '1',
+                    apply: (value) => updateQuestion(question.id, { ...question, points: Number(value) }),
+                },
+            ];
+        }
+        // The limit and the target each need more than one value, so open the tab that holds them.
+        if (finding.id === 'time_over' || finding.id === 'time_short') {
+            return [
+                {
+                    control: 'action',
+                    labelKey: 'tests.fix_change_time_limit',
+                    value: '',
+                    apply: () => {
+                        setChecksOpen(false);
+                        openSettings('delivery');
+                    },
+                },
+            ];
+        }
+        if (finding.id === 'cefr_above' || finding.id === 'cefr_below') {
+            return [
+                {
+                    control: 'action',
+                    labelKey: 'tests.fix_change_cefr_target',
+                    value: '',
+                    apply: () => {
+                        setChecksOpen(false);
+                        openSettings('basics');
+                    },
+                },
+            ];
+        }
+        return [];
+    }
+
     const checkRows: TestCheckRow[] = (draftBlockers?.entries ?? []).map((entry) => {
         const question = displayOrderedQuestions.find((q) => q.id === entry.questionId);
         const label = question ? htmlToPlainText(plainQuestionPromptText(question)).trim() : '';
@@ -1227,8 +1334,14 @@ function TestBuilderEditor({
             number: entry.number,
             label: label || (question ? t(questionTypeLabelKey(question.type)) : ''),
             issues: entry.issues,
+            fixes: question ? blockerFixes(question, entry.issues) : [],
         };
     });
+
+    const qualityRows: TestQualityRow[] = qualityFindings.map((finding) => ({
+        ...finding,
+        fixes: qualityFixes(finding),
+    }));
 
     const verifiedChecks: VerifiedCheck[] = [];
     if (displayOrderedQuestions.length > 0 && checkRows.length === 0) {
@@ -1253,7 +1366,7 @@ function TestBuilderEditor({
             questionCount={displayOrderedQuestions.length}
             totalPoints={totalPoints}
             verified={verifiedChecks}
-            quality={qualityFindings}
+            quality={qualityRows}
             onJump={jumpToQuestion}
             onBack={() => setChecksOpen(false)}
             onSave={() => void handleSave()}

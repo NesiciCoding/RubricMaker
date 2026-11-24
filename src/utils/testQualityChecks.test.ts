@@ -86,6 +86,16 @@ describe('testQualityChecks', () => {
         expect(testQualityChecks({ questions })).toEqual([]);
     });
 
+    it('flags a question that scores nothing', () => {
+        const findings = testQualityChecks({
+            questions: [
+                question({ id: 'q1', type: 'short-answer', points: 0 }),
+                question({ id: 'q2', type: 'short-answer', points: 2 }),
+            ],
+        });
+        expect(findings).toEqual([{ id: 'no_points', questionIds: ['q1'], numbers: [1], values: { number: 1 } }]);
+    });
+
     it('flags repeated option text, ignoring case and spacing', () => {
         const findings = testQualityChecks({
             questions: [

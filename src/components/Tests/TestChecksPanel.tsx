@@ -1,7 +1,24 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertCircle, ArrowLeft, CheckCircle2, ClipboardCheck, Lightbulb, Save } from 'lucide-react';
 import type { TestQuestionIssue } from '../../utils/testQuestionIssues';
 import type { TestQualityFinding } from '../../utils/testQualityChecks';
+
+/**
+ * A fix the checks screen can apply in place: an input for the missing value, a pick for the correct
+ * option, or an `action` button for a field that needs more than one value (the time limit, the CEFR
+ * target) and so opens instead of editing here.
+ */
+export interface TestCheckFix {
+    control: 'number' | 'text' | 'select' | 'action';
+    /** Translation key of the field label, or the button's own label for `action`. */
+    labelKey: string;
+    /** Starting value; empty for `action`. */
+    value: string;
+    /** Choices for `select`. */
+    options?: { value: string; label: string }[];
+    apply: (value: string) => void;
+}
 
 export interface TestCheckRow {
     questionId: string;
@@ -9,6 +26,13 @@ export interface TestCheckRow {
     number: number;
     label: string;
     issues: TestQuestionIssue[];
+    /** Fixes that can be applied on this screen, in issue order. */
+    fixes?: TestCheckFix[];
+}
+
+/** A quality hint plus whatever part of it can be fixed without leaving the screen. */
+export interface TestQualityRow extends TestQualityFinding {
+    fixes?: TestCheckFix[];
 }
 
 export interface VerifiedCheck {
@@ -24,7 +48,7 @@ interface Props {
     totalPoints: number;
     verified: VerifiedCheck[];
     /** Non-blocking quality hints; absent when the test has none. */
-    quality?: TestQualityFinding[];
+    quality?: TestQualityRow[];
     onJump: (questionId: string) => void;
     onBack?: () => void;
     onSave: () => void;
@@ -32,11 +56,73 @@ interface Props {
     readOnly?: boolean;
 }
 
+/** One inline fixer: an input, a pick, or a button that opens the field it belongs to. */
+function CheckFixControl({ fix, testId }: { fix: TestCheckFix; testId: string }) {
+    const { t } = useTranslation();
+    const [value, setValue] = useState(fix.value);
+    const inputId = `${testId}-input`;
+
+    if (fix.control === 'action') {
+        return (
+            <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                data-testid={`${testId}-apply`}
+                onClick={() => fix.apply('')}
+            >
+                {t(fix.labelKey)}
+            </button>
+        );
+    }
+
+    return (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <label htmlFor={inputId} className="text-xs">
+                {t(fix.labelKey)}
+            </label>
+            {fix.control === 'select' ? (
+                <select
+                    id={inputId}
+                    data-testid={inputId}
+                    value={value}
+                    onChange={(event) => setValue(event.target.value)}
+                    style={{ padding: '4px 6px', maxWidth: 220 }}
+                >
+                    {(fix.options ?? []).map((option) => (
+                        <option key={option.value} value={option.value}>
+                            {option.label}
+                        </option>
+                    ))}
+                </select>
+            ) : (
+                <input
+                    id={inputId}
+                    data-testid={inputId}
+                    type={fix.control}
+                    inputMode={fix.control === 'number' ? 'decimal' : undefined}
+                    value={value}
+                    onChange={(event) => setValue(event.target.value)}
+                    style={{ padding: '4px 6px', width: fix.control === 'number' ? 90 : 220 }}
+                />
+            )}
+            <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                data-testid={`${testId}-apply`}
+                onClick={() => fix.apply(value)}
+                disabled={value.trim() === ''}
+            >
+                {t('tests.fix_apply')}
+            </button>
+        </div>
+    );
+}
+
 /**
  * The pre-assign screen: what stops the test being handed to students, one line per question with a
- * jump link, then what could be better, then what is already fine, then the save/assign footer. It
- * only presents the issues `testAssignBlockers` and `testQualityChecks` already compute — no
- * validation lives here.
+ * jump link and the fix that can be applied in place, then what could be better, then what is
+ * already fine, then the save/assign footer. It only presents the issues `testAssignBlockers` and
+ * `testQualityChecks` already compute — no validation lives here.
  */
 export default function TestChecksPanel({
     rows,
@@ -155,6 +241,14 @@ export default function TestChecksPanel({
                                     <li key={issue}>{t(`tests.issue_${issue}`)}</li>
                                 ))}
                             </ul>
+                            {!readOnly &&
+                                (row.fixes ?? []).map((fix, index) => (
+                                    <CheckFixControl
+                                        key={`${fix.labelKey}-${index}`}
+                                        fix={fix}
+                                        testId={`${row.questionId}-fix-${index}`}
+                                    />
+                                ))}
                         </li>
                     ))}
                 </ul>
@@ -210,6 +304,15 @@ export default function TestChecksPanel({
                                         {t('tests.checks_jump')}
                                     </button>
                                 )}
+                                {!readOnly &&
+                                    (finding.fixes ?? []).map((fix, index) => (
+                                        <div key={`${fix.labelKey}-${index}`} style={{ flexBasis: '100%' }}>
+                                            <CheckFixControl
+                                                fix={fix}
+                                                testId={`quality-${finding.id}-${finding.questionIds[0] ?? 'test'}-fix-${index}`}
+                                            />
+                                        </div>
+                                    ))}
                             </li>
                         ))}
                     </ul>

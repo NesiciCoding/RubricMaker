@@ -90,6 +90,91 @@ describe('TestChecksPanel', () => {
         expect(onJump).toHaveBeenCalledWith('q3');
     });
 
+    it('applies an inline fix without jumping away', () => {
+        const apply = vi.fn();
+        const { onJump } = renderPanel({
+            rows: [
+                {
+                    questionId: 'q2',
+                    number: 2,
+                    label: 'Second prompt',
+                    issues: ['no_model_answer'],
+                    fixes: [{ control: 'text', labelKey: 'tests.fix_model_answer', value: '', apply }],
+                },
+            ],
+        });
+        const input = screen.getByTestId('q2-fix-0-input');
+        expect(screen.getByTestId('q2-fix-0-apply')).toBeDisabled();
+        fireEvent.change(input, { target: { value: 'Paris' } });
+        fireEvent.click(screen.getByTestId('q2-fix-0-apply'));
+        expect(apply).toHaveBeenCalledWith('Paris');
+        expect(onJump).not.toHaveBeenCalled();
+    });
+
+    it('offers the correct-option fix as a pick of the options', () => {
+        const apply = vi.fn();
+        renderPanel({
+            rows: [
+                {
+                    questionId: 'q1',
+                    number: 1,
+                    label: 'Prompt',
+                    issues: ['no_correct_option'],
+                    fixes: [
+                        {
+                            control: 'select',
+                            labelKey: 'tests.fix_correct_option',
+                            value: 'a',
+                            options: [
+                                { value: 'a', label: 'Alpha' },
+                                { value: 'b', label: 'Beta' },
+                            ],
+                            apply,
+                        },
+                    ],
+                },
+            ],
+        });
+        fireEvent.change(screen.getByTestId('q1-fix-0-input'), { target: { value: 'b' } });
+        fireEvent.click(screen.getByTestId('q1-fix-0-apply'));
+        expect(apply).toHaveBeenCalledWith('b');
+    });
+
+    it('gives a quality hint a single action button and no input', () => {
+        const apply = vi.fn();
+        renderPanel({
+            quality: [
+                {
+                    id: 'time_over',
+                    questionIds: [],
+                    numbers: [],
+                    values: { estimated: 70, duration: 60 },
+                    fixes: [{ control: 'action', labelKey: 'tests.fix_change_time_limit', value: '', apply }],
+                },
+            ],
+        });
+        expect(screen.queryByTestId('quality-time_over-test-fix-0-input')).not.toBeInTheDocument();
+        fireEvent.click(screen.getByTestId('quality-time_over-test-fix-0-apply'));
+        expect(apply).toHaveBeenCalledWith('');
+    });
+
+    it('offers no inline fixes on a read-only shared test', () => {
+        renderPanel({
+            readOnly: true,
+            rows: [
+                {
+                    questionId: 'q2',
+                    number: 2,
+                    label: 'Second prompt',
+                    issues: ['no_model_answer'],
+                    fixes: [{ control: 'text', labelKey: 'tests.fix_model_answer', value: '', apply: vi.fn() }],
+                },
+            ],
+        });
+        expect(screen.queryByTestId('q2-fix-0-input')).not.toBeInTheDocument();
+        expect(screen.getByTestId('checks-jump-q2')).toBeInTheDocument();
+    });
+
     it('shows no quality block when there is nothing to improve', () => {
         renderPanel();
         expect(screen.queryByTestId('checks-quality')).not.toBeInTheDocument();

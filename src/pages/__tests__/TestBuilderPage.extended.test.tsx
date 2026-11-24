@@ -1197,6 +1197,29 @@ describe('TestBuilderPage extended', () => {
         expect(panel.getByText(/tests\.issue_no_numeric_answer/)).toBeInTheDocument();
     });
 
+    it('fixes a missing numeric answer inline from the checks screen (#1215)', () => {
+        mockTests = [
+            {
+                id: 'incomplete',
+                name: 'Incomplete',
+                createdAt: '2024-01-01T00:00:00Z',
+                updatedAt: '2024-01-01T00:00:00Z',
+                questions: [
+                    { id: 'q1', type: 'open', prompt: 'Explain', points: 1 },
+                    { id: 'q2', type: 'numeric', prompt: '2 + 2?', points: 1 },
+                ],
+            } as RmTest,
+        ];
+        renderBuilder('/tests/incomplete');
+        fireEvent.click(screen.getByTestId('checks_review'));
+        const row = within(screen.getByTestId('checks-row-q2'));
+        fireEvent.change(row.getByTestId('q2-fix-0-input'), { target: { value: '4' } });
+        fireEvent.click(row.getByTestId('q2-fix-0-apply'));
+        // The blocker is gone, so the fix reached the draft without opening the question.
+        expect(screen.queryByTestId('checks-row-q2')).not.toBeInTheDocument();
+        expect(screen.getByLabelText('tests.name_label')).toBeInTheDocument();
+    });
+
     it('hides the blocker banner while the checks screen is open', () => {
         renderBuilder();
         fireEvent.change(screen.getByLabelText('tests.name_label'), { target: { value: 'Draft test' } });

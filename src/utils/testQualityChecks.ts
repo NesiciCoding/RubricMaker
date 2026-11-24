@@ -7,6 +7,7 @@ export type TestQualityCheckId =
     | 'time_short'
     | 'cefr_above'
     | 'cefr_below'
+    | 'no_points'
     | 'duplicate_options'
     | 'no_distractor'
     | 'twin_true_false'
@@ -143,6 +144,9 @@ export function testQualityChecks({
 
     questions.forEach((q, index) => {
         const number = index + 1;
+        if (!(q.points > 0)) {
+            findings.push({ id: 'no_points', questionIds: [q.id], numbers: [number], values: { number } });
+        }
         if (q.type === 'multiple-choice' || q.type === 'multiple-response') {
             const options = q.options ?? [];
             const texts = options.map((o) => normalizeText(o.text)).filter(Boolean);

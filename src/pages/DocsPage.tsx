@@ -1060,7 +1060,7 @@ function RubricsTab() {
                     {t('docs.rb_tests_checks')}
                 </p>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
-                    {t('docs.rb_tests_quality')}
+                    {t('docs.rb_tests_quality')} {t('docs.rb_tests_quality_fixes')}
                 </p>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     {t('docs.rb_tests_inspector')}
