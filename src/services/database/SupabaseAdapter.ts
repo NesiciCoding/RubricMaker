@@ -55,6 +55,52 @@ import type { SharedEntry } from '../../utils/materialSharing';
 /** A school write that RLS silently filtered to 0 rows (not permitted, or already gone). */
 export const SCHOOL_NOT_CHANGED = 'school_not_changed';
 
+/** Postgres `insufficient_privilege`: RLS refused the write. Retrying can never succeed. */
+const RLS_REJECTED = '42501';
+
+/**
+ * Owner-carrying entities are stored with their ownership in a column, not in the `data` JSON, so
+ * a write never ships a second (stale) copy of `ownerId` into the document.
+ */
+function withoutOwnerId<T extends { ownerId?: string }>(entity: T): T {
+    const copy = { ...entity };
+    delete copy.ownerId;
+    return copy;
+}
+
+/**
+ * Maps a write to a SyncResult, treating "no error, no rows" as a rejection. PostgREST reports an
+ * RLS-filtered UPDATE/DELETE as a success with zero rows, which used to look like a completed
+ * write: the row never changed and nothing was ever retried or reported.
+ */
+function writeResult(error: { message: string; code?: string } | null, rows: unknown[] | null): SyncResult {
+    if (error) {
+        return error.code === RLS_REJECTED
+            ? { success: false, error: error.message, code: 'forbidden' }
+            : { success: false, error: error.message };
+    }
+    if (rows && rows.length === 0) {
+        return { success: false, error: 'Write rejected by access rules', code: 'forbidden' };
+    }
+    return { success: true };
+}
+
+/**
+ * Ids of my own and co-taught classes and their students — one resolved roster per pull, passed to
+ * the fetch methods that narrow to it. `undefined` asks for the whole school.
+ */
+export interface MyRoster {
+    classIds: string[];
+    studentIds: string[];
+}
+
+/** `in.(…)` filters travel in the URL, so a large roster is split into small id lists. */
+function chunkIds(ids: string[], size = 100): string[][] {
+    const chunks: string[][] = [];
+    for (let i = 0; i < ids.length; i += size) chunks.push(ids.slice(i, i + size));
+    return chunks;
+}
+
 export class SupabaseAdapter {
     private client: SupabaseClient | null = null;
     private userId: string | null = null;
@@ -749,83 +795,134 @@ export class SupabaseAdapter {
 
     // ── Classes ───────────────────────────────────────────────────────────────
 
-    async fetchClasses(): Promise<Class[]> {
-        const { data, error } = await this.db().from('classes').select('data');
+    // ── Roster scope ──────────────────────────────────────────────────────────
+
+    /**
+     * My own and co-taught classes and their students. Narrowing a pull to these is what keeps an
+     * admin's startup from downloading the whole school (the SELECT policy, migration 007, hands
+     * every class to an admin). A teacher's RLS result is already this set.
+     */
+    async resolveMyRoster(): Promise<MyRoster> {
+        const sharedIds = Object.keys(await this.fetchMyClassRoles());
+        const { data, error } = await this.db().from('classes').select('id').eq('owner_id', this.uid());
         if (error) throw error;
-        return (data ?? []).map((r) => r.data as Class);
+        const classIds = [...new Set([...sharedIds, ...(data ?? []).map((r) => r.id as string)])];
+        if (classIds.length === 0) return { classIds, studentIds: [] };
+        const { data: students, error: studentError } = await this.db()
+            .from('students')
+            .select('id')
+            .in('class_id', classIds);
+        if (studentError) throw studentError;
+        return { classIds, studentIds: (students ?? []).map((r) => r.id as string) };
+    }
+
+    // ── Classes ───────────────────────────────────────────────────────────────
+
+    async fetchClasses(roster?: MyRoster): Promise<Class[]> {
+        // owner_id rides along so the client can tell "my classes" apart from a colleague's.
+        if (roster && roster.classIds.length === 0) return [];
+        const query = this.db().from('classes').select('data, owner_id');
+        const { data, error } = roster ? await query.in('id', roster.classIds) : await query;
+        if (error) throw error;
+        return (data ?? []).map((r) => ({ ...(r.data as Class), ownerId: r.owner_id as string }));
     }
 
     async upsertClass(c: Class): Promise<SyncResult> {
-        const { error } = await this.db().from('classes').upsert(
-            {
-                id: c.id,
-                owner_id: this.uid(),
-                data: c,
-            },
-            { onConflict: 'id' }
-        );
-        return error ? { success: false, error: error.message } : { success: true };
+        // Keep the existing owner: an admin intervening on a colleague's class must not take it
+        // over, and RLS would refuse the ownership change anyway.
+        const { data, error } = await this.db()
+            .from('classes')
+            .upsert(
+                {
+                    id: c.id,
+                    owner_id: c.ownerId ?? this.uid(),
+                    data: withoutOwnerId(c),
+                },
+                { onConflict: 'id' }
+            )
+            .select('id');
+        return writeResult(error, data);
     }
 
     async deleteClass(id: string): Promise<SyncResult> {
-        const { error } = await this.db().from('classes').delete().eq('id', id).eq('owner_id', this.uid());
-        return error ? { success: false, error: error.message } : { success: true };
+        // No owner filter: RLS decides (owner, or an admin in the intervention policy). Filtering
+        // here made a refused delete look successful instead of reporting it.
+        const { data, error } = await this.db().from('classes').delete().eq('id', id).select('id');
+        return writeResult(error, data);
     }
 
     /** Batched upsert — one round-trip for a bulk action (e.g. a CSV roster import creating several new classes). */
     async upsertClasses(classes: Class[]): Promise<SyncResult> {
         if (classes.length === 0) return { success: true };
         const ownerId = this.uid();
-        const rows = classes.map((c) => ({ id: c.id, owner_id: ownerId, data: c }));
-        const { error } = await this.db().from('classes').upsert(rows, { onConflict: 'id' });
-        return error ? { success: false, error: error.message } : { success: true };
+        const rows = classes.map((c) => ({ id: c.id, owner_id: c.ownerId ?? ownerId, data: withoutOwnerId(c) }));
+        const { data, error } = await this.db().from('classes').upsert(rows, { onConflict: 'id' }).select('id');
+        const result = writeResult(error, data);
+        if (result.success && data && data.length < rows.length) {
+            return { success: false, error: 'Some classes were rejected by access rules', code: 'forbidden' };
+        }
+        return result;
     }
 
     async deleteClasses(ids: string[]): Promise<SyncResult> {
         if (ids.length === 0) return { success: true };
-        const { error } = await this.db().from('classes').delete().in('id', ids).eq('owner_id', this.uid());
-        return error ? { success: false, error: error.message } : { success: true };
+        const { data, error } = await this.db().from('classes').delete().in('id', ids).select('id');
+        return writeResult(error, data);
     }
 
     // ── Students ──────────────────────────────────────────────────────────────
 
-    async fetchStudents(): Promise<Student[]> {
-        const { data, error } = await this.db().from('students').select('data');
+    async fetchStudents(roster?: MyRoster): Promise<Student[]> {
+        if (roster && roster.classIds.length === 0) return [];
+        const query = this.db().from('students').select('data, owner_id');
+        const { data, error } = roster ? await query.in('class_id', roster.classIds) : await query;
         if (error) throw error;
-        return (data ?? []).map((r) => r.data as Student);
+        return (data ?? []).map((r) => ({ ...(r.data as Student), ownerId: r.owner_id as string }));
     }
 
     async upsertStudent(s: Student): Promise<SyncResult> {
-        const { error } = await this.db().from('students').upsert(
-            {
-                id: s.id,
-                owner_id: this.uid(),
-                class_id: s.classId,
-                data: s,
-            },
-            { onConflict: 'id' }
-        );
-        return error ? { success: false, error: error.message } : { success: true };
+        const { data, error } = await this.db()
+            .from('students')
+            .upsert(
+                {
+                    id: s.id,
+                    owner_id: s.ownerId ?? this.uid(),
+                    class_id: s.classId,
+                    data: withoutOwnerId(s),
+                },
+                { onConflict: 'id' }
+            )
+            .select('id');
+        return writeResult(error, data);
     }
 
     async deleteStudent(id: string): Promise<SyncResult> {
-        const { error } = await this.db().from('students').delete().eq('id', id).eq('owner_id', this.uid());
-        return error ? { success: false, error: error.message } : { success: true };
+        const { data, error } = await this.db().from('students').delete().eq('id', id).select('id');
+        return writeResult(error, data);
     }
 
     /** Batched upsert — one round-trip for a bulk action (e.g. a CSV roster import). */
     async upsertStudents(students: Student[]): Promise<SyncResult> {
         if (students.length === 0) return { success: true };
         const ownerId = this.uid();
-        const rows = students.map((s) => ({ id: s.id, owner_id: ownerId, class_id: s.classId, data: s }));
-        const { error } = await this.db().from('students').upsert(rows, { onConflict: 'id' });
-        return error ? { success: false, error: error.message } : { success: true };
+        const rows = students.map((s) => ({
+            id: s.id,
+            owner_id: s.ownerId ?? ownerId,
+            class_id: s.classId,
+            data: withoutOwnerId(s),
+        }));
+        const { data, error } = await this.db().from('students').upsert(rows, { onConflict: 'id' }).select('id');
+        const result = writeResult(error, data);
+        if (result.success && data && data.length < rows.length) {
+            return { success: false, error: 'Some students were rejected by access rules', code: 'forbidden' };
+        }
+        return result;
     }
 
     async deleteStudents(ids: string[]): Promise<SyncResult> {
         if (ids.length === 0) return { success: true };
-        const { error } = await this.db().from('students').delete().in('id', ids).eq('owner_id', this.uid());
-        return error ? { success: false, error: error.message } : { success: true };
+        const { data, error } = await this.db().from('students').delete().in('id', ids).select('id');
+        return writeResult(error, data);
     }
 
     // ── Student Rubrics (grades) ───────────────────────────────────────────────
@@ -850,14 +947,28 @@ export class SupabaseAdapter {
         return out;
     }
 
-    async fetchStudentRubrics(): Promise<StudentRubric[]> {
-        const rows = await this.fetchPaged<{ data: StudentRubric }>(() =>
-            this.db().from('student_rubrics').select('data').eq('is_peer_review', false).order('id')
-        );
-        return rows.map((r) => r.data);
+    /** One grade collection, narrowed to the given students when a roster is passed. */
+    private async fetchGrades(peerReview: boolean, studentIds?: string[]): Promise<StudentRubric[]> {
+        if (studentIds && studentIds.length === 0) return [];
+        const out: StudentRubric[] = [];
+        for (const ids of studentIds ? chunkIds(studentIds) : [undefined]) {
+            const rows = await this.fetchPaged<{ data: StudentRubric }>(() => {
+                const query = this.db().from('student_rubrics').select('data').eq('is_peer_review', peerReview);
+                return (ids ? query.in('student_id', ids) : query).order('id');
+            });
+            out.push(...rows.map((r) => r.data));
+        }
+        return out;
+    }
+
+    async fetchStudentRubrics(roster?: MyRoster): Promise<StudentRubric[]> {
+        return this.fetchGrades(false, roster?.studentIds);
     }
 
     async upsertStudentRubric(sr: StudentRubric): Promise<SyncResult> {
+        // A grade for a student outside my classes trips can_grade_student (migration 077), which
+        // errors rather than no-opping; writeResult tags it 'forbidden' so sync drops it instead
+        // of retrying forever.
         const { error } = await this.db().from('student_rubrics').upsert(
             {
                 id: sr.id,
@@ -869,12 +980,17 @@ export class SupabaseAdapter {
             },
             { onConflict: 'id' }
         );
-        return error ? { success: false, error: error.message } : { success: true };
+        return writeResult(error, null);
     }
 
     async deleteStudentRubric(id: string): Promise<SyncResult> {
-        const { error } = await this.db().from('student_rubrics').delete().eq('id', id).eq('grader_id', this.uid());
-        return error ? { success: false, error: error.message } : { success: true };
+        const { data, error } = await this.db()
+            .from('student_rubrics')
+            .delete()
+            .eq('id', id)
+            .eq('grader_id', this.uid())
+            .select('id');
+        return writeResult(error, data);
     }
 
     /** Batched upsert — one round-trip for a bulk action (e.g. assign a rubric to a whole class). */
@@ -890,22 +1006,24 @@ export class SupabaseAdapter {
             data: sr,
         }));
         const { error } = await this.db().from('student_rubrics').upsert(rows, { onConflict: 'id' });
-        return error ? { success: false, error: error.message } : { success: true };
+        return writeResult(error, null);
     }
 
     async deleteStudentRubrics(ids: string[]): Promise<SyncResult> {
         if (ids.length === 0) return { success: true };
-        const { error } = await this.db().from('student_rubrics').delete().in('id', ids).eq('grader_id', this.uid());
-        return error ? { success: false, error: error.message } : { success: true };
+        const { data, error } = await this.db()
+            .from('student_rubrics')
+            .delete()
+            .in('id', ids)
+            .eq('grader_id', this.uid())
+            .select('id');
+        return writeResult(error, data);
     }
 
     // ── Peer Reviews ──────────────────────────────────────────────────────────
 
-    async fetchPeerReviews(): Promise<StudentRubric[]> {
-        const rows = await this.fetchPaged<{ data: StudentRubric }>(() =>
-            this.db().from('student_rubrics').select('data').eq('is_peer_review', true).order('id')
-        );
-        return rows.map((r) => r.data);
+    async fetchPeerReviews(roster?: MyRoster): Promise<StudentRubric[]> {
+        return this.fetchGrades(true, roster?.studentIds);
     }
 
     async upsertPeerReview(sr: StudentRubric): Promise<SyncResult> {

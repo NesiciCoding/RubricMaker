@@ -60,7 +60,7 @@ import { useMediaRecorder } from '../hooks/useMediaRecorder';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { useOwnOrSharedItem } from '../hooks/useSharedMaterials';
 import LastEditedNote from '../components/Grading/LastEditedNote';
-import { useCanEditStudentWork } from '../hooks/useClassRoles';
+import { useCanGradeStudentWork } from '../hooks/useRosterScope';
 import { SkeletonRow } from '../components/ui/Skeleton';
 import { useToast } from '../hooks/useToast';
 import { isOffline } from '../context/storeCore';
@@ -199,7 +199,7 @@ function GradeStudentEditor() {
     const student = students.find((s) => s.id === studentId);
     // A class shared with me as "Can view": I may read its grades but the server refuses changes
     // (migration 096), so nothing here may pretend to save.
-    const canEditStudentWork = useCanEditStudentWork();
+    const canEditStudentWork = useCanGradeStudentWork();
     const readOnly = !canEditStudentWork(student?.classId);
     const classStudents = useMemo(
         () => students.filter((s) => s.classId === student?.classId).map((s) => ({ id: s.id, name: s.name })),

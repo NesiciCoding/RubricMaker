@@ -4,11 +4,20 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const db = vi.hoisted(() => ({ isConnected: true, userId: 'me' as string | null }));
 const mockFetchRoles = vi.fn();
 
-vi.mock('../useDbStatus', () => ({
-    useDbStatus: () => ({ isConnected: db.isConnected, userId: db.userId }),
+vi.mock('../../services/database/supabaseConfig', () => ({
+    loadSupabaseConfig: () => ({ supabaseUrl: 'https://example.test', supabaseAnonKey: 'anon' }),
 }));
-vi.mock('../../services/database', () => ({
-    storageSync: { adapter: { fetchMyClassRoles: (...a: unknown[]) => mockFetchRoles(...a) } },
+// The hook loads the database module lazily (it is read by the app-wide roster provider, which
+// must not pull supabase-js into the entry chunk), so the test stubs the loader, not the module.
+vi.mock('../../services/database/lazyDb', () => ({
+    loadDb: async () => ({
+        storageSync: {
+            isConnected: () => db.isConnected,
+            getCurrentUserId: () => db.userId,
+            adapter: { fetchMyClassRoles: (...a: unknown[]) => mockFetchRoles(...a) },
+            subscribe: () => () => {},
+        },
+    }),
 }));
 
 import { useCanEditRoster, useCanEditStudentWork, resetClassRolesCache } from '../useClassRoles';

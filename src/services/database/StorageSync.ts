@@ -5,6 +5,8 @@ import { AttachmentSync } from './AttachmentSync';
 import { RecordingSync } from './RecordingSync';
 import { FeedbackAudioSync } from './FeedbackAudioSync';
 import type { DatabaseConfig, SyncStatus, SyncResult, DbUser } from './types';
+import type { RosterFetchMode } from '../../utils/rosterScope';
+import type { MyRoster } from './SupabaseAdapter';
 export { loadSupabaseConfig, saveSupabaseConfig, clearSupabaseConfig } from './supabaseConfig';
 import { clearSupabaseConfig } from './supabaseConfig';
 import type { StoreData } from '../../store/storage';
@@ -699,11 +701,48 @@ class StorageSyncService {
     // Number of fetches tracked across both hydrate waves — a unit test pins done === total.
     static readonly HYDRATE_FETCH_COUNT = 35;
     private hydrationGeneration = 0;
+    private rosterFetch: RosterFetchMode = 'all';
+    /** Settles when the last started full pull does — see the wait in hydratePartial. */
+    private hydrateSettled: Promise<void> = Promise.resolve();
     private hydrateProgress: { done: number; total: number } | null = null;
+
+    /**
+     * Narrows every roster pull (hydrate, partial hydrate, realtime refresh) to the classes this
+     * user owns or co-teaches. Set by AppContext from the roster scope before the first hydrate.
+     */
+    setRosterFetch(mode: RosterFetchMode): void {
+        this.rosterFetch = mode;
+    }
+
+    /**
+     * Resolves when no full pull is in flight — including one that started while waiting, since a
+     * hydrate begun before a scope change carries the wider roster and must merge first.
+     */
+    private async waitForHydrate(): Promise<void> {
+        let settled = this.hydrateSettled;
+        await settled;
+        while (settled !== this.hydrateSettled) {
+            settled = this.hydrateSettled;
+            await settled;
+        }
+    }
+
+    /** The roster every narrowed pull filters on; `undefined` asks for the whole school. */
+    private async myRoster(): Promise<MyRoster | undefined> {
+        if (this.rosterFetch !== 'mine') return undefined;
+        // A failed lookup must not cost the user their roster, and an admin who teaches nothing
+        // has nothing to narrow to — their view resolves to the whole school anyway.
+        const roster = await this.adapter.resolveMyRoster().catch(() => undefined);
+        return roster && roster.classIds.length > 0 ? roster : undefined;
+    }
 
     async hydrate(): Promise<{ data: Partial<StoreData> | null; error?: string }> {
         const gen = ++this.hydrationGeneration;
         const impl = this._hydrateImpl(gen);
+        this.hydrateSettled = impl.then(
+            () => undefined,
+            () => undefined
+        );
         let timer: ReturnType<typeof setTimeout> | undefined;
         const timeout = new Promise<null>((resolve) => {
             timer = setTimeout(() => resolve(null), StorageSyncService.HYDRATE_TIMEOUT_MS);
@@ -761,6 +800,7 @@ class StorageSyncService {
         this.setStatus('syncing');
         const fetchErrors: unknown[] = [];
         try {
+            const roster = await this.myRoster();
             const [
                 rubrics,
                 folders,
@@ -792,10 +832,10 @@ class StorageSyncService {
                 skipFailed(fetchErrors, [
                     this.adapter.fetchRubrics(),
                     this.adapter.fetchFolders(),
-                    this.adapter.fetchClasses(),
-                    this.adapter.fetchStudents(),
-                    this.adapter.fetchStudentRubrics(),
-                    this.adapter.fetchPeerReviews(),
+                    this.adapter.fetchClasses(roster),
+                    this.adapter.fetchStudents(roster),
+                    this.adapter.fetchStudentRubrics(roster),
+                    this.adapter.fetchPeerReviews(roster),
                     this.adapter.fetchGradeScales(),
                     this.adapter.fetchCommentSnippets(),
                     this.adapter.fetchCommentBank(),
@@ -889,6 +929,7 @@ class StorageSyncService {
                             ...DEFAULT_SETTINGS,
                             ...(settings ?? {}),
                             userRole: profileFull.role,
+                            userId: profileFull.id,
                             ...(profileFull.email ? { userEmail: profileFull.email } : {}),
                         }
                       : (settings ?? undefined);
@@ -1007,6 +1048,10 @@ class StorageSyncService {
         for (const table of tables) {
             if (!StorageSyncService.PARTIAL_HYDRATE_TABLES.has(table)) return { data: null, fullFallback: true };
         }
+        // Runs *after* any full pull still in flight, so a boot hydrate started on the wider scope
+        // cannot deliver its rows after this narrower refresh and win the merge it should have lost.
+        await this.waitForHydrate();
+        const roster = await this.myRoster();
         const a = this.adapter;
         const result: Partial<StoreData> = {};
         const jobs: Array<Promise<void>> = [];
@@ -1025,17 +1070,17 @@ class StorageSyncService {
                         break;
                     case 'classes':
                         jobs.push(
-                            a.fetchClasses().then((c) => {
+                            a.fetchClasses(roster).then((c) => {
                                 if (c.length) result.classes = c;
                             })
                         );
                         break;
                     case 'students':
-                        jobs.push(a.fetchStudents().then((s) => void (result.students = s)));
+                        jobs.push(a.fetchStudents(roster).then((s) => void (result.students = s)));
                         break;
                     case 'student_rubrics':
-                        jobs.push(a.fetchStudentRubrics().then((r) => void (result.studentRubrics = r)));
-                        jobs.push(a.fetchPeerReviews().then((r) => void (result.peerReviews = r)));
+                        jobs.push(a.fetchStudentRubrics(roster).then((r) => void (result.studentRubrics = r)));
+                        jobs.push(a.fetchPeerReviews(roster).then((r) => void (result.peerReviews = r)));
                         break;
                     case 'attachments':
                         jobs.push(this.attachmentSync.hydrateAttachments().then((x) => void (result.attachments = x)));
@@ -1411,6 +1456,15 @@ class StorageSyncService {
                     if (action === 'upsert')
                         result = await this.adapter.saveSettings(payload as import('../../types').AppSettings);
                     break;
+            }
+            if (result && !result.success && result.code === 'forbidden') {
+                // Access rules refused this write; retrying can never succeed. Say so once instead
+                // of parking it in the pending queue, which would re-attempt it on every reconnect
+                // while the next hydrate quietly reverted the local copy.
+                console.warn(`[sync] pushOne(${entity}, ${action}) rejected by access rules`, result.error);
+                logEvent('sync', `pushOne:${entity}:${action}:forbidden`, { id, error: result.error }, 'warn');
+                this.toastFn?.(i18n.t('toast.sync_not_allowed'), 'warning');
+                return;
             }
             if (result && !result.success) {
                 throw new Error(result.error || `sync ${entity} ${action} rejected`);

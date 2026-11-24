@@ -2560,7 +2560,8 @@
         "delete_student_title": "Delete student",
         "delete_student_confirmation": "Are you sure you want to delete <1>{{studentName}}</1>?",
         "delete_student_warning": "This will permanently delete all grades and rubrics associated with this student.",
-        "roster_read_only_notice": "This student belongs to a colleague's class. Only the class owner can change their name, class, track or school year."
+        "roster_read_only_notice": "This student belongs to a colleague's class. Only the class owner can change their name, class, track or school year.",
+        "class_managed_by_owner": "Only the class owner can manage this class. An admin can help via Whole school."
     },
     "gradeStudent": {
         "group_grade_banner": "Group grade — saving will also copy these scores and comments to: {{names}}",
@@ -3314,7 +3315,8 @@
         "sync_offline_cache": "You're offline — using locally cached data.",
         "signout_pending_writes": "Some changes haven't synced yet — your local data was kept so nothing is lost.",
         "signout_unmigrated_local": "Your local data was never uploaded to your account, so it was kept on this device. Sign in again and choose Upload to account to sync it.",
-        "voice_feedback_dropped": "Grades were saved, but {{count}} voice recording(s) did not fit in this device's storage and will be lost on reload. Connect to the cloud or remove old recordings to keep them."
+        "voice_feedback_dropped": "Grades were saved, but {{count}} voice recording(s) did not fit in this device's storage and will be lost on reload. Connect to the cloud or remove old recordings to keep them.",
+        "sync_not_allowed": "That change was refused by the server: you can only change your own classes. Nothing was lost."
     },
     "pwa": {
         "update_available_title": "Update available",
@@ -5669,7 +5671,8 @@
         "gr_test_rich_authoring_item_pill_keyboard": "Gap, hot-text and error-correction pills in the editor can be reached with Tab and opened with Enter or Space; Escape closes the editing box and returns you to the pill.",
         "gr_test_rich_authoring_item_rich_notes": "Hints and explanations are rich text: use bold, lists, links and pictures. Notes written earlier as plain text keep their line breaks, unless they contain text that looks like an HTML tag. Students see the hint when they ask for it, and the explanation after submitting a practice test.",
         "gr_test_rich_authoring_item_typed_gap_chips": "Typed fill-in gaps now list their accepted answers as chips, like dropdown gaps: add one (or several at once as a|b|c), remove one with its ×, and press Enter on an empty box to save. The first answer is the one shown in the editor.",
-        "gr_test_answer_options_item_scripts": "Option and item text can show subscript and superscript: write H_{2}O or x^{2} (the braces are required, so ordinary text such as snake_case or 2^10 is never changed). It shows on screen, in the printed booklet (HTML and Word) and as Unicode in results and answer keys."
+        "gr_test_answer_options_item_scripts": "Option and item text can show subscript and superscript: write H_{2}O or x^{2} (the braces are required, so ordinary text such as snake_case or 2^10 is never changed). It shows on screen, in the printed booklet (HTML and Word) and as Unicode in results and answer keys.",
+        "gs_classes_item_scope": "Admins who also teach see their own and co-taught classes by default, and can switch to Whole school in the top bar. Class management stays with the class owner unless an admin switches to Whole school to help out. Only the scope you are in is downloaded; switching loads the rest on demand."
     },
     "studentProfile": {
         "tab_overview": "Overview",
@@ -7004,5 +7007,10 @@
         "image_invalid": "Choose a JPG, PNG or WebP image.",
         "image_too_large": "That image is larger than 5 MB.",
         "image_upload_failed": "The image could not be uploaded."
+    },
+    "scope": {
+        "label": "Roster scope",
+        "mine": "My classes",
+        "school": "Whole school"
     }
 }
