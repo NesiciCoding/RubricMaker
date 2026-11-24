@@ -308,7 +308,7 @@ async function categorizeParagraphs(question: TestQuestion): Promise<Paragraph[]
     return [...items, categoryLine];
 }
 
-/** Image MIME types docx can embed directly; anything else (e.g. webp, svg) is skipped rather than crash the export. */
+/** Image MIME types docx can embed directly; WebP is converted to PNG, anything else (e.g. svg) is skipped rather than crash the export. */
 const DOCX_IMAGE_TYPE: Record<string, 'jpg' | 'png' | 'gif' | 'bmp'> = {
     'image/jpeg': 'jpg',
     'image/jpg': 'jpg',
@@ -334,18 +334,32 @@ interface FetchedDocxImage {
     height: number;
 }
 
+/** docx cannot embed WebP, but the browser can decode it: redraw the bitmap on a canvas and take PNG bytes. */
+async function bitmapToPng(bitmap: ImageBitmap): Promise<ArrayBuffer | null> {
+    const canvas = document.createElement('canvas');
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const context = canvas.getContext('2d');
+    if (!context) return null;
+    context.drawImage(bitmap, 0, 0);
+    const png = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+    return png ? png.arrayBuffer() : null;
+}
+
 async function fetchDocxImage(imageUrl: string, maxWidthPx: number): Promise<FetchedDocxImage | null> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), IMAGE_FETCH_TIMEOUT_MS);
     try {
         const blob = await fetch(imageUrl, { signal: controller.signal }).then((r) => r.blob());
-        const type = DOCX_IMAGE_TYPE[blob.type];
-        if (!type) return null;
+        const direct = DOCX_IMAGE_TYPE[blob.type];
+        if (!direct && blob.type !== 'image/webp') return null;
         const bitmap = await createImageBitmap(blob);
+        const converted = direct ? null : await bitmapToPng(bitmap);
+        if (!direct && !converted) return null;
         const scale = Math.min(1, maxWidthPx / bitmap.width);
         return {
-            type,
-            data: await blob.arrayBuffer(),
+            type: direct ?? 'png',
+            data: converted ?? (await blob.arrayBuffer()),
             width: Math.round(bitmap.width * scale),
             height: Math.round(bitmap.height * scale),
         };
