@@ -27,6 +27,7 @@ export interface ScorableQuestion {
     expectedAnswers?: string[];
     expectedNumericValue?: number;
     numericTolerance?: number;
+    numericTolerancePercent?: number;
     partialCredit?: boolean;
     gapWeights?: number[];
     correctBoolean?: boolean;
@@ -391,7 +392,10 @@ export function scoreNumeric(question: ScorableQuestion, response: string): numb
     if (trimmed === '') return 0;
     const value = Number(trimmed);
     if (Number.isNaN(value)) return 0;
-    const tolerance = question.numericTolerance ?? 0;
+    const tolerance = Math.max(
+        question.numericTolerance ?? 0,
+        (Math.abs(question.expectedNumericValue) * (question.numericTolerancePercent ?? 0)) / 100
+    );
     // Epsilon guards against float imprecision (e.g. 3.14 - 3.13 !== 0.01 exactly in IEEE 754)
     return Math.abs(value - question.expectedNumericValue) <= tolerance + 1e-9 ? question.points : 0;
 }

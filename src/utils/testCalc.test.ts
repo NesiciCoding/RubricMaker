@@ -198,6 +198,29 @@ describe('scoreNumeric', () => {
         expect(scoreNumeric(numericQuestion, '3.20')).toBe(0);
     });
 
+    it('accepts a percentage margin of the expected value', () => {
+        const pct = {
+            ...numericQuestion,
+            expectedNumericValue: 200,
+            numericTolerance: undefined,
+            numericTolerancePercent: 5,
+        };
+        expect(scoreNumeric(pct, '210')).toBe(3);
+        expect(scoreNumeric(pct, '190')).toBe(3);
+        expect(scoreNumeric(pct, '211')).toBe(0);
+    });
+
+    it('applies the wider of the absolute and percentage margins', () => {
+        const both = { ...numericQuestion, expectedNumericValue: 100, numericTolerance: 8, numericTolerancePercent: 5 };
+        expect(scoreNumeric(both, '108')).toBe(3);
+        expect(scoreNumeric(both, '109')).toBe(0);
+    });
+
+    it('lets the percentage margin win when it is wider than the absolute one', () => {
+        const q = { ...numericQuestion, expectedNumericValue: 100, numericTolerance: 2, numericTolerancePercent: 5 };
+        expect(scoreNumeric(q, '104')).toBe(3);
+    });
+
     it('defaults tolerance to 0 (exact match) when unset', () => {
         const exact = { ...numericQuestion, numericTolerance: undefined };
         expect(scoreNumeric(exact, '3.14')).toBe(3);

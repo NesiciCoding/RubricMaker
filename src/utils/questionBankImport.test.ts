@@ -178,6 +178,7 @@ describe('parseQuestionBankJson', () => {
                             expectedAnswer: 'Fallback answer',
                             expectedNumericValue: 42,
                             numericTolerance: 0.5,
+                            numericTolerancePercent: 5,
                             matchingPairs: [{}, { left: 'Cat', right: 'Meow' }],
                             orderItems: [{}, { text: 'First' }],
                             categories: [{ label: 'Verb' }, {}],
@@ -212,6 +213,7 @@ describe('parseQuestionBankJson', () => {
         expect(q.expectedAnswer).toBe('Fallback answer');
         expect(q.expectedNumericValue).toBe(42);
         expect(q.numericTolerance).toBe(0.5);
+        expect(q.numericTolerancePercent).toBe(5);
         expect(q.options?.[0].imageUrl).toBe('https://example.com/pic.png');
         expect(q.options?.[1].text).toBe('');
         expect(q.matchingPairs?.[0]).toMatchObject({ left: '', right: '' });
