@@ -56,6 +56,7 @@ describe('ErrorPassageEditor', () => {
         await waitFor(() =>
             expect(document.querySelector('.error-passage-editor-content')?.textContent).toContain('First')
         );
+        onChange.mockClear();
         rerender(<ErrorPassageEditor passage="Second [[c|d]] text" onChange={onChange} />);
         await waitFor(() => {
             const text = document.querySelector('.error-passage-editor-content')?.textContent ?? '';
@@ -63,6 +64,8 @@ describe('ErrorPassageEditor', () => {
             expect(text).not.toContain('First');
         });
         // Loading content reports an update; it must be the passage that was loaded, or the two would loop.
+        // Asserting at least one call keeps this from passing vacuously if the report-back ever stops.
+        expect(onChange).toHaveBeenCalled();
         for (const [reported] of onChange.mock.calls) expect(reported).toBe('Second [[c|d]] text');
     });
 });
