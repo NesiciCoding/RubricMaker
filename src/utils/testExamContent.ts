@@ -177,12 +177,20 @@ export interface MatchingBookletData {
 /** Matching question split into a numbered left column and a shuffled, lettered right-hand word bank — printing pairs in stored order would trivially leak the answer via row position. */
 export function matchingBookletData(question: TestQuestion): MatchingBookletData {
     const pairs = question.matchingPairs ?? [];
-    const shuffledRight = nonIdentityShuffle(pairs, `${question.id}:right`);
     return {
         left: pairs.map((p) => p.left),
         leftImages: pairs.map((p) => p.leftImageUrl),
-        rightOptions: shuffledRight.map((p, i) => ({ letter: optionLetter(i), text: p.right })),
+        rightOptions: shuffledMatchingRight(question).map((p, i) => ({ letter: optionLetter(i), text: p.right })),
     };
+}
+
+/** Every right-hand choice (pairs plus distractors) in the booklet's shuffled order. */
+function shuffledMatchingRight(question: TestQuestion): { id: string; right: string }[] {
+    const choices = [
+        ...(question.matchingPairs ?? []).map((p) => ({ id: p.id, right: p.right })),
+        ...(question.matchingDistractors ?? []).filter(Boolean).map((right, i) => ({ id: `distractor-${i}`, right })),
+    ];
+    return nonIdentityShuffle(choices, `${question.id}:right`);
 }
 
 export interface MatrixBookletData {
@@ -240,8 +248,7 @@ export function orderingBookletItems(question: TestQuestion): { letter: string; 
 /** For each left-hand item (by row), the letter of its correct match in the booklet's shuffled right-hand word bank — e.g. "1→C; 2→A" — matching what a student actually writes, for the grading key. */
 function matchingCorrectLetterKey(question: TestQuestion): string {
     const pairs = question.matchingPairs ?? [];
-    const shuffledRight = nonIdentityShuffle(pairs, `${question.id}:right`);
-    const letterByPairId = new Map(shuffledRight.map((p, i) => [p.id, optionLetter(i)]));
+    const letterByPairId = new Map(shuffledMatchingRight(question).map((p, i) => [p.id, optionLetter(i)]));
     return pairs.map((p, i) => `${i + 1}→${letterByPairId.get(p.id) ?? '?'}`).join('; ');
 }
 

@@ -57,7 +57,7 @@ export function formatGivenAnswer(question: TestQuestion, answer: TestAnswer | u
             return texts.length > 0 ? texts.join(', ') : NO_RESPONSE;
         }
         case 'true-false':
-            return response === 'true' ? 'True' : 'False';
+            return response === 'true' ? question.trueLabel?.trim() || 'True' : question.falseLabel?.trim() || 'False';
         case 'cloze':
         case 'cloze-dropdown':
         case 'cloze-bank': {
@@ -92,11 +92,10 @@ export function formatGivenAnswer(question: TestQuestion, answer: TestAnswer | u
             const pairs = question.matchingPairs ?? [];
             if (pairs.length === 0) return NO_RESPONSE;
             const answers = parseJson<Record<string, string>>(response, {});
-            const byId = new Map(pairs.map((p) => [p.id, p]));
+            const rightById = matchingRightById(question);
             return pairs
                 .map(
-                    (p) =>
-                        `${plainInlineScript(p.left)} → ${plainInlineScript(byId.get(answers[p.id])?.right ?? '___')}`
+                    (p) => `${plainInlineScript(p.left)} → ${plainInlineScript(rightById.get(answers[p.id]) ?? '___')}`
                 )
                 .join('; ');
         }
@@ -141,16 +140,24 @@ export function formatCorrectAnswer(question: TestQuestion): string {
                 .join(', ');
         case 'true-false':
             // Match autoScoreResponse: an unset correctBoolean scores `true` as correct.
-            return (question.correctBoolean ?? true) ? 'True' : 'False';
+            return (question.correctBoolean ?? true)
+                ? question.trueLabel?.trim() || 'True'
+                : question.falseLabel?.trim() || 'False';
         case 'short-answer': {
             const accepted = question.expectedAnswers ?? (question.expectedAnswer ? [question.expectedAnswer] : []);
             return accepted.join(' / ');
         }
         case 'numeric':
             if (question.expectedNumericValue === undefined) return '';
-            return question.numericTolerance
-                ? `${question.expectedNumericValue} ± ${question.numericTolerance}`
-                : String(question.expectedNumericValue);
+            return [
+                question.numericTolerance
+                    ? `${question.expectedNumericValue} ± ${question.numericTolerance}`
+                    : String(question.expectedNumericValue),
+                question.numericTolerancePercent ? `± ${question.numericTolerancePercent}%` : '',
+                question.numericUnit?.trim() ?? '',
+            ]
+                .filter(Boolean)
+                .join(' ');
         case 'cloze':
         case 'cloze-dropdown':
         case 'cloze-bank':
@@ -392,4 +399,10 @@ export function buildTestStudentSummary(
     }
 
     return lines.join('\n');
+}
+
+export function matchingRightById(question: TestQuestion): Map<string, string> {
+    const map = new Map<string, string>((question.matchingPairs ?? []).map((p) => [p.id, p.right]));
+    (question.matchingDistractors ?? []).filter(Boolean).forEach((text, i) => map.set(`distractor-${i}`, text));
+    return map;
 }
