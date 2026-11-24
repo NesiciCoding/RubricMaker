@@ -2415,7 +2415,10 @@
         "matching_distractors_placeholder": "Ein Ablenker pro Zeile",
         "cloze_points_per_gap": "Jede Lücke ist {{points}} Punkt(e) wert.",
         "cloze_generate_replace_confirm": "Dadurch werden die bereits erstellten Lücken samt Alternativen und falschen Optionen ersetzt. Fortfahren?",
-        "cloze_points_all_or_nothing": "Alle Lücken müssen stimmen, um die {{points}} Punkt(e) zu erhalten."
+        "cloze_points_all_or_nothing": "Alle Lücken müssen stimmen, um die {{points}} Punkt(e) zu erhalten.",
+        "cloze_gap_weight": "Gewicht",
+        "cloze_gap_weight_aria": "Gewicht von Lücke {{gap}}",
+        "cloze_points_by_weight": "Die Lücken sind der Reihe nach {{points}} Punkt(e) wert."
     },
     "classShare": {
         "menu_item": "Mit Kolleg:innen teilen…",
@@ -5637,7 +5640,8 @@
         "gr_test_answer_options_item_shuffle": "Multiple Choice und Mehrfachauswahl: Mit Optionen mischen sieht jede Person ihre eigene feste Zufallsreihenfolge; die letzte Option (z. B. „Keine der genannten“) kann am Ende bleiben.",
         "gr_test_answer_options_item_true_false": "Wahr/Falsch: Die beiden Schaltflächen lassen sich frei beschriften, etwa Ja / Nein oder Zustimmung / Ablehnung. Ergebnisse und Lösungsschlüssel verwenden dieselbe Beschriftung.",
         "gr_test_answer_options_item_numeric": "Numerisch: Neben der absoluten Toleranz lässt sich eine prozentuale Toleranz festlegen (der größere Spielraum gilt) sowie eine Einheit, die neben dem Antwortfeld steht, aber nicht bewertet wird.",
-        "gr_test_answer_options_item_matching": "Zuordnen: Zusätzliche Auswahlmöglichkeiten rechts ohne Partner verhindern, dass sich die Aufgabe durch Ausschluss lösen lässt. Sie erscheinen auch im gedruckten Wortspeicher."
+        "gr_test_answer_options_item_matching": "Zuordnen: Zusätzliche Auswahlmöglichkeiten rechts ohne Partner verhindern, dass sich die Aufgabe durch Ausschluss lösen lässt. Sie erscheinen auch im gedruckten Wortspeicher.",
+        "gr_test_rich_authoring_item_gap_weights": "Lückenfragen: In der Lückenliste unter dem Text lässt sich einer Lücke mehr Gewicht geben (z. B. 2 für die Schlüssellücke), sodass sie einen größeren Anteil der Punkte bringt, wenn Teilpunkte aktiviert sind (ohne Teilpunkte muss weiterhin jede Lücke stimmen). Ändert sich die Zahl der Lücken, werden die Gewichte auf gleich zurückgesetzt."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",
