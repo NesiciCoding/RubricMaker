@@ -11030,10 +11030,15 @@ AS $$
   HAVING sum(student_count) >= monitoring.hl_min_cohort()
 $$;
 
--- This week against last week (rolling 7 days), per school and metric. Read straight from the
--- domain tables like 092's app_daily_activity, but only for schools whose snapshots cover at least
--- the minimum cohort of students. Timestamps that do not parse are skipped (public.try_timestamptz,
--- 078) rather than failing the query; the string comparison is a cheap pre-filter for ISO dates.
+-- This week against last week (rolling 7 days), per school and metric, read straight from the
+-- domain tables like 092's app_daily_activity. Three rules keep it consistent with the rest:
+--   * only teachers who share (a snapshot in the last 60 days) are counted, so opting out removes
+--     their classes' activity from the screen too;
+--   * a period is reported only when at least hl_min_cohort() distinct students produced it
+--     (counting students, not events), otherwise it is NULL, not 0;
+--   * the school's snapshots must cover at least that many students.
+-- Timestamps that do not parse are skipped (public.try_timestamptz, 078) rather than failing the
+-- query; the string comparison is a cheap pre-filter for ISO dates.
 CREATE OR REPLACE FUNCTION monitoring.hl_week_activity()
 RETURNS TABLE (school text, metric text, this_week bigint, last_week bigint)
 LANGUAGE sql
@@ -11041,25 +11046,31 @@ STABLE
 SECURITY DEFINER
 SET search_path = ''
 AS $$
-  WITH events (owner_id, metric, at, amount) AS (
-    SELECT grader_id, 'grades', public.try_timestamptz(coalesce(data->>'gradedAt', data->>'updatedAt')), 1
+  WITH events (owner_id, metric, student, at, amount) AS (
+    SELECT grader_id, 'grades', student_id,
+           public.try_timestamptz(coalesce(data->>'gradedAt', data->>'updatedAt')), 1
       FROM public.student_rubrics
       WHERE NOT is_peer_review
         AND coalesce(data->>'gradedAt', data->>'updatedAt') >= to_char(now() - interval '15 days', 'YYYY-MM-DD') COLLATE "C"
     UNION ALL
-    SELECT a.owner_id, 'essays', es.submitted_at, 1
+    SELECT a.owner_id, 'essays', a.student_id, es.submitted_at, 1
       FROM public.essay_submissions es
       JOIN public.essay_assignments a ON a.id = es.assignment_id
       WHERE es.submitted_at >= now() - interval '15 days'
     UNION ALL
-    SELECT a.owner_id, 'words', es.submitted_at, es.word_count
+    SELECT a.owner_id, 'words', a.student_id, es.submitted_at, es.word_count
       FROM public.essay_submissions es
       JOIN public.essay_assignments a ON a.id = es.assignment_id
       WHERE es.submitted_at >= now() - interval '15 days'
     UNION ALL
-    SELECT owner_id, 'test_attempts', public.try_timestamptz(data->>'startedAt'), 1
+    SELECT owner_id, 'test_attempts', data->>'studentId', public.try_timestamptz(data->>'startedAt'), 1
       FROM public.student_tests
       WHERE data->>'startedAt' >= to_char(now() - interval '15 days', 'YYYY-MM-DD') COLLATE "C"
+  ),
+  sharing AS (
+    SELECT DISTINCT owner_id
+    FROM public.school_highlight_snapshots
+    WHERE snapshot_date >= current_date - 60
   ),
   covered AS (
     SELECT school_id
@@ -11070,9 +11081,12 @@ AS $$
   SELECT
     os.school,
     e.metric,
-    coalesce(sum(e.amount) FILTER (WHERE e.at >= now() - interval '7 days'), 0)::bigint,
-    coalesce(sum(e.amount) FILTER (WHERE e.at >= now() - interval '14 days' AND e.at < now() - interval '7 days'), 0)::bigint
+    CASE WHEN count(DISTINCT e.student) FILTER (WHERE e.at >= now() - interval '7 days') >= monitoring.hl_min_cohort()
+         THEN sum(e.amount) FILTER (WHERE e.at >= now() - interval '7 days') END::bigint,
+    CASE WHEN count(DISTINCT e.student) FILTER (WHERE e.at >= now() - interval '14 days' AND e.at < now() - interval '7 days') >= monitoring.hl_min_cohort()
+         THEN sum(e.amount) FILTER (WHERE e.at >= now() - interval '14 days' AND e.at < now() - interval '7 days') END::bigint
   FROM events e
+  JOIN sharing sh ON sh.owner_id = e.owner_id
   JOIN monitoring.hl_owner_schools() os ON os.owner_id = e.owner_id
   JOIN covered cv ON cv.school_id IS NOT DISTINCT FROM os.school_id
   WHERE e.at >= now() - interval '14 days'

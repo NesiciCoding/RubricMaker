@@ -36,7 +36,13 @@ export function SchoolHighlightsSync() {
             try {
                 await whenIdle();
                 if (!mayShare()) return;
-                const snapshot = buildSchoolHighlightsSnapshot(store.getState());
+                const ownIds = await adapter.fetchOwnStudentIds(ownerId);
+                if (!mayShare()) return;
+                const state = store.getState();
+                const snapshot = buildSchoolHighlightsSnapshot({
+                    ...state,
+                    students: state.students.filter((st) => ownIds.has(st.id)),
+                });
                 const today = new Date().toISOString().slice(0, 10);
                 const key = today + JSON.stringify(snapshot);
                 if (key === lastPushed) return;

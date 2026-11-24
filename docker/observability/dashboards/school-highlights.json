@@ -122,9 +122,10 @@
           },
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT coalesce(max(this_week), 0) AS \"this week\", coalesce(max(last_week), 0) AS \"last week\" FROM monitoring.hl_week_activity() WHERE school = ${school:sqlstring} AND metric = 'essays'"
+          "rawSql": "SELECT max(this_week) AS \"this week\", max(last_week) AS \"last week\" FROM monitoring.hl_week_activity() WHERE school = ${school:sqlstring} AND metric = 'essays'"
         }
-      ]
+      ],
+      "description": "Shown only when at least 5 different students produced it in that week."
     },
     {
       "id": 3,
@@ -168,9 +169,10 @@
           },
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT coalesce(max(this_week), 0) AS \"this week\", coalesce(max(last_week), 0) AS \"last week\" FROM monitoring.hl_week_activity() WHERE school = ${school:sqlstring} AND metric = 'words'"
+          "rawSql": "SELECT max(this_week) AS \"this week\", max(last_week) AS \"last week\" FROM monitoring.hl_week_activity() WHERE school = ${school:sqlstring} AND metric = 'words'"
         }
-      ]
+      ],
+      "description": "Shown only when at least 5 different students produced it in that week."
     },
     {
       "id": 4,
@@ -214,9 +216,10 @@
           },
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT coalesce(max(this_week), 0) AS \"this week\", coalesce(max(last_week), 0) AS \"last week\" FROM monitoring.hl_week_activity() WHERE school = ${school:sqlstring} AND metric = 'grades'"
+          "rawSql": "SELECT max(this_week) AS \"this week\", max(last_week) AS \"last week\" FROM monitoring.hl_week_activity() WHERE school = ${school:sqlstring} AND metric = 'grades'"
         }
-      ]
+      ],
+      "description": "Shown only when at least 5 different students produced it in that week."
     },
     {
       "id": 5,
@@ -260,9 +263,10 @@
           },
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT coalesce(max(this_week), 0) AS \"this week\", coalesce(max(last_week), 0) AS \"last week\" FROM monitoring.hl_week_activity() WHERE school = ${school:sqlstring} AND metric = 'test_attempts'"
+          "rawSql": "SELECT max(this_week) AS \"this week\", max(last_week) AS \"last week\" FROM monitoring.hl_week_activity() WHERE school = ${school:sqlstring} AND metric = 'test_attempts'"
         }
-      ]
+      ],
+      "description": "Shown only when at least 5 different students produced it in that week."
     },
     {
       "id": 6,

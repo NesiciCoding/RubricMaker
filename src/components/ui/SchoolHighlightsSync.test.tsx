@@ -43,12 +43,14 @@ function mount(state: StoreData) {
 
 describe('SchoolHighlightsSync', () => {
     const push = vi.fn();
+    const fetchOwnStudentIds = vi.fn();
     const forTeacher = vi.fn();
 
     beforeEach(() => {
         vi.useFakeTimers();
         push.mockReset().mockResolvedValue(undefined);
-        forTeacher.mockReset().mockReturnValue({ push });
+        fetchOwnStudentIds.mockReset().mockResolvedValue(new Set(['s1']));
+        forTeacher.mockReset().mockReturnValue({ push, fetchOwnStudentIds });
         vi.mocked(logger.logError).mockReset();
         vi.mocked(lazyDb.getDb).mockReturnValue({
             SchoolHighlightsAdapter: { forTeacher },
@@ -134,6 +136,28 @@ describe('SchoolHighlightsSync', () => {
         expect(logger.logError).toHaveBeenCalledWith('school_highlights_push_failed', expect.any(Error));
         await flush(SIX_HOURS_MS);
         expect(push).toHaveBeenCalledTimes(2);
+    });
+
+    it('counts only the students the teacher owns, not shared-class ones', async () => {
+        fetchOwnStudentIds.mockResolvedValue(new Set(['s1']));
+        mount(
+            makeState({
+                students: [
+                    { id: 's1', name: 'Mine', classId: 'c1' },
+                    { id: 's2', name: 'Shared', classId: 'c1' },
+                ] as StoreData['students'],
+            })
+        );
+        await flush(FIRST_PUSH_MS + 1);
+        expect(push.mock.calls[0][1].studentCount).toBe(1);
+    });
+
+    it('sends nothing when the owned student ids cannot be fetched', async () => {
+        fetchOwnStudentIds.mockRejectedValueOnce(new Error('network'));
+        mount(makeState());
+        await flush(FIRST_PUSH_MS + 1);
+        expect(push).not.toHaveBeenCalled();
+        expect(logger.logError).toHaveBeenCalled();
     });
 
     it('stops its timers on unmount', async () => {

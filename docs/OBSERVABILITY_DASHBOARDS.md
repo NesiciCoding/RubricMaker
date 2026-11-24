@@ -240,7 +240,8 @@ after two years.
 **Small-group suppression** happens in the functions, not the client: every figure returned has at least
 `monitoring.hl_min_cohort()` (5) students behind it. A CEFR level (overall, per skill, per week) or grammar
 topic with fewer than 5 students is left out, and a school whose snapshots cover fewer than 5 students
-returns nothing, weekly activity included. Schools are grouped by id, so two schools with the same name are
+returns nothing. Weekly activity (essays, words, grades, tests) is reported only when at least 5 different
+students produced it in that period, counts only teachers who share, and shows no value (not 0) otherwise. Schools are grouped by id, so two schools with the same name are
 never merged (a duplicate name gets a short id suffix in the `School` list). A hidden level has no bar in the level charts (it is not shown as 0), and the weekly shares are taken over the levels that remain, so a share never reveals how many students are hidden. Only the five reporting functions are granted to `pg_monitor`; the helpers that return
 per-teacher snapshots are not, so the database role cannot read a small group's figures directly. Raise the
 number in a new migration if a school wants a stricter floor.

@@ -324,7 +324,7 @@ describe('School Highlights reads (migration 108)', () => {
     });
 
     it('never shows a suppressed cell as zero', () => {
-        for (const query of queries) expect(query).not.toMatch(/coalesce\(\s*\(\s*SELECT/i);
+        for (const query of queries) expect(query).not.toMatch(/coalesce\(\s*(\(\s*SELECT|max\()/i);
     });
 
     it('takes weekly shares over the visible levels only, so a share cannot reveal hidden students', () => {
@@ -334,6 +334,16 @@ describe('School Highlights reads (migration 108)', () => {
         expect(trend, 'hl_cefr_trend not found').toBeDefined();
         const totals = /totals AS \(([\s\S]*?)\n {2}\)/.exec(trend as string)?.[1] ?? '';
         expect(totals).toContain('hl_min_cohort()');
+    });
+
+    it('reports weekly activity only for five distinct students, from teachers who share', () => {
+        const week = migration
+            .split(/create or replace function /i)
+            .find((b) => b.startsWith('monitoring.hl_week_activity'));
+        expect(week, 'hl_week_activity not found').toBeDefined();
+        expect(week).toMatch(/count\(DISTINCT e\.student\)[^\n]*>= monitoring\.hl_min_cohort\(\)/);
+        expect(week).toContain('school_highlight_snapshots');
+        expect(week).not.toMatch(/coalesce\(\s*sum\(/i);
     });
 
     it('keeps student identifiers out of the snapshot table', () => {
