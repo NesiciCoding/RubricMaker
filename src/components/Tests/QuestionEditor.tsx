@@ -163,6 +163,8 @@ export default function QuestionEditor({
     const [pickingCefr, setPickingCefr] = React.useState(false);
     const [expandedOptionImages, setExpandedOptionImages] = React.useState<Set<string>>(new Set());
     const [expandedOptionAudio, setExpandedOptionAudio] = React.useState<Set<string>>(new Set());
+    // An explicit choice wins; until the teacher toggles, an option that already has feedback shows its field.
+    const [optionFeedbackOpen, setOptionFeedbackOpen] = React.useState<Record<string, boolean>>({});
     // Every panel starts closed: nothing here is needed to write the question itself.
     const [morePanel, setMorePanel] = React.useState<MorePanelId | null>(null);
     const [typePickerOpen, setTypePickerOpen] = React.useState(false);
@@ -942,6 +944,7 @@ export default function QuestionEditor({
                         const showImageField = expandedOptionImages.has(option.id) || !!option.imageUrl;
                         const showAudioField =
                             expandedOptionAudio.has(option.id) || !!option.audioUrl || !!option.spokenText;
+                        const showFeedbackField = optionFeedbackOpen[option.id] ?? !!option.feedback;
                         return (
                             <div key={option.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1042,6 +1045,25 @@ export default function QuestionEditor({
                                     <button
                                         type="button"
                                         className="btn btn-ghost btn-icon btn-sm"
+                                        aria-label={t('tests.option_feedback_label')}
+                                        aria-pressed={showFeedbackField}
+                                        title={t('tests.option_feedback_label')}
+                                        onClick={() =>
+                                            setOptionFeedbackOpen((prev) => ({
+                                                ...prev,
+                                                [option.id]: !showFeedbackField,
+                                            }))
+                                        }
+                                        style={{
+                                            color: option.feedback ? 'var(--accent-text)' : 'var(--text-muted)',
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        <MessageCircle size={14} />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-ghost btn-icon btn-sm"
                                         aria-label={t('tests.remove_option')}
                                         style={{ color: 'var(--red-text)' }}
                                         disabled={question.options!.length <= 1}
@@ -1082,6 +1104,20 @@ export default function QuestionEditor({
                                                 }}
                                             />
                                         )}
+                                    </div>
+                                )}
+                                {showFeedbackField && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 32 }}>
+                                        <input
+                                            type="text"
+                                            value={option.feedback ?? ''}
+                                            onChange={(e) =>
+                                                updateOption(option.id, { feedback: e.target.value || undefined })
+                                            }
+                                            placeholder={t('tests.option_feedback_placeholder')}
+                                            style={{ flex: 1 }}
+                                            aria-label={t('tests.option_feedback_label')}
+                                        />
                                     </div>
                                 )}
                                 {showAudioField && (

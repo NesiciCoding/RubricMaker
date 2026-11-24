@@ -2419,7 +2419,9 @@
         "cloze_points_all_or_nothing": "Tous les trous doivent être justes pour obtenir les {{points}} point(s).",
         "cloze_gap_weight": "Poids",
         "cloze_gap_weight_aria": "Poids du trou {{gap}}",
-        "cloze_points_by_weight": "Les trous valent {{points}} point(s), dans l'ordre."
+        "cloze_points_by_weight": "Les trous valent {{points}} point(s), dans l'ordre.",
+        "option_feedback_label": "Commentaire pour cette option",
+        "option_feedback_placeholder": "Pourquoi cette option est juste ou fausse (mode entraînement uniquement)"
     },
     "classShare": {
         "menu_item": "Partager avec des co-enseignants…",
@@ -5642,7 +5644,8 @@
         "gr_test_answer_options_item_true_false": "Vrai/faux : donnez vos propres libellés aux deux boutons, par exemple Oui / Non ou D'accord / Pas d'accord. Les résultats et les corrigés utilisent les mêmes libellés.",
         "gr_test_answer_options_item_numeric": "Numérique : en plus de la tolérance absolue, définissez une tolérance en pourcentage (la marge la plus large s'applique) et une unité affichée à côté du champ de réponse mais jamais notée.",
         "gr_test_answer_options_item_matching": "Association : ajoutez des choix supplémentaires à droite sans partenaire pour que les élèves ne terminent pas par élimination. Ils figurent aussi dans la banque de mots imprimée.",
-        "gr_test_rich_authoring_item_gap_weights": "Questions à trous : donnez plus de poids à un trou dans la liste sous le texte (par exemple 2 pour le trou clé) pour qu'il rapporte une plus grande part des points de la question lorsque le crédit partiel est activé (sinon, chaque trou doit rester juste). Modifier le nombre de trous rétablit des poids égaux."
+        "gr_test_rich_authoring_item_gap_weights": "Questions à trous : donnez plus de poids à un trou dans la liste sous le texte (par exemple 2 pour le trou clé) pour qu'il rapporte une plus grande part des points de la question lorsque le crédit partiel est activé (sinon, chaque trou doit rester juste). Modifier le nombre de trous rétablit des poids égaux.",
+        "gr_test_rich_authoring_item_option_feedback": "Choix multiple et réponses multiples : ajoutez un commentaire à chaque option (bouton bulle). Dans un test d'entraînement, l'élève qui a choisi cette option le voit dans la correction après l'envoi ; il n'est jamais envoyé aux élèves dans les tests notés."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",
