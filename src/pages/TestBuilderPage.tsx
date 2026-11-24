@@ -852,6 +852,20 @@ function TestBuilderEditor({
         setQuestions((prev) => prev.map((q) => (q.id === qid ? question : q)));
     }
 
+    /**
+     * Change fields of one question against the latest state. The checks screen's inline fixes use
+     * this instead of rebuilding the whole question from their render, so a fix applied to a field
+     * cannot undo an edit that landed on another field in the meantime.
+     */
+    function patchQuestion(
+        qid: string,
+        patch: Partial<TestQuestion> | ((current: TestQuestion) => Partial<TestQuestion>)
+    ) {
+        setQuestions((prev) =>
+            prev.map((q) => (q.id === qid ? { ...q, ...(typeof patch === 'function' ? patch(q) : patch) } : q))
+        );
+    }
+
     function toggleQuestionCollapsed(qid: string) {
         setCollapsedQuestions((prev) => {
             const next = new Set(prev);
@@ -1226,7 +1240,7 @@ function TestBuilderEditor({
 
     /** The mechanical gaps the checks screen fixes in place instead of only linking to the question. */
     function blockerFixes(question: TestQuestion, issues: TestQuestionIssue[]): TestCheckFix[] {
-        const patch = (next: Partial<TestQuestion>) => updateQuestion(question.id, { ...question, ...next });
+        const patch = (next: Partial<TestQuestion>) => patchQuestion(question.id, next);
         const fixes: TestCheckFix[] = [];
 
         if (issues.includes('no_correct_option')) {
@@ -1242,12 +1256,14 @@ function TestBuilderEditor({
                         value: option.id,
                         label: option.text.trim() || t('tests.fix_option_number', { number: index + 1 }),
                     })),
+                    // The options are read from the latest state, not from this render: another
+                    // edit may have added or renamed one since.
                     apply: (optionId) =>
-                        patch({
-                            options: (question.options ?? []).map((option) =>
+                        patchQuestion(question.id, (current) => ({
+                            options: (current.options ?? []).map((option) =>
                                 option.id === optionId ? { ...option, isCorrect: true } : option
                             ),
-                        }),
+                        })),
                 });
             }
         }
@@ -1292,7 +1308,7 @@ function TestBuilderEditor({
                     control: 'number',
                     labelKey: 'tests.fix_points',
                     value: question.points > 0 ? String(question.points) : '1',
-                    apply: (value) => updateQuestion(question.id, { ...question, points: Number(value) }),
+                    apply: (value) => patchQuestion(question.id, { points: Number(value) }),
                 },
             ];
         }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { act, render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
@@ -1218,6 +1218,39 @@ describe('TestBuilderPage extended', () => {
         // The blocker is gone, so the fix reached the draft without opening the question.
         expect(screen.queryByTestId('checks-row-q2')).not.toBeInTheDocument();
         expect(screen.getByLabelText('tests.name_label')).toBeInTheDocument();
+    });
+
+    it('keeps two inline fixes made to the same question (#1215)', () => {
+        mockTests = [
+            {
+                id: 'incomplete',
+                name: 'Incomplete',
+                createdAt: '2024-01-01T00:00:00Z',
+                updatedAt: '2024-01-01T00:00:00Z',
+                questions: [
+                    {
+                        id: 'q1',
+                        type: 'key-word-transformation',
+                        prompt: 'Rewrite the sentence.',
+                        keyWord: 'ALTHOUGH',
+                        points: 0,
+                    },
+                ],
+            } as RmTest,
+        ];
+        renderBuilder('/tests/incomplete');
+        fireEvent.click(screen.getByTestId('checks_review'));
+        const blocker = within(screen.getByTestId('checks-row-q1'));
+        fireEvent.change(blocker.getByTestId('q1-fix-0-input'), { target: { value: 'Paris' } });
+        const points = within(screen.getByTestId('quality-no_points-q1'));
+        // Both handlers come from one render, so each fix must patch only its own field — a fix that
+        // rebuilt the whole question here would drop the other one.
+        act(() => {
+            fireEvent.click(blocker.getByTestId('q1-fix-0-apply'));
+            fireEvent.click(points.getByTestId('quality-no_points-q1-fix-0-apply'));
+        });
+        expect(screen.queryByTestId('checks-row-q1')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('quality-no_points-q1')).not.toBeInTheDocument();
     });
 
     it('hides the blocker banner while the checks screen is open', () => {
