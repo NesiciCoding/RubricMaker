@@ -337,6 +337,46 @@ describe('QuestionEditor extended', () => {
         });
     });
 
+    describe('cloze points line', () => {
+        const pointsLine = () => screen.getByTestId('cloze-points-per-gap').textContent;
+
+        it('says each gap is worth the same, lists unequal weights, and explains all-or-nothing', () => {
+            const equal = renderEditor(makeQuestion({ type: 'cloze', prompt: 'A {{one}} and {{two}}.', points: 4 }));
+            expect(pointsLine()).toBe('tests.cloze_points_per_gap');
+            equal.view.unmount();
+
+            const weighted = renderEditor(
+                makeQuestion({ type: 'cloze', prompt: 'A {{one}} and {{two}}.', points: 4, gapWeights: [3, 1] })
+            );
+            expect(pointsLine()).toBe('tests.cloze_points_by_weight');
+            weighted.view.unmount();
+
+            renderEditor(
+                makeQuestion({
+                    type: 'cloze',
+                    prompt: 'A {{one}} and {{two}}.',
+                    points: 4,
+                    gapWeights: [3, 1],
+                    partialCredit: false,
+                })
+            );
+            expect(pointsLine()).toBe('tests.cloze_points_all_or_nothing');
+        });
+    });
+
+    describe('cloze gap weights', () => {
+        it('drops the weights when an edit changes the gap count and keeps them otherwise', () => {
+            const { onChange } = renderEditor(
+                makeQuestion({ type: 'cloze', prompt: 'A {{one}} and {{two}}.', gapWeights: [3, 1] })
+            );
+            const prompt = screen.getAllByLabelText('tests.question_prompt_label')[0];
+            fireEvent.change(prompt, { target: { value: 'A {{one}} and {{two}} and {{three}}.' } });
+            expect(onChange.mock.calls.at(-1)?.[0]).not.toHaveProperty('gapWeights');
+            fireEvent.change(prompt, { target: { value: 'An {{one}} and {{two}}.' } });
+            expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ gapWeights: [3, 1] }));
+        });
+    });
+
     describe('rubric-scored tasks', () => {
         it('offers a rubric on open and audio-response questions only', () => {
             const { onChange, view } = renderEditor(makeQuestion({ type: 'open' }));
