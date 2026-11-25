@@ -39,7 +39,7 @@ import QuestionBankModal from '../components/Tests/QuestionBankModal';
 import TagFilterChips from '../components/Tests/TagFilterChips';
 import { cloneBankItemIntoTest, duplicateQuestion, newQuestion } from '../utils/testQuestionClone';
 import { buildEasierClozeVariant, type ClozeVariantKind } from '../utils/clozeVariant';
-import { testAssignBlockers } from '../utils/testQuestionIssues';
+import { testAssignBlockers, type TestQuestionIssue } from '../utils/testQuestionIssues';
 import type {
     Class,
     Student,
@@ -68,7 +68,13 @@ import TestSettingsDrawer, {
     type TestSettingsTab,
     type TestSettingsValues,
 } from '../components/Tests/TestSettingsDrawer';
-import TestChecksPanel, { type TestCheckRow, type VerifiedCheck } from '../components/Tests/TestChecksPanel';
+import TestChecksPanel, {
+    type TestCheckFix,
+    type TestCheckRow,
+    type TestQualityRow,
+    type VerifiedCheck,
+} from '../components/Tests/TestChecksPanel';
+import { attemptDurationsMinutes, testQualityChecks, type TestQualityFinding } from '../utils/testQualityChecks';
 import { questionTypeLabelKey } from '../utils/questionTypeKey';
 import { SkeletonRow } from '../components/ui/Skeleton';
 import { useSharedMaterials } from '../hooks/useSharedMaterials';
@@ -846,6 +852,20 @@ function TestBuilderEditor({
         setQuestions((prev) => prev.map((q) => (q.id === qid ? question : q)));
     }
 
+    /**
+     * Change fields of one question against the latest state. The checks screen's inline fixes use
+     * this instead of rebuilding the whole question from their render, so a fix applied to a field
+     * cannot undo an edit that landed on another field in the meantime.
+     */
+    function patchQuestion(
+        qid: string,
+        patch: Partial<TestQuestion> | ((current: TestQuestion) => Partial<TestQuestion>)
+    ) {
+        setQuestions((prev) =>
+            prev.map((q) => (q.id === qid ? { ...q, ...(typeof patch === 'function' ? patch(q) : patch) } : q))
+        );
+    }
+
     function toggleQuestionCollapsed(qid: string) {
         setCollapsedQuestions((prev) => {
             const next = new Set(prev);
@@ -1206,6 +1226,124 @@ function TestBuilderEditor({
     const allQuestionsCollapsed = questions.length > 0 && questions.every((q) => collapsedQuestions.has(q.id));
     const focusQuestion = questions.find((q) => q.id === selectedQuestionId) ?? null;
 
+    // Quality hints read the unsaved draft too, so they answer "is this a good test?" while writing;
+    // the time hint compares against how long the saved test's sittings actually took.
+    const qualityFindings = React.useMemo(
+        () =>
+            testQualityChecks({
+                questions: displayOrderedQuestions,
+                sections,
+                durationMinutes: Number(durationMinutes) > 0 ? Number(durationMinutes) : undefined,
+                cefrTargetLevel: cefrTargetLevel || undefined,
+                attemptMinutes: existing ? attemptDurationsMinutes(studentTests ?? [], existing.id) : [],
+            }),
+        [displayOrderedQuestions, sections, durationMinutes, cefrTargetLevel, existing, studentTests]
+    );
+
+    /** The mechanical gaps the checks screen fixes in place instead of only linking to the question. */
+    function blockerFixes(question: TestQuestion, issues: TestQuestionIssue[]): TestCheckFix[] {
+        const patch = (next: Partial<TestQuestion>) => patchQuestion(question.id, next);
+        const fixes: TestCheckFix[] = [];
+
+        if (issues.includes('no_correct_option')) {
+            const options = (question.options ?? []).filter(
+                (option) => option.text.trim() !== '' || option.imageUrl || option.audioUrl
+            );
+            if (options.length > 0) {
+                fixes.push({
+                    control: 'select',
+                    labelKey: 'tests.fix_correct_option',
+                    value: options[0].id,
+                    options: options.map((option, index) => ({
+                        value: option.id,
+                        label: option.text.trim() || t('tests.fix_option_number', { number: index + 1 }),
+                    })),
+                    // The options are read from the latest state, not from this render: another
+                    // edit may have added or renamed one since.
+                    apply: (optionId) =>
+                        patchQuestion(question.id, (current) => ({
+                            options: (current.options ?? []).map((option) =>
+                                option.id === optionId ? { ...option, isCorrect: true } : option
+                            ),
+                        })),
+                });
+            }
+        }
+        if (issues.includes('no_key_word')) {
+            fixes.push({
+                control: 'text',
+                labelKey: 'tests.fix_key_word',
+                value: question.keyWord ?? '',
+                apply: (value) => patch({ keyWord: value }),
+            });
+        }
+        if (
+            issues.includes('no_model_answer') &&
+            (question.type === 'short-answer' || question.type === 'key-word-transformation')
+        ) {
+            fixes.push({
+                control: 'text',
+                labelKey: 'tests.fix_model_answer',
+                value: question.expectedAnswer ?? '',
+                apply: (value) => patch({ expectedAnswer: value }),
+            });
+        }
+        if (issues.includes('no_numeric_answer')) {
+            fixes.push({
+                control: 'number',
+                labelKey: 'tests.fix_numeric_answer',
+                value: typeof question.expectedNumericValue === 'number' ? String(question.expectedNumericValue) : '',
+                apply: (value) => patch({ expectedNumericValue: Number(value) }),
+            });
+        }
+        return fixes;
+    }
+
+    /** A quality hint's own fix: the points of the question, or the setting that produced the hint. */
+    function qualityFixes(finding: TestQualityFinding): TestCheckFix[] {
+        const question = finding.questionIds[0]
+            ? displayOrderedQuestions.find((q) => q.id === finding.questionIds[0])
+            : undefined;
+        if (finding.id === 'no_points' && question) {
+            return [
+                {
+                    control: 'number',
+                    labelKey: 'tests.fix_points',
+                    value: question.points > 0 ? String(question.points) : '1',
+                    apply: (value) => patchQuestion(question.id, { points: Number(value) }),
+                },
+            ];
+        }
+        // The limit and the target each need more than one value, so open the tab that holds them.
+        if (finding.id.startsWith('time_')) {
+            return [
+                {
+                    control: 'action',
+                    labelKey: 'tests.fix_change_time_limit',
+                    value: '',
+                    apply: () => {
+                        setChecksOpen(false);
+                        openSettings('delivery');
+                    },
+                },
+            ];
+        }
+        if (finding.id === 'cefr_off_target') {
+            return [
+                {
+                    control: 'action',
+                    labelKey: 'tests.fix_change_cefr_target',
+                    value: '',
+                    apply: () => {
+                        setChecksOpen(false);
+                        openSettings('basics');
+                    },
+                },
+            ];
+        }
+        return [];
+    }
+
     const checkRows: TestCheckRow[] = (draftBlockers?.entries ?? []).map((entry) => {
         const question = displayOrderedQuestions.find((q) => q.id === entry.questionId);
         const label = question ? htmlToPlainText(plainQuestionPromptText(question)).trim() : '';
@@ -1214,8 +1352,14 @@ function TestBuilderEditor({
             number: entry.number,
             label: label || (question ? t(questionTypeLabelKey(question.type)) : ''),
             issues: entry.issues,
+            fixes: question ? blockerFixes(question, entry.issues) : [],
         };
     });
+
+    const qualityRows: TestQualityRow[] = qualityFindings.map((finding) => ({
+        ...finding,
+        fixes: qualityFixes(finding),
+    }));
 
     const verifiedChecks: VerifiedCheck[] = [];
     if (displayOrderedQuestions.length > 0 && checkRows.length === 0) {
@@ -1240,6 +1384,7 @@ function TestBuilderEditor({
             questionCount={displayOrderedQuestions.length}
             totalPoints={totalPoints}
             verified={verifiedChecks}
+            quality={qualityRows}
             onJump={jumpToQuestion}
             onBack={() => setChecksOpen(false)}
             onSave={() => void handleSave()}
