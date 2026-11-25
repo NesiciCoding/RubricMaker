@@ -28,6 +28,7 @@
     "e2e:a11y": "playwright test --project=a11y",
     "e2e:a11y:baseline": "node scripts/a11y-baseline.mjs",
     "e2e:wide": "playwright test --project=wide",
+    "e2e:wide:firefox": "playwright test --project=wide-firefox",
     "fixtures:tiered": "node scripts/build-tiered-fixtures.mjs",
     "loadtest": "bash scripts/loadtest.sh",
     "loadtest:smoke": "bash scripts/loadtest.sh smoke",
