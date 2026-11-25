@@ -64,7 +64,9 @@ test.describe('startup — offline with Supabase configured', () => {
         expect(elapsed, 'app should open from cache without waiting for hydration timeout').toBeLessThan(6_000);
 
         // The cached rubric must be visible in the rubric list.
-        await page.evaluate(() => { window.location.hash = '/rubrics'; });
+        await page.evaluate(() => {
+            window.location.hash = '/rubrics';
+        });
         await expect(page.getByText('Offline Cache Rubric')).toBeVisible({ timeout: 5_000 });
 
         // Offline cache toast must be shown.
@@ -106,7 +108,9 @@ test.describe('startup — Supabase hydration timeout', () => {
         expect(elapsed, 'app should not wait for the full delayed request').toBeLessThan(14_000);
 
         // Cached rubric must be visible (app fell through to localStorage).
-        await page.evaluate(() => { window.location.hash = '/rubrics'; });
+        await page.evaluate(() => {
+            window.location.hash = '/rubrics';
+        });
         await expect(page.getByText('Timeout Cache Rubric')).toBeVisible({ timeout: 5_000 });
 
         // The pull is still running in the background (not dropped), so the progress
@@ -115,8 +119,18 @@ test.describe('startup — Supabase hydration timeout', () => {
 
         // Once the requests fail, the late hydrate reports it and the indicator clears;
         // local data is kept.
+        const tRelease = Date.now();
         release();
-        await expect(page.getByText('Could not load your cloud data')).toBeVisible({ timeout: 15_000 });
+        // TEMP DIAGNOSTIC (to be removed): dump timeline + body text if the toast never shows.
+        try {
+            await expect(page.getByText('Could not load your cloud data')).toBeVisible({ timeout: 15_000 });
+        } catch (e) {
+            console.log(
+                `[diag] ${Date.now() - tRelease}ms since release(); bodyText=`,
+                (await page.evaluate(() => document.body.innerText)).slice(0, 1500)
+            );
+            throw e;
+        }
         await expect(page.getByText('Loading your data from the cloud')).toBeHidden();
         await expect(page.getByText('Timeout Cache Rubric')).toBeVisible();
     });
