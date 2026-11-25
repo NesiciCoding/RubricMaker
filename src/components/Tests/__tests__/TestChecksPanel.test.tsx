@@ -11,6 +11,12 @@ vi.mock('react-i18next', () => ({
     }),
 }));
 
+// A test-level hint names no question, so it must not render a jump link.
+function setNoQualityJump(quality: HTMLElement, key: string): boolean {
+    const row = Array.from(quality.querySelectorAll('li')).find((li) => li.textContent?.includes(key));
+    return Boolean(row) && row!.querySelector('button') === null;
+}
+
 const rows: TestCheckRow[] = [
     { questionId: 'q1', number: 1, label: 'First prompt', issues: ['empty_prompt', 'no_correct_option'] },
     { questionId: 'q3', number: 3, label: 'Third prompt', issues: ['no_model_answer'] },
@@ -66,6 +72,112 @@ describe('TestChecksPanel', () => {
         renderPanel({ rows: [], noQuestions: true, questionCount: 0, totalPoints: 0 });
         expect(screen.getByText('tests.issue_no_questions')).toBeInTheDocument();
         expect(screen.getByText('tests.issues_title')).toBeInTheDocument();
+    });
+
+    it('shows quality hints with a link to the question they name', () => {
+        const { onJump } = renderPanel({
+            quality: [
+                { id: 'time_over', questionIds: [], numbers: [], values: { minutes: 70, duration: 60 } },
+                { id: 'duplicate_options', questionIds: ['q3'], numbers: [3], values: { number: 3 } },
+            ],
+        });
+        const quality = screen.getByTestId('checks-quality');
+        expect(quality).toHaveTextContent('tests.quality_title');
+        expect(quality).toHaveTextContent(/tests\.quality_time_over/);
+        expect(quality).toHaveTextContent('70');
+        expect(setNoQualityJump(quality, 'tests.quality_time_over')).toBe(true);
+        fireEvent.click(screen.getByTestId('quality-jump-q3'));
+        expect(onJump).toHaveBeenCalledWith('q3');
+    });
+
+    it('applies an inline fix without jumping away', () => {
+        const apply = vi.fn();
+        const { onJump } = renderPanel({
+            rows: [
+                {
+                    questionId: 'q2',
+                    number: 2,
+                    label: 'Second prompt',
+                    issues: ['no_model_answer'],
+                    fixes: [{ control: 'text', labelKey: 'tests.fix_model_answer', value: '', apply }],
+                },
+            ],
+        });
+        const input = screen.getByTestId('q2-fix-0-input');
+        expect(screen.getByTestId('q2-fix-0-apply')).toBeDisabled();
+        fireEvent.change(input, { target: { value: 'Paris' } });
+        fireEvent.click(screen.getByTestId('q2-fix-0-apply'));
+        expect(apply).toHaveBeenCalledWith('Paris');
+        expect(onJump).not.toHaveBeenCalled();
+    });
+
+    it('offers the correct-option fix as a pick of the options', () => {
+        const apply = vi.fn();
+        renderPanel({
+            rows: [
+                {
+                    questionId: 'q1',
+                    number: 1,
+                    label: 'Prompt',
+                    issues: ['no_correct_option'],
+                    fixes: [
+                        {
+                            control: 'select',
+                            labelKey: 'tests.fix_correct_option',
+                            value: 'a',
+                            options: [
+                                { value: 'a', label: 'Alpha' },
+                                { value: 'b', label: 'Beta' },
+                            ],
+                            apply,
+                        },
+                    ],
+                },
+            ],
+        });
+        fireEvent.change(screen.getByTestId('q1-fix-0-input'), { target: { value: 'b' } });
+        fireEvent.click(screen.getByTestId('q1-fix-0-apply'));
+        expect(apply).toHaveBeenCalledWith('b');
+    });
+
+    it('gives a quality hint a single action button and no input', () => {
+        const apply = vi.fn();
+        renderPanel({
+            quality: [
+                {
+                    id: 'time_over',
+                    questionIds: [],
+                    numbers: [],
+                    values: { minutes: 70, duration: 60 },
+                    fixes: [{ control: 'action', labelKey: 'tests.fix_change_time_limit', value: '', apply }],
+                },
+            ],
+        });
+        expect(screen.queryByTestId('quality-time_over-test-fix-0-input')).not.toBeInTheDocument();
+        fireEvent.click(screen.getByTestId('quality-time_over-test-fix-0-apply'));
+        expect(apply).toHaveBeenCalledWith('');
+    });
+
+    it('offers no inline fixes on a read-only shared test', () => {
+        renderPanel({
+            readOnly: true,
+            rows: [
+                {
+                    questionId: 'q2',
+                    number: 2,
+                    label: 'Second prompt',
+                    issues: ['no_model_answer'],
+                    fixes: [{ control: 'text', labelKey: 'tests.fix_model_answer', value: '', apply: vi.fn() }],
+                },
+            ],
+        });
+        expect(screen.queryByTestId('q2-fix-0-input')).not.toBeInTheDocument();
+        expect(screen.getByTestId('checks-jump-q2')).toBeInTheDocument();
+    });
+
+    it('shows no quality block when there is nothing to improve', () => {
+        renderPanel();
+        expect(screen.queryByTestId('checks-quality')).not.toBeInTheDocument();
     });
 
     it('lists what is already fine', () => {

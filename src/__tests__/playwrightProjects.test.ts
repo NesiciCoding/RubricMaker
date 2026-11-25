@@ -158,7 +158,7 @@ describe('Playwright project wiring', () => {
     it('npm scripts only reference existing projects', () => {
         const pkg = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
         const names = projects.map((p) => p.name);
-        for (const scriptName of ['e2e:chromium', 'e2e:supabase', 'e2e:a11y', 'e2e:wide']) {
+        for (const scriptName of ['e2e:chromium', 'e2e:supabase', 'e2e:a11y', 'e2e:wide', 'e2e:wide:firefox']) {
             const cmd: string = pkg.scripts?.[scriptName];
             expect(cmd, `missing npm script ${scriptName}`).toBeDefined();
             // Project names may contain digits (e.g. `a11y`).
@@ -167,6 +167,29 @@ describe('Playwright project wiring', () => {
                 expect(names, `${scriptName} references unknown project "${name}"`).toContain(name);
             }
         }
+    });
+
+    it('every project is run by CI, directly or through a script a workflow runs', () => {
+        const pkg = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8')) as {
+            scripts?: Record<string, string>;
+        };
+        const workflowsDir = path.join(repoRoot, '.github', 'workflows');
+        const workflowText = readdirSync(workflowsDir)
+            .filter((file) => file.endsWith('.yml') || file.endsWith('.yaml'))
+            .map((file) => readFileSync(path.join(workflowsDir, file), 'utf8'))
+            .join('\n');
+
+        const gated = new Set([...workflowText.matchAll(/--project=([a-z0-9-]+)/g)].map((match) => match[1]));
+        for (const [, scriptName] of workflowText.matchAll(/npm run ([a-z0-9:_-]+)/g)) {
+            const command = pkg.scripts?.[scriptName] ?? '';
+            for (const [, name] of command.matchAll(/--project=([a-z0-9-]+)/g)) gated.add(name);
+        }
+
+        // A project no workflow runs is dead wiring: its specs pass on a developer machine and never
+        // gate a PR. `wide` and `wide-firefox` were exactly that — the layout they cover, and the
+        // nested `zoom` counter-scale in it, had no CI coverage at all.
+        const ungated = projects.map((p) => p.name).filter((name) => !gated.has(name));
+        expect(ungated).toEqual([]);
     });
 
     describe('quarantine list', () => {

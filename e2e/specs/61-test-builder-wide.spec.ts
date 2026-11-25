@@ -3,9 +3,11 @@
  * ≥1400px. Every other spec runs at 1280, so nothing exercised it in a real browser and axe never
  * saw the rail, the settings drawer, the checks screen or the inspector tablist (#1217).
  *
- * This spec runs in the `wide` project (1500×1000) only — the 1280 projects ignore it.
+ * This spec runs in the `wide` and `wide-firefox` projects (1500×1000) only — the 1280 projects
+ * ignore it — and both are part of CI's e2e shards.
  */
 import { test, expect } from '../fixtures/app.fixture';
+import type { Locator } from '@playwright/test';
 import { TestBuilderPage } from '../pages/TestBuilderPage';
 import {
     A11Y_THEMES,
@@ -167,6 +169,88 @@ test.describe('test builder — accessibility at 1500px', () => {
             });
         }
     }
+});
+
+test.describe('test builder — A4 preview toolbar (#1275)', () => {
+    const toolbarButtons = '.tiptap-toolbar .toolbar-btn';
+
+    async function toolbarState(sheet: Locator): Promise<{ zoom: number; inverse: number }> {
+        return sheet.evaluate((page) => ({
+            zoom: Number.parseFloat(page.style.getPropertyValue('zoom')),
+            inverse: Number.parseFloat(page.style.getPropertyValue('--a4-zoom')),
+        }));
+    }
+
+    // The page keeps its print scale, so at 0.3 a toolbar that shrank with the sheet would measure
+    // 7.8 px, and one that escaped the sheet's zoom entirely would measure 87 px. axe only gates
+    // the 24 px AA rule (both failures can still clear it at some scales), so assert the 26 px.
+    async function expectAuthoredToolbarSize(sheet: Locator, zoom: number): Promise<void> {
+        await expect.poll(async () => (await toolbarState(sheet)).zoom).toBeCloseTo(zoom, 2);
+        const { inverse } = await toolbarState(sheet);
+        expect(inverse).toBeCloseTo(1 / zoom, 2);
+
+        const buttons = sheet.locator(toolbarButtons);
+        await expect(buttons).toHaveCount(12);
+        const sizes = await buttons.evaluateAll((elements) =>
+            elements.map((button) => {
+                const box = button.getBoundingClientRect();
+                return { width: box.width, height: box.height };
+            })
+        );
+        for (const size of sizes) {
+            expect(Math.abs(size.width - 26), `button width at zoom ${zoom}`).toBeLessThanOrEqual(1);
+            expect(Math.abs(size.height - 26), `button height at zoom ${zoom}`).toBeLessThanOrEqual(1);
+        }
+    }
+
+    async function expectToolbarsClearOfText(sheet: Locator, zoom: number): Promise<void> {
+        const frames = await sheet.evaluate((page) => {
+            const rect = (node: Element) => {
+                const box = node.getBoundingClientRect();
+                return { left: box.left, top: box.top, right: box.right, bottom: box.bottom };
+            };
+            return [...page.querySelectorAll('.a4-preview-editable')].map((editor) => ({
+                editor: rect(editor),
+                toolbar: rect(editor.querySelector('.tiptap-toolbar')!),
+                text: rect(editor.querySelector('.tiptap-editor-content')!),
+            }));
+        });
+
+        expect(frames).toHaveLength(3);
+        for (const { editor, toolbar, text } of frames) {
+            const slack = 1;
+            // The counter-scaled toolbar has to stay inside its editor frame rather than spill over
+            // the printed page, and it has to sit beside the text, never on top of it.
+            expect(toolbar.left).toBeGreaterThanOrEqual(editor.left - slack);
+            expect(toolbar.top).toBeGreaterThanOrEqual(editor.top - slack);
+            expect(toolbar.right).toBeLessThanOrEqual(editor.right + slack);
+            expect(toolbar.bottom).toBeLessThanOrEqual(editor.bottom + slack);
+            expect(
+                text.top >= toolbar.bottom - slack || text.bottom <= toolbar.top + slack,
+                `the toolbar covers the page text at zoom ${zoom}`
+            ).toBe(true);
+        }
+    }
+
+    test('keeps its buttons at 26 px and clear of the page text at min and max zoom', async ({ appPage }) => {
+        const builder = new TestBuilderPage(appPage);
+        await builder.gotoNew();
+
+        const sheet = appPage.getByTestId('a4-page');
+        await expect(sheet).toBeVisible();
+
+        const zoomOut = appPage.getByTestId('a4-zoom-out');
+        const zoomIn = appPage.getByTestId('a4-zoom-in');
+
+        for (let i = 0; i < 12; i += 1) await zoomOut.click();
+        await expectAuthoredToolbarSize(sheet, 0.3);
+        await expectToolbarsClearOfText(sheet, 0.3);
+
+        // Enough steps to clamp at the 1.5 maximum whatever the fit scale was.
+        for (let i = 0; i < 30; i += 1) await zoomIn.click();
+        await expectAuthoredToolbarSize(sheet, 1.5);
+        await expectToolbarsClearOfText(sheet, 1.5);
+    });
 });
 
 test.describe('test builder — keyboard authoring (#1214)', () => {

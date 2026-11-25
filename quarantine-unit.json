@@ -2,7 +2,7 @@
     {
         "id": "does not push again when nothing changed",
         "file": "src/components/ui/SchoolHighlightsSync.test.tsx",
-        "since": "2026-11-24",
-        "reason": "Flaky around UTC midnight: the test advances fake timers by 6 hours and asserts the push key (which embeds today's date) is unchanged, but when the real wall-clock start time is within 6 hours of UTC midnight the virtual clock crosses into the next calendar day and the component legitimately pushes again. Unrelated to the per-class test assignment PR; pre-existing on main."
+        "reason": "Advances fake time by exactly PUSH_INTERVAL_MS (6h) past the first push. Whenever the test happens to run inside the ~6h window before UTC midnight, that advance crosses the day boundary, the push's dedupe key (which includes today's date) changes, and the interval fires a second push — failing an assertion the test's own timing can't control. Pre-existing, unrelated to PR #1321's test-quality-coach diff.",
+        "since": "2026-11-24"
     }
 ]
