@@ -567,6 +567,85 @@ docker run --rm --network supabase_default alpine sh -c 'apk add -q openssl && o
 
 `Verification: OK` and a certificate for that exact host name are required.
 
+### Relay provider and sending domain
+
+Production sends auth mail through an **SMTP relay**, not directly from Office 365, Gmail or a school
+tenant. The relay owns the sending reputation and the school's own mail flow is never involved. Use an
+EU provider — these messages go to student and teacher addresses. How much delivery evidence comes
+back depends on the provider: Brevo keeps a per-message transactional log, while STRATO has no
+delivery dashboard and returns bounces to the sending mailbox (see below).
+
+**STRATO is the primary setup**, and the values below assume it: the domain and its mailboxes live in
+a STRATO package (Mail Basic is enough — five mailboxes), and `smtp.strato.de` relays the app's mail.
+From address, SPF and DKIM then all belong to one package, which is why the records further down are
+short. **Brevo** (France, free tier 300 emails/day) is the documented **fallback** for a domain that
+is not hosted at STRATO, or when a separate provider dashboard is wanted.
+
+| Bundled stack → official stack     | STRATO value                                        |
+| ---------------------------------- | --------------------------------------------------- |
+| `SMTP_HOST` → `SMTP_HOST`          | `smtp.strato.de`                                    |
+| `SMTP_PORT` → `SMTP_PORT`          | `465` (implicit TLS); `587` (STARTTLS) also works   |
+| `SMTP_USER` → `SMTP_USER`          | the full mailbox address, e.g. `noreply@example.nl` |
+| `SMTP_PASS` → `SMTP_PASS`          | that mailbox's password                             |
+| `SMTP_SENDER` → `SMTP_ADMIN_EMAIL` | the same mailbox address                            |
+| — → `SMTP_SENDER_NAME`             | `RubricMaker`                                       |
+
+Two STRATO rules decide what goes in there: `SMTP_USER` must be a **mailbox**, never an alias (aliases
+receive mail but cannot authenticate), and the From address must be a mailbox in the package too —
+otherwise submission fails with `not authorized to send mail from`. The Brevo fallback uses
+`smtp-relay.brevo.com` on `587` or `465`, the account login as `SMTP_USER` and an **SMTP key** as
+`SMTP_PASS`, with the From domain verified in Brevo.
+
+This repo's `docker-compose.yml` maps `SMTP_*` onto `GOTRUE_SMTP_*` itself, so the bundled stack needs
+no extra variables. The official stack reads `SMTP_*` from its `.env` (GoTrue's image maps them to
+`GOTRUE_SMTP_*`), and `deploy/supabase/docker-compose.override.yml` passes the same block to the edge
+functions, so the notification emails share the relay and its reputation.
+
+#### SPF, DKIM and DMARC
+
+All three belong on the **sending domain** and are what the receiving school actually checks:
+
+| Record | Name                          | Value                                                            |
+| ------ | ----------------------------- | ---------------------------------------------------------------- |
+| SPF    | `@` (TXT)                     | `v=spf1 redirect=_spf.strato.com`                                |
+| DKIM   | `strato-dkim-0002._domainkey` | `strato-dkim-0002._domainkey.rzone.de.` (CNAME)                  |
+| DKIM   | `strato-dkim-0003._domainkey` | `strato-dkim-0003._domainkey.rzone.de.` (CNAME)                  |
+| DMARC  | `_dmarc` (TXT)                | `v=DMARC1; p=none; rua=mailto:dmarc@example.nl; adkim=r; aspf=r` |
+
+On STRATO's own nameservers the DKIM records already exist; with DNS hosted elsewhere, add both
+CNAMEs. Keep **both** selectors — STRATO signs with an RSA key (`strato-dkim-0002`) and an ed25519
+key (`strato-dkim-0003`), and some receivers ignore the ed25519 signature while others only use it.
+The apex SPF entry also has its own control in the STRATO DNS settings: _STRATO SPF-Regel → Standard
+STRATO Mailserver_ writes `redirect=_spf.strato.com`. Where another sender shares the domain, use
+`v=spf1 include:_spf.strato.com ~all` instead.
+
+The Brevo fallback publishes `v=spf1 include:spf.brevo.com ~all` and the DKIM CNAMEs Brevo lists under
+Senders, domains & IPs → your domain → DKIM; DMARC is the same record either way.
+
+- **One SPF record only.** If the domain already has one (the school's own mail), edit it and add the
+  provider's `redirect=`/`include:`; a second `v=spf1` record makes SPF fail outright.
+- **DKIM is the one that matters.** The `<selector>._domainkey…` CNAMEs sign each message — don't
+  flatten them to A records or proxy them.
+- Start DMARC at `p=none` with a report address, then move to `p=quarantine` once the reports show the
+  relay passing for a week or two. Don't jump to `p=reject` while the school's own mail still sends
+  from the domain.
+
+Verify the records from anywhere:
+
+```bash
+dig +short TXT example.nl | grep spf1                        # exactly one v=spf1 record, with the include
+dig +short CNAME strato-dkim-0002._domainkey.example.nl     # and strato-dkim-0003
+```
+
+Then request a code and read the message's `Authentication-Results` header: `spf=pass`, `dkim=pass`
+and `dmarc=pass` are what "verified" means. Without them the relay still accepts the message and the
+school's filter still drops it. Requesting a code is the only end-to-end test worth running, and it
+should go to an Outlook/school address, not just a Gmail account on the same network.
+
+With STRATO there is no delivery dashboard: the envelope sender is the mailbox, so bounces and DMARC
+aggregate reports arrive **in that mailbox** (STRATO webmail) — check it when a teacher reports a
+missing code. Brevo keeps the same information in its transactional log.
+
 ### Notification emails
 
 Three edge functions send their own email over the same SMTP account, with Dutch + English bodies
