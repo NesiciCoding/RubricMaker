@@ -622,17 +622,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // The roster scope is applied once, here: an admin reads their own and co-taught classes unless
     // they switch to "whole school". Selector consumers and the roster domain then see the same
     // classes/students/grades, so no page, count, picker or chart can disagree.
-    const classRoles = useMyClassRoles();
+    // Only an admin's view narrows by co-taught class, so only an admin needs the roles fetched —
+    // a teacher already fetches their own co-teaching roles from the grading/roster screens that
+    // actually use them, and gains nothing from a second copy pulled here on every boot.
+    const isAdmin = resolveUserRole(state.settings.userRole) === 'admin';
+    const classRoles = useMyClassRoles(isAdmin);
     const rosterScope = useMemo(() => {
         const userId = state.settings.userId;
-        const isAdmin = resolveUserRole(state.settings.userRole) === 'admin';
         return {
             userId,
             isAdmin,
             scope: resolveRosterScope(state.settings, state.classes, userId, classRoles),
             canSwitchScope: isAdmin && !!userId && state.classes.some((c) => isMyClass(c, userId, classRoles)),
         };
-    }, [state.settings, state.classes, classRoles]);
+    }, [state.settings, state.classes, classRoles, isAdmin]);
     // The pull itself follows the scope, not just the view: an admin on "My classes" never
     // downloads the school's roster and grades. It reads the stored preference, not the resolved
     // scope — that one falls back to "school" while the class list is still empty, which would

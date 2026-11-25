@@ -45,10 +45,15 @@ export function resetClassRolesCache() {
  * is read by the app-wide roster provider, and a static import of `services/database` would drag
  * @supabase/supabase-js (~450KB) into the entry chunk. With no Supabase config there is nothing to
  * fetch, so offline installs never load the module at all.
+ *
+ * `enabled: false` skips the subscription (and its fetch) entirely — used by the app-wide roster
+ * provider, which only needs this for an admin's own-vs-whole-school split and would otherwise fire
+ * an extra class_members round-trip on every boot for every teacher, who gains nothing from it here
+ * (their grading/roster screens already call this hook unconditionally for their own reasons).
  */
-function useClassRolesSubscription() {
+function useClassRolesSubscription(enabled: boolean) {
     useEffect(() => {
-        if (!loadSupabaseConfig()) return;
+        if (!enabled || !loadSupabaseConfig()) return;
         let cancelled = false;
         let unsubscribe: (() => void) | undefined;
         void loadDb()
@@ -72,13 +77,17 @@ function useClassRolesSubscription() {
             cancelled = true;
             unsubscribe?.();
         };
-    }, []);
+    }, [enabled]);
 }
 
-/** My co-teacher roles by class id, or null while offline/unknown. */
-export function useMyClassRoles(): ClassRoles {
+/**
+ * My co-teacher roles by class id, or null while offline/unknown. `enabled` (default true) lets a
+ * caller that only sometimes needs this — the app-wide roster provider, gated on being an admin —
+ * skip the fetch rather than run and discard it.
+ */
+export function useMyClassRoles(enabled = true): ClassRoles {
     const current = useSyncExternalStore(subscribe, () => state);
-    useClassRolesSubscription();
+    useClassRolesSubscription(enabled);
     return current.userId ? current.roles : null;
 }
 
