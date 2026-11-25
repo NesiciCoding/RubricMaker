@@ -21,7 +21,6 @@ import { createSelectorStore, StoreActionsProvider, StoreProvider } from './useS
 import { RosterScopeProvider } from './rosterScopeContext';
 import { useMyClassRoles } from '../hooks/useClassRoles';
 import { isMyClass, resolveRosterFetch, resolveRosterScope, scopeRoster } from '../utils/rosterScope';
-import { resolveUserRole } from '../utils/userRole';
 
 import { RosterProvider } from './domains/roster';
 import { AuthoringProvider } from './domains/authoring';
@@ -625,7 +624,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Only an admin's view narrows by co-taught class, so only an admin needs the roles fetched —
     // a teacher already fetches their own co-teaching roles from the grading/roster screens that
     // actually use them, and gains nothing from a second copy pulled here on every boot.
-    const isAdmin = resolveUserRole(state.settings.userRole) === 'admin';
+    // The raw role, not resolveUserRole's offline-fallback (which treats an unset role as admin
+    // for the single-user local-mode case): a hydrate that outlives its timeout opens the app
+    // before the profile role is written, and that fallback would otherwise also fire for a
+    // connected teacher in that window — fetching roles they don't need and flashing the
+    // admin-only scope toggle in the Topbar. Same raw check resolveRosterFetch already uses.
+    const isAdmin = state.settings.userRole === 'admin';
     const classRoles = useMyClassRoles(isAdmin);
     const rosterScope = useMemo(() => {
         const userId = state.settings.userId;
