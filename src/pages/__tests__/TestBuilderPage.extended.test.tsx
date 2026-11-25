@@ -1,12 +1,20 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { act, render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
 import { questionTypeLabelKey } from '../../utils/questionTypeKey';
 import { builderDraftKey } from '../../utils/testBuilderDraft';
 import { loadBuilderDraft } from '../../store/storage';
-import type { AppSettings, GradeScale, Test as RmTest, QuestionBankItem, TestQuestion, TestSection } from '../../types';
+import type {
+    AppSettings,
+    GradeScale,
+    StudentTest,
+    Test as RmTest,
+    QuestionBankItem,
+    TestQuestion,
+    TestSection,
+} from '../../types';
 
 // ---- Hoisted mocks ----
 const mockLangState = vi.hoisted(() => ({ value: 'en' }));
@@ -50,10 +58,14 @@ const noop = vi.fn();
 
 let mockTests: RmTest[] = [];
 let mockQuestionBank: QuestionBankItem[] = [];
+let mockStudentTests: StudentTest[] = [];
 
 const mockUseApp = {
     get tests() {
         return mockTests;
+    },
+    get studentTests() {
+        return mockStudentTests;
     },
     students: [],
     classes: [],
@@ -255,6 +267,7 @@ describe('TestBuilderPage extended', () => {
         localStorage.clear();
         mockTests = [];
         mockQuestionBank = [];
+        mockStudentTests = [];
         mockAddTest.mockClear();
         mockUpdateTest.mockClear();
         mockShowToast.mockClear();
@@ -1195,6 +1208,99 @@ describe('TestBuilderPage extended', () => {
         const panel = within(screen.getByTestId('checks-row-q2'));
         expect(panel.getByRole('button', { name: 'tests.issue_question:{"number":2}' })).toBeInTheDocument();
         expect(panel.getByText(/tests\.issue_no_numeric_answer/)).toBeInTheDocument();
+    });
+
+    it('fixes a missing numeric answer inline from the checks screen (#1215)', () => {
+        mockTests = [
+            {
+                id: 'incomplete',
+                name: 'Incomplete',
+                createdAt: '2024-01-01T00:00:00Z',
+                updatedAt: '2024-01-01T00:00:00Z',
+                questions: [
+                    { id: 'q1', type: 'open', prompt: 'Explain', points: 1 },
+                    { id: 'q2', type: 'numeric', prompt: '2 + 2?', points: 1 },
+                ],
+            } as RmTest,
+        ];
+        renderBuilder('/tests/incomplete');
+        fireEvent.click(screen.getByTestId('checks_review'));
+        const row = within(screen.getByTestId('checks-row-q2'));
+        fireEvent.change(row.getByTestId('q2-fix-0-input'), { target: { value: '4' } });
+        fireEvent.click(row.getByTestId('q2-fix-0-apply'));
+        // The blocker is gone, so the fix reached the draft without opening the question.
+        expect(screen.queryByTestId('checks-row-q2')).not.toBeInTheDocument();
+        expect(screen.getByLabelText('tests.name_label')).toBeInTheDocument();
+    });
+
+    it('keeps two inline fixes made to the same question (#1215)', () => {
+        mockTests = [
+            {
+                id: 'incomplete',
+                name: 'Incomplete',
+                createdAt: '2024-01-01T00:00:00Z',
+                updatedAt: '2024-01-01T00:00:00Z',
+                questions: [
+                    {
+                        id: 'q1',
+                        type: 'key-word-transformation',
+                        prompt: 'Rewrite the sentence.',
+                        keyWord: 'ALTHOUGH',
+                        points: 0,
+                    },
+                ],
+            } as RmTest,
+        ];
+        renderBuilder('/tests/incomplete');
+        fireEvent.click(screen.getByTestId('checks_review'));
+        const blocker = within(screen.getByTestId('checks-row-q1'));
+        fireEvent.change(blocker.getByTestId('q1-fix-0-input'), { target: { value: 'Paris' } });
+        const points = within(screen.getByTestId('quality-no_points-q1'));
+        // Both handlers come from one render, so each fix must patch only its own field — a fix that
+        // rebuilt the whole question here would drop the other one.
+        act(() => {
+            fireEvent.click(blocker.getByTestId('q1-fix-0-apply'));
+            fireEvent.click(points.getByTestId('quality-no_points-q1-fix-0-apply'));
+        });
+        expect(screen.queryByTestId('checks-row-q1')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('quality-no_points-q1')).not.toBeInTheDocument();
+    });
+
+    it('compares the time limit against how long the sittings took (#1215)', () => {
+        const sitting = (id: string, minutes: number): StudentTest => ({
+            id,
+            testId: 'timed',
+            studentId: `s-${id}`,
+            answers: [],
+            status: 'submitted',
+            startedAt: '2024-01-01T10:00:00Z',
+            submittedAt: new Date(Date.parse('2024-01-01T10:00:00Z') + minutes * 60000).toISOString(),
+        });
+        mockTests = [
+            {
+                id: 'timed',
+                name: 'Timed',
+                durationMinutes: 20,
+                createdAt: '2024-01-01T00:00:00Z',
+                updatedAt: '2024-01-01T00:00:00Z',
+                questions: [
+                    {
+                        id: 'q1',
+                        type: 'key-word-transformation',
+                        prompt: 'Rewrite the sentence.',
+                        keyWord: 'ALTHOUGH',
+                        points: 1,
+                    },
+                ],
+            } as RmTest,
+        ];
+        mockStudentTests = [sitting('a1', 31), sitting('a2', 33)];
+
+        renderBuilder('/tests/timed');
+        fireEvent.click(screen.getByTestId('checks_review'));
+        const hint = screen.getByTestId('quality-time_over-test');
+        expect(hint).toHaveTextContent('"minutes":32');
+        expect(screen.queryByTestId('quality-time_rough_over-test')).not.toBeInTheDocument();
     });
 
     it('hides the blocker banner while the checks screen is open', () => {

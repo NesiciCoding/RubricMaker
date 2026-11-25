@@ -112,6 +112,7 @@ export default function TestA4Preview({ test, onChange }: Props) {
                 <button
                     type="button"
                     className="btn btn-secondary btn-sm"
+                    data-testid="a4-zoom-out"
                     aria-label={t('tests.a4_zoom_out')}
                     onClick={() => setZoomStep((z) => z - 1)}
                 >
@@ -120,6 +121,7 @@ export default function TestA4Preview({ test, onChange }: Props) {
                 <button
                     type="button"
                     className="btn btn-secondary btn-sm"
+                    data-testid="a4-zoom-in"
                     aria-label={t('tests.a4_zoom_in')}
                     onClick={() => setZoomStep((z) => z + 1)}
                 >

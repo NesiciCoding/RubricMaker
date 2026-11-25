@@ -1,5 +1,4 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { SupabaseAdapter } from '../SupabaseAdapter';
 import { storageSync } from '../StorageSync';
 import { adapterWithClient } from './supabaseTestUtils';
 
