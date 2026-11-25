@@ -584,17 +584,22 @@ is not hosted at STRATO, or when a separate provider dashboard is wanted.
 | Bundled stack → official stack     | STRATO value                                        |
 | ---------------------------------- | --------------------------------------------------- |
 | `SMTP_HOST` → `SMTP_HOST`          | `smtp.strato.de`                                    |
-| `SMTP_PORT` → `SMTP_PORT`          | `465` (implicit TLS); `587` (STARTTLS) also works   |
+| `SMTP_PORT` → `SMTP_PORT`          | `587` (STARTTLS — not `465`, see below)             |
 | `SMTP_USER` → `SMTP_USER`          | the full mailbox address, e.g. `noreply@example.nl` |
 | `SMTP_PASS` → `SMTP_PASS`          | that mailbox's password                             |
 | `SMTP_SENDER` → `SMTP_ADMIN_EMAIL` | the same mailbox address                            |
 | — → `SMTP_SENDER_NAME`             | `RubricMaker`                                       |
 
-Two STRATO rules decide what goes in there: `SMTP_USER` must be a **mailbox**, never an alias (aliases
+Three rules decide what goes in there. `SMTP_USER` must be a **mailbox**, never an alias (aliases
 receive mail but cannot authenticate), and the From address must be a mailbox in the package too —
-otherwise submission fails with `not authorized to send mail from`. The Brevo fallback uses
-`smtp-relay.brevo.com` on `587` or `465`, the account login as `SMTP_USER` and an **SMTP key** as
-`SMTP_PASS`, with the From domain verified in Brevo.
+otherwise submission fails with `not authorized to send mail from`. And the port is **587**, not 465:
+Supabase Auth opens the connection in plaintext and upgrades it with STARTTLS, so an implicit-TLS
+listener never gets its handshake and the request ends as `upstream request timeout` after the code
+is requested. The edge functions' own client (`supabase/functions/_shared/smtp.ts`) does handle 465,
+but it reads the same `SMTP_PORT`, so keep one value that works for both. The certificate check above
+uses `-starttls smtp` for the same reason. The Brevo fallback uses `smtp-relay.brevo.com` on `587`,
+the account login as `SMTP_USER` and an **SMTP key** as `SMTP_PASS`, with the From domain verified in
+Brevo.
 
 This repo's `docker-compose.yml` maps `SMTP_*` onto `GOTRUE_SMTP_*` itself, so the bundled stack needs
 no extra variables. The official stack reads `SMTP_*` from its `.env` (GoTrue's image maps them to
