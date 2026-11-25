@@ -604,6 +604,10 @@ class StorageSyncService {
         return this.adapter.saveTestAssignment(a);
     }
 
+    async deleteTestAssignments(testId: string, studentIds: string[]): Promise<SyncResult> {
+        return this.adapter.deleteTestAssignments(testId, studentIds);
+    }
+
     async fetchMyTestAssignments() {
         return this.adapter.fetchMyTestAssignments();
     }

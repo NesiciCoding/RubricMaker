@@ -5,6 +5,7 @@ import type { LucideIcon } from 'lucide-react';
 import {
     Archive,
     BarChart3,
+    Check,
     Copy,
     Ellipsis,
     FileDown,
@@ -19,7 +20,7 @@ import {
     Trash2,
     Upload,
 } from 'lucide-react';
-import type { Folder, MaterialSharing, Test } from '../../types';
+import type { Class, Folder, MaterialSharing, Test } from '../../types';
 import CardTile from '../ui/CardTile';
 import CardGrip from '../ui/CardGrip';
 import DropdownMenu from '../ui/DropdownMenu';
@@ -38,6 +39,10 @@ export interface TestCardProps {
     shared: MaterialSharing;
     canReorder: boolean;
     folders: Folder[];
+    /** Classes offered in the menu, with the ones this test is assigned to marked. */
+    classes: Class[];
+    assignedClassIds: string[];
+    onToggleClass: (classId: string) => void;
     draggableProps?: DraggableProvided['draggableProps'];
     dragHandleProps?: DraggableProvided['dragHandleProps'];
     onOpen: () => void;
@@ -74,6 +79,23 @@ function MenuGroup({ label, children }: { label: string; children: React.ReactNo
             </div>
             {children}
         </div>
+    );
+}
+
+function MenuCheckItem({ label, checked, onClick }: { label: string; checked: boolean; onClick: () => void }) {
+    return (
+        <button
+            type="button"
+            role="menuitemcheckbox"
+            aria-checked={checked}
+            className="btn btn-ghost btn-sm"
+            title={label}
+            style={{ justifyContent: 'flex-start' }}
+            onClick={onClick}
+        >
+            <Check size={14} aria-hidden="true" style={{ opacity: checked ? 1 : 0 }} />
+            {label}
+        </button>
     );
 }
 
@@ -140,6 +162,9 @@ const TestCard = React.forwardRef<HTMLDivElement, TestCardProps>(function TestCa
         shared,
         canReorder,
         folders,
+        classes,
+        assignedClassIds,
+        onToggleClass,
         draggableProps,
         dragHandleProps,
         onOpen,
@@ -261,6 +286,21 @@ const TestCard = React.forwardRef<HTMLDivElement, TestCardProps>(function TestCa
                             />
                         )}
                     </MenuGroup>
+                    {classes.length > 0 && (
+                        <>
+                            <MenuDivider />
+                            <MenuGroup label={t('tests.card_menu_classes')}>
+                                {classes.map((cls) => (
+                                    <MenuCheckItem
+                                        key={cls.id}
+                                        label={cls.name}
+                                        checked={assignedClassIds.includes(cls.id)}
+                                        onClick={() => onToggleClass(cls.id)}
+                                    />
+                                ))}
+                            </MenuGroup>
+                        </>
+                    )}
                     <MenuDivider />
                     <MenuGroup label={t('tests.card_menu_organise')}>
                         <MenuItem

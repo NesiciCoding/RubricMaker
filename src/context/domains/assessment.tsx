@@ -51,6 +51,7 @@ export type AssessmentValue = Pick<
     | 'addGradingTasks'
     | 'deleteGradingTask'
     | 'saveTestAssignment'
+    | 'deleteTestAssignments'
     | 'fetchMyTestAssignments'
     | 'fetchAssignedTestContent'
     | 'fetchMyReadAloudAccommodation'
@@ -84,6 +85,7 @@ export type AssessmentActions = Pick<
     | 'addGradingTasks'
     | 'deleteGradingTask'
     | 'saveTestAssignment'
+    | 'deleteTestAssignments'
     | 'fetchMyTestAssignments'
     | 'fetchAssignedTestContent'
     | 'fetchMyReadAloudAccommodation'
@@ -156,6 +158,8 @@ export function createAssessmentActions(ctx: StoreActionsCtx): AssessmentActions
             .catch((e) => console.error('[sync] failed to push gradingTask deletion', e));
     };
     const saveTestAssignment = async (a: TestAssignment) => (await loadDb()).storageSync.saveTestAssignment(a);
+    const deleteTestAssignments = async (testId: string, studentIds: string[]) =>
+        (await loadDb()).storageSync.deleteTestAssignments(testId, studentIds);
     const fetchMyTestAssignments = async () => (await loadDb()).storageSync.fetchMyTestAssignments();
     const fetchAssignedTestContent = async (testId: string) =>
         (await loadDb()).storageSync.fetchAssignedTestContent(testId);
@@ -194,6 +198,7 @@ export function createAssessmentActions(ctx: StoreActionsCtx): AssessmentActions
         addGradingTasks,
         deleteGradingTask,
         saveTestAssignment,
+        deleteTestAssignments,
         fetchMyTestAssignments,
         fetchAssignedTestContent,
         fetchMyReadAloudAccommodation,

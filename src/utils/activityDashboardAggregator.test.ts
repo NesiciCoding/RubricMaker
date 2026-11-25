@@ -41,8 +41,8 @@ function mkStudent(id: string, classId: string): Student {
     return { id, name: `Student ${id}`, classId };
 }
 
-function mkClass(id: string, rubricIds?: string[]): Class {
-    return { id, name: `Class ${id}`, rubricIds };
+function mkClass(id: string, rubricIds?: string[], testIds?: string[]): Class {
+    return { id, name: `Class ${id}`, rubricIds, testIds };
 }
 
 function mkSR(id: string, rubricId: string, studentId: string): StudentRubric {
@@ -179,12 +179,28 @@ describe('buildDashboardMatrix', () => {
             expect(matrix['test:t1']['cls1'].submittedCount).toBe(1);
         });
 
-        it('isLinked true when any student in class has a StudentTest (even in_progress)', () => {
+        it('isLinked true when the test is in Class.testIds, even with no submissions', () => {
+            const activities = [{ kind: 'test' as const, id: 't1', name: 'T1' }];
+            const classList = [mkClass('cls1', undefined, ['t1']), mkClass('cls2')];
+            const matrix = buildDashboardMatrix(activities, classList, students, [], [], []);
+            expect(matrix['test:t1']['cls1'].isLinked).toBe(true);
+            expect(matrix['test:t1']['cls2'].isLinked).toBe(false);
+        });
+
+        it('isLinked true when a student took the test but the class was never linked explicitly', () => {
             const activities = [{ kind: 'test' as const, id: 't1', name: 'T1' }];
             const sts = [mkST('a', 't1', 's1', 'in_progress')];
             const matrix = buildDashboardMatrix(activities, classes, students, [], sts, []);
+            // Legacy tests were assigned by handing out links, so the work must keep counting.
             expect(matrix['test:t1']['cls1'].isLinked).toBe(true);
             expect(matrix['test:t1']['cls2'].isLinked).toBe(false);
+        });
+
+        it('isLinked stays true for a class that took the test after it was unlinked', () => {
+            const activities = [{ kind: 'test' as const, id: 't1', name: 'T1' }];
+            const sts = [mkST('a', 't1', 's1', 'submitted')];
+            const matrix = buildDashboardMatrix(activities, classes, students, [], sts, []);
+            expect(matrix['test:t1']['cls1'].isLinked).toBe(true);
         });
 
         it('isLinked false when no students in class have started the test', () => {

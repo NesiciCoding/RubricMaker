@@ -11,6 +11,10 @@ import { getActivityRows, buildDashboardMatrix, summarizeDashboardMatrix } from 
 import ActivityDashboardGrid from '../components/ActivityDashboard/ActivityDashboardGrid';
 import ActivityDashboardSummary from '../components/ActivityDashboard/ActivityDashboardSummary';
 import Modal from '../components/ui/Modal';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import { useConfirm } from '../hooks/useConfirm';
+import { getDb } from '../services/database/lazyDb';
+import { toggleClassTest } from '../utils/classTests';
 import { reorderDisplayOrder } from '../utils/displayOrder';
 import { VO_TRACKS } from '../data/voTracks';
 import { SCHOOL_YEAR_LABELS, getAvailableSchoolYears } from '../data/schoolYears';
@@ -57,7 +61,9 @@ export default function ActivityDashboardPage() {
         addEssayAssignments,
         updateEssayGroup,
         updateSettings,
+        deleteTestAssignments,
     } = useStoreActions();
+    const { confirm, dialogProps: confirmDialogProps } = useConfirm();
 
     const [filterYear, setFilterYear] = useState<SchoolYear | 'all'>('all');
     const [filterTrack, setFilterTrack] = useState<VoTrack | 'all'>('all');
@@ -167,14 +173,49 @@ export default function ActivityDashboardPage() {
         [visibleClasses]
     );
 
-    function toggleRubricLink(classId: string, rubricId: string, linked: boolean) {
+    /**
+     * Link or unlink an activity to a class, asking for confirmation before an unlink. A test
+     * unlink also revokes that class's student assignment rows, so the portal to-do list cannot
+     * keep an assignment the class lost.
+     */
+    async function toggleLink(classId: string, activity: ActivityRow, linked: boolean) {
         const cls = classes.find((c) => c.id === classId);
         /* v8 ignore next -- provably dead: the cell only renders for a visible class */
         if (!cls) return;
-        const rubricIds = linked
-            ? cls.rubricIds!.filter((id) => id !== rubricId)
-            : [...(cls.rubricIds ?? []), rubricId];
-        updateClass({ ...cls, rubricIds });
+        if (activity.kind === 'rubric') {
+            if (linked) {
+                const ok = await confirm({
+                    title: t('activityDashboard.unlink_rubric_title'),
+                    message: t('activityDashboard.unlink_rubric_message', {
+                        name: activity.name,
+                        className: cls.name,
+                    }),
+                    confirmLabel: t('activityDashboard.unlink_rubric_action'),
+                });
+                if (!ok) return;
+            }
+            const rubricIds = linked
+                ? (cls.rubricIds ?? []).filter((id) => id !== activity.id)
+                : [...(cls.rubricIds ?? []), activity.id];
+            updateClass({ ...cls, rubricIds });
+            return;
+        }
+        if (activity.kind !== 'test') return;
+        if (!linked) {
+            updateClass(toggleClassTest(cls, activity.id, false));
+            return;
+        }
+        const ok = await confirm({
+            title: t('tests.class_unlink_title'),
+            message: t('tests.class_unlink_message', { name: activity.name, className: cls.name }),
+            confirmLabel: t('tests.class_unlink_action'),
+        });
+        if (!ok) return;
+        updateClass(toggleClassTest(cls, activity.id, true));
+        const studentIds = students.filter((s) => s.classId === cls.id).map((s) => s.id);
+        if (!getDb()?.storageSync.isConnected() || studentIds.length === 0) return;
+        const result = await deleteTestAssignments(activity.id, studentIds).catch(() => ({ success: false }) as const);
+        if (!result.success) console.error('[sync] failed to delete test assignments', activity.id);
     }
 
     function assignEssayToClass(classId: string, teacherKey: string) {
@@ -349,7 +390,7 @@ export default function ActivityDashboardPage() {
                     matrix={matrix}
                     compact={settings.activityDashboardCompact ?? false}
                     onCompactChange={(compact) => updateSettings({ activityDashboardCompact: compact })}
-                    onToggleRubricLink={toggleRubricLink}
+                    onToggleLink={toggleLink}
                     onAssignRubric={openAssignTaskModal}
                     onAssignEssay={assignEssayToClass}
                     onOpenActivity={openActivity}
@@ -358,6 +399,8 @@ export default function ActivityDashboardPage() {
 
                 {visibleClasses.length > 0 && <ActivityDashboardSummary summary={summary} classNames={classNames} />}
             </div>
+
+            <ConfirmDialog {...confirmDialogProps} />
 
             {assignTaskCell && (
                 <Modal titleId="grading-task-title" onClose={() => setAssignTaskCell(null)} maxWidth={420}>
