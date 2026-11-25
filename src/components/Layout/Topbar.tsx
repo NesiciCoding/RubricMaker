@@ -5,6 +5,8 @@ import { useClasses, useSettings } from '../../context/AppContext';
 import { useMobileMenu } from '../../context/MobileMenuContext';
 import NotificationBell from './NotificationBell';
 import GlobalSearch from '../Search/GlobalSearch';
+import SegmentedToggle from '../ui/SegmentedToggle';
+import { useRosterScope } from '../../hooks/useRosterScope';
 
 interface TopbarProps {
     title: string;
@@ -24,6 +26,7 @@ export default function Topbar({ title, actions, classSelector = false }: Topbar
     const { classes = [] } = useClasses();
 
     const { settings, updateSettings } = useSettings();
+    const { scope, canSwitchScope } = useRosterScope();
 
     const { t } = useTranslation();
     const { open: openMobileMenu } = useMobileMenu();
@@ -76,6 +79,19 @@ export default function Topbar({ title, actions, classSelector = false }: Topbar
                         </option>
                     ))}
                 </select>
+            )}
+            {canSwitchScope && (
+                <SegmentedToggle
+                    size="sm"
+                    minTargetHeight={24}
+                    ariaLabel={t('scope.label')}
+                    value={scope}
+                    onChange={(next) => updateSettings({ rosterScope: next })}
+                    options={[
+                        { value: 'mine', label: t('scope.mine') },
+                        { value: 'school', label: t('scope.school') },
+                    ]}
+                />
             )}
             {actions && <div className="topbar-actions">{actions}</div>}
             <div className="topbar-global">

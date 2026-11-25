@@ -10,7 +10,7 @@ import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { useToast } from '../hooks/useToast';
 import { useOwnOrSharedItem } from '../hooks/useSharedMaterials';
 import { useDbStatus } from '../hooks/useDbStatus';
-import { useCanEditStudentWork } from '../hooks/useClassRoles';
+import { useCanGradeStudentWork } from '../hooks/useRosterScope';
 import LastEditedNote from '../components/Grading/LastEditedNote';
 import { SkeletonRow } from '../components/ui/Skeleton';
 import { calcTestMaxPoints, calcStudentTestRawPoints, calcTestPercentage, autoScoreResponse } from '../utils/testCalc';
@@ -465,7 +465,7 @@ export default function TestResultsPage() {
     const { saveStudentTest, recordCommentBankUsage, addCommentBankItem, addFlashcardDeck } = useStoreActions();
     const { showToast } = useToast();
     const dbStatus = useDbStatus();
-    const canEditStudentWork = useCanEditStudentWork();
+    const canEditStudentWork = useCanGradeStudentWork();
 
     const { item: test, loading: sharedLoading } = useOwnOrSharedItem(
         'test',

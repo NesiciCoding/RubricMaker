@@ -2590,7 +2590,8 @@
         "delete_student_title": "Supprimer l'élève",
         "delete_student_confirmation": "Voulez-vous vraiment supprimer <1>{{studentName}}</1> ?",
         "delete_student_warning": "Toutes les notes et grilles associées à cet élève seront définitivement supprimées.",
-        "roster_read_only_notice": "Cet élève appartient à la classe d'un collègue. Seul le propriétaire de la classe peut modifier son nom, sa classe, sa filière ou son année scolaire."
+        "roster_read_only_notice": "Cet élève appartient à la classe d'un collègue. Seul le propriétaire de la classe peut modifier son nom, sa classe, sa filière ou son année scolaire.",
+        "class_managed_by_owner": "Seul le propriétaire de la classe peut la gérer. Un administrateur peut intervenir via Toute l’école."
     },
     "gradeStudent": {
         "group_grade_banner": "Note de groupe — l'enregistrement copiera aussi ces scores et commentaires vers : {{names}}",
@@ -3344,7 +3345,8 @@
         "sync_offline_cache": "Vous êtes hors ligne — utilisation des données en cache local.",
         "signout_pending_writes": "Certaines modifications ne sont pas encore synchronisées — vos données locales ont été conservées pour ne rien perdre.",
         "signout_unmigrated_local": "Vos données locales n'ont jamais été téléversées vers votre compte : elles ont donc été conservées sur cet appareil. Reconnectez-vous et choisissez Téléverser vers le compte pour les synchroniser.",
-        "voice_feedback_dropped": "Les notes ont été enregistrées, mais le stockage de cet appareil n'a pas pu conserver {{count}} enregistrement(s) vocal(aux), qui seront perdus au rechargement. Connectez-vous au cloud ou supprimez d'anciens enregistrements pour les conserver."
+        "voice_feedback_dropped": "Les notes ont été enregistrées, mais le stockage de cet appareil n'a pas pu conserver {{count}} enregistrement(s) vocal(aux), qui seront perdus au rechargement. Connectez-vous au cloud ou supprimez d'anciens enregistrements pour les conserver.",
+        "sync_not_allowed": "Le serveur a refusé cette modification : vous ne pouvez modifier que vos propres classes. Rien n'a été perdu."
     },
     "pwa": {
         "update_available_title": "Mise à jour disponible",
@@ -5705,7 +5707,8 @@
         "gr_test_rich_authoring_item_pill_keyboard": "Les pastilles de trou, de texte actif et de correction d'erreur de l'éditeur sont accessibles avec Tab et s'ouvrent avec Entrée ou Espace ; Échap ferme la zone d'édition et vous ramène à la pastille.",
         "gr_test_rich_authoring_item_rich_notes": "Les indices et explications sont du texte enrichi : gras, listes, liens et images. Les notes écrites auparavant en texte brut conservent leurs sauts de ligne, sauf si elles contiennent du texte qui ressemble à une balise HTML. Les élèves voient l'indice à leur demande et l'explication après l'envoi d'un test d'entraînement.",
         "gr_test_rich_authoring_item_typed_gap_chips": "Les trous à saisie libre listent désormais leurs réponses acceptées sous forme de puces, comme les trous à liste déroulante : ajoutez-en une (ou plusieurs d'un coup avec a|b|c), supprimez-en une avec ×, et appuyez sur Entrée dans un champ vide pour enregistrer. La première réponse est celle affichée dans l'éditeur.",
-        "gr_test_answer_options_item_scripts": "Le texte des options et des éléments peut afficher indices et exposants : écrivez H_{2}O ou x^{2} (les accolades sont obligatoires, donc un texte ordinaire comme snake_case ou 2^10 n'est jamais modifié). Ils s'affichent à l'écran, dans le livret imprimé (HTML et Word) et en Unicode dans les résultats et les corrigés."
+        "gr_test_answer_options_item_scripts": "Le texte des options et des éléments peut afficher indices et exposants : écrivez H_{2}O ou x^{2} (les accolades sont obligatoires, donc un texte ordinaire comme snake_case ou 2^10 n'est jamais modifié). Ils s'affichent à l'écran, dans le livret imprimé (HTML et Word) et en Unicode dans les résultats et les corrigés.",
+        "gs_classes_item_scope": "Les administrateurs qui enseignent voient par défaut leurs propres classes et celles qu'ils co-enseignent, et peuvent passer à Toute l'école dans la barre supérieure. La gestion d'une classe reste au propriétaire, sauf si un administrateur change de portée pour intervenir. Seule la portée active est téléchargée ; basculer charge le reste."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",
@@ -7040,5 +7043,10 @@
         "image_invalid": "Choisissez une image JPG, PNG ou WebP.",
         "image_too_large": "Cette image dépasse 5 Mo.",
         "image_upload_failed": "L'image n'a pas pu être envoyée."
+    },
+    "scope": {
+        "label": "Portée du groupe",
+        "mine": "Mes classes",
+        "school": "Toute l'école"
     }
 }

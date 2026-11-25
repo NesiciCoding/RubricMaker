@@ -105,6 +105,26 @@ vi.mock('../../context/useStore', () => ({
 }));
 
 const resultsDb = vi.hoisted(() => ({ isConnected: false }));
+// The class-role hook loads the database module lazily (it is read by the app-wide roster
+// provider, which must not pull supabase-js into the entry chunk), so connectivity is stubbed at
+// the loader and the real adapter still carries the fetchMyClassRoles spy.
+vi.mock('../../services/database/supabaseConfig', () => ({
+    loadSupabaseConfig: () => ({ supabaseUrl: 'https://example.test', supabaseAnonKey: 'anon' }),
+}));
+vi.mock('../../services/database/lazyDb', async () => {
+    const real = await import('../../services/database');
+    return {
+        loadDb: async () => ({
+            storageSync: {
+                isConnected: () => resultsDb.isConnected,
+                getCurrentUserId: () => (resultsDb.isConnected ? 'me' : null),
+                subscribe: () => () => {},
+                adapter: real.storageSync.adapter,
+            },
+        }),
+        getDb: () => null,
+    };
+});
 vi.mock('../../hooks/useDbStatus', () => ({
     useDbStatus: () => ({ isConnected: resultsDb.isConnected, userId: resultsDb.isConnected ? 'me' : null }),
 }));

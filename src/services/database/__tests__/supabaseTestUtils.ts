@@ -1,7 +1,7 @@
 import { vi } from 'vitest';
 import { SupabaseAdapter } from '../SupabaseAdapter';
 
-export type QueryResult = { data: unknown; error: { message: string } | null };
+export type QueryResult = { data: unknown; error: { message: string; code?: string | null } | null };
 
 export function makeQueryBuilder(result: QueryResult) {
     const builder: Record<string, unknown> = {};

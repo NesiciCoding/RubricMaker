@@ -806,6 +806,8 @@ export interface PastClassMembership {
 
 export interface Student {
     id: string;
+    /** Owning teacher's profile id, carried from the row's owner_id. Absent on local/legacy rows. */
+    ownerId?: string;
     name: string;
     email?: string;
     studentNumber?: string;
@@ -833,6 +835,8 @@ export type SchoolYear = 'groep-7' | 'groep-8' | 'jaar-1' | 'jaar-2' | 'jaar-3' 
 
 export interface Class {
     id: string;
+    /** Owning teacher's profile id, carried from the row's owner_id. Absent on local/legacy rows. */
+    ownerId?: string;
     name: string;
     subject?: string;
     /** Primary school year — the first of `years`. Kept in sync for single-year classes and older records. */
@@ -1065,6 +1069,14 @@ export interface AppSettings {
     userRole?: UserRole;
     /** Email of the currently authenticated user (populated from Supabase profile on login). */
     userEmail?: string;
+    /** Profile id of the signed-in user (populated on login); unknown in local mode. */
+    userId?: string;
+    /**
+     * Which classes the roster surfaces (pages, pickers, analytics) show. Admins default to their
+     * own and co-taught classes; 'school' shows every class in the school so they can intervene.
+     * Teachers are unaffected — their access is already limited to those classes server-side.
+     */
+    rosterScope?: 'mine' | 'school';
     /** Default sharing for rubrics, tests and folders that have no setting of their own (undefined = private). */
     materialSharing?: MaterialSharing;
     /** Contribute aggregate CEFR/grammar totals to the school wall display (Grafana). On unless explicitly `false`. */

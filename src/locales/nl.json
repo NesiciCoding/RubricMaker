@@ -2590,7 +2590,8 @@
         "delete_student_title": "Leerling verwijderen",
         "delete_student_confirmation": "Weet u zeker dat u <1>{{studentName}}</1> wilt verwijderen?",
         "delete_student_warning": "Hiermee worden alle beoordelingen en rubrics van deze leerling definitief verwijderd.",
-        "roster_read_only_notice": "Deze leerling zit in de klas van een collega. Alleen de eigenaar van de klas kan naam, klas, leerweg of leerjaar wijzigen."
+        "roster_read_only_notice": "Deze leerling zit in de klas van een collega. Alleen de eigenaar van de klas kan naam, klas, leerweg of leerjaar wijzigen.",
+        "class_managed_by_owner": "Alleen de eigenaar van de klas kan deze beheren. Een beheerder kan helpen via Hele school."
     },
     "gradeStudent": {
         "group_grade_banner": "Groepscijfer — opslaan kopieert deze scores en opmerkingen ook naar: {{names}}",
@@ -3344,7 +3345,8 @@
         "sync_offline_cache": "Je bent offline — lokaal gecachte gegevens worden gebruikt.",
         "signout_pending_writes": "Sommige wijzigingen zijn nog niet gesynchroniseerd — je lokale gegevens zijn bewaard zodat niets verloren gaat.",
         "signout_unmigrated_local": "Je lokale gegevens zijn nooit naar je account geüpload en zijn daarom op dit apparaat bewaard. Log opnieuw in en kies Uploaden naar account om ze te synchroniseren.",
-        "voice_feedback_dropped": "De cijfers zijn opgeslagen, maar {{count}} spraakopname(n) pasten niet in de opslag van dit apparaat en gaan verloren bij herladen. Maak verbinding met de cloud of verwijder oude opnames om ze te bewaren."
+        "voice_feedback_dropped": "De cijfers zijn opgeslagen, maar {{count}} spraakopname(n) pasten niet in de opslag van dit apparaat en gaan verloren bij herladen. Maak verbinding met de cloud of verwijder oude opnames om ze te bewaren.",
+        "sync_not_allowed": "De server heeft die wijziging geweigerd: je kunt alleen je eigen klassen aanpassen. Er is niets verloren gegaan."
     },
     "pwa": {
         "update_available_title": "Update beschikbaar",
@@ -5705,7 +5707,8 @@
         "gr_test_rich_authoring_item_pill_keyboard": "Gat-, hot-text- en foutcorrectiepillen in de editor zijn met Tab te bereiken en met Enter of spatie te openen; Escape sluit het bewerkvak en brengt je terug bij de pil.",
         "gr_test_rich_authoring_item_rich_notes": "Hints en uitleg zijn opgemaakte tekst: gebruik vet, lijsten, links en afbeeldingen. Eerder als platte tekst geschreven notities behouden hun regeleinden, tenzij ze tekst bevatten die op een HTML-tag lijkt. Leerlingen zien de hint als ze erom vragen en de uitleg na het inleveren van een oefentoets.",
         "gr_test_rich_authoring_item_typed_gap_chips": "Getypte invulgaten tonen hun geaccepteerde antwoorden nu als chips, net als keuzelijstgaten: voeg er een toe (of meerdere tegelijk als a|b|c), verwijder er een met ×, en druk op Enter in een leeg vak om op te slaan. Het eerste antwoord is dat wat in de editor wordt getoond.",
-        "gr_test_answer_options_item_scripts": "Optie- en itemtekst kan subscript en superscript tonen: schrijf H_{2}O of x^{2} (de accolades zijn verplicht, dus gewone tekst zoals snake_case of 2^10 verandert nooit). Het staat op het scherm, in het afgedrukte boekje (HTML en Word) en als Unicode in resultaten en antwoordsleutels."
+        "gr_test_answer_options_item_scripts": "Optie- en itemtekst kan subscript en superscript tonen: schrijf H_{2}O of x^{2} (de accolades zijn verplicht, dus gewone tekst zoals snake_case of 2^10 verandert nooit). Het staat op het scherm, in het afgedrukte boekje (HTML en Word) en als Unicode in resultaten en antwoordsleutels.",
+        "gs_classes_item_scope": "Beheerders die ook lesgeven zien standaard hun eigen en mede-gedoceerde klassen en kunnen in de bovenbalk naar Hele school schakelen. Klasbeheer blijft bij de eigenaar, tenzij een beheerder van bereik wisselt om bij te springen. Alleen het bereik waarin je werkt wordt gedownload; omschakelen laadt de rest."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",
@@ -7040,5 +7043,10 @@
         "image_invalid": "Kies een JPG-, PNG- of WebP-afbeelding.",
         "image_too_large": "Die afbeelding is groter dan 5 MB.",
         "image_upload_failed": "De afbeelding kon niet worden geüpload."
+    },
+    "scope": {
+        "label": "Rosterbereik",
+        "mine": "Mijn klassen",
+        "school": "Hele school"
     }
 }

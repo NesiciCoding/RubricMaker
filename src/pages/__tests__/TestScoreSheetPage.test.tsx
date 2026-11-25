@@ -53,6 +53,25 @@ const mockFetchShared = vi.fn();
 const mockUpdateShared = vi.fn();
 const mockFetchRoles = vi.fn();
 const mockShowToast = vi.fn();
+// The class-role hook loads the database module lazily; stub connectivity at the loader and let
+// the real (mocked) adapter keep the fetchMyClassRoles spy.
+vi.mock('../../services/database/supabaseConfig', () => ({
+    loadSupabaseConfig: () => ({ supabaseUrl: 'https://example.test', supabaseAnonKey: 'anon' }),
+}));
+vi.mock('../../services/database/lazyDb', async () => {
+    const real = await import('../../services/database');
+    return {
+        loadDb: async () => ({
+            storageSync: {
+                isConnected: () => sharedDb.connected,
+                getCurrentUserId: () => (sharedDb.connected ? 'me' : null),
+                subscribe: () => () => {},
+                adapter: real.storageSync.adapter,
+            },
+        }),
+        getDb: () => null,
+    };
+});
 vi.mock('../../hooks/useDbStatus', () => ({
     useDbStatus: () => ({ isConnected: sharedDb.connected, userId: sharedDb.connected ? 'me' : null }),
 }));

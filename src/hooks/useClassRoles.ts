@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
-import { storageSync } from '../services/database';
-import { useDbStatus } from './useDbStatus';
+import { loadDb } from '../services/database/lazyDb';
+import { loadSupabaseConfig } from '../services/database/supabaseConfig';
+import type { ClassRoles } from '../utils/rosterScope';
 
 type Roles = Record<string, 'viewer' | 'editor'>;
 
@@ -26,6 +27,7 @@ function subscribe(listener: () => void) {
 async function load(userId: string) {
     set({ userId, roles: state.userId === userId ? state.roles : {}, status: 'loading' });
     try {
+        const { storageSync } = await loadDb();
         const roles = await storageSync.adapter.fetchMyClassRoles();
         if (state.userId === userId) set({ userId, roles, status: 'ready' });
     } catch {
@@ -38,17 +40,55 @@ export function resetClassRolesCache() {
     set({ userId: null, roles: {}, status: 'idle' });
 }
 
-/** My co-teacher roles by class id, or null while offline/unknown. */
-function useMyClassRoles(): Roles | null {
-    const db = useDbStatus();
-    const userId = db.isConnected ? db.userId : null;
-    const current = useSyncExternalStore(subscribe, () => state);
-
+/**
+ * Keeps the cache in step with the signed-in user without importing the database module: this hook
+ * is read by the app-wide roster provider, and a static import of `services/database` would drag
+ * @supabase/supabase-js (~450KB) into the entry chunk. With no Supabase config there is nothing to
+ * fetch, so offline installs never load the module at all.
+ *
+ * `enabled: false` skips the subscription (and its fetch) entirely — used by the app-wide roster
+ * provider, which only needs this for an admin's own-vs-whole-school split and would otherwise fire
+ * an extra class_members round-trip on every boot for every teacher, who gains nothing from it here
+ * (their grading/roster screens already call this hook unconditionally for their own reasons).
+ */
+function useClassRolesSubscription(enabled: boolean) {
     useEffect(() => {
-        if (userId && (state.userId !== userId || state.status === 'idle')) void load(userId);
-    }, [userId]);
+        if (!enabled || !loadSupabaseConfig()) return;
+        let cancelled = false;
+        let unsubscribe: (() => void) | undefined;
+        void loadDb()
+            .then(({ storageSync }) => {
+                if (cancelled) return;
+                const sync = () => {
+                    const uid = storageSync.isConnected() ? storageSync.getCurrentUserId() : null;
+                    if (!uid) {
+                        if (state.userId) set({ userId: null, roles: {}, status: 'idle' });
+                        return;
+                    }
+                    if (state.userId !== uid || state.status === 'idle') void load(uid);
+                };
+                sync();
+                unsubscribe = storageSync.subscribe(sync);
+            })
+            .catch(() => {
+                // No database available: every class counts as the caller's own.
+            });
+        return () => {
+            cancelled = true;
+            unsubscribe?.();
+        };
+    }, [enabled]);
+}
 
-    return userId && current.userId === userId ? current.roles : null;
+/**
+ * My co-teacher roles by class id, or null while offline/unknown. `enabled` (default true) lets a
+ * caller that only sometimes needs this — the app-wide roster provider, gated on being an admin —
+ * skip the fetch rather than run and discard it.
+ */
+export function useMyClassRoles(enabled = true): ClassRoles {
+    const current = useSyncExternalStore(subscribe, () => state);
+    useClassRolesSubscription(enabled);
+    return current.userId ? current.roles : null;
 }
 
 /**
