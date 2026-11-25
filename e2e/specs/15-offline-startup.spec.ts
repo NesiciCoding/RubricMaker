@@ -76,7 +76,7 @@ test.describe('startup — offline with Supabase configured', () => {
 
 test.describe('startup — Supabase hydration timeout', () => {
     test('falls through to localStorage cache after 8 s hydration timeout', async ({ supabasePage: page }) => {
-        test.setTimeout(60_000);
+        test.setTimeout(90_000);
         // supabasePage fixture already signed in.
         const timeoutRubric = buildRubric({ id: 'timeout-cache-rubric', name: 'Timeout Cache Rubric' });
         await addRubricToCache(page, timeoutRubric);
@@ -118,19 +118,13 @@ test.describe('startup — Supabase hydration timeout', () => {
         await expect(page.getByText('Loading your data from the cloud')).toBeVisible();
 
         // Once the requests fail, the late hydrate reports it and the indicator clears;
-        // local data is kept.
-        const tRelease = Date.now();
+        // local data is kept. The late pull only resolves once every one of its ~35 requests has
+        // settled, and after release() those settle in batches gated by the browser's per-origin
+        // connection limit — a diagnosed run under CI load caught this mid-flight (progress stuck
+        // at 25/35) 15 s after release(), so the wait budget below has real headroom, not padding
+        // against an unknown hang.
         release();
-        // TEMP DIAGNOSTIC (to be removed): dump timeline + body text if the toast never shows.
-        try {
-            await expect(page.getByText('Could not load your cloud data')).toBeVisible({ timeout: 15_000 });
-        } catch (e) {
-            console.log(
-                `[diag] ${Date.now() - tRelease}ms since release(); bodyText=`,
-                (await page.evaluate(() => document.body.innerText)).slice(0, 1500)
-            );
-            throw e;
-        }
+        await expect(page.getByText('Could not load your cloud data')).toBeVisible({ timeout: 30_000 });
         await expect(page.getByText('Loading your data from the cloud')).toBeHidden();
         await expect(page.getByText('Timeout Cache Rubric')).toBeVisible();
     });
