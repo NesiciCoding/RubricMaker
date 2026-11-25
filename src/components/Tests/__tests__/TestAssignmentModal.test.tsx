@@ -17,8 +17,8 @@ const mockSettings: AppSettings = {
     activeClassId: 'c1',
 };
 
-const mockClass: Class = { id: 'c1', name: 'Class A' };
-const mockClass2: Class = { id: 'c2', name: 'Class B' };
+const mockClass: Class = { id: 'c1', name: 'Class A', testIds: ['t1'] };
+const mockClass2: Class = { id: 'c2', name: 'Class B', testIds: ['t1'] };
 const mockStudents: Student[] = [
     { id: 's1', name: 'Alice', classId: 'c1' },
     { id: 's2', name: 'Bob', classId: 'c1' },
@@ -84,15 +84,23 @@ vi.mock('../../../services/database', () => ({
     loadSupabaseConfig: vi.fn(() => ({ supabaseUrl: 'https://x.supabase.co', supabaseAnonKey: 'anon-key' })),
 }));
 
+function selectClass(classId: string) {
+    fireEvent.change(screen.getByLabelText('tests.assignment_class_label'), { target: { value: classId } });
+}
+
 describe('TestAssignmentModal', () => {
     beforeEach(() => {
         mockDbStatus.isConnected = false;
         mockSaveTestAssignment.mockClear();
+        mockClass.testIds = ['t1'];
+        mockClass2.testIds = ['t1'];
     });
 
     it('generates per-student share links that decode back to a valid TestAssignmentPayload with distinct teacherKeys', async () => {
         const { default: TestAssignmentModal } = await import('../TestAssignmentModal');
-        renderWithRouter(<TestAssignmentModal test={mockTest} onClose={vi.fn()} />);
+        renderWithRouter(<TestAssignmentModal test={mockTest} onClose={vi.fn()} {...modalCallbacks()} />);
+
+        selectClass('c1');
 
         const teacherKeys = new Set<string>();
         for (const student of classAStudents) {
@@ -133,7 +141,8 @@ describe('TestAssignmentModal', () => {
             ],
         };
         const decodedOptions = (test: RmTest) => {
-            const view = renderWithRouter(<TestAssignmentModal test={test} onClose={vi.fn()} />);
+            const view = renderWithRouter(<TestAssignmentModal test={test} onClose={vi.fn()} {...modalCallbacks()} />);
+            selectClass('c1');
             const input = screen.getByLabelText('tests.assignment_link_for:{"name":"Alice"}') as HTMLInputElement;
             const options = decodeTestAssignment(input.value.split('#/test/')[1])?.test?.questions[0].options;
             view.unmount();
@@ -147,8 +156,12 @@ describe('TestAssignmentModal', () => {
     it('saves one test_assignments row per student when DB embedding is enabled', async () => {
         mockDbStatus.isConnected = true;
         const { default: TestAssignmentModal } = await import('../TestAssignmentModal');
-        renderWithRouter(<TestAssignmentModal test={mockTest} onClose={vi.fn()} />);
+        renderWithRouter(<TestAssignmentModal test={mockTest} onClose={vi.fn()} {...modalCallbacks()} />);
 
+        // Merely opening the dialog must not assign anything — not even to the active class.
+        expect(mockSaveTestAssignment).not.toHaveBeenCalled();
+
+        selectClass('c1');
         await waitFor(() => expect(mockSaveTestAssignment).toHaveBeenCalledTimes(classAStudents.length));
 
         const savedStudentIds = mockSaveTestAssignment.mock.calls.map(([a]) => a.studentId).sort();
@@ -160,21 +173,21 @@ describe('TestAssignmentModal', () => {
     it('keeps a stable teacherKey per student when the class dropdown is switched back and forth', async () => {
         mockDbStatus.isConnected = true;
         const { default: TestAssignmentModal } = await import('../TestAssignmentModal');
-        renderWithRouter(<TestAssignmentModal test={mockTest} onClose={vi.fn()} />);
+        renderWithRouter(<TestAssignmentModal test={mockTest} onClose={vi.fn()} {...modalCallbacks()} />);
 
+        selectClass('c1');
         await waitFor(() => expect(mockSaveTestAssignment).toHaveBeenCalledTimes(classAStudents.length));
         const firstVisitKey = mockSaveTestAssignment.mock.calls.find(([a]) => a.studentId === 's1')?.[0]?.teacherKey;
         expect(firstVisitKey).toBeTruthy();
 
-        const classSelect = screen.getByLabelText('tests.assignment_class_label');
-        fireEvent.change(classSelect, { target: { value: 'c2' } });
+        selectClass('c2');
         await waitFor(() => expect(mockSaveTestAssignment).toHaveBeenCalledTimes(mockStudents.length));
 
         // Class B has 1 student. The saved-progress count must read against class B alone
         // (1/1), not the lifetime total across every class saved so far this session (3/1).
         expect(screen.getByText('tests.assignment_saved_count:{"saved":1,"total":1}')).toBeInTheDocument();
 
-        fireEvent.change(classSelect, { target: { value: 'c1' } });
+        selectClass('c1');
         await waitFor(() => expect(screen.getByLabelText('tests.assignment_class_label')).toHaveValue('c1'));
 
         // Revisiting class A must not re-save its students (they're already persisted),
@@ -190,7 +203,9 @@ describe('TestAssignmentModal', () => {
         mockDbStatus.isConnected = true;
         mockFetchTestAssignmentTeacherKeys.mockResolvedValueOnce({ s1: 'persisted-key-s1' });
         const { default: TestAssignmentModal } = await import('../TestAssignmentModal');
-        renderWithRouter(<TestAssignmentModal test={mockTest} onClose={vi.fn()} />);
+        renderWithRouter(<TestAssignmentModal test={mockTest} onClose={vi.fn()} {...modalCallbacks()} />);
+
+        selectClass('c1');
 
         // Displayed link for the student with a persisted row must be that exact key,
         // not a freshly-minted nanoid.
@@ -204,4 +219,49 @@ describe('TestAssignmentModal', () => {
         const s1Save = mockSaveTestAssignment.mock.calls.find(([a]) => a.studentId === 's1')?.[0];
         expect(s1Save?.teacherKey).toBe('persisted-key-s1');
     });
+
+    it('offers to assign a class the test is not linked to yet', async () => {
+        mockClass.testIds = [];
+        const onAssignClass = vi.fn();
+        const onUnassignClass = vi.fn();
+        const { default: TestAssignmentModal } = await import('../TestAssignmentModal');
+        renderWithRouter(
+            <TestAssignmentModal
+                test={mockTest}
+                onClose={vi.fn()}
+                onAssignClass={onAssignClass}
+                onUnassignClass={onUnassignClass}
+            />
+        );
+
+        // Nothing is assigned until a class is named.
+        expect(screen.queryByText('tests.assignment_link_class')).not.toBeInTheDocument();
+        selectClass('c1');
+
+        expect(screen.getByText('tests.assignment_not_linked')).toBeInTheDocument();
+        expect(screen.queryByLabelText('tests.assignment_link_for:{"name":"Alice"}')).not.toBeInTheDocument();
+        fireEvent.click(screen.getByText('tests.assignment_link_class'));
+        expect(onAssignClass).toHaveBeenCalledWith('c1');
+    });
+
+    it('offers to unassign a class the test is already linked to', async () => {
+        const onUnassignClass = vi.fn();
+        const { default: TestAssignmentModal } = await import('../TestAssignmentModal');
+        renderWithRouter(
+            <TestAssignmentModal
+                test={mockTest}
+                onClose={vi.fn()}
+                onAssignClass={vi.fn()}
+                onUnassignClass={onUnassignClass}
+            />
+        );
+        selectClass('c1');
+        expect(screen.getByText('tests.assignment_linked_class')).toBeInTheDocument();
+        fireEvent.click(screen.getByText('tests.assignment_unlink_class'));
+        expect(onUnassignClass).toHaveBeenCalledWith('c1');
+    });
 });
+
+function modalCallbacks() {
+    return { onAssignClass: vi.fn(), onUnassignClass: vi.fn() };
+}

@@ -86,6 +86,7 @@ test.describe('Testing environment — full lifecycle (offline)', () => {
         await list.openAssignModal('E2E Vocabulary Quiz');
         await appExpect(list.assignmentModal()).toBeVisible();
         await list.setAssignmentClass('E2E Class');
+        await list.assignToClass();
         const assignmentLink = await list.getStudentAssignmentLink('Eva Example');
         appExpect(assignmentLink).toContain('#/test/');
         await list.closeAssignmentModal();
