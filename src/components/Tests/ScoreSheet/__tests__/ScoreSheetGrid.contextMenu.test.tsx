@@ -139,6 +139,10 @@ describe('ScoreSheetGrid context menu', () => {
         const trigger = screen.getByRole('button', { name: 'tests.scoreSheet.menu_cell_label' });
         // Hidden on fine pointers by CSS, exactly like the row and outline menu buttons.
         expect(trigger.closest('.menu-touch-only')).not.toBeNull();
+        // A real touch target, and a sibling of the input rather than an overlay hiding the points.
+        expect(trigger).toHaveStyle({ minWidth: '24px', minHeight: '24px' });
+        expect(cell(0, 0).parentElement?.className).toContain('score-cell-has-menu');
+        expect(cell(0, 0).nextElementSibling).toContainElement(trigger);
 
         fireEvent.click(trigger);
         expect(screen.getByRole('menu', { name: 'tests.scoreSheet.menu_cell_label' })).toBeInTheDocument();

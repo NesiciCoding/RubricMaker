@@ -3239,6 +3239,19 @@ label.sub-item-check {
     }
 }
 
+/* Score-sheet cell: its touch-only ⋯ button is a sibling of the points input rather than an overlay.
+   On coarse pointers the input gives up exactly the button's width, so the value is never underneath
+   the control and the column keeps its width. */
+.score-cell-input {
+    width: 52px;
+}
+
+@media (pointer: coarse) {
+    .score-cell-has-menu .score-cell-input {
+        width: 28px;
+    }
+}
+
 /* Long-press opens the app's own menu on touch screens, so the browser's callout must not compete.
    Only opted-in surfaces: text outside them stays selectable. */
 [data-longpress] {
