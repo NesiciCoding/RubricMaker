@@ -3649,7 +3649,8 @@
         "switch_back_to_teacher": "Terug naar docent",
         "letter_grade_range": "{{grade}} = {{min}}–{{max}}% op {{scale}}",
         "back_to_portal": "Terug naar portaal",
-        "privacy_link": "Privacy & gegevensbescherming"
+        "privacy_link": "Privacy & gegevensbescherming",
+        "live_writing_title": "Live schrijven"
     },
     "selfAssess": {
         "title": "ERK Zelfbeoordeling",
@@ -5708,7 +5709,16 @@
         "gr_test_rich_authoring_item_rich_notes": "Hints en uitleg zijn opgemaakte tekst: gebruik vet, lijsten, links en afbeeldingen. Eerder als platte tekst geschreven notities behouden hun regeleinden, tenzij ze tekst bevatten die op een HTML-tag lijkt. Leerlingen zien de hint als ze erom vragen en de uitleg na het inleveren van een oefentoets.",
         "gr_test_rich_authoring_item_typed_gap_chips": "Getypte invulgaten tonen hun geaccepteerde antwoorden nu als chips, net als keuzelijstgaten: voeg er een toe (of meerdere tegelijk als a|b|c), verwijder er een met ×, en druk op Enter in een leeg vak om op te slaan. Het eerste antwoord is dat wat in de editor wordt getoond.",
         "gr_test_answer_options_item_scripts": "Optie- en itemtekst kan subscript en superscript tonen: schrijf H_{2}O of x^{2} (de accolades zijn verplicht, dus gewone tekst zoals snake_case of 2^10 verandert nooit). Het staat op het scherm, in het afgedrukte boekje (HTML en Word) en als Unicode in resultaten en antwoordsleutels.",
-        "gs_classes_item_scope": "Beheerders die ook lesgeven zien standaard hun eigen en mede-gedoceerde klassen en kunnen in de bovenbalk naar Hele school schakelen. Klasbeheer blijft bij de eigenaar, tenzij een beheerder van bereik wisselt om bij te springen. Alleen het bereik waarin je werkt wordt gedownload; omschakelen laadt de rest."
+        "gs_classes_item_scope": "Beheerders die ook lesgeven zien standaard hun eigen en mede-gedoceerde klassen en kunnen in de bovenbalk naar Hele school schakelen. Klasbeheer blijft bij de eigenaar, tenzij een beheerder van bereik wisselt om bij te springen. Alleen het bereik waarin je werkt wordt gedownload; omschakelen laadt de rest.",
+        "lw_share_title": "Opdrachten delen met collega’s",
+        "lw_share_body": "Een opgeslagen opdracht kan naar de marktplaats van je school worden gepubliceerd en door een andere docent worden gekloond als startpunt van een eigen sessie.",
+        "lw_share_item_tags": "Publiceer met vaste labels — vak, taal, ERK-niveau(s), schrijffocus en schooljaar — zodat collega’s de opdrachtenbank kunnen filteren.",
+        "lw_share_item_clone": "Klonen opent een nieuwe conceptsessie met de opdracht, afbeelding, timing en docentenhints ingevuld; alleen de klas kies je zelf.",
+        "lw_share_item_privacy": "Alleen die opdrachtvelden gaan mee. Klas, deelnemers, antwoorden, stemmen en resultaten verlaten de oorspronkelijke sessie nooit.",
+        "lw_share_item_unpublish": "Publicatie intrekken haalt de vermelding uit het overzicht; sessies die er al van zijn gekloond blijven ongewijzigd.",
+        "rb_marketplace_live_prompt_note": "Live schrijfopdrachten worden gepubliceerd vanuit een sessieconsole en verschijnen op dezelfde marktplaats, filterbaar op vak en ERK-niveau.",
+        "lw_local_mode_info": "Lokale modus en de functiegrens: live schrijven heeft het gedeelde Supabase-backend nodig. Zonder dat tonen /live en /join een korte melding dat een cloudverbinding nodig is, in plaats van te falen of lokaal te doen alsof. Er is geen aparte schakelaar per school — elke sessie wordt door de docent aangemaakt, en \"Vergrendelen na start\" stopt late deelnames met een code zodra een ronde loopt.",
+        "lw_teacher_item_portal": "Portaldeelname is per sessie optioneel: staat het aan, dan vult een ingelogde leerling de code in het portal in en doet mee als zichzelf, zonder namenlijst."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",
@@ -6030,7 +6040,15 @@
         "kind_questionBankItems": "Vragenbank-items",
         "sort_label": "Sorteren op",
         "sort_newest": "Nieuwste",
-        "sort_upvotes": "Meeste stemmen"
+        "sort_upvotes": "Meeste stemmen",
+        "kind_live_prompt": "Live schrijfopdracht",
+        "kind_live_prompts": "Live opdrachten",
+        "filter_cefr_label": "ERK-niveau",
+        "filter_cefr_all": "Alle niveaus",
+        "unpublish_title": "Publicatie intrekken",
+        "unpublish_toast": "Publicatie ingetrokken",
+        "unpublish_failed": "Deze vermelding kon niet worden ingetrokken",
+        "clone_prompt_title": "Deze opdracht gebruiken"
     },
     "search": {
         "placeholder": "Zoek rubrics, toetsen, leerlingen… (probeer type:test, class:5A)",
@@ -7042,7 +7060,35 @@
         "image_hint": "Wordt getoond op het projector en op de pagina van elke leerling. JPG, PNG of WebP, max. 5 MB.",
         "image_invalid": "Kies een JPG-, PNG- of WebP-afbeelding.",
         "image_too_large": "Die afbeelding is groter dan 5 MB.",
-        "image_upload_failed": "De afbeelding kon niet worden geüpload."
+        "image_upload_failed": "De afbeelding kon niet worden geüpload.",
+        "focus_narrative": "Verhalend",
+        "focus_argumentative": "Betogend",
+        "focus_descriptive": "Beschrijvend",
+        "focus_expository": "Uiteenzettend",
+        "focus_reflective": "Beschouwend",
+        "focus_language_practice": "Taalvaardigheid",
+        "share_title": "Deze opdracht delen",
+        "share_open": "Delen",
+        "share_intro": "Publiceer de opdracht, afbeelding, timing en hints naar de marktplaats van je school. Er worden geen klassen, leerlingen, antwoorden, stemmen of resultaten gedeeld.",
+        "share_subject": "Vak",
+        "share_language": "Taal",
+        "share_levels": "ERK-niveau(s)",
+        "share_focus": "Schrijffocus",
+        "share_year": "Schooljaar",
+        "share_year_any": "Elk jaar",
+        "share_select": "Selecteer…",
+        "share_publish": "Opdracht publiceren",
+        "share_published": "Opdracht gepubliceerd op de marktplaats van je school",
+        "share_failed": "Deze opdracht kon niet worden gepubliceerd",
+        "share_requires_school": "Sluit je aan bij een school om opdrachten met collega’s te delen.",
+        "portal_join_toggle": "Portaldeelnemers met de code laten joinen",
+        "portal_join_hint": "Ingelogde leerlingen slaan de namenlijst over en doen mee als zichzelf.",
+        "portal_join_title": "Deelnemen aan live schrijven",
+        "portal_join_subtitle": "Vul de code van het bord in. Je doet mee als jezelf — zonder namenlijst.",
+        "portal_join_button": "Deelnemen",
+        "portal_join_joining": "Bezig met deelnemen…",
+        "portal_join_disabled": "Portaldeelname staat uit voor deze sessie. Gebruik de publieke link en kies je naam.",
+        "portal_join_signed_out": "Log in op je leerlingenportaal om zo deel te nemen."
     },
     "scope": {
         "label": "Rosterbereik",

@@ -75,6 +75,7 @@ export interface LiveWritingSessionInput {
     liveLeaderboard: boolean;
     lockAfterStart: boolean;
     peerVoting: boolean;
+    portalJoin: boolean;
 }
 
 export type LiveWritingSessionPatch = Partial<LiveWritingSessionInput> & {
@@ -135,6 +136,7 @@ function mapSession(row: Row): LiveWritingSession {
         liveLeaderboard: bool(row.live_leaderboard, true),
         lockAfterStart: bool(row.lock_after_start),
         peerVoting: bool(row.peer_voting, true),
+        portalJoin: bool(row.portal_join),
         votesOpen: bool(row.votes_open),
         timerState: text(row.timer_state, 'idle') as LiveWritingTimerState,
         timerEndsAt: optionalText(row.timer_ends_at),
@@ -293,6 +295,11 @@ export class LiveWritingAdapter {
         return client ? new LiveWritingAdapter(client) : null;
     }
 
+    /** Portal join uses the persisted portal session, not a throwaway anonymous client. */
+    static forPortal(): LiveWritingAdapter | null {
+        return LiveWritingAdapter.forTeacher();
+    }
+
     static forStudent(): LiveWritingAdapter | null {
         let saved: { supabaseUrl?: string; supabaseAnonKey?: string } = {};
         try {
@@ -344,6 +351,7 @@ export class LiveWritingAdapter {
                 live_leaderboard: input.liveLeaderboard,
                 lock_after_start: input.lockAfterStart,
                 peer_voting: input.peerVoting,
+                portal_join: input.portalJoin,
             })
             .select('*')
             .single();
@@ -367,6 +375,7 @@ export class LiveWritingAdapter {
         if (patch.liveLeaderboard !== undefined) row.live_leaderboard = patch.liveLeaderboard;
         if (patch.lockAfterStart !== undefined) row.lock_after_start = patch.lockAfterStart;
         if (patch.peerVoting !== undefined) row.peer_voting = patch.peerVoting;
+        if (patch.portalJoin !== undefined) row.portal_join = patch.portalJoin;
         if (patch.status !== undefined) row.status = patch.status;
         if (patch.currentRound !== undefined) row.current_round = patch.currentRound;
         if (patch.votesOpen !== undefined) row.votes_open = patch.votesOpen;
@@ -436,6 +445,28 @@ export class LiveWritingAdapter {
             p_code: code,
             p_student_id: studentId,
         });
+        throwIfError(error);
+        const row = firstRow(data);
+        return {
+            participantId: text(row.participant_id),
+            joinToken: text(row.join_token),
+            title: text(row.title),
+            status: text(row.status, 'lobby') as LiveWritingSessionStatus,
+            currentRound: number(row.current_round, 1),
+            roundCount: number(row.round_count, 1),
+            minutesPerRound: number(row.minutes_per_round, 10),
+            minWords: number(row.min_words),
+            maxWords: optionalNumber(row.max_words),
+            scaffoldEnabled: bool(row.scaffold_enabled, true),
+        };
+    }
+
+    /**
+     * Portal join: the caller's authenticated email resolves the roster row server-side, so a
+     * student can never pick someone else's name. Requires `portalJoin` on the session.
+     */
+    async joinViaPortal(code: string): Promise<LiveWritingJoin> {
+        const { data, error } = await this.client.rpc('join_live_writing_portal', { p_code: code });
         throwIfError(error);
         const row = firstRow(data);
         return {

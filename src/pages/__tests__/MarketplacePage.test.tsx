@@ -577,6 +577,18 @@ describe('filterAndSortListings', () => {
         expect(filterAndSortListings(listings, 'all', 'upvotes')[0].id).toBe('2');
     });
 
+    it('filters by CEFR band', async () => {
+        const { filterAndSortListings } = await import('../MarketplacePage');
+        const listings = [
+            { id: '1', cefrLevels: ['A2', 'B1'], upvoteCount: 0, createdAt: '2024-01-01' },
+            { id: '2', cefrLevels: ['C1'], upvoteCount: 0, createdAt: '2024-01-02' },
+            { id: '3', upvoteCount: 0, createdAt: '2024-01-03' },
+        ] as Parameters<typeof filterAndSortListings>[0];
+        expect(filterAndSortListings(listings, 'all', 'newest', 'all', 'B1').map((l) => l.id)).toEqual(['1']);
+        expect(filterAndSortListings(listings, 'all', 'newest', 'all', 'C1').map((l) => l.id)).toEqual(['2']);
+        expect(filterAndSortListings(listings, 'all', 'newest', 'all', 'all')).toHaveLength(3);
+    });
+
     it('sorts by newest when sortBy is newest', async () => {
         const { filterAndSortListings } = await import('../MarketplacePage');
         const listings = [

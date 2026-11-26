@@ -975,20 +975,42 @@ export interface SchoolMember {
 }
 
 /** A rubric published to a school's marketplace. rubricSnapshot is frozen at publish time. */
-export type MarketplaceListingKind = 'rubric' | 'test' | 'deck' | 'questionBankItem';
+export type MarketplaceListingKind = 'rubric' | 'test' | 'deck' | 'questionBankItem' | 'live_prompt';
+
+/** Writing focus a shared live-writing prompt is tagged with (Phase 43.7). */
+export type LiveWritingFocus =
+    'narrative' | 'argumentative' | 'descriptive' | 'expository' | 'reflective' | 'language_practice';
+
+/**
+ * The prompt-only payload of a live-writing session shared to the school marketplace.
+ * Deliberately holds no class, participant, response, vote or result data.
+ */
+export interface MarketplaceLivePrompt {
+    title: string;
+    prompt: string;
+    imagePath?: string;
+    minutesPerRound: number;
+    minWords: number;
+    maxWords?: number;
+    scaffoldPrompts: string[];
+}
 
 export interface MarketplaceListing {
     id: string;
     schoolId: string;
     publishedBy: string;
-    /** 'rubric' (default, back-compat with pre-24.4 listings) | 'test' | 'deck' | 'questionBankItem' — discriminates the shape of `snapshot`. */
+    /** 'rubric' (default, back-compat with pre-24.4 listings) | 'test' | 'deck' | 'questionBankItem' | 'live_prompt' — discriminates the shape of `snapshot`. */
     kind: MarketplaceListingKind;
-    snapshot: Rubric | Test | FlashcardDeck | QuestionBankItem;
+    snapshot: Rubric | Test | FlashcardDeck | QuestionBankItem | MarketplaceLivePrompt;
     name: string;
     subject?: string;
     description?: string;
     attribution?: string;
     cefrLevels?: CefrLevel[];
+    /** First-class tags for live prompts; undefined on older listings of any kind. */
+    language?: string;
+    writingFocus?: LiveWritingFocus[];
+    schoolYear?: SchoolYear;
     upvoteCount: number;
     createdAt: string;
     updatedAt: string;
@@ -2095,6 +2117,8 @@ export interface LiveWritingSession {
     lockAfterStart: boolean;
     /** When false, ending writing skips voting and goes straight to finals. */
     peerVoting: boolean;
+    /** Signed-in portal students may join with the code and skip the name picker. */
+    portalJoin: boolean;
     votesOpen: boolean;
     /** Server-authoritative countdown for the projector and, later, student clients. */
     timerState: LiveWritingTimerState;

@@ -3649,7 +3649,8 @@
         "switch_back_to_teacher": "Zurück zur Lehrkraft-Rolle",
         "letter_grade_range": "{{grade}} = {{min}}–{{max}} % auf {{scale}}",
         "back_to_portal": "Zurück zum Portal",
-        "privacy_link": "Datenschutz"
+        "privacy_link": "Datenschutz",
+        "live_writing_title": "Live-Schreiben"
     },
     "selfAssess": {
         "title": "GER-Selbstbewertung",
@@ -5708,7 +5709,16 @@
         "gr_test_rich_authoring_item_rich_notes": "Hinweise und Erklärungen sind formatierter Text: fett, Listen, Links und Bilder sind möglich. Früher als einfacher Text geschriebene Notizen behalten ihre Zeilenumbrüche, außer sie enthalten Text, der wie ein HTML-Tag aussieht. Lernende sehen den Hinweis auf Anfrage und die Erklärung nach Abgabe eines Übungstests.",
         "gr_test_rich_authoring_item_typed_gap_chips": "Frei auszufüllende Lücken zeigen ihre akzeptierten Antworten jetzt als Chips, wie Dropdown-Lücken: eine (oder mehrere auf einmal als a|b|c) hinzufügen, mit × entfernen und mit Enter im leeren Feld speichern. Die erste Antwort wird im Editor angezeigt.",
         "gr_test_answer_options_item_scripts": "Options- und Elementtext kann Tief- und Hochstellung zeigen: H_{2}O oder x^{2} schreiben (die geschweiften Klammern sind Pflicht, gewöhnlicher Text wie snake_case oder 2^10 bleibt also unverändert). Es erscheint am Bildschirm, im gedruckten Heft (HTML und Word) und als Unicode in Ergebnissen und Lösungsschlüsseln.",
-        "gs_classes_item_scope": "Administratoren, die auch unterrichten, sehen standardmäßig ihre eigenen und mitbetreuten Klassen und können in der oberen Leiste zu Ganze Schule wechseln. Die Klassenverwaltung bleibt beim Eigentümer, es sei denn, ein Administrator wechselt den Bereich, um zu helfen. Es wird nur der aktive Bereich geladen; beim Wechsel wird der Rest nachgeladen."
+        "gs_classes_item_scope": "Administratoren, die auch unterrichten, sehen standardmäßig ihre eigenen und mitbetreuten Klassen und können in der oberen Leiste zu Ganze Schule wechseln. Die Klassenverwaltung bleibt beim Eigentümer, es sei denn, ein Administrator wechselt den Bereich, um zu helfen. Es wird nur der aktive Bereich geladen; beim Wechsel wird der Rest nachgeladen.",
+        "lw_share_title": "Aufträge mit Kolleginnen und Kollegen teilen",
+        "lw_share_body": "Ein gespeicherter Auftrag kann im Marktplatz deiner Schule veröffentlicht und von einer anderen Lehrkraft als Ausgangspunkt einer eigenen Sitzung geklont werden.",
+        "lw_share_item_tags": "Veröffentliche mit festen Tags — Fach, Sprache, GER-Niveau(s), Schreibfokus und Schuljahr —, damit Kolleginnen und Kollegen die Auftragssammlung filtern können.",
+        "lw_share_item_clone": "Beim Klonen entsteht eine neue Sitzungsskizze mit Auftrag, Bild, Zeitplan und Lehrkraft-Hinweisen; nur die Klasse wählst du selbst.",
+        "lw_share_item_privacy": "Nur diese Auftragsfelder werden übertragen. Klasse, Teilnehmende, Antworten, Stimmen und Ergebnisse verlassen die ursprüngliche Sitzung nie.",
+        "lw_share_item_unpublish": "Das Zurückziehen entfernt den Eintrag aus der Übersicht; bereits geklonte Sitzungen bleiben unberührt.",
+        "rb_marketplace_live_prompt_note": "Live-Schreibaufträge werden aus einer Sitzungskonsole veröffentlicht und erscheinen im selben Marktplatz, filterbar nach Fach und GER-Niveau.",
+        "lw_local_mode_info": "Lokaler Modus und Funktionsgrenze: Live-Schreiben braucht das gemeinsame Supabase-Backend. Ohne es zeigen /live und /join einen kurzen Hinweis, dass eine Cloud-Verbindung nötig ist, statt zu scheitern oder lokal etwas vorzutäuschen. Einen eigenen Schalter pro Schule gibt es nicht — jede Sitzung wird von der Lehrkraft erstellt, und „Nach dem Start sperren“ verhindert späte Code-Beitritte, sobald eine Runde läuft.",
+        "lw_teacher_item_portal": "Der Portal-Beitritt ist pro Sitzung optional: Ist er aktiv, gibt ein angemeldeter Schüler den Code im Portal ein und nimmt ohne Namensauswahl als er selbst teil."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",
@@ -6030,7 +6040,15 @@
         "kind_questionBankItems": "Fragenbank-Einträge",
         "sort_label": "Sortieren nach",
         "sort_newest": "Neueste",
-        "sort_upvotes": "Meiste Stimmen"
+        "sort_upvotes": "Meiste Stimmen",
+        "kind_live_prompt": "Live-Schreibauftrag",
+        "kind_live_prompts": "Live-Aufträge",
+        "filter_cefr_label": "GER-Niveau",
+        "filter_cefr_all": "Alle Niveaus",
+        "unpublish_title": "Veröffentlichung zurückziehen",
+        "unpublish_toast": "Veröffentlichung zurückgezogen",
+        "unpublish_failed": "Dieser Eintrag konnte nicht zurückgezogen werden",
+        "clone_prompt_title": "Diesen Auftrag verwenden"
     },
     "search": {
         "placeholder": "Rubriken, Tests, Schüler suchen… (z. B. type:test, class:5A)",
@@ -7042,7 +7060,35 @@
         "image_hint": "Wird am Projektor und auf der Seite jeder Schülerin und jedes Schülers angezeigt. JPG, PNG oder WebP, max. 5 MB.",
         "image_invalid": "Wähle ein JPG-, PNG- oder WebP-Bild.",
         "image_too_large": "Dieses Bild ist größer als 5 MB.",
-        "image_upload_failed": "Das Bild konnte nicht hochgeladen werden."
+        "image_upload_failed": "Das Bild konnte nicht hochgeladen werden.",
+        "focus_narrative": "Erzählend",
+        "focus_argumentative": "Argumentierend",
+        "focus_descriptive": "Beschreibend",
+        "focus_expository": "Darstellend",
+        "focus_reflective": "Reflektierend",
+        "focus_language_practice": "Sprachübung",
+        "share_title": "Diesen Auftrag teilen",
+        "share_open": "Teilen",
+        "share_intro": "Veröffentliche Auftrag, Bild, Zeitplan und Hinweise im Marktplatz deiner Schule. Klassen, Schüler, Antworten, Stimmen und Ergebnisse werden nicht geteilt.",
+        "share_subject": "Fach",
+        "share_language": "Sprache",
+        "share_levels": "GER-Niveau(s)",
+        "share_focus": "Schreibfokus",
+        "share_year": "Schuljahr",
+        "share_year_any": "Jedes Jahr",
+        "share_select": "Auswählen…",
+        "share_publish": "Auftrag veröffentlichen",
+        "share_published": "Auftrag im Marktplatz deiner Schule veröffentlicht",
+        "share_failed": "Dieser Auftrag konnte nicht veröffentlicht werden",
+        "share_requires_school": "Tritt einer Schule bei, um Aufträge mit Kolleginnen und Kollegen zu teilen.",
+        "portal_join_toggle": "Portal-Schüler mit dem Code beitreten lassen",
+        "portal_join_hint": "Angemeldete Schüler überspringen die Namensliste und nehmen als sie selbst teil.",
+        "portal_join_title": "Einer Live-Schreib-Sitzung beitreten",
+        "portal_join_subtitle": "Gib den Code von der Tafel ein. Du nimmst als du selbst teil – ohne Namensauswahl.",
+        "portal_join_button": "Beitreten",
+        "portal_join_joining": "Beitritt läuft…",
+        "portal_join_disabled": "Der Portal-Beitritt ist für diese Sitzung ausgeschaltet. Nutze den öffentlichen Link und wähle deinen Namen.",
+        "portal_join_signed_out": "Melde dich in deinem Schülerportal an, um so beizutreten."
     },
     "scope": {
         "label": "Klassenbereich",

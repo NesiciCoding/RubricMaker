@@ -35,6 +35,8 @@
     "loadtest:stress": "bash scripts/loadtest.sh stress",
     "loadtest:spike": "bash scripts/loadtest.sh spike",
     "loadtest:soak": "bash scripts/loadtest.sh soak",
+    "loadtest:live": "bash scripts/loadtest.sh live",
+    "loadtest:live:smoke": "VUS=10 STUDENTS=10 DURATION=20s bash scripts/loadtest.sh live",
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",

@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Copy, ImagePlus, MonitorPlay, RefreshCw, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import LiveWritingFinalsPanel from '../components/LiveWriting/LiveWritingFinalsPanel';
 import LiveWritingVotingPanel from '../components/LiveWriting/LiveWritingVotingPanel';
-import { useAuthoring, useClasses } from '../context/AppContext';
+import LiveWritingSharePromptPanel from '../components/LiveWriting/LiveWritingSharePromptPanel';
+import { useAuthoring, useClasses, useSettings } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { LiveWritingAdapter, type LiveWritingSessionInput } from '../services/database/LiveWritingAdapter';
 import type {
+    MarketplaceLivePrompt,
     LiveWritingFinalText,
     LiveWritingParticipant,
     LiveWritingRoundLogEntry,
@@ -33,6 +35,7 @@ interface DraftState {
     liveLeaderboard: boolean;
     lockAfterStart: boolean;
     peerVoting: boolean;
+    portalJoin: boolean;
 }
 
 function emptyDraft(): DraftState {
@@ -50,6 +53,7 @@ function emptyDraft(): DraftState {
         liveLeaderboard: true,
         lockAfterStart: false,
         peerVoting: true,
+        portalJoin: false,
     };
 }
 
@@ -68,6 +72,7 @@ function draftFromSession(session: LiveWritingSession): DraftState {
         liveLeaderboard: session.liveLeaderboard,
         lockAfterStart: session.lockAfterStart,
         peerVoting: session.peerVoting,
+        portalJoin: session.portalJoin,
     };
 }
 
@@ -90,6 +95,7 @@ function toInput(draft: DraftState): LiveWritingSessionInput {
         liveLeaderboard: draft.liveLeaderboard,
         lockAfterStart: draft.lockAfterStart,
         peerVoting: draft.peerVoting,
+        portalJoin: draft.portalJoin,
     };
 }
 
@@ -97,11 +103,14 @@ export default function LiveWritingSessionPage() {
     const { t } = useTranslation();
     const { sessionId } = useParams<{ sessionId: string }>();
     const navigate = useNavigate();
+    const location = useLocation();
     const { showToast } = useToast();
     const { classes } = useClasses();
     const { rubrics } = useAuthoring();
+    const { settings } = useSettings();
     const adapter = useMemo(() => LiveWritingAdapter.forTeacher(), []);
     const isNew = !sessionId || sessionId === 'new';
+    const clonePrompt = (location.state as { livePrompt?: MarketplaceLivePrompt } | null)?.livePrompt;
 
     const [session, setSession] = useState<LiveWritingSession | null>(null);
     const [draft, setDraft] = useState<DraftState>(emptyDraft);
@@ -124,10 +133,26 @@ export default function LiveWritingSessionPage() {
     useEffect(() => {
         if (!isNew) return;
         setSession(null);
-        setDraft(emptyDraft());
         setParticipants([]);
         setLoading(false);
-    }, [isNew]);
+        if (!clonePrompt) {
+            setDraft(emptyDraft());
+            return;
+        }
+        // A marketplace prompt is a frozen copy: prefill the writing fields and leave the class
+        // for the teacher to choose, so nothing about the publisher's session is carried over.
+        setDraft({
+            ...emptyDraft(),
+            title: clonePrompt.title,
+            prompt: clonePrompt.prompt,
+            imagePath: clonePrompt.imagePath ?? '',
+            minutesPerRound: clonePrompt.minutesPerRound,
+            minWords: clonePrompt.minWords,
+            maxWords: clonePrompt.maxWords === undefined ? '' : String(clonePrompt.maxWords),
+            scaffoldEnabled: clonePrompt.scaffoldPrompts.length > 0,
+            scaffoldPrompts: [0, 1, 2].map((index) => clonePrompt.scaffoldPrompts[index] ?? ''),
+        });
+    }, [isNew, clonePrompt]);
 
     useEffect(() => {
         if (!adapter || isNew || !sessionId) return;
@@ -803,6 +828,21 @@ export default function LiveWritingSessionPage() {
                                 <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                                     <input
                                         type="checkbox"
+                                        checked={draft.portalJoin}
+                                        disabled={!editable}
+                                        onChange={(e) => patchDraft({ portalJoin: e.target.checked })}
+                                        style={{ marginTop: 3 }}
+                                    />
+                                    <span>
+                                        {t('liveWriting.portal_join_toggle')}
+                                        <span className="text-muted text-xs" style={{ display: 'block' }}>
+                                            {t('liveWriting.portal_join_hint')}
+                                        </span>
+                                    </span>
+                                </label>
+                                <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                                    <input
+                                        type="checkbox"
                                         checked={draft.lockAfterStart}
                                         disabled={!editable}
                                         onChange={(e) => patchDraft({ lockAfterStart: e.target.checked })}
@@ -905,6 +945,11 @@ export default function LiveWritingSessionPage() {
                                 )}
                             </aside>
                         )}
+                    </div>
+                )}
+                {session && (
+                    <div style={{ marginTop: 20 }}>
+                        <LiveWritingSharePromptPanel session={session} schoolId={settings.schoolId} />
                     </div>
                 )}
                 {session && session.peerVoting && (session.status === 'voting' || session.status === 'finals') && (

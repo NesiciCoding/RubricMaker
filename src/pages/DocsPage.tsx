@@ -988,7 +988,7 @@ function RubricsTab() {
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
                     {t('docs.rb_marketplace_body_prefix')} <strong>{t('docs.rb_marketplace_body_name')}</strong>{' '}
                     {t('docs.rb_marketplace_body_suffix')} {t('docs.rb_marketplace_cefr_tags_body')}{' '}
-                    {t('docs.rb_marketplace_kinds_note')}
+                    {t('docs.rb_marketplace_kinds_note')} {t('docs.rb_marketplace_live_prompt_note')}
                 </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
@@ -2071,6 +2071,7 @@ function LiveWritingTab() {
                 <FeatureList
                     items={[
                         t('docs.lw_teacher_item_setup'),
+                        t('docs.lw_teacher_item_portal'),
                         t('docs.lw_teacher_item_projector'),
                         t('docs.lw_teacher_item_timer'),
                         t('docs.lw_teacher_item_progress'),
@@ -2109,6 +2110,20 @@ function LiveWritingTab() {
                 <InfoBox color="#ec4899">{t('docs.lw_finals_info')}</InfoBox>
             </FeatureSection>
 
+            <FeatureSection icon={Globe} title={t('docs.lw_share_title')} color="#ec4899">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    {t('docs.lw_share_body')}
+                </p>
+                <FeatureList
+                    items={[
+                        t('docs.lw_share_item_tags'),
+                        t('docs.lw_share_item_clone'),
+                        t('docs.lw_share_item_privacy'),
+                        t('docs.lw_share_item_unpublish'),
+                    ]}
+                />
+            </FeatureSection>
+
             <FeatureSection icon={Shield} title={t('docs.lw_privacy_title')} color="#ec4899">
                 <FeatureList
                     items={[
@@ -2118,6 +2133,7 @@ function LiveWritingTab() {
                         t('docs.lw_privacy_item_no_ai'),
                     ]}
                 />
+                <InfoBox color="#ec4899">{t('docs.lw_local_mode_info')}</InfoBox>
             </FeatureSection>
         </div>
     );

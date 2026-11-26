@@ -1,17 +1,21 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import PageTour from '../components/Tour/PageTour';
 import { usePageTourState } from '../hooks/usePageTourState';
 import { useTranslation } from 'react-i18next';
-import { Store, ThumbsUp, Copy, Upload, Check } from 'lucide-react';
+import { Store, ThumbsUp, Copy, Upload, Check, Trash2 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { EmptyState } from '../components/ui/EmptyState';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import { Skeleton, SkeletonText } from '../components/ui/Skeleton';
 import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { useDbStatus } from '../hooks/useDbStatus';
+import { useToast } from '../hooks/useToast';
 import { storageSync } from '../services/database';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
+import { SCHOOL_YEAR_LABELS } from '../data/schoolYears';
 import { plainQuestionPromptText } from '../utils/clozeParse';
+import { liveWritingFocusKey } from '../utils/liveWriting';
 import type {
     CefrLevel,
     MarketplaceListing,
@@ -22,7 +26,14 @@ import type {
     QuestionBankItem,
 } from '../types';
 
-const KIND_TABS: Array<MarketplaceListingKind | 'all'> = ['all', 'rubric', 'test', 'deck', 'questionBankItem'];
+const KIND_TABS: Array<MarketplaceListingKind | 'all'> = [
+    'all',
+    'rubric',
+    'test',
+    'deck',
+    'questionBankItem',
+    'live_prompt',
+];
 
 // One template for the skeleton and the real cards, so nothing reflows on arrival.
 const LISTING_GRID: React.CSSProperties = {
@@ -74,11 +85,13 @@ export function filterAndSortListings(
     listings: MarketplaceListing[],
     subjectFilter: string,
     sortBy: 'newest' | 'upvotes',
-    kindFilter: MarketplaceListingKind | 'all' = 'all'
+    kindFilter: MarketplaceListingKind | 'all' = 'all',
+    cefrFilter: CefrLevel | 'all' = 'all'
 ): MarketplaceListing[] {
     const filtered = listings
         .filter((l) => kindFilter === 'all' || l.kind === kindFilter)
-        .filter((l) => subjectFilter === 'all' || l.subject === subjectFilter);
+        .filter((l) => subjectFilter === 'all' || l.subject === subjectFilter)
+        .filter((l) => cefrFilter === 'all' || (l.cefrLevels?.includes(cefrFilter) ?? false));
     return [...filtered].sort((a, b) =>
         sortBy === 'upvotes'
             ? b.upvoteCount - a.upvoteCount
@@ -88,6 +101,8 @@ export function filterAndSortListings(
 
 export default function MarketplacePage() {
     const { t } = useTranslation();
+    const navigate = useNavigate();
+    const { showToast } = useToast();
     const tour = usePageTourState('market');
     const { rubrics, questionBank, tests, flashcardDecks, settings } = useStoreSelector((s) => ({
         rubrics: s.rubrics,
@@ -118,15 +133,21 @@ export default function MarketplacePage() {
     const [subjectFilter, setSubjectFilter] = useState('all');
     const [sortBy, setSortBy] = useState<'newest' | 'upvotes'>('newest');
     const [kindFilter, setKindFilter] = useState<MarketplaceListingKind | 'all'>('all');
+    const [cefrFilter, setCefrFilter] = useState<CefrLevel | 'all'>('all');
 
     const subjectOptions = useMemo(
         () => Array.from(new Set(listings.map((l) => l.subject).filter((s): s is string => !!s))).sort(),
         [listings]
     );
 
+    const cefrOptions = useMemo(
+        () => CEFR_LEVELS.filter((level) => listings.some((l) => l.cefrLevels?.includes(level))),
+        [listings]
+    );
+
     const visibleListings = useMemo(
-        () => filterAndSortListings(listings, subjectFilter, sortBy, kindFilter),
-        [listings, subjectFilter, sortBy, kindFilter]
+        () => filterAndSortListings(listings, subjectFilter, sortBy, kindFilter, cefrFilter),
+        [listings, subjectFilter, sortBy, kindFilter, cefrFilter]
     );
 
     const publishOptions =
@@ -186,7 +207,19 @@ export default function MarketplacePage() {
     async function handleClone(listingId: string) {
         const cloned = await storageSync.adapter.cloneMarketplaceListing(listingId);
         if (!cloned) return;
-        const { id: _id, createdAt: _createdAt, updatedAt: _updatedAt, ...fields } = cloned.entity;
+        if (cloned.kind === 'live_prompt') {
+            // A prompt has no library entity: it opens a fresh draft session instead.
+            navigate('/live/new', { state: { livePrompt: cloned.entity } });
+            setClonedId(listingId);
+            setTimeout(() => setClonedId(null), 2000);
+            return;
+        }
+        const {
+            id: _id,
+            createdAt: _createdAt,
+            updatedAt: _updatedAt,
+            ...fields
+        } = cloned.entity as Rubric | Test | FlashcardDeck | QuestionBankItem;
         if (cloned.kind === 'test') addTest(fields as Omit<Test, 'id' | 'createdAt' | 'updatedAt'>);
         else if (cloned.kind === 'deck')
             addFlashcardDeck(fields as Omit<FlashcardDeck, 'id' | 'createdAt' | 'updatedAt'>);
@@ -195,6 +228,16 @@ export default function MarketplacePage() {
         else addRubric(fields as Omit<Rubric, 'id' | 'createdAt' | 'updatedAt'>);
         setClonedId(listingId);
         setTimeout(() => setClonedId(null), 2000);
+    }
+
+    async function handleUnpublish(listing: MarketplaceListing) {
+        const result = await storageSync.adapter.deleteMarketplaceListing(listing.id);
+        if (!result.success) {
+            showToast(t('marketplace.unpublish_failed'), 'error');
+            return;
+        }
+        setListings((prev) => prev.filter((l) => l.id !== listing.id));
+        showToast(t('marketplace.unpublish_toast'), 'success');
     }
 
     async function handleToggleUpvote(listingId: string) {
@@ -378,6 +421,23 @@ export default function MarketplacePage() {
                                     </select>
                                 </div>
                             )}
+                            {cefrOptions.length > 0 && (
+                                <div className="form-group" style={{ marginBottom: 0, maxWidth: 180 }}>
+                                    <label>{t('marketplace.filter_cefr_label')}</label>
+                                    <select
+                                        value={cefrFilter}
+                                        onChange={(e) => setCefrFilter(e.target.value as CefrLevel | 'all')}
+                                        disabled={loading}
+                                    >
+                                        <option value="all">{t('marketplace.filter_cefr_all')}</option>
+                                        {cefrOptions.map((level) => (
+                                            <option key={level} value={level}>
+                                                {level}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
                             <div className="form-group" style={{ marginBottom: 0, maxWidth: 180 }}>
                                 <label>{t('marketplace.sort_label')}</label>
                                 <select
@@ -416,6 +476,21 @@ export default function MarketplacePage() {
                                             {listing.cefrLevels.map((level) => (
                                                 <CefrBadge key={level} level={level} size="sm" />
                                             ))}
+                                        </div>
+                                    )}
+                                    {(listing.language ||
+                                        listing.schoolYear ||
+                                        (listing.writingFocus?.length ?? 0) > 0) && (
+                                        <div className="text-muted text-xs" style={{ marginTop: 6 }}>
+                                            {[
+                                                listing.language,
+                                                listing.schoolYear ? SCHOOL_YEAR_LABELS[listing.schoolYear] : undefined,
+                                                ...(listing.writingFocus ?? []).map((focus) =>
+                                                    t(liveWritingFocusKey(focus))
+                                                ),
+                                            ]
+                                                .filter(Boolean)
+                                                .join(' · ')}
                                         </div>
                                     )}
                                 </div>
@@ -460,10 +535,24 @@ export default function MarketplacePage() {
                                     >
                                         <ThumbsUp size={14} /> {listing.upvoteCount}
                                     </button>
+                                    {listing.publishedBy === dbStatus.userId && (
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            aria-label={t('marketplace.unpublish_title')}
+                                            title={t('marketplace.unpublish_title')}
+                                            onClick={() => void handleUnpublish(listing)}
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    )}
                                     <button
                                         className="btn btn-secondary btn-sm"
                                         onClick={() => handleClone(listing.id)}
-                                        title={t('marketplace.clone_title')}
+                                        title={t(
+                                            listing.kind === 'live_prompt'
+                                                ? 'marketplace.clone_prompt_title'
+                                                : 'marketplace.clone_title'
+                                        )}
                                     >
                                         {clonedId === listing.id ? (
                                             <>

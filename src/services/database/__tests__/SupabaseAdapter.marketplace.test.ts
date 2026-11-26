@@ -208,7 +208,7 @@ describe('SupabaseAdapter marketplace methods', () => {
 
         expect(cloned).not.toBeNull();
         expect(cloned?.kind).toBe('rubric');
-        expect(cloned?.entity.id).not.toBe(rubric.id);
+        expect((cloned?.entity as Rubric).id).not.toBe(rubric.id);
         expect((cloned?.entity as Rubric)?.name).toBe(rubric.name);
         expect((cloned?.entity as unknown as { versions?: unknown })?.versions).toBeUndefined();
     });
@@ -222,7 +222,7 @@ describe('SupabaseAdapter marketplace methods', () => {
 
         expect(cloned?.kind).toBe('deck');
         expect((cloned?.entity as FlashcardDeck)?.name).toBe('Grammar Deck');
-        expect(cloned?.entity.id).not.toBe('d1');
+        expect((cloned?.entity as FlashcardDeck).id).not.toBe('d1');
     });
 
     it('cloneMarketplaceListing returns the questionBankItem kind for a published question', async () => {
@@ -239,7 +239,7 @@ describe('SupabaseAdapter marketplace methods', () => {
 
         expect(cloned?.kind).toBe('questionBankItem');
         expect((cloned?.entity as QuestionBankItem)?.question?.prompt).toBe('What is 2+2?');
-        expect(cloned?.entity.id).not.toBe('qb1');
+        expect((cloned?.entity as QuestionBankItem).id).not.toBe('qb1');
     });
 
     it('publishToMarketplace uses an explicit options.name for a questionBankItem, which has no .name field', async () => {
@@ -260,6 +260,73 @@ describe('SupabaseAdapter marketplace methods', () => {
         expect(builder.insert).toHaveBeenCalledWith(
             expect.objectContaining({ kind: 'questionBankItem', name: 'What is 2+2?', subject: null })
         );
+    });
+
+    it('publishes a live prompt with first-class tags and no session data', async () => {
+        const prompt = {
+            title: 'Change your mind',
+            prompt: 'Write about a time you changed your mind.',
+            minutesPerRound: 10,
+            minWords: 50,
+            scaffoldPrompts: ['Start with the moment.'],
+        };
+        const client = makeClient({ data: { ...prompt, kind: 'live_prompt' }, error: null });
+        const connectedAdapter = adapterWithClient(client);
+
+        await connectedAdapter.publishToMarketplace('school1', 'live_prompt', prompt, undefined, {
+            name: prompt.title,
+            subject: 'English',
+            language: 'English',
+            cefrLevels: ['B1'],
+            writingFocus: ['narrative'],
+            schoolYear: 'jaar-2',
+        });
+
+        const builder = client.from.mock.results[0].value as { insert: ReturnType<typeof vi.fn> };
+        expect(builder.insert).toHaveBeenCalledWith(
+            expect.objectContaining({
+                kind: 'live_prompt',
+                rubric_snapshot: prompt,
+                name: 'Change your mind',
+                subject: 'English',
+                language: 'English',
+                writing_focus: ['narrative'],
+                school_year: 'jaar-2',
+                cefr_levels: ['B1'],
+            })
+        );
+    });
+
+    it('cloneMarketplaceListing returns the live_prompt payload', async () => {
+        const prompt = {
+            title: 'Change your mind',
+            prompt: 'Write about a time you changed your mind.',
+            minutesPerRound: 10,
+            minWords: 50,
+            scaffoldPrompts: [],
+        };
+        const client = makeClient({ data: { kind: 'live_prompt', rubric_snapshot: prompt }, error: null });
+        const connectedAdapter = adapterWithClient(client);
+
+        const cloned = await connectedAdapter.cloneMarketplaceListing('listing1');
+
+        expect(cloned?.kind).toBe('live_prompt');
+        expect((cloned?.entity as typeof prompt).prompt).toBe(prompt.prompt);
+    });
+
+    it('deleteMarketplaceListing removes only the given listing', async () => {
+        const client = makeClient({ data: null, error: null });
+        const connectedAdapter = adapterWithClient(client);
+
+        const result = await connectedAdapter.deleteMarketplaceListing('listing1');
+
+        const builder = client.from.mock.results[0].value as {
+            delete: ReturnType<typeof vi.fn>;
+            eq: ReturnType<typeof vi.fn>;
+        };
+        expect(builder.delete).toHaveBeenCalled();
+        expect(builder.eq).toHaveBeenCalledWith('id', 'listing1');
+        expect(result.success).toBe(true);
     });
 
     it('cloneMarketplaceListing returns null on error', async () => {

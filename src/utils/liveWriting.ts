@@ -1,4 +1,4 @@
-import type { CefrLevel, LiveWritingSelfRating, LiveWritingSessionStatus } from '../types';
+import type { CefrLevel, LiveWritingFocus, LiveWritingSelfRating, LiveWritingSessionStatus } from '../types';
 import { profileText } from './cefrVocabularyProfiler';
 import { countWords, htmlToPlainText } from './essayUtils';
 
@@ -12,6 +12,24 @@ export function liveWritingCefrEstimate(html: string, wordCount = countWords(htm
 }
 
 export const LIVE_WRITING_SELF_RATINGS: LiveWritingSelfRating[] = ['happy', 'neutral', 'unhappy'];
+
+/** The first-class writing-focus tags a shared prompt carries (Phase 43.7). */
+export const LIVE_WRITING_FOCUS: LiveWritingFocus[] = [
+    'narrative',
+    'argumentative',
+    'descriptive',
+    'expository',
+    'reflective',
+    'language_practice',
+];
+
+/** Translation key for a writing-focus tag. */
+export function liveWritingFocusKey(focus: LiveWritingFocus): string {
+    return `liveWriting.focus_${focus}`;
+}
+
+/** Language tags offered when sharing a live prompt; stored as a first-class column value. */
+export const LIVE_PROMPT_LANGUAGES = ['English', 'Dutch', 'French', 'German', 'Spanish'];
 
 /** Translation key for the student's three-option self-check. */
 export function liveWritingSelfRatingKey(rating: LiveWritingSelfRating): string {
@@ -45,4 +63,59 @@ export function isCompleteJoinCode(input: string): boolean {
 /** Absolute link to the public join page, keeping the current base path (self-hosted subpaths). */
 export function liveWritingJoinLink(code: string): string {
     return `${window.location.href.split('#')[0]}#/join/${encodeURIComponent(code)}`;
+}
+
+/** A participant token kept per tab, so a reload resumes the same live-writing row. */
+export interface StoredLiveWritingJoin {
+    participantId: string;
+    joinToken: string;
+}
+
+const LIVE_WRITING_JOIN_STORAGE_PREFIX = 'rm_live_write_join:';
+
+/** Per-code, per-tab storage key for a joined participant. */
+export function liveWritingJoinStorageKey(code: string): string {
+    return `${LIVE_WRITING_JOIN_STORAGE_PREFIX}${normalizeJoinCode(code)}`;
+}
+
+export function readStoredLiveWritingJoin(code: string): StoredLiveWritingJoin | null {
+    if (!isCompleteJoinCode(code)) return null;
+    try {
+        const raw = sessionStorage.getItem(liveWritingJoinStorageKey(code));
+        if (!raw) return null;
+        const parsed = JSON.parse(raw) as Partial<StoredLiveWritingJoin>;
+        if (typeof parsed.participantId === 'string' && typeof parsed.joinToken === 'string') {
+            return { participantId: parsed.participantId, joinToken: parsed.joinToken };
+        }
+    } catch {
+        // Private browsing or a corrupt value: fall back to the name picker.
+    }
+    return null;
+}
+
+export function writeStoredLiveWritingJoin(code: string, join: StoredLiveWritingJoin): void {
+    try {
+        sessionStorage.setItem(liveWritingJoinStorageKey(code), JSON.stringify(join));
+    } catch {
+        // The session still works; only reload-resume is unavailable.
+    }
+}
+
+export function clearStoredLiveWritingJoin(code: string): void {
+    try {
+        sessionStorage.removeItem(liveWritingJoinStorageKey(code));
+    } catch {
+        // Nothing to clear when storage is unavailable.
+    }
+}
+
+/** Translation key for a rejected join; shared by the public picker and the portal entry. */
+export function liveWritingJoinErrorKey(error: unknown): string {
+    const message = error instanceof Error ? error.message : typeof error === 'string' ? error : '';
+    if (message.includes('too_many_attempts')) return 'liveWriting.too_many_attempts';
+    if (message.includes('student_not_in_class')) return 'liveWriting.student_not_in_class';
+    if (message.includes('portal_join_disabled')) return 'liveWriting.portal_join_disabled';
+    if (message.includes('not_authenticated')) return 'liveWriting.portal_join_signed_out';
+    if (message.includes('invalid_code')) return 'liveWriting.invalid_code';
+    return 'liveWriting.join_failed';
 }

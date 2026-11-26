@@ -29,6 +29,9 @@ import type {
     UserTemplate,
     MarketplaceListing,
     MarketplaceListingKind,
+    MarketplaceLivePrompt,
+    LiveWritingFocus,
+    SchoolYear,
     CefrLevel,
     Message,
     MessageContextType,
@@ -2712,6 +2715,9 @@ export class SupabaseAdapter {
         description: string | null;
         attribution: string | null;
         cefr_levels: string[] | null;
+        language: string | null;
+        writing_focus: string[] | null;
+        school_year: string | null;
         upvote_count: number;
         created_at: string;
         updated_at: string;
@@ -2721,12 +2727,15 @@ export class SupabaseAdapter {
             schoolId: row.school_id,
             publishedBy: row.published_by,
             kind: (row.kind as MarketplaceListingKind) || 'rubric',
-            snapshot: row.rubric_snapshot as Rubric | Test | FlashcardDeck | QuestionBankItem,
+            snapshot: row.rubric_snapshot as Rubric | Test | FlashcardDeck | QuestionBankItem | MarketplaceLivePrompt,
             name: row.name,
             subject: row.subject ?? undefined,
             description: row.description ?? undefined,
             attribution: row.attribution ?? undefined,
             cefrLevels: (row.cefr_levels as CefrLevel[] | null) ?? undefined,
+            language: row.language ?? undefined,
+            writingFocus: (row.writing_focus as LiveWritingFocus[] | null) ?? undefined,
+            schoolYear: (row.school_year as SchoolYear | null) ?? undefined,
             upvoteCount: row.upvote_count,
             createdAt: row.created_at,
             updatedAt: row.updated_at,
@@ -2734,7 +2743,7 @@ export class SupabaseAdapter {
     }
 
     private static readonly MARKETPLACE_LISTING_COLUMNS =
-        'id, school_id, published_by, kind, rubric_snapshot, name, subject, description, attribution, cefr_levels, upvote_count, created_at, updated_at';
+        'id, school_id, published_by, kind, rubric_snapshot, name, subject, description, attribution, cefr_levels, language, writing_focus, school_year, upvote_count, created_at, updated_at';
 
     /** RLS scopes results to the caller's school; schoolId here is just a hint for callers, not an extra filter. */
     async listMarketplaceListings(schoolId: string): Promise<MarketplaceListing[]> {
@@ -2754,9 +2763,17 @@ export class SupabaseAdapter {
     async publishToMarketplace(
         schoolId: string,
         kind: MarketplaceListingKind,
-        entity: Rubric | Test | FlashcardDeck | QuestionBankItem,
+        entity: Rubric | Test | FlashcardDeck | QuestionBankItem | MarketplaceLivePrompt,
         attribution?: string,
-        options?: { name?: string; subject?: string; description?: string; cefrLevels?: CefrLevel[] }
+        options?: {
+            name?: string;
+            subject?: string;
+            description?: string;
+            cefrLevels?: CefrLevel[];
+            language?: string;
+            writingFocus?: LiveWritingFocus[];
+            schoolYear?: SchoolYear;
+        }
     ): Promise<MarketplaceListing | null> {
         if (!this.client || !this.userId) return null;
         const subject = kind === 'rubric' ? ((entity as Rubric).subject ?? null) : null;
@@ -2776,6 +2793,9 @@ export class SupabaseAdapter {
                 description: options?.description ?? fallbackDescription ?? null,
                 attribution: attribution ?? null,
                 cefr_levels: options?.cefrLevels?.length ? options.cefrLevels : null,
+                language: options?.language || null,
+                writing_focus: options?.writingFocus?.length ? options.writingFocus : null,
+                school_year: options?.schoolYear || null,
             })
             .select(SupabaseAdapter.MARKETPLACE_LISTING_COLUMNS)
             .single();
@@ -2792,9 +2812,10 @@ export class SupabaseAdapter {
      * returned entity via the normal AppContext/storage.ts path so localStorage stays the
      * single write point.
      */
-    async cloneMarketplaceListing(
-        listingId: string
-    ): Promise<{ kind: MarketplaceListingKind; entity: Rubric | Test | FlashcardDeck | QuestionBankItem } | null> {
+    async cloneMarketplaceListing(listingId: string): Promise<{
+        kind: MarketplaceListingKind;
+        entity: Rubric | Test | FlashcardDeck | QuestionBankItem | MarketplaceLivePrompt;
+    } | null> {
         if (!this.client || !this.userId) return null;
         const { data, error } = await this.client
             .from('marketplace_listings')
@@ -2817,8 +2838,15 @@ export class SupabaseAdapter {
                 id: nanoid(),
                 createdAt: now,
                 updatedAt: now,
-            } as Rubric | Test | FlashcardDeck | QuestionBankItem,
+            } as Rubric | Test | FlashcardDeck | QuestionBankItem | MarketplaceLivePrompt,
         };
+    }
+
+    /** Publisher-only (RLS). Clones already materialised from the snapshot are unaffected. */
+    async deleteMarketplaceListing(listingId: string): Promise<SyncResult> {
+        if (!this.client || !this.userId) return { success: false, error: 'Not connected' };
+        const { error } = await this.client.from('marketplace_listings').delete().eq('id', listingId);
+        return error ? { success: false, error: error.message } : { success: true };
     }
 
     async upvoteListing(listingId: string): Promise<SyncResult> {
