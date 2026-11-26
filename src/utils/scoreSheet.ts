@@ -116,7 +116,9 @@ export function toggleReviewFlag(
     const base = existing ?? emptyManualTest(test, studentId, now);
     const current = base.reviewFlags ?? [];
     const next = current.includes(questionId) ? current.filter((id) => id !== questionId) : [...current, questionId];
-    return { ...base, reviewFlags: next.length ? next : undefined, updatedAt: now };
+    // Clearing stores an empty array, never `undefined`: the empty value is what tells a merge that
+    // the teacher has seen and dismissed this cell, so a stale copy cannot carry the flag back.
+    return { ...base, reviewFlags: next, updatedAt: now };
 }
 
 export function isFlaggedForReview(st: StudentTest | undefined, questionId: string): boolean {

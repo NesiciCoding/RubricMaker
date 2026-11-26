@@ -122,7 +122,7 @@ describe('ScoreSheetGrid context menu', () => {
 
         await waitFor(() => expect(cell(1, 0).getAttribute('data-flagged')).toBeNull());
         const last = onSave.mock.calls.at(-1)![0] as StudentTest[];
-        expect(last[0].reviewFlags).toBeUndefined();
+        expect(last[0].reviewFlags).toEqual([]);
     });
 
     it('jumps to the next flagged cell, wrapping around', async () => {

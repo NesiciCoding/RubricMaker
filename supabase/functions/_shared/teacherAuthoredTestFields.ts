@@ -13,9 +13,9 @@ export const TEACHER_AUTHORED_TEST_FIELDS = ['reviewFlags', 'adjustment', 'adjus
 
 /**
  * Copies teacher-authored fields that `target` lacks from `source` — a copy of the same row written
- * before the teacher's edit. Fields the target already sets are never overwritten, and nothing is
- * copied when the source has none: a flag the teacher cleared is absent on both copies, so merging
- * can never restore it.
+ * before the teacher's edit. A field the target already sets is never overwritten, and `undefined`
+ * counts as not set, so a cleared-but-present value wins: `reviewFlags: []` blocks the carry of a
+ * stale flag, while a source without the field can only ever add, never restore, a dismissal.
  */
 export function carryTeacherAuthoredTestFields<T extends Record<string, unknown>>(
     target: T,

@@ -1828,6 +1828,11 @@ export interface StudentTest {
      * because a manually typed cell may have no answer object to hang it on, and re-typing the
      * points must not drop the flag. `student_tests` stores the whole record in one jsonb `data`
      * column, so the list syncs and backs up with the submission and needs no migration.
+     *
+     * An empty array is a deliberate clear (the teacher looked and dismissed it), which is why
+     * clearing writes `[]` rather than removing the field: merges treat a known value as the
+     * teacher's latest word, so a stale copy cannot restore a dismissed flag. `undefined` means the
+     * record predates flagging, or was written by a path that never authored this field.
      */
     reviewFlags?: string[];
 }

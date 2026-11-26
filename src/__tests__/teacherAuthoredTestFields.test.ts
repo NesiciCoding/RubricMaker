@@ -33,6 +33,15 @@ describe('carryTeacherAuthoredTestFields', () => {
         expect(merged.reviewFlags).toEqual(['q2']);
     });
 
+    it('treats an explicit empty clear as a value the carry cannot overwrite', () => {
+        // `[]` is how a clear is stored, so it must block the flag a stale copy still carries.
+        const merged = carryTeacherAuthoredTestFields<Record<string, unknown>>(
+            { reviewFlags: [] },
+            { reviewFlags: ['q1'] }
+        );
+        expect(merged.reviewFlags).toEqual([]);
+    });
+
     it('cannot resurrect a flag the teacher cleared, because the cleared copy has none', () => {
         expect(
             carryTeacherAuthoredTestFields<Record<string, unknown>>({}, { reviewFlags: undefined }).reviewFlags

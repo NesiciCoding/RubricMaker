@@ -163,7 +163,8 @@ describe('review flags', () => {
         expect(isFlaggedForReview(flagged, 'a')).toBe(true);
 
         const cleared = toggleReviewFlag(flagged, test, 's1', 'a', NOW);
-        expect(cleared.reviewFlags).toBeUndefined();
+        // An explicit empty array, not a removed field: the clear has to be able to beat a stale copy in a merge.
+        expect(cleared.reviewFlags).toEqual([]);
         expect(isFlaggedForReview(cleared, 'a')).toBe(false);
     });
 
@@ -176,7 +177,7 @@ describe('review flags', () => {
         expect(retyped.answers[0].pointsEarned).toBe(2);
 
         const cleared = toggleReviewFlag(retyped, test, 's1', 'a', NOW);
-        expect(cleared.reviewFlags).toBeUndefined();
+        expect(cleared.reviewFlags).toEqual([]);
         expect(cleared.answers[0].pointsEarned).toBe(2);
     });
 

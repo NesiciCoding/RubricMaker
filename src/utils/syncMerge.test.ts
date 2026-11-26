@@ -878,13 +878,23 @@ describe('studentTests merge keeps teacher-authored fields', () => {
         expect(merged.lastEditedBy).toBe('teacher-1');
     });
 
-    it('never restores a flag the newer local copy cleared', () => {
+    it('does not take flags from the copy a newer local value replaced', () => {
         const local = submission({ updatedAt: '2026-01-03T00:00:00.000Z' });
         const remote = submission({ updatedAt: '2026-01-02T00:00:00.000Z', reviewFlags: ['q1'] });
 
         const merged = mergeOne(local, remote);
 
         expect(merged.reviewFlags).toBeUndefined();
+    });
+
+    it('keeps an explicit clear when the newer remote copy cleared the flag', () => {
+        // Device B cleared the flag and synced; device A still holds the stale flagged copy.
+        const local = submission({ updatedAt: '2026-01-01T00:00:00.000Z', reviewFlags: ['q1'] });
+        const remote = submission({ updatedAt: '2026-01-02T00:00:00.000Z', reviewFlags: [] });
+
+        const merged = mergeOne(local, remote);
+
+        expect(merged.reviewFlags).toEqual([]);
     });
 
     it('keeps a flag the winning copy already carries', () => {
