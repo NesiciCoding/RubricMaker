@@ -3389,6 +3389,16 @@
             "title_other": "{{count}} Markierungen in Zeile {{line}}",
             "close": "Markierungsfenster schließen",
             "listLabel": "Markierungen in dieser Zeile"
+        },
+        "list": {
+            "label": "Korrekturzeichen im Text",
+            "title_one": "1 Markierung in diesem Aufsatz",
+            "title_other": "{{count}} Markierungen in diesem Aufsatz",
+            "paragraph": "¶{{index}}",
+            "showAll": "Alle {{count}} Markierungen anzeigen",
+            "showFewer": "Weniger Markierungen anzeigen",
+            "more_one": "1 weitere Markierung",
+            "more_other": "{{count}} weitere Markierungen"
         }
     },
     "pwa": {

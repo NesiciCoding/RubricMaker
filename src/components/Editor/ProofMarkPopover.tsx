@@ -10,10 +10,12 @@ const ESTIMATED_WIDTH = 260;
 
 export interface ProofMarkPopoverProps {
     row: ProofRailRow;
-    /** The chip the panel opens from, in rail-local px. */
-    anchor: PanelAnchor;
-    /** The page, in rail-local px — the panel may not leave it. */
-    bounds: PanelBounds;
+    /** `anchored` sits beside its chip; `sheet` is the narrow-screen bottom sheet. */
+    variant?: 'anchored' | 'sheet';
+    /** The chip the panel opens from, in rail-local px. Required when anchored. */
+    anchor?: PanelAnchor;
+    /** The page, in rail-local px — the panel may not leave it. Required when anchored. */
+    bounds?: PanelBounds;
     dir: 'ltr' | 'rtl';
     titleId: string;
     /** Text currently under a mark's anchor, read from the editor; null when it no longer resolves. */
@@ -31,6 +33,7 @@ export interface ProofMarkPopoverProps {
  */
 export default function ProofMarkPopover({
     row,
+    variant = 'anchored',
     anchor,
     bounds,
     dir,
@@ -41,18 +44,22 @@ export default function ProofMarkPopover({
     const { t } = useTranslation();
     const panelRef = useRef<HTMLDivElement>(null);
     const closeRef = useRef<HTMLButtonElement>(null);
+    const sheet = variant === 'sheet';
     const [placement, setPlacement] = useState<PanelPlacement>(() =>
-        placePanel(anchor, { width: ESTIMATED_WIDTH, height: 0 }, bounds)
+        anchor && bounds
+            ? placePanel(anchor, { width: ESTIMATED_WIDTH, height: 0 }, bounds)
+            : { side: 'right', left: 0, top: 0, width: ESTIMATED_WIDTH }
     );
 
-    // Measure once the panel exists: its height decides how far up the page it can sit.
+    // Measure once the panel exists: its height decides how far up the page it can sit. The bottom
+    // sheet is fixed to the viewport, so there is nothing to measure for it.
     useLayoutEffect(() => {
         const panel = panelRef.current;
-        if (!panel) return;
+        if (!panel || !anchor || !bounds || sheet) return;
         setPlacement(
             placePanel(anchor, { width: panel.offsetWidth || ESTIMATED_WIDTH, height: panel.offsetHeight }, bounds)
         );
-    }, [anchor, bounds]);
+    }, [anchor, bounds, sheet]);
 
     useEffect(() => {
         closeRef.current?.focus();
@@ -78,15 +85,14 @@ export default function ProofMarkPopover({
             aria-modal="true"
             aria-labelledby={titleId}
             data-testid="proof-mark-panel"
-            data-side={placement.side}
+            data-side={sheet ? 'sheet' : placement.side}
             onKeyDown={onKeyDown}
             onClick={(event) => event.stopPropagation()}
             style={{
-                position: 'absolute',
-                top: placement.top,
-                left: placement.left,
-                width: placement.width,
-                zIndex: 6,
+                ...(sheet
+                    ? { position: 'fixed', left: 8, right: 8, bottom: 8, maxHeight: '60vh', overflowY: 'auto' }
+                    : { position: 'absolute', top: placement.top, left: placement.left, width: placement.width }),
+                zIndex: sheet ? 60 : 6,
                 pointerEvents: 'auto',
                 background: '#ffffff',
                 color: '#2a261f',

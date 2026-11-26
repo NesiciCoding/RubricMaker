@@ -5,6 +5,8 @@ import { firstLineBox, planRail, resolveMarkRange, type RailRow } from '../../ut
 
 export interface ProofRailRow extends RailRow {
     marks: DocumentMark[];
+    /** 1-based top-level block the row's first mark sits in, for the list's ¶ grouping. */
+    block?: number;
 }
 
 export interface ProofRailBox {
@@ -74,6 +76,7 @@ export function useProofRail({
         const height = contentRect.height / zoom;
         const targets: { id: string; center: number; lines: number }[] = [];
         const byId = new Map(marks.map((mark) => [mark.id, mark]));
+        const blocks = new Map<string, number>();
 
         for (const mark of marks) {
             const range = resolveMarkRange(editor.state.doc, mark);
@@ -81,6 +84,11 @@ export function useProofRail({
             const line = firstLineBox(editor.view, range, origin);
             if (!line) continue;
             targets.push({ id: mark.id, center: line.center / zoom, lines: line.lines });
+            try {
+                blocks.set(mark.id, editor.state.doc.resolve(range.from).index(0) + 1);
+            } catch {
+                // A range that resolves to no top-level block simply has no ¶ number to show.
+            }
         }
 
         const planned = planRail(targets, {
@@ -94,6 +102,7 @@ export function useProofRail({
             planned.map((row) => ({
                 ...row,
                 marks: row.ids.map((id) => byId.get(id)).filter((mark): mark is DocumentMark => Boolean(mark)),
+                block: row.ids.map((id) => blocks.get(id)).find((block) => block !== undefined),
             }))
         );
         setBox({

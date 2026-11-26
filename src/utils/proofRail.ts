@@ -227,6 +227,29 @@ export function planRail(targets: RailTarget[], options: RailOptions, tolerance 
 /** Below this page width the reveal panel becomes a bottom sheet rather than a side panel. */
 export const PANEL_SHEET_MAX_WIDTH = 640;
 
+/**
+ * Below this container width the margin rail stops being drawn and the marks are listed below the
+ * text instead: a chip column that eats the only readable column is worse than a list.
+ */
+export const COMPACT_RAIL_MAX_WIDTH = 900;
+
+/**
+ * Whether the marks belong below the text rather than in the margin. `pageMode` is `null` before the
+ * editor has reported, in which case only the width can decide.
+ */
+export function shouldUseCompactRail({
+    width,
+    pageMode,
+    hasMarks,
+}: {
+    width: number;
+    pageMode: boolean | null;
+    hasMarks: boolean;
+}): boolean {
+    if (!hasMarks) return false;
+    return pageMode === false || (width > 0 && width < COMPACT_RAIL_MAX_WIDTH);
+}
+
 export interface PanelAnchor {
     top: number;
     left: number;

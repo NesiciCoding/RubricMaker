@@ -3389,6 +3389,16 @@
             "title_other": "{{count}} marcas en la línea {{line}}",
             "close": "Cerrar el panel de marcas",
             "listLabel": "Marcas en esta línea"
+        },
+        "list": {
+            "label": "Marcas de corrección en el texto",
+            "title_one": "1 marca en este texto",
+            "title_other": "{{count}} marcas en este texto",
+            "paragraph": "¶{{index}}",
+            "showAll": "Mostrar las {{count}} marcas",
+            "showFewer": "Mostrar menos marcas",
+            "more_one": "1 marca más",
+            "more_other": "{{count}} marcas más"
         }
     },
     "pwa": {

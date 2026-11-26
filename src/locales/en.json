@@ -3389,6 +3389,16 @@
             "title_other": "{{count}} marks on line {{line}}",
             "close": "Close the mark panel",
             "listLabel": "Marks on this line"
+        },
+        "list": {
+            "label": "Proofreading marks in the text",
+            "title_one": "1 mark in this essay",
+            "title_other": "{{count}} marks in this essay",
+            "paragraph": "¶{{index}}",
+            "showAll": "Show all {{count}} marks",
+            "showFewer": "Show fewer marks",
+            "more_one": "1 more mark",
+            "more_other": "{{count}} more marks"
         }
     },
     "pwa": {

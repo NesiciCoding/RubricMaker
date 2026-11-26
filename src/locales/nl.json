@@ -3389,6 +3389,16 @@
             "title_other": "{{count}} markeringen op regel {{line}}",
             "close": "Sluit het markeringenpaneel",
             "listLabel": "Markeringen op deze regel"
+        },
+        "list": {
+            "label": "Proefleesmarkeringen in de tekst",
+            "title_one": "1 markering in dit essay",
+            "title_other": "{{count}} markeringen in dit essay",
+            "paragraph": "¶{{index}}",
+            "showAll": "Alle {{count}} markeringen tonen",
+            "showFewer": "Minder markeringen tonen",
+            "more_one": "1 markering meer",
+            "more_other": "{{count}} markeringen meer"
         }
     },
     "pwa": {

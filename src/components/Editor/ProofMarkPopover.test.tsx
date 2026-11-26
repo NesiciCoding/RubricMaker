@@ -116,3 +116,30 @@ describe('ProofMarkPopover', () => {
         expect(onClose).toHaveBeenCalledTimes(1);
     });
 });
+
+describe('ProofMarkPopover as a bottom sheet', () => {
+    function renderSheet() {
+        return render(<ProofMarkPopover variant="sheet" row={ROW} dir="ltr" titleId="sheet-title" onClose={vi.fn()} />);
+    }
+
+    it('is fixed to the viewport bottom instead of being placed beside a chip', () => {
+        renderSheet();
+
+        const dialog = screen.getByRole('dialog');
+        expect(dialog).toHaveAttribute('data-side', 'sheet');
+        expect(dialog).toHaveStyle({ position: 'fixed', bottom: '8px' });
+        expect(dialog).not.toHaveStyle({ position: 'absolute' });
+    });
+
+    it('keeps Escape and the Tab trap working without an anchor', () => {
+        const onClose = vi.fn();
+        render(<ProofMarkPopover variant="sheet" row={ROW} dir="ltr" titleId="sheet-title" onClose={onClose} />);
+
+        const dialog = screen.getByRole('dialog');
+        fireEvent.keyDown(dialog, { key: 'Tab' });
+        expect(screen.getByRole('button', { name: 'proofMarks.panel.close' })).toHaveFocus();
+
+        fireEvent.keyDown(dialog, { key: 'Escape' });
+        expect(onClose).toHaveBeenCalledTimes(1);
+    });
+});
