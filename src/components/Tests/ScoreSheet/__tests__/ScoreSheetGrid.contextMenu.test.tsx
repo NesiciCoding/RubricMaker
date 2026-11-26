@@ -91,6 +91,58 @@ function StatefulHarness({ onSaveSpy }: { onSaveSpy: (list: StudentTest[]) => vo
 describe('ScoreSheetGrid context menu', () => {
     beforeEach(() => vi.clearAllMocks());
 
+    it('flags a cell for review and marks it in the sheet', async () => {
+        const onSave = vi.fn();
+        render(<StatefulHarness onSaveSpy={onSave} />);
+
+        fireEvent.contextMenu(cell(1, 0));
+        fireEvent.click(screen.getByRole('menuitem', { name: 'tests.scoreSheet.menu_flag_review' }));
+
+        await waitFor(() => expect(cell(1, 0).getAttribute('data-flagged')).toBe('true'));
+        expect(cell(1, 0)).toHaveAttribute('aria-describedby', 'cell-flag-1-0');
+        expect(screen.getByText('tests.scoreSheet.flagged')).toHaveAttribute('id', 'cell-flag-1-0');
+        expect(cell(0, 0).getAttribute('data-flagged')).toBeNull();
+        const saved = onSave.mock.calls[0][0] as StudentTest[];
+        expect(saved[0].studentId).toBe('s2');
+        expect(saved[0].reviewFlags).toEqual(['q1']);
+    });
+
+    it('offers to clear an existing flag instead of flagging again', async () => {
+        const onSave = vi.fn();
+        render(<StatefulHarness onSaveSpy={onSave} />);
+
+        fireEvent.contextMenu(cell(1, 0));
+        fireEvent.click(screen.getByRole('menuitem', { name: 'tests.scoreSheet.menu_flag_review' }));
+        await waitFor(() => expect(cell(1, 0).getAttribute('data-flagged')).toBe('true'));
+
+        fireEvent.contextMenu(cell(1, 0));
+        expect(screen.getByRole('menuitem', { name: 'tests.scoreSheet.menu_clear_flag' })).toBeInTheDocument();
+        expect(screen.queryByRole('menuitem', { name: 'tests.scoreSheet.menu_flag_review' })).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole('menuitem', { name: 'tests.scoreSheet.menu_clear_flag' }));
+
+        await waitFor(() => expect(cell(1, 0).getAttribute('data-flagged')).toBeNull());
+        const last = onSave.mock.calls.at(-1)![0] as StudentTest[];
+        expect(last[0].reviewFlags).toBeUndefined();
+    });
+
+    it('jumps to the next flagged cell, wrapping around', async () => {
+        const onSave = vi.fn();
+        render(<StatefulHarness onSaveSpy={onSave} />);
+
+        fireEvent.contextMenu(cell(1, 1));
+        fireEvent.click(screen.getByRole('menuitem', { name: 'tests.scoreSheet.menu_flag_review' }));
+        await waitFor(() => expect(cell(1, 1).getAttribute('data-flagged')).toBe('true'));
+
+        const next = screen.getByTestId('score-sheet-next-flagged');
+        expect(next).toHaveTextContent('tests.scoreSheet.next_flagged:{"count":1}');
+        fireEvent.click(next);
+        expect(document.activeElement).toBe(cell(1, 1));
+
+        // One flag only: the route wraps onto the same cell rather than dead-ending.
+        fireEvent.click(next);
+        expect(document.activeElement).toBe(cell(1, 1));
+    });
+
     it('pastes a copied block from the cell menu', async () => {
         const onSave = renderGrid();
         Object.defineProperty(navigator, 'clipboard', {

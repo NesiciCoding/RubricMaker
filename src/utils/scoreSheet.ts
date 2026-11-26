@@ -101,6 +101,28 @@ export function setAbsent(
     return { ...base, absent: absent || undefined, updatedAt: now };
 }
 
+/**
+ * Flags (or clears) one student's cell for a later check. The flag is stored on the submission as a
+ * list of question ids, so it survives re-typing the points, clearing the cell, and a sync round
+ * trip — see `StudentTest.reviewFlags` for why it is not on the answer.
+ */
+export function toggleReviewFlag(
+    existing: StudentTest | undefined,
+    test: Test,
+    studentId: string,
+    questionId: string,
+    now: string = new Date().toISOString()
+): StudentTest {
+    const base = existing ?? emptyManualTest(test, studentId, now);
+    const current = base.reviewFlags ?? [];
+    const next = current.includes(questionId) ? current.filter((id) => id !== questionId) : [...current, questionId];
+    return { ...base, reviewFlags: next.length ? next : undefined, updatedAt: now };
+}
+
+export function isFlaggedForReview(st: StudentTest | undefined, questionId: string): boolean {
+    return (st?.reviewFlags ?? []).includes(questionId);
+}
+
 export function newScoreOnlyQuestion(label: string, points = 1): TestQuestion {
     return { id: nanoid(), prompt: label, type: 'open', points };
 }

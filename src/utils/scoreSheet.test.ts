@@ -5,11 +5,13 @@ import {
     buildScoreSheetCsv,
     defaultScoreOnlyQuestions,
     formatPoints,
+    isFlaggedForReview,
     isSheetComplete,
     newScoreOnlyQuestion,
     parsePastedGrid,
     parsePoints,
     setAbsent,
+    toggleReviewFlag,
     validateCell,
 } from './scoreSheet';
 
@@ -143,5 +145,40 @@ describe('buildScoreSheetCsv', () => {
         expect(header).toBe('Student Name,Student Number,1a,1b,Total,Score %,Grade,Grade (HAVO),Grade (VWO),Absent');
         expect(anna).toBe('Anna,1,2,1.5,3.5,70.0,7.3,,,');
         expect(bram).toBe('Bram,,,,,,,6,,yes');
+    });
+});
+
+describe('review flags', () => {
+    it('flags and clears a cell without touching its score', () => {
+        const flagged = toggleReviewFlag(undefined, test, 's1', 'a', NOW);
+        expect(flagged.reviewFlags).toEqual(['a']);
+        expect(flagged.source).toBe('manual');
+        expect(flagged.answers).toEqual([]);
+        expect(isFlaggedForReview(flagged, 'a')).toBe(true);
+
+        const cleared = toggleReviewFlag(flagged, test, 's1', 'a', NOW);
+        expect(cleared.reviewFlags).toBeUndefined();
+        expect(isFlaggedForReview(cleared, 'a')).toBe(false);
+    });
+
+    it('keeps the flag through a re-typed cell and the score through a cleared flag', () => {
+        const flagged = toggleReviewFlag(applyCellEdit(undefined, test, 's1', 'a', 1.5, NOW), test, 's1', 'a', NOW);
+        expect(flagged.reviewFlags).toEqual(['a']);
+
+        const retyped = applyCellEdit(flagged, test, 's1', 'a', 2, NOW);
+        expect(retyped.reviewFlags).toEqual(['a']);
+        expect(retyped.answers[0].pointsEarned).toBe(2);
+
+        const cleared = toggleReviewFlag(retyped, test, 's1', 'a', NOW);
+        expect(cleared.reviewFlags).toBeUndefined();
+        expect(cleared.answers[0].pointsEarned).toBe(2);
+    });
+
+    it('keeps several flags in the order they were set', () => {
+        const two = toggleReviewFlag(toggleReviewFlag(undefined, test, 's1', 'a', NOW), test, 's1', 'b', NOW);
+        expect(two.reviewFlags).toEqual(['a', 'b']);
+        expect(isFlaggedForReview(two, 'b')).toBe(true);
+        expect(isFlaggedForReview(two, 'zzz')).toBe(false);
+        expect(isFlaggedForReview(undefined, 'a')).toBe(false);
     });
 });
