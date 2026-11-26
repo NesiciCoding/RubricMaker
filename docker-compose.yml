@@ -19,7 +19,7 @@ services:
 
   # ── PostgreSQL (Supabase flavour) ────────────────────────────────────────────
   db:
-    image: public.ecr.aws/supabase/postgres:15.8.1.085
+    image: public.ecr.aws/supabase/postgres:17.12.0.005
     restart: unless-stopped
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run scripts/generate-docker-secrets.sh to create .env}
@@ -57,7 +57,7 @@ services:
 
   # ── GoTrue — authentication ──────────────────────────────────────────────────
   auth:
-    image: public.ecr.aws/supabase/gotrue:v2.188.1
+    image: public.ecr.aws/supabase/gotrue:v2.199.0
     restart: unless-stopped
     depends_on:
       db:
@@ -123,7 +123,7 @@ services:
 
   # ── PostgREST — REST API over the database ───────────────────────────────────
   rest:
-    image: public.ecr.aws/supabase/postgrest:v14.10
+    image: public.ecr.aws/supabase/postgrest:v16.6
     restart: unless-stopped
     depends_on:
       db:
@@ -138,7 +138,7 @@ services:
 
   # ── Supabase Storage — file uploads ──────────────────────────────────────────
   storage:
-    image: public.ecr.aws/supabase/storage-api:v1.54.1
+    image: public.ecr.aws/supabase/storage-api:v1.99.5
     restart: unless-stopped
     depends_on:
       db:

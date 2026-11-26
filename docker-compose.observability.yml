@@ -18,7 +18,7 @@ name: rubricmaker-observability
 
 services:
   loki:
-    image: grafana/loki:3.7.8
+    image: grafana/loki:3.7.10
     restart: unless-stopped
     volumes:
       - ./docker/observability/loki-config.yml:/etc/loki/local-config.yaml:ro
@@ -27,7 +27,7 @@ services:
 
   # Grafana Alloy replaced Promtail, which reached end-of-life on 2026-03-02.
   alloy:
-    image: grafana/alloy:v1.20.1
+    image: grafana/alloy:v1.22.0
     restart: unless-stopped
     volumes:
       - ./docker/observability/config.alloy:/etc/alloy/config.alloy:ro
@@ -77,7 +77,7 @@ services:
 
   # Metrics store. Alloy pushes host, container, Postgres and stack metrics here (remote write).
   prometheus:
-    image: prom/prometheus:v3.15.0
+    image: prom/prometheus:v3.16.0
     restart: unless-stopped
     volumes:
       - ./docker/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
@@ -93,7 +93,7 @@ services:
   # Postgres metrics (connections, cache hit ratio, locks, database size). Uses the same
   # SUPABASE_DB_* connection as Grafana's client_logs datasource; pg_up stays 0 until it is set.
   postgres-exporter:
-    image: prometheuscommunity/postgres-exporter:v0.20.1
+    image: prometheuscommunity/postgres-exporter:v0.21.1
     restart: unless-stopped
     environment:
       DATA_SOURCE_URI: "${SUPABASE_DB_HOST:-localhost:5432}/${SUPABASE_DB_NAME:-postgres}?sslmode=${SUPABASE_DB_SSLMODE:-require}"
@@ -101,7 +101,7 @@ services:
       DATA_SOURCE_PASS: "${SUPABASE_DB_PASSWORD:-}"
 
   grafana:
-    image: grafana/grafana:13.2.3
+    image: grafana/grafana:13.3.1
     restart: unless-stopped
     ports:
       # Bound to localhost only — put a reverse proxy (with HTTPS) in front
