@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FileDown, ListChecks, Table2, X } from 'lucide-react';
+import { FileDown, Flag, ListChecks, Table2, X } from 'lucide-react';
 import ClassAverageAdjuster from './ClassAverageAdjuster';
 import ItemAnalysisPanel from './ItemAnalysisPanel';
 import PlacementAnalysisPanel from './PlacementAnalysisPanel';
@@ -11,6 +11,7 @@ import { useToast } from '../../hooks/useToast';
 import type { AppSettings, Class, GradeScale, Student, StudentTest, Test } from '../../types';
 import type { DocxStyleTemplateOverrides } from '../../utils/docxExport';
 import { calcClassAveragePercentage } from '../../utils/testCalc';
+import { countFlaggedCells } from '../../utils/scoreSheet';
 import { resolveTestScale } from '../../utils/testGradingNorm';
 import { getEffectiveVoTrack, VO_TRACK_LABELS } from '../../data/voTracks';
 import { getEffectiveSchoolYear, SCHOOL_YEAR_LABELS } from '../../data/schoolYears';
@@ -79,6 +80,7 @@ export default function TestResultsDrawer({
     const average = relevantStudentTests.length
         ? Math.round(calcClassAveragePercentage(relevantStudentTests, test))
         : null;
+    const flaggedCount = countFlaggedCells(test, relevantStudentTests);
 
     async function handleExportTestSummaryText(attempts: StudentTest[]) {
         const { buildTestStudentSummary, pickLatestAttempt } = await import('../../utils/testAnswerText');
@@ -278,6 +280,18 @@ export default function TestResultsDrawer({
                         <p className="text-muted text-xs" style={{ margin: '4px 0 0' }}>
                             {t('tests.list_submitted', { count: submittedCount })}
                             {average !== null && <> · {t('tests.list_avg', { pct: average })}</>}
+                            {flaggedCount > 0 && (
+                                <>
+                                    {' · '}
+                                    <span
+                                        data-testid="results-flagged-count"
+                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                                    >
+                                        <Flag size={12} aria-hidden />{' '}
+                                        {t('tests.results.flagged_cells', { count: flaggedCount })}
+                                    </span>
+                                </>
+                            )}
                         </p>
                     </div>
                     <button
@@ -316,6 +330,13 @@ export default function TestResultsDrawer({
                                         onClick={() => onOpenStudentResult(st.id)}
                                     >
                                         {student?.name ?? st.studentId}
+                                        {countFlaggedCells(test, [st]) > 0 && (
+                                            <Flag
+                                                size={12}
+                                                aria-label={t('tests.scoreSheet.flagged')}
+                                                style={{ marginLeft: 6 }}
+                                            />
+                                        )}
                                         {st.attemptNumber && st.attemptNumber > 1 && (
                                             <span
                                                 style={{

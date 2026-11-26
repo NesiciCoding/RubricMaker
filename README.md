@@ -85,27 +85,27 @@ Sections marked 🧑‍💻 in the contents are written for developers — if yo
 
 One-glance overview — see the [Features wiki page](https://github.com/NesiciCoding/RubricMaker/wiki/Features) for the full, illustrated detail:
 
-| Area                        | What you can do                                                                                                                                               |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Classes & cohorts           | Multi-year/track classes, cohort filters, per-student year/track tagging that drives CEFR targets.                                                          |
-| Rubric builder              | Criteria + levels, 3 scoring modes, tiered rubrics, standards/CEFR/Bloom's linking, versioning.                                                              |
-| Folders                     | Nested folders (4 levels) across rubrics, tests, essays and flashcards.                                                                                      |
-| Archive & class links       | Link material to classes; per-class test assignment (assign/unassign from the card menu, assign dialog or activity dashboard, without dropping existing results); archive without losing any grade or result. |
-| Tests & quizzes             | 19 question types, cloze generators, exam-scan OCR, Safe Exam Browser, per-student accommodations.                                                          |
-| Rubric quality analysis     | Per-criterion P-value, Rit/Rir, Cronbach's α, SEM.                                                                                                            |
-| Score sheet & test quality  | Spreadsheet grading, grading norms (N-term, caesura, grade tables), item analysis.                                                                           |
-| Practice & placement        | Practice mode plus 3 adaptive placement engines producing a provisional CEFR estimate.                                                                       |
-| Grading                     | Click/slider scoring, comment bank, voice feedback, handwriting-scan OCR, co-grading, peer review.                                                           |
-| Essays                      | TipTap editor, submission codes, live monitoring, deterministic (no-AI) writing stats.                                                                       |
-| Flashcards                  | FSRS spaced repetition, vocab/grammar decks, CSV/XLSX/DOCX import, student-created decks.                                                                    |
-| CEFR & language assessment  | Proficiency overviews, speaking sessions, rule-based learning paths, grammar mastery.                                                                        |
-| Vocabulary profiling        | Rule-based (no-AI) CEFR vocabulary profiler with a target-level "is this text right?" verdict.                                                               |
-| Live writing                | In-class writing sessions, zero AI, anonymous finals gallery, peer voting.                                                                                   |
-| Student portal              | Shareable link per student: grades, to-dos, essays, tests, flashcards, messaging, 5 languages.                                                               |
-| Analytics                   | Student Snapshot dashboard, grade distributions, query builder, writing trends.                                                                              |
-| Export                      | PDF/DOCX/CSV, Magister/SOMtoday presets, CITO-style printable exam export.                                                                                   |
-| Collaboration               | Marketplace, live sharing, co-teaching, proctoring, notifications.                                                                                           |
-| Accessibility               | WCAG 2.1 AA + AAA contrast, dyslexia mode, six themes, global search.                                                                                         |
+| Area                       | What you can do                                                                                                                                                                                               |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Classes & cohorts          | Multi-year/track classes, cohort filters, per-student year/track tagging that drives CEFR targets.                                                                                                            |
+| Rubric builder             | Criteria + levels, 3 scoring modes, tiered rubrics, standards/CEFR/Bloom's linking, versioning.                                                                                                               |
+| Folders                    | Nested folders (4 levels) across rubrics, tests, essays and flashcards.                                                                                                                                       |
+| Archive & class links      | Link material to classes; per-class test assignment (assign/unassign from the card menu, assign dialog or activity dashboard, without dropping existing results); archive without losing any grade or result. |
+| Tests & quizzes            | 19 question types, cloze generators, exam-scan OCR, Safe Exam Browser, per-student accommodations.                                                                                                            |
+| Rubric quality analysis    | Per-criterion P-value, Rit/Rir, Cronbach's α, SEM.                                                                                                                                                            |
+| Score sheet & test quality | Spreadsheet grading, review flags (also in CSV), grading norms, item analysis.                                                                                                                                |
+| Practice & placement       | Practice mode plus 3 adaptive placement engines producing a provisional CEFR estimate.                                                                                                                        |
+| Grading                    | Click/slider scoring, comment bank, voice feedback, handwriting-scan OCR, co-grading, peer review.                                                                                                            |
+| Essays                     | TipTap editor, submission codes, live monitoring, deterministic (no-AI) writing stats.                                                                                                                        |
+| Flashcards                 | FSRS spaced repetition, vocab/grammar decks, CSV/XLSX/DOCX import, student-created decks.                                                                                                                     |
+| CEFR & language assessment | Proficiency overviews, speaking sessions, rule-based learning paths, grammar mastery.                                                                                                                         |
+| Vocabulary profiling       | Rule-based (no-AI) CEFR vocabulary profiler with a target-level "is this text right?" verdict.                                                                                                                |
+| Live writing               | In-class writing sessions, zero AI, anonymous finals gallery, peer voting.                                                                                                                                    |
+| Student portal             | Shareable link per student: grades, to-dos, essays, tests, flashcards, messaging, 5 languages.                                                                                                                |
+| Analytics                  | Student Snapshot dashboard, grade distributions, query builder, writing trends.                                                                                                                               |
+| Export                     | PDF/DOCX/CSV, Magister/SOMtoday presets, CITO-style printable exam export.                                                                                                                                    |
+| Collaboration              | Marketplace, live sharing, co-teaching, proctoring, notifications.                                                                                                                                            |
+| Accessibility              | WCAG 2.1 AA + AAA contrast, dyslexia mode, six themes, global search.                                                                                                                                         |
 
 **Offline-first, cloud-ready:** the core grading workflow works fully offline in `localStorage`. An optional [Supabase](https://supabase.com) backend unlocks cross-device sync, collaboration, the student portal and the marketplace — if it's configured but unreachable, the app falls back to local storage rather than failing. See [Supabase Sync on the wiki](https://github.com/NesiciCoding/RubricMaker/wiki/Supabase-Sync).
 

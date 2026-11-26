@@ -3,7 +3,9 @@ import type { StudentTest, Test } from '../types';
 import {
     applyCellEdit,
     buildScoreSheetCsv,
+    countFlaggedCells,
     defaultScoreOnlyQuestions,
+    flaggedColumnLabels,
     formatPoints,
     isFlaggedForReview,
     isSheetComplete,
@@ -125,6 +127,7 @@ describe('buildScoreSheetCsv', () => {
                     percentage: 70,
                     grade: '7.3',
                     absent: false,
+                    flagged: ['1a'],
                 },
                 {
                     name: 'Bram',
@@ -142,9 +145,12 @@ describe('buildScoreSheetCsv', () => {
             ]
         );
         const [header, anna, bram] = csv.split(/\r?\n/);
-        expect(header).toBe('Student Name,Student Number,1a,1b,Total,Score %,Grade,Grade (HAVO),Grade (VWO),Absent');
-        expect(anna).toBe('Anna,1,2,1.5,3.5,70.0,7.3,,,');
-        expect(bram).toBe('Bram,,,,,,,6,,yes');
+        expect(header).toBe(
+            'Student Name,Student Number,1a,1b,Total,Score %,Grade,Grade (HAVO),Grade (VWO),Absent,Flagged'
+        );
+        // The flag travels with the row, so a marked sheet is still findable after export.
+        expect(anna).toBe('Anna,1,2,1.5,3.5,70.0,7.3,,,,1a');
+        expect(bram).toBe('Bram,,,,,,,6,,yes,');
     });
 });
 
@@ -180,5 +186,29 @@ describe('review flags', () => {
         expect(isFlaggedForReview(two, 'b')).toBe(true);
         expect(isFlaggedForReview(two, 'zzz')).toBe(false);
         expect(isFlaggedForReview(undefined, 'a')).toBe(false);
+    });
+});
+
+describe('review flags beyond the grid', () => {
+    const withFlags = (studentId: string, reviewFlags: string[]): StudentTest => ({
+        id: `st-${studentId}`,
+        testId: 't',
+        studentId,
+        answers: [],
+        status: 'in_progress',
+        startedAt: NOW,
+        source: 'manual',
+        reviewFlags,
+    });
+
+    it('counts flagged cells across submissions and ignores ids no longer on the test', () => {
+        expect(countFlaggedCells(test, [])).toBe(0);
+        expect(countFlaggedCells(test, [withFlags('s1', ['a', 'gone']), withFlags('s2', ['b'])])).toBe(2);
+    });
+
+    it('labels the flagged columns in column order for the CSV', () => {
+        expect(flaggedColumnLabels(test, undefined, ['1', '2'])).toEqual([]);
+        expect(flaggedColumnLabels(test, ['b', 'a'], ['1', '2'])).toEqual(['1', '2']);
+        expect(flaggedColumnLabels(test, ['b', 'gone'], ['1', '2'])).toEqual(['2']);
     });
 });
