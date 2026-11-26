@@ -96,7 +96,7 @@
     "read-excel-file": "^9.3.20",
     "recharts": "^3.11.0",
     "tesseract.js": "^7.0.0",
-    "ts-fsrs": "^6.0.0",
+    "ts-fsrs": "^6.0.1",
     "udpipe-wasm": "0.1.0"
   },
   "devDependencies": {
