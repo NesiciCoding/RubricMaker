@@ -222,6 +222,8 @@ The visual work is in `spike/marks-visual.html` (throwaway specimen, screenshots
 5. **A mark needs a second half in the text.** Six cue styles carry the _family_ under the words — strike for delete, strike + dotted for replace, double underline for transpose, dotted for type style, wavy for advisory, a dashed caret for an insertion point — so a reader can tell a deletion from a style note before opening anything. The cue never changes the line style's meaning on its own: the rail glyph is the exact instruction, the cue is the category, and the chip's `aria-label` is the name.
 6. **No ghost text inline.** Drawing the suggested word inside the paragraph reflows the essay and moves every anchor below it — exactly the measurement problem Phase 0 was about. The suggestion lives in the popover (and later in the apply flow, PM-12).
 
+![The six cue styles on real prose](img/proofreading-marks/10-inline-cues.png)
+
 ![The 19 glyphs at 26 px and at 14 px](img/proofreading-marks/08-glyph-set.png)
 
 **The 19 seed symbols.** `del` delete (deleteRange) · `ins` insert text (insertText) · `#` insert space (insertText) · `⁐` close up (deleteRange on the space) · `¶` new paragraph (splitBlock) · `tr` transpose (transposeRanges) · `sp` spelling (replaceRange) · `?` query (advisory) · `caps` / `lc` / `ital` / `bf` / `ul` (setMark) · `,` `.` `'` insert punctuation (insertText) · align left / centre / right (setBlockAttr).
@@ -229,6 +231,8 @@ The visual work is in `spike/marks-visual.html` (throwaway specimen, screenshots
 Dropped on purpose, to be recorded in the registry: hair space, letterspacing and equalise-space (invisible in a reflowable document), wrong fount / roman / small caps (no HTML equivalent), and **stet** — a proofreader's self-cancel, not teacher feedback; rejecting a mark is the app's own undo.
 
 ![Chip anatomy: rest, active, grouped and today's textual chip](img/proofreading-marks/09-chip-anatomy.png)
+
+![Proposed, accepted and rejected states, dark mode](img/proofreading-marks/11-states-dark.png)
 
 #### Steps
 
