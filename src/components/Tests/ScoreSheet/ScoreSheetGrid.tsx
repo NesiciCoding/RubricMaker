@@ -78,6 +78,10 @@ export default function ScoreSheetGrid({
     const tableRef = useRef<HTMLTableElement>(null);
     const [drafts, setDrafts] = useState<Record<string, string>>({});
     const [focus, setFocus] = useState<{ row: number; col: number } | null>(null);
+    // The cell whose menu was opened from its ⋯ button. Opening a menu moves focus to its first item,
+    // which blurs the input and would unmount the trigger mid-interaction, so the cell keeps it until
+    // the menu closes.
+    const [menuCellKey, setMenuCellKey] = useState<string | null>(null);
     // Context-menu items are built once, at open time, but stay selectable after a later
     // render (e.g. the auto-focus-driven blur-commit that fires right after opening) swaps
     // in a new `sheetByStudent`. Reading through this ref instead of the closed-over prop
@@ -288,6 +292,12 @@ export default function ScoreSheetGrid({
                 onSelect: () => fillAcross(row, col),
             },
         ];
+    }
+
+    /** Opens the cell menu from either route — right-click/Shift+F10 and the touch ⋯ button. */
+    function openCellMenu(event: React.MouseEvent, row: number, col: number) {
+        setMenuCellKey(`${row}-${col}`);
+        ctx.open(event, cellMenu(row, col), t('tests.scoreSheet.menu_cell_label'));
     }
 
     function rowMenu(row: number): ContextMenuItem[] {
@@ -558,10 +568,9 @@ export default function ScoreSheetGrid({
                                         <td
                                             key={q.id}
                                             data-context-menu="cell"
-                                            onContextMenu={(e) =>
-                                                ctx.open(e, cellMenu(row, col), t('tests.scoreSheet.menu_cell_label'))
-                                            }
+                                            onContextMenu={(e) => openCellMenu(e, row, col)}
                                             style={{
+                                                position: 'relative',
                                                 borderBottom: cellBorder,
                                                 padding: 2,
                                                 background: isFocused ? focusedCellBg : inBand ? bandCellBg : undefined,
@@ -612,6 +621,28 @@ export default function ScoreSheetGrid({
                                                         : 'transparent',
                                                 }}
                                             />
+                                            {(isFocused || menuCellKey === `${row}-${col}`) && (
+                                                <span
+                                                    // Coarse pointers only (#1325): the visible route to the menu
+                                                    // right-click already opens. Suppressing pointerdown keeps the
+                                                    // input focused, so the tap is not spent on the blur that would
+                                                    // commit the draft and unmount this button before the click.
+                                                    className="menu-touch-only"
+                                                    style={{ position: 'absolute', top: -3, right: -3, zIndex: 1 }}
+                                                    onPointerDown={(event) => event.preventDefault()}
+                                                >
+                                                    <MenuButton
+                                                        label={t('tests.scoreSheet.menu_cell_label')}
+                                                        onOpen={(event) => openCellMenu(event, row, col)}
+                                                        style={{
+                                                            minHeight: 20,
+                                                            minWidth: 20,
+                                                            padding: 0,
+                                                            background: 'var(--bg-elevated)',
+                                                        }}
+                                                    />
+                                                </span>
+                                            )}
                                         </td>
                                     );
                                 })}
@@ -699,7 +730,13 @@ export default function ScoreSheetGrid({
                     </tr>
                 </tfoot>
             </table>
-            <ContextMenu {...ctx.menuProps} />
+            <ContextMenu
+                {...ctx.menuProps}
+                onClose={() => {
+                    setMenuCellKey(null);
+                    ctx.menuProps.onClose();
+                }}
+            />
         </div>
     );
 }

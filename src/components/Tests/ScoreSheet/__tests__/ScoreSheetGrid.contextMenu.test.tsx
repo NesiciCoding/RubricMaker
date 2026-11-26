@@ -131,6 +131,33 @@ describe('ScoreSheetGrid context menu', () => {
         }
     });
 
+    it('gives touch screens a visible route to the cell menu on the focused cell', () => {
+        renderGrid();
+        expect(screen.queryByRole('button', { name: 'tests.scoreSheet.menu_cell_label' })).toBeNull();
+
+        act(() => cell(0, 0).focus());
+        const trigger = screen.getByRole('button', { name: 'tests.scoreSheet.menu_cell_label' });
+        // Hidden on fine pointers by CSS, exactly like the row and outline menu buttons.
+        expect(trigger.closest('.menu-touch-only')).not.toBeNull();
+
+        fireEvent.click(trigger);
+        expect(screen.getByRole('menu', { name: 'tests.scoreSheet.menu_cell_label' })).toBeInTheDocument();
+        for (const key of ['menu_mark_absent', 'menu_clear_cell', 'menu_copy_value', 'menu_fill_down']) {
+            expect(screen.getByRole('menuitem', { name: `tests.scoreSheet.${key}` })).toBeInTheDocument();
+        }
+        // Opening the menu moves focus to its first item; the trigger must survive that or the tap
+        // would destroy the control it just used.
+        expect(screen.getByRole('button', { name: 'tests.scoreSheet.menu_cell_label' })).toBeInTheDocument();
+    });
+
+    it('drops the cell menu trigger once its menu closes', () => {
+        renderGrid();
+        act(() => cell(1, 1).focus());
+        fireEvent.click(screen.getByRole('button', { name: 'tests.scoreSheet.menu_cell_label' }));
+        fireEvent.keyDown(document, { key: 'Escape' });
+        expect(screen.queryByRole('button', { name: 'tests.scoreSheet.menu_cell_label' })).toBeNull();
+    });
+
     it('fills the same points down the column for editable, present students', () => {
         const onSave = renderGrid();
         fireEvent.contextMenu(cell(0, 0));
