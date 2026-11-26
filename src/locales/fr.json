@@ -3375,6 +3375,12 @@
             "type-style": "Style de caractère",
             "align": "Alignement",
             "advisory": "À vérifier"
+        },
+        "rail": {
+            "label": "Marques de correction",
+            "chipLabel_one": "{{count}} marque sur la ligne {{line}} : {{symbols}}",
+            "chipLabel_other": "{{count}} marques sur la ligne {{line}} : {{symbols}}",
+            "spansLines": "s’étend sur plusieurs lignes"
         }
     },
     "pwa": {

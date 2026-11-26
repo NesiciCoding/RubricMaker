@@ -3375,6 +3375,12 @@
             "type-style": "Type style",
             "align": "Alignment",
             "advisory": "Query"
+        },
+        "rail": {
+            "label": "Proofreading marks",
+            "chipLabel_one": "{{count}} mark on line {{line}}: {{symbols}}",
+            "chipLabel_other": "{{count}} marks on line {{line}}: {{symbols}}",
+            "spansLines": "spans more than one line"
         }
     },
     "pwa": {

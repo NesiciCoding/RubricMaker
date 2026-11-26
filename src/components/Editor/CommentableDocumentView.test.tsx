@@ -2,13 +2,15 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import CommentableDocumentView from './CommentableDocumentView';
-import type { DocumentComment } from '../../types';
+import type { DocumentComment, DocumentMark } from '../../types';
 
 const fakeEditor = vi.hoisted(() => ({
     state: { selection: { from: 3, to: 8, empty: false } },
     commands: {
         setDocumentComments: vi.fn(),
         setActiveDocumentComment: vi.fn(),
+        setDocumentMarks: vi.fn(),
+        setActiveDocumentMarks: vi.fn(),
     },
 }));
 
@@ -93,6 +95,19 @@ vi.mock('./commentDecorations', async (importOriginal) => {
     };
 });
 
+function makeMark(overrides: Partial<DocumentMark> = {}): DocumentMark {
+    return {
+        id: 'm1',
+        attachmentId: 'att-1',
+        authorId: 'user-1',
+        symbolId: 'sp',
+        anchor: { from: 0, to: 5 },
+        status: 'noted',
+        createdAt: '2024-01-01T00:00:00Z',
+        ...overrides,
+    };
+}
+
 function makeComment(overrides: Partial<DocumentComment> = {}): DocumentComment {
     return {
         id: 'c1',
@@ -113,6 +128,8 @@ describe('CommentableDocumentView', () => {
         mockGetCurrentDatabaseUserId.mockReturnValue('user-1');
         fakeEditor.commands.setDocumentComments.mockClear();
         fakeEditor.commands.setActiveDocumentComment.mockClear();
+        fakeEditor.commands.setDocumentMarks.mockClear();
+        fakeEditor.commands.setActiveDocumentMarks.mockClear();
     });
 
     it('renders the document and pushes only matching comments to the editor', async () => {
@@ -130,6 +147,27 @@ describe('CommentableDocumentView', () => {
         expect(screen.getByTestId('mock-essay-editor')).toBeInTheDocument();
         expect(screen.getByText('Nice work')).toBeInTheDocument();
         expect(screen.queryByText('Other doc')).not.toBeInTheDocument();
+    });
+
+    it('pushes only the marks for this attachment to the editor', async () => {
+        render(
+            <CommentableDocumentView
+                content="<p>Hello</p>"
+                attachmentId="att-1"
+                marks={[makeMark({ id: 'm1' }), makeMark({ id: 'm2', attachmentId: 'att-other' })]}
+            />
+        );
+
+        await waitFor(() => {
+            expect(fakeEditor.commands.setDocumentMarks).toHaveBeenCalledWith([expect.objectContaining({ id: 'm1' })]);
+        });
+        expect(fakeEditor.commands.setActiveDocumentMarks).toHaveBeenCalledWith([]);
+    });
+
+    it('sends no marks when the document has none', async () => {
+        render(<CommentableDocumentView content="<p>Hello</p>" attachmentId="att-1" />);
+
+        await waitFor(() => expect(fakeEditor.commands.setDocumentMarks).toHaveBeenCalledWith([]));
     });
 
     it('shows the empty state when there are no comments for the attachment', async () => {
