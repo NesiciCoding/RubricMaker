@@ -11,6 +11,7 @@ import ContextMenu, { useContextMenu } from '../ui/ContextMenu';
 import MenuButton from '../ui/MenuButton';
 import { useCopyFeedback } from '../../hooks/useCopyFeedback';
 import { criterionMenuItems, type PreviousFeedback } from './criterionMenuItems';
+import type { PriorCommentSource, RankedPriorComment } from '../../utils/commentRecall';
 
 interface Props {
     criterion: RubricCriterion;
@@ -21,8 +22,11 @@ interface Props {
     updateEntry: (patch: Partial<ScoreEntry>) => void;
     setSubItemScore: (subItemId: string, score: number) => void;
     commentBank: CommentBankItem[];
+    /** Criterion comments from earlier grades, ranked locally by the composer's search. */
+    pastFeedback?: PriorCommentSource[];
     editorRef: React.Ref<TiptapEditorHandle>;
     onInsertChip: (item: CommentBankItem) => void;
+    onInsertPriorComment?: (comment: RankedPriorComment) => void;
     onBrowseAll: () => void;
     audioRecording: boolean;
     audioDataUrl?: string;
@@ -51,8 +55,10 @@ export default function CriterionDetailPanel({
     updateEntry,
     setSubItemScore,
     commentBank,
+    pastFeedback,
     editorRef,
     onInsertChip,
+    onInsertPriorComment,
     onBrowseAll,
     audioRecording,
     audioDataUrl,
@@ -341,7 +347,9 @@ export default function CriterionDetailPanel({
                     onChange={(html) => updateEntry({ comment: html })}
                     editorRef={editorRef}
                     commentBank={commentBank}
+                    pastFeedback={pastFeedback}
                     onInsertChip={onInsertChip}
+                    onInsertPriorComment={onInsertPriorComment}
                     onBrowseAll={onBrowseAll}
                     audioRecording={audioRecording}
                     audioDataUrl={audioDataUrl}

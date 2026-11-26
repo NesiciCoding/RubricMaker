@@ -5,6 +5,7 @@ import { AttachmentSync } from './AttachmentSync';
 import { RecordingSync } from './RecordingSync';
 import { FeedbackAudioSync } from './FeedbackAudioSync';
 import type { DatabaseConfig, SyncStatus, SyncResult, DbUser } from './types';
+import type { PriorCommentHit } from '../../utils/commentRecall';
 import type { RosterFetchMode } from '../../utils/rosterScope';
 import type { MyRoster } from './SupabaseAdapter';
 export { loadSupabaseConfig, saveSupabaseConfig, clearSupabaseConfig } from './supabaseConfig';
@@ -208,6 +209,20 @@ class StorageSyncService {
     }
     isConnected(): boolean {
         return this.adapter.isConnected();
+    }
+
+    /**
+     * Comment-bank hits ranked by Postgres; [] while offline (the composer ranks its local copy).
+     * A failed RPC is logged and swallowed so the search box never shows an error for a nicety.
+     */
+    async searchPriorComments(query: string, limit = 6): Promise<PriorCommentHit[]> {
+        if (!this.adapter.isConnected()) return [];
+        try {
+            return await this.adapter.searchPriorComments(query, limit);
+        } catch (error) {
+            console.warn('[sync] searchPriorComments failed', { error });
+            return [];
+        }
     }
     getCurrentUserId(): string | null {
         return this.adapter.getCurrentUserId();
