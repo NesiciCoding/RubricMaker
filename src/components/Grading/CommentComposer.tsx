@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { BookOpen, Mic, MicOff, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import TiptapEditor, { type TiptapEditorHandle } from '../Editor/TiptapEditor';
@@ -9,6 +9,8 @@ import type { PriorCommentSource, RankedPriorComment } from '../../utils/comment
 
 const CHIP_COUNT = 6;
 const RESULT_COUNT = 6;
+const RESULT_LIST_ID = 'prior-comment-results';
+const optionId = (index: number) => `prior-comment-option-${index}`;
 
 function truncate(text: string, max = 42): string {
     const clean = text.replace(/\s+/g, ' ').trim();
@@ -88,6 +90,77 @@ export default function CommentComposer({
         RESULT_COUNT
     );
 
+    // ── Combobox operation (#533): arrows move the active option, Enter inserts, focus stays here ──
+    const [activeIndex, setActiveIndex] = useState(0);
+    const [listDismissed, setListDismissed] = useState(false);
+    const optionRefs = useRef(new Map<number, HTMLDivElement>());
+
+    const queryLongEnough = priorQuery.trim().length >= 2;
+    const listOpen = queryLongEnough && !listDismissed;
+
+    useEffect(() => {
+        setActiveIndex(0);
+    }, [priorQuery]);
+
+    useEffect(() => {
+        setActiveIndex((index) => Math.min(index, Math.max(priorResults.length - 1, 0)));
+    }, [priorResults.length]);
+
+    useEffect(() => {
+        // scrollIntoView is absent in jsdom; the optional call keeps tests honest.
+        optionRefs.current.get(activeIndex)?.scrollIntoView?.({ block: 'nearest' });
+    }, [activeIndex]);
+
+    const activeOptionId = listOpen && priorResults.length > 0 ? optionId(activeIndex) : undefined;
+
+    const announcement =
+        !queryLongEnough || listDismissed || priorSearching
+            ? ''
+            : priorResults.length === 0
+              ? t('gradeStudent.prior_comments_no_results', { query: priorQuery.trim() })
+              : t('gradeStudent.prior_comments_results', {
+                    count: priorResults.length,
+                    query: priorQuery.trim(),
+                });
+
+    function handleSearchKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+        // IME confirmation (e.g. Japanese/Chinese Enter) must not insert.
+        if (e.nativeEvent.isComposing) return;
+        if (e.key === 'Escape') {
+            if (!queryLongEnough) return;
+            e.preventDefault();
+            setListDismissed(true);
+            return;
+        }
+        if (!queryLongEnough) return;
+        if (listDismissed) {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                setListDismissed(false);
+            }
+            return;
+        }
+        if (priorResults.length === 0) return;
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setActiveIndex((index) => Math.min(index + 1, priorResults.length - 1));
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setActiveIndex((index) => Math.max(index - 1, 0));
+        } else if (e.key === 'Home') {
+            e.preventDefault();
+            setActiveIndex(0);
+        } else if (e.key === 'End') {
+            e.preventDefault();
+            setActiveIndex(priorResults.length - 1);
+        } else if (e.key === 'Enter') {
+            const target = priorResults[activeIndex];
+            if (!target) return;
+            e.preventDefault();
+            onInsertPriorComment?.(target);
+        }
+    }
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -166,14 +239,34 @@ export default function CommentComposer({
                             id="prior-comment-search"
                             type="search"
                             className="input"
+                            role="combobox"
+                            aria-expanded={listOpen && priorResults.length > 0}
+                            aria-controls={RESULT_LIST_ID}
+                            aria-activedescendant={activeOptionId}
+                            aria-autocomplete="list"
                             value={priorQuery}
-                            onChange={(e) => setPriorQuery(e.target.value)}
+                            onChange={(e) => {
+                                setPriorQuery(e.target.value);
+                                setListDismissed(false);
+                            }}
+                            onKeyDown={handleSearchKeyDown}
                             placeholder={t('gradeStudent.prior_comments_placeholder')}
                             autoComplete="off"
                             style={{ paddingLeft: 30, width: '100%', fontSize: '0.8rem' }}
                         />
                     </div>
-                    {priorQuery.trim().length >= 2 &&
+                    {/* Screen-reader announcement of the live result count (#533, 4.1.3). The query is
+                        part of the text so a new result set with the same count still announces. */}
+                    <span
+                        role="status"
+                        aria-live="polite"
+                        aria-atomic="true"
+                        className="sr-only"
+                        data-testid="prior-comments-status"
+                    >
+                        {announcement}
+                    </span>
+                    {listOpen &&
                         (priorResults.length === 0 ? (
                             <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', fontStyle: 'italic' }}>
                                 {priorSearching
@@ -181,35 +274,47 @@ export default function CommentComposer({
                                     : t('gradeStudent.prior_comments_empty')}
                             </span>
                         ) : (
-                            <ul
+                            <div
+                                id={RESULT_LIST_ID}
+                                role="listbox"
                                 aria-label={t('gradeStudent.prior_comments_label')}
                                 style={{
-                                    listStyle: 'none',
-                                    margin: 0,
-                                    padding: 0,
                                     display: 'flex',
                                     flexDirection: 'column',
                                     gap: 4,
                                 }}
                             >
-                                {priorResults.map((item) => (
-                                    <li key={`${item.source}:${item.id}`}>
-                                        <button
-                                            type="button"
-                                            className="btn btn-ghost btn-sm"
+                                {priorResults.map((item, index) => {
+                                    const active = index === activeIndex;
+                                    return (
+                                        <div
+                                            key={`${item.source}:${item.id}`}
+                                            id={optionId(index)}
+                                            role="option"
+                                            aria-selected={active}
                                             title={item.text}
                                             onClick={() => onInsertPriorComment?.(item)}
+                                            onMouseEnter={() => setActiveIndex(index)}
+                                            ref={(el) => {
+                                                if (el) optionRefs.current.set(index, el);
+                                                else optionRefs.current.delete(index);
+                                            }}
                                             style={{
-                                                width: '100%',
-                                                justifyContent: 'flex-start',
+                                                display: 'flex',
                                                 alignItems: 'baseline',
                                                 gap: 8,
-                                                textAlign: 'left',
+                                                padding: '6px 9px',
+                                                borderRadius: 6,
+                                                cursor: 'pointer',
+                                                background: active ? 'var(--bg-elevated)' : 'transparent',
+                                                outline: active ? '2px solid var(--accent)' : 'none',
+                                                outlineOffset: -2,
                                             }}
                                         >
                                             <span
                                                 style={{
                                                     flex: 1,
+                                                    fontSize: '0.8rem',
                                                     overflow: 'hidden',
                                                     textOverflow: 'ellipsis',
                                                     whiteSpace: 'nowrap',
@@ -231,10 +336,10 @@ export default function CommentComposer({
                                                             : 'gradeStudent.prior_comments_feedback_badge'
                                                     )}
                                             </span>
-                                        </button>
-                                    </li>
-                                ))}
-                            </ul>
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         ))}
                 </div>
             )}
