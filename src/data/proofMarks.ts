@@ -1,5 +1,5 @@
 import type { MarkOperation } from '../types';
-import type { MarkGlyphId } from './markGlyphs';
+import { getMarkGlyph, type MarkGlyph, type MarkGlyphId } from './markGlyphs';
 
 /**
  * The symbol set: one entry per mark a teacher can place. A registry rather than a map of
@@ -134,3 +134,35 @@ export const PROOF_MARKS: Readonly<Record<ProofMarkId, ProofMark>> = {
 };
 
 export const PROOF_MARK_IDS = Object.keys(PROOF_MARKS) as ProofMarkId[];
+
+export interface ProofMarkFamilyGroup {
+    family: ProofMarkFamily;
+    symbols: ProofMark[];
+}
+
+const ADVISORY_FALLBACK = PROOF_MARKS.query;
+
+/*
+ * Mark ids arrive from storage and sync, so they are untrusted: they can name a symbol this build
+ * dropped. Every accessor resolves through this one fallback instead of throwing or returning
+ * undefined, and query is the honest answer - it asks the author, it never applies a change.
+ */
+export function getSymbol(id: string): ProofMark {
+    return PROOF_MARKS[id as ProofMarkId] ?? ADVISORY_FALLBACK;
+}
+
+export function getGlyph(id: string): MarkGlyph {
+    return getMarkGlyph(getSymbol(id).glyph);
+}
+
+export function operationFor(symbolId: string): MarkOperation | null {
+    return getSymbol(symbolId).operation;
+}
+
+/** The palette contents in palette order, every declared family present even when it is empty. */
+export function symbolsByFamily(): ProofMarkFamilyGroup[] {
+    return PROOF_MARK_FAMILIES.map((family) => ({
+        family,
+        symbols: PROOF_MARK_IDS.map((id) => PROOF_MARKS[id]).filter((mark) => mark.family === family),
+    }));
+}

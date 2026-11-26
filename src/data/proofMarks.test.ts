@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { MARK_GLYPHS } from './markGlyphs';
-import { PROOF_MARK_FAMILIES, PROOF_MARK_IDS, PROOF_MARKS, type ProofMarkFamily } from './proofMarks';
+import {
+    getGlyph,
+    getSymbol,
+    operationFor,
+    PROOF_MARK_FAMILIES,
+    PROOF_MARK_IDS,
+    PROOF_MARKS,
+    symbolsByFamily,
+    type ProofMarkFamily,
+} from './proofMarks';
 import en from '../locales/en.json';
 import nl from '../locales/nl.json';
 import fr from '../locales/fr.json';
@@ -83,5 +92,35 @@ describe('proofMarks registry', () => {
                 expect(typeof resolve(bundle, `proofMarks.families.${family}`), `${lang}: ${family}`).toBe('string');
             }
         }
+    });
+});
+
+describe('proofMarks accessors', () => {
+    it('resolves every known id to its own entry, glyph and operation', () => {
+        for (const id of PROOF_MARK_IDS) {
+            expect(getSymbol(id), id).toBe(PROOF_MARKS[id]);
+            expect(getGlyph(id), id).toBe(MARK_GLYPHS[PROOF_MARKS[id].glyph]);
+            expect(operationFor(id), id).toBe(PROOF_MARKS[id].operation);
+        }
+    });
+
+    it('falls back to the advisory query mark for an id this build no longer ships', () => {
+        const stale = 'stet';
+        expect(getSymbol(stale)).toBe(PROOF_MARKS.query);
+        expect(getSymbol(stale).family).toBe('advisory');
+        expect(getSymbol(stale).operation).toBeNull();
+        expect(operationFor(stale)).toBeNull();
+        expect(getGlyph(stale)).toBe(MARK_GLYPHS.query);
+    });
+
+    it('groups the palette by family in palette order, each symbol exactly once', () => {
+        const groups = symbolsByFamily();
+        expect(groups.map((group) => group.family)).toEqual([...PROOF_MARK_FAMILIES]);
+        expect(groups.map((group) => group.symbols.length)).toEqual([2, 6, 2, 5, 3, 1]);
+        for (const group of groups) {
+            for (const mark of group.symbols) expect(mark.family, mark.id).toBe(group.family);
+        }
+        const ids = groups.flatMap((group) => group.symbols.map((mark) => mark.id));
+        expect(ids.slice().sort()).toEqual([...PROOF_MARK_IDS].sort());
     });
 });
