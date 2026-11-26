@@ -24,7 +24,7 @@ import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { useSettings } from '../context/AppContext';
 import { useOwnOrSharedItem } from '../hooks/useSharedMaterials';
 import { useDbStatus } from '../hooks/useDbStatus';
-import { useCanEditStudentWork } from '../hooks/useClassRoles';
+import { useCanGradeStudentWork } from '../hooks/useRosterScope';
 import { SkeletonRow } from '../components/ui/Skeleton';
 import { formatCorrectAnswer, pickLatestAttempt } from '../utils/testAnswerText';
 import QueueAnswer from '../components/Tests/QueueAnswer';
@@ -134,7 +134,7 @@ export default function TestGradingQueuePage() {
     const { saveStudentTest, updateTest, recordCommentBankUsage, addCommentBankItem } = useStoreActions();
     const { showToast } = useToast();
     const dbStatus = useDbStatus();
-    const canEditStudentWork = useCanEditStudentWork();
+    const canEditStudentWork = useCanGradeStudentWork();
     const queueSessionKey = useMemo(() => gradeQueueSessionKey(testId, dbStatus.userId), [testId, dbStatus.userId]);
     const restoredPositionRef = useRef<GradeQueueSession | null>(null);
     const sessionKeyRef = useRef<string | null>(null);

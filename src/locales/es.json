@@ -2595,7 +2595,8 @@
         "delete_student_title": "Eliminar alumno",
         "delete_student_confirmation": "¿Seguro que quiere eliminar a <1>{{studentName}}</1>?",
         "delete_student_warning": "Se eliminarán de forma permanente todas las calificaciones y rúbricas asociadas a este alumno.",
-        "roster_read_only_notice": "Este alumno pertenece a la clase de un colega. Solo el propietario de la clase puede cambiar su nombre, clase, itinerario o curso escolar."
+        "roster_read_only_notice": "Este alumno pertenece a la clase de un colega. Solo el propietario de la clase puede cambiar su nombre, clase, itinerario o curso escolar.",
+        "class_managed_by_owner": "Solo el propietario de la clase puede gestionarla. Un administrador puede ayudar desde Todo el centro."
     },
     "gradeStudent": {
         "group_grade_banner": "Calificación grupal — al guardar también se copiarán estas puntuaciones y comentarios a: {{names}}",
@@ -3349,7 +3350,8 @@
         "sync_offline_cache": "Estás sin conexión — usando datos almacenados en caché local.",
         "signout_pending_writes": "Algunos cambios aún no se han sincronizado — tus datos locales se han conservado para no perder nada.",
         "signout_unmigrated_local": "Tus datos locales nunca se subieron a tu cuenta, así que se han conservado en este dispositivo. Vuelve a iniciar sesión y elige Subir a la cuenta para sincronizarlos.",
-        "voice_feedback_dropped": "Las calificaciones se guardaron, pero {{count}} grabación(es) de voz no cabían en el almacenamiento de este dispositivo y se perderán al recargar. Conéctate a la nube o elimina grabaciones antiguas para conservarlas."
+        "voice_feedback_dropped": "Las calificaciones se guardaron, pero {{count}} grabación(es) de voz no cabían en el almacenamiento de este dispositivo y se perderán al recargar. Conéctate a la nube o elimina grabaciones antiguas para conservarlas.",
+        "sync_not_allowed": "El servidor rechazó ese cambio: solo puedes modificar tus propias clases. No se ha perdido nada."
     },
     "pwa": {
         "update_available_title": "Actualización disponible",
@@ -5710,7 +5712,8 @@
         "gr_test_rich_authoring_item_pill_keyboard": "Las pastillas de hueco, texto activo y corrección de errores del editor se alcanzan con Tab y se abren con Intro o Espacio; Esc cierra el cuadro de edición y le devuelve a la pastilla.",
         "gr_test_rich_authoring_item_rich_notes": "Las pistas y explicaciones son texto enriquecido: negrita, listas, enlaces e imágenes. Las notas escritas antes como texto sin formato conservan sus saltos de línea, salvo que contengan texto que parezca una etiqueta HTML. El alumnado ve la pista cuando la pide y la explicación tras enviar una prueba de práctica.",
         "gr_test_rich_authoring_item_typed_gap_chips": "Los huecos de respuesta libre muestran ahora sus respuestas aceptadas como fichas, igual que los desplegables: añada una (o varias a la vez como a|b|c), quite una con × y pulse Intro en un cuadro vacío para guardar. La primera respuesta es la que se muestra en el editor.",
-        "gr_test_answer_options_item_scripts": "El texto de opciones y elementos puede mostrar subíndices y superíndices: escriba H_{2}O o x^{2} (las llaves son obligatorias, así que un texto normal como snake_case o 2^10 nunca cambia). Se ve en pantalla, en el cuadernillo impreso (HTML y Word) y como Unicode en resultados y claves de respuesta."
+        "gr_test_answer_options_item_scripts": "El texto de opciones y elementos puede mostrar subíndices y superíndices: escriba H_{2}O o x^{2} (las llaves son obligatorias, así que un texto normal como snake_case o 2^10 nunca cambia). Se ve en pantalla, en el cuadernillo impreso (HTML y Word) y como Unicode en resultados y claves de respuesta.",
+        "gs_classes_item_scope": "Los administradores que también enseñan ven por defecto sus propias clases y las que comparten, y pueden cambiar a Todo el centro en la barra superior. La gestión de una clase sigue siendo del propietario, salvo que un administrador cambie de ámbito para ayudar. Solo se descarga el ámbito activo; al cambiar se carga el resto."
     },
     "studentProfile": {
         "tab_overview": "Resumen",
@@ -7045,5 +7048,10 @@
         "image_invalid": "Elige una imagen JPG, PNG o WebP.",
         "image_too_large": "Esa imagen supera los 5 MB.",
         "image_upload_failed": "No se pudo subir la imagen."
+    },
+    "scope": {
+        "label": "Ámbito del alumnado",
+        "mine": "Mis clases",
+        "school": "Todo el centro"
     }
 }

@@ -62,6 +62,7 @@ vi.mock('../../hooks/useDbStatus', () => ({
 
 vi.mock('../../hooks/useClassRoles', () => ({
     useCanEditStudentWork: () => () => true,
+    useMyClassRoles: () => null,
 }));
 
 vi.mock('../../hooks/useToast', () => ({

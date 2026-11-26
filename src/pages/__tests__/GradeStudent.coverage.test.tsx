@@ -60,6 +60,25 @@ vi.mock('../../hooks/useMediaRecorder', () => ({
 const mockShowToast = vi.hoisted(() => vi.fn());
 vi.mock('../../hooks/useToast', () => ({ useToast: () => ({ showToast: mockShowToast }) }));
 
+// The class-role hook loads the database module lazily; stub connectivity at the loader and let
+// the real adapter keep the fetchMyClassRoles spy.
+vi.mock('../../services/database/supabaseConfig', () => ({
+    loadSupabaseConfig: () => ({ supabaseUrl: 'https://example.test', supabaseAnonKey: 'anon' }),
+}));
+vi.mock('../../services/database/lazyDb', async () => {
+    const real = await import('../../services/database');
+    return {
+        loadDb: async () => ({
+            storageSync: {
+                isConnected: () => dbState.isConnected,
+                getCurrentUserId: () => dbState.userId,
+                subscribe: () => () => {},
+                adapter: real.storageSync.adapter,
+            },
+        }),
+        getDb: () => null,
+    };
+});
 vi.mock('../../hooks/useDbStatus', () => ({
     useDbStatus: () => ({ isConnected: dbState.isConnected, userId: dbState.userId }),
 }));

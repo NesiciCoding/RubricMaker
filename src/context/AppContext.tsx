@@ -18,6 +18,9 @@ import {
     BootPhase,
 } from './storeCore';
 import { createSelectorStore, StoreActionsProvider, StoreProvider } from './useStore';
+import { RosterScopeProvider } from './rosterScopeContext';
+import { useMyClassRoles } from '../hooks/useClassRoles';
+import { isMyClass, resolveRosterFetch, resolveRosterScope, scopeRoster } from '../utils/rosterScope';
 
 import { RosterProvider } from './domains/roster';
 import { AuthoringProvider } from './domains/authoring';
@@ -82,6 +85,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // whereas effect-only sync would leave render-time predicates one dispatch stale.
     // eslint-disable-next-line react-hooks/refs
     currentStateRef.current = state;
+    // The roster-scoped view the selector store hands to components (see below). Same
+    // render-phase sync for the same reason: a selector read must never trail the render.
+    const scopedStateRef = useRef(state);
     // Backs the delta-sync diff effect further below (compares each render's
     // state to the last one to decide what to push to Supabase).
     const prevStateRef = useRef(state);
@@ -611,12 +617,98 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // The store's getState closure reads the ref lazily (on subscribe/snapshot reads), and
     // the ref is synced during render above — same deliberate pattern as the ref-based
     // action reads, so the eslint-disable is warranted.
+
+    // The roster scope is applied once, here: an admin reads their own and co-taught classes unless
+    // they switch to "whole school". Selector consumers and the roster domain then see the same
+    // classes/students/grades, so no page, count, picker or chart can disagree.
+    // Only an admin's view narrows by co-taught class, so only an admin needs the roles fetched —
+    // a teacher already fetches their own co-teaching roles from the grading/roster screens that
+    // actually use them, and gains nothing from a second copy pulled here on every boot.
+    // The raw role, not resolveUserRole's offline-fallback (which treats an unset role as admin
+    // for the single-user local-mode case): a hydrate that outlives its timeout opens the app
+    // before the profile role is written, and that fallback would otherwise also fire for a
+    // connected teacher in that window — fetching roles they don't need and flashing the
+    // admin-only scope toggle in the Topbar. Same raw check resolveRosterFetch already uses.
+    const isAdmin = state.settings.userRole === 'admin';
+    const classRoles = useMyClassRoles(isAdmin);
+    const rosterScope = useMemo(() => {
+        const userId = state.settings.userId;
+        return {
+            userId,
+            isAdmin,
+            scope: resolveRosterScope(state.settings, state.classes, userId, classRoles),
+            canSwitchScope: isAdmin && !!userId && state.classes.some((c) => isMyClass(c, userId, classRoles)),
+        };
+    }, [state.settings, state.classes, classRoles, isAdmin]);
+    // The pull itself follows the scope, not just the view: an admin on "My classes" never
+    // downloads the school's roster and grades. It reads the stored preference, not the resolved
+    // scope — that one falls back to "school" while the class list is still empty, which would
+    // download everything on every boot and then narrow. Teachers stay on the unscoped pull, since
+    // RLS already limits them and narrowing would only cost extra round-trips.
+    const rosterFetch = resolveRosterFetch(state.settings.userRole, state.settings.rosterScope);
+    // Seeded with the current mode so the first run only installs it; a change pulls the roster in
+    // the new shape (a narrow pull also drops the school rows a wide one cached — mergeCollection
+    // keeps nothing the server stopped returning). hydratePartial itself waits for a full pull
+    // still in flight, so a boot hydrate started on the wider scope always merges first.
+    const appliedRosterFetch = useRef(rosterFetch);
+    const rosterPull = useRef<Promise<void>>(Promise.resolve());
+    useEffect(() => {
+        let cancelled = false;
+        void loadDb()
+            .then(({ storageSync }) => {
+                if (cancelled) return;
+                // Optional call: many unit tests double storageSync with only the subset of the
+                // interface their scenario needs, predating this method.
+                storageSync.setRosterFetch?.(rosterFetch);
+                if (appliedRosterFetch.current === rosterFetch) return;
+                appliedRosterFetch.current = rosterFetch;
+                // Chained so two quick flips cannot land out of order.
+                rosterPull.current = rosterPull.current
+                    .then(async () => {
+                        if (cancelled || !storageSync.isConnected() || !navigator.onLine) return;
+                        const tables = new Set(['classes', 'students', 'student_rubrics']);
+                        const { data } = await storageSync.hydratePartial(tables);
+                        if (cancelled || !data) return;
+                        const merged = mergeStoreData(currentStateRef.current, data, loadPendingQueue());
+                        const reconciled = applyHydrated(merged, true);
+                        try {
+                            await flushToLocalStorage(reconciled, new Set(Object.keys(data) as (keyof StoreData)[]));
+                        } catch {
+                            // A full quota only blocks the local cache; the in-memory snapshot is correct.
+                        }
+                    })
+                    .catch(() => undefined);
+            })
+            .catch((e) => {
+                if (!cancelled) console.error('[roster] failed to load database module for scope sync', e);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [rosterFetch, applyHydrated]);
+    const scopedState = useMemo(() => {
+        const slices = scopeRoster(
+            { classes: state.classes, students: state.students, studentRubrics: state.studentRubrics },
+            { ...rosterScope, roles: classRoles }
+        );
+        return slices.classes === state.classes &&
+            slices.students === state.students &&
+            slices.studentRubrics === state.studentRubrics
+            ? state
+            : { ...state, ...slices };
+    }, [state, rosterScope, classRoles]);
+
+    // The store's getState closure reads the ref lazily (on subscribe/snapshot reads), and the ref
+    // is synced during render above — same deliberate pattern as the raw state ref the actions
+    // read, so the eslint-disable is warranted.
+    // eslint-disable-next-line react-hooks/refs, react-hooks/preserve-manual-memoization
+    const selectorStore = useMemo(() => createSelectorStore(() => scopedStateRef.current, dispatch), [dispatch]);
     // eslint-disable-next-line react-hooks/refs
-    const selectorStore = useMemo(() => createSelectorStore(() => currentStateRef.current, dispatch), [dispatch]);
+    scopedStateRef.current = scopedState;
     // Notify in the layout phase so selector consumers re-check their snapshots before paint.
     useLayoutEffect(() => {
         selectorStore.notify();
-    }, [state, selectorStore]);
+    }, [scopedState, selectorStore]);
 
     const actionsCtx = useMemo(() => ({ getState: () => currentStateRef.current, dispatch }), [dispatch]);
     const platformCtx = useMemo(
@@ -634,29 +726,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
     );
 
     return (
-        <StoreProvider store={selectorStore}>
-            <StoreActionsProvider ctx={actionsCtx}>
-                <RosterProvider ctx={actionsCtx} state={state}>
-                    <AuthoringProvider ctx={actionsCtx} state={state}>
-                        <AssessmentProvider ctx={actionsCtx} state={state}>
-                            <EssaysProvider ctx={actionsCtx} state={state}>
-                                <FlashcardsProvider ctx={actionsCtx} state={state}>
-                                    <SettingsProvider ctx={actionsCtx} state={state}>
-                                        <PlatformProvider
-                                            ctx={platformCtx}
-                                            landingState={landingState}
-                                            bootPhase={bootPhase}
-                                            showMigrationPrompt={showMigrationPrompt}
-                                        >
-                                            {children}
-                                        </PlatformProvider>
-                                    </SettingsProvider>
-                                </FlashcardsProvider>
-                            </EssaysProvider>
-                        </AssessmentProvider>
-                    </AuthoringProvider>
-                </RosterProvider>
-            </StoreActionsProvider>{' '}
-        </StoreProvider>
+        <RosterScopeProvider value={rosterScope}>
+            <StoreProvider store={selectorStore}>
+                <StoreActionsProvider ctx={actionsCtx}>
+                    <RosterProvider ctx={actionsCtx} state={scopedState}>
+                        <AuthoringProvider ctx={actionsCtx} state={state}>
+                            <AssessmentProvider ctx={actionsCtx} state={state}>
+                                <EssaysProvider ctx={actionsCtx} state={state}>
+                                    <FlashcardsProvider ctx={actionsCtx} state={state}>
+                                        <SettingsProvider ctx={actionsCtx} state={state}>
+                                            <PlatformProvider
+                                                ctx={platformCtx}
+                                                landingState={landingState}
+                                                bootPhase={bootPhase}
+                                                showMigrationPrompt={showMigrationPrompt}
+                                            >
+                                                {children}
+                                            </PlatformProvider>
+                                        </SettingsProvider>
+                                    </FlashcardsProvider>
+                                </EssaysProvider>
+                            </AssessmentProvider>
+                        </AuthoringProvider>
+                    </RosterProvider>
+                </StoreActionsProvider>{' '}
+            </StoreProvider>
+        </RosterScopeProvider>
     );
 }

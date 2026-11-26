@@ -64,7 +64,9 @@ test.describe('startup — offline with Supabase configured', () => {
         expect(elapsed, 'app should open from cache without waiting for hydration timeout').toBeLessThan(6_000);
 
         // The cached rubric must be visible in the rubric list.
-        await page.evaluate(() => { window.location.hash = '/rubrics'; });
+        await page.evaluate(() => {
+            window.location.hash = '/rubrics';
+        });
         await expect(page.getByText('Offline Cache Rubric')).toBeVisible({ timeout: 5_000 });
 
         // Offline cache toast must be shown.
@@ -74,7 +76,7 @@ test.describe('startup — offline with Supabase configured', () => {
 
 test.describe('startup — Supabase hydration timeout', () => {
     test('falls through to localStorage cache after 8 s hydration timeout', async ({ supabasePage: page }) => {
-        test.setTimeout(60_000);
+        test.setTimeout(90_000);
         // supabasePage fixture already signed in.
         const timeoutRubric = buildRubric({ id: 'timeout-cache-rubric', name: 'Timeout Cache Rubric' });
         await addRubricToCache(page, timeoutRubric);
@@ -106,7 +108,9 @@ test.describe('startup — Supabase hydration timeout', () => {
         expect(elapsed, 'app should not wait for the full delayed request').toBeLessThan(14_000);
 
         // Cached rubric must be visible (app fell through to localStorage).
-        await page.evaluate(() => { window.location.hash = '/rubrics'; });
+        await page.evaluate(() => {
+            window.location.hash = '/rubrics';
+        });
         await expect(page.getByText('Timeout Cache Rubric')).toBeVisible({ timeout: 5_000 });
 
         // The pull is still running in the background (not dropped), so the progress
@@ -114,9 +118,13 @@ test.describe('startup — Supabase hydration timeout', () => {
         await expect(page.getByText('Loading your data from the cloud')).toBeVisible();
 
         // Once the requests fail, the late hydrate reports it and the indicator clears;
-        // local data is kept.
+        // local data is kept. The late pull only resolves once every one of its ~35 requests has
+        // settled, and after release() those settle in batches gated by the browser's per-origin
+        // connection limit — a diagnosed run under CI load caught this mid-flight (progress stuck
+        // at 25/35) 15 s after release(), so the wait budget below has real headroom, not padding
+        // against an unknown hang.
         release();
-        await expect(page.getByText('Could not load your cloud data')).toBeVisible({ timeout: 15_000 });
+        await expect(page.getByText('Could not load your cloud data')).toBeVisible({ timeout: 30_000 });
         await expect(page.getByText('Loading your data from the cloud')).toBeHidden();
         await expect(page.getByText('Timeout Cache Rubric')).toBeVisible();
     });

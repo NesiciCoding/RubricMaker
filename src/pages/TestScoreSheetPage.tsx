@@ -9,7 +9,7 @@ import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { useOwnOrSharedItem, useSharedMaterials } from '../hooks/useSharedMaterials';
 import { useToast } from '../hooks/useToast';
 import { useDbStatus } from '../hooks/useDbStatus';
-import { useCanEditStudentWork } from '../hooks/useClassRoles';
+import { useCanGradeStudentWork } from '../hooks/useRosterScope';
 import { SkeletonRow } from '../components/ui/Skeleton';
 import ScoreSheetGrid from '../components/Tests/ScoreSheet/ScoreSheetGrid';
 import TestQualityPanel from '../components/Tests/ScoreSheet/TestQualityPanel';
@@ -325,7 +325,7 @@ function ScoreSheetBody({
     }
 
     // Rows of a class shared with me as "Can view" are read-only: the server refuses the write.
-    const canEditStudentWork = useCanEditStudentWork();
+    const canEditStudentWork = useCanGradeStudentWork();
     const classOfStudent = new Map(rows.map((s) => [s.id, s.classId]));
     const canEditStudent = (student: Student) => canEditStudentWork(student.classId);
 

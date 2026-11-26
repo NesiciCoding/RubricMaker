@@ -34,6 +34,7 @@ import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { useSharedMaterials } from '../hooks/useSharedMaterials';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { useCanEditRoster } from '../hooks/useClassRoles';
+import { useClassAccess } from '../hooks/useRosterScope';
 import { useActiveClassCohorts } from '../hooks/useActiveClassCohorts';
 import { useToast } from '../hooks/useToast';
 import Papa from 'papaparse';
@@ -388,8 +389,8 @@ export default function StudentsPage() {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     const {
-        students: allStudents,
         classes,
+        students: allStudents,
         studentRubrics: allStudentRubrics,
         rubrics,
         gradeScales,
@@ -400,8 +401,8 @@ export default function StudentsPage() {
         essayAssignments,
         settings,
     } = useStoreSelector((s) => ({
-        students: s.students,
         classes: s.classes,
+        students: s.students,
         studentRubrics: s.studentRubrics,
         rubrics: s.rubrics,
         gradeScales: s.gradeScales,
@@ -432,6 +433,9 @@ export default function StudentsPage() {
     const dbStatus = useDbStatus();
     const { showToast } = useToast();
     const canEditRoster = useCanEditRoster();
+    // A class an admin can see but does not own (a co-taught class, or a colleague's class while
+    // the roster scope is "whole school") only offers management when the toggle allows it.
+    const { canManageClass } = useClassAccess();
 
     const { selectedCohorts, setSelectedCohorts, toggleCohort, isAllCohorts, singleClassId } = useActiveClassCohorts({
         activeClassId: settings.activeClassId,
@@ -1073,7 +1077,12 @@ export default function StudentsPage() {
                                         style={{ display: 'flex', flexWrap: 'nowrap', gap: 8, alignItems: 'center' }}
                                     >
                                         {sortedClasses.map((c, classIdx) => (
-                                            <Draggable key={c.id} draggableId={c.id} index={classIdx}>
+                                            <Draggable
+                                                key={c.id}
+                                                draggableId={c.id}
+                                                index={classIdx}
+                                                isDragDisabled={!canManageClass(c)}
+                                            >
                                                 {(classDragProvided) => (
                                                     <div
                                                         ref={classDragProvided.innerRef}
@@ -1193,8 +1202,18 @@ export default function StudentsPage() {
                                                         <button
                                                             type="button"
                                                             className="btn btn-ghost btn-icon btn-sm"
-                                                            aria-label={t('studentsPage.action_class_menu')}
+                                                            aria-label={
+                                                                canManageClass(c)
+                                                                    ? t('studentsPage.action_class_menu')
+                                                                    : `${t('studentsPage.action_class_menu')} — ${t('studentsPage.class_managed_by_owner')}`
+                                                            }
                                                             aria-expanded={classMenuOpen === c.id}
+                                                            disabled={!canManageClass(c)}
+                                                            title={
+                                                                canManageClass(c)
+                                                                    ? undefined
+                                                                    : t('studentsPage.class_managed_by_owner')
+                                                            }
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 if (classMenuOpen === c.id) {
