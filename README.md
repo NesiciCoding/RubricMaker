@@ -260,7 +260,7 @@ docker-compose --profile https up -d --build
 
 Caddy obtains a free Let's Encrypt certificate automatically. Open ports 80 and 443 on your firewall.
 
-**Enabling email login (OTP):** without SMTP, teachers log in anonymously. Set `SMTP_HOST`/`SMTP_USER`/`SMTP_PASS` and `MAILER_AUTOCONFIRM=false` in `.env`, then `docker-compose up -d --force-recreate auth` — teachers get an 8-digit sign-in code by email (code-only, no clickable link, to avoid scanners consuming the token). See [docs/SELF_HOSTING_OPS.md](docs/SELF_HOSTING_OPS.md) → Email for the official-Supabase-stack override.
+**Enabling email login (OTP):** without SMTP, teachers log in anonymously. Set `SMTP_HOST`/`SMTP_USER`/`SMTP_PASS` and `MAILER_AUTOCONFIRM=false` in `.env`, then `docker-compose up -d --force-recreate auth` — teachers get an 8-digit sign-in code by email (code-only, no clickable link, to avoid scanners consuming the token). Send through an SMTP relay rather than the school's own mail server — STRATO's `smtp.strato.de` when the domain is in a STRATO package, or Brevo (France) as an EU fallback — with SPF, DKIM and DMARC on the sending domain; school filters drop unsigned mail. See [docs/SELF_HOSTING_OPS.md](docs/SELF_HOSTING_OPS.md) → Email for the relay setup and the official-Supabase-stack override.
 
 **Student login without email:** a teacher can set a student password directly (Students page → key icon) as a fallback when school spam filters block the OTP email. Needs a functions runtime in front of an API gateway — only available on the [official self-hosted Supabase Docker stack](https://supabase.com/docs/guides/self-hosting/docker) or Supabase Cloud, not this repo's own `docker-compose.yml`. Details: [docs/SELF_HOSTING_OPS.md](docs/SELF_HOSTING_OPS.md).
 
