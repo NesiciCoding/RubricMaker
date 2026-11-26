@@ -161,7 +161,7 @@ Sizes: **S** ≤ 1 day · **M** 2–3 · **L** 4–6 · **XL** 7+.
 | ID    | Issue                                          | Milestone | Size | Depends on   |
 | ----- | ---------------------------------------------- | --------- | ---- | ------------ |
 | PM-01 | Code-on-comment marks (cheap version)          | M1        | S    | —            |
-| PM-02 | Mark model + symbol registry + i18n            | M2        | M    | —            |
+| PM-02 | Mark model, symbol registry and glyph set      | M2        | M    | —            |
 | PM-03 | Persistence: reducer, storage, sync, migration | M2        | L    | PM-02        |
 | PM-04 | Rail renderer with per-line grouping           | M2        | L    | PM-02, PM-03 |
 | PM-05 | Badge reveal + accessible list panel           | M2        | M    | PM-04        |
@@ -205,27 +205,49 @@ Sizes: **S** ≤ 1 day · **M** 2–3 · **L** 4–6 · **XL** 7+.
 
 ---
 
-### PM-02 · Mark model + symbol registry + i18n
+### PM-02 · Mark model, symbol registry and glyph set + i18n
 
-**Milestone** M2 · **Size** M (2–3 days) · **Depends on** —
+**Milestone** M2 · **Size** M (3–4 days) · **Depends on** —
 
-**Goal.** Define what a mark _is_ in data, and make the symbol set editable rather than hardcoded to Chicago.
+**Goal.** Define what a mark _is_ in data, make the symbol set editable rather than hardcoded to Chicago, and settle what each symbol **looks like** at chip size. The glyph is part of the contract, not decoration deferred to the palette (PM-08): every later surface — rail, popover, legend, export — draws the same shape.
 
-**Steps.**
+#### What Phase 0 established about the look
+
+The visual work is in `spike/marks-visual.html` (throwaway specimen, screenshots below). Six things were measured rather than assumed.
+
+1. **The marks are not one kind of object.** Where print draws a mark — delete, caret, close-up, `#`, `¶`, alignments — the glyph is a stroke drawing: one 20-unit grid, 2-unit stroke, round caps, so the stroke is 1.4 px at the 14 px glyph box. Where print writes a letter or a pair — `tr`, `sp`, `¶`, and all five type-style instructions — the glyph is a letterform in the serif italic. The type-style case is forced: in print, caps / lowercase / italic / bold / underline all share the same in-text underline and are disambiguated only by the margin letter, so no shape can carry the difference at 14 px.
+2. **The chip is not a tag.** Today's cheapest version (PM-01) paints a 15 px box with a 9 px monospace `sp`; it is legible but reads as a label stuck on the text. The same footprint holding a 14 px glyph reads as a mark, and keeps the PM-01 fallback intact behind it.
+3. **Chip geometry is inherited, not re-chosen.** 20 px tall inside the 28 px line pitch, 4 px gap, 72 px rail: the numbers the 40-mark gate already validated. Glyph chips are 28 px wide, letter chips 36 px (two letters need the room), grouped chips 44 px with a 12 px badge.
+4. **Ink had to darken to pass the repo's own floor.** The spike's `#b91c1c` is 6.47:1 on paper and fails the 7:1 AAA floor that `contrastPalette.test.ts` enforces. `#991b1b` is 8.31:1 on paper, 7.60:1 on the chip tint and 7.39:1 on the rail; dark mode uses `#fca5a5` (7.93:1 on `#2a261f`). Accepted marks use `#08473e` (10.60:1), rejected `#534d45` (8.35:1) plus a strike — status is never drawn with opacity, because a 50 % chip cannot meet the gate.
+5. **A mark needs a second half in the text.** Six cue styles carry the _family_ under the words — strike for delete, strike + dotted for replace, double underline for transpose, dotted for type style, wavy for advisory, a dashed caret for an insertion point — so a reader can tell a deletion from a style note before opening anything. The cue never changes the line style's meaning on its own: the rail glyph is the exact instruction, the cue is the category, and the chip's `aria-label` is the name.
+6. **No ghost text inline.** Drawing the suggested word inside the paragraph reflows the essay and moves every anchor below it — exactly the measurement problem Phase 0 was about. The suggestion lives in the popover (and later in the apply flow, PM-12).
+
+![The 19 glyphs at 26 px and at 14 px](img/proofreading-marks/08-glyph-set.png)
+
+**The 19 seed symbols.** `del` delete (deleteRange) · `ins` insert text (insertText) · `#` insert space (insertText) · `⁐` close up (deleteRange on the space) · `¶` new paragraph (splitBlock) · `tr` transpose (transposeRanges) · `sp` spelling (replaceRange) · `?` query (advisory) · `caps` / `lc` / `ital` / `bf` / `ul` (setMark) · `,` `.` `'` insert punctuation (insertText) · align left / centre / right (setBlockAttr).
+
+Dropped on purpose, to be recorded in the registry: hair space, letterspacing and equalise-space (invisible in a reflowable document), wrong fount / roman / small caps (no HTML equivalent), and **stet** — a proofreader's self-cancel, not teacher feedback; rejecting a mark is the app's own undo.
+
+![Chip anatomy: rest, active, grouped and today's textual chip](img/proofreading-marks/09-chip-anatomy.png)
+
+#### Steps
 
 1. Add to `src/types/index.ts`: `DocumentMark` (`id`, `attachmentId`/`essayId`, `authorId`, `symbolId`, `anchor {from,to}`, `extraAnchor?`, `payload?`, `status: 'noted' | 'proposed' | 'accepted' | 'rejected'`, `note?`, `snippetHash?`, timestamps) and `MarkOperation`.
-2. Create `src/data/proofMarks.ts` with the registry: one entry per symbol — `{ id, glyph, family, operation | null, labelKey }`. Seed with the ~25 marks that survive translation (type-style, punctuation, `¶`, alignments, delete/insert/replace/transpose, `sp`, queries); record in a comment which CMOS/ISO marks were deliberately dropped and why.
-3. Add `proofMarks.<id>.label` keys to `en/nl/fr/de/es`, plus family names. Keep labels _instructions_ ("set in lowercase"), not glyph names.
-4. Export helpers: `getSymbol(id)`, `operationFor(symbolId)`, `symbolsByFamily()`.
-5. Unit tests: unique ids; every entry has a label in every locale; operation mapping is total (either an operation or explicitly advisory); unknown id falls back to an advisory mark rather than throwing.
+2. Create `src/data/proofMarks.ts` with the registry: one entry per symbol — `{ id, glyph: MarkGlyphId, family, operation | null, labelKey }`. Seed with the 19 symbols above; record the dropped CMOS/ISO marks and the reason in a comment.
+3. Create `src/data/markGlyphs.ts`: the path table (`d` strings on the 20×20 grid) plus the letterform tier, so a glyph is data and the registry stays free of JSX. Two kinds, one type: `{ kind: 'stroke', paths: string[] } | { kind: 'letter', text: string, style?: 'italic' | 'bold' | 'underline' }`.
+4. Add `src/components/Editor/MarkGlyph.tsx`: one inline-SVG sprite (`<symbol>` per glyph, `currentColor`, `stroke-width: 2`, `aria-hidden`) switching on the entry. No icon font and no new dependency — an icon font cannot inherit `currentColor`, needs a webfont round-trip before first paint, and gives no per-glyph tree-shaking.
+5. Add `proofMarks.<id>.label` keys to `en/nl/fr/de/es`, plus family names. Keep labels _instructions_ ("set in lowercase"), not glyph names: the glyph is the recognition aid, the label is the meaning.
+6. Export helpers: `getSymbol(id)`, `getGlyph(id)`, `operationFor(symbolId)`, `symbolsByFamily()`.
+7. Unit tests: unique ids; every entry has a label in every locale; operation mapping is total (either an operation or explicitly advisory); every registry id resolves to a glyph of a known kind; every path string parses as a path; unknown id falls back to an advisory mark rather than throwing.
+8. Extend the palette contrast test with the four mark inks (`#991b1b`, `#fca5a5`, `#08473e`, `#534d45`) so the chip ink can never regress below 7:1 in either theme.
 
-**Files.** `src/types/index.ts`, `src/data/proofMarks.ts` (new), `src/locales/*.json`, maybe `src/utils/proofMarks.test.ts`.
+**Files.** `src/types/index.ts`, `src/data/proofMarks.ts` (new), `src/data/markGlyphs.ts` (new), `src/components/Editor/MarkGlyph.tsx` (new), `src/locales/*.json`, `src/utils/contrastPalette.test.ts` (fixtures), `src/utils/proofMarks.test.ts`.
 
-**Done when.** `symbolsByFamily()` returns the palette contents, and adding a symbol requires touching one data file plus five locale files.
+**Done when.** `symbolsByFamily()` returns the palette contents with a glyph for every entry, the specimen page renders all 19 at 26 / 16 / 14 px without misreading, and adding a symbol requires touching one data file plus five locale files — never a component.
 
-**Tests.** Registry integrity test; i18n parity test extension; a test that every symbol's `operation` is in the closed vocabulary.
+**Tests.** Registry integrity test; glyph-table test (id ↔ path, path parses, letterform tier covered); i18n parity extension; operation-vocabulary test; palette contrast extension.
 
-**Risks.** Over-porting print-only marks (`wf`, hair space, letterspace). Mitigation: the registry starts small; adding a symbol is a data change, not a code change.
+**Risks.** At 14 px, `del` and `⁐` are the two glyphs that rely most on the popover: the loop and the hooks compress into a single stroke. Mitigation: the label and popover carry the meaning, the palette preview (PM-08) runs at 20 px, and PM-08 adds a five-teacher recognition check with the letterform as the fallback. Over-porting print-only marks (`wf`, hair space, letterspace) stays out for the same reason as before: the registry starts small.
 
 ---
 
