@@ -40,6 +40,7 @@ export function eraseStudentFromStore(state: StoreData, studentId: string): Stud
     drop('peerReviews', (sr) => sr.studentId === studentId);
     drop('attachments', (a) => a.studentId === studentId);
     drop('documentComments', (c) => erasedAttachmentIds.has(c.attachmentId));
+    drop('documentMarks', (m) => erasedAttachmentIds.has(m.attachmentId));
     drop('selfAssessments', (sa) => sa.studentId === studentId);
     drop('speakingSessions', (ss) => ss.studentId === studentId);
     drop('analysisResults', (ar) => ar.studentId === studentId);
@@ -72,7 +73,8 @@ export function pendingWritesForStudent(
         .filter((op) => {
             const payload = (op.payload ?? {}) as Record<string, unknown>;
             if (op.entity === 'student') return (op.entityId ?? payload.id) === studentId;
-            if (op.entity === 'documentComment') return attachmentIds.has(payload.attachmentId as string);
+            if (op.entity === 'documentComment' || op.entity === 'documentMark')
+                return attachmentIds.has(payload.attachmentId as string);
             return STUDENT_LINK_FIELDS.some((field) => payload[field] === studentId);
         })
         .map((op) => op.id);

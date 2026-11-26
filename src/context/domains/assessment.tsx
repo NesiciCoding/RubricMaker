@@ -4,6 +4,7 @@ import { AppContextValue, StoreActionsCtx, useContextOrThrow } from '../storeCor
 import type {
     DocumentAnalysisResult,
     DocumentComment,
+    DocumentMark,
     GradingTask,
     SelfAssessment,
     SpeakingSession,
@@ -29,6 +30,7 @@ export type AssessmentValue = Pick<
     | 'speakingSessions'
     | 'analysisResults'
     | 'documentComments'
+    | 'documentMarks'
     | 'gradingTasks'
     | 'savePeerReview'
     | 'deletePeerReview'
@@ -48,6 +50,10 @@ export type AssessmentValue = Pick<
     | 'addDocumentComment'
     | 'resolveDocumentComment'
     | 'deleteDocumentComment'
+    | 'addDocumentMark'
+    | 'updateDocumentMark'
+    | 'deleteDocumentMark'
+    | 'setDocumentMarkStatus'
     | 'addGradingTasks'
     | 'deleteGradingTask'
     | 'saveTestAssignment'
@@ -67,6 +73,10 @@ export type AssessmentActions = Pick<
     | 'addDocumentComment'
     | 'resolveDocumentComment'
     | 'deleteDocumentComment'
+    | 'addDocumentMark'
+    | 'updateDocumentMark'
+    | 'deleteDocumentMark'
+    | 'setDocumentMarkStatus'
     | 'savePeerReview'
     | 'deletePeerReview'
     | 'saveSelfAssessment'
@@ -109,6 +119,20 @@ export function createAssessmentActions(ctx: StoreActionsCtx): AssessmentActions
     const resolveDocumentComment = (id: string, resolved: boolean) =>
         dispatch({ type: 'RESOLVE_DOCUMENT_COMMENT', id, resolved });
     const deleteDocumentComment = (id: string) => dispatch({ type: 'DELETE_DOCUMENT_COMMENT', id });
+    const addDocumentMark = (m: Omit<DocumentMark, 'id' | 'createdAt'>): DocumentMark => {
+        const mark: DocumentMark = {
+            ...m,
+            id: nanoid(),
+            createdAt: new Date().toISOString(),
+        };
+        dispatch({ type: 'ADD_DOCUMENT_MARK', payload: mark });
+        return mark;
+    };
+    const updateDocumentMark = (id: string, patch: Partial<Omit<DocumentMark, 'id' | 'createdAt' | 'updatedAt'>>) =>
+        dispatch({ type: 'UPDATE_DOCUMENT_MARK', id, patch });
+    const deleteDocumentMark = (id: string) => dispatch({ type: 'DELETE_DOCUMENT_MARK', id });
+    const setDocumentMarkStatus = (id: string, status: DocumentMark['status']) =>
+        dispatch({ type: 'SET_DOCUMENT_MARK_STATUS', id, status });
     const savePeerReview = (sr: StudentRubric) => {
         dispatch({ type: 'SAVE_PEER_REVIEW', payload: sr });
     };
@@ -180,6 +204,10 @@ export function createAssessmentActions(ctx: StoreActionsCtx): AssessmentActions
         addDocumentComment,
         resolveDocumentComment,
         deleteDocumentComment,
+        addDocumentMark,
+        updateDocumentMark,
+        deleteDocumentMark,
+        setDocumentMarkStatus,
         savePeerReview,
         deletePeerReview,
         saveSelfAssessment,
@@ -219,6 +247,7 @@ export function useAssessmentValue(state: StoreData, actions: AssessmentActions)
             speakingSessions: state.speakingSessions,
             analysisResults: state.analysisResults,
             documentComments: state.documentComments,
+            documentMarks: state.documentMarks,
             gradingTasks: state.gradingTasks,
             ...actions,
         }),
@@ -231,6 +260,7 @@ export function useAssessmentValue(state: StoreData, actions: AssessmentActions)
             state.speakingSessions,
             state.analysisResults,
             state.documentComments,
+            state.documentMarks,
             state.gradingTasks,
         ]
     );

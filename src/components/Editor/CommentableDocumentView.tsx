@@ -14,12 +14,11 @@ import { useAssessment, usePlatform } from '../../context/AppContext';
 interface CommentableDocumentViewProps {
     content: string;
     attachmentId: string;
-    /** Proofreading marks to draw on this document; empty until the persistence layer supplies them. */
+    /** Override for the marks to draw; stored marks for this attachment are used when omitted. */
     marks?: readonly DocumentMark[];
 }
 
 const noop = () => {};
-const NO_MARKS: readonly DocumentMark[] = [];
 const NO_IDS: string[] = [];
 
 /**
@@ -31,10 +30,11 @@ const NO_IDS: string[] = [];
 export default function CommentableDocumentView({
     content,
     attachmentId,
-    marks: allMarks = NO_MARKS,
+    marks: propMarks,
 }: CommentableDocumentViewProps) {
     const { t } = useTranslation();
-    const { documentComments, addDocumentComment, resolveDocumentComment, deleteDocumentComment } = useAssessment();
+    const { documentComments, documentMarks, addDocumentComment, resolveDocumentComment, deleteDocumentComment } =
+        useAssessment();
     const { getCurrentDatabaseUserId } = usePlatform();
 
     const [editor, setEditor] = useState<Editor | null>(null);
@@ -56,9 +56,11 @@ export default function CommentableDocumentView({
         [documentComments, attachmentId]
     );
 
+    // Stored marks are the normal source (PM-03); the prop stays for previews and tests. A caller
+    // that passes marks may pass any attachment's, so the filter applies to both paths.
     const marks = useMemo(
-        () => allMarks.filter((mark) => mark.attachmentId === attachmentId),
-        [allMarks, attachmentId]
+        () => (propMarks ?? documentMarks).filter((mark) => mark.attachmentId === attachmentId),
+        [propMarks, documentMarks, attachmentId]
     );
 
     const onCommentClick = useCallback((id: string) => setActiveCommentId(id), []);
