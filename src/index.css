@@ -3244,3 +3244,14 @@ label.sub-item-check {
 [data-longpress] {
     -webkit-touch-callout: none;
 }
+
+/* ─── Page-mode ink ───────────────────────────────────────────────────────────
+   The A4 sheet is painted white in every theme, so its ink cannot come from the theme palette:
+   the default (dark) --text is #f1ebdf, which is near-invisible on paper. These tokens are
+   declared after both theme blocks so neither can override them, and every one clears the
+   project's AAA floor (>= 7:1) against #ffffff — contrastPalette.test.ts enforces both facts. */
+:root {
+    --page-ink: #0f172a;
+    --page-dim-ink: #475569;
+    --page-mark-ink: #991b1b;
+}

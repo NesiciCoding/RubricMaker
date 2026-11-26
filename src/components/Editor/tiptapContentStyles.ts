@@ -29,7 +29,9 @@ export const TIPTAP_CONTENT_STYLES = `
     .essay-editor-content ul[data-type="taskList"] li { display: flex; align-items: flex-start; gap: 0.5em; }
     .essay-editor-content ul[data-type="taskList"] li > label { margin-top: 0.2em; flex-shrink: 0; cursor: pointer; }
     .essay-editor-content ul[data-type="taskList"] li > div { flex: 1; }
-    .essay-editor-content .is-empty::before { content: attr(data-placeholder); color: var(--text-dim, #94a3b8); pointer-events: none; position: absolute; }
+    /* The placeholder is read on paper-white in page mode and on a themed surface in the compact
+       editor, so it takes the page-scoped tone that clears AAA on white in both themes. */
+    .essay-editor-content .is-empty::before { content: attr(data-placeholder); color: var(--page-dim-ink, #475569); pointer-events: none; position: absolute; }
     .essay-editor-content img { max-width: 100%; height: auto; border-radius: 4px; }
     .essay-editor-content sup { font-size: 0.72em; vertical-align: super; }
     .essay-editor-content sub { font-size: 0.72em; vertical-align: sub; }
