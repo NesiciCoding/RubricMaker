@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { codeFromText, isProofCode, knownCode, PROOF_CODES, stripProofCode, withProofCode } from './proofCode';
+import { codeFromText, isProofCode, knownCode, PROOF_CODES, withProofCode } from './proofCode';
 
 describe('codeFromText', () => {
     it('reads a letter code followed by a dash, an em dash or a space', () => {
@@ -78,17 +78,5 @@ describe('withProofCode', () => {
 
     it('leaves only the code for an empty comment', () => {
         expect(withProofCode('sp', '   ')).toBe('sp ');
-    });
-});
-
-describe('stripProofCode', () => {
-    it('removes a known code and its separator', () => {
-        expect(stripProofCode('sp — recieve → receive')).toBe('recieve → receive');
-        expect(stripProofCode('¶')).toBe('');
-    });
-
-    it('leaves a comment without a code untouched', () => {
-        expect(stripProofCode('Nice work')).toBe('Nice work');
-        expect(stripProofCode('yes this works')).toBe('yes this works');
     });
 });

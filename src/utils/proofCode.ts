@@ -38,12 +38,3 @@ export function withProofCode(code: ProofCode, text: string): string {
     if (!trimmed) return `${code} `;
     return knownCode(trimmed) ? trimmed : `${code} ${trimmed}`;
 }
-
-export function stripProofCode(text: string): string {
-    const code = codeFromText(text);
-    if (!code || !isProofCode(code)) return text;
-    return text
-        .trim()
-        .slice(code.length)
-        .replace(/^[\s—–-]+/, '');
-}

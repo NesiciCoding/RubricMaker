@@ -2,7 +2,7 @@ import { Extension } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import type { DocumentComment } from '../../types';
-import { knownCode } from '../../utils/proofCode';
+import { knownCode, type ProofCode } from '../../utils/proofCode';
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
@@ -44,15 +44,34 @@ export function commentDecorationSpecs(comments: DocumentComment[], docSize: num
         }));
 }
 
+export function createMarkChip(code: ProofCode, commentId: string): HTMLElement {
+    const chip = document.createElement('span');
+    chip.className = 'comment-mark-chip';
+    chip.textContent = code;
+    chip.setAttribute('data-comment-id', commentId);
+    return chip;
+}
+
+/**
+ * The code chip is a widget at the end of the range, not a `::after` on the inline decoration:
+ * an inline decoration is split per text node, so a range crossing bold/italic/link would repeat
+ * the chip on every fragment instead of drawing it once for the comment.
+ */
 function buildDecorationSet(doc: Parameters<typeof DecorationSet.create>[0], storage: CommentHighlightStorage) {
     const specs = commentDecorationSpecs(storage.comments, doc.content.size, storage.activeCommentId);
-    const decorations = specs.map((s) =>
-        Decoration.inline(s.from, s.to, {
+    const decorations = specs.flatMap((s) => {
+        const highlight = Decoration.inline(s.from, s.to, {
             class: s.active ? 'comment-highlight comment-highlight-active' : 'comment-highlight',
             'data-comment-id': s.id,
-            ...(s.code ? { 'data-mark-code': s.code } : {}),
-        })
-    );
+        });
+        const code = s.code;
+        if (!code) return [highlight];
+        const chip = Decoration.widget(s.to, () => createMarkChip(code, s.id), {
+            key: `comment-mark-${s.id}`,
+            side: 1,
+        });
+        return [highlight, chip];
+    });
     return DecorationSet.create(doc, decorations);
 }
 
