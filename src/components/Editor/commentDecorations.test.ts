@@ -80,6 +80,21 @@ describe('commentDecorationSpecs', () => {
     it('returns an empty array for no comments', () => {
         expect(commentDecorationSpecs([], 30, null)).toEqual([]);
     });
+
+    it('carries a known proofreading code and ignores code-shaped prose', () => {
+        const specs = commentDecorationSpecs(
+            [
+                makeComment({ id: 'c1', text: 'sp — recieve → receive' }),
+                makeComment({ id: 'c2', text: 'Great point', anchor: { from: 10, to: 12 } }),
+                makeComment({ id: 'c3', text: '¶ new paragraph', anchor: { from: 14, to: 16 } }),
+            ],
+            30,
+            null
+        );
+        expect(specs.find((s) => s.id === 'c1')?.code).toBe('sp');
+        expect(specs.find((s) => s.id === 'c2')?.code).toBeNull();
+        expect(specs.find((s) => s.id === 'c3')?.code).toBe('¶');
+    });
 });
 
 describe('CommentHighlight extension', () => {
@@ -120,6 +135,19 @@ describe('CommentHighlight extension', () => {
         )(editor.state);
         // The decoration for anchor 2..8 is present with the comment id attached
         expect(set.find(2, 8).length).toBe(1);
+    });
+
+    it('puts the proofreading code on the decoration for the chip', () => {
+        const { editor } = makeEditor();
+        const plugin = findPlugin(editor);
+        editor.commands.setDocumentComments([makeComment({ text: 'del remove this word' })]);
+        const set = (
+            plugin.props.decorations as unknown as (state: unknown) => {
+                find: (from: number, to: number) => { type: { attrs: Record<string, string> } }[];
+            }
+        )(editor.state);
+        expect(set.find(2, 8)[0].type.attrs['data-mark-code']).toBe('del');
+        editor.destroy();
     });
 
     it('rebuilds decorations when the doc changes or the comment meta is set', () => {

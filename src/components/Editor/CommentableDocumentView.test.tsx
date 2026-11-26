@@ -173,6 +173,32 @@ describe('CommentableDocumentView', () => {
         promptSpy.mockRestore();
     });
 
+    it('prefills the prompt with the chosen proofreading code', async () => {
+        const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('sp recieve → receive');
+        mockDocumentComments.push(makeComment({ id: 'c1' }));
+        render(<CommentableDocumentView content="<p>Hello</p>" attachmentId="att-1" />);
+
+        fireEvent.click(await screen.findByText('sp'));
+        expect(promptSpy).toHaveBeenCalledWith('attachments.comment_prompt', 'sp ');
+        expect(mockAddDocumentComment).toHaveBeenCalledWith({
+            attachmentId: 'att-1',
+            authorId: 'user-1',
+            text: 'sp recieve → receive',
+            anchor: { from: 3, to: 8 },
+        });
+        promptSpy.mockRestore();
+    });
+
+    it('adds the chosen code when the teacher deletes the prefilled one', async () => {
+        const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('recieve → receive');
+        mockDocumentComments.push(makeComment({ id: 'c1' }));
+        render(<CommentableDocumentView content="<p>Hello</p>" attachmentId="att-1" />);
+
+        fireEvent.click(await screen.findByText('del'));
+        expect(mockAddDocumentComment).toHaveBeenCalledWith(expect.objectContaining({ text: 'del recieve → receive' }));
+        promptSpy.mockRestore();
+    });
+
     it('does not add a comment when the prompt is dismissed or empty', async () => {
         const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue(null);
         mockDocumentComments.push(makeComment({ id: 'c1' }));

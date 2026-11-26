@@ -4015,6 +4015,24 @@
         "delete_title": "Supprimer la pièce jointe",
         "delete_message": "Cette pièce jointe sera définitivement supprimée."
     },
+    "proofMarks": {
+        "picker_label": "Ajouter une marque",
+        "codes": {
+            "sp": "Orthographe",
+            "del": "Supprimer",
+            "ins": "Insérer",
+            "tr": "Intervertir",
+            "lc": "Minuscules",
+            "caps": "Majuscules",
+            "ital": "Italique",
+            "bf": "Gras",
+            "ul": "Souligné",
+            "¶": "Nouveau paragraphe",
+            ",": "Insérer une virgule",
+            ".": "Insérer un point",
+            "'": "Insérer une apostrophe"
+        }
+    },
     "exportPage": {
         "rubric_section_title": "Notes par grille",
         "select_rubric": "Sélectionner une rubrique à exporter",
@@ -5369,6 +5387,8 @@
         "es_editor_item_toc": "Une barre latérale de table des matières liste les titres du document et y accède en un clic — utile pour les longs essais et textes de lecture.",
         "es_editor_item_emoji": "Tapez :shortcode: (ex. :smile:) ou collez directement un emoji pour un rendu cohérent sur toutes les plateformes.",
         "es_editor_item_invisibles": "Le bouton \"afficher les marques de mise en forme\" révèle les espaces, tabulations et sauts de paragraphe pour la relecture.",
+        "es_marks_title": "Marques de correction dans les commentaires",
+        "es_marks_body": "Commencez un commentaire par un code de correction — sp, del, ins, tr, lc, caps ou ¶ — ou choisissez-en un dans la rangée au-dessus du champ de commentaire. Le code apparaît comme une petite marque sur les mots surlignés et le commentaire conserve l'instruction complète : l'élève voit la correction et ce à quoi elle se rapporte. Les commentaires qui ne commencent pas par un code connu restent inchangés.",
         "es_editor_item_image": "Les enseignants peuvent glisser-déposer ou coller une image directement dans un texte de test ou un énoncé de question pour l'intégrer en ligne (non disponible dans l'éditeur d'essai des élèves).",
         "es_doc_analysis_title": "Analyse de documents",
         "es_doc_analysis_item_upload": "Téléchargez un DOCX ou un PDF pour importer du texte dans l'éditeur.",

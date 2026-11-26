@@ -2,6 +2,7 @@ import { Extension } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import type { DocumentComment } from '../../types';
+import { knownCode } from '../../utils/proofCode';
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
@@ -34,7 +35,13 @@ const commentPluginKey = new PluginKey<DecorationSet>('commentHighlight');
 export function commentDecorationSpecs(comments: DocumentComment[], docSize: number, activeCommentId: string | null) {
     return comments
         .filter((c) => c.anchor.from >= 0 && c.anchor.to <= docSize && c.anchor.from < c.anchor.to)
-        .map((c) => ({ from: c.anchor.from, to: c.anchor.to, id: c.id, active: c.id === activeCommentId }));
+        .map((c) => ({
+            from: c.anchor.from,
+            to: c.anchor.to,
+            id: c.id,
+            active: c.id === activeCommentId,
+            code: knownCode(c.text),
+        }));
 }
 
 function buildDecorationSet(doc: Parameters<typeof DecorationSet.create>[0], storage: CommentHighlightStorage) {
@@ -43,6 +50,7 @@ function buildDecorationSet(doc: Parameters<typeof DecorationSet.create>[0], sto
         Decoration.inline(s.from, s.to, {
             class: s.active ? 'comment-highlight comment-highlight-active' : 'comment-highlight',
             'data-comment-id': s.id,
+            ...(s.code ? { 'data-mark-code': s.code } : {}),
         })
     );
     return DecorationSet.create(doc, decorations);

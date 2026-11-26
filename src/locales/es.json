@@ -4015,6 +4015,24 @@
         "delete_title": "Eliminar archivo adjunto",
         "delete_message": "Este archivo adjunto se eliminará de forma permanente."
     },
+    "proofMarks": {
+        "picker_label": "Añadir una marca",
+        "codes": {
+            "sp": "Ortografía",
+            "del": "Eliminar",
+            "ins": "Insertar",
+            "tr": "Invertir",
+            "lc": "Minúsculas",
+            "caps": "Mayúsculas",
+            "ital": "Cursiva",
+            "bf": "Negrita",
+            "ul": "Subrayado",
+            "¶": "Nuevo párrafo",
+            ",": "Insertar coma",
+            ".": "Insertar punto",
+            "'": "Insertar apóstrofo"
+        }
+    },
     "exportPage": {
         "rubric_section_title": "Notas por rúbrica",
         "select_rubric": "Seleccionar Rúbrica para Exportar",
@@ -5369,6 +5387,8 @@
         "es_editor_item_toc": "Una barra lateral de tabla de contenidos enumera los encabezados del documento y salta a ellos al hacer clic — útil para ensayos largos y textos de lectura.",
         "es_editor_item_emoji": "Escribe :shortcode: (p. ej. :smile:) o pega un emoji directamente para una representación consistente entre plataformas.",
         "es_editor_item_invisibles": "El botón \"mostrar marcas de formato\" de la barra de herramientas revela espacios, tabulaciones y saltos de párrafo para la revisión.",
+        "es_marks_title": "Marcas de corrección en los comentarios",
+        "es_marks_body": "Empieza un comentario con un código de corrección — sp, del, ins, tr, lc, caps o ¶ — o elige uno de la fila encima del cuadro de comentario. El código aparece como una pequeña marca sobre las palabras resaltadas y el comentario conserva la instrucción completa, así el estudiante ve la corrección y a qué se refiere. Los comentarios que no empiezan por un código conocido se quedan tal cual.",
         "es_editor_item_image": "Los profesores pueden soltar o pegar una imagen directamente en un texto de examen o en el enunciado de una pregunta para incrustarla en línea (no disponible en el editor de redacción del estudiante).",
         "es_doc_analysis_title": "Análisis de documentos",
         "es_doc_analysis_item_upload": "Sube un DOCX o PDF para importar texto al editor.",

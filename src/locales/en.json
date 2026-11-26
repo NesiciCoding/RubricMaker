@@ -4015,6 +4015,24 @@
         "delete_title": "Delete attachment",
         "delete_message": "This attachment will be permanently removed."
     },
+    "proofMarks": {
+        "picker_label": "Add a mark",
+        "codes": {
+            "sp": "Spelling",
+            "del": "Delete",
+            "ins": "Insert",
+            "tr": "Transpose",
+            "lc": "Lowercase",
+            "caps": "Capitals",
+            "ital": "Italic",
+            "bf": "Bold",
+            "ul": "Underline",
+            "¶": "New paragraph",
+            ",": "Insert comma",
+            ".": "Insert full stop",
+            "'": "Insert apostrophe"
+        }
+    },
     "exportPage": {
         "rubric_section_title": "Rubric grades",
         "select_rubric": "Select Rubric to Export",
@@ -5367,6 +5385,8 @@
         "es_editor_item_toc": "A table-of-contents sidebar lists the document's headings and jumps to them on click — helpful for long essays and reading passages.",
         "es_editor_item_emoji": "Type :shortcode: (e.g. :smile:) or paste an emoji directly for consistent, cross-platform emoji rendering.",
         "es_editor_item_invisibles": "The \"show formatting marks\" toolbar button reveals spaces, tabs, and paragraph breaks for proofreading.",
+        "es_marks_title": "Proofreading marks in comments",
+        "es_marks_body": "Start a comment with a proofreading code — sp, del, ins, tr, lc, caps or ¶ — or pick one from the row above the comment box. The code shows as a small mark on the highlighted words, and the comment keeps the full instruction, so the student sees the correction and what it refers to. Comments that do not start with a known code are left exactly as written.",
         "es_editor_item_image": "Teachers can drop or paste an image directly into a test passage or question prompt to embed it inline (not available in the student essay editor).",
         "es_doc_analysis_title": "Document analysis",
         "es_doc_analysis_item_upload": "Upload a DOCX or PDF to import text into the editor.",

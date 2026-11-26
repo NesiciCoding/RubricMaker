@@ -4015,6 +4015,24 @@
         "delete_title": "Bijlage verwijderen",
         "delete_message": "Deze bijlage wordt definitief verwijderd."
     },
+    "proofMarks": {
+        "picker_label": "Een markering toevoegen",
+        "codes": {
+            "sp": "Spelling",
+            "del": "Verwijderen",
+            "ins": "Invoegen",
+            "tr": "Omwisselen",
+            "lc": "Kleine letters",
+            "caps": "Hoofdletters",
+            "ital": "Cursief",
+            "bf": "Vet",
+            "ul": "Onderstreept",
+            "¶": "Nieuwe alinea",
+            ",": "Komma invoegen",
+            ".": "Punt invoegen",
+            "'": "Apostrof invoegen"
+        }
+    },
     "exportPage": {
         "rubric_section_title": "Rubriekcijfers",
         "select_rubric": "Selecteer Rubriek om te Exporteren",
@@ -5369,6 +5387,8 @@
         "es_editor_item_toc": "Een inhoudsopgave-zijbalk toont de koppen van het document en springt ernaartoe bij een klik — handig bij lange essays en leesteksten.",
         "es_editor_item_emoji": "Typ :shortcode: (bijv. :smile:) of plak een emoji direct voor consistente emoji-weergave op elk platform.",
         "es_editor_item_invisibles": "De knop \"opmaaktekens tonen\" in de werkbalk toont spaties, tabs en alinea-einden voor het nalezen.",
+        "es_marks_title": "Proefleesmarkeringen in opmerkingen",
+        "es_marks_body": "Begin een opmerking met een proefleescodering — sp, del, ins, tr, lc, caps of ¶ — of kies er een uit de rij boven het opmerkingenveld. De code verschijnt als klein merkteken op de gemarkeerde woorden en de opmerking bevat de volledige instructie, zodat de leerling de correctie én het doelwit ziet. Opmerkingen die niet met een bekende code beginnen, blijven ongewijzigd.",
         "es_editor_item_image": "Docenten kunnen een afbeelding direct in een toetstekst of vraagprompt slepen of plakken om deze inline in te sluiten (niet beschikbaar in de leerling-essay-editor).",
         "es_doc_analysis_title": "Documentanalyse",
         "es_doc_analysis_item_upload": "Upload een DOCX of PDF om tekst in de editor te importeren.",

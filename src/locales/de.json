@@ -4015,6 +4015,24 @@
         "delete_title": "Anhang löschen",
         "delete_message": "Dieser Anhang wird dauerhaft entfernt."
     },
+    "proofMarks": {
+        "picker_label": "Markierung hinzufügen",
+        "codes": {
+            "sp": "Rechtschreibung",
+            "del": "Löschen",
+            "ins": "Einfügen",
+            "tr": "Umstellen",
+            "lc": "Kleinbuchstaben",
+            "caps": "Großbuchstaben",
+            "ital": "Kursiv",
+            "bf": "Fett",
+            "ul": "Unterstrichen",
+            "¶": "Neuer Absatz",
+            ",": "Komma einfügen",
+            ".": "Punkt einfügen",
+            "'": "Apostroph einfügen"
+        }
+    },
     "exportPage": {
         "rubric_section_title": "Rubriknoten",
         "select_rubric": "Zu exportierende Rubrik auswählen",
@@ -5369,6 +5387,8 @@
         "es_editor_item_toc": "Eine Inhaltsverzeichnis-Seitenleiste listet die Überschriften des Dokuments auf und springt beim Klick dorthin — hilfreich bei langen Aufsätzen und Lesetexten.",
         "es_editor_item_emoji": "Tippen Sie :shortcode: (z. B. :smile:) oder fügen Sie ein Emoji direkt ein, für eine konsistente, plattformübergreifende Emoji-Darstellung.",
         "es_editor_item_invisibles": "Die Schaltfläche \"Formatierungszeichen anzeigen\" in der Symbolleiste zeigt Leerzeichen, Tabulatoren und Absatzumbrüche zum Korrekturlesen an.",
+        "es_marks_title": "Korrekturzeichen in Kommentaren",
+        "es_marks_body": "Beginne einen Kommentar mit einem Korrekturzeichen — sp, del, ins, tr, lc, caps oder ¶ — oder wähle eines aus der Reihe über dem Kommentarfeld. Das Zeichen erscheint als kleine Markierung an den hervorgehobenen Wörtern, und der Kommentar enthält die vollständige Anweisung, sodass die Schülerin oder der Schüler die Korrektur und die zugehörige Stelle sieht. Kommentare, die nicht mit einem bekannten Zeichen beginnen, bleiben unverändert.",
         "es_editor_item_image": "Lehrkräfte können ein Bild direkt in einen Testtext oder eine Fragestellung ziehen oder einfügen, um es inline einzubetten (im Schüler-Aufsatzeditor nicht verfügbar).",
         "es_doc_analysis_title": "Dokumentenanalyse",
         "es_doc_analysis_item_upload": "Lade eine DOCX- oder PDF-Datei hoch, um Text in den Editor zu importieren.",

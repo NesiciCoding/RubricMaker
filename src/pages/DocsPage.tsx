@@ -2021,6 +2021,12 @@ function EssaysTab() {
                 />
             </FeatureSection>
 
+            <FeatureSection icon={MessageSquare} title={t('docs.es_marks_title')} color="#991b1b">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    {t('docs.es_marks_body')}
+                </p>
+            </FeatureSection>
+
             <FeatureSection icon={FileSearch} title={t('docs.es_submission_title')} color="#3b82f6">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     {t('docs.es_submission_body1')} <strong>{t('docs.es_submission_import_button')}</strong>{' '}
