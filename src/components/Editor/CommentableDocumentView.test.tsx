@@ -52,9 +52,13 @@ vi.mock('./EssayEditor', () => {
     const MockEssayEditor = ({
         onEditorReady,
         onChange,
+        allowPageMode,
+        defaultPageMode,
     }: {
         onEditorReady?: (editor: typeof fakeEditor | null) => void;
         onChange?: (html: string) => void;
+        allowPageMode?: boolean;
+        defaultPageMode?: boolean;
     }) => {
         React.useEffect(() => {
             onEditorReady?.(fakeEditor);
@@ -62,7 +66,13 @@ vi.mock('./EssayEditor', () => {
             onChange?.('<p>edited</p>');
             return () => onEditorReady?.(null);
         }, [onEditorReady, onChange]);
-        return <div data-testid="mock-essay-editor" />;
+        return (
+            <div
+                data-testid="mock-essay-editor"
+                data-allow-page-mode={allowPageMode ? 'true' : 'false'}
+                data-page-mode={defaultPageMode ? 'true' : 'false'}
+            />
+        );
     };
     return { default: MockEssayEditor };
 });
@@ -168,6 +178,29 @@ describe('CommentableDocumentView', () => {
         render(<CommentableDocumentView content="<p>Hello</p>" attachmentId="att-1" />);
 
         await waitFor(() => expect(fakeEditor.commands.setDocumentMarks).toHaveBeenCalledWith([]));
+    });
+
+    it('switches the editor to page mode when marks arrive for this document', () => {
+        const { rerender } = render(<CommentableDocumentView content="<p>Hello</p>" attachmentId="att-1" />);
+        const editor = () => screen.getByTestId('mock-essay-editor');
+
+        // The document mounts before its marks load, so it starts compact.
+        expect(editor()).toHaveAttribute('data-allow-page-mode', 'false');
+        expect(editor()).toHaveAttribute('data-page-mode', 'false');
+
+        // Marks for another attachment do not give this document a margin rail.
+        rerender(
+            <CommentableDocumentView
+                content="<p>Hello</p>"
+                attachmentId="att-1"
+                marks={[makeMark({ attachmentId: 'att-other' })]}
+            />
+        );
+        expect(editor()).toHaveAttribute('data-page-mode', 'false');
+
+        rerender(<CommentableDocumentView content="<p>Hello</p>" attachmentId="att-1" marks={[makeMark()]} />);
+        expect(editor()).toHaveAttribute('data-allow-page-mode', 'true');
+        expect(editor()).toHaveAttribute('data-page-mode', 'true');
     });
 
     it('shows the empty state when there are no comments for the attachment', async () => {
