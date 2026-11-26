@@ -106,7 +106,7 @@ describe('useProofRail', () => {
         expect(result.current.rows).toHaveLength(1);
         expect(result.current.rows[0]!.marks[0]!.id).toBe('m1');
         expect(result.current.rows[0]!.top).toBe(200);
-        expect(result.current.box).toEqual({ top: 96, left: 804, height: 1123 });
+        expect(result.current.box).toEqual({ top: 96, left: 804, height: 1123, width: 800 });
         expect(result.current.dir).toBe('ltr');
         editor.destroy();
     });
@@ -149,7 +149,7 @@ describe('useProofRail', () => {
         const page = makePage();
         const empty = renderHook(() => useProofRail({ editor, pageElement: page, marks: NO_MARKS }));
         expect(empty.result.current.rows).toEqual([]);
-        expect(empty.result.current.box).toEqual({ top: 0, left: 0, height: 0 });
+        expect(empty.result.current.box).toEqual({ top: 0, left: 0, height: 0, width: 0 });
 
         const noEditor = renderHook(() => useProofRail({ editor: null, pageElement: page, marks: ONE_MARK }));
         expect(noEditor.result.current.rows).toEqual([]);

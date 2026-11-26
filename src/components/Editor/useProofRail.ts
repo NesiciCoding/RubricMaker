@@ -11,9 +11,11 @@ export interface ProofRailBox {
     top: number;
     left: number;
     height: number;
+    /** Width of the page box, so a panel opened from a chip can stay inside it. */
+    width: number;
 }
 
-const EMPTY_BOX: ProofRailBox = { top: 0, left: 0, height: 0 };
+const EMPTY_BOX: ProofRailBox = { top: 0, left: 0, height: 0, width: 0 };
 
 /** Gap between the text block and the chips, in rail px. */
 const RAIL_INSET = 10;
@@ -98,6 +100,7 @@ export function useProofRail({
             top: (contentRect.top - origin.top) / zoom,
             left: (contentRect.right - origin.left) / zoom + RAIL_INSET,
             height,
+            width: (origin.right - origin.left) / zoom,
         });
         setDir(window.getComputedStyle(content).direction === 'rtl' ? 'rtl' : 'ltr');
         // `marks` must be a stable array (memoize it at the call site): measuring sets layout state,

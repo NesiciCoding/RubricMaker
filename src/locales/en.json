@@ -3380,7 +3380,15 @@
             "label": "Proofreading marks",
             "chipLabel_one": "{{count}} mark on line {{line}}: {{symbols}}",
             "chipLabel_other": "{{count}} marks on line {{line}}: {{symbols}}",
-            "spansLines": "spans more than one line"
+            "spansLines": "spans more than one line",
+            "summary_one": "{{count}} mark across {{lines}} line",
+            "summary_other": "{{count}} marks across {{lines}} lines"
+        },
+        "panel": {
+            "title_one": "1 mark on line {{line}}",
+            "title_other": "{{count}} marks on line {{line}}",
+            "close": "Close the mark panel",
+            "listLabel": "Marks on this line"
         }
     },
     "pwa": {

@@ -3380,7 +3380,15 @@
             "label": "Korrekturzeichen",
             "chipLabel_one": "{{count}} Korrekturzeichen in Zeile {{line}}: {{symbols}}",
             "chipLabel_other": "{{count}} Korrekturzeichen in Zeile {{line}}: {{symbols}}",
-            "spansLines": "reicht über mehrere Zeilen"
+            "spansLines": "reicht über mehrere Zeilen",
+            "summary_one": "{{count}} Markierung in {{lines}} Zeile",
+            "summary_other": "{{count}} Markierungen in {{lines}} Zeilen"
+        },
+        "panel": {
+            "title_one": "1 Markierung in Zeile {{line}}",
+            "title_other": "{{count}} Markierungen in Zeile {{line}}",
+            "close": "Markierungsfenster schließen",
+            "listLabel": "Markierungen in dieser Zeile"
         }
     },
     "pwa": {

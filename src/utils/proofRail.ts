@@ -223,3 +223,70 @@ export function planRail(targets: RailTarget[], options: RailOptions, tolerance 
         };
     });
 }
+
+/** Below this page width the reveal panel becomes a bottom sheet rather than a side panel. */
+export const PANEL_SHEET_MAX_WIDTH = 640;
+
+export interface PanelAnchor {
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+}
+
+export interface PanelSize {
+    width: number;
+    height: number;
+}
+
+export interface PanelBounds {
+    top: number;
+    left: number;
+    right: number;
+    bottom: number;
+    width: number;
+}
+
+export interface PanelPlacement {
+    /** `right`/`left` is the side of the chip the panel sits on; `sheet` spans the page bottom. */
+    side: 'right' | 'left' | 'sheet';
+    left: number;
+    top: number;
+    width: number;
+}
+
+/**
+ * Places the reveal panel: right of the chip, flipped left when the page edge is in the way, clamped
+ * inside the page vertically, and as a full-width bottom sheet on a narrow page.
+ *
+ * All coordinates are rail-local px, exactly like the chips; `bounds` is the page in the same space.
+ */
+export function placePanel(
+    anchor: PanelAnchor,
+    panel: PanelSize,
+    bounds: PanelBounds,
+    options: { gap?: number; margin?: number } = {}
+): PanelPlacement {
+    const gap = options.gap ?? 8;
+    const margin = options.margin ?? 8;
+    const minTop = bounds.top + margin;
+    const maxTop = Math.max(minTop, bounds.bottom - margin - panel.height);
+    const top = Math.min(Math.max(anchor.top, minTop), maxTop);
+
+    if (bounds.width < PANEL_SHEET_MAX_WIDTH) {
+        return {
+            side: 'sheet',
+            left: bounds.left + margin,
+            top: Math.min(Math.max(anchor.top, minTop), maxTop),
+            width: Math.max(0, bounds.width - margin * 2),
+        };
+    }
+
+    const rightLeft = anchor.left + anchor.width + gap;
+    if (rightLeft + panel.width <= bounds.right - margin) {
+        return { side: 'right', left: rightLeft, top, width: panel.width };
+    }
+
+    const flipped = anchor.left - gap - panel.width;
+    return { side: 'left', left: Math.max(bounds.left + margin, flipped), top, width: panel.width };
+}

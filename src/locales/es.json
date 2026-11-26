@@ -3380,7 +3380,15 @@
             "label": "Marcas de corrección",
             "chipLabel_one": "{{count}} marca en la línea {{line}}: {{symbols}}",
             "chipLabel_other": "{{count}} marcas en la línea {{line}}: {{symbols}}",
-            "spansLines": "abarca más de una línea"
+            "spansLines": "abarca más de una línea",
+            "summary_one": "{{count}} marca en {{lines}} línea",
+            "summary_other": "{{count}} marcas en {{lines}} líneas"
+        },
+        "panel": {
+            "title_one": "1 marca en la línea {{line}}",
+            "title_other": "{{count}} marcas en la línea {{line}}",
+            "close": "Cerrar el panel de marcas",
+            "listLabel": "Marcas en esta línea"
         }
     },
     "pwa": {

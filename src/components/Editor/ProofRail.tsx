@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { MarkStatus } from '../../types';
+import type { DocumentMark, MarkStatus } from '../../types';
 import { getGlyph, getSymbol } from '../../data/proofMarks';
 import MarkGlyph from './MarkGlyph';
+import ProofMarkPopover from './ProofMarkPopover';
 import type { ProofRailBox, ProofRailRow } from './useProofRail';
 
 /**
@@ -23,6 +24,25 @@ const INK: Record<MarkStatus, string> = {
     rejected: '#534d45',
 };
 
+const VISUALLY_HIDDEN: React.CSSProperties = {
+    position: 'absolute',
+    width: 1,
+    height: 1,
+    padding: 0,
+    margin: -1,
+    overflow: 'hidden',
+    clip: 'rect(0 0 0 0)',
+    whiteSpace: 'nowrap',
+    border: 0,
+};
+
+function chipWidth(row: ProofRailRow): number {
+    const primary = row.marks[0];
+    if (!primary) return STROKE_CHIP_WIDTH;
+    if (row.marks.length > 1 || row.multiLine) return GROUPED_CHIP_WIDTH;
+    return getGlyph(primary.symbolId).kind === 'letter' ? LETTER_CHIP_WIDTH : STROKE_CHIP_WIDTH;
+}
+
 export interface ProofRailProps {
     rows: ProofRailRow[];
     box: ProofRailBox;
@@ -30,10 +50,63 @@ export interface ProofRailProps {
     /** Line whose marks are currently highlighted in the text. */
     activeLine: number | null;
     onSelectLine: (line: number | null) => void;
+    /** Text currently under a mark's anchor, read from the editor; shown in the reveal panel. */
+    snippetFor?: (mark: DocumentMark) => string | null;
 }
 
-export default function ProofRail({ rows, box, dir = 'ltr', activeLine, onSelectLine }: ProofRailProps) {
+export default function ProofRail({ rows, box, dir = 'ltr', activeLine, onSelectLine, snippetFor }: ProofRailProps) {
     const { t } = useTranslation();
+    const [focusIndex, setFocusIndex] = useState(0);
+    const [openId, setOpenId] = useState<string | null>(null);
+    const buttonRefs = useRef(new Map<string, HTMLButtonElement>());
+    const openRow = rows.find((row) => row.id === openId) ?? null;
+
+    // A re-measure can drop the row that was focused or opened; never leave either pointing at
+    // a chip that no longer exists.
+    useEffect(() => {
+        setFocusIndex((index) => Math.min(index, Math.max(0, rows.length - 1)));
+    }, [rows.length]);
+
+    useEffect(() => {
+        if (openId && !rows.some((row) => row.id === openId)) setOpenId(null);
+    }, [rows, openId]);
+
+    useEffect(() => {
+        if (openId) return;
+        const onKey = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') onSelectLine(null);
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [openId, onSelectLine]);
+
+    const openPanel = (row: ProofRailRow) => {
+        setOpenId(row.id);
+        if (activeLine !== row.line) onSelectLine(row.line);
+    };
+
+    // Escape and Close both land here: focus goes back to the chip that opened the panel.
+    const closePanel = () => {
+        const trigger = openId ? buttonRefs.current.get(openId) : null;
+        setOpenId(null);
+        trigger?.focus();
+    };
+
+    const focusRow = (index: number) => {
+        const next = Math.min(Math.max(index, 0), Math.max(0, rows.length - 1));
+        setFocusIndex(next);
+        const row = rows[next];
+        if (row) buttonRefs.current.get(row.id)?.focus();
+    };
+
+    const totalMarks = rows.reduce((sum, row) => sum + row.marks.length, 0);
+    const bounds = {
+        top: -box.top,
+        left: -box.left,
+        right: box.width - box.left,
+        bottom: box.height - box.top,
+        width: box.width,
+    };
 
     return (
         <div
@@ -51,6 +124,10 @@ export default function ProofRail({ rows, box, dir = 'ltr', activeLine, onSelect
                 pointerEvents: 'none',
             }}
         >
+            <span role="status" aria-live="polite" style={VISUALLY_HIDDEN}>
+                {rows.length > 0 ? t('proofMarks.rail.summary', { count: totalMarks, lines: rows.length }) : ''}
+            </span>
+
             {rows
                 .filter((row) => row.stacked)
                 .map((row) => (
@@ -82,19 +159,15 @@ export default function ProofRail({ rows, box, dir = 'ltr', activeLine, onSelect
                     </React.Fragment>
                 ))}
 
-            {rows.map((row) => {
+            {rows.map((row, index) => {
                 const primary = row.marks[0];
                 if (!primary) return null;
 
                 const symbol = getSymbol(primary.symbolId);
                 const count = row.marks.length;
-                const grouped = count > 1 || row.multiLine;
-                const width = grouped
-                    ? GROUPED_CHIP_WIDTH
-                    : getGlyph(primary.symbolId).kind === 'letter'
-                      ? LETTER_CHIP_WIDTH
-                      : STROKE_CHIP_WIDTH;
+                const width = chipWidth(row);
                 const active = activeLine === row.line;
+                const open = openId === row.id;
                 const symbols = row.marks.map((mark) => t(getSymbol(mark.symbolId).labelKey)).join('; ');
                 const label = `${t('proofMarks.rail.chipLabel', { count, line: row.line, symbols })}${
                     row.multiLine ? ` — ${t('proofMarks.rail.spansLines')}` : ''
@@ -103,13 +176,41 @@ export default function ProofRail({ rows, box, dir = 'ltr', activeLine, onSelect
                 return (
                     <button
                         key={row.id}
+                        ref={(node) => {
+                            if (node) buttonRefs.current.set(row.id, node);
+                            else buttonRefs.current.delete(row.id);
+                        }}
                         type="button"
                         data-mark-line={row.line}
                         data-mark-ids={row.ids.join(' ')}
+                        data-active={active ? 'true' : 'false'}
                         aria-label={label}
                         title={label}
                         aria-pressed={active}
-                        onClick={() => onSelectLine(active ? null : row.line)}
+                        aria-haspopup="dialog"
+                        aria-expanded={open}
+                        // Roving tabindex: one tab stop for the whole rail, arrows move within it.
+                        tabIndex={index === focusIndex ? 0 : -1}
+                        onFocus={() => setFocusIndex(index)}
+                        onKeyDown={(event) => {
+                            if (event.key === 'ArrowDown') {
+                                event.preventDefault();
+                                focusRow(index + 1);
+                            } else if (event.key === 'ArrowUp') {
+                                event.preventDefault();
+                                focusRow(index - 1);
+                            } else if (event.key === 'Home') {
+                                event.preventDefault();
+                                focusRow(0);
+                            } else if (event.key === 'End') {
+                                event.preventDefault();
+                                focusRow(rows.length - 1);
+                            }
+                        }}
+                        onClick={() => {
+                            if (open) closePanel();
+                            else openPanel(row);
+                        }}
                         style={{
                             position: 'absolute',
                             top: row.top,
@@ -123,7 +224,7 @@ export default function ProofRail({ rows, box, dir = 'ltr', activeLine, onSelect
                             paddingInline: 2,
                             border: '1px solid rgba(153, 27, 27, 0.25)',
                             borderRadius: 4,
-                            background: '#fef2f2',
+                            background: open ? '#fde8e8' : '#fef2f2',
                             color: INK[primary.status],
                             fontFamily: 'Georgia, "Times New Roman", serif',
                             fontSize: 11,
@@ -154,6 +255,19 @@ export default function ProofRail({ rows, box, dir = 'ltr', activeLine, onSelect
                     </button>
                 );
             })}
+
+            {openRow && openRow.marks[0] && (
+                <ProofMarkPopover
+                    key={openRow.id}
+                    row={openRow}
+                    anchor={{ top: openRow.top, left: 0, width: chipWidth(openRow), height: CHIP_HEIGHT }}
+                    bounds={bounds}
+                    dir={dir}
+                    titleId={`proof-rail-title-${openRow.id}`}
+                    snippetFor={snippetFor}
+                    onClose={closePanel}
+                />
+            )}
         </div>
     );
 }

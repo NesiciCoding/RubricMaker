@@ -3380,7 +3380,15 @@
             "label": "Marques de correction",
             "chipLabel_one": "{{count}} marque sur la ligne {{line}} : {{symbols}}",
             "chipLabel_other": "{{count}} marques sur la ligne {{line}} : {{symbols}}",
-            "spansLines": "s’étend sur plusieurs lignes"
+            "spansLines": "s’étend sur plusieurs lignes",
+            "summary_one": "{{count}} marque sur {{lines}} ligne",
+            "summary_other": "{{count}} marques sur {{lines}} lignes"
+        },
+        "panel": {
+            "title_one": "1 marque à la ligne {{line}}",
+            "title_other": "{{count}} marques à la ligne {{line}}",
+            "close": "Fermer le panneau des marques",
+            "listLabel": "Marques sur cette ligne"
         }
     },
     "pwa": {

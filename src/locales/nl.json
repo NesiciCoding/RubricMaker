@@ -3380,7 +3380,15 @@
             "label": "Proefleesmarkeringen",
             "chipLabel_one": "{{count}} markering op regel {{line}}: {{symbols}}",
             "chipLabel_other": "{{count}} markeringen op regel {{line}}: {{symbols}}",
-            "spansLines": "loopt over meer dan één regel"
+            "spansLines": "loopt over meer dan één regel",
+            "summary_one": "{{count}} markering over {{lines}} regel",
+            "summary_other": "{{count}} markeringen over {{lines}} regels"
+        },
+        "panel": {
+            "title_one": "1 markering op regel {{line}}",
+            "title_other": "{{count}} markeringen op regel {{line}}",
+            "close": "Sluit het markeringenpaneel",
+            "listLabel": "Markeringen op deze regel"
         }
     },
     "pwa": {
