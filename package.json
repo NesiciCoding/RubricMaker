@@ -102,7 +102,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.65.1",
-    "@rollup/wasm-node": "^4.68.7",
+    "@rollup/wasm-node": "^4.68.8",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^8.0.0",
     "@testing-library/react": "^16.3.3",
