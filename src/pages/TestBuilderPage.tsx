@@ -58,6 +58,7 @@ import { clamp } from '../utils/clamp';
 import { plainQuestionPromptText } from '../utils/clozeParse';
 import { EmptyState } from '../components/ui/EmptyState';
 import QuestionTypePicker from '../components/Tests/QuestionTypePicker';
+import { convertQuestionType } from '../utils/questionTypeConvert';
 import TestOutlineRail from '../components/Tests/TestOutlineRail';
 import { builderItemInsights } from '../utils/builderItemAnalysis';
 import { questionOutlineMenuItems } from '../components/Tests/questionOutlineMenuItems';
@@ -185,6 +186,9 @@ function TestBuilderEditor({
     const [bankInsertAfterId, setBankInsertAfterId] = useState<string | null>(null);
     /** Section the question being created belongs to; null while the type picker is closed. */
     const [newQuestionFor, setNewQuestionFor] = useState<{ sectionId?: string } | null>(null);
+    /** Question whose type is being changed from the outline/⋯ menu, and the conversion awaiting confirmation. */
+    const [changeTypeFor, setChangeTypeFor] = useState<TestQuestion | null>(null);
+    const [pendingTypeChange, setPendingTypeChange] = useState<TestQuestion | null>(null);
     /** Question open in the focus pane. At rail widths this is the only editor on screen. */
     const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null);
     useEffect(() => {
@@ -775,6 +779,32 @@ function TestBuilderEditor({
         setSelectedQuestionId(question.id);
         // The new question is what the teacher wants to see, even from the checks screen.
         setChecksOpen(false);
+    }
+
+    /**
+     * Changing a question's type from the outline or its row menu reuses the add flow's picker, so both
+     * routes show the same previews. The conversion is the shared helper the editor's own type switch
+     * uses; authored content the new type cannot hold asks before it is discarded.
+     */
+    function beginTypeChange(question: TestQuestion) {
+        setChangeTypeFor(question);
+    }
+
+    function applyTypeChange(type: TestQuestionType) {
+        const current = changeTypeFor;
+        if (!current) return;
+        const conversion = convertQuestionType(current, type);
+        setChangeTypeFor(null);
+        if (conversion.dropped.length > 0) {
+            setPendingTypeChange(conversion.question);
+            return;
+        }
+        updateQuestion(conversion.question.id, conversion.question);
+    }
+
+    function commitTypeChange() {
+        if (pendingTypeChange) updateQuestion(pendingTypeChange.id, pendingTypeChange);
+        setPendingTypeChange(null);
     }
 
     /** Reorders inside the question's own part; moving between parts is a section change. */
@@ -1646,6 +1676,7 @@ function TestBuilderEditor({
                                               moveTo: (title) => t('tests.menu_move_to_section', { section: title }),
                                               noSection: t('tests.no_section'),
                                               remove: t('tests.menu_delete_question'),
+                                              changeType: t('tests.menu_change_type'),
                                           },
                                           duplicate: () => {
                                               setChecksOpen(false);
@@ -1658,6 +1689,7 @@ function TestBuilderEditor({
                                           },
                                           moveToSection: (sectionId) => moveQuestionToSection(question.id, sectionId),
                                           remove: () => removeQuestion(question.id),
+                                          onChangeType: () => beginTypeChange(question),
                                       })
                         }
                         onSelectSection={(sectionId) => {
@@ -2715,6 +2747,22 @@ function TestBuilderEditor({
             {newQuestionFor && (
                 <QuestionTypePicker onSelect={createQuestionOfType} onClose={() => setNewQuestionFor(null)} />
             )}
+            {changeTypeFor && (
+                <QuestionTypePicker
+                    selected={changeTypeFor.type}
+                    onSelect={applyTypeChange}
+                    onClose={() => setChangeTypeFor(null)}
+                />
+            )}
+            <ConfirmDialog
+                open={pendingTypeChange !== null}
+                danger={false}
+                title={t('tests.change_type_confirm_title')}
+                message={t('tests.change_type_confirm_body')}
+                confirmLabel={t('tests.change_type_confirm_action')}
+                onConfirm={commitTypeChange}
+                onCancel={() => setPendingTypeChange(null)}
+            />
             {quickJumpOpen && (
                 <BuilderQuickJump
                     questions={displayOrderedQuestions.map((question) => ({

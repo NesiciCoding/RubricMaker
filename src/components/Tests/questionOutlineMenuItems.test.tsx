@@ -12,12 +12,14 @@ const labels = {
     moveTo: (title: string) => `Move to ${title}`,
     noSection: 'No section',
     remove: 'Delete',
+    changeType: 'Change type',
 };
 const actions = {
     duplicate: vi.fn(),
     insertFromBankAfter: vi.fn(),
     moveToSection: vi.fn(),
     remove: vi.fn(),
+    onChangeType: vi.fn(),
 };
 
 function items(question: Partial<TestQuestion>) {
@@ -36,6 +38,7 @@ describe('questionOutlineMenuItems', () => {
             'Insert',
             'Move to No section',
             'Move to Writing',
+            'Change type',
             'Delete',
         ]);
     });
@@ -43,6 +46,13 @@ describe('questionOutlineMenuItems', () => {
     it('treats a question with an unknown section as uncategorised', () => {
         const moves = items({ sectionId: 'gone' }).filter((i) => i.key.startsWith('move-'));
         expect(moves.map((i) => i.label)).toEqual(['Move to Reading', 'Move to Writing']);
+    });
+
+    it('hands the type change to the builder, which owns the picker and the conversion', () => {
+        items({})
+            .find((i) => i.key === 'change-type')
+            ?.onSelect();
+        expect(actions.onChangeType).toHaveBeenCalledTimes(1);
     });
 
     it('moves to "no section" with an undefined id and marks Delete dangerous', () => {
