@@ -1,11 +1,14 @@
 import type { StoreData, PendingWrite } from '../store/storage';
-import type { StudentRubric } from '../types';
+import type { StudentRubric, StudentTest } from '../types';
+import { carryTeacherAuthoredTestFields } from '../../supabase/functions/_shared/teacherAuthoredTestFields';
 
 export interface MergeCollectionOptions<T> {
     getId(x: T): string;
     getUpdatedAt?(x: T): string | undefined;
     pendingIds: Set<string>;
     deletedIds?: Set<string>;
+    /** Runs when the remote copy wins, so fields only the teacher authors can be carried over. */
+    mergeRemoteWin?(remote: T, local: T): T;
 }
 
 function parseTime(value: string | undefined): number | null {
@@ -15,7 +18,7 @@ function parseTime(value: string | undefined): number | null {
 }
 
 export function mergeCollection<T>(local: T[], remote: T[], opts: MergeCollectionOptions<T>): T[] {
-    const { getId, getUpdatedAt, pendingIds, deletedIds } = opts;
+    const { getId, getUpdatedAt, pendingIds, deletedIds, mergeRemoteWin } = opts;
     const localById = new Map(local.map((x) => [getId(x), x]));
     const result: T[] = [];
     const seen = new Set<string>();
@@ -39,7 +42,7 @@ export function mergeCollection<T>(local: T[], remote: T[], opts: MergeCollectio
         if (localTime !== null && remoteTime !== null && localTime > remoteTime) {
             result.push(localItem);
         } else {
-            result.push(remoteItem);
+            result.push(mergeRemoteWin ? mergeRemoteWin(remoteItem, localItem) : remoteItem);
         }
     }
 
@@ -88,6 +91,7 @@ interface CollectionSpec {
     entity: string;
     getId(x: never): string;
     getUpdatedAt?(x: never): string | undefined;
+    mergeRemoteWin?(remote: never, local: never): never;
 }
 
 const COLLECTIONS: CollectionSpec[] = [
@@ -171,6 +175,13 @@ const COLLECTIONS: CollectionSpec[] = [
         entity: 'studentTest',
         getId: (st: { id: string }) => st.id,
         getUpdatedAt: (st: { updatedAt?: string }) => st.updatedAt,
+        // A hand-in, re-import or scan rebuilds the attempt and knows nothing about the teacher's
+        // review flags or adjustment, so the winning copy inherits those from the copy it replaced.
+        mergeRemoteWin: (remote: StudentTest, local: StudentTest) =>
+            carryTeacherAuthoredTestFields(
+                remote as unknown as Record<string, unknown>,
+                local as unknown as Record<string, unknown>
+            ) as unknown as StudentTest,
     },
     { key: 'essayTemplates', entity: 'essayTemplate', getId: (et: { id: string }) => et.id },
     { key: 'gradingTasks', entity: 'gradingTask', getId: (gt: { id: string }) => gt.id },
@@ -251,6 +262,7 @@ export function mergeStoreData(local: StoreData, remote: Partial<StoreData>, pen
             getUpdatedAt: spec.getUpdatedAt as ((x: unknown) => string | undefined) | undefined,
             pendingIds: upserts,
             deletedIds: deletes,
+            mergeRemoteWin: spec.mergeRemoteWin as ((remote: unknown, local: unknown) => unknown) | undefined,
         });
     }
 

@@ -12,6 +12,7 @@ import type {
     SelfAssessment,
     SpeakingSession,
     DocumentAnalysisResult,
+    StudentTest,
 } from '../types';
 
 interface Item {
@@ -826,5 +827,70 @@ describe('dedupeStudentRubrics (#799)', () => {
                 selfAssessedAt: '2026-10-01T12:00:00Z',
             },
         ]);
+    });
+});
+
+describe('studentTests merge keeps teacher-authored fields', () => {
+    const submission = (over: Partial<StudentTest>): StudentTest => ({
+        id: 'st1',
+        testId: 't1',
+        studentId: 's1',
+        answers: [],
+        status: 'in_progress',
+        startedAt: '2026-01-01T00:00:00.000Z',
+        ...over,
+    });
+
+    function mergeOne(local: StudentTest, remote: StudentTest): StudentTest {
+        const merged = mergeStoreData(baseStoreData({ studentTests: [local] }), { studentTests: [remote] }, []);
+        expect(merged.studentTests).toHaveLength(1);
+        return merged.studentTests[0];
+    }
+
+    it('carries review flags onto a newer copy that does not know about them', () => {
+        const local = submission({ updatedAt: '2026-01-01T00:00:00.000Z', reviewFlags: ['q1'] });
+        const remote = submission({
+            updatedAt: '2026-01-02T00:00:00.000Z',
+            status: 'submitted',
+            answers: [{ questionId: 'q1', response: 'answer' }],
+        });
+
+        const merged = mergeOne(local, remote);
+
+        expect(merged.status).toBe('submitted');
+        expect(merged.answers).toEqual(remote.answers);
+        expect(merged.reviewFlags).toEqual(['q1']);
+    });
+
+    it('carries a class-wide adjustment the same way', () => {
+        const local = submission({
+            updatedAt: '2026-01-01T00:00:00.000Z',
+            adjustmentPoints: 1.5,
+            adjustment: { points: 1.5, appliedAt: '2026-01-01T00:00:00.000Z' },
+            lastEditedBy: 'teacher-1',
+        });
+        const remote = submission({ updatedAt: '2026-01-02T00:00:00.000Z' });
+
+        const merged = mergeOne(local, remote);
+
+        expect(merged.adjustmentPoints).toBe(1.5);
+        expect(merged.adjustment).toEqual(local.adjustment);
+        expect(merged.lastEditedBy).toBe('teacher-1');
+    });
+
+    it('never restores a flag the newer local copy cleared', () => {
+        const local = submission({ updatedAt: '2026-01-03T00:00:00.000Z' });
+        const remote = submission({ updatedAt: '2026-01-02T00:00:00.000Z', reviewFlags: ['q1'] });
+
+        const merged = mergeOne(local, remote);
+
+        expect(merged.reviewFlags).toBeUndefined();
+    });
+
+    it('keeps a flag the winning copy already carries', () => {
+        const local = submission({ updatedAt: '2026-01-01T00:00:00.000Z', reviewFlags: ['q1'] });
+        const remote = submission({ updatedAt: '2026-01-02T00:00:00.000Z', reviewFlags: ['q2'] });
+
+        expect(mergeOne(local, remote).reviewFlags).toEqual(['q2']);
     });
 });

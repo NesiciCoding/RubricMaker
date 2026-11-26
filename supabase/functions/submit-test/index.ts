@@ -29,6 +29,7 @@ import {
     replayStaircaseLevels,
 } from '../_shared/placementStaircase.ts';
 import { sanitizeAnswers, isAssignmentExpired, attemptPolicyFor } from './validation.ts';
+import { carryTeacherAuthoredTestFields } from '../_shared/teacherAuthoredTestFields.ts';
 
 const CORS = {
     'Access-Control-Allow-Origin': '*',
@@ -355,6 +356,17 @@ serve(async (req) => {
     // genuine duplicate submission and should fail immediately, as before.
     const { isPractice, maxAttempts } = attemptPolicyFor(assignment.mode);
 
+    // `data` below is rebuilt field by field, so anything the teacher authored on this
+    // assignment's previous attempt — review flags, a class-wide adjustment — would be lost on a
+    // retake unless it is carried across explicitly (see _shared/teacherAuthoredTestFields.ts).
+    const { data: priorAttemptRows } = await admin
+        .from('student_tests')
+        .select('data')
+        .eq('assignment_id', assignmentId)
+        .order('submitted_at', { ascending: false })
+        .limit(1);
+    const priorAttemptData = (priorAttemptRows?.[0]?.data ?? null) as Record<string, unknown> | null;
+
     for (let retry = 0; retry < maxAttempts; retry++) {
         let attemptNumber = 1;
         if (isPractice) {
@@ -372,29 +384,32 @@ serve(async (req) => {
             student_user_id: user.id,
             submitted_at: submittedAt,
             attempt_number: attemptNumber,
-            data: {
-                id: submissionId,
-                testId: assignment.test_id,
-                studentId: assignment.student_id,
-                answers: generatorAnswers ?? sanitizedAnswers,
-                status: 'submitted',
-                startedAt,
-                submittedAt,
-                events: events ?? [],
-                attemptNumber,
-                ...(sectionPath ? { sectionPath } : {}),
-                ...(deliveredVariants.length > 0 ? { deliveredVariantIds: deliveredVariants } : {}),
-                ...(typeof testVersion === 'string' && /^[A-D]$/.test(testVersion) ? { testVersion } : {}),
-                ...(generatorLevelPath
-                    ? {
-                          levelPath: generatorLevelPath,
-                          askedQuestionSnapshots: generatorAskedQuestions ?? [],
-                          ...(generatorStartLevel ? { placementStartLevel: generatorStartLevel } : {}),
-                      }
-                    : levelPath
-                      ? { levelPath }
-                      : {}),
-            },
+            data: carryTeacherAuthoredTestFields(
+                {
+                    id: submissionId,
+                    testId: assignment.test_id,
+                    studentId: assignment.student_id,
+                    answers: generatorAnswers ?? sanitizedAnswers,
+                    status: 'submitted',
+                    startedAt,
+                    submittedAt,
+                    events: events ?? [],
+                    attemptNumber,
+                    ...(sectionPath ? { sectionPath } : {}),
+                    ...(deliveredVariants.length > 0 ? { deliveredVariantIds: deliveredVariants } : {}),
+                    ...(typeof testVersion === 'string' && /^[A-D]$/.test(testVersion) ? { testVersion } : {}),
+                    ...(generatorLevelPath
+                        ? {
+                              levelPath: generatorLevelPath,
+                              askedQuestionSnapshots: generatorAskedQuestions ?? [],
+                              ...(generatorStartLevel ? { placementStartLevel: generatorStartLevel } : {}),
+                          }
+                        : levelPath
+                          ? { levelPath }
+                          : {}),
+                },
+                priorAttemptData
+            ),
         });
 
         if (!insertErr) {
