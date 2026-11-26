@@ -3348,6 +3348,35 @@
         "voice_feedback_dropped": "Les notes ont été enregistrées, mais le stockage de cet appareil n'a pas pu conserver {{count}} enregistrement(s) vocal(aux), qui seront perdus au rechargement. Connectez-vous au cloud ou supprimez d'anciens enregistrements pour les conserver.",
         "sync_not_allowed": "Le serveur a refusé cette modification : vous ne pouvez modifier que vos propres classes. Rien n'a été perdu."
     },
+    "proofMarks": {
+        "del": { "label": "supprimer ce texte" },
+        "ins": { "label": "insérer du texte" },
+        "space": { "label": "insérer une espace" },
+        "closeup": { "label": "rapprocher les mots" },
+        "para": { "label": "commencer un nouveau paragraphe" },
+        "tr": { "label": "intervertir ces lettres" },
+        "sp": { "label": "orthographe : remplacer le mot" },
+        "query": { "label": "à vérifier : contrôler ceci" },
+        "caps": { "label": "mettre en capitales" },
+        "lc": { "label": "mettre en bas de casse" },
+        "ital": { "label": "mettre en italique" },
+        "bf": { "label": "mettre en gras" },
+        "ul": { "label": "souligner" },
+        "comma": { "label": "insérer une virgule" },
+        "period": { "label": "insérer un point" },
+        "apostrophe": { "label": "insérer une apostrophe" },
+        "align-left": { "label": "aligner à gauche" },
+        "align-center": { "label": "centrer" },
+        "align-right": { "label": "aligner à droite" },
+        "families": {
+            "delete": "Suppression",
+            "insert": "Insertion",
+            "replace": "Remplacement",
+            "type-style": "Style de caractère",
+            "align": "Alignement",
+            "advisory": "À vérifier"
+        }
+    },
     "pwa": {
         "update_available_title": "Mise à jour disponible",
         "update_available_refresh": "Actualiser",

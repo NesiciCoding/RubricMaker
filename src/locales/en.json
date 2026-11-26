@@ -3348,6 +3348,35 @@
         "voice_feedback_dropped": "Grades were saved, but {{count}} voice recording(s) did not fit in this device's storage and will be lost on reload. Connect to the cloud or remove old recordings to keep them.",
         "sync_not_allowed": "That change was refused by the server: you can only change your own classes. Nothing was lost."
     },
+    "proofMarks": {
+        "del": { "label": "delete this text" },
+        "ins": { "label": "insert text" },
+        "space": { "label": "insert a space" },
+        "closeup": { "label": "close up the gap" },
+        "para": { "label": "start a new paragraph" },
+        "tr": { "label": "transpose these letters" },
+        "sp": { "label": "spelling: replace the word" },
+        "query": { "label": "query: check this" },
+        "caps": { "label": "set in capitals" },
+        "lc": { "label": "set in lowercase" },
+        "ital": { "label": "set in italics" },
+        "bf": { "label": "set in bold" },
+        "ul": { "label": "underline this" },
+        "comma": { "label": "insert a comma" },
+        "period": { "label": "insert a full stop" },
+        "apostrophe": { "label": "insert an apostrophe" },
+        "align-left": { "label": "align left" },
+        "align-center": { "label": "centre this" },
+        "align-right": { "label": "align right" },
+        "families": {
+            "delete": "Delete",
+            "insert": "Insert",
+            "replace": "Replace",
+            "type-style": "Type style",
+            "align": "Alignment",
+            "advisory": "Query"
+        }
+    },
     "pwa": {
         "update_available_title": "Update available",
         "update_available_refresh": "Refresh",

@@ -395,6 +395,58 @@ export interface DocumentComment {
 }
 
 /**
+ * The whole set of changes a proofreading mark may execute. Closed on purpose: the apply flow
+ * (PM-09) and the registry both switch on it, so a free-text operation could silently do nothing.
+ */
+export type MarkOperation =
+    'deleteRange' | 'insertText' | 'splitBlock' | 'transposeRanges' | 'replaceRange' | 'setMark' | 'setBlockAttr';
+
+/**
+ * What the teacher has decided about a mark. `noted` is a mark that has merely been placed — like
+ * a pen stroke on paper — and is the only status that leaves the essay text untouched.
+ */
+export type MarkStatus = 'noted' | 'proposed' | 'accepted' | 'rejected';
+
+/**
+ * Operation arguments, all optional so one shape serves the whole vocabulary: the spelling mark
+ * carries the corrected word, the type-style marks the TipTap mark name, the alignment marks the
+ * block attribute. Which field an operation reads is fixed by the operation, never by the payload.
+ */
+export interface MarkPayload {
+    /** Text the operation writes: the corrected word, the inserted space, the punctuation. */
+    text?: string;
+    mark?: 'bold' | 'italic' | 'underline';
+    blockAttr?: { name: 'textAlign'; value: 'left' | 'center' | 'right' };
+}
+
+/**
+ * A proofreading mark anchored to a document — the sidecar counterpart to DocumentComment, and
+ * deliberately not a ProseMirror mark: the essay's schema, HTML and export stay free of marks, and
+ * an unaccepted mark can never leak into a submitted text.
+ */
+export interface DocumentMark {
+    id: string;
+    /** The document the mark is drawn on — the same key DocumentComment uses. */
+    attachmentId: string;
+    /** Set when the marked document is an essay body rather than an uploaded attachment. */
+    essayId?: string;
+    authorId: string;
+    /** Registry id from `src/data/proofMarks.ts`; unknown ids read as advisory, never throw. */
+    symbolId: string;
+    anchor: { from: number; to: number };
+    /** The other range for operations that act on two ranges — the partner in a transpose. */
+    extraAnchor?: { from: number; to: number };
+    payload?: MarkPayload;
+    status: MarkStatus;
+    /** The teacher's own words, shown in the popover beside the symbol's label. */
+    note?: string;
+    /** Hash of the anchored text at creation, so a mark survives edits that shift its positions. */
+    snippetHash?: string;
+    createdAt: string;
+    updatedAt?: string;
+}
+
+/**
  * A blank DOCX template used to style an export. Unset/'table' = a rubric template whose
  * column headers & header colour are extracted (levelHeaders/headerColor). 'style' = an
  * essay/period-report template whose heading/body font are extracted instead.
