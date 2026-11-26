@@ -53,7 +53,6 @@ import type {
 import { resolveUserRole } from '../utils/userRole';
 import { exportFullBackup } from '../store/storage';
 import { hasFloorRange } from '../utils/gradeCalc';
-import { seedDemoData } from '../utils/seedDemoData';
 import { diffRestoredSettings, hasIgnoredProtectedSettings, type SettingChange } from '../utils/backupSettings';
 import BackupSettingsChanges from '../components/Settings/BackupSettingsChanges';
 import AccountPasswordCard from '../components/Settings/AccountPasswordCard';
@@ -400,7 +399,10 @@ export default function SettingsPage() {
 
     // ─── Other handlers ──────────────────────────────────────────────────────────
 
-    function handleLoadSampleData() {
+    async function handleLoadSampleData() {
+        // On demand: the button only renders in dev builds, and the demo dataset (including the
+        // proof-mark essay fixture) must not land in the production Settings chunk.
+        const { seedDemoData } = await import('../utils/seedDemoData');
         seedDemoData();
         window.location.reload();
     }
