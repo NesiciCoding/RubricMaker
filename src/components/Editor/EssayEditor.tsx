@@ -42,6 +42,14 @@ import CardGrip from '../ui/CardGrip';
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
+/**
+ * Page mode always paints a white A4 sheet, so its ink has to be fixed as well. Inheriting
+ * `--text` from the theme put near-white text (#f1ebdf) on white paper in the default palette,
+ * i.e. an unreadable page view. The compact editor keeps using theme colours — it sits on a
+ * themed surface — so this applies to the page box only.
+ */
+const PAGE_INK = '#0f172a';
+
 const FONT_FAMILIES = [
     { label: 'Inter (default)', value: '' },
     { label: 'Arial', value: 'Arial, sans-serif' },
@@ -649,6 +657,7 @@ export default function EssayEditor({
                                     minHeight: 1123,
                                     margin: '0 auto',
                                     background: '#fff',
+                                    color: PAGE_INK,
                                     boxShadow: '0 4px 24px rgba(0,0,0,0.14)',
                                     borderRadius: 2,
                                     padding: '96px 96px 96px',
