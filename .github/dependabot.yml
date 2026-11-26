@@ -49,6 +49,42 @@ updates:
           - "supabase"
           - "@types/*"
 
+  # Images pinned in the compose files. The docker-compose ecosystem reads every compose file in
+  # the directory (docker-compose.yml, docker-compose.override.yml, compose.yaml, …), so "/" covers
+  # the repo stack plus the observability stack, and "/deploy/supabase" covers the production
+  # Supabase stack. Grouping keeps a stack's images moving in one reviewable PR.
+  - package-ecosystem: "docker-compose"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    groups:
+      compose-images:
+        patterns:
+          - "*"
+    ignore:
+      # A Postgres major needs a dump/restore, not a pull.
+      - dependency-name: "postgres"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: "docker-compose"
+    directory: "/deploy/supabase"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    groups:
+      supabase-stack:
+        patterns:
+          - "*"
+    ignore:
+      # The db image is supabase/postgres; a major upgrade needs the same dump/restore.
+      - dependency-name: "supabase/postgres"
+        update-types: ["version-update:semver-major"]
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

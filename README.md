@@ -297,6 +297,7 @@ Deploy `dist/` to GitHub Pages, Vercel, Netlify, or any web server.
 Deep operational detail — attachment retention, nightly backups, email digests, observability, load testing — lives in [docs/SELF_HOSTING_OPS.md](docs/SELF_HOSTING_OPS.md) and the linked docs below. Recommended for a production deployment:
 
 - **Attachment cleanup** — nightly script purges attachments/scans past the retention period. [docs/SELF_HOSTING_OPS.md](docs/SELF_HOSTING_OPS.md)
+- **Self-hosted Supabase stack** — the pinned official compose file, the production override and the env template live in [deploy/supabase/](deploy/supabase/README.md), so a host can be rebuilt from the repo, a `.env` and a backup.
 - **Cloud backups** — nightly DB + Storage backup, on-site or (recommended) off-site. [docs/SELF_HOSTING_OPS.md](docs/SELF_HOSTING_OPS.md)
 - **Error reporting** — JS-error-only telemetry, no user content, 30-day retention. [docs/ERROR_REPORTING.md](docs/ERROR_REPORTING.md)
 - **Observability** — Loki/Prometheus/Grafana stack with alerting and a School Highlights wall-display dashboard (anonymous CEFR, grammar and activity totals; teachers can opt out in Settings). [docs/OBSERVABILITY_DASHBOARDS.md](docs/OBSERVABILITY_DASHBOARDS.md) · [docs/OBSERVABILITY_HESTIACP.md](docs/OBSERVABILITY_HESTIACP.md)

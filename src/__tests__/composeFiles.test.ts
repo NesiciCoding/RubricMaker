@@ -7,6 +7,7 @@ const root = resolve(__dirname, '../..');
 const COMPOSE_FILES = [
     'docker-compose.yml',
     'docker-compose.observability.yml',
+    'deploy/supabase/docker-compose.yml',
     'deploy/supabase/docker-compose.override.yml',
 ];
 
@@ -67,6 +68,26 @@ describe('compose files', () => {
             expect(port).toMatch(/^127\.0\.0\.1:/);
         }
         expect(services.supavisor.ports).toHaveLength(2);
+    });
+
+    it('the pinned official stack still has every service the override configures (#934)', () => {
+        const upstream = load('deploy/supabase/docker-compose.yml').value.services as Record<string, unknown>;
+        const override = load('deploy/supabase/docker-compose.override.yml').value.services as Record<string, unknown>;
+        // mail-templates is the override's own container; every other key must be an upstream service,
+        // or the override silently stops applying after a re-pin renames one.
+        const missing = Object.keys(override).filter((name) => name !== 'mail-templates' && !(name in upstream));
+        expect(missing).toEqual([]);
+    });
+
+    it('Dependabot watches every compose directory so image updates arrive as PRs (#934)', () => {
+        const config = load('.github/dependabot.yml').value.updates as {
+            'package-ecosystem'?: string;
+            directory?: string;
+        }[];
+        const watched = config
+            .filter((entry) => entry['package-ecosystem'] === 'docker-compose')
+            .map((entry) => entry.directory);
+        expect(watched).toEqual(expect.arrayContaining(['/', '/deploy/supabase']));
     });
 
     it('the official-stack override guards Postgres from the OOM killer (#932)', () => {
