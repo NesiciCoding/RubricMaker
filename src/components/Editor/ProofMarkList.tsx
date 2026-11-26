@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { DocumentMark } from '../../types';
 import { getSymbol } from '../../data/proofMarks';
@@ -49,6 +49,7 @@ export default function ProofMarkList({
 }: ProofMarkListProps) {
     const { t } = useTranslation();
     const [showAll, setShowAll] = useState(false);
+    const [focusIndex, setFocusIndex] = useState(0);
     // The trigger is the exact item that opened the panel, so focus can go back to it — a line can
     // hold several items.
     const [open, setOpen] = useState<{ rowId: string; triggerKey: string } | null>(null);
@@ -69,9 +70,31 @@ export default function ProofMarkList({
         return [...byBlock.entries()].sort(([a], [b]) => a - b).map(([block, items]) => ({ block, items }));
     }, [rows]);
 
+    // Roving focus across the rendered items, in reading order — the same one-tab-stop model as the
+    // rail, so a long list does not add a tab stop per mark.
+    const orderedKeys = useMemo(() => {
+        const keys: string[] = [];
+        for (const group of groups) {
+            const items = collapsed ? group.items.slice(0, COLLAPSED_PER_PARAGRAPH) : group.items;
+            for (const item of items) keys.push(`${item.row.id}:${item.mark.id}`);
+        }
+        return keys;
+    }, [groups, collapsed]);
+
+    useEffect(() => {
+        setFocusIndex((index) => Math.min(index, Math.max(0, orderedKeys.length - 1)));
+    }, [orderedKeys.length]);
+
     const total = rows.reduce((sum, row) => sum + row.marks.length, 0);
     const canCollapse = groups.some((group) => group.items.length > COLLAPSED_PER_PARAGRAPH);
     const openRow = open ? (rows.find((row) => row.id === open.rowId) ?? null) : null;
+
+    const focusItem = (index: number) => {
+        const next = Math.min(Math.max(index, 0), Math.max(0, orderedKeys.length - 1));
+        setFocusIndex(next);
+        const key = orderedKeys[next];
+        if (key) itemRefs.current.get(key)?.focus();
+    };
 
     const closePanel = () => {
         const trigger = open ? itemRefs.current.get(open.triggerKey) : null;
@@ -131,6 +154,7 @@ export default function ProofMarkList({
                                     const replacement = mark.payload?.text ?? null;
                                     const active = activeLine === row.line;
                                     const refKey = `${row.id}:${mark.id}`;
+                                    const position = orderedKeys.indexOf(refKey);
                                     const isOpen = open?.rowId === row.id;
                                     const label = t('proofMarks.rail.chipLabel', {
                                         count: 1,
@@ -154,7 +178,26 @@ export default function ProofMarkList({
                                                 aria-pressed={active}
                                                 aria-haspopup={interactive ? 'dialog' : undefined}
                                                 aria-expanded={interactive ? isOpen : undefined}
-                                                tabIndex={interactive ? 0 : -1}
+                                                tabIndex={interactive ? (position === focusIndex ? 0 : -1) : -1}
+                                                onFocus={() => {
+                                                    if (interactive) setFocusIndex(position);
+                                                }}
+                                                onKeyDown={(event) => {
+                                                    if (!interactive) return;
+                                                    if (event.key === 'ArrowDown') {
+                                                        event.preventDefault();
+                                                        focusItem(position + 1);
+                                                    } else if (event.key === 'ArrowUp') {
+                                                        event.preventDefault();
+                                                        focusItem(position - 1);
+                                                    } else if (event.key === 'Home') {
+                                                        event.preventDefault();
+                                                        focusItem(0);
+                                                    } else if (event.key === 'End') {
+                                                        event.preventDefault();
+                                                        focusItem(orderedKeys.length - 1);
+                                                    }
+                                                }}
                                                 onClick={() => {
                                                     if (!interactive) return;
                                                     if (isOpen) {

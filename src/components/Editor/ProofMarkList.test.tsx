@@ -166,3 +166,44 @@ describe('ProofMarkList a11y', () => {
         );
     });
 });
+
+describe('ProofMarkList roving focus', () => {
+    const items = () => [...document.querySelectorAll<HTMLButtonElement>('button[data-mark-id]')];
+
+    it('is one tab stop, moved by the arrow keys', () => {
+        renderList();
+
+        expect(items().map((item) => item.tabIndex)).toEqual([0, -1, -1]);
+
+        fireEvent.keyDown(items()[0], { key: 'ArrowDown' });
+        expect(items()[1]).toHaveFocus();
+        expect(items().map((item) => item.tabIndex)).toEqual([-1, 0, -1]);
+
+        fireEvent.keyDown(items()[1], { key: 'End' });
+        expect(items()[2]).toHaveFocus();
+
+        fireEvent.keyDown(items()[2], { key: 'Home' });
+        expect(items()[0]).toHaveFocus();
+
+        fireEvent.keyDown(items()[0], { key: 'ArrowUp' });
+        expect(items()[0]).toHaveFocus();
+    });
+
+    it('keeps a single tab stop after expanding and after collapsing the focused item away', () => {
+        renderList();
+
+        fireEvent.click(screen.getByRole('button', { name: 'proofMarks.list.showAll|{"count":4}' }));
+        expect(items()).toHaveLength(4);
+        expect(items().filter((item) => item.tabIndex === 0)).toHaveLength(1);
+
+        fireEvent.keyDown(items()[1], { key: 'End' });
+        expect(items()[3]).toHaveFocus();
+
+        fireEvent.click(screen.getByRole('button', { name: 'proofMarks.list.showFewer' }));
+
+        // m3 is collapsed away, so the tab stop clamps onto the last visible item (m4).
+        const focused = items().filter((item) => item.tabIndex === 0);
+        expect(focused).toHaveLength(1);
+        expect(focused[0]).toHaveAttribute('data-mark-id', 'm4');
+    });
+});
