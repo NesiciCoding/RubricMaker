@@ -651,6 +651,7 @@ export default function EssayEditor({
                             className={showInvisibles ? 'show-invisibles' : ''}
                         >
                             <div
+                                data-testid="essay-page"
                                 style={{
                                     width: '100%',
                                     maxWidth: 794,
@@ -755,8 +756,10 @@ export default function EssayEditor({
                 ${TIPTAP_CONTENT_STYLES}
 
                 /* ── Show invisibles ── */
-                .show-invisibles .essay-editor-content p::after { content: '¶'; color: var(--text-dim); font-weight: 400; margin-left: 2px; pointer-events: none; }
-                .show-invisibles .essay-editor-content br::after { content: '↵'; color: var(--text-dim); pointer-events: none; }
+                /* Page-scoped ink: the sheet is white in every theme, so these glyphs cannot
+                   inherit the theme's tertiary text tone. */
+                .show-invisibles .essay-editor-content p::after { content: '¶'; color: var(--page-dim-ink, #475569); font-weight: 400; margin-left: 2px; pointer-events: none; }
+                .show-invisibles .essay-editor-content br::after { content: '↵'; color: var(--page-dim-ink, #475569); pointer-events: none; }
             `}</style>
         </div>
     );

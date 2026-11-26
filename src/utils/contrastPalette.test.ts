@@ -281,3 +281,38 @@ describe('coloured text uses the text-safe token, not the fill', () => {
         expect(offenders).toEqual([]);
     });
 });
+
+describe('page-mode ink is fixed and clear of the AAA floor on the white sheet', () => {
+    // The A4 page is white whatever the app theme, so its tones must not be theme tokens.
+    const PAGE_TOKENS = ['page-ink', 'page-dim-ink', 'page-mark-ink'] as const;
+    const pageBlock = cssBlocks(css).find((block) => tokens(block.body)['page-ink'] !== undefined);
+    const page = tokens(pageBlock?.body ?? '');
+
+    it('declares the page tokens outside both theme blocks', () => {
+        expect(pageBlock, 'no :root block declares --page-ink').toBeTruthy();
+        for (const theme of ['dark', 'light'] as const) {
+            const palette = themeTokens(theme);
+            for (const token of PAGE_TOKENS) {
+                expect(palette[token], `${theme} must not redefine --${token}`).toBeUndefined();
+            }
+        }
+    });
+
+    for (const token of PAGE_TOKENS) {
+        it(`--${token} >= ${AAA_NORMAL}:1 on #ffffff`, () => {
+            expect(page[token], `--${token} is missing`).toMatch(/^#[0-9a-f]{6}$/i);
+            expect(contrastRatio(page[token], '#ffffff')).toBeGreaterThanOrEqual(AAA_NORMAL);
+        });
+    }
+
+    it('keeps page ink out of the theme text palette', () => {
+        // Inheriting --text is exactly the bug: the dark theme's #f1ebdf is ~1.1:1 on paper.
+        expect(themeTokens('dark').text).not.toBe(page['page-ink']);
+        expect(themeTokens('light').text).not.toBe(page['page-ink']);
+    });
+
+    it('the A4 page box uses the token value', () => {
+        const source = readFileSync(join(srcDir, 'components/Editor/EssayEditor.tsx'), 'utf8');
+        expect(source).toContain(`const PAGE_INK = '${page['page-ink']}';`);
+    });
+});
