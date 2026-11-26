@@ -42,7 +42,7 @@ Backups made before format 2 (a single `database.sql` dumped with `--no-acl`) ar
 
 ### Running against the official Supabase stack
 
-Production typically runs the **official Supabase self-hosted Docker stack** (its own `docker compose` project, cloned next to `deploy/supabase/docker-compose.override.yml` — see that file), not this repository's `docker-compose.yml`. Two things differ, and the scripts above handle both once you export the right variables:
+Production typically runs the **official Supabase self-hosted Docker stack**, not this repository's `docker-compose.yml`. The pinned upstream compose file, the production override and the env template live in [`deploy/supabase/`](../deploy/supabase/README.md); copy them to the stack's directory on the host. Two things differ, and the scripts above handle both once you export the right variables:
 
 |                    | This repo's compose                                   | Official stack                                                                                                                            |
 | ------------------ | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
@@ -186,7 +186,7 @@ Production runs the **official Supabase self-hosted Docker stack**, not this rep
 
 Upstream's `docker-compose.yml` publishes Supavisor (`5432`, `6543`) and the API gateway (`8000`/`8443`, service key `api-gw` — Envoy-based on newer checkouts, Kong on older ones) on **all interfaces**. Docker inserts its own iptables rules ahead of the host firewall, so a port blocked in HestiaCP or ufw is still reachable from the internet — and the pooler port accepts Postgres logins directly, a known brute-force target. HestiaCP's nginx already reverse-proxies the public API domain to the gateway on `127.0.0.1`, so the raw ports don't need to be public.
 
-1. Copy [`deploy/supabase/docker-compose.override.yml`](../deploy/supabase/docker-compose.override.yml) next to the stack's own `docker-compose.yml` (Compose loads an override file automatically) and `docker compose up -d` to apply it.
+1. Copy [`deploy/supabase/docker-compose.yml`](../deploy/supabase/docker-compose.yml) and [`deploy/supabase/docker-compose.override.yml`](../deploy/supabase/docker-compose.override.yml) into the stack's directory (Compose loads the override automatically) and `docker compose up -d` to apply it. See [`deploy/supabase/README.md`](../deploy/supabase/README.md) for the directory layout and the one-service-at-a-time upgrade.
 2. Copy [`deploy/nginx-supabase-api-hestiacp.conf`](../deploy/nginx-supabase-api-hestiacp.conf) to the public API domain's vhost (`nginx.ssl.conf_after`) so `/project`, `/api/platform` and `/mcp` — Studio's dashboard and its SQL-executing MCP endpoint — 404 publicly instead of being reverse-proxied through. Reach them yourself over an SSH tunnel (`ssh -L 8000:127.0.0.1:8000 <vps>`) or WireGuard/Tailscale instead.
 3. Rotate `DASHBOARD_PASSWORD` in the stack's `.env` once both are live — it may have crossed the network in clear text before the lockdown (`.mcp.json`'s production endpoint is `https://`, fixed already).
 4. Verify from **outside** the VPS: `nmap -Pn -p 22,80,443,3000,5432,6543,8000,8443 <vps-ip>` should show only 22, 80 and 443 open.
@@ -542,8 +542,8 @@ container).
 
 **The official Supabase stack** needs `deploy/supabase/docker-compose.override.yml`:
 
-1. Copy it next to the stack's `docker-compose.yml`. Compose loads `docker-compose.override.yml`
-   automatically.
+1. Copy it next to the stack's `docker-compose.yml` (with the pinned `deploy/supabase/docker-compose.yml`
+   if the host is being rebuilt). Compose loads `docker-compose.override.yml` automatically.
 2. Copy the templates into the stack: `cp public/email-templates/*.html <stack>/volumes/mail-templates/`.
 3. In the stack's `.env`, set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_ADMIN_EMAIL`
    (the From address), `SMTP_SENDER_NAME=RubricMaker` (the display name) and
