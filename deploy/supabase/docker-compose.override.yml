@@ -65,7 +65,7 @@ services:
         mem_limit: 256m
 
     mail-templates:
-        image: nginx:1.27-alpine
+        image: nginx:1.29-alpine
         restart: unless-stopped
         mem_limit: 64m
         volumes:

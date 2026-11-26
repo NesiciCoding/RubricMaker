@@ -81,7 +81,7 @@ services:
   # See: https://github.com/orgs/supabase/discussions/48048
   api-gw:
     container_name: supabase-envoy
-    image: envoyproxy/envoy:v1.39.6
+    image: envoyproxy/envoy:v1.40.2
     restart: unless-stopped
     networks:
       default:
@@ -266,7 +266,7 @@ services:
 
   rest:
     container_name: supabase-rest
-    image: postgrest/postgrest:v14.18
+    image: postgrest/postgrest:v16.6
     restart: unless-stopped
     depends_on:
       db:
@@ -426,7 +426,7 @@ services:
 
   imgproxy:
     container_name: supabase-imgproxy
-    image: ghcr.io/imgproxy/imgproxy:v4.0.24
+    image: ghcr.io/imgproxy/imgproxy:v4.0.25
     restart: unless-stopped
     volumes:
       - ./volumes/storage:/var/lib/storage:z
@@ -466,7 +466,7 @@ services:
 
   functions:
     container_name: supabase-edge-functions
-    image: supabase/edge-runtime:v1.79.2
+    image: supabase/edge-runtime:v1.79.3
     mem_limit: ${FUNCTIONS_MEMORY_LIMIT:-2g}
     restart: unless-stopped
     volumes:
@@ -511,7 +511,7 @@ services:
   db:
     container_name: supabase-db
     # To upgrade an existing Postgres 15 database in place, see utils/upgrade-pg17.sh.
-    image: supabase/postgres:17.6.1.136
+    image: supabase/postgres:17.12.0.002
     restart: unless-stopped
     volumes:
       - ./volumes/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:Z
