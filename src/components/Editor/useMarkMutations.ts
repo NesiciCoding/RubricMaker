@@ -10,8 +10,10 @@ import {
     applyFormattingMark,
     applyFormattingMarks,
     FORMATTING_REFUSAL_KEYS,
+    isFormattingMark,
     markStatusAfter,
 } from '../../utils/markOperations';
+import { ADVISORY_KEYS, applyTextMark } from '../../utils/markTextOperations';
 import { popMarkUndo, pushMarkUndo, type MarkUndoEntry } from '../../utils/markUndo';
 import type { TextRange } from '../../utils/proofRail';
 
@@ -21,10 +23,12 @@ export interface MarkMutations {
     /** Deletes immediately and offers the undo in a toast — no confirmation dialog. */
     remove: (mark: DocumentMark) => void;
     /**
-     * Applies a formatting mark to the document as one transaction and records the decision. True
-     * when the document changed, so the caller knows there is new HTML to save.
+     * Applies a formatting or text-operation mark to the document as one transaction and records
+     * the decision. True when the document changed, so the caller knows there is new HTML to save.
      */
     accept: (editor: Editor | null, mark: DocumentMark) => boolean;
+    /** Records that the correction is proposed to the student; text edits stay for accept. */
+    propose: (mark: DocumentMark) => void;
     reject: (mark: DocumentMark) => void;
     /**
      * The only batch action: every formatting mark on the page, one transaction each. Returns how
@@ -103,6 +107,27 @@ export function useMarkMutations(): MarkMutations {
     const accept = useCallback(
         (editor: Editor | null, mark: DocumentMark): boolean => {
             if (!editor) return false;
+
+            if (!isFormattingMark(mark)) {
+                const result = applyTextMark(editor, mark);
+                if (!result.ok) {
+                    const message =
+                        result.reason === 'advisory'
+                            ? t('proofMarks.apply.advisory', { reason: t(ADVISORY_KEYS[result.advisory]) })
+                            : t(
+                                  result.reason === 'stale-anchor'
+                                      ? 'proofMarks.apply.refused.stale-anchor'
+                                      : 'proofMarks.apply.notTextOperation'
+                              );
+                    showToast(message, 'warning');
+                    return false;
+                }
+                const status = markStatusAfter(mark.status, 'accept');
+                if (status) setDocumentMarkStatus(mark.id, status);
+                showToast(t('proofMarks.apply.accepted', { symbol: t(getSymbol(mark.symbolId).labelKey) }), 'success');
+                return true;
+            }
+
             const result = applyFormattingMark(editor, mark);
             if (!result.ok) {
                 showToast(t(FORMATTING_REFUSAL_KEYS[result.reason]), 'warning');
@@ -126,6 +151,16 @@ export function useMarkMutations(): MarkMutations {
         [setDocumentMarkStatus, showToast, t]
     );
 
+    const propose = useCallback(
+        (mark: DocumentMark) => {
+            const status = markStatusAfter(mark.status, 'propose');
+            if (!status) return;
+            setDocumentMarkStatus(mark.id, status);
+            showToast(t('proofMarks.apply.proposed', { symbol: t(getSymbol(mark.symbolId).labelKey) }), 'info');
+        },
+        [setDocumentMarkStatus, showToast, t]
+    );
+
     const acceptAllFormatting = useCallback(
         (editor: Editor | null, marks: readonly DocumentMark[]): number => {
             if (!editor) return 0;
@@ -145,5 +180,5 @@ export function useMarkMutations(): MarkMutations {
         [setDocumentMarkStatus, showToast, t]
     );
 
-    return { update, move, remove, accept, reject, acceptAllFormatting, undo, canUndo: undoDepth > 0 };
+    return { update, move, remove, accept, propose, reject, acceptAllFormatting, undo, canUndo: undoDepth > 0 };
 }

@@ -3350,6 +3350,30 @@
     },
     "proofMarks": {
         "apply": {
+            "propose": "Proponer",
+            "proposed": "{{symbol}} propuesto",
+            "advisory": "No se aplica automáticamente: {{reason}}",
+            "notTextOperation": "Esta marca es una consulta y no cambia nada.",
+            "suggestion": {
+                "delete": "Eliminar «{{text}}»",
+                "deleteWithSpace": "Eliminar «{{text}}» y el espacio siguiente",
+                "closeup": "Cerrar el espacio en «{{text}}»",
+                "insert": "Insertar «{{text}}»",
+                "replace": "Sustituir «{{text}}» por «{{replacement}}»",
+                "transpose": "Intercambiar «{{first}}» y «{{second}}»",
+                "split": "Empezar un párrafo nuevo aquí",
+                "alignLeft": "Alinear este párrafo a la izquierda",
+                "alignCenter": "Centrar este párrafo",
+                "alignRight": "Alinear este párrafo a la derecha"
+            },
+            "reason": {
+                "acrossBlocks": "la marca abarca más de un párrafo",
+                "needsTwoWords": "la marca no abarca exactamente dos palabras",
+                "noWhitespace": "no hay ningún espacio que cerrar",
+                "noReplacement": "no se ha escrito texto de sustitución",
+                "alreadyThere": "el texto ya está ahí",
+                "noBlock": "la marca no está dentro de un párrafo"
+            },
             "accept": "Aceptar",
             "reject": "Rechazar",
             "acceptAll": "Aceptar todas las correcciones de formato de esta página",

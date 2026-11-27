@@ -3350,6 +3350,30 @@
     },
     "proofMarks": {
         "apply": {
+            "propose": "Propose",
+            "proposed": "Proposed {{symbol}}",
+            "advisory": "Won't apply automatically: {{reason}}",
+            "notTextOperation": "This mark asks a question; it changes nothing.",
+            "suggestion": {
+                "delete": "Delete “{{text}}”",
+                "deleteWithSpace": "Delete “{{text}}” and the space after it",
+                "closeup": "Close up the gap at “{{text}}”",
+                "insert": "Insert “{{text}}”",
+                "replace": "Replace “{{text}}” with “{{replacement}}”",
+                "transpose": "Swap “{{first}}” and “{{second}}”",
+                "split": "Start a new paragraph here",
+                "alignLeft": "Align this paragraph left",
+                "alignCenter": "Centre this paragraph",
+                "alignRight": "Align this paragraph right"
+            },
+            "reason": {
+                "acrossBlocks": "the mark covers more than one paragraph",
+                "needsTwoWords": "the mark does not cover exactly two words",
+                "noWhitespace": "there is no space at the mark to close up",
+                "noReplacement": "no replacement text was written",
+                "alreadyThere": "the text is already there",
+                "noBlock": "the mark is not inside a paragraph"
+            },
             "accept": "Accept",
             "reject": "Reject",
             "acceptAll": "Accept all formatting on this page",
