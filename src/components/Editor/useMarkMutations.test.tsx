@@ -203,6 +203,57 @@ describe('useMarkMutations', () => {
         expect(mocks.showToast).not.toHaveBeenCalled();
     });
 
+    it('applies a text-operation mark and records the acceptance', () => {
+        const editor = makeEditor('<p>Hello recieve again</p>');
+        const spelling = mark({
+            symbolId: 'sp',
+            anchor: { from: 7, to: 14 },
+            snippetHash: hashSnippet('recieve'),
+            payload: { text: 'receive' },
+        });
+        const { result } = renderHook(() => useMarkMutations());
+
+        let applied!: boolean;
+        act(() => {
+            applied = result.current.accept(editor, spelling);
+        });
+
+        expect(applied).toBe(true);
+        expect(editor.state.doc.textContent).toBe('Hello receive again');
+        expect(mocks.setDocumentMarkStatus).toHaveBeenCalledWith('m1', 'accepted');
+        expect(mocks.showToast).toHaveBeenCalledWith('proofMarks.apply.accepted', 'success');
+    });
+
+    it('refuses an ambiguous text-operation mark and explains why', () => {
+        const editor = makeEditor('<p>Hello recieve again</p>');
+        const original = editor.getJSON();
+        const spelling = mark({
+            symbolId: 'sp',
+            anchor: { from: 7, to: 14 },
+            snippetHash: hashSnippet('recieve'),
+        });
+        const { result } = renderHook(() => useMarkMutations());
+
+        let applied!: boolean;
+        act(() => {
+            applied = result.current.accept(editor, spelling);
+        });
+
+        expect(applied).toBe(false);
+        expect(editor.getJSON()).toEqual(original);
+        expect(mocks.setDocumentMarkStatus).not.toHaveBeenCalled();
+        expect(mocks.showToast).toHaveBeenCalledWith('proofMarks.apply.advisory', 'warning');
+    });
+
+    it('proposes a correction without touching the document', () => {
+        const { result } = renderHook(() => useMarkMutations());
+
+        act(() => result.current.propose(mark({ symbolId: 'sp' })));
+
+        expect(mocks.setDocumentMarkStatus).toHaveBeenCalledWith('m1', 'proposed');
+        expect(mocks.showToast).toHaveBeenCalledWith('proofMarks.apply.proposed', 'info');
+    });
+
     it('rejects a mark without touching the document', () => {
         const editor = makeEditor();
         const original = editor.getHTML();

@@ -3350,6 +3350,30 @@
     },
     "proofMarks": {
         "apply": {
+            "propose": "Vorschlagen",
+            "proposed": "{{symbol}} vorgeschlagen",
+            "advisory": "Nicht automatisch angewendet: {{reason}}",
+            "notTextOperation": "Diese Markierung ist eine Frage und ändert nichts.",
+            "suggestion": {
+                "delete": "„{{text}}“ löschen",
+                "deleteWithSpace": "„{{text}}“ und das folgende Leerzeichen löschen",
+                "closeup": "Die Lücke bei „{{text}}“ schließen",
+                "insert": "„{{text}}“ einfügen",
+                "replace": "„{{text}}“ durch „{{replacement}}“ ersetzen",
+                "transpose": "„{{first}}“ und „{{second}}“ vertauschen",
+                "split": "Hier einen neuen Absatz beginnen",
+                "alignLeft": "Diesen Absatz linksbündig setzen",
+                "alignCenter": "Diesen Absatz zentrieren",
+                "alignRight": "Diesen Absatz rechtsbündig setzen"
+            },
+            "reason": {
+                "acrossBlocks": "die Markierung umfasst mehr als einen Absatz",
+                "needsTwoWords": "die Markierung umfasst nicht genau zwei Wörter",
+                "noWhitespace": "es gibt keine Lücke zum Schließen",
+                "noReplacement": "es wurde kein Ersatztext eingegeben",
+                "alreadyThere": "der Text steht bereits dort",
+                "noBlock": "die Markierung liegt nicht in einem Absatz"
+            },
             "accept": "Übernehmen",
             "reject": "Ablehnen",
             "acceptAll": "Alle Formatierungskorrekturen auf dieser Seite übernehmen",

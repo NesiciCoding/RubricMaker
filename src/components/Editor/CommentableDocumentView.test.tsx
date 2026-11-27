@@ -86,6 +86,18 @@ vi.mock('../../hooks/useToast', () => ({
     useToast: () => ({ showToast: mockShowToast, dismissToast: vi.fn() }),
 }));
 
+const mockSuggestions = vi.hoisted(() => ({
+    value: {} as Record<string, { key: string; values?: Record<string, string>; reasonKey?: string }>,
+}));
+
+vi.mock('./useMarkSuggestions', () => ({
+    useMarkSuggestions: () => mockSuggestions.value,
+}));
+
+beforeEach(() => {
+    mockSuggestions.value = {};
+});
+
 // jsdom has no layout, so the rail's measurement finds no line boxes. The editor panel is what is
 // under test here, so the measured rows are supplied directly.
 const mockRailRows = vi.hoisted(() => ({ rows: [] as unknown[] }));
@@ -480,6 +492,27 @@ describe('Mark editing', () => {
         expect(mockSetDocumentMarkStatus).toHaveBeenCalledWith('m1', 'accepted');
         expect(onApplyContent).toHaveBeenCalledTimes(1);
         expect(onApplyContent).toHaveBeenCalledWith('<p>Hello</p>');
+    });
+
+    it('shows the derived suggestion for a text-operation mark', () => {
+        mockSuggestions.value = {
+            m1: {
+                key: 'proofMarks.apply.suggestion.replace',
+                values: { text: 'recieve', replacement: 'receive' },
+            },
+        };
+        openEditor([makeMark({ symbolId: 'sp' })]);
+
+        expect(screen.getByText('proofMarks.apply.suggestion.replace')).toBeInTheDocument();
+    });
+
+    it('proposes a suggested correction through the store', () => {
+        mockSuggestions.value = { m1: { key: 'proofMarks.apply.suggestion.insert', values: { text: ',' } } };
+        openEditor([makeMark({ symbolId: 'comma' })]);
+
+        fireEvent.click(screen.getByRole('button', { name: /proofMarks\.apply\.propose:/ }));
+
+        expect(mockSetDocumentMarkStatus).toHaveBeenCalledWith('m1', 'proposed');
     });
 
     it('records a rejection through the store without touching the document', () => {

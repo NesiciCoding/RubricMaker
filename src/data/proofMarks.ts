@@ -53,7 +53,26 @@ export interface ProofMark {
     operation: MarkOperation | null;
     /** An instruction, not a glyph name — the glyph is the recognition aid, the label the meaning. */
     labelKey: `proofMarks.${ProofMarkId}.label`;
+    /**
+     * How accepting this symbol derives its text edit (PM-12). A symbol without one is either
+     * formatting (PM-11) or advisory; derivation lives in the registry so adding a symbol is still
+     * one data edit, and the planner never invents a rule from the symbol's name.
+     */
+    derive?: TextDerivation;
 }
+
+/**
+ * What the teacher's mark means in text terms. `text` is the literal a punctuation or space mark
+ * contributes when the mark itself carries none; `align` is the block value an alignment mark sets.
+ */
+export type TextDerivation =
+    | { kind: 'delete' }
+    | { kind: 'closeup' }
+    | { kind: 'insert'; text?: string }
+    | { kind: 'split-block' }
+    | { kind: 'transpose' }
+    | { kind: 'replace' }
+    | { kind: 'align'; align: 'left' | 'center' | 'right' };
 
 /*
  * Deliberately not ported from CMOS/ISO proofreading:
@@ -64,14 +83,29 @@ export interface ProofMark {
  * - stet is a proofreader's self-cancel, not teacher feedback: rejecting a mark is the app's undo.
  */
 export const PROOF_MARKS: Readonly<Record<ProofMarkId, ProofMark>> = {
-    del: { id: 'del', glyph: 'del', family: 'delete', operation: 'deleteRange', labelKey: 'proofMarks.del.label' },
-    ins: { id: 'ins', glyph: 'ins', family: 'insert', operation: 'insertText', labelKey: 'proofMarks.ins.label' },
+    del: {
+        id: 'del',
+        glyph: 'del',
+        family: 'delete',
+        operation: 'deleteRange',
+        labelKey: 'proofMarks.del.label',
+        derive: { kind: 'delete' },
+    },
+    ins: {
+        id: 'ins',
+        glyph: 'ins',
+        family: 'insert',
+        operation: 'insertText',
+        labelKey: 'proofMarks.ins.label',
+        derive: { kind: 'insert' },
+    },
     space: {
         id: 'space',
         glyph: 'space',
         family: 'insert',
         operation: 'insertText',
         labelKey: 'proofMarks.space.label',
+        derive: { kind: 'insert', text: ' ' },
     },
     closeup: {
         id: 'closeup',
@@ -79,10 +113,33 @@ export const PROOF_MARKS: Readonly<Record<ProofMarkId, ProofMark>> = {
         family: 'delete',
         operation: 'deleteRange',
         labelKey: 'proofMarks.closeup.label',
+        derive: { kind: 'closeup' },
     },
-    para: { id: 'para', glyph: 'para', family: 'insert', operation: 'splitBlock', labelKey: 'proofMarks.para.label' },
-    tr: { id: 'tr', glyph: 'tr', family: 'replace', operation: 'transposeRanges', labelKey: 'proofMarks.tr.label' },
-    sp: { id: 'sp', glyph: 'sp', family: 'replace', operation: 'replaceRange', labelKey: 'proofMarks.sp.label' },
+    para: {
+        id: 'para',
+        glyph: 'para',
+        family: 'insert',
+        operation: 'splitBlock',
+        labelKey: 'proofMarks.para.label',
+        derive: { kind: 'split-block' },
+    },
+    tr: {
+        id: 'tr',
+        glyph: 'tr',
+        family: 'replace',
+        operation: 'transposeRanges',
+        labelKey: 'proofMarks.tr.label',
+        derive: { kind: 'transpose' },
+    },
+    sp: {
+        id: 'sp',
+        glyph: 'sp',
+        family: 'replace',
+        operation: 'replaceRange',
+        labelKey: 'proofMarks.sp.label',
+        // The planner never guesses a spelling: without the teacher's replacement it is advisory.
+        derive: { kind: 'replace' },
+    },
     query: { id: 'query', glyph: 'query', family: 'advisory', operation: null, labelKey: 'proofMarks.query.label' },
     caps: { id: 'caps', glyph: 'caps', family: 'type-style', operation: 'setMark', labelKey: 'proofMarks.caps.label' },
     lc: { id: 'lc', glyph: 'lc', family: 'type-style', operation: 'setMark', labelKey: 'proofMarks.lc.label' },
@@ -95,6 +152,7 @@ export const PROOF_MARKS: Readonly<Record<ProofMarkId, ProofMark>> = {
         family: 'insert',
         operation: 'insertText',
         labelKey: 'proofMarks.comma.label',
+        derive: { kind: 'insert', text: ',' },
     },
     period: {
         id: 'period',
@@ -102,6 +160,7 @@ export const PROOF_MARKS: Readonly<Record<ProofMarkId, ProofMark>> = {
         family: 'insert',
         operation: 'insertText',
         labelKey: 'proofMarks.period.label',
+        derive: { kind: 'insert', text: '.' },
     },
     apostrophe: {
         id: 'apostrophe',
@@ -109,6 +168,7 @@ export const PROOF_MARKS: Readonly<Record<ProofMarkId, ProofMark>> = {
         family: 'insert',
         operation: 'insertText',
         labelKey: 'proofMarks.apostrophe.label',
+        derive: { kind: 'insert', text: "'" },
     },
     'align-left': {
         id: 'align-left',
@@ -116,6 +176,7 @@ export const PROOF_MARKS: Readonly<Record<ProofMarkId, ProofMark>> = {
         family: 'align',
         operation: 'setBlockAttr',
         labelKey: 'proofMarks.align-left.label',
+        derive: { kind: 'align', align: 'left' },
     },
     'align-center': {
         id: 'align-center',
@@ -123,6 +184,7 @@ export const PROOF_MARKS: Readonly<Record<ProofMarkId, ProofMark>> = {
         family: 'align',
         operation: 'setBlockAttr',
         labelKey: 'proofMarks.align-center.label',
+        derive: { kind: 'align', align: 'center' },
     },
     'align-right': {
         id: 'align-right',
@@ -130,6 +192,7 @@ export const PROOF_MARKS: Readonly<Record<ProofMarkId, ProofMark>> = {
         family: 'align',
         operation: 'setBlockAttr',
         labelKey: 'proofMarks.align-right.label',
+        derive: { kind: 'align', align: 'right' },
     },
 };
 

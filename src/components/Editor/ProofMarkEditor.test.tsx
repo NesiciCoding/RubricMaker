@@ -193,6 +193,47 @@ describe('ProofMarkEditor apply', () => {
         expect(screen.getByRole('button', { name: /proofMarks\.apply\.reject:/ })).toBeEnabled();
     });
 
+    it('shows the derived suggestion and offers propose for a text mark', () => {
+        const props = renderEditor({
+            marks: [mark({ symbolId: 'del' })],
+            suggestions: {
+                m1: { key: 'proofMarks.apply.suggestion.deleteWithSpace', values: { text: 'recieve' } },
+            },
+            onPropose: vi.fn(),
+        });
+
+        expect(screen.getByText('proofMarks.apply.suggestion.deleteWithSpace')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: /proofMarks\.apply\.propose:/ }));
+        expect(props.onPropose).toHaveBeenCalledWith(mark({ symbolId: 'del' }));
+    });
+
+    it('offers accept for a text mark with a plan', () => {
+        const props = renderEditor({
+            marks: [mark({ symbolId: 'comma' })],
+            suggestions: { m1: { key: 'proofMarks.apply.suggestion.insert', values: { text: ',' } } },
+        });
+
+        const accept = screen.getByRole('button', { name: /proofMarks\.apply\.accept:/ });
+        expect(accept).toBeEnabled();
+
+        fireEvent.click(accept);
+        expect(props.onAccept).toHaveBeenCalledWith(mark({ symbolId: 'comma' }));
+    });
+
+    it('shows an advisory reason and hides accept for an ambiguous mark', () => {
+        renderEditor({
+            marks: [mark({ symbolId: 'tr' })],
+            suggestions: {
+                m1: { key: 'proofMarks.apply.advisory', reasonKey: 'proofMarks.apply.reason.needsTwoWords' },
+            },
+        });
+
+        expect(screen.getByText('proofMarks.apply.advisory')).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /proofMarks\.apply\.accept:/ })).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /proofMarks\.apply\.reject:/ })).toBeInTheDocument();
+    });
+
     it('hides the accept controls when the surface cannot save the document', () => {
         renderEditor({
             marks: [mark({ symbolId: 'ital' })],

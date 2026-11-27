@@ -4,6 +4,7 @@ import type { DocumentMark } from '../../types';
 import { getSymbol, PROOF_MARK_IDS } from '../../data/proofMarks';
 import type { MarkEditInput } from '../../utils/proofMarkEdit';
 import { formattingTargetFor } from '../../utils/markOperations';
+import type { MarkSuggestion } from '../../utils/markTextOperations';
 import type { TextRange } from '../../utils/proofRail';
 import MarkGlyph from './MarkGlyph';
 
@@ -55,7 +56,11 @@ export interface ProofMarkEditorProps {
      * an accept button that survives only until reload would claim a save that never happened.
      */
     onAccept?: (mark: DocumentMark) => void;
+    /** Moves a placed mark to `proposed`; offered where there is a derived correction to show. */
+    onPropose?: (mark: DocumentMark) => void;
     onReject: (mark: DocumentMark) => void;
+    /** What accepting each mark would do, derived from the document; absent when there is nothing to say. */
+    suggestions?: Record<string, MarkSuggestion>;
     /** The one batch action; omitted for the same reason as `onAccept`. */
     onAcceptAllFormatting?: () => void;
     /** Formatting marks on this page; 0 disables the one batch action. */
@@ -67,17 +72,37 @@ export interface ProofMarkEditorProps {
 
 interface MarkRowProps extends Omit<
     ProofMarkEditorProps,
-    'marks' | 'canUndo' | 'onUndo' | 'onDismiss' | 'dir' | 'onAcceptAllFormatting' | 'formattingMarkCount'
+    | 'marks'
+    | 'canUndo'
+    | 'onUndo'
+    | 'onDismiss'
+    | 'dir'
+    | 'onAcceptAllFormatting'
+    | 'formattingMarkCount'
+    | 'suggestions'
 > {
     mark: DocumentMark;
+    suggestion?: MarkSuggestion;
 }
 
-function MarkRow({ mark, selection, onEdit, onMove, onDelete, onAccept, onReject }: MarkRowProps) {
+function MarkRow({
+    mark,
+    selection,
+    onEdit,
+    onMove,
+    onDelete,
+    onAccept,
+    onPropose,
+    onReject,
+    suggestion,
+}: MarkRowProps) {
     const { t } = useTranslation();
     const fieldId = useId();
     const symbol = getSymbol(mark.symbolId);
     const label = t(symbol.labelKey);
     const formatting = formattingTargetFor(mark);
+    const showDecision = formatting !== null || suggestion !== undefined;
+    const canApply = formatting !== null || suggestion?.reasonKey === undefined;
     const [note, setNote] = useState(mark.note ?? '');
     const [text, setText] = useState(mark.payload?.text ?? '');
 
@@ -180,12 +205,22 @@ function MarkRow({ mark, selection, onEdit, onMove, onDelete, onAccept, onReject
                 </button>
             </div>
 
-            {formatting && (
+            {showDecision && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                     <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.02em' }}>
                         {t(`proofMarks.apply.status.${mark.status}`)}
                     </span>
-                    {onAccept && (
+                    {onPropose && suggestion && mark.status === 'noted' && (
+                        <button
+                            type="button"
+                            onClick={() => onPropose(mark)}
+                            aria-label={`${t('proofMarks.apply.propose')}: ${label}`}
+                            style={BUTTON}
+                        >
+                            {t('proofMarks.apply.propose')}
+                        </button>
+                    )}
+                    {onAccept && canApply && (
                         <button
                             type="button"
                             onClick={() => onAccept(mark)}
@@ -207,6 +242,16 @@ function MarkRow({ mark, selection, onEdit, onMove, onDelete, onAccept, onReject
                     </button>
                 </div>
             )}
+
+            {suggestion && (
+                <p style={{ margin: 0, fontSize: 11, color: 'var(--text-muted, #4b5563)' }}>
+                    {suggestion.reasonKey
+                        ? t(suggestion.key, { reason: t(suggestion.reasonKey) })
+                        : suggestion.values
+                          ? t(suggestion.key, suggestion.values)
+                          : t(suggestion.key)}
+                </p>
+            )}
         </div>
     );
 }
@@ -225,9 +270,11 @@ export default function ProofMarkEditor({
     onMove,
     onDelete,
     onAccept,
+    onPropose,
     onReject,
     onAcceptAllFormatting,
     formattingMarkCount,
+    suggestions,
     onUndo,
     onDismiss,
     dir = 'ltr',
@@ -284,7 +331,9 @@ export default function ProofMarkEditor({
                     onMove={onMove}
                     onDelete={onDelete}
                     onAccept={onAccept}
+                    onPropose={onPropose}
                     onReject={onReject}
+                    suggestion={suggestions?.[mark.id]}
                 />
             ))}
         </section>

@@ -13,6 +13,7 @@ import ProofMarkEditor from './ProofMarkEditor';
 import UnanchoredMarks from './UnanchoredMarks';
 import { useEditorSelection } from './useEditorSelection';
 import { useMarkMutations } from './useMarkMutations';
+import { useMarkSuggestions } from './useMarkSuggestions';
 import type { DocumentMark } from '../../types';
 import type { ProofMarkId } from '../../data/proofMarks';
 import { draftProofMark } from '../../utils/proofMarkDraft';
@@ -112,6 +113,7 @@ export default function CommentableDocumentView({
         [rows, activeLine]
     );
     const markMutations = useMarkMutations();
+    const suggestions = useMarkSuggestions(editor, activeMarks);
     const moveTarget = useEditorSelection(editor);
     const formattingMarks = useMemo(() => anchoredMarks.filter(isFormattingMark), [anchoredMarks]);
 
@@ -244,8 +246,10 @@ export default function CommentableDocumentView({
                         onMove={handleMoveMark}
                         onDelete={markMutations.remove}
                         onAccept={onApplyContent ? handleAcceptMark : undefined}
+                        onPropose={markMutations.propose}
                         onReject={markMutations.reject}
                         onAcceptAllFormatting={onApplyContent ? handleAcceptAllFormatting : undefined}
+                        suggestions={suggestions}
                         formattingMarkCount={formattingMarks.length}
                         onUndo={markMutations.undo}
                         onDismiss={() => setActiveLine(null)}

@@ -3350,6 +3350,30 @@
     },
     "proofMarks": {
         "apply": {
+            "propose": "Voorstellen",
+            "proposed": "{{symbol}} voorgesteld",
+            "advisory": "Niet automatisch toegepast: {{reason}}",
+            "notTextOperation": "Deze markering is een vraag en verandert niets.",
+            "suggestion": {
+                "delete": "“{{text}}” verwijderen",
+                "deleteWithSpace": "“{{text}}” en de spatie erna verwijderen",
+                "closeup": "De ruimte bij “{{text}}” sluiten",
+                "insert": "“{{text}}” invoegen",
+                "replace": "“{{text}}” vervangen door “{{replacement}}”",
+                "transpose": "“{{first}}” en “{{second}}” omwisselen",
+                "split": "Hier een nieuwe alinea beginnen",
+                "alignLeft": "Deze alinea links uitlijnen",
+                "alignCenter": "Deze alinea centreren",
+                "alignRight": "Deze alinea rechts uitlijnen"
+            },
+            "reason": {
+                "acrossBlocks": "de markering loopt over meer dan één alinea",
+                "needsTwoWords": "er zijn niet precies twee woorden gemarkeerd",
+                "noWhitespace": "er is geen spatie om te sluiten",
+                "noReplacement": "er is geen vervangende tekst ingevuld",
+                "alreadyThere": "de tekst staat er al",
+                "noBlock": "de markering staat niet in een alinea"
+            },
             "accept": "Aanvaarden",
             "reject": "Afwijzen",
             "acceptAll": "Alle opmaakcorrecties op deze pagina aanvaarden",
