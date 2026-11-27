@@ -4,6 +4,7 @@ import {
     LIVE_WRITING_CEFR_MIN_WORDS,
     liveWritingCefrEstimate,
     liveWritingJoinErrorKey,
+    liveWritingLookupErrorKey,
     liveWritingSelfRatingKey,
     normalizeJoinCode,
 } from './liveWriting';
@@ -37,6 +38,13 @@ describe('live writing join errors', () => {
     it('falls back to the generic message for an unrecognised rejection', () => {
         expect(liveWritingJoinErrorKey(new Error('network down'))).toBe('liveWriting.join_failed');
         expect(liveWritingJoinErrorKey(undefined)).toBe('liveWriting.join_failed');
+    });
+
+    it('reads an unrecognised roster lookup as an inactive code', () => {
+        expect(liveWritingLookupErrorKey(new Error('network down'))).toBe('liveWriting.invalid_code');
+        expect(liveWritingLookupErrorKey(new Error('invalid_code'))).toBe('liveWriting.invalid_code');
+        // A rate limit is not about the code itself, so it keeps its own message.
+        expect(liveWritingLookupErrorKey(new Error('too_many_attempts'))).toBe('liveWriting.too_many_attempts');
     });
 });
 

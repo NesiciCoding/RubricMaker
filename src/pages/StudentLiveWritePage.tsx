@@ -20,6 +20,7 @@ import {
     isCompleteJoinCode,
     liveWritingCefrEstimate,
     liveWritingJoinErrorKey,
+    liveWritingLookupErrorKey,
     LIVE_WRITING_CEFR_MIN_WORDS,
     normalizeJoinCode,
     readStoredLiveWritingJoin,
@@ -108,7 +109,7 @@ export default function StudentLiveWritePage() {
                     setRoster(names);
                 }
             } catch (err) {
-                setError(liveWritingJoinErrorKey(err));
+                setError(liveWritingLookupErrorKey(err));
             } finally {
                 setBusy(false);
             }

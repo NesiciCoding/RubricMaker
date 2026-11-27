@@ -130,3 +130,12 @@ export function liveWritingJoinErrorKey(error: unknown): string {
     if (message.includes('invalid_code')) return 'liveWriting.invalid_code';
     return 'liveWriting.join_failed';
 }
+
+/**
+ * Translation key for a failed roster lookup. Only a live code resolves a roster, so anything we
+ * do not recognise means the code did not resolve — not that joining itself failed.
+ */
+export function liveWritingLookupErrorKey(error: unknown): string {
+    const key = liveWritingJoinErrorKey(error);
+    return key === 'liveWriting.join_failed' ? 'liveWriting.invalid_code' : key;
+}
