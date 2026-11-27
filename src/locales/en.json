@@ -3380,7 +3380,15 @@
             "label": "Proofreading marks",
             "chipLabel_one": "{{count}} mark on line {{line}}: {{symbols}}",
             "chipLabel_other": "{{count}} marks on line {{line}}: {{symbols}}",
-            "spansLines": "spans more than one line"
+            "spansLines": "spans more than one line",
+            "summary_one": "{{count}} mark across {{lines}} line",
+            "summary_other": "{{count}} marks across {{lines}} lines"
+        },
+        "panel": {
+            "title_one": "1 mark on line {{line}}",
+            "title_other": "{{count}} marks on line {{line}}",
+            "close": "Close the mark panel",
+            "listLabel": "Marks on this line"
         }
     },
     "pwa": {
@@ -5172,6 +5180,12 @@
         "gr_document_view_title": "Document view",
         "gr_document_view_body": "Essay submissions and uploaded Word (.docx) attachments render through the same paginated, formatted document view in both single-student and comparative grading — no more raw HTML dumps or a mismatched Word viewer. For .docx files, a \"View as sent\" toggle switches to the original file rendering if the formatted conversion loses layout detail.",
         "gr_document_comments_body": "Select text in that document view to leave an inline comment, anchored right on the passage it refers to. Comments show in a sidebar below the document — resolve or delete them as needed. This is a grading-side annotation tool for the teacher; students don't see or reply to these comments.",
+        "gr_proof_marks_title": "Proofreading marks",
+        "gr_proof_marks_body": "Marks are a second layer over the essay, not an edit to it: each one records a proofreading symbol against the passage it corrects, and the submission HTML stays exactly as the student wrote it. Every symbol has a plain-language label in your language, so you never have to remember a code.",
+        "gr_proof_marks_item_rail": "The margin rail puts a chip on each line that carries a mark; a chip with several marks shows a count, and its badge opens a panel listing them all.",
+        "gr_proof_marks_item_panel": "The panel names each mark, quotes the text under it and shows the replacement when there is one, and closes with Escape, its Close button or a click elsewhere.",
+        "gr_proof_marks_item_narrow": "On a narrow screen the rail becomes a list under the essay, and printing gives a marked copy with the marks listed for the page.",
+        "gr_proof_marks_item_sync": "Marks are stored and synced with the essay, so they survive a reload and follow it to another device; students do not see them.",
         "gr_comparative_title": "Comparative grading",
         "gr_comparative_body_prefix": "Click",
         "gr_comparative_button": "Compare",

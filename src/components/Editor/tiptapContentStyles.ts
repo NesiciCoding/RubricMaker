@@ -36,9 +36,9 @@ export const TIPTAP_CONTENT_STYLES = `
     .essay-editor-content .comment-highlight { background: rgba(99, 102, 241, 0.15); border-bottom: 2px solid rgba(99, 102, 241, 0.45); cursor: pointer; }
     .essay-editor-content .comment-highlight-active { background: rgba(99, 102, 241, 0.32); border-bottom-color: #6366f1; }
     /* Proof-mark cues: one style per family, so a deletion reads differently from a style note
-       before anything is opened. The ink is the contrast-guarded light value because cues are only
-       drawn on the page-mode sheet, which is always white. */
-    .essay-editor-content .proof-cue { text-decoration-color: #991b1b; text-decoration-thickness: 1.5px; text-underline-offset: 2px; }
+       before anything is opened. The ink is the page-mode mark token — cues are only drawn on the
+       sheet, which is always white — with the contrast-guarded light value as its fallback. */
+    .essay-editor-content .proof-cue { text-decoration-color: var(--page-mark-ink, #991b1b); text-decoration-thickness: 1.5px; text-underline-offset: 2px; }
     .essay-editor-content .proof-cue-delete { text-decoration-line: line-through; }
     .essay-editor-content .proof-cue-replace { text-decoration-line: line-through underline; text-decoration-style: dotted; }
     .essay-editor-content .proof-cue-type-style { text-decoration-line: underline; text-decoration-style: dotted; }

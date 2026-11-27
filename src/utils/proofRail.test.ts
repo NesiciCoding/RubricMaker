@@ -6,6 +6,8 @@ import {
     groupByLine,
     hasOverlap,
     hashSnippet,
+    PANEL_SHEET_MAX_WIDTH,
+    placePanel,
     planRail,
     resolveMarkRange,
     stackRail,
@@ -209,5 +211,45 @@ describe('planRail', () => {
         expect(rows.reduce((sum, row) => sum + row.ids.length, 0)).toBe(40);
         expect(rows.every((row) => row.drift === 0)).toBe(true);
         expect(hasOverlap(rows, options.chipHeight, options.gap)).toBe(false);
+    });
+});
+
+describe('placePanel', () => {
+    const PAGE = { top: 0, left: 0, right: 1000, bottom: 1200, width: 1000 };
+    const PANEL = { width: 260, height: 160 };
+    const chip = { top: 200, left: 100, width: 28, height: 20 };
+
+    it('prefers the right of the chip when the page has room', () => {
+        const placement = placePanel(chip, PANEL, PAGE);
+        expect(placement.side).toBe('right');
+        expect(placement.left).toBe(136);
+        expect(placement.top).toBe(200);
+        expect(placement.width).toBe(260);
+    });
+
+    it('flips to the left of the chip when the right side would leave the page', () => {
+        const placement = placePanel({ ...chip, left: 900 }, PANEL, PAGE);
+        expect(placement.side).toBe('left');
+        expect(placement.left).toBe(632);
+    });
+
+    it('clamps to the page margin when neither side fits', () => {
+        const narrow = { ...PAGE, right: 420, width: 420 };
+        const placement = placePanel({ ...chip, left: 120 }, PANEL, narrow);
+        expect(placement.left).toBe(8);
+    });
+
+    it('clamps vertically so the panel never leaves the page', () => {
+        const placement = placePanel({ ...chip, top: 1180 }, PANEL, PAGE);
+        expect(placement.top).toBe(1032);
+        expect(placePanel({ ...chip, top: -40 }, PANEL, PAGE).top).toBe(8);
+    });
+
+    it('becomes a full-width sheet under the narrow breakpoint', () => {
+        const narrow = { ...PAGE, right: 600, width: PANEL_SHEET_MAX_WIDTH - 40 };
+        const placement = placePanel(chip, PANEL, narrow);
+        expect(placement.side).toBe('sheet');
+        expect(placement.left).toBe(8);
+        expect(placement.width).toBe(584);
     });
 });

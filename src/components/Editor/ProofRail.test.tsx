@@ -36,7 +36,7 @@ const makeRow = (overrides: Partial<ProofRailRow> = {}): ProofRailRow => ({
     ...overrides,
 });
 
-const BOX = { top: 96, left: 804, height: 1123 };
+const BOX = { top: 96, left: 804, height: 1123, width: 794 };
 
 describe('ProofRail', () => {
     it('renders one chip per row, positioned on the rail', () => {
@@ -143,24 +143,146 @@ describe('ProofRail', () => {
         expect(document.querySelector('.proof-rail-tick')).toBeInTheDocument();
     });
 
-    it('toggles the pressed state through the line callback', () => {
+    it('opens the line panel on click, highlights the line, and closes on a second click', () => {
         const onSelectLine = vi.fn();
         const { rerender } = render(
             <ProofRail rows={[makeRow({ line: 3 })]} box={BOX} activeLine={null} onSelectLine={onSelectLine} />
         );
+        const chip = screen.getByRole('button', { name: /proofMarks\.rail\.chipLabel/ });
 
-        fireEvent.click(screen.getByRole('button'));
+        fireEvent.click(chip);
         expect(onSelectLine).toHaveBeenCalledWith(3);
+        expect(chip).toHaveAttribute('aria-expanded', 'true');
+        expect(chip).toHaveAttribute('aria-haspopup', 'dialog');
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
 
         rerender(<ProofRail rows={[makeRow({ line: 3 })]} box={BOX} activeLine={3} onSelectLine={onSelectLine} />);
-        expect(screen.getByRole('button')).toHaveAttribute('aria-pressed', 'true');
+        expect(chip).toHaveAttribute('aria-pressed', 'true');
 
-        fireEvent.click(screen.getByRole('button'));
-        expect(onSelectLine).toHaveBeenLastCalledWith(null);
+        fireEvent.click(screen.getByRole('button', { name: /proofMarks\.rail\.chipLabel/ }));
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    it('moves one tab stop through the chips with the arrow keys', () => {
+        render(
+            <ProofRail
+                rows={[
+                    makeRow({ id: '1', line: 1, ids: ['m1'], marks: [makeMark()] }),
+                    makeRow({ id: '2', line: 2, top: 228, ids: ['m2'], marks: [makeMark({ id: 'm2' })] }),
+                    makeRow({ id: '3', line: 3, top: 256, ids: ['m3'], marks: [makeMark({ id: 'm3' })] }),
+                ]}
+                box={BOX}
+                activeLine={null}
+                onSelectLine={vi.fn()}
+            />
+        );
+
+        const chips = screen.getAllByRole('button');
+        expect(chips.map((chip) => chip.tabIndex)).toEqual([0, -1, -1]);
+
+        chips[0]!.focus();
+        fireEvent.keyDown(chips[0]!, { key: 'ArrowDown' });
+        expect(chips[1]).toHaveFocus();
+        expect(chips.map((chip) => chip.tabIndex)).toEqual([-1, 0, -1]);
+
+        fireEvent.keyDown(chips[1]!, { key: 'End' });
+        expect(chips[2]).toHaveFocus();
+
+        fireEvent.keyDown(chips[2]!, { key: 'ArrowUp' });
+        expect(chips[1]).toHaveFocus();
+    });
+
+    it('closes the panel on Escape and returns focus to the chip', () => {
+        render(
+            <ProofRail
+                rows={[
+                    makeRow({ id: '1', line: 1, ids: ['m1'], marks: [makeMark()] }),
+                    makeRow({ id: '2', line: 2, top: 228, ids: ['m2'], marks: [makeMark({ id: 'm2' })] }),
+                ]}
+                box={BOX}
+                activeLine={null}
+                onSelectLine={vi.fn()}
+            />
+        );
+
+        const chips = screen.getAllByRole('button');
+        fireEvent.click(chips[1]!);
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+        fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(chips[1]).toHaveFocus();
+    });
+
+    it('announces a summary of the rail for screen readers', () => {
+        render(
+            <ProofRail
+                rows={[
+                    makeRow({ id: '1', line: 1, ids: ['m1', 'm2'], marks: [makeMark(), makeMark({ id: 'm2' })] }),
+                    makeRow({ id: '2', line: 2, top: 228, ids: ['m3'], marks: [makeMark({ id: 'm3' })] }),
+                ]}
+                box={BOX}
+                activeLine={null}
+                onSelectLine={vi.fn()}
+            />
+        );
+
+        const status = screen.getByRole('status');
+        expect(status.textContent).toContain('proofMarks.rail.summary');
+        expect(status.textContent).toContain('"count":3');
+        expect(status.textContent).toContain('"lines":2');
     });
 
     it('renders nothing but the empty group when there are no rows', () => {
         render(<ProofRail rows={[]} box={BOX} activeLine={null} onSelectLine={vi.fn()} />);
         expect(screen.queryAllByRole('button')).toHaveLength(0);
+    });
+});
+
+describe('ProofRail a11y', () => {
+    const axeOptions = {
+        rules: {
+            'color-contrast': { enabled: false },
+            region: { enabled: false },
+        },
+    };
+
+    async function expectNoViolations(container: HTMLElement) {
+        const { axe } = await import('jest-axe');
+        const results = (await axe(container, axeOptions)) as unknown as {
+            violations: { id: string; nodes: { target: unknown[] }[] }[];
+        };
+        expect(results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual(
+            []
+        );
+    }
+
+    it('passes axe with the reveal panel open', async () => {
+        const { container } = render(
+            <ProofRail
+                rows={[
+                    makeRow({
+                        id: '1',
+                        line: 1,
+                        ids: ['m1', 'm2'],
+                        marks: [makeMark({ payload: { text: 'receive' } }), makeMark({ id: 'm2', symbolId: 'sp' })],
+                    }),
+                ]}
+                box={BOX}
+                activeLine={null}
+                onSelectLine={vi.fn()}
+            />
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: /chipLabel/ }));
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        await expectNoViolations(container);
+    });
+
+    it('passes axe when the rail is closed', async () => {
+        const { container } = render(
+            <ProofRail rows={[makeRow()]} box={BOX} activeLine={null} onSelectLine={vi.fn()} />
+        );
+        await expectNoViolations(container);
     });
 });

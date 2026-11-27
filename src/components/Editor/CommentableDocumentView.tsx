@@ -8,6 +8,7 @@ import { CommentHighlight } from './commentDecorations';
 import { MarkCues } from './markCues';
 import ProofRail from './ProofRail';
 import { useProofRail } from './useProofRail';
+import { resolveMarkRange } from '../../utils/proofRail';
 import type { DocumentMark } from '../../types';
 import { useAssessment, usePlatform } from '../../context/AppContext';
 
@@ -67,6 +68,17 @@ export default function CommentableDocumentView({
     const extraExtensions = useMemo(() => [CommentHighlight.configure({ onCommentClick }), MarkCues], [onCommentClick]);
 
     const { rows, box, dir } = useProofRail({ editor, pageElement: shell, marks });
+
+    // The panel shows the words a mark is on. Read them from the document rather than storing
+    // them on the mark: the essay stays the single source of truth and no snippet is duplicated.
+    const snippetFor = useCallback(
+        (mark: DocumentMark) => {
+            if (!editor) return null;
+            const range = resolveMarkRange(editor.state.doc, mark);
+            return range ? editor.state.doc.textBetween(range.from, range.to, ' ', ' ') : null;
+        },
+        [editor]
+    );
     const activeMarkIds = useMemo(() => rows.find((row) => row.line === activeLine)?.ids ?? NO_IDS, [rows, activeLine]);
 
     useEffect(() => {
@@ -127,7 +139,14 @@ export default function CommentableDocumentView({
                 onEditorReady={setEditor}
             />
             {rows.length > 0 && (
-                <ProofRail rows={rows} box={box} dir={dir} activeLine={activeLine} onSelectLine={setActiveLine} />
+                <ProofRail
+                    rows={rows}
+                    box={box}
+                    dir={dir}
+                    activeLine={activeLine}
+                    onSelectLine={setActiveLine}
+                    snippetFor={snippetFor}
+                />
             )}
             <div style={{ marginTop: 10 }}>
                 <CommentSidebar
