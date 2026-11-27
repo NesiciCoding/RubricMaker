@@ -704,7 +704,7 @@ class StorageSyncService {
 
     private static readonly HYDRATE_TIMEOUT_MS = 8000;
     // Number of fetches tracked across both hydrate waves — a unit test pins done === total.
-    static readonly HYDRATE_FETCH_COUNT = 35;
+    static readonly HYDRATE_FETCH_COUNT = 36;
     private hydrationGeneration = 0;
     private rosterFetch: RosterFetchMode = 'all';
     /** Settles when the last started full pull does — see the wait in hydratePartial. */
