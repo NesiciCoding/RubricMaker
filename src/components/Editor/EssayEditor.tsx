@@ -83,6 +83,9 @@ interface EssayEditorProps {
     lang?: string;
     /** Additional TipTap extensions appended to the shared set (e.g. comment decorations). */
     extraExtensions?: AnyExtension[];
+    /** Fired whenever page mode changes, so a caller can switch what it draws alongside the text
+     * (e.g. the proofreading rail needs the page's margin; the compact view uses the list). */
+    onPageModeChange?: (pageMode: boolean) => void;
     /** Fired with the underlying TipTap editor instance once created (and with null on unmount) —
      * lets a caller render something alongside this editor (e.g. a BubbleMenu) that needs direct
      * access to the instance, without this component having to know about that concern itself. */
@@ -155,6 +158,7 @@ export default function EssayEditor({
     ariaLabelledBy,
     lang,
     extraExtensions,
+    onPageModeChange,
     onEditorReady,
     showDragHandle = false,
     showTableOfContents = false,
@@ -178,6 +182,10 @@ export default function EssayEditor({
         lastRequestedPageMode.current = requestedPageMode;
         setPageMode(requestedPageMode);
     }, [requestedPageMode]);
+
+    useEffect(() => {
+        onPageModeChange?.(pageMode);
+    }, [onPageModeChange, pageMode]);
 
     const editor = useEditor({
         extensions: [

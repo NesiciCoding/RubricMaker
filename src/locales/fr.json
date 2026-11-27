@@ -3389,6 +3389,16 @@
             "title_other": "{{count}} marques à la ligne {{line}}",
             "close": "Fermer le panneau des marques",
             "listLabel": "Marques sur cette ligne"
+        },
+        "list": {
+            "label": "Marques de correction dans le texte",
+            "title_one": "1 marque dans cette copie",
+            "title_other": "{{count}} marques dans cette copie",
+            "paragraph": "¶{{index}}",
+            "showAll": "Afficher les {{count}} marques",
+            "showFewer": "Afficher moins de marques",
+            "more_one": "1 marque de plus",
+            "more_other": "{{count}} marques de plus"
         }
     },
     "pwa": {
@@ -5182,6 +5192,12 @@
         "gr_document_view_title": "Vue du document",
         "gr_document_view_body": "Les copies d'essai et les pièces jointes Word (.docx) importées s'affichent désormais dans la même vue de document paginée et mise en forme, en notation individuelle comme comparative — fini le dump HTML brut ou la visionneuse Word incohérente. Pour les fichiers .docx, un bouton « Afficher tel qu'envoyé » bascule vers le rendu du fichier original si la conversion mise en forme perd des détails de mise en page.",
         "gr_document_comments_body": "Sélectionnez du texte dans cette vue de document pour laisser un commentaire en ligne, ancré directement sur le passage concerné. Les commentaires s'affichent dans une barre latérale sous le document — résolvez-les ou supprimez-les selon les besoins. Il s'agit d'un outil d'annotation côté enseignant ; les élèves ne voient pas ces commentaires et ne peuvent pas y répondre.",
+        "gr_proof_marks_title": "Signes de correction",
+        "gr_proof_marks_body": "Les signes de correction forment une seconde couche par-dessus l'essai, sans le modifier : chaque marque associe un signe au passage qu'il corrige, et le HTML de la copie reste exactement celui de l'élève. Chaque signe possède une explication en langage clair dans votre langue, pour n'avoir aucun code à retenir.",
+        "gr_proof_marks_item_rail": "La marge place une puce sur chaque ligne qui porte une marque ; une puce qui en contient plusieurs affiche un compteur et ouvre un panneau qui les liste toutes.",
+        "gr_proof_marks_item_panel": "Le panneau nomme chaque marque, cite le texte concerné et montre le remplacement lorsqu'il existe ; il se ferme avec Échap, le bouton Fermer ou un clic ailleurs.",
+        "gr_proof_marks_item_narrow": "Sur un écran étroit, la marge devient une liste sous l'essai, et l'impression donne une copie annotée avec les marques listées pour la page.",
+        "gr_proof_marks_item_sync": "Les marques sont enregistrées et synchronisées avec l'essai : elles survivent à un rechargement et suivent la copie sur un autre appareil ; les élèves ne les voient pas.",
         "gr_comparative_title": "Notation comparative",
         "gr_comparative_body_prefix": "Cliquez sur",
         "gr_comparative_button": "Comparer",

@@ -3389,6 +3389,16 @@
             "title_other": "{{count}} marcas en la línea {{line}}",
             "close": "Cerrar el panel de marcas",
             "listLabel": "Marcas en esta línea"
+        },
+        "list": {
+            "label": "Marcas de corrección en el texto",
+            "title_one": "1 marca en este texto",
+            "title_other": "{{count}} marcas en este texto",
+            "paragraph": "¶{{index}}",
+            "showAll": "Mostrar las {{count}} marcas",
+            "showFewer": "Mostrar menos marcas",
+            "more_one": "1 marca más",
+            "more_other": "{{count}} marcas más"
         }
     },
     "pwa": {
@@ -5182,6 +5192,12 @@
         "gr_document_view_title": "Vista de documento",
         "gr_document_view_body": "Las entregas de ensayos y los archivos Word (.docx) adjuntos se muestran ahora en la misma vista de documento paginada y con formato, tanto en la calificación individual como en la comparativa — sin más volcados de HTML sin formato ni un visor de Word inconsistente. Para archivos .docx, un interruptor \"Ver como se envió\" cambia a la representación del archivo original si la conversión con formato pierde detalles de diseño.",
         "gr_document_comments_body": "Selecciona texto en esa vista de documento para dejar un comentario en línea, anclado directamente al pasaje al que se refiere. Los comentarios aparecen en una barra lateral debajo del documento — resuélvelos o elimínalos según sea necesario. Es una herramienta de anotación del lado del profesor; los estudiantes no ven ni pueden responder a estos comentarios.",
+        "gr_proof_marks_title": "Marcas de corrección",
+        "gr_proof_marks_body": "Las marcas de corrección son una segunda capa sobre el ensayo, no una edición: cada marca registra un signo de corrección en el pasaje que corrige, y el HTML de la entrega queda exactamente como lo escribió el alumno. Cada signo tiene una explicación sencilla en tu idioma, así que no hay ningún código que memorizar.",
+        "gr_proof_marks_item_rail": "El margen coloca una ficha en cada línea que lleva una marca; si una ficha tiene varias, muestra un contador y abre un panel con todas.",
+        "gr_proof_marks_item_panel": "El panel nombra cada marca, cita el texto al que se refiere y muestra la sustitución cuando la hay; se cierra con Escape, con el botón Cerrar o con un clic en otro lugar.",
+        "gr_proof_marks_item_narrow": "En una pantalla estrecha el margen se convierte en una lista bajo el ensayo, y al imprimir se obtiene una copia marcada con las marcas de la página.",
+        "gr_proof_marks_item_sync": "Las marcas se guardan y se sincronizan con el ensayo, así que sobreviven a una recarga y acompañan la copia a otro dispositivo; el alumnado no las ve.",
         "gr_comparative_title": "Calificación comparativa",
         "gr_comparative_body_prefix": "Haz clic en",
         "gr_comparative_button": "Comparar",

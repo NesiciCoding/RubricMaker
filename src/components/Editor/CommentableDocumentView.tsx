@@ -7,8 +7,9 @@ import CommentSidebar from './CommentSidebar';
 import { CommentHighlight } from './commentDecorations';
 import { MarkCues } from './markCues';
 import ProofRail from './ProofRail';
+import ProofMarkList from './ProofMarkList';
 import { useProofRail } from './useProofRail';
-import { resolveMarkRange } from '../../utils/proofRail';
+import { resolveMarkRange, shouldUseCompactRail } from '../../utils/proofRail';
 import type { DocumentMark } from '../../types';
 import { useAssessment, usePlatform } from '../../context/AppContext';
 
@@ -43,6 +44,8 @@ export default function CommentableDocumentView({
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [shell, setShell] = useState<HTMLDivElement | null>(null);
     const [activeLine, setActiveLine] = useState<number | null>(null);
+    // `null` until the editor reports, so the first render never guesses against a page-mode essay.
+    const [pageMode, setPageMode] = useState<boolean | null>(null);
 
     // A callback ref, not `containerRef.current`: the rail hook needs the element itself, and refs
     // are not a render input, so reading `.current` would leave the first render measuring nothing.
@@ -80,6 +83,10 @@ export default function CommentableDocumentView({
         [editor]
     );
     const activeMarkIds = useMemo(() => rows.find((row) => row.line === activeLine)?.ids ?? NO_IDS, [rows, activeLine]);
+
+    // The rail needs the page's margin. When the page is too narrow, or the teacher switched to the
+    // compact view, the same rows are listed below the text instead of pushed off to the side.
+    const compact = shouldUseCompactRail({ width: box.width, pageMode, hasMarks: rows.length > 0 });
 
     useEffect(() => {
         setActiveLine(null);
@@ -136,9 +143,30 @@ export default function CommentableDocumentView({
                 defaultPageMode={marks.length > 0}
                 allowPageMode={marks.length > 0}
                 extraExtensions={extraExtensions}
+                onPageModeChange={setPageMode}
                 onEditorReady={setEditor}
             />
+            {compact && (
+                <ProofMarkList
+                    rows={rows}
+                    dir={dir}
+                    activeLine={activeLine}
+                    onSelectLine={setActiveLine}
+                    snippetFor={snippetFor}
+                />
+            )}
+            {/* Paper gets every mark, whether or not the screen is showing the rail or the list. */}
             {rows.length > 0 && (
+                <ProofMarkList
+                    rows={rows}
+                    variant="print"
+                    dir={dir}
+                    activeLine={activeLine}
+                    onSelectLine={setActiveLine}
+                    snippetFor={snippetFor}
+                />
+            )}
+            {!compact && rows.length > 0 && (
                 <ProofRail
                     rows={rows}
                     box={box}

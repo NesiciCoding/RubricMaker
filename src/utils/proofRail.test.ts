@@ -5,11 +5,13 @@ import {
     findTextRange,
     groupByLine,
     hasOverlap,
+    COMPACT_RAIL_MAX_WIDTH,
     hashSnippet,
     PANEL_SHEET_MAX_WIDTH,
     placePanel,
     planRail,
     resolveMarkRange,
+    shouldUseCompactRail,
     stackRail,
     type RailSlot,
 } from './proofRail';
@@ -251,5 +253,20 @@ describe('placePanel', () => {
         expect(placement.side).toBe('sheet');
         expect(placement.left).toBe(8);
         expect(placement.width).toBe(584);
+    });
+});
+
+describe('shouldUseCompactRail', () => {
+    it('lists marks when the container is narrow or the page is not in page mode', () => {
+        expect(shouldUseCompactRail({ width: 640, pageMode: true, hasMarks: true })).toBe(true);
+        expect(shouldUseCompactRail({ width: COMPACT_RAIL_MAX_WIDTH, pageMode: true, hasMarks: true })).toBe(false);
+        expect(shouldUseCompactRail({ width: 1280, pageMode: false, hasMarks: true })).toBe(true);
+    });
+
+    it('keeps the rail when there is room and page mode is on', () => {
+        expect(shouldUseCompactRail({ width: 1280, pageMode: true, hasMarks: true })).toBe(false);
+        // Before measurement or when the editor has not reported, the width cannot decide.
+        expect(shouldUseCompactRail({ width: 0, pageMode: null, hasMarks: true })).toBe(false);
+        expect(shouldUseCompactRail({ width: 640, pageMode: true, hasMarks: false })).toBe(false);
     });
 });

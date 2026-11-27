@@ -2166,6 +2166,18 @@ select.input-error {
     display: none;
 }
 
+/* The printed mark list is always in the DOM so a print (or Ctrl+P on any surface) has every mark;
+   it is display:none on screen, so it is also out of the accessibility tree there. */
+.proof-mark-list--print {
+    display: none;
+}
+
+/* The instruction only earns its ink on paper: on screen it is in the item's accessible name and
+   opening the row shows it in the panel. */
+.proof-mark-list-instruction {
+    display: none;
+}
+
 /* ─── Print styles ───────────────────────────────────────────────────────────── */
 @media print {
     /* When the slip sheet is portalled to body, hide the main app entirely */
@@ -2178,6 +2190,32 @@ select.input-error {
     .grade-footer,
     .no-print {
         display: none !important;
+    }
+
+    /* Marks in print: the inline cue is the pointer, the list below the text is the instruction.
+       Nothing may be absolutely positioned here — a browser paginates a static flow. */
+    .proof-rail,
+    .proof-mark-list--screen {
+        display: none !important;
+    }
+    .proof-mark-list--print {
+        display: block !important;
+        margin-top: 16px !important;
+    }
+    .proof-mark-list-instruction {
+        display: inline !important;
+    }
+    .proof-mark-list-group {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+    .proof-mark-list-item {
+        break-inside: avoid;
+    }
+    /* Browsers drop backgrounds by default; keep the cue's status readable on paper. */
+    .essay-editor-content .proof-cue {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
 
     .print-only {

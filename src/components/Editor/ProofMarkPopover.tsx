@@ -1,4 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useTranslation } from 'react-i18next';
 import type { DocumentMark } from '../../types';
@@ -11,10 +12,12 @@ const ESTIMATED_WIDTH = 260;
 
 export interface ProofMarkPopoverProps {
     row: ProofRailRow;
-    /** The chip the panel opens from, in rail-local px. */
-    anchor: PanelAnchor;
-    /** The page, in rail-local px — the panel may not leave it. */
-    bounds: PanelBounds;
+    /** `anchored` sits beside its chip; `sheet` is the narrow-screen bottom sheet. */
+    variant?: 'anchored' | 'sheet';
+    /** The chip the panel opens from, in rail-local px. Required when anchored. */
+    anchor?: PanelAnchor;
+    /** The page, in rail-local px — the panel may not leave it. Required when anchored. */
+    bounds?: PanelBounds;
     dir: 'ltr' | 'rtl';
     titleId: string;
     /** Text currently under a mark's anchor, read from the editor; null when it no longer resolves. */
@@ -25,18 +28,21 @@ export interface ProofMarkPopoverProps {
 /**
  * The marks on one rail line, opened from a chip. A Radix dialog with the line as its accessible
  * name, a list of instructions (symbol, what the teacher means, and the word as written → the
- * replacement), and focus trapped inside until Escape or Close returns it to the chip.
+ * replacement), and Escape or Close to dismiss it.
  *
  * Radix owns the ARIA, Escape and outside-click handling, so the panel is one of the shared dialog
- * primitives rather than another hand-rolled overlay. Being non-modal, a click anywhere else on
- * the page dismisses it, like the menus it sits beside. It renders in the rail rather than through
- * a portal, because its placement is measured in the rail's coordinate space.
+ * primitives rather than another hand-rolled overlay. The anchored panel is non-modal — the rail's
+ * chips stay reachable, and a click anywhere else on the page dismisses it — while the bottom sheet
+ * covers the screen on a narrow viewport, so it is modal and traps focus until it closes. The sheet
+ * is portalled to <body> so `position: fixed` cannot be captured by an animated ancestor; the
+ * anchored panel stays in the rail, whose coordinate space its placement is measured in.
  *
  * Nothing here writes to the document: the panel only reads the anchor's text, so the essay HTML
  * stays free of marks.
  */
 export default function ProofMarkPopover({
     row,
+    variant = 'anchored',
     anchor,
     bounds,
     dir,
@@ -47,37 +53,40 @@ export default function ProofMarkPopover({
     const { t } = useTranslation();
     const panelRef = useRef<HTMLDivElement>(null);
     const closeRef = useRef<HTMLButtonElement>(null);
+    const sheet = variant === 'sheet';
     const [placement, setPlacement] = useState<PanelPlacement>(() =>
-        placePanel(anchor, { width: ESTIMATED_WIDTH, height: 0 }, bounds)
+        anchor && bounds
+            ? placePanel(anchor, { width: ESTIMATED_WIDTH, height: 0 }, bounds)
+            : { side: 'right', left: 0, top: 0, width: ESTIMATED_WIDTH }
     );
 
-    // Measure once the panel exists: its height decides how far up the page it can sit.
+    // Measure once the panel exists: its height decides how far up the page it can sit. The bottom
+    // sheet is fixed to the viewport, so there is nothing to measure for it.
     useLayoutEffect(() => {
         const panel = panelRef.current;
-        if (!panel) return;
+        if (!panel || !anchor || !bounds || sheet) return;
         setPlacement(
             placePanel(anchor, { width: panel.offsetWidth || ESTIMATED_WIDTH, height: panel.offsetHeight }, bounds)
         );
-    }, [anchor, bounds]);
+    }, [anchor, bounds, sheet]);
 
     useEffect(() => {
         closeRef.current?.focus();
     }, []);
 
-    return (
-        <Dialog.Root open modal={false} onOpenChange={(open) => !open && onClose()}>
+    const panel = (
+        <Dialog.Root open modal={sheet} onOpenChange={(open) => !open && onClose()}>
             <Dialog.Content
                 ref={panelRef}
                 aria-labelledby={titleId}
                 data-testid="proof-mark-panel"
-                data-side={placement.side}
+                data-side={sheet ? 'sheet' : placement.side}
                 onClick={(event) => event.stopPropagation()}
                 style={{
-                    position: 'absolute',
-                    top: placement.top,
-                    left: placement.left,
-                    width: placement.width,
-                    zIndex: 6,
+                    ...(sheet
+                        ? { position: 'fixed', left: 8, right: 8, bottom: 8, maxHeight: '60vh', overflowY: 'auto' }
+                        : { position: 'absolute', top: placement.top, left: placement.left, width: placement.width }),
+                    zIndex: sheet ? 60 : 6,
                     pointerEvents: 'auto',
                     background: '#ffffff',
                     color: '#2a261f',
@@ -160,4 +169,8 @@ export default function ProofMarkPopover({
             </Dialog.Content>
         </Dialog.Root>
     );
+
+    // The sheet is fixed to the viewport, so it has to leave the page tree; the anchored panel keeps
+    // rendering in the rail, whose coordinate space its placement is measured in.
+    return sheet ? createPortal(panel, document.body) : panel;
 }
