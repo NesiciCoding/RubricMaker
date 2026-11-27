@@ -3349,6 +3349,27 @@
         "sync_not_allowed": "El servidor rechazó ese cambio: solo puedes modificar tus propias clases. No se ha perdido nada."
     },
     "proofMarks": {
+        "apply": {
+            "accept": "Aceptar",
+            "reject": "Rechazar",
+            "acceptAll": "Aceptar todas las correcciones de formato de esta página",
+            "accepted": "{{symbol}} aplicado",
+            "rejected": "{{symbol}} rechazado",
+            "acceptedAll": "{{total}} correcciones de formato aplicadas",
+            "noneApplied": "No se pudo aplicar ninguna corrección de formato",
+            "noFormatting": "Esta página no tiene marcas de formato que aceptar.",
+            "status": {
+                "noted": "sin aplicar",
+                "proposed": "propuesto",
+                "accepted": "aplicado",
+                "rejected": "rechazado"
+            },
+            "refused": {
+                "not-formatting": "Esta marca no cambia el formato.",
+                "stale-anchor": "El texto bajo esta marca ha cambiado, así que no se aplicó.",
+                "unsupported": "Este editor no puede aplicar ese formato."
+            }
+        },
         "del": { "label": "eliminar este texto" },
         "ins": { "label": "insertar texto" },
         "space": { "label": "insertar un espacio" },

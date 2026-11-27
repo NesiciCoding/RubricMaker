@@ -3349,6 +3349,27 @@
         "sync_not_allowed": "Le serveur a refusé cette modification : vous ne pouvez modifier que vos propres classes. Rien n'a été perdu."
     },
     "proofMarks": {
+        "apply": {
+            "accept": "Accepter",
+            "reject": "Rejeter",
+            "acceptAll": "Accepter toutes les corrections de mise en forme de cette page",
+            "accepted": "{{symbol}} appliqué",
+            "rejected": "{{symbol}} rejeté",
+            "acceptedAll": "{{total}} corrections de mise en forme appliquées",
+            "noneApplied": "Aucune correction de mise en forme n'a pu être appliquée",
+            "noFormatting": "Cette page ne contient aucune marque de mise en forme à accepter.",
+            "status": {
+                "noted": "non appliqué",
+                "proposed": "proposé",
+                "accepted": "appliqué",
+                "rejected": "rejeté"
+            },
+            "refused": {
+                "not-formatting": "Cette marque ne modifie pas la mise en forme.",
+                "stale-anchor": "Le texte sous cette marque a changé ; elle n'a pas été appliquée.",
+                "unsupported": "Cet éditeur ne peut pas appliquer cette mise en forme."
+            }
+        },
         "del": { "label": "supprimer ce texte" },
         "ins": { "label": "insérer du texte" },
         "space": { "label": "insérer une espace" },

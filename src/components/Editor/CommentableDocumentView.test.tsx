@@ -5,20 +5,35 @@ import CommentableDocumentView from './CommentableDocumentView';
 import type { DocumentComment, DocumentMark } from '../../types';
 import { hashSnippet } from '../../utils/proofRail';
 
-const fakeEditor = vi.hoisted(() => ({
-    state: {
-        selection: { from: 3, to: 8, empty: false },
-        doc: { content: { size: 100 }, textBetween: () => 'Hello' },
-    },
-    commands: {
-        setDocumentComments: vi.fn(),
-        setActiveDocumentComment: vi.fn(),
-        setDocumentMarks: vi.fn(),
-        setActiveDocumentMarks: vi.fn(),
-    },
-    on: vi.fn(),
-    off: vi.fn(),
-}));
+const fakeEditor = vi.hoisted(() => {
+    type Chain = {
+        setTextSelection: (range: { from: number; to: number }) => Chain;
+        setMark: (name: string, attrs?: Record<string, unknown>) => Chain;
+        run: () => boolean;
+    };
+    const chain: Chain = {
+        setTextSelection: vi.fn(() => chain),
+        setMark: vi.fn(() => chain),
+        run: vi.fn(() => true),
+    };
+    return {
+        state: {
+            selection: { from: 3, to: 8, empty: false },
+            doc: { content: { size: 100 }, textBetween: () => 'Hello' },
+        },
+        schema: { marks: { bold: {}, italic: {}, underline: {}, textStyle: {} } },
+        chain: vi.fn(() => chain),
+        getHTML: vi.fn(() => '<p>Hello</p>'),
+        commands: {
+            setDocumentComments: vi.fn(),
+            setActiveDocumentComment: vi.fn(),
+            setDocumentMarks: vi.fn(),
+            setActiveDocumentMarks: vi.fn(),
+        },
+        on: vi.fn(),
+        off: vi.fn(),
+    };
+});
 
 const mockCommentHighlightConfig = vi.hoisted(() => ({
     config: null as { onCommentClick?: (id: string) => void } | null,
@@ -30,6 +45,7 @@ const mockDeleteDocumentComment = vi.fn();
 const mockUpdateDocumentMark = vi.fn();
 const mockDeleteDocumentMark = vi.fn();
 const mockRestoreDocumentMark = vi.fn();
+const mockSetDocumentMarkStatus = vi.fn();
 const mockShowToast = vi.hoisted(() =>
     vi.fn((_message?: string, _type?: string, _options?: { action?: { onClick: () => void } }) => 1)
 );
@@ -47,6 +63,7 @@ const makeAppValue = () => ({
     updateDocumentMark: mockUpdateDocumentMark,
     deleteDocumentMark: mockDeleteDocumentMark,
     restoreDocumentMark: mockRestoreDocumentMark,
+    setDocumentMarkStatus: mockSetDocumentMarkStatus,
     getCurrentDatabaseUserId: mockGetCurrentDatabaseUserId,
 });
 
@@ -380,10 +397,10 @@ describe('Mark editing', () => {
         mockRailRows.rows = [];
     });
 
-    const openEditor = (marks: DocumentMark[]) => {
+    const openEditor = (marks: DocumentMark[], props: { onApplyContent?: (html: string) => void } = {}) => {
         mockDocumentMarks.push(...marks);
         mockRailRows.rows = [railRowFor(marks)];
-        render(<CommentableDocumentView content="<p>Hello</p>" attachmentId="att-1" />);
+        render(<CommentableDocumentView content="<p>Hello</p>" attachmentId="att-1" {...props} />);
         fireEvent.click(screen.getByRole('button', { name: 'proofMarks.rail.chipLabel' }));
     };
 
@@ -434,6 +451,51 @@ describe('Mark editing', () => {
 
         act(() => mockShowToast.mock.calls[0]![2]!.action!.onClick());
         expect(mockRestoreDocumentMark).toHaveBeenCalledWith(stored);
+    });
+
+    it('offers no accept when the surface has nowhere to save the corrected document', () => {
+        openEditor([makeMark({ symbolId: 'ital' })]);
+
+        expect(screen.queryByRole('button', { name: /proofMarks\.apply\.accept:/ })).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'proofMarks.apply.acceptAll' })).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /proofMarks\.apply\.reject:/ })).toBeInTheDocument();
+    });
+
+    it('applies an accepted mark and hands the corrected HTML to the document owner', () => {
+        const onApplyContent = vi.fn();
+        openEditor([makeMark({ symbolId: 'ital' })], { onApplyContent });
+
+        fireEvent.click(screen.getByRole('button', { name: /proofMarks\.apply\.accept:/ }));
+
+        expect(mockSetDocumentMarkStatus).toHaveBeenCalledWith('m1', 'accepted');
+        expect(onApplyContent).toHaveBeenCalledWith('<p>Hello</p>');
+    });
+
+    it('saves once after accepting every formatting mark on the page', () => {
+        const onApplyContent = vi.fn();
+        openEditor([makeMark({ symbolId: 'ital' })], { onApplyContent });
+
+        fireEvent.click(screen.getByRole('button', { name: 'proofMarks.apply.acceptAll' }));
+
+        expect(mockSetDocumentMarkStatus).toHaveBeenCalledWith('m1', 'accepted');
+        expect(onApplyContent).toHaveBeenCalledTimes(1);
+        expect(onApplyContent).toHaveBeenCalledWith('<p>Hello</p>');
+    });
+
+    it('records a rejection through the store without touching the document', () => {
+        openEditor([makeMark({ symbolId: 'ital' })]);
+
+        fireEvent.click(screen.getByRole('button', { name: /proofMarks\.apply\.reject:/ }));
+
+        expect(mockSetDocumentMarkStatus).toHaveBeenCalledWith('m1', 'rejected');
+        expect(mockUpdateDocumentMark).not.toHaveBeenCalled();
+    });
+
+    it('offers no decision and disables the batch action for a mark that changes no formatting', () => {
+        openEditor([makeMark({ symbolId: 'sp' })], { onApplyContent: vi.fn() });
+
+        expect(screen.queryByRole('button', { name: /proofMarks\.apply\.accept:/ })).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'proofMarks.apply.acceptAll' })).toBeDisabled();
     });
 
     it('closes the editor from its close button', () => {

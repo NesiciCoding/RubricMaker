@@ -3349,6 +3349,27 @@
         "sync_not_allowed": "De server heeft die wijziging geweigerd: je kunt alleen je eigen klassen aanpassen. Er is niets verloren gegaan."
     },
     "proofMarks": {
+        "apply": {
+            "accept": "Aanvaarden",
+            "reject": "Afwijzen",
+            "acceptAll": "Alle opmaakcorrecties op deze pagina aanvaarden",
+            "accepted": "{{symbol}} toegepast",
+            "rejected": "{{symbol}} afgewezen",
+            "acceptedAll": "{{total}} opmaakcorrecties toegepast",
+            "noneApplied": "Er konden geen opmaakcorrecties worden toegepast",
+            "noFormatting": "Deze pagina heeft geen opmaakmarkeringen om te aanvaarden.",
+            "status": {
+                "noted": "nog niet toegepast",
+                "proposed": "voorgesteld",
+                "accepted": "toegepast",
+                "rejected": "afgewezen"
+            },
+            "refused": {
+                "not-formatting": "Deze markering verandert de opmaak niet.",
+                "stale-anchor": "De tekst onder deze markering is gewijzigd en daarom niet toegepast.",
+                "unsupported": "Deze editor kan die opmaak niet toepassen."
+            }
+        },
         "del": { "label": "verwijder deze tekst" },
         "ins": { "label": "tekst invoegen" },
         "space": { "label": "spatie invoegen" },

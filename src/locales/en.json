@@ -3349,6 +3349,27 @@
         "sync_not_allowed": "That change was refused by the server: you can only change your own classes. Nothing was lost."
     },
     "proofMarks": {
+        "apply": {
+            "accept": "Accept",
+            "reject": "Reject",
+            "acceptAll": "Accept all formatting on this page",
+            "accepted": "Applied {{symbol}}",
+            "rejected": "Rejected {{symbol}}",
+            "acceptedAll": "Applied {{total}} formatting corrections",
+            "noneApplied": "No formatting corrections could be applied",
+            "noFormatting": "This page has no formatting marks to accept.",
+            "status": {
+                "noted": "not applied",
+                "proposed": "proposed",
+                "accepted": "accepted",
+                "rejected": "rejected"
+            },
+            "refused": {
+                "not-formatting": "This mark does not change the formatting.",
+                "stale-anchor": "The text under this mark has changed, so it was not applied.",
+                "unsupported": "This editor cannot apply that formatting."
+            }
+        },
         "del": { "label": "delete this text" },
         "ins": { "label": "insert text" },
         "space": { "label": "insert a space" },

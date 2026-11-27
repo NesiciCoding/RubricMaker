@@ -1,10 +1,17 @@
 import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { Editor } from '@tiptap/core';
 import type { DocumentMark } from '../../types';
 import { useAssessment } from '../../context/AppContext';
 import { useToast } from '../../hooks/useToast';
 import { getSymbol } from '../../data/proofMarks';
 import { editMark, markSnapshotPatch, moveMark, type MarkEditInput } from '../../utils/proofMarkEdit';
+import {
+    applyFormattingMark,
+    applyFormattingMarks,
+    FORMATTING_REFUSAL_KEYS,
+    markStatusAfter,
+} from '../../utils/markOperations';
 import { popMarkUndo, pushMarkUndo, type MarkUndoEntry } from '../../utils/markUndo';
 import type { TextRange } from '../../utils/proofRail';
 
@@ -13,6 +20,17 @@ export interface MarkMutations {
     move: (mark: DocumentMark, selection: TextRange | null, text: string) => void;
     /** Deletes immediately and offers the undo in a toast — no confirmation dialog. */
     remove: (mark: DocumentMark) => void;
+    /**
+     * Applies a formatting mark to the document as one transaction and records the decision. True
+     * when the document changed, so the caller knows there is new HTML to save.
+     */
+    accept: (editor: Editor | null, mark: DocumentMark) => boolean;
+    reject: (mark: DocumentMark) => void;
+    /**
+     * The only batch action: every formatting mark on the page, one transaction each. Returns how
+     * many marks it applied, so the caller only saves a document that actually changed.
+     */
+    acceptAllFormatting: (editor: Editor | null, marks: readonly DocumentMark[]) => number;
     undo: () => void;
     canUndo: boolean;
 }
@@ -24,7 +42,7 @@ export interface MarkMutations {
  */
 export function useMarkMutations(): MarkMutations {
     const { t } = useTranslation();
-    const { updateDocumentMark, deleteDocumentMark, restoreDocumentMark } = useAssessment();
+    const { updateDocumentMark, deleteDocumentMark, restoreDocumentMark, setDocumentMarkStatus } = useAssessment();
     const { showToast } = useToast();
 
     const undoStack = useRef<MarkUndoEntry[]>([]);
@@ -77,5 +95,55 @@ export function useMarkMutations(): MarkMutations {
         [deleteDocumentMark, remember, showToast, t, undo]
     );
 
-    return { update, move, remove, undo, canUndo: undoDepth > 0 };
+    /*
+     * Accept/reject write the record's decision but deliberately not the mark undo stack: the essay
+     * change is the editor's own transaction, so Ctrl+Z is what reverses it. A stack entry here could
+     * only restore the status and would leave the text formatted — the mixed undo model to avoid.
+     */
+    const accept = useCallback(
+        (editor: Editor | null, mark: DocumentMark): boolean => {
+            if (!editor) return false;
+            const result = applyFormattingMark(editor, mark);
+            if (!result.ok) {
+                showToast(t(FORMATTING_REFUSAL_KEYS[result.reason]), 'warning');
+                return false;
+            }
+            const status = markStatusAfter(mark.status, 'accept');
+            if (status) setDocumentMarkStatus(mark.id, status);
+            showToast(t('proofMarks.apply.accepted', { symbol: t(getSymbol(mark.symbolId).labelKey) }), 'success');
+            return true;
+        },
+        [setDocumentMarkStatus, showToast, t]
+    );
+
+    const reject = useCallback(
+        (mark: DocumentMark) => {
+            const status = markStatusAfter(mark.status, 'reject');
+            if (!status) return;
+            setDocumentMarkStatus(mark.id, status);
+            showToast(t('proofMarks.apply.rejected', { symbol: t(getSymbol(mark.symbolId).labelKey) }), 'info');
+        },
+        [setDocumentMarkStatus, showToast, t]
+    );
+
+    const acceptAllFormatting = useCallback(
+        (editor: Editor | null, marks: readonly DocumentMark[]): number => {
+            if (!editor) return 0;
+            const { applied, refused } = applyFormattingMarks(editor, marks);
+            for (const mark of applied) {
+                const status = markStatusAfter(mark.status, 'accept');
+                if (status) setDocumentMarkStatus(mark.id, status);
+            }
+            if (applied.length === 0) {
+                showToast(t('proofMarks.apply.noneApplied'), 'warning');
+            } else {
+                showToast(t('proofMarks.apply.acceptedAll', { total: applied.length }), 'success');
+            }
+            if (refused.length > 0) showToast(t(FORMATTING_REFUSAL_KEYS[refused[0]!.reason]), 'warning');
+            return applied.length;
+        },
+        [setDocumentMarkStatus, showToast, t]
+    );
+
+    return { update, move, remove, accept, reject, acceptAllFormatting, undo, canUndo: undoDepth > 0 };
 }

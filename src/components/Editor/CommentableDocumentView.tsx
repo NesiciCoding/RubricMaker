@@ -16,6 +16,7 @@ import { useMarkMutations } from './useMarkMutations';
 import type { DocumentMark } from '../../types';
 import type { ProofMarkId } from '../../data/proofMarks';
 import { draftProofMark } from '../../utils/proofMarkDraft';
+import { isFormattingMark } from '../../utils/markOperations';
 import { markAnchorState } from '../../utils/proofRail';
 import { useAssessment, usePlatform } from '../../context/AppContext';
 
@@ -30,6 +31,13 @@ interface CommentableDocumentViewProps {
      * offered rather than offering a control that silently does nothing.
      */
     onCreateMark?: (mark: Omit<DocumentMark, 'id' | 'createdAt'>) => void;
+    /**
+     * Writes the corrected document HTML back through whatever owns the document. This view is
+     * read-only and owns nothing, so applying a mark here changes only this session's editor: the
+     * accept controls appear only when a caller can persist the result, rather than accepting a
+     * correction a reload throws away.
+     */
+    onApplyContent?: (html: string) => void;
 }
 
 const noop = () => {};
@@ -47,6 +55,7 @@ export default function CommentableDocumentView({
     attachmentId,
     marks: propMarks,
     onCreateMark,
+    onApplyContent,
 }: CommentableDocumentViewProps) {
     const { t } = useTranslation();
     const { documentComments, documentMarks, addDocumentComment, resolveDocumentComment, deleteDocumentComment } =
@@ -104,6 +113,7 @@ export default function CommentableDocumentView({
     );
     const markMutations = useMarkMutations();
     const moveTarget = useEditorSelection(editor);
+    const formattingMarks = useMemo(() => anchoredMarks.filter(isFormattingMark), [anchoredMarks]);
 
     useEffect(() => {
         setActiveLine(null);
@@ -154,6 +164,19 @@ export default function CommentableDocumentView({
         },
         [editor, markMutations, moveTarget]
     );
+
+    const handleAcceptMark = useCallback(
+        (mark: DocumentMark) => {
+            if (!editor || !onApplyContent) return;
+            if (markMutations.accept(editor, mark)) onApplyContent(editor.getHTML());
+        },
+        [editor, markMutations, onApplyContent]
+    );
+
+    const handleAcceptAllFormatting = useCallback(() => {
+        if (!editor || !onApplyContent) return;
+        if (markMutations.acceptAllFormatting(editor, formattingMarks) > 0) onApplyContent(editor.getHTML());
+    }, [editor, formattingMarks, markMutations, onApplyContent]);
 
     const handlePlaceMark = useCallback(
         (symbolId: ProofMarkId) => {
@@ -220,6 +243,10 @@ export default function CommentableDocumentView({
                         onEdit={markMutations.update}
                         onMove={handleMoveMark}
                         onDelete={markMutations.remove}
+                        onAccept={onApplyContent ? handleAcceptMark : undefined}
+                        onReject={markMutations.reject}
+                        onAcceptAllFormatting={onApplyContent ? handleAcceptAllFormatting : undefined}
+                        formattingMarkCount={formattingMarks.length}
                         onUndo={markMutations.undo}
                         onDismiss={() => setActiveLine(null)}
                         dir={dir}
