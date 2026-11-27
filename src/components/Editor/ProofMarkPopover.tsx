@@ -27,9 +27,10 @@ export interface ProofMarkPopoverProps {
  * name, a list of instructions (symbol, what the teacher means, and the word as written → the
  * replacement), and focus trapped inside until Escape or Close returns it to the chip.
  *
- * Radix owns the trap, Escape and ARIA, so the panel is one of the shared dialog primitives rather
- * than another hand-rolled overlay. It renders in the rail rather than through a portal, because
- * its placement is measured in the rail's coordinate space.
+ * Radix owns the ARIA, Escape and outside-click handling, so the panel is one of the shared dialog
+ * primitives rather than another hand-rolled overlay. Being non-modal, a click anywhere else on
+ * the page dismisses it, like the menus it sits beside. It renders in the rail rather than through
+ * a portal, because its placement is measured in the rail's coordinate space.
  *
  * Nothing here writes to the document: the panel only reads the anchor's text, so the essay HTML
  * stays free of marks.
