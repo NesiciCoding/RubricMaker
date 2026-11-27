@@ -30,6 +30,7 @@ const mockDeleteDocumentComment = vi.fn();
 const mockUpdateDocumentMark = vi.fn();
 const mockDeleteDocumentMark = vi.fn();
 const mockRestoreDocumentMark = vi.fn();
+const mockSetDocumentMarkStatus = vi.fn();
 const mockShowToast = vi.hoisted(() =>
     vi.fn((_message?: string, _type?: string, _options?: { action?: { onClick: () => void } }) => 1)
 );
@@ -47,6 +48,7 @@ const makeAppValue = () => ({
     updateDocumentMark: mockUpdateDocumentMark,
     deleteDocumentMark: mockDeleteDocumentMark,
     restoreDocumentMark: mockRestoreDocumentMark,
+    setDocumentMarkStatus: mockSetDocumentMarkStatus,
     getCurrentDatabaseUserId: mockGetCurrentDatabaseUserId,
 });
 
@@ -434,6 +436,30 @@ describe('Mark editing', () => {
 
         act(() => mockShowToast.mock.calls[0]![2]!.action!.onClick());
         expect(mockRestoreDocumentMark).toHaveBeenCalledWith(stored);
+    });
+
+    it('offers accept, reject and the one batch action for a formatting mark', () => {
+        openEditor([makeMark({ symbolId: 'ital' })]);
+
+        expect(screen.getByRole('button', { name: /proofMarks\.apply\.accept:/ })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /proofMarks\.apply\.reject:/ })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'proofMarks.apply.acceptAll' })).toBeEnabled();
+    });
+
+    it('records a rejection through the store without touching the document', () => {
+        openEditor([makeMark({ symbolId: 'ital' })]);
+
+        fireEvent.click(screen.getByRole('button', { name: /proofMarks\.apply\.reject:/ }));
+
+        expect(mockSetDocumentMarkStatus).toHaveBeenCalledWith('m1', 'rejected');
+        expect(mockUpdateDocumentMark).not.toHaveBeenCalled();
+    });
+
+    it('offers no decision and disables the batch action for a mark that changes no formatting', () => {
+        openEditor([makeMark({ symbolId: 'sp' })]);
+
+        expect(screen.queryByRole('button', { name: /proofMarks\.apply\.accept:/ })).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'proofMarks.apply.acceptAll' })).toBeDisabled();
     });
 
     it('closes the editor from its close button', () => {

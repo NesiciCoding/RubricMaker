@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { DocumentMark } from '../../types';
 import { getSymbol, PROOF_MARK_IDS } from '../../data/proofMarks';
 import type { MarkEditInput } from '../../utils/proofMarkEdit';
+import { formattingTargetFor } from '../../utils/markOperations';
 import type { TextRange } from '../../utils/proofRail';
 import MarkGlyph from './MarkGlyph';
 
@@ -49,20 +50,29 @@ export interface ProofMarkEditorProps {
     onEdit: (mark: DocumentMark, input: MarkEditInput) => void;
     onMove: (mark: DocumentMark) => void;
     onDelete: (mark: DocumentMark) => void;
+    onAccept: (mark: DocumentMark) => void;
+    onReject: (mark: DocumentMark) => void;
+    onAcceptAllFormatting: () => void;
+    /** Formatting marks on this page; 0 disables the one batch action. */
+    formattingMarkCount: number;
     onUndo: () => void;
     onDismiss: () => void;
     dir?: 'ltr' | 'rtl';
 }
 
-interface MarkRowProps extends Omit<ProofMarkEditorProps, 'marks' | 'canUndo' | 'onUndo' | 'onDismiss' | 'dir'> {
+interface MarkRowProps extends Omit<
+    ProofMarkEditorProps,
+    'marks' | 'canUndo' | 'onUndo' | 'onDismiss' | 'dir' | 'onAcceptAllFormatting' | 'formattingMarkCount'
+> {
     mark: DocumentMark;
 }
 
-function MarkRow({ mark, selection, onEdit, onMove, onDelete }: MarkRowProps) {
+function MarkRow({ mark, selection, onEdit, onMove, onDelete, onAccept, onReject }: MarkRowProps) {
     const { t } = useTranslation();
     const fieldId = useId();
     const symbol = getSymbol(mark.symbolId);
     const label = t(symbol.labelKey);
+    const formatting = formattingTargetFor(mark);
     const [note, setNote] = useState(mark.note ?? '');
     const [text, setText] = useState(mark.payload?.text ?? '');
 
@@ -164,6 +174,32 @@ function MarkRow({ mark, selection, onEdit, onMove, onDelete }: MarkRowProps) {
                     {t('proofMarks.edit.delete')}
                 </button>
             </div>
+
+            {formatting && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.02em' }}>
+                        {t(`proofMarks.apply.status.${mark.status}`)}
+                    </span>
+                    <button
+                        type="button"
+                        onClick={() => onAccept(mark)}
+                        disabled={mark.status === 'accepted'}
+                        aria-label={`${t('proofMarks.apply.accept')}: ${label}`}
+                        style={BUTTON}
+                    >
+                        {t('proofMarks.apply.accept')}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => onReject(mark)}
+                        disabled={mark.status === 'rejected'}
+                        aria-label={`${t('proofMarks.apply.reject')}: ${label}`}
+                        style={BUTTON}
+                    >
+                        {t('proofMarks.apply.reject')}
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
@@ -181,6 +217,10 @@ export default function ProofMarkEditor({
     onEdit,
     onMove,
     onDelete,
+    onAccept,
+    onReject,
+    onAcceptAllFormatting,
+    formattingMarkCount,
     onUndo,
     onDismiss,
     dir = 'ltr',
@@ -216,6 +256,16 @@ export default function ProofMarkEditor({
                 </div>
             </div>
 
+            <button
+                type="button"
+                onClick={onAcceptAllFormatting}
+                disabled={formattingMarkCount === 0}
+                title={formattingMarkCount === 0 ? t('proofMarks.apply.noFormatting') : undefined}
+                style={BUTTON}
+            >
+                {t('proofMarks.apply.acceptAll')}
+            </button>
+
             {marks.map((mark) => (
                 <MarkRow
                     key={mark.id}
@@ -224,6 +274,8 @@ export default function ProofMarkEditor({
                     onEdit={onEdit}
                     onMove={onMove}
                     onDelete={onDelete}
+                    onAccept={onAccept}
+                    onReject={onReject}
                 />
             ))}
         </section>

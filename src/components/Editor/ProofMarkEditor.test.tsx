@@ -28,6 +28,10 @@ function renderEditor(overrides: Partial<ProofMarkEditorProps> = {}) {
         onEdit: vi.fn(),
         onMove: vi.fn(),
         onDelete: vi.fn(),
+        onAccept: vi.fn(),
+        onReject: vi.fn(),
+        onAcceptAllFormatting: vi.fn(),
+        formattingMarkCount: 0,
         onUndo: vi.fn(),
         onDismiss: vi.fn(),
         ...overrides,
@@ -78,6 +82,10 @@ describe('ProofMarkEditor', () => {
                 onEdit={vi.fn()}
                 onMove={vi.fn()}
                 onDelete={vi.fn()}
+                onAccept={vi.fn()}
+                onReject={vi.fn()}
+                onAcceptAllFormatting={vi.fn()}
+                formattingMarkCount={0}
                 onUndo={vi.fn()}
                 onDismiss={vi.fn()}
             />
@@ -92,6 +100,10 @@ describe('ProofMarkEditor', () => {
                 onEdit={vi.fn()}
                 onMove={vi.fn()}
                 onDelete={vi.fn()}
+                onAccept={vi.fn()}
+                onReject={vi.fn()}
+                onAcceptAllFormatting={vi.fn()}
+                formattingMarkCount={0}
                 onUndo={vi.fn()}
                 onDismiss={vi.fn()}
             />
@@ -152,6 +164,55 @@ describe('ProofMarkEditor', () => {
     });
 });
 
+describe('ProofMarkEditor apply', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('offers a decision only for the formatting symbols', () => {
+        renderEditor({ marks: [mark({ symbolId: 'ital' }), mark({ id: 'm2', symbolId: 'sp' })] });
+
+        expect(screen.getAllByRole('button', { name: /proofMarks\.apply\.accept:/ })).toHaveLength(1);
+        expect(screen.getAllByRole('button', { name: /proofMarks\.apply\.reject:/ })).toHaveLength(1);
+        expect(screen.getByRole('button', { name: 'proofMarks.apply.accept: proofMarks.ital.label' })).toBeEnabled();
+    });
+
+    it('hands the decision to the caller with the mark', () => {
+        const props = renderEditor({ marks: [mark({ symbolId: 'bf' })] });
+
+        fireEvent.click(screen.getByRole('button', { name: /proofMarks\.apply\.accept:/ }));
+        expect(props.onAccept).toHaveBeenCalledWith(mark({ symbolId: 'bf' }));
+
+        fireEvent.click(screen.getByRole('button', { name: /proofMarks\.apply\.reject:/ }));
+        expect(props.onReject).toHaveBeenCalledWith(mark({ symbolId: 'bf' }));
+    });
+
+    it('shows the recorded decision and disables the side already taken', () => {
+        renderEditor({ marks: [mark({ symbolId: 'ital', status: 'accepted' })] });
+
+        expect(screen.getByText('proofMarks.apply.status.accepted')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /proofMarks\.apply\.accept:/ })).toBeDisabled();
+        expect(screen.getByRole('button', { name: /proofMarks\.apply\.reject:/ })).toBeEnabled();
+    });
+
+    it('disables the one batch action when the page has no formatting marks', () => {
+        const props = renderEditor({ formattingMarkCount: 0 });
+        const all = screen.getByRole('button', { name: 'proofMarks.apply.acceptAll' });
+
+        expect(all).toBeDisabled();
+        expect(all).toHaveAttribute('title', 'proofMarks.apply.noFormatting');
+        fireEvent.click(all);
+        expect(props.onAcceptAllFormatting).not.toHaveBeenCalled();
+    });
+
+    it('accepts every formatting mark on the page in one action', () => {
+        const props = renderEditor({ formattingMarkCount: 2 });
+        const all = screen.getByRole('button', { name: 'proofMarks.apply.acceptAll' });
+
+        expect(all).toBeEnabled();
+        fireEvent.click(all);
+        expect(props.onAcceptAllFormatting).toHaveBeenCalledTimes(1);
+    });
+});
+
 describe('ProofMarkEditor a11y', () => {
     const axeOptions = {
         rules: {
@@ -179,6 +240,10 @@ describe('ProofMarkEditor a11y', () => {
                 onEdit={vi.fn()}
                 onMove={vi.fn()}
                 onDelete={vi.fn()}
+                onAccept={vi.fn()}
+                onReject={vi.fn()}
+                onAcceptAllFormatting={vi.fn()}
+                formattingMarkCount={0}
                 onUndo={vi.fn()}
                 onDismiss={vi.fn()}
             />
@@ -206,6 +271,10 @@ describe('ProofMarkEditor a11y', () => {
                 onEdit={vi.fn()}
                 onMove={vi.fn()}
                 onDelete={vi.fn()}
+                onAccept={vi.fn()}
+                onReject={vi.fn()}
+                onAcceptAllFormatting={vi.fn()}
+                formattingMarkCount={0}
                 onUndo={vi.fn()}
                 onDismiss={vi.fn()}
             />
@@ -228,6 +297,10 @@ describe('ProofMarkEditor a11y', () => {
                 onEdit={vi.fn()}
                 onMove={vi.fn()}
                 onDelete={vi.fn()}
+                onAccept={vi.fn()}
+                onReject={vi.fn()}
+                onAcceptAllFormatting={vi.fn()}
+                formattingMarkCount={0}
                 onUndo={vi.fn()}
                 onDismiss={vi.fn()}
             />

@@ -3349,6 +3349,27 @@
         "sync_not_allowed": "Der Server hat die Änderung abgelehnt: Du kannst nur deine eigenen Klassen ändern. Es ist nichts verloren gegangen."
     },
     "proofMarks": {
+        "apply": {
+            "accept": "Übernehmen",
+            "reject": "Ablehnen",
+            "acceptAll": "Alle Formatierungskorrekturen auf dieser Seite übernehmen",
+            "accepted": "{{symbol}} übernommen",
+            "rejected": "{{symbol}} abgelehnt",
+            "acceptedAll": "{{total}} Formatierungskorrekturen übernommen",
+            "noneApplied": "Es konnten keine Formatierungskorrekturen übernommen werden",
+            "noFormatting": "Diese Seite enthält keine Formatierungsmarkierungen zum Übernehmen.",
+            "status": {
+                "noted": "nicht übernommen",
+                "proposed": "vorgeschlagen",
+                "accepted": "übernommen",
+                "rejected": "abgelehnt"
+            },
+            "refused": {
+                "not-formatting": "Diese Markierung ändert die Formatierung nicht.",
+                "stale-anchor": "Der Text unter dieser Markierung hat sich geändert und wurde daher nicht übernommen.",
+                "unsupported": "Dieser Editor kann diese Formatierung nicht anwenden."
+            }
+        },
         "del": { "label": "diesen Text löschen" },
         "ins": { "label": "Text einfügen" },
         "space": { "label": "Leerzeichen einfügen" },

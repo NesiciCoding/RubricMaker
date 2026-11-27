@@ -16,6 +16,7 @@ import { useMarkMutations } from './useMarkMutations';
 import type { DocumentMark } from '../../types';
 import type { ProofMarkId } from '../../data/proofMarks';
 import { draftProofMark } from '../../utils/proofMarkDraft';
+import { isFormattingMark } from '../../utils/markOperations';
 import { markAnchorState } from '../../utils/proofRail';
 import { useAssessment, usePlatform } from '../../context/AppContext';
 
@@ -104,6 +105,7 @@ export default function CommentableDocumentView({
     );
     const markMutations = useMarkMutations();
     const moveTarget = useEditorSelection(editor);
+    const formattingMarks = useMemo(() => anchoredMarks.filter(isFormattingMark), [anchoredMarks]);
 
     useEffect(() => {
         setActiveLine(null);
@@ -153,6 +155,16 @@ export default function CommentableDocumentView({
             );
         },
         [editor, markMutations, moveTarget]
+    );
+
+    const handleAcceptMark = useCallback(
+        (mark: DocumentMark) => markMutations.accept(editor, mark),
+        [editor, markMutations]
+    );
+
+    const handleAcceptAllFormatting = useCallback(
+        () => markMutations.acceptAllFormatting(editor, formattingMarks),
+        [editor, formattingMarks, markMutations]
     );
 
     const handlePlaceMark = useCallback(
@@ -220,6 +232,10 @@ export default function CommentableDocumentView({
                         onEdit={markMutations.update}
                         onMove={handleMoveMark}
                         onDelete={markMutations.remove}
+                        onAccept={handleAcceptMark}
+                        onReject={markMutations.reject}
+                        onAcceptAllFormatting={handleAcceptAllFormatting}
+                        formattingMarkCount={formattingMarks.length}
                         onUndo={markMutations.undo}
                         onDismiss={() => setActiveLine(null)}
                         dir={dir}

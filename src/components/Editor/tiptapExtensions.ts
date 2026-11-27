@@ -136,6 +136,35 @@ export const FontSize = Extension.create({
     },
 });
 
+// ── Custom: TextTransform ───────────────────────────────────────────────────
+
+/**
+ * `caps` and `lc` are type-style proof marks with no HTML equivalent mark, so they ride on
+ * `textStyle` as a text-transform — the same seam FontFamily and FontSize use. Rendered only when
+ * set, so existing `textStyle` spans are unchanged.
+ */
+export const TextTransform = Extension.create({
+    name: 'textTransform',
+    addOptions() {
+        return { types: ['textStyle'] };
+    },
+    addGlobalAttributes() {
+        return [
+            {
+                types: this.options.types,
+                attributes: {
+                    textTransform: {
+                        default: null,
+                        parseHTML: (el: HTMLElement) => (el as HTMLElement).style.textTransform || null,
+                        renderHTML: (attrs: Record<string, string | null>) =>
+                            attrs.textTransform ? { style: `text-transform: ${attrs.textTransform}` } : {},
+                    },
+                },
+            },
+        ];
+    },
+});
+
 // ── Custom: LineHeight ──────────────────────────────────────────────────────
 
 export const LineHeight = Extension.create({
@@ -200,6 +229,7 @@ export function getTipTapExtensions() {
         TaskItem.configure({ nested: true }),
         FontFamily,
         FontSize,
+        TextTransform,
         LineHeight,
         InvisibleCharacters.configure({ visible: false }),
         // Headings only — this is what TableOfContents' click-to-scroll and stable anchors rely on;

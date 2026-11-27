@@ -416,6 +416,8 @@ export interface MarkPayload {
     /** Text the operation writes: the corrected word, the inserted space, the punctuation. */
     text?: string;
     mark?: 'bold' | 'italic' | 'underline';
+    /** The case the `caps`/`lc` marks set; HTML has no case mark, so it is a text-transform style. */
+    textTransform?: 'uppercase' | 'lowercase';
     blockAttr?: { name: 'textAlign'; value: 'left' | 'center' | 'right' };
 }
 

@@ -61,6 +61,7 @@ describe('getTipTapExtensions', () => {
             'taskList',
             'fontFamily',
             'fontSize',
+            'textTransform',
             'lineHeight',
             'uniqueID',
             'emoji',
