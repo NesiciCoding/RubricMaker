@@ -50,7 +50,7 @@ export default function PortalLiveWritingJoin() {
     return (
         <div className="card" style={{ padding: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                <Radio size={18} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                <Radio size={18} style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
                 <h3 style={{ margin: 0, fontSize: '1rem' }}>{t('liveWriting.portal_join_title')}</h3>
             </div>
             <p className="text-muted" style={{ margin: '0 0 14px', fontSize: '0.88rem' }}>

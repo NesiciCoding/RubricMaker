@@ -109,9 +109,20 @@ export function clearStoredLiveWritingJoin(code: string): void {
     }
 }
 
+/** Supabase rejects with PostgrestError objects as well as Errors; read the marker from either. */
+function joinErrorMessage(error: unknown): string {
+    if (typeof error === 'string') return error;
+    if (error instanceof Error) return error.message;
+    if (error && typeof error === 'object') {
+        const message = (error as { message?: unknown }).message;
+        if (typeof message === 'string') return message;
+    }
+    return '';
+}
+
 /** Translation key for a rejected join; shared by the public picker and the portal entry. */
 export function liveWritingJoinErrorKey(error: unknown): string {
-    const message = error instanceof Error ? error.message : typeof error === 'string' ? error : '';
+    const message = joinErrorMessage(error);
     if (message.includes('too_many_attempts')) return 'liveWriting.too_many_attempts';
     if (message.includes('student_not_in_class')) return 'liveWriting.student_not_in_class';
     if (message.includes('portal_join_disabled')) return 'liveWriting.portal_join_disabled';

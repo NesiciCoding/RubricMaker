@@ -67,7 +67,8 @@ async function writeDraft(page: Page, text: string) {
 }
 
 async function handInAndSelfCheck(page: Page) {
-    await page.getByRole('button', { name: 'Hand in early' }).click();
+    // The writing screen offers the same action in its header and below the editor.
+    await page.getByRole('button', { name: 'Hand in early' }).first().click();
     await expect(page.getByText('How do you feel about your text?')).toBeVisible({ timeout: 20_000 });
     const group = page.getByRole('group', { name: 'How do you feel about your text?' });
     await group.getByRole('button', { name: "I'm happy with it" }).click();
