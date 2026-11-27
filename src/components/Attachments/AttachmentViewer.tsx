@@ -7,6 +7,7 @@ import { convertDocxToHtml } from '../../utils/textExtraction';
 import EssayEditor from '../Editor/EssayEditor';
 import CommentableDocumentView from '../Editor/CommentableDocumentView';
 import { MediaBoxSkeleton } from '../ui/Skeleton';
+import { useAssessment } from '../../context/AppContext';
 
 interface Props {
     attachment: Attachment;
@@ -18,6 +19,7 @@ const noop = () => {};
 
 export default function AttachmentViewer({ attachment, commentable = false }: Props) {
     const { t } = useTranslation();
+    const { addDocumentMark } = useAssessment();
     const docxRef = useRef<HTMLDivElement>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -221,7 +223,11 @@ export default function AttachmentViewer({ attachment, commentable = false }: Pr
                         >
                             {docxHtml !== null ? (
                                 commentable ? (
-                                    <CommentableDocumentView content={docxHtml} attachmentId={attachment.id} />
+                                    <CommentableDocumentView
+                                        content={docxHtml}
+                                        attachmentId={attachment.id}
+                                        onCreateMark={addDocumentMark}
+                                    />
                                 ) : (
                                     <EssayEditor
                                         content={docxHtml}
@@ -281,7 +287,11 @@ export default function AttachmentViewer({ attachment, commentable = false }: Pr
                     }}
                 >
                     {commentable ? (
-                        <CommentableDocumentView content={essayHtml} attachmentId={attachment.id} />
+                        <CommentableDocumentView
+                            content={essayHtml}
+                            attachmentId={attachment.id}
+                            onCreateMark={addDocumentMark}
+                        />
                     ) : (
                         <EssayEditor
                             content={essayHtml}

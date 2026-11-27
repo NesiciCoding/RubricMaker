@@ -20,8 +20,9 @@ interface CommentableDocumentViewProps {
     /** Override for the marks to draw; stored marks for this attachment are used when omitted. */
     marks?: readonly DocumentMark[];
     /**
-     * Stores a mark the palette created. Without it the surface has nowhere to write a mark, so the
-     * palette is not offered rather than offering a control that silently does nothing.
+     * Stores a mark the palette created — the grading attachment view passes the store's
+     * `addDocumentMark`. Without it the surface has nowhere to write a mark, so the palette is not
+     * offered rather than offering a control that silently does nothing.
      */
     onCreateMark?: (mark: Omit<DocumentMark, 'id' | 'createdAt'>) => void;
 }
