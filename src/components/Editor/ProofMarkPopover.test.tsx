@@ -53,12 +53,13 @@ function renderPanel(overrides: Partial<React.ComponentProps<typeof ProofMarkPop
 }
 
 describe('ProofMarkPopover', () => {
-    it('is a dialog named by its line header, with a labelled list', () => {
+    it('is a non-modal dialog named by its line header, with a labelled list', () => {
         renderPanel();
 
+        // Non-modal: the rail's chips stay reachable, so Escape or Close is how the panel ends.
         const dialog = screen.getByRole('dialog');
         expect(dialog).toHaveAttribute('aria-labelledby', 'panel-title');
-        expect(dialog).toHaveAttribute('aria-modal', 'true');
+        expect(dialog).not.toHaveAttribute('aria-modal');
         expect(screen.getByRole('heading', { level: 3 })).toHaveAttribute('id', 'panel-title');
         expect(screen.getByRole('heading').textContent).toContain('"count":2');
         expect(screen.getByRole('heading').textContent).toContain('"line":9');
@@ -90,14 +91,10 @@ describe('ProofMarkPopover', () => {
         expect(screen.getByRole('dialog')).toHaveAttribute('data-side', 'left');
     });
 
-    it('opens with focus on the close button and traps Tab there', () => {
+    it('opens with focus on the close button', () => {
         renderPanel();
 
-        const close = screen.getByRole('button', { name: 'proofMarks.panel.close' });
-        expect(close).toHaveFocus();
-
-        fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Tab' });
-        expect(close).toHaveFocus();
+        expect(screen.getByRole('button', { name: 'proofMarks.panel.close' })).toHaveFocus();
     });
 
     it('closes on Escape', () => {
@@ -131,15 +128,13 @@ describe('ProofMarkPopover as a bottom sheet', () => {
         expect(dialog).not.toHaveStyle({ position: 'absolute' });
     });
 
-    it('keeps Escape and the Tab trap working without an anchor', () => {
+    it('closes on Escape and opens on its close button without an anchor', () => {
         const onClose = vi.fn();
         render(<ProofMarkPopover variant="sheet" row={ROW} dir="ltr" titleId="sheet-title" onClose={onClose} />);
 
-        const dialog = screen.getByRole('dialog');
-        fireEvent.keyDown(dialog, { key: 'Tab' });
         expect(screen.getByRole('button', { name: 'proofMarks.panel.close' })).toHaveFocus();
 
-        fireEvent.keyDown(dialog, { key: 'Escape' });
+        fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
         expect(onClose).toHaveBeenCalledTimes(1);
     });
 });
