@@ -11,6 +11,7 @@ import type {
 import type { TiptapEditorHandle } from '../Editor/TiptapEditor';
 import CriterionDetailPanel from './CriterionDetailPanel';
 import type { PreviousFeedback } from './criterionMenuItems';
+import type { PriorCommentSource, RankedPriorComment } from '../../utils/commentRecall';
 import { storageSync } from '../../services/database';
 import { subItemMode, tickCount } from '../../utils/subItems';
 
@@ -40,6 +41,10 @@ interface Props {
     previousFeedbackFor?: (criterionId: string) => PreviousFeedback | undefined;
     /** Put the previous student's feedback at the caret in the open comment editor. */
     onInsertPreviousFeedback?: (criterionId: string, text: string) => void;
+    /** Past criterion comments for the composer's phrase search (#887). */
+    pastFeedback?: PriorCommentSource[];
+    /** Insert a search hit at the caret; absent keeps the search field out of the composer. */
+    onInsertPriorComment?: (comment: RankedPriorComment) => void;
 }
 
 /**
@@ -66,6 +71,8 @@ export default function GradingGrid({
     onStopAudio,
     previousFeedbackFor,
     onInsertPreviousFeedback,
+    pastFeedback,
+    onInsertPriorComment,
 }: Props) {
     const { t } = useTranslation();
     const maxLevels = criteria.reduce((m, c) => Math.max(m, orderedLevels(c).length), 0);
@@ -236,8 +243,10 @@ export default function GradingGrid({
                                                     setSubItemScore(entry, subItemId, score)
                                                 }
                                                 commentBank={commentBank}
+                                                pastFeedback={pastFeedback}
                                                 editorRef={commentEditorRef}
                                                 onInsertChip={onInsertChip}
+                                                onInsertPriorComment={onInsertPriorComment}
                                                 onBrowseAll={() => onBrowseAll(c.id)}
                                                 audioRecording={recordingKey === c.id}
                                                 audioDataUrl={entry.audioDataUrl}

@@ -88,6 +88,7 @@ import SubItemChecklist, { BestFitHint } from '../components/Grading/SubItemChec
 import TieredGradingBar, { type TieredGradePatch } from '../components/Grading/TieredGradingBar';
 import { mergeEditsOntoSavedGrade } from '../utils/hydratedGradeMerge';
 import { escapeHtml, stripCommentHtml } from '../utils/exportDataPrep';
+import type { PriorCommentSource, RankedPriorComment } from '../utils/commentRecall';
 import { useCopyFeedback } from '../hooks/useCopyFeedback';
 import { getCriterionInterventionFlags } from '../utils/learningPathAggregator';
 import { exportSinglePdf } from '../utils/pdfExport';
@@ -941,6 +942,27 @@ function GradeStudentEditor() {
         },
         [classStudents, studentId, studentRubrics, rubricId]
     );
+    // Every criterion comment from earlier grades, with the student it was written for. Built once
+    // per roster change so the composer's phrase search never re-scans the grade collection (#887).
+    const pastFeedbackComments = useMemo<PriorCommentSource[]>(() => {
+        const names = new Map(students.map((s) => [s.id, s.name]));
+        const comments: PriorCommentSource[] = [];
+        for (const item of studentRubrics) {
+            const name = names.get(item.studentId);
+            for (const entry of item.entries) {
+                const text = stripCommentHtml(entry.comment ?? '').trim();
+                if (!text) continue;
+                comments.push({
+                    id: `${item.id}:${entry.criterionId}`,
+                    text,
+                    source: 'feedback',
+                    label: name,
+                });
+            }
+        }
+        return comments;
+    }, [students, studentRubrics]);
+
     // One menu for the whole card list: it opens on whichever criterion card was right-clicked.
     const cardMenu = useContextMenu();
     const copyFeedback = useCopyFeedback();
@@ -988,6 +1010,13 @@ function GradeStudentEditor() {
     const insertCommentChip = (item: CommentBankItem) => {
         commentEditorRef.current?.insertContent(item.text);
         recordCommentBankUsage(item.id);
+    };
+
+    // A hit from the "similar past comments" search: bank snippets keep their usage count,
+    // feedback copied from a past grade is inserted as plain text.
+    const insertPriorComment = (item: RankedPriorComment) => {
+        commentEditorRef.current?.insertContent(escapeHtml(item.text));
+        if (item.source === 'bank') recordCommentBankUsage(item.id);
     };
 
     const isSinglePoint = rubric.scoringMode === 'single-point';
@@ -1473,8 +1502,10 @@ function GradeStudentEditor() {
                         updateEntry={updateEntry}
                         setSubItemScore={setSubItemScore}
                         commentBank={commentBank}
+                        pastFeedback={pastFeedbackComments}
                         commentEditorRef={commentEditorRef}
                         onInsertChip={insertCommentChip}
+                        onInsertPriorComment={insertPriorComment}
                         onBrowseAll={(cid) => setShowCommentBankFor(cid)}
                         recordingKey={audioRecorder.recordingKey}
                         onStartAudio={startAudioRecording}

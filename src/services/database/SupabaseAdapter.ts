@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient, Session, AuthChangeEvent } from '@supabase/supabase-js';
+import type { PriorCommentHit } from '../../utils/commentRecall';
 import type {
     Rubric,
     Folder,
@@ -1173,6 +1174,27 @@ export class SupabaseAdapter {
     async deleteCommentBankItem(id: string): Promise<SyncResult> {
         const { error } = await this.db().from('comment_bank').delete().eq('id', id).eq('owner_id', this.uid());
         return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    /**
+     * Ranked prior comments for a free-text query (#887). The ranking lives in Postgres
+     * (`search_prior_comments`, migration 111) so it scales past what the client has hydrated;
+     * the composer keeps its local ranking as the offline path.
+     */
+    async searchPriorComments(query: string, limit = 6): Promise<PriorCommentHit[]> {
+        const { data, error } = await this.db().rpc('search_prior_comments', {
+            p_query: query,
+            p_limit: limit,
+        });
+        if (error) throw error;
+        return ((data ?? []) as { id: string; text: string | null; tags: string[] | null; rank: number | null }[]).map(
+            (row) => ({
+                id: row.id,
+                text: row.text ?? '',
+                tags: row.tags ?? [],
+                score: row.rank ?? 0,
+            })
+        );
     }
 
     // ── Question Bank (roadmap 24.1) ─────────────────────────────────────────────
