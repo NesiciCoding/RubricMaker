@@ -17,7 +17,7 @@ import {
 
 const editors: Editor[] = [];
 
-function makeEditor(content = '<p>Hello world again</p>', { underline = true } = {}): Editor {
+function makeEditor(content = '<p>Hello world again</p>', { underline = true, editable = true } = {}): Editor {
     const editor = new Editor({
         extensions: [
             StarterKit.configure({ link: false, underline: false, undoRedo: {} }),
@@ -27,13 +27,14 @@ function makeEditor(content = '<p>Hello world again</p>', { underline = true } =
             TextTransform,
         ],
         content,
+        editable,
     });
     editors.push(editor);
     return editor;
 }
 
-function makeAppEditor(content: string): Editor {
-    const editor = new Editor({ extensions: getTipTapExtensions(), content });
+function makeAppEditor(content: string, { editable = true } = {}): Editor {
+    const editor = new Editor({ extensions: getTipTapExtensions(), content, editable });
     editors.push(editor);
     return editor;
 }
@@ -177,6 +178,24 @@ describe('applyFormattingMark', () => {
 
         applyFormattingMark(editor, mark());
         const applied = editor.getHTML();
+
+        editor.commands.undo();
+        expect(editor.getHTML()).toBe(original);
+
+        editor.commands.redo();
+        expect(editor.getHTML()).toBe(applied);
+    });
+
+    it('applies, undoes and redoes on a read-only review surface', () => {
+        // CommentableDocumentView mounts its editor with editable: false, so an apply there has to
+        // behave like the editable one: one reversible transaction.
+        const editor = makeAppEditor('<p>Hello world again</p>', { editable: false });
+        expect(editor.isEditable).toBe(false);
+        const original = editor.getHTML();
+
+        expect(applyFormattingMark(editor, mark({ symbolId: 'caps' })).ok).toBe(true);
+        const applied = editor.getHTML();
+        expect(applied).toContain('text-transform: uppercase');
 
         editor.commands.undo();
         expect(editor.getHTML()).toBe(original);
