@@ -1,13 +1,14 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import CommentableDocumentView from './CommentableDocumentView';
 import type { DocumentComment, DocumentMark } from '../../types';
+import { hashSnippet } from '../../utils/proofRail';
 
 const fakeEditor = vi.hoisted(() => ({
     state: {
         selection: { from: 3, to: 8, empty: false },
-        doc: { textBetween: () => 'Hello' },
+        doc: { content: { size: 100 }, textBetween: () => 'Hello' },
     },
     commands: {
         setDocumentComments: vi.fn(),
@@ -15,6 +16,8 @@ const fakeEditor = vi.hoisted(() => ({
         setDocumentMarks: vi.fn(),
         setActiveDocumentMarks: vi.fn(),
     },
+    on: vi.fn(),
+    off: vi.fn(),
 }));
 
 const mockCommentHighlightConfig = vi.hoisted(() => ({
@@ -24,6 +27,12 @@ const mockCommentHighlightConfig = vi.hoisted(() => ({
 const mockAddDocumentComment = vi.fn();
 const mockResolveDocumentComment = vi.fn();
 const mockDeleteDocumentComment = vi.fn();
+const mockUpdateDocumentMark = vi.fn();
+const mockDeleteDocumentMark = vi.fn();
+const mockRestoreDocumentMark = vi.fn();
+const mockShowToast = vi.hoisted(() =>
+    vi.fn((_message?: string, _type?: string, _options?: { action?: { onClick: () => void } }) => 1)
+);
 const mockGetCurrentDatabaseUserId = vi.fn(() => 'user-1');
 
 const mockDocumentComments: DocumentComment[] = [];
@@ -35,6 +44,9 @@ const makeAppValue = () => ({
     addDocumentComment: mockAddDocumentComment,
     resolveDocumentComment: mockResolveDocumentComment,
     deleteDocumentComment: mockDeleteDocumentComment,
+    updateDocumentMark: mockUpdateDocumentMark,
+    deleteDocumentMark: mockDeleteDocumentMark,
+    restoreDocumentMark: mockRestoreDocumentMark,
     getCurrentDatabaseUserId: mockGetCurrentDatabaseUserId,
 });
 
@@ -51,6 +63,23 @@ vi.mock('../../context/AppContext', () => ({
 
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({ t: (key: string) => key }),
+}));
+
+vi.mock('../../hooks/useToast', () => ({
+    useToast: () => ({ showToast: mockShowToast, dismissToast: vi.fn() }),
+}));
+
+// jsdom has no layout, so the rail's measurement finds no line boxes. The editor panel is what is
+// under test here, so the measured rows are supplied directly.
+const mockRailRows = vi.hoisted(() => ({ rows: [] as unknown[] }));
+
+vi.mock('./useProofRail', () => ({
+    useProofRail: () => ({
+        rows: mockRailRows.rows,
+        box: { top: 0, left: 0, height: 0 },
+        dir: 'ltr',
+        remeasure: vi.fn(),
+    }),
 }));
 
 vi.mock('./EssayEditor', () => {
@@ -123,6 +152,21 @@ function makeMark(overrides: Partial<DocumentMark> = {}): DocumentMark {
     };
 }
 
+function railRowFor(marks: DocumentMark[]) {
+    return {
+        id: '1',
+        center: 10,
+        top: 0,
+        drift: 0,
+        stacked: false,
+        overflow: false,
+        line: 1,
+        ids: marks.map((mark) => mark.id),
+        multiLine: false,
+        marks,
+    };
+}
+
 function makeComment(overrides: Partial<DocumentComment> = {}): DocumentComment {
     return {
         id: 'c1',
@@ -141,6 +185,7 @@ describe('CommentableDocumentView', () => {
         vi.clearAllMocks();
         mockDocumentComments.length = 0;
         mockDocumentMarks.length = 0;
+        mockRailRows.rows = [];
         mockGetCurrentDatabaseUserId.mockReturnValue('user-1');
         fakeEditor.commands.setDocumentComments.mockClear();
         fakeEditor.commands.setActiveDocumentComment.mockClear();
@@ -325,6 +370,146 @@ describe('CommentableDocumentView', () => {
 
         expect(onCreateMark).not.toHaveBeenCalled();
         fakeEditor.state.selection = { from: 3, to: 8, empty: false };
+    });
+});
+
+describe('Mark editing', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockDocumentMarks.length = 0;
+        mockRailRows.rows = [];
+    });
+
+    const openEditor = (marks: DocumentMark[]) => {
+        mockDocumentMarks.push(...marks);
+        mockRailRows.rows = [railRowFor(marks)];
+        render(<CommentableDocumentView content="<p>Hello</p>" attachmentId="att-1" />);
+        fireEvent.click(screen.getByRole('button', { name: 'proofMarks.rail.chipLabel' }));
+    };
+
+    it('opens the mark editor for the rail line a teacher selects', () => {
+        openEditor([makeMark()]);
+
+        expect(screen.getByRole('group', { name: 'proofMarks.edit.label' })).toBeInTheDocument();
+    });
+
+    it('keeps the mark editor closed until a rail line is selected', () => {
+        const stored = makeMark();
+        mockDocumentMarks.push(stored);
+        mockRailRows.rows = [railRowFor([stored])];
+        render(<CommentableDocumentView content="<p>Hello</p>" attachmentId="att-1" />);
+
+        expect(screen.queryByRole('group', { name: 'proofMarks.edit.label' })).not.toBeInTheDocument();
+    });
+
+    it('writes an edited note through the store', () => {
+        openEditor([makeMark()]);
+        const note = screen.getByLabelText('proofMarks.edit.note');
+
+        fireEvent.change(note, { target: { value: 'needs a comma' } });
+        fireEvent.blur(note);
+
+        expect(mockUpdateDocumentMark).toHaveBeenCalledWith('m1', { note: 'needs a comma' });
+    });
+
+    it('moves the mark to the current selection', () => {
+        fakeEditor.state.selection = { from: 9, to: 14, empty: false };
+        openEditor([makeMark()]);
+
+        fireEvent.click(screen.getByRole('button', { name: 'proofMarks.edit.moveHere' }));
+
+        expect(mockUpdateDocumentMark).toHaveBeenCalledWith('m1', {
+            anchor: { from: 9, to: 14 },
+            snippetHash: expect.any(String),
+        });
+        fakeEditor.state.selection = { from: 3, to: 8, empty: false };
+    });
+
+    it('deletes a mark and restores it from the toast action', () => {
+        const stored = makeMark();
+        openEditor([stored]);
+
+        fireEvent.click(screen.getByRole('button', { name: /proofMarks.edit.delete/ }));
+        expect(mockDeleteDocumentMark).toHaveBeenCalledWith('m1');
+
+        act(() => mockShowToast.mock.calls[0]![2]!.action!.onClick());
+        expect(mockRestoreDocumentMark).toHaveBeenCalledWith(stored);
+    });
+
+    it('closes the editor from its close button', () => {
+        openEditor([makeMark()]);
+
+        fireEvent.click(screen.getByRole('button', { name: 'proofMarks.edit.close' }));
+        expect(screen.queryByRole('group', { name: 'proofMarks.edit.label' })).not.toBeInTheDocument();
+    });
+});
+
+describe('Mark anchors', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockDocumentMarks.length = 0;
+        mockRailRows.rows = [];
+    });
+
+    it('draws only the marks whose anchor still matches', async () => {
+        mockDocumentMarks.push(
+            makeMark({ id: 'live', snippetHash: hashSnippet('Hello') }),
+            makeMark({ id: 'stale', anchor: { from: 900, to: 905 } })
+        );
+        render(<CommentableDocumentView content="<p>Hello</p>" attachmentId="att-1" />);
+
+        await waitFor(() =>
+            expect(fakeEditor.commands.setDocumentMarks).toHaveBeenCalledWith([expect.objectContaining({ id: 'live' })])
+        );
+    });
+
+    it('lists a mark whose anchor is out of bounds instead of dropping it silently', async () => {
+        mockDocumentMarks.push(makeMark({ id: 'stale', anchor: { from: 900, to: 905 } }));
+        render(<CommentableDocumentView content="<p>Hello</p>" attachmentId="att-1" />);
+
+        const list = await screen.findByRole('group', { name: 'proofMarks.unanchored.label' });
+        expect(within(list).getByText('proofMarks.sp.label')).toBeInTheDocument();
+    });
+
+    it('lists a mark whose stored snippet no longer matches', async () => {
+        mockDocumentMarks.push(makeMark({ id: 'stale', snippetHash: 'written-against-other-text' }));
+        render(<CommentableDocumentView content="<p>Hello</p>" attachmentId="att-1" />);
+
+        expect(await screen.findByRole('group', { name: 'proofMarks.unanchored.label' })).toBeInTheDocument();
+    });
+
+    it('re-anchors an unanchored mark to the current selection', async () => {
+        fakeEditor.state.selection = { from: 9, to: 14, empty: false };
+        mockDocumentMarks.push(makeMark({ id: 'stale', anchor: { from: 900, to: 905 } }));
+        render(<CommentableDocumentView content="<p>Hello</p>" attachmentId="att-1" />);
+
+        const list = await screen.findByRole('group', { name: 'proofMarks.unanchored.label' });
+        fireEvent.click(within(list).getByRole('button', { name: /proofMarks.edit.moveHere/ }));
+
+        expect(mockUpdateDocumentMark).toHaveBeenCalledWith('stale', {
+            anchor: { from: 9, to: 14 },
+            snippetHash: expect.any(String),
+        });
+        fakeEditor.state.selection = { from: 3, to: 8, empty: false };
+    });
+
+    it('deletes an unanchored mark through the store', async () => {
+        mockDocumentMarks.push(makeMark({ id: 'stale', anchor: { from: 900, to: 905 } }));
+        render(<CommentableDocumentView content="<p>Hello</p>" attachmentId="att-1" />);
+
+        const list = await screen.findByRole('group', { name: 'proofMarks.unanchored.label' });
+        fireEvent.click(within(list).getByRole('button', { name: /proofMarks.edit.delete/ }));
+        expect(mockDeleteDocumentMark).toHaveBeenCalledWith('stale');
+    });
+
+    it('shows no unanchored list when every mark still matches', async () => {
+        mockDocumentMarks.push(makeMark({ id: 'live', snippetHash: hashSnippet('Hello') }));
+        render(<CommentableDocumentView content="<p>Hello</p>" attachmentId="att-1" />);
+
+        await waitFor(() =>
+            expect(fakeEditor.commands.setDocumentMarks).toHaveBeenCalledWith([expect.objectContaining({ id: 'live' })])
+        );
+        expect(screen.queryByRole('group', { name: 'proofMarks.unanchored.label' })).not.toBeInTheDocument();
     });
 });
 

@@ -6,6 +6,7 @@ import {
     groupByLine,
     hasOverlap,
     hashSnippet,
+    markAnchorState,
     planRail,
     resolveMarkRange,
     stackRail,
@@ -91,6 +92,27 @@ describe('resolveMarkRange', () => {
         expect(resolveMarkRange(doc, { anchor: { from: 2, to: 900 } })).toBeNull();
         expect(resolveMarkRange(doc, { anchor: { from: 4, to: 4 } })).toBeNull();
         expect(resolveMarkRange(doc, { anchor: { from: 8, to: 3 } })).toBeNull();
+    });
+});
+
+describe('markAnchorState', () => {
+    const doc = docFrom('<p>Hello world</p>');
+
+    it('reports an anchor that still matches as anchored', () => {
+        expect(markAnchorState(doc, { anchor: { from: 1, to: 6 } })).toBe('anchored');
+        expect(
+            markAnchorState(doc, { anchor: { from: 1, to: 6 }, snippetHash: hashSnippet(doc.textBetween(1, 6)) })
+        ).toBe('anchored');
+    });
+
+    it('separates an anchor that left the document from one whose words changed', () => {
+        expect(markAnchorState(doc, { anchor: { from: -1, to: 5 } })).toBe('out-of-bounds');
+        expect(markAnchorState(doc, { anchor: { from: 2, to: 900 } })).toBe('out-of-bounds');
+        expect(markAnchorState(doc, { anchor: { from: 4, to: 4 } })).toBe('out-of-bounds');
+        expect(markAnchorState(doc, { anchor: { from: 8, to: 3 } })).toBe('out-of-bounds');
+        expect(markAnchorState(doc, { anchor: { from: 1, to: 6 }, snippetHash: hashSnippet('Goodbye') })).toBe(
+            'text-changed'
+        );
     });
 });
 

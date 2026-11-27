@@ -3388,6 +3388,25 @@
             "needSelection": "Sélectionnez d’abord du texte, puis choisissez une marque.",
             "shortcut": "{{family}} (Alt+{{key}})"
         },
+        "unanchored": {
+            "label": "Marques qui ne correspondent plus au texte",
+            "hint": "Les mots sous ces marques ont changé : elles ne sont pas affichées sur la page."
+        },
+        "edit": {
+            "label": "Modifier les marques",
+            "symbol": "Marque",
+            "note": "Note",
+            "notePlaceholder": "Votre note pour l’élève",
+            "replacement": "Texte de remplacement",
+            "replacementPlaceholder": "Texte corrigé",
+            "moveHere": "Déplacer vers la sélection",
+            "noSelection": "Sélectionnez d’abord le nouveau texte",
+            "delete": "Supprimer la marque",
+            "undo": "Annuler",
+            "undone": "Modification de la marque annulée",
+            "deleted": "Marque supprimée : {{symbol}}",
+            "close": "Fermer"
+        },
         "rail": {
             "label": "Marques de correction",
             "chipLabel_one": "{{count}} marque sur la ligne {{line}} : {{symbols}}",
