@@ -3388,6 +3388,21 @@
             "needSelection": "Select text first, then choose a mark.",
             "shortcut": "{{family}} (Alt+{{key}})"
         },
+        "edit": {
+            "label": "Edit marks",
+            "symbol": "Mark",
+            "note": "Note",
+            "notePlaceholder": "Your note for the student",
+            "replacement": "Replacement text",
+            "replacementPlaceholder": "Corrected text",
+            "moveHere": "Move to selection",
+            "noSelection": "Select the new text first",
+            "delete": "Delete mark",
+            "undo": "Undo",
+            "undone": "Mark change undone",
+            "deleted": "Mark deleted: {{symbol}}",
+            "close": "Close"
+        },
         "rail": {
             "label": "Proofreading marks",
             "chipLabel_one": "{{count}} mark on line {{line}}: {{symbols}}",

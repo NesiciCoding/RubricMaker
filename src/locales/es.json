@@ -3388,6 +3388,21 @@
             "needSelection": "Selecciona texto primero y luego elige una marca.",
             "shortcut": "{{family}} (Alt+{{key}})"
         },
+        "edit": {
+            "label": "Editar marcas",
+            "symbol": "Marca",
+            "note": "Nota",
+            "notePlaceholder": "Tu nota para el alumno",
+            "replacement": "Texto de sustitución",
+            "replacementPlaceholder": "Texto corregido",
+            "moveHere": "Mover a la selección",
+            "noSelection": "Selecciona primero el texto nuevo",
+            "delete": "Eliminar la marca",
+            "undo": "Deshacer",
+            "undone": "Cambio de la marca deshecho",
+            "deleted": "Marca eliminada: {{symbol}}",
+            "close": "Cerrar"
+        },
         "rail": {
             "label": "Marcas de corrección",
             "chipLabel_one": "{{count}} marca en la línea {{line}}: {{symbols}}",

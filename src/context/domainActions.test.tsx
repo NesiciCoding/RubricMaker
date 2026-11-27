@@ -411,6 +411,7 @@ describe('domain action creators', () => {
         const { result } = renderHook(() => useAssessment(), { wrapper });
 
         let markId = '';
+        let stored: import('../types').DocumentMark | null = null;
         act(() => {
             const mark = result.current.addDocumentMark({
                 attachmentId: 'a1',
@@ -420,6 +421,7 @@ describe('domain action creators', () => {
                 status: 'noted',
             });
             markId = mark.id;
+            stored = mark;
         });
         expect(result.current.documentMarks).toHaveLength(1);
 
@@ -437,6 +439,14 @@ describe('domain action creators', () => {
             result.current.deleteDocumentMark(markId);
         });
         expect(result.current.documentMarks).toHaveLength(0);
+
+        // Undo restores the same record, id included, so the rail and its cues find it again.
+        act(() => {
+            result.current.restoreDocumentMark(stored!);
+        });
+        expect(result.current.documentMarks).toHaveLength(1);
+        expect(result.current.documentMarks[0]!.id).toBe(markId);
+        expect(result.current.documentMarks[0]!.anchor).toEqual({ from: 1, to: 4 });
     });
 
     it('logs a console error when grading-task pushes fail', async () => {

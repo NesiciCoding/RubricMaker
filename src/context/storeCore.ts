@@ -1201,6 +1201,7 @@ export interface AppContextValue extends StoreData {
     addDocumentMark: (m: Omit<DocumentMark, 'id' | 'createdAt'>) => DocumentMark;
     updateDocumentMark: (id: string, patch: Partial<Omit<DocumentMark, 'id' | 'createdAt' | 'updatedAt'>>) => void;
     deleteDocumentMark: (id: string) => void;
+    restoreDocumentMark: (mark: DocumentMark) => void;
     setDocumentMarkStatus: (id: string, status: DocumentMark['status']) => void;
     dismissNotification: (type: NotificationDismissalType, entityId: string, fingerprint: string) => void;
     addComparativeMatchup: (rubricId: string, studentAId: string, studentBId: string) => void;

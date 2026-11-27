@@ -9,6 +9,9 @@ import { MarkCues } from './markCues';
 import ProofRail from './ProofRail';
 import { useProofRail } from './useProofRail';
 import ProofMarkPalette from './ProofMarkPalette';
+import ProofMarkEditor from './ProofMarkEditor';
+import { useDocumentSelection } from './useDocumentSelection';
+import { useMarkMutations } from './useMarkMutations';
 import type { DocumentMark } from '../../types';
 import type { ProofMarkId } from '../../data/proofMarks';
 import { draftProofMark } from '../../utils/proofMarkDraft';
@@ -29,6 +32,7 @@ interface CommentableDocumentViewProps {
 
 const noop = () => {};
 const NO_IDS: string[] = [];
+const NO_MARKS: DocumentMark[] = [];
 
 /**
  * Read-only, paginated document view (essay HTML or Mammoth-converted DOCX HTML) with
@@ -78,6 +82,12 @@ export default function CommentableDocumentView({
 
     const { rows, box, dir } = useProofRail({ editor, pageElement: shell, marks });
     const activeMarkIds = useMemo(() => rows.find((row) => row.line === activeLine)?.ids ?? NO_IDS, [rows, activeLine]);
+    const activeMarks = useMemo(
+        () => rows.find((row) => row.line === activeLine)?.marks ?? NO_MARKS,
+        [rows, activeLine]
+    );
+    const markMutations = useMarkMutations();
+    const moveTarget = useDocumentSelection(editor);
 
     useEffect(() => {
         setActiveLine(null);
@@ -115,6 +125,19 @@ export default function CommentableDocumentView({
         if (!text || !text.trim()) return;
         addDocumentComment({ attachmentId, authorId: currentUserId, text: text.trim(), anchor: { from, to } });
     }, [editor, attachmentId, currentUserId, addDocumentComment, t]);
+
+    const handleMoveMark = useCallback(
+        (mark: DocumentMark) => {
+            /* v8 ignore next -- the editor exists whenever the rail has marks */
+            if (!editor || !moveTarget) return;
+            markMutations.move(
+                mark,
+                moveTarget,
+                editor.state.doc.textBetween(moveTarget.from, moveTarget.to, ' ', ' ')
+            );
+        },
+        [editor, markMutations, moveTarget]
+    );
 
     const handlePlaceMark = useCallback(
         (symbolId: ProofMarkId) => {
@@ -160,6 +183,21 @@ export default function CommentableDocumentView({
             />
             {rows.length > 0 && (
                 <ProofRail rows={rows} box={box} dir={dir} activeLine={activeLine} onSelectLine={setActiveLine} />
+            )}
+            {activeMarks.length > 0 && (
+                <div style={{ marginTop: 8 }}>
+                    <ProofMarkEditor
+                        marks={activeMarks}
+                        selection={moveTarget}
+                        canUndo={markMutations.canUndo}
+                        onEdit={markMutations.update}
+                        onMove={handleMoveMark}
+                        onDelete={markMutations.remove}
+                        onUndo={markMutations.undo}
+                        onDismiss={() => setActiveLine(null)}
+                        dir={dir}
+                    />
+                </div>
             )}
             <div style={{ marginTop: 10 }}>
                 <CommentSidebar

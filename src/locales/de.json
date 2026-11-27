@@ -3388,6 +3388,21 @@
             "needSelection": "Zuerst Text auswählen, dann ein Zeichen wählen.",
             "shortcut": "{{family}} (Alt+{{key}})"
         },
+        "edit": {
+            "label": "Markierungen bearbeiten",
+            "symbol": "Markierung",
+            "note": "Notiz",
+            "notePlaceholder": "Deine Notiz für die Schülerin oder den Schüler",
+            "replacement": "Ersatztext",
+            "replacementPlaceholder": "Korrigierter Text",
+            "moveHere": "Zur Auswahl verschieben",
+            "noSelection": "Wähle zuerst den neuen Text aus",
+            "delete": "Markierung löschen",
+            "undo": "Rückgängig",
+            "undone": "Änderung an der Markierung rückgängig gemacht",
+            "deleted": "Markierung gelöscht: {{symbol}}",
+            "close": "Schließen"
+        },
         "rail": {
             "label": "Korrekturzeichen",
             "chipLabel_one": "{{count}} Korrekturzeichen in Zeile {{line}}: {{symbols}}",

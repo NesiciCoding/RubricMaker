@@ -53,6 +53,7 @@ export type AssessmentValue = Pick<
     | 'addDocumentMark'
     | 'updateDocumentMark'
     | 'deleteDocumentMark'
+    | 'restoreDocumentMark'
     | 'setDocumentMarkStatus'
     | 'addGradingTasks'
     | 'deleteGradingTask'
@@ -76,6 +77,7 @@ export type AssessmentActions = Pick<
     | 'addDocumentMark'
     | 'updateDocumentMark'
     | 'deleteDocumentMark'
+    | 'restoreDocumentMark'
     | 'setDocumentMarkStatus'
     | 'savePeerReview'
     | 'deletePeerReview'
@@ -131,6 +133,8 @@ export function createAssessmentActions(ctx: StoreActionsCtx): AssessmentActions
     const updateDocumentMark = (id: string, patch: Partial<Omit<DocumentMark, 'id' | 'createdAt' | 'updatedAt'>>) =>
         dispatch({ type: 'UPDATE_DOCUMENT_MARK', id, patch });
     const deleteDocumentMark = (id: string) => dispatch({ type: 'DELETE_DOCUMENT_MARK', id });
+    // Undo restores the record it deleted, id included, so nothing that referred to the mark breaks.
+    const restoreDocumentMark = (mark: DocumentMark) => dispatch({ type: 'ADD_DOCUMENT_MARK', payload: mark });
     const setDocumentMarkStatus = (id: string, status: DocumentMark['status']) =>
         dispatch({ type: 'SET_DOCUMENT_MARK_STATUS', id, status });
     const savePeerReview = (sr: StudentRubric) => {
@@ -207,6 +211,7 @@ export function createAssessmentActions(ctx: StoreActionsCtx): AssessmentActions
         addDocumentMark,
         updateDocumentMark,
         deleteDocumentMark,
+        restoreDocumentMark,
         setDocumentMarkStatus,
         savePeerReview,
         deletePeerReview,

@@ -3388,6 +3388,21 @@
             "needSelection": "Selecteer eerst tekst en kies dan een markering.",
             "shortcut": "{{family}} (Alt+{{key}})"
         },
+        "edit": {
+            "label": "Markeringen bewerken",
+            "symbol": "Markering",
+            "note": "Notitie",
+            "notePlaceholder": "Je notitie voor de leerling",
+            "replacement": "Vervangende tekst",
+            "replacementPlaceholder": "Gecorrigeerde tekst",
+            "moveHere": "Naar selectie verplaatsen",
+            "noSelection": "Selecteer eerst de nieuwe tekst",
+            "delete": "Markering verwijderen",
+            "undo": "Ongedaan maken",
+            "undone": "Wijziging aan markering ongedaan gemaakt",
+            "deleted": "Markering verwijderd: {{symbol}}",
+            "close": "Sluiten"
+        },
         "rail": {
             "label": "Proefleesmarkeringen",
             "chipLabel_one": "{{count}} markering op regel {{line}}: {{symbols}}",
