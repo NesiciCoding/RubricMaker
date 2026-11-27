@@ -202,7 +202,13 @@ export default function CommentableDocumentView({
             )}
             {unanchoredMarks.length > 0 && (
                 <div style={{ marginTop: 8 }}>
-                    <UnanchoredMarks marks={unanchoredMarks} onDelete={markMutations.remove} dir={dir} />
+                    <UnanchoredMarks
+                        marks={unanchoredMarks}
+                        selection={moveTarget}
+                        onReanchor={handleMoveMark}
+                        onDelete={markMutations.remove}
+                        dir={dir}
+                    />
                 </div>
             )}
             {activeMarks.length > 0 && (

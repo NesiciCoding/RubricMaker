@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { DocumentMark } from '../../types';
 import { getSymbol } from '../../data/proofMarks';
+import type { TextRange } from '../../utils/proofRail';
 import MarkGlyph from './MarkGlyph';
 
 const BUTTON: React.CSSProperties = {
@@ -17,6 +18,9 @@ const BUTTON: React.CSSProperties = {
 
 export interface UnanchoredMarksProps {
     marks: DocumentMark[];
+    /** The range "re-anchor here" would move the mark to; null disables it. */
+    selection: TextRange | null;
+    onReanchor: (mark: DocumentMark) => void;
     onDelete: (mark: DocumentMark) => void;
     dir?: 'ltr' | 'rtl';
 }
@@ -25,9 +29,10 @@ export interface UnanchoredMarksProps {
  * Marks whose stored anchor no longer matches the document (out of bounds, or the words under it
  * changed) cannot be drawn on the page, and drawing them anyway would put feedback on the wrong
  * sentence. They are listed here with their instruction and note instead of disappearing, and can
- * be deleted — deletion is reversible through the same toast undo as a placed mark.
+ * be re-anchored to the teacher's current selection (the same move the mark editor performs) or
+ * deleted — deletion is reversible through the same toast undo as a placed mark.
  */
-export default function UnanchoredMarks({ marks, onDelete, dir = 'ltr' }: UnanchoredMarksProps) {
+export default function UnanchoredMarks({ marks, selection, onReanchor, onDelete, dir = 'ltr' }: UnanchoredMarksProps) {
     const { t } = useTranslation();
 
     return (
@@ -65,6 +70,16 @@ export default function UnanchoredMarks({ marks, onDelete, dir = 'ltr' }: Unanch
                             </span>
                             <span>{label}</span>
                             {mark.note && <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{mark.note}</span>}
+                            <button
+                                type="button"
+                                onClick={() => onReanchor(mark)}
+                                disabled={!selection}
+                                title={selection ? undefined : t('proofMarks.edit.noSelection')}
+                                aria-label={`${t('proofMarks.edit.moveHere')}: ${label}`}
+                                style={BUTTON}
+                            >
+                                {t('proofMarks.edit.moveHere')}
+                            </button>
                             <button
                                 type="button"
                                 onClick={() => onDelete(mark)}

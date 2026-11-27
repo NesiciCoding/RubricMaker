@@ -478,6 +478,21 @@ describe('Mark anchors', () => {
         expect(await screen.findByRole('group', { name: 'proofMarks.unanchored.label' })).toBeInTheDocument();
     });
 
+    it('re-anchors an unanchored mark to the current selection', async () => {
+        fakeEditor.state.selection = { from: 9, to: 14, empty: false };
+        mockDocumentMarks.push(makeMark({ id: 'stale', anchor: { from: 900, to: 905 } }));
+        render(<CommentableDocumentView content="<p>Hello</p>" attachmentId="att-1" />);
+
+        const list = await screen.findByRole('group', { name: 'proofMarks.unanchored.label' });
+        fireEvent.click(within(list).getByRole('button', { name: /proofMarks.edit.moveHere/ }));
+
+        expect(mockUpdateDocumentMark).toHaveBeenCalledWith('stale', {
+            anchor: { from: 9, to: 14 },
+            snippetHash: expect.any(String),
+        });
+        fakeEditor.state.selection = { from: 3, to: 8, empty: false };
+    });
+
     it('deletes an unanchored mark through the store', async () => {
         mockDocumentMarks.push(makeMark({ id: 'stale', anchor: { from: 900, to: 905 } }));
         render(<CommentableDocumentView content="<p>Hello</p>" attachmentId="att-1" />);

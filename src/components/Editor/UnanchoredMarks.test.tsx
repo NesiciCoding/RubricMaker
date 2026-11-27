@@ -19,21 +19,28 @@ const mark = (overrides: Partial<DocumentMark> = {}): DocumentMark => ({
     ...overrides,
 });
 
+function renderList(overrides: Partial<React.ComponentProps<typeof UnanchoredMarks>> = {}) {
+    const props: React.ComponentProps<typeof UnanchoredMarks> = {
+        marks: [mark()],
+        selection: null,
+        onReanchor: vi.fn(),
+        onDelete: vi.fn(),
+        ...overrides,
+    };
+    render(<UnanchoredMarks {...props} />);
+    return props;
+}
+
 describe('UnanchoredMarks', () => {
     it('names the list and explains why the marks are not drawn', () => {
-        render(<UnanchoredMarks marks={[mark()]} onDelete={vi.fn()} />);
+        renderList();
 
         const list = screen.getByRole('group', { name: 'proofMarks.unanchored.label' });
         expect(within(list).getByText('proofMarks.unanchored.hint')).toBeInTheDocument();
     });
 
     it('lists each stale mark with its instruction and the teacher note', () => {
-        render(
-            <UnanchoredMarks
-                marks={[mark({ note: 'wrong word' }), mark({ id: 'm2', symbolId: 'ital' })]}
-                onDelete={vi.fn()}
-            />
-        );
+        renderList({ marks: [mark({ note: 'wrong word' }), mark({ id: 'm2', symbolId: 'ital' })] });
 
         const rows = screen.getAllByRole('listitem');
         expect(rows).toHaveLength(2);
@@ -43,11 +50,29 @@ describe('UnanchoredMarks', () => {
     });
 
     it('deletes a stale mark from its own row', () => {
-        const onDelete = vi.fn();
-        render(<UnanchoredMarks marks={[mark()]} onDelete={onDelete} />);
+        const props = renderList();
 
         fireEvent.click(screen.getByRole('button', { name: /proofMarks.edit.delete/ }));
 
-        expect(onDelete).toHaveBeenCalledWith(mark());
+        expect(props.onDelete).toHaveBeenCalledWith(mark());
+    });
+
+    it('disables re-anchoring until there is a selection to move the mark to', () => {
+        const props = renderList();
+        const reanchor = screen.getByRole('button', { name: /proofMarks.edit.moveHere/ });
+
+        expect(reanchor).toBeDisabled();
+        expect(reanchor).toHaveAttribute('title', 'proofMarks.edit.noSelection');
+        expect(props.onReanchor).not.toHaveBeenCalled();
+    });
+
+    it('re-anchors a stale mark once there is a selection', () => {
+        const props = renderList({ selection: { from: 8, to: 12 } });
+        const reanchor = screen.getByRole('button', { name: /proofMarks.edit.moveHere/ });
+
+        expect(reanchor).toBeEnabled();
+        expect(reanchor).toHaveAccessibleName('proofMarks.edit.moveHere: proofMarks.sp.label');
+        fireEvent.click(reanchor);
+        expect(props.onReanchor).toHaveBeenCalledWith(mark());
     });
 });
