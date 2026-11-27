@@ -195,6 +195,39 @@ describe('badge labels stay AAA on their own tint', () => {
     }
 });
 
+describe('proof-mark chip inks clear AAA on every surface a chip is painted on', () => {
+    // The four surfaces Phase 0 measured in `spike/marks-visual.html`. Paper, rail and the dark
+    // surface are read from the stylesheet so a palette tweak re-tests the ink; the chip tint is a
+    // literal because it is mixed from the ink rather than declared as a token.
+    const PAPER = themeTokens('light')['bg-card'];
+    const CHIP_TINT = '#fef2f2';
+    const RAIL = themeTokens('light')['bg-elevated'];
+    const DARK_SURFACE = themeTokens('dark')['bg-elevated'];
+
+    // Light-theme mark ink: proposed, accepted and rejected. Dark mode only re-inks the proposed
+    // mark; accepted and rejected reuse the text-safe tokens the surface tests above already cover.
+    const LIGHT_INKS = {
+        'proposed ink': '#991b1b',
+        'accepted ink': '#08473e',
+        'rejected ink': '#534d45',
+    };
+    const DARK_INK = '#fca5a5';
+
+    it('pins the four surfaces the inks were measured on', () => {
+        expect([PAPER, CHIP_TINT, RAIL, DARK_SURFACE]).toEqual(['#ffffff', '#fef2f2', '#f6f1e8', '#2a261f']);
+    });
+
+    for (const [name, ink] of Object.entries(LIGHT_INKS)) {
+        it(`${name} (${ink}) >= ${AAA_NORMAL}:1 on paper, chip tint and rail`, () => {
+            expect(worstContrast(ink, [PAPER, CHIP_TINT, RAIL])).toBeGreaterThanOrEqual(AAA_NORMAL);
+        });
+    }
+
+    it(`dark proposed ink (${DARK_INK}) >= ${AAA_NORMAL}:1 on the dark surface`, () => {
+        expect(contrastRatio(DARK_INK, DARK_SURFACE)).toBeGreaterThanOrEqual(AAA_NORMAL);
+    });
+});
+
 describe('data colours used as text are mixed with the body colour', () => {
     // CEFR level colours and a school's own grade colours live in data, not in the palette, so they
     // cannot have a per-theme token. `textOnTheme` mixes them with --text, which darkens them on the
