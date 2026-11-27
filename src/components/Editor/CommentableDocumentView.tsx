@@ -8,7 +8,10 @@ import { CommentHighlight } from './commentDecorations';
 import { MarkCues } from './markCues';
 import ProofRail from './ProofRail';
 import { useProofRail } from './useProofRail';
+import ProofMarkPalette from './ProofMarkPalette';
 import type { DocumentMark } from '../../types';
+import type { ProofMarkId } from '../../data/proofMarks';
+import { draftProofMark } from '../../utils/proofMarkDraft';
 import { useAssessment, usePlatform } from '../../context/AppContext';
 
 interface CommentableDocumentViewProps {
@@ -16,6 +19,12 @@ interface CommentableDocumentViewProps {
     attachmentId: string;
     /** Override for the marks to draw; stored marks for this attachment are used when omitted. */
     marks?: readonly DocumentMark[];
+    /**
+     * Stores a mark the palette created — the grading attachment view passes the store's
+     * `addDocumentMark`. Without it the surface has nowhere to write a mark, so the palette is not
+     * offered rather than offering a control that silently does nothing.
+     */
+    onCreateMark?: (mark: Omit<DocumentMark, 'id' | 'createdAt'>) => void;
 }
 
 const noop = () => {};
@@ -31,6 +40,7 @@ export default function CommentableDocumentView({
     content,
     attachmentId,
     marks: propMarks,
+    onCreateMark,
 }: CommentableDocumentViewProps) {
     const { t } = useTranslation();
     const { documentComments, documentMarks, addDocumentComment, resolveDocumentComment, deleteDocumentComment } =
@@ -106,13 +116,35 @@ export default function CommentableDocumentView({
         addDocumentComment({ attachmentId, authorId: currentUserId, text: text.trim(), anchor: { from, to } });
     }, [editor, attachmentId, currentUserId, addDocumentComment, t]);
 
+    const handlePlaceMark = useCallback(
+        (symbolId: ProofMarkId) => {
+            /* v8 ignore next -- the palette only renders once the editor is ready */
+            if (!editor || !onCreateMark) return;
+            const { from, to } = editor.state.selection;
+            const draft = draftProofMark({
+                attachmentId,
+                authorId: currentUserId,
+                symbolId,
+                selection: { from, to },
+                text: editor.state.doc.textBetween(from, to, ' ', ' '),
+            });
+            if (draft.ok) onCreateMark(draft.mark);
+        },
+        [editor, onCreateMark, attachmentId, currentUserId]
+    );
+
     return (
         <div ref={setContainer} style={{ position: 'relative' }}>
             {editor && (
                 <BubbleMenu editor={editor} shouldShow={({ state }) => !state.selection.empty}>
-                    <button type="button" className="btn btn-primary btn-sm" onClick={handleAddComment}>
-                        {t('attachments.comment_add')}
-                    </button>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <div>
+                            <button type="button" className="btn btn-primary btn-sm" onClick={handleAddComment}>
+                                {t('attachments.comment_add')}
+                            </button>
+                        </div>
+                        {onCreateMark && <ProofMarkPalette onPlaceMark={handlePlaceMark} />}
+                    </div>
                 </BubbleMenu>
             )}
             <EssayEditor

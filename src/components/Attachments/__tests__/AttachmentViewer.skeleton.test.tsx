@@ -11,7 +11,14 @@ vi.mock('../../../utils/textExtraction', () => ({
     convertDocxToHtml: vi.fn(() => new Promise(() => {})),
 }));
 vi.mock('../../Editor/EssayEditor', () => ({ default: () => <div data-testid="editor" /> }));
-vi.mock('../../Editor/CommentableDocumentView', () => ({ default: () => <div data-testid="commentable" /> }));
+vi.mock('../../Editor/CommentableDocumentView', () => ({
+    default: ({ onCreateMark }: { onCreateMark?: unknown }) => (
+        <div data-testid="commentable" data-can-create-mark={onCreateMark ? 'yes' : 'no'} />
+    ),
+}));
+vi.mock('../../../context/AppContext', () => ({
+    useAssessment: () => ({ addDocumentMark: vi.fn() }),
+}));
 
 import AttachmentViewer from '../AttachmentViewer';
 
@@ -64,5 +71,20 @@ describe('AttachmentViewer loading placeholders', () => {
         // A4/letter page proportions, matching the rendered document preview.
         expect(status.style.aspectRatio).toBe('8.5 / 11');
         expect(screen.queryByTestId('editor')).toBeNull();
+    });
+});
+
+const htmlAttachment: Attachment = {
+    ...imageAttachment,
+    id: 'a3',
+    name: 'essay.html',
+    mimeType: 'text/html',
+    dataUrl: `data:text/html;base64,${btoa('<p>Hello</p>')}`,
+};
+
+describe('AttachmentViewer mark palette wiring', () => {
+    it('gives the commentable view a way to store a placed mark', () => {
+        render(<AttachmentViewer attachment={htmlAttachment} commentable />);
+        expect(screen.getByTestId('commentable')).toHaveAttribute('data-can-create-mark', 'yes');
     });
 });

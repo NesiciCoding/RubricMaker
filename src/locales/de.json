@@ -3376,6 +3376,18 @@
             "align": "Ausrichtung",
             "advisory": "Rückfrage"
         },
+        "palette": {
+            "label": "Korrekturzeichen",
+            "codeField": "Zeichencode",
+            "codePlaceholder": "Code, z. B. sp",
+            "codeHint": "Code eingeben und Enter drücken",
+            "codeResolved": "Enter wendet an: {{symbol}}",
+            "codeNoMatch": "Kein Zeichen passt zu “{{code}}”",
+            "codeAmbiguous": "Mehrere Zeichen passen zu “{{code}}”: {{symbols}}",
+            "codeApplied": "Markiert: {{symbol}}",
+            "needSelection": "Zuerst Text auswählen, dann ein Zeichen wählen.",
+            "shortcut": "{{family}} (Alt+{{key}})"
+        },
         "rail": {
             "label": "Korrekturzeichen",
             "chipLabel_one": "{{count}} Korrekturzeichen in Zeile {{line}}: {{symbols}}",

@@ -5,7 +5,10 @@ import CommentableDocumentView from './CommentableDocumentView';
 import type { DocumentComment, DocumentMark } from '../../types';
 
 const fakeEditor = vi.hoisted(() => ({
-    state: { selection: { from: 3, to: 8, empty: false } },
+    state: {
+        selection: { from: 3, to: 8, empty: false },
+        doc: { textBetween: () => 'Hello' },
+    },
     commands: {
         setDocumentComments: vi.fn(),
         setActiveDocumentComment: vi.fn(),
@@ -288,6 +291,40 @@ describe('CommentableDocumentView', () => {
         fireEvent.click(await screen.findByText('attachments.comment_add'));
         expect(mockAddDocumentComment).toHaveBeenCalledWith(expect.objectContaining({ authorId: 'local' }));
         promptSpy.mockRestore();
+    });
+
+    it('offers no mark palette while the surface has nowhere to store a mark', async () => {
+        render(<CommentableDocumentView content="<p>Hello</p>" attachmentId="att-1" />);
+
+        await waitFor(() => expect(screen.getByTestId('mock-essay-editor')).toBeInTheDocument());
+        expect(screen.queryByRole('group', { name: 'proofMarks.palette.label' })).not.toBeInTheDocument();
+    });
+
+    it('creates a mark from the palette against the current selection', async () => {
+        const onCreateMark = vi.fn();
+        render(<CommentableDocumentView content="<p>Hello</p>" attachmentId="att-1" onCreateMark={onCreateMark} />);
+
+        fireEvent.click(await screen.findByRole('button', { name: 'proofMarks.ital.label' }));
+
+        expect(onCreateMark).toHaveBeenCalledWith({
+            attachmentId: 'att-1',
+            authorId: 'user-1',
+            symbolId: 'ital',
+            anchor: { from: 3, to: 8 },
+            snippetHash: expect.any(String),
+            status: 'noted',
+        });
+    });
+
+    it('writes no mark when the selection is empty', async () => {
+        const onCreateMark = vi.fn();
+        fakeEditor.state.selection = { from: 4, to: 4, empty: true };
+        render(<CommentableDocumentView content="<p>Hello</p>" attachmentId="att-1" onCreateMark={onCreateMark} />);
+
+        fireEvent.click(await screen.findByRole('button', { name: 'proofMarks.ital.label' }));
+
+        expect(onCreateMark).not.toHaveBeenCalled();
+        fakeEditor.state.selection = { from: 3, to: 8, empty: false };
     });
 });
 
