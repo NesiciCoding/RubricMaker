@@ -7,6 +7,7 @@ import type { StoreData } from '../store/storage';
 import { DEFAULT_FORMAT } from '../types';
 import type {
     AppSettings,
+    Attachment,
     Class,
     DocumentComment,
     DocumentMark,
@@ -554,6 +555,90 @@ describe('AppContext reducer — settings, standards, comment bank, templates', 
         expect(state.attachments).toHaveLength(1);
         state = run(state, { type: 'DELETE_ATTACHMENT', id: 'a1' });
         expect(state.attachments).toHaveLength(0);
+    });
+
+    it('stores and clears a corrected copy without changing the original payload', () => {
+        const original: Attachment = {
+            id: 'a1',
+            name: 'Essay.html',
+            mimeType: 'text/html',
+            dataUrl: 'data:text/html;base64,PGgxPk9yaWdpbmFsPC9oMT4=',
+            size: 20,
+            studentId: 's1',
+            addedAt: now,
+        };
+        let state = makeState({ attachments: [original] });
+
+        state = run(state, { type: 'UPDATE_ATTACHMENT_CORRECTION', id: 'a1', html: '<p>Corrected</p>' });
+
+        expect(state.attachments[0]).toMatchObject({
+            dataUrl: original.dataUrl,
+            correctedHtml: '<p>Corrected</p>',
+            correctedAt: expect.any(String),
+        });
+
+        state = run(state, { type: 'UPDATE_ATTACHMENT_CORRECTION', id: 'a1', html: null });
+
+        expect(state.attachments[0].dataUrl).toBe(original.dataUrl);
+        expect(state.attachments[0]).not.toHaveProperty('correctedHtml');
+        expect(state.attachments[0]).not.toHaveProperty('correctedAt');
+    });
+
+    it('remaps only the named attachment’s anchors and keeps the snippet hash', () => {
+        const mark: DocumentMark = {
+            id: 'm1',
+            attachmentId: 'a1',
+            authorId: 't1',
+            symbolId: 'del',
+            anchor: { from: 2, to: 6 },
+            snippetHash: 'abc',
+            status: 'noted',
+            createdAt: now,
+        };
+        const otherMark: DocumentMark = { ...mark, id: 'm2', attachmentId: 'a2' };
+        const comment: DocumentComment = {
+            id: 'c1',
+            attachmentId: 'a1',
+            authorId: 't1',
+            text: 'Check',
+            anchor: { from: 2, to: 6 },
+            createdAt: now,
+            resolved: false,
+        };
+
+        const state = run(makeState({ documentMarks: [mark, otherMark], documentComments: [comment] }), {
+            type: 'REMAP_DOCUMENT_ANCHORS',
+            attachmentId: 'a1',
+            marks: [{ id: 'm1', anchor: { from: 3, to: 7 } }],
+            comments: [{ id: 'c1', anchor: { from: 4, to: 4 } }],
+        });
+
+        expect(state.documentMarks[0]).toMatchObject({ anchor: { from: 3, to: 7 }, snippetHash: 'abc' });
+        expect(state.documentComments[0].anchor).toEqual({ from: 4, to: 4 });
+        expect(state.documentMarks[1]).toBe(otherMark);
+    });
+
+    it('leaves state untouched for a remap with no changes or another document', () => {
+        const mark: DocumentMark = {
+            id: 'm1',
+            attachmentId: 'a1',
+            authorId: 't1',
+            symbolId: 'del',
+            anchor: { from: 2, to: 6 },
+            status: 'noted',
+            createdAt: now,
+        };
+        const state = makeState({ documentMarks: [mark] });
+
+        expect(run(state, { type: 'REMAP_DOCUMENT_ANCHORS', attachmentId: 'a1', marks: [], comments: [] })).toBe(state);
+        expect(
+            run(state, {
+                type: 'REMAP_DOCUMENT_ANCHORS',
+                attachmentId: 'other',
+                marks: [{ id: 'm1', anchor: { from: 0, to: 1 } }],
+                comments: [],
+            })
+        ).toBe(state);
     });
 
     it('adds, updates, and deletes grade scales', () => {

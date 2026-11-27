@@ -67,6 +67,12 @@ export class AttachmentSync {
         return url ?? '';
     }
 
+    /** Update the metadata document only; corrections never rewrite the stored file. */
+    async updateAttachmentMeta(att: Attachment) {
+        const { dataUrl: _dataUrl, ...meta } = att;
+        return this.adapter.updateAttachmentMeta(meta);
+    }
+
     /** Push a single attachment to storage + metadata table. */
     async pushAttachment(att: Attachment): Promise<void> {
         const { dataUrl, ...meta } = att;

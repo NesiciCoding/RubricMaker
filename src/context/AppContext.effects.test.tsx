@@ -1363,6 +1363,24 @@ describe('AppContext startup effects', () => {
         });
         expect(storageSync.pushOne).toHaveBeenCalledWith('rubric', 'delete', null, 'r1');
 
+        // A correction on an attachment the cloud already knows is metadata-only. The add
+        // above went through the one-time upload path; this one must not.
+        storageSync.pushOne.mockClear();
+        act(() => {
+            platform!.dispatch({
+                type: 'UPDATE_ATTACHMENT_CORRECTION',
+                id: 'a1',
+                html: '<p>Corrected</p>',
+            } as never);
+        });
+        expect(storageSync.pushOne).toHaveBeenCalledWith(
+            'attachmentMeta',
+            'upsert',
+            expect.objectContaining({ id: 'a1', correctedHtml: '<p>Corrected</p>' }),
+            'a1'
+        );
+        expect(storageSync.pushOne).not.toHaveBeenCalledWith('attachment', 'upsert', expect.anything(), 'a1');
+
         // Settings change → pushOne settings.
         act(() => {
             platform!.dispatch({ type: 'UPDATE_SETTINGS', payload: { theme: 'light' } } as never);

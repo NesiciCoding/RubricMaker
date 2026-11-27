@@ -127,7 +127,7 @@ const TEACHER_FEATURES = [
         icon: PenLine,
         key: 'essays',
         title: 'Essays',
-        desc: 'Write a prompt, link a rubric, and assign it to a class from a dedicated Essays page — then track submissions, share links, and watch live progress — and see word, sentence, transition, readability and grammar-range stats for each essay while you grade.',
+        desc: 'Write a prompt, link a rubric, and assign it to a class from a dedicated Essays page — then track submissions, share links, and watch live progress — and see word, sentence, transition, readability and grammar-range stats for each essay while you grade. Accept proof marks to save your own corrected copy of an essay, while the student’s original stays exactly as submitted.',
         color: '#6366f1',
     },
     {

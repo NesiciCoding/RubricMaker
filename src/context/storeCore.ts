@@ -47,6 +47,7 @@ import type {
     UserTemplate,
     VocabularyItem,
 } from '../types';
+import type { CommentAnchorPatch, MarkAnchorPatch } from '../utils/documentAnchorMapping';
 import {
     StoreData,
     deleteRubricVersions,
@@ -219,6 +220,13 @@ export type Action =
     | { type: 'ADD_DOCUMENT_COMMENT'; payload: DocumentComment }
     | { type: 'RESOLVE_DOCUMENT_COMMENT'; id: string; resolved: boolean }
     | { type: 'DELETE_DOCUMENT_COMMENT'; id: string }
+    | { type: 'UPDATE_ATTACHMENT_CORRECTION'; id: string; html: string | null }
+    | {
+          type: 'REMAP_DOCUMENT_ANCHORS';
+          attachmentId: string;
+          marks: MarkAnchorPatch[];
+          comments: CommentAnchorPatch[];
+      }
     | { type: 'ADD_DOCUMENT_MARK'; payload: DocumentMark }
     | { type: 'UPDATE_DOCUMENT_MARK'; id: string; patch: Partial<Omit<DocumentMark, 'id' | 'createdAt'>> }
     | { type: 'DELETE_DOCUMENT_MARK'; id: string }
@@ -541,6 +549,48 @@ export function reducer(state: StoreData, action: Action): StoreData {
             const next = state.attachments.filter((a) => a.id !== action.id);
             if (isOffline()) saveAttachments(next);
             return { ...state, attachments: next };
+        }
+        case 'UPDATE_ATTACHMENT_CORRECTION': {
+            const correctedAt = action.html === null ? undefined : new Date().toISOString();
+            const next = state.attachments.map((a) => {
+                if (a.id !== action.id) return a;
+                if (action.html === null) {
+                    const { correctedHtml: _html, correctedAt: _at, ...original } = a;
+                    return original;
+                }
+                return { ...a, correctedHtml: action.html, correctedAt };
+            });
+            if (isOffline()) saveAttachments(next);
+            return { ...state, attachments: next };
+        }
+        case 'REMAP_DOCUMENT_ANCHORS': {
+            const markPatches = new Map(action.marks.map((patch) => [patch.id, patch]));
+            const commentPatches = new Map(action.comments.map((patch) => [patch.id, patch]));
+            if (markPatches.size === 0 && commentPatches.size === 0) return state;
+
+            const updatedAt = new Date().toISOString();
+            let marksChanged = false;
+            let commentsChanged = false;
+            const documentMarks = state.documentMarks.map((mark) => {
+                if (mark.attachmentId !== action.attachmentId) return mark;
+                const patch = markPatches.get(mark.id);
+                if (!patch) return mark;
+                marksChanged = true;
+                return { ...mark, anchor: patch.anchor, extraAnchor: patch.extraAnchor ?? mark.extraAnchor, updatedAt };
+            });
+            const documentComments = state.documentComments.map((comment) => {
+                if (comment.attachmentId !== action.attachmentId) return comment;
+                const patch = commentPatches.get(comment.id);
+                if (!patch) return comment;
+                commentsChanged = true;
+                return { ...comment, anchor: patch.anchor, updatedAt };
+            });
+            if (!marksChanged && !commentsChanged) return state;
+            if (isOffline()) {
+                if (marksChanged) saveDocumentMarks(documentMarks);
+                if (commentsChanged) saveDocumentComments(documentComments);
+            }
+            return { ...state, documentMarks, documentComments };
         }
         case 'ADD_GRADE_SCALE': {
             const next = [...state.gradeScales, { ...action.payload, updatedAt: new Date().toISOString() }];
@@ -1152,6 +1202,8 @@ export interface AppContextValue extends StoreData {
     deletedStudentRubrics: StudentRubric[];
     addAttachment: (a: Omit<Attachment, 'id' | 'addedAt'>) => Attachment;
     deleteAttachment: (id: string) => void;
+    /** Writes (or clears) the teacher's corrected copy; the original attachment is untouched. */
+    updateAttachmentCorrection: (id: string, html: string | null) => void;
     addGradeScale: (gs: Omit<GradeScale, 'id'>) => GradeScale;
     updateGradeScale: (gs: GradeScale) => void;
     deleteGradeScale: (id: string) => void;
@@ -1203,6 +1255,7 @@ export interface AppContextValue extends StoreData {
     deleteDocumentMark: (id: string) => void;
     restoreDocumentMark: (mark: DocumentMark) => void;
     setDocumentMarkStatus: (id: string, status: DocumentMark['status']) => void;
+    remapDocumentAnchors: (attachmentId: string, marks: MarkAnchorPatch[], comments: CommentAnchorPatch[]) => void;
     dismissNotification: (type: NotificationDismissalType, entityId: string, fingerprint: string) => void;
     addComparativeMatchup: (rubricId: string, studentAId: string, studentBId: string) => void;
     addExportTemplate: (t: Omit<ExportTemplate, 'id' | 'addedAt'>) => ExportTemplate;

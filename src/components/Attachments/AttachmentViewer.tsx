@@ -7,7 +7,7 @@ import { convertDocxToHtml } from '../../utils/textExtraction';
 import EssayEditor from '../Editor/EssayEditor';
 import CommentableDocumentView from '../Editor/CommentableDocumentView';
 import { MediaBoxSkeleton } from '../ui/Skeleton';
-import { useAssessment } from '../../context/AppContext';
+import { useAssessment, useRoster } from '../../context/AppContext';
 
 interface Props {
     attachment: Attachment;
@@ -20,6 +20,7 @@ const noop = () => {};
 export default function AttachmentViewer({ attachment, commentable = false }: Props) {
     const { t } = useTranslation();
     const { addDocumentMark } = useAssessment();
+    const { updateAttachmentCorrection } = useRoster();
     const docxRef = useRef<HTMLDivElement>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -35,6 +36,8 @@ export default function AttachmentViewer({ attachment, commentable = false }: Pr
         setImageLoaded(false);
         setImageError(false);
     }, [attachment.dataUrl]);
+    const [showOriginalHtml, setShowOriginalHtml] = useState(false);
+    useEffect(() => setShowOriginalHtml(false), [attachment.id, attachment.correctedHtml]);
 
     const isImage = attachment.mimeType.startsWith('image/');
     const isPdf = attachment.mimeType === 'application/pdf';
@@ -44,15 +47,23 @@ export default function AttachmentViewer({ attachment, commentable = false }: Pr
     const isHtml = attachment.mimeType === 'text/html' || attachment.name.endsWith('.html');
 
     const essayHtml = useMemo(() => {
-        if (!isHtml || !attachment.dataUrl) return '';
+        if (!isHtml) return '';
         try {
-            const base64 = attachment.dataUrl.split(',')[1];
-            const decoded = decodeURIComponent(escape(atob(base64)));
-            return DOMPurify.sanitize(decoded);
+            const source =
+                attachment.correctedHtml && !showOriginalHtml
+                    ? attachment.correctedHtml
+                    : attachment.dataUrl.split(',')[1]
+                      ? decodeURIComponent(escape(atob(attachment.dataUrl.split(',')[1])))
+                      : '';
+            return source ? DOMPurify.sanitize(source) : '';
         } catch {
             return '';
         }
-    }, [isHtml, attachment.dataUrl]);
+    }, [isHtml, attachment.dataUrl, attachment.correctedHtml, showOriginalHtml]);
+
+    // Only a student's HTML essay has a teacher-owned copy to correct; rubric materials, DOCX and
+    // non-commentable viewers keep accepting hidden rather than writing into something surprising.
+    const canCorrect = commentable && isHtml && !!attachment.studentId;
 
     // Mammoth's semantic HTML conversion feeds the shared read-only page view (default).
     useEffect(() => {
@@ -275,7 +286,7 @@ export default function AttachmentViewer({ attachment, commentable = false }: Pr
                 </div>
             )}
 
-            {isHtml && attachment.dataUrl && essayHtml && (
+            {isHtml && essayHtml && (
                 <div
                     style={{
                         width: '100%',
@@ -286,11 +297,48 @@ export default function AttachmentViewer({ attachment, commentable = false }: Pr
                         border: '1px solid var(--border)',
                     }}
                 >
+                    {attachment.correctedHtml && (
+                        <div
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 8,
+                                padding: '6px 8px',
+                                borderBottom: '1px solid var(--border)',
+                                background: 'var(--bg-elevated)',
+                                fontSize: '0.8rem',
+                            }}
+                        >
+                            <span className="badge">{t('attachments.corrected_badge')}</span>
+                            <button
+                                type="button"
+                                className="btn btn-ghost btn-sm"
+                                onClick={() => setShowOriginalHtml((previous) => !previous)}
+                            >
+                                {showOriginalHtml ? t('attachments.corrected_view') : t('attachments.view_original')}
+                            </button>
+                            <button
+                                type="button"
+                                className="btn btn-ghost btn-sm"
+                                onClick={() => {
+                                    if (window.confirm(t('attachments.corrected_revert_confirm'))) {
+                                        updateAttachmentCorrection(attachment.id, null);
+                                    }
+                                }}
+                            >
+                                {t('attachments.corrected_revert')}
+                            </button>
+                        </div>
+                    )}
                     {commentable ? (
                         <CommentableDocumentView
+                            key={showOriginalHtml ? 'original' : 'corrected'}
                             content={essayHtml}
                             attachmentId={attachment.id}
                             onCreateMark={addDocumentMark}
+                            onApplyContent={
+                                canCorrect ? (html) => updateAttachmentCorrection(attachment.id, html) : undefined
+                            }
                         />
                     ) : (
                         <EssayEditor

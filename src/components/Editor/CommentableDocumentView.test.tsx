@@ -11,18 +11,13 @@ const fakeEditor = vi.hoisted(() => {
         setMark: (name: string, attrs?: Record<string, unknown>) => Chain;
         run: () => boolean;
     };
-    const chain: Chain = {
-        setTextSelection: vi.fn(() => chain),
-        setMark: vi.fn(() => chain),
-        run: vi.fn(() => true),
-    };
-    return {
+    const editor = {
         state: {
             selection: { from: 3, to: 8, empty: false },
             doc: { content: { size: 100 }, textBetween: () => 'Hello' },
         },
         schema: { marks: { bold: {}, italic: {}, underline: {}, textStyle: {} } },
-        chain: vi.fn(() => chain),
+        chain: undefined as unknown as (() => Chain) | undefined,
         getHTML: vi.fn(() => '<p>Hello</p>'),
         commands: {
             setDocumentComments: vi.fn(),
@@ -32,7 +27,18 @@ const fakeEditor = vi.hoisted(() => {
         },
         on: vi.fn(),
         off: vi.fn(),
+        emitChange: undefined as ((html: string) => void) | undefined,
     };
+    const chain: Chain = {
+        setTextSelection: vi.fn(() => chain),
+        setMark: vi.fn(() => chain),
+        run: vi.fn(() => {
+            editor.emitChange?.('<p>Hello</p>');
+            return true;
+        }),
+    };
+    editor.chain = () => chain;
+    return editor;
 });
 
 const mockCommentHighlightConfig = vi.hoisted(() => ({
@@ -50,6 +56,7 @@ const mockShowToast = vi.hoisted(() =>
     vi.fn((_message?: string, _type?: string, _options?: { action?: { onClick: () => void } }) => 1)
 );
 const mockGetCurrentDatabaseUserId = vi.fn(() => 'user-1');
+const mockRemapDocumentAnchors = vi.fn();
 
 const mockDocumentComments: DocumentComment[] = [];
 const mockDocumentMarks: DocumentMark[] = [];
@@ -64,6 +71,7 @@ const makeAppValue = () => ({
     deleteDocumentMark: mockDeleteDocumentMark,
     restoreDocumentMark: mockRestoreDocumentMark,
     setDocumentMarkStatus: mockSetDocumentMarkStatus,
+    remapDocumentAnchors: mockRemapDocumentAnchors,
     getCurrentDatabaseUserId: mockGetCurrentDatabaseUserId,
 });
 
@@ -124,10 +132,12 @@ vi.mock('./EssayEditor', () => {
         defaultPageMode?: boolean;
     }) => {
         React.useEffect(() => {
+            fakeEditor.emitChange = onChange;
             onEditorReady?.(fakeEditor);
-            // Simulate TipTap emitting an edit so the read-only onChange (noop) runs.
-            onChange?.('<p>edited</p>');
-            return () => onEditorReady?.(null);
+            return () => {
+                fakeEditor.emitChange = undefined;
+                onEditorReady?.(null);
+            };
         }, [onEditorReady, onChange]);
         return (
             <div
@@ -473,25 +483,60 @@ describe('Mark editing', () => {
         expect(screen.getByRole('button', { name: /proofMarks\.apply\.reject:/ })).toBeInTheDocument();
     });
 
-    it('applies an accepted mark and hands the corrected HTML to the document owner', () => {
+    it('applies an accepted mark and hands the corrected HTML to the document owner', async () => {
         const onApplyContent = vi.fn();
         openEditor([makeMark({ symbolId: 'ital' })], { onApplyContent });
 
         fireEvent.click(screen.getByRole('button', { name: /proofMarks\.apply\.accept:/ }));
 
         expect(mockSetDocumentMarkStatus).toHaveBeenCalledWith('m1', 'accepted');
-        expect(onApplyContent).toHaveBeenCalledWith('<p>Hello</p>');
+        await waitFor(() => expect(onApplyContent).toHaveBeenCalledWith('<p>Hello</p>'));
     });
 
-    it('saves once after accepting every formatting mark on the page', () => {
+    it('saves once after accepting every formatting mark on the page', async () => {
         const onApplyContent = vi.fn();
         openEditor([makeMark({ symbolId: 'ital' })], { onApplyContent });
 
         fireEvent.click(screen.getByRole('button', { name: 'proofMarks.apply.acceptAll' }));
 
         expect(mockSetDocumentMarkStatus).toHaveBeenCalledWith('m1', 'accepted');
-        expect(onApplyContent).toHaveBeenCalledTimes(1);
+        await waitFor(() => expect(onApplyContent).toHaveBeenCalledTimes(1));
         expect(onApplyContent).toHaveBeenCalledWith('<p>Hello</p>');
+    });
+
+    it('persists an editor undo or redo through the same writer', async () => {
+        const onApplyContent = vi.fn();
+        openEditor([makeMark({ symbolId: 'ital' })], { onApplyContent });
+
+        act(() => fakeEditor.emitChange?.('<p>undone</p>'));
+
+        await waitFor(() => expect(onApplyContent).toHaveBeenCalledWith('<p>undone</p>'));
+    });
+
+    it('writes the HTML before moving mark and comment anchors through the transaction', async () => {
+        const onApplyContent = vi.fn();
+        mockDocumentComments.push(makeComment({ id: 'c1' }));
+        openEditor([makeMark({ symbolId: 'ital' })], { onApplyContent });
+        const recorded = fakeEditor.on.mock.calls.find(([event]) => event === 'transaction')?.[1] as
+            | ((payload: { transaction: { docChanged: boolean; mapping: { map: (pos: number) => number } } }) => void)
+            | undefined;
+        expect(recorded).toBeDefined();
+
+        act(() => {
+            recorded!({ transaction: { docChanged: true, mapping: { map: (pos) => pos + 2 } } });
+            fakeEditor.emitChange?.('<p>Hello</p>');
+        });
+
+        await waitFor(() =>
+            expect(mockRemapDocumentAnchors).toHaveBeenCalledWith(
+                'att-1',
+                [{ id: 'm1', anchor: { from: 2, to: 7 } }],
+                [{ id: 'c1', anchor: { from: 2, to: 7 } }]
+            )
+        );
+        expect(mockRemapDocumentAnchors.mock.invocationCallOrder[0]).toBeGreaterThan(
+            onApplyContent.mock.invocationCallOrder[0]!
+        );
     });
 
     it('shows the derived suggestion for a text-operation mark', () => {

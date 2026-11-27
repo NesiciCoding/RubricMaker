@@ -1331,6 +1331,10 @@ class StorageSyncService {
                     if (action === 'upsert') await this.attachmentSync.pushAttachment(payload as Attachment);
                     else if (id) result = await this.adapter.deleteAttachment(id);
                     break;
+                case 'attachmentMeta':
+                    if (action === 'upsert')
+                        result = await this.attachmentSync.updateAttachmentMeta(payload as Attachment);
+                    break;
                 case 'gradeScale':
                     if (action === 'upsert') result = await this.adapter.upsertGradeScale(payload as GradeScale);
                     else if (id) result = await this.adapter.deleteGradeScale(id);

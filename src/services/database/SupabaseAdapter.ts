@@ -1056,17 +1056,21 @@ export class SupabaseAdapter {
     }
 
     async upsertAttachment(a: Omit<Attachment, 'dataUrl'>, storagePath?: string): Promise<SyncResult> {
+        const row: Record<string, unknown> = { id: a.id, owner_id: this.uid(), data: a };
+        // Only write storage_path when this push actually owns the file bytes. Sending null on an
+        // update would orphan an essay an earlier upload had already stored.
+        if (storagePath !== undefined) row.storage_path = storagePath;
+        const { error } = await this.db().from('attachments').upsert(row, { onConflict: 'id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    /** Updates the metadata document only — the stored file and its storage_path are untouched. */
+    async updateAttachmentMeta(a: Omit<Attachment, 'dataUrl'>): Promise<SyncResult> {
         const { error } = await this.db()
             .from('attachments')
-            .upsert(
-                {
-                    id: a.id,
-                    owner_id: this.uid(),
-                    storage_path: storagePath ?? null,
-                    data: a,
-                },
-                { onConflict: 'id' }
-            );
+            .update({ data: a })
+            .eq('id', a.id)
+            .eq('owner_id', this.uid());
         return error ? { success: false, error: error.message } : { success: true };
     }
 
