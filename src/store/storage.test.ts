@@ -9,6 +9,7 @@ import {
     stripAudioForOfflineCache,
     saveStudentRubricsCache,
     saveAttachments,
+    saveDocumentMarks,
     saveGradeScales,
     saveSettings,
     saveFavoriteStandards,
@@ -60,7 +61,16 @@ import {
     migrateLegacyRubricVersions,
     migrateLegacyRubricSharing,
 } from './storage';
-import type { Rubric, Student, Class, AppSettings, RubricFormat, StudentRubric, RubricVersion } from '../types';
+import type {
+    Rubric,
+    Student,
+    Class,
+    AppSettings,
+    RubricFormat,
+    StudentRubric,
+    RubricVersion,
+    DocumentMark,
+} from '../types';
 import { DEFAULT_FORMAT } from '../types';
 import { markCloudHydrated, resetCloudHydratedForTests } from '../services/snapshotCache';
 
@@ -1340,6 +1350,7 @@ describe('importFullBackup — every field', () => {
                 anchor: { from: 0, to: 1 },
             },
         ],
+        documentMarks: [],
         notificationDismissals: [
             { id: 'od:s1', type: 'overdue_grading', entityId: 's1', fingerprint: 'f', dismissedAt: '2024-01-01' },
         ],
@@ -1542,5 +1553,31 @@ describe('migration flags (#636)', () => {
         skipMigrationForSession();
         expect(isMigrationSkippedForSession()).toBe(true);
         expect(localStorage.getItem('rm_migration_done')).toBeNull();
+    });
+});
+
+describe('document marks persistence', () => {
+    const mark: DocumentMark = {
+        id: 'dm1',
+        attachmentId: 'a1',
+        authorId: 't1',
+        symbolId: 'sp',
+        anchor: { from: 1, to: 4 },
+        snippetHash: 'hash',
+        status: 'noted',
+        createdAt: '2024-01-01',
+    };
+
+    it('round-trips marks through storage', () => {
+        saveDocumentMarks([mark]);
+        expect(loadStore().documentMarks).toEqual([mark]);
+    });
+
+    it('restores marks from a full backup', () => {
+        saveDocumentMarks([mark]);
+        const backup = exportFullBackup();
+        clearLocalData();
+        expect(importFullBackup(backup)).toBe(true);
+        expect(loadStore().documentMarks).toEqual([mark]);
     });
 });

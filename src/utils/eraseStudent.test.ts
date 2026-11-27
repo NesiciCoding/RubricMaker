@@ -34,6 +34,7 @@ function store(overrides: Partial<StoreData>): StoreData {
         newsFlashReads: [],
         questionBank: [],
         documentComments: [],
+        documentMarks: [],
         notificationDismissals: [],
         comparativeMatchups: [],
     };
@@ -55,6 +56,10 @@ describe('eraseStudentFromStore (#644)', () => {
         documentComments: [
             { id: 'dc1', attachmentId: 'a1' },
             { id: 'dc2', attachmentId: 'a3' },
+        ],
+        documentMarks: [
+            { id: 'dm1', attachmentId: 'a1' },
+            { id: 'dm2', attachmentId: 'a3' },
         ],
         speakingSessions: [{ id: 'ss1', studentId: 's1', recordings: [{ id: 'rec1' }, { id: 'rec2' }] }],
         selfAssessments: [{ id: 'sa1', studentId: 's1' }],
@@ -81,6 +86,7 @@ describe('eraseStudentFromStore (#644)', () => {
         expect(next.studentRubrics.map((r) => r.id)).toEqual(['sr2']);
         expect(next.attachments.map((a) => a.id)).toEqual(['a2', 'a3']);
         expect(next.documentComments.map((c) => c.id)).toEqual(['dc2']);
+        expect(next.documentMarks.map((m) => m.id)).toEqual(['dm2']);
         expect(next.comparativeMatchups.map((m) => m.id)).toEqual(['cm2']);
         expect(next.flashcardDecks.map((d) => d.id)).toEqual(['d2']);
         for (const key of [
@@ -107,6 +113,7 @@ describe('eraseStudentFromStore (#644)', () => {
         const { changed, recordingIds } = eraseStudentFromStore(state, 's1');
         expect(changed.has('students')).toBe(true);
         expect(changed.has('documentComments')).toBe(true);
+        expect(changed.has('documentMarks')).toBe(true);
         expect(changed.has('rubrics')).toBe(false);
         expect(recordingIds).toEqual(['rec1', 'rec2']);
     });
@@ -137,6 +144,7 @@ describe('pendingWritesForStudent', () => {
             op('w5', 'flashcardDeck', { id: 'd1', ownerStudentId: 's1' }, 'd1'),
             op('w6', 'comparativeMatchup', { id: 'm1', studentAId: 's2', studentBId: 's1' }, 'm1'),
             op('w7', 'documentComment', { id: 'dc1', attachmentId: 'a1' }, 'dc1'),
+            op('w8', 'documentMark', { id: 'dm1', attachmentId: 'a1' }, 'dm1'),
             op('k1', 'student', { id: 's2', name: 'Bob' }, 's2'),
             op('k2', 'studentRubric', { id: 'sr2', studentId: 's2' }, 'sr2'),
             op('k3', 'documentComment', { id: 'dc2', attachmentId: 'a2' }, 'dc2'),
@@ -151,6 +159,7 @@ describe('pendingWritesForStudent', () => {
             'w5',
             'w6',
             'w7',
+            'w8',
         ]);
     });
 });

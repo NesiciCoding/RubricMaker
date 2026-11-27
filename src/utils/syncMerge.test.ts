@@ -698,6 +698,7 @@ describe('mergeStoreData', () => {
             'newsFlashes',
             'questionBank',
             'documentComments',
+            'documentMarks',
             'notificationDismissals',
             'standardMasteryTargets',
         ] as const;

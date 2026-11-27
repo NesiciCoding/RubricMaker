@@ -40,6 +40,7 @@ import type {
     NewsFlashRead,
     QuestionBankItem,
     DocumentComment,
+    DocumentMark,
     NotificationDismissal,
     ComparativeMatchup,
     Scan,
@@ -1227,6 +1228,33 @@ export class SupabaseAdapter {
 
     async deleteDocumentComment(id: string): Promise<SyncResult> {
         const { error } = await this.db().from('document_comments').delete().eq('id', id).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── Document Marks (proofreading marks, epic #1346) ───────────────────────────
+    // Owner-only — grading-side annotations, no student read/write path.
+
+    async fetchDocumentMarks(): Promise<DocumentMark[]> {
+        const { data, error } = await this.db().from('document_marks').select('data').eq('owner_id', this.uid());
+        if (error) throw error;
+        return (data ?? []).map((r) => r.data as DocumentMark);
+    }
+
+    async upsertDocumentMark(mark: DocumentMark): Promise<SyncResult> {
+        const { error } = await this.db().from('document_marks').upsert(
+            {
+                id: mark.id,
+                owner_id: this.uid(),
+                data: mark,
+                updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'id' }
+        );
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteDocumentMark(id: string): Promise<SyncResult> {
+        const { error } = await this.db().from('document_marks').delete().eq('id', id).eq('owner_id', this.uid());
         return error ? { success: false, error: error.message } : { success: true };
     }
 
