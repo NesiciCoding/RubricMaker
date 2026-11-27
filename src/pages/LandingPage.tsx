@@ -200,6 +200,13 @@ const TEACHER_FEATURES = [
         desc: 'Run a timed writing session with teacher hints, a three-way self-check and an anonymous peer vote, then reveal, moderate or spotlight the finals. Send every finished text into the ordinary essay rubric with one idempotent action — no accounts and no AI.',
         color: '#ec4899',
     },
+    {
+        icon: PenLine,
+        key: 'proofreading_marks',
+        title: 'Proofreading Marks',
+        desc: 'Mark up a submitted essay with the proofreading symbols you already use: each mark sits on its line in the margin, opens to a plain-language explanation, and never changes a word of the student’s text.',
+        color: '#b91c1c',
+    },
 ];
 
 const STUDENT_FEATURES = [
