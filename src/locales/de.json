@@ -4015,6 +4015,24 @@
         "delete_title": "Anhang löschen",
         "delete_message": "Dieser Anhang wird dauerhaft entfernt."
     },
+    "proofMarks": {
+        "picker_label": "Markierung hinzufügen",
+        "codes": {
+            "sp": "Rechtschreibung",
+            "del": "Löschen",
+            "ins": "Einfügen",
+            "tr": "Umstellen",
+            "lc": "Kleinbuchstaben",
+            "caps": "Großbuchstaben",
+            "ital": "Kursiv",
+            "bf": "Fett",
+            "ul": "Unterstrichen",
+            "¶": "Neuer Absatz",
+            ",": "Komma einfügen",
+            ".": "Punkt einfügen",
+            "'": "Apostroph einfügen"
+        }
+    },
     "exportPage": {
         "rubric_section_title": "Rubriknoten",
         "select_rubric": "Zu exportierende Rubrik auswählen",
@@ -5139,6 +5157,12 @@
         "gr_document_view_title": "Dokumentenansicht",
         "gr_document_view_body": "Aufsatzabgaben und hochgeladene Word-Anhänge (.docx) werden sowohl bei der Einzel- als auch bei der vergleichenden Bewertung über dieselbe paginierte, formatierte Dokumentenansicht dargestellt — kein roher HTML-Dump und kein abweichender Word-Viewer mehr. Bei .docx-Dateien wechselt ein Schalter „Wie gesendet anzeigen“ zur Originaldatei-Darstellung, falls die formatierte Konvertierung Layoutdetails verliert.",
         "gr_document_comments_body": "Wähle Text in dieser Dokumentenansicht aus, um einen Inline-Kommentar zu hinterlassen, der direkt an der betreffenden Textstelle verankert ist. Kommentare erscheinen in einer Seitenleiste unter dem Dokument — erledige oder lösche sie nach Bedarf. Dies ist ein Anmerkungswerkzeug für die Lehrkraft; Schüler sehen diese Kommentare nicht und können nicht darauf antworten.",
+        "gr_proof_marks_title": "Korrekturzeichen",
+        "gr_proof_marks_body": "Korrekturzeichen liegen als zweite Ebene über dem Aufsatz, statt ihn zu verändern: Jede Markierung hält ein Korrekturzeichen an der Stelle fest, die es korrigiert, und das HTML der Abgabe bleibt genau so, wie es die Schülerin oder der Schüler geschrieben hat. Jedes Zeichen hat eine einfache Erklärung in deiner Sprache — du musst dir keinen Code merken.",
+        "gr_proof_marks_item_rail": "Der Rand stellt je Zeile mit einer Markierung einen Chip auf; ein Chip mit mehreren Markierungen zeigt eine Anzahl und öffnet eine Liste mit allen.",
+        "gr_proof_marks_item_panel": "Die Liste nennt jede Markierung, zitiert den Text darunter und zeigt die Ersetzung, wenn es eine gibt; geschlossen wird mit Escape, der Schaltfläche Schließen oder einem Klick daneben.",
+        "gr_proof_marks_item_narrow": "Auf einem schmalen Bildschirm wird der Rand zu einer Liste unter dem Aufsatz, und beim Drucken entsteht eine markierte Fassung mit den Markierungen zur Seite.",
+        "gr_proof_marks_item_sync": "Markierungen werden mit dem Aufsatz gespeichert und synchronisiert, überstehen also ein Neuladen und wandern auf ein anderes Gerät; Schüler sehen sie nicht.",
         "gr_comparative_title": "Vergleichende Bewertung",
         "gr_comparative_body_prefix": "Klicke auf",
         "gr_comparative_button": "Vergleichen",
@@ -5369,6 +5393,8 @@
         "es_editor_item_toc": "Eine Inhaltsverzeichnis-Seitenleiste listet die Überschriften des Dokuments auf und springt beim Klick dorthin — hilfreich bei langen Aufsätzen und Lesetexten.",
         "es_editor_item_emoji": "Tippen Sie :shortcode: (z. B. :smile:) oder fügen Sie ein Emoji direkt ein, für eine konsistente, plattformübergreifende Emoji-Darstellung.",
         "es_editor_item_invisibles": "Die Schaltfläche \"Formatierungszeichen anzeigen\" in der Symbolleiste zeigt Leerzeichen, Tabulatoren und Absatzumbrüche zum Korrekturlesen an.",
+        "es_marks_title": "Korrekturzeichen in Kommentaren",
+        "es_marks_body": "Beginne einen Kommentar mit einem Korrekturzeichen — sp, del, ins, tr, lc, caps oder ¶ — oder wähle eines aus der Reihe über dem Kommentarfeld. Das Zeichen erscheint als kleine Markierung an den hervorgehobenen Wörtern, und der Kommentar enthält die vollständige Anweisung, sodass die Schülerin oder der Schüler die Korrektur und die zugehörige Stelle sieht. Kommentare, die nicht mit einem bekannten Zeichen beginnen, bleiben unverändert.",
         "es_editor_item_image": "Lehrkräfte können ein Bild direkt in einen Testtext oder eine Fragestellung ziehen oder einfügen, um es inline einzubetten (im Schüler-Aufsatzeditor nicht verfügbar).",
         "es_doc_analysis_title": "Dokumentenanalyse",
         "es_doc_analysis_item_upload": "Lade eine DOCX- oder PDF-Datei hoch, um Text in den Editor zu importieren.",

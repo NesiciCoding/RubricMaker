@@ -6,6 +6,10 @@ import EssayEditor from './EssayEditor';
 import CommentSidebar from './CommentSidebar';
 import { CommentHighlight } from './commentDecorations';
 import { useAssessment, usePlatform } from '../../context/AppContext';
+import { withProofCode, type ProofCode } from '../../utils/proofCode';
+
+/** The marks a teacher reaches for most; the rest are typed. */
+const QUICK_CODES: readonly ProofCode[] = ['sp', 'del', 'ins', 'tr', 'lc', 'caps', '¶'];
 
 interface CommentableDocumentViewProps {
     content: string;
@@ -52,24 +56,58 @@ export default function CommentableDocumentView({ content, attachmentId }: Comme
         el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, []);
 
-    const handleAddComment = useCallback(() => {
-        /* v8 ignore next -- editor is always initialized before the menu can render */
-        if (!editor) return;
-        const { from, to } = editor.state.selection;
-        /* v8 ignore next -- the bubble menu only shows for a non-empty selection */
-        if (from === to) return;
-        const text = window.prompt(t('attachments.comment_prompt'));
-        if (!text || !text.trim()) return;
-        addDocumentComment({ attachmentId, authorId: currentUserId, text: text.trim(), anchor: { from, to } });
-    }, [editor, attachmentId, currentUserId, addDocumentComment, t]);
+    const handleAddComment = useCallback(
+        (code?: ProofCode) => {
+            /* v8 ignore next -- editor is always initialized before the menu can render */
+            if (!editor) return;
+            const { from, to } = editor.state.selection;
+            /* v8 ignore next -- the bubble menu only shows for a non-empty selection */
+            if (from === to) return;
+            const text = window.prompt(t('attachments.comment_prompt'), code ? `${code} ` : '');
+            if (!text || !text.trim()) return;
+            const body = text.trim();
+            addDocumentComment({
+                attachmentId,
+                authorId: currentUserId,
+                text: code ? withProofCode(code, body) : body,
+                anchor: { from, to },
+            });
+        },
+        [editor, attachmentId, currentUserId, addDocumentComment, t]
+    );
 
     return (
         <div ref={containerRef}>
             {editor && (
                 <BubbleMenu editor={editor} shouldShow={({ state }) => !state.selection.empty}>
-                    <button type="button" className="btn btn-primary btn-sm" onClick={handleAddComment}>
-                        {t('attachments.comment_add')}
-                    </button>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <button type="button" className="btn btn-primary btn-sm" onClick={() => handleAddComment()}>
+                            {t('attachments.comment_add')}
+                        </button>
+                        <div
+                            role="group"
+                            aria-label={t('proofMarks.picker_label')}
+                            style={{ display: 'flex', flexWrap: 'wrap', gap: 4, maxWidth: 224 }}
+                        >
+                            {QUICK_CODES.map((code) => (
+                                <button
+                                    key={code}
+                                    type="button"
+                                    className="btn btn-ghost btn-sm"
+                                    style={{
+                                        fontFamily: 'ui-monospace, SFMono-Regular, monospace',
+                                        fontSize: '0.7rem',
+                                        padding: '1px 6px',
+                                    }}
+                                    aria-label={`${t(`proofMarks.codes.${code}`)} (${code})`}
+                                    title={t(`proofMarks.codes.${code}`)}
+                                    onClick={() => handleAddComment(code)}
+                                >
+                                    {code}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
                 </BubbleMenu>
             )}
             <EssayEditor

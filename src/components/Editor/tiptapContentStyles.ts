@@ -35,4 +35,24 @@ export const TIPTAP_CONTENT_STYLES = `
     .essay-editor-content sub { font-size: 0.72em; vertical-align: sub; }
     .essay-editor-content .comment-highlight { background: rgba(99, 102, 241, 0.15); border-bottom: 2px solid rgba(99, 102, 241, 0.45); cursor: pointer; }
     .essay-editor-content .comment-highlight-active { background: rgba(99, 102, 241, 0.32); border-bottom-color: #6366f1; }
+    /* PM-01: a known proofreading code opening the comment shows as a chip on the marked words.
+       Rendered once per comment as a widget at the range end (see commentDecorations.ts), not as
+       an ::after on the inline decoration — that would repeat per text node in a mixed-mark range.
+       #991b1b on #fff is 8.31:1, above the 7:1 floor the palette test enforces. */
+    .essay-editor-content .comment-mark-chip {
+        display: inline-block;
+        margin-left: 2px;
+        cursor: pointer;
+        padding: 0 3px;
+        border: 1px solid #991b1b;
+        border-radius: 3px;
+        background: #fff;
+        color: #991b1b;
+        font-family: ui-monospace, SFMono-Regular, monospace;
+        font-size: 0.62em;
+        font-style: normal;
+        font-weight: 700;
+        line-height: 1.2;
+        vertical-align: 0.45em;
+    }
 `;

@@ -4015,6 +4015,24 @@
         "delete_title": "Bijlage verwijderen",
         "delete_message": "Deze bijlage wordt definitief verwijderd."
     },
+    "proofMarks": {
+        "picker_label": "Een markering toevoegen",
+        "codes": {
+            "sp": "Spelling",
+            "del": "Verwijderen",
+            "ins": "Invoegen",
+            "tr": "Omwisselen",
+            "lc": "Kleine letters",
+            "caps": "Hoofdletters",
+            "ital": "Cursief",
+            "bf": "Vet",
+            "ul": "Onderstreept",
+            "¶": "Nieuwe alinea",
+            ",": "Komma invoegen",
+            ".": "Punt invoegen",
+            "'": "Apostrof invoegen"
+        }
+    },
     "exportPage": {
         "rubric_section_title": "Rubriekcijfers",
         "select_rubric": "Selecteer Rubriek om te Exporteren",
@@ -5139,6 +5157,12 @@
         "gr_document_view_title": "Documentweergave",
         "gr_document_view_body": "Essayinzendingen en geüploade Word-bijlagen (.docx) worden weergegeven in dezelfde opgemaakte, gepagineerde documentweergave, zowel bij individuele als vergelijkende beoordeling — geen rauwe HTML-dump of afwijkende Word-viewer meer. Voor .docx-bestanden schakelt een knop \"Weergeven zoals verzonden\" over naar de originele bestandsweergave als de opgemaakte conversie lay-outdetails verliest.",
         "gr_document_comments_body": "Selecteer tekst in die documentweergave om een inline opmerking te plaatsen, direct verankerd aan de passage waar hij over gaat. Opmerkingen verschijnen in een zijbalk onder het document — handel ze af of verwijder ze naar wens. Dit is een beoordelingstool voor de docent; leerlingen zien deze opmerkingen niet en kunnen er niet op reageren.",
+        "gr_proof_marks_title": "Correctietekens",
+        "gr_proof_marks_body": "Correctietekens vormen een tweede laag over het essay, geen bewerking ervan: elke markering legt een correctieteken vast bij de passage die het verbetert, en de HTML van de inzending blijft precies zoals de leerling hem schreef. Elk teken heeft een gewone uitleg in jouw taal, dus je hoeft geen code te onthouden.",
+        "gr_proof_marks_item_rail": "De kantlijnbalk zet een chip op elke regel met een markering; een chip met meerdere markeringen toont een aantal en opent een paneel met alle markeringen.",
+        "gr_proof_marks_item_panel": "Het paneel noemt elke markering, citeert de tekst eronder en toont de vervanging als die er is; sluiten kan met Escape, de knop Sluiten of een klik ergens anders.",
+        "gr_proof_marks_item_narrow": "Op een smal scherm wordt de balk een lijst onder het essay, en bij afdrukken krijg je een gemarkeerde kopie met de markeringen per pagina.",
+        "gr_proof_marks_item_sync": "Markeringen worden samen met het essay bewaard en gesynchroniseerd, dus ze overleven een herlaadbeurt en gaan mee naar een ander apparaat; leerlingen zien ze niet.",
         "gr_comparative_title": "Vergelijkend beoordelen",
         "gr_comparative_body_prefix": "Klik op",
         "gr_comparative_button": "Vergelijken",
@@ -5369,6 +5393,8 @@
         "es_editor_item_toc": "Een inhoudsopgave-zijbalk toont de koppen van het document en springt ernaartoe bij een klik — handig bij lange essays en leesteksten.",
         "es_editor_item_emoji": "Typ :shortcode: (bijv. :smile:) of plak een emoji direct voor consistente emoji-weergave op elk platform.",
         "es_editor_item_invisibles": "De knop \"opmaaktekens tonen\" in de werkbalk toont spaties, tabs en alinea-einden voor het nalezen.",
+        "es_marks_title": "Proefleesmarkeringen in opmerkingen",
+        "es_marks_body": "Begin een opmerking met een proefleescodering — sp, del, ins, tr, lc, caps of ¶ — of kies er een uit de rij boven het opmerkingenveld. De code verschijnt als klein merkteken op de gemarkeerde woorden en de opmerking bevat de volledige instructie, zodat de leerling de correctie én het doelwit ziet. Opmerkingen die niet met een bekende code beginnen, blijven ongewijzigd.",
         "es_editor_item_image": "Docenten kunnen een afbeelding direct in een toetstekst of vraagprompt slepen of plakken om deze inline in te sluiten (niet beschikbaar in de leerling-essay-editor).",
         "es_doc_analysis_title": "Documentanalyse",
         "es_doc_analysis_item_upload": "Upload een DOCX of PDF om tekst in de editor te importeren.",

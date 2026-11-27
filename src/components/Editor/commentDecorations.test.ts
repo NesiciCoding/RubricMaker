@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
-import { commentDecorationSpecs, CommentHighlight } from './commentDecorations';
+import { commentDecorationSpecs, CommentHighlight, createMarkChip } from './commentDecorations';
 import type { DocumentComment } from '../../types';
 
 const MINIMAL_KIT = StarterKit.configure({
@@ -80,6 +80,21 @@ describe('commentDecorationSpecs', () => {
     it('returns an empty array for no comments', () => {
         expect(commentDecorationSpecs([], 30, null)).toEqual([]);
     });
+
+    it('carries a known proofreading code and ignores code-shaped prose', () => {
+        const specs = commentDecorationSpecs(
+            [
+                makeComment({ id: 'c1', text: 'sp — recieve → receive' }),
+                makeComment({ id: 'c2', text: 'Great point', anchor: { from: 10, to: 12 } }),
+                makeComment({ id: 'c3', text: '¶ new paragraph', anchor: { from: 14, to: 16 } }),
+            ],
+            30,
+            null
+        );
+        expect(specs.find((s) => s.id === 'c1')?.code).toBe('sp');
+        expect(specs.find((s) => s.id === 'c2')?.code).toBeNull();
+        expect(specs.find((s) => s.id === 'c3')?.code).toBe('¶');
+    });
 });
 
 describe('CommentHighlight extension', () => {
@@ -120,6 +135,49 @@ describe('CommentHighlight extension', () => {
         )(editor.state);
         // The decoration for anchor 2..8 is present with the comment id attached
         expect(set.find(2, 8).length).toBe(1);
+    });
+
+    it('builds a chip element carrying the code and the comment id', () => {
+        const chip = createMarkChip('del', 'c1');
+        expect(chip.className).toBe('comment-mark-chip');
+        expect(chip.textContent).toBe('del');
+        expect(chip.getAttribute('data-comment-id')).toBe('c1');
+    });
+
+    it('puts the proofreading code on a widget at the range end, not on the inline decoration', () => {
+        const { editor } = makeEditor();
+        editor.commands.setDocumentComments([makeComment({ text: 'del remove this word' })]);
+        const set = (
+            findPlugin(editor).props.decorations as unknown as (state: unknown) => {
+                find: (
+                    from?: number,
+                    to?: number,
+                    predicate?: (spec: { key?: string }) => boolean
+                ) => { from: number; to: number; type: { attrs?: Record<string, string> } }[];
+            }
+        )(editor.state);
+
+        const inline = set.find(2, 8).filter((d) => d.type.attrs);
+        expect(inline).toHaveLength(1);
+        expect(inline[0].type.attrs?.['data-mark-code']).toBeUndefined();
+
+        const chips = set.find(2, 8, (spec) => spec.key === 'comment-mark-c1');
+        expect(chips).toHaveLength(1);
+        expect(chips[0].from).toBe(8);
+        editor.destroy();
+    });
+
+    it('renders one chip for a range that crosses a bold boundary', () => {
+        const editor = new Editor({
+            extensions: [StarterKit, CommentHighlight],
+            content: '<p>Hello <strong>bold world</strong> tail</p>',
+        });
+        // 1..17 covers the plain "Hello " run and the whole bold run, i.e. two text nodes
+        editor.commands.setDocumentComments([makeComment({ text: 'sp fix this', anchor: { from: 1, to: 17 } })]);
+
+        expect(editor.view.dom.querySelectorAll('.comment-mark-chip')).toHaveLength(1);
+        expect(editor.view.dom.querySelectorAll('.comment-highlight').length).toBeGreaterThan(1);
+        editor.destroy();
     });
 
     it('rebuilds decorations when the doc changes or the comment meta is set', () => {
