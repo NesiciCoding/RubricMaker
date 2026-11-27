@@ -1124,7 +1124,8 @@
             "import_error_wrong_test": "Ce code de soumission correspond à un autre test.",
             "attempt_label": "(Tentative {{n}})",
             "drawer_title": "Résultats — {{name}}",
-            "submissions_title": "Remises ({{count}})"
+            "submissions_title": "Remises ({{count}})",
+            "flagged_cells": "{{count}} marquée(s) à revoir"
         },
         "export": {
             "section_title": "Exporter le résumé",
@@ -2235,6 +2236,10 @@
             "menu_row_label": "Actions de la ligne de l'élève",
             "menu_mark_absent": "Marquer absent",
             "menu_mark_present": "Marquer présent",
+            "menu_flag_review": "Marquer à revoir",
+            "menu_clear_flag": "Retirer le marquage",
+            "flagged": "Marquée à revoir",
+            "next_flagged": "Suivante marquée ({{count}})",
             "menu_clear_cell": "Effacer la cellule",
             "menu_copy_value": "Copier la valeur",
             "menu_paste": "Coller",
@@ -5620,7 +5625,7 @@
         "route_test_scores_label": "Feuille de points",
         "route_test_scores_desc": "Saisir les points par question et par élève, choisir le barème et analyser la qualité du test.",
         "gr_score_sheet_title": "Feuille de points (saisie manuelle)",
-        "gr_score_sheet_body": "Ouvrez la feuille de points d'un test via l'icône tableau sur sa carte (page Tests). Les lignes sont les élèves de la classe choisie, les colonnes les questions. Saisissez les points obtenus dans chaque cellule — Entrée ou ↓ passe à l'élève suivant, ← et → à la question suivante — ou collez un bloc entier depuis Excel ou Google Sheets. Les valeurs au-dessus du maximum d'une question sont signalées et non enregistrées. Cochez Absent pour exclure un élève des totaux et de l'analyse. Les points saisis ici remplacent la correction automatique sans effacer la réponse en ligne de l'élève ; total, pourcentage et note se mettent à jour aussitôt. Exporter en CSV télécharge la feuille. Un clic droit sur une cellule — ou Maj+F10 sur une cellule active — permet de marquer l'élève absent, d'effacer la cellule, de copier ou coller sa valeur ou de remplir la colonne vers le bas ; un clic droit sur le nom d'un élève ouvre les actions de ligne.",
+        "gr_score_sheet_body": "Ouvrez la feuille de points d'un test via l'icône tableau sur sa carte (page Tests). Les lignes sont les élèves de la classe choisie, les colonnes les questions. Saisissez les points obtenus dans chaque cellule — Entrée ou ↓ passe à l'élève suivant, ← et → à la question suivante — ou collez un bloc entier depuis Excel ou Google Sheets. Les valeurs au-dessus du maximum d'une question sont signalées et non enregistrées. Cochez Absent pour exclure un élève des totaux et de l'analyse. Les points saisis ici remplacent la correction automatique sans effacer la réponse en ligne de l'élève ; total, pourcentage et note se mettent à jour aussitôt. Exporter en CSV télécharge la feuille. Un clic droit sur une cellule — ou Maj+F10 sur une cellule active — permet de marquer l'élève absent, d'effacer la cellule, de copier ou coller sa valeur ou de remplir la colonne vers le bas ; un clic droit sur le nom d'un élève ouvre les actions de ligne. Marquez une cellule à revoir (Marquer à revoir dans ce menu) si vous hésitez sur une note ; les cellules marquées restent visibles dans la grille et Suivante marquée passe à la suivante. Les CSV exportés comportent une colonne Flagged avec les questions marquées, et le panneau de résultats indique combien de cellules d'un test restent à revoir.",
         "gr_score_only_body": "Pour un test sur papier jamais créé dans l'application, cliquez sur Nouveau test à points sur la page Tests. Vous définissez seulement des colonnes (un libellé comme 1a et le maximum de points) dans Questions et liens, où chaque colonne peut aussi être liée à des standards, descripteurs CECRL ou un point de grammaire pour alimenter les vues standards, CECRL et maîtrise. Ces tests ne peuvent pas être assignés ni passés en ligne.",
         "gr_norms_title": "Barème par test",
         "gr_norms_body": "Chaque test a son propre barème, défini sur la feuille de points ou dans l'éditeur de test : pourcentage → échelle de notes (par défaut), terme N (formule néerlandaise CvTE 9·score/max + N avec ses règles aux bornes), seuil de réussite (points nécessaires pour la note de réussite ; la note varie linéairement de 1 à la note de réussite puis à 10) ou une table points → note. Une table peut avoir une colonne par année et filière ; chaque élève est noté avec la colonne de son année et sa filière. Si on ne peut pas la déterminer, la note de chaque colonne est affichée avec son libellé. Vous choisissez aussi la note de réussite (5,5 par défaut) et le nombre de décimales. Le barème est utilisé sur la page de résultats et dans les exports CSV et Magister/SOMtoday. Une cellule de la table peut aussi contenir un libellé comme IO, B ou E au lieu d'un nombre, pour noter les petites classes par libellés et les grandes sur 10 ; pour une colonne à libellés, vous choisissez à partir de quel libellé un résultat est suffisant, ce qui détermine les couleurs et le taux de réussite, et l'analyse montre combien d'élèves ont obtenu chaque libellé. Les libellés sont exportés en texte dans le CSV ; les exports Magister/SOMtoday n'acceptent que des notes 1–10 et les laissent vides.",

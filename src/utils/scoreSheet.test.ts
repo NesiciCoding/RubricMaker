@@ -3,13 +3,17 @@ import type { StudentTest, Test } from '../types';
 import {
     applyCellEdit,
     buildScoreSheetCsv,
+    countFlaggedCells,
     defaultScoreOnlyQuestions,
+    flaggedColumnLabels,
     formatPoints,
+    isFlaggedForReview,
     isSheetComplete,
     newScoreOnlyQuestion,
     parsePastedGrid,
     parsePoints,
     setAbsent,
+    toggleReviewFlag,
     validateCell,
 } from './scoreSheet';
 
@@ -123,6 +127,7 @@ describe('buildScoreSheetCsv', () => {
                     percentage: 70,
                     grade: '7.3',
                     absent: false,
+                    flagged: ['1a'],
                 },
                 {
                     name: 'Bram',
@@ -140,8 +145,71 @@ describe('buildScoreSheetCsv', () => {
             ]
         );
         const [header, anna, bram] = csv.split(/\r?\n/);
-        expect(header).toBe('Student Name,Student Number,1a,1b,Total,Score %,Grade,Grade (HAVO),Grade (VWO),Absent');
-        expect(anna).toBe('Anna,1,2,1.5,3.5,70.0,7.3,,,');
-        expect(bram).toBe('Bram,,,,,,,6,,yes');
+        expect(header).toBe(
+            'Student Name,Student Number,1a,1b,Total,Score %,Grade,Grade (HAVO),Grade (VWO),Absent,Flagged'
+        );
+        // The flag travels with the row, so a marked sheet is still findable after export.
+        expect(anna).toBe('Anna,1,2,1.5,3.5,70.0,7.3,,,,1a');
+        expect(bram).toBe('Bram,,,,,,,6,,yes,');
+    });
+});
+
+describe('review flags', () => {
+    it('flags and clears a cell without touching its score', () => {
+        const flagged = toggleReviewFlag(undefined, test, 's1', 'a', NOW);
+        expect(flagged.reviewFlags).toEqual(['a']);
+        expect(flagged.source).toBe('manual');
+        expect(flagged.answers).toEqual([]);
+        expect(isFlaggedForReview(flagged, 'a')).toBe(true);
+
+        const cleared = toggleReviewFlag(flagged, test, 's1', 'a', NOW);
+        // An explicit empty array, not a removed field: the clear has to be able to beat a stale copy in a merge.
+        expect(cleared.reviewFlags).toEqual([]);
+        expect(isFlaggedForReview(cleared, 'a')).toBe(false);
+    });
+
+    it('keeps the flag through a re-typed cell and the score through a cleared flag', () => {
+        const flagged = toggleReviewFlag(applyCellEdit(undefined, test, 's1', 'a', 1.5, NOW), test, 's1', 'a', NOW);
+        expect(flagged.reviewFlags).toEqual(['a']);
+
+        const retyped = applyCellEdit(flagged, test, 's1', 'a', 2, NOW);
+        expect(retyped.reviewFlags).toEqual(['a']);
+        expect(retyped.answers[0].pointsEarned).toBe(2);
+
+        const cleared = toggleReviewFlag(retyped, test, 's1', 'a', NOW);
+        expect(cleared.reviewFlags).toEqual([]);
+        expect(cleared.answers[0].pointsEarned).toBe(2);
+    });
+
+    it('keeps several flags in the order they were set', () => {
+        const two = toggleReviewFlag(toggleReviewFlag(undefined, test, 's1', 'a', NOW), test, 's1', 'b', NOW);
+        expect(two.reviewFlags).toEqual(['a', 'b']);
+        expect(isFlaggedForReview(two, 'b')).toBe(true);
+        expect(isFlaggedForReview(two, 'zzz')).toBe(false);
+        expect(isFlaggedForReview(undefined, 'a')).toBe(false);
+    });
+});
+
+describe('review flags beyond the grid', () => {
+    const withFlags = (studentId: string, reviewFlags: string[]): StudentTest => ({
+        id: `st-${studentId}`,
+        testId: 't',
+        studentId,
+        answers: [],
+        status: 'in_progress',
+        startedAt: NOW,
+        source: 'manual',
+        reviewFlags,
+    });
+
+    it('counts flagged cells across submissions and ignores ids no longer on the test', () => {
+        expect(countFlaggedCells(test, [])).toBe(0);
+        expect(countFlaggedCells(test, [withFlags('s1', ['a', 'gone']), withFlags('s2', ['b'])])).toBe(2);
+    });
+
+    it('labels the flagged columns in column order for the CSV', () => {
+        expect(flaggedColumnLabels(test, undefined, ['1', '2'])).toEqual([]);
+        expect(flaggedColumnLabels(test, ['b', 'a'], ['1', '2'])).toEqual(['1', '2']);
+        expect(flaggedColumnLabels(test, ['b', 'gone'], ['1', '2'])).toEqual(['2']);
     });
 });

@@ -47,4 +47,27 @@ test.describe('Score sheet context menu', () => {
         await appPage.keyboard.press('Escape');
         await expect(menu).toBeHidden();
     });
+    test('flags a cell for review and returns to it with Next flagged', async ({ appPage, seedStorage }) => {
+        const cls = buildClass({ name: '3A', year: 'jaar-3', voTrack: 'havo' });
+        await seedStorage({ rm_classes: [cls], rm_students: [buildStudent(cls.id, { name: 'Anna' })] });
+
+        const list = new TestListPage(appPage);
+        await list.goto();
+        await appPage.getByRole('button', { name: 'New score-only test' }).click();
+        await expect(appPage).toHaveURL(/\/tests\/[^/]+\/scores/);
+
+        const sheet = new TestScoreSheetPage(appPage);
+        const first = sheet.cell('Anna', 1);
+        await first.click();
+        await first.click({ button: 'right' });
+        await appPage.getByRole('menuitem', { name: 'Flag for review' }).click();
+
+        // The marker sits on the cell itself, so the flag is findable without reopening the menu.
+        await expect(first).toHaveAttribute('data-flagged', 'true');
+        await expect(appPage.getByText('Flagged for review')).toBeAttached();
+
+        await first.blur();
+        await appPage.getByRole('button', { name: /Next flagged \(1\)/ }).click();
+        await expect(first).toBeFocused();
+    });
 });

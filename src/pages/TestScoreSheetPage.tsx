@@ -29,7 +29,7 @@ import {
     resolveTestScale,
     type TestGradeResult,
 } from '../utils/testGradingNorm';
-import { buildScoreSheetCsv, isSheetComplete } from '../utils/scoreSheet';
+import { buildScoreSheetCsv, flaggedColumnLabels, isSheetComplete } from '../utils/scoreSheet';
 import { buildReviewDeck, type MissedQuestion } from '../utils/questionsToDeck';
 import { downloadCsv } from '../utils/csvDownload';
 import { sanitizeFilename } from '../utils/exportDataPrep';
@@ -318,6 +318,7 @@ function ScoreSheetBody({
                     grade: a.grade,
                 })),
                 absent: !!st?.absent,
+                flagged: flaggedColumnLabels(test, st?.reviewFlags, columns),
             };
         });
         downloadCsv(buildScoreSheetCsv(columns, csvRows), `${sanitizeFilename(test.name)}_scores.csv`);

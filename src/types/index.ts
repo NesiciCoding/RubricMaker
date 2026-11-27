@@ -1800,6 +1800,11 @@ export interface StudentTest {
         appliedAt: string;
         note?: string;
     };
+    /**
+     * Set when the teacher reverts a class-average adjustment. Removing the two fields above reads as
+     * "never adjusted" to a merge, which would let an older copy restore them; this records the clear.
+     */
+    adjustmentRevertedAt?: string;
     /** Proctoring events captured while the student took the test */
     events?: ProctorEvent[];
     /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */
@@ -1822,6 +1827,19 @@ export interface StudentTest {
     testVersion?: string;
     /** Family members (easier-cloze variants) this attempt was given, saved at delivery so later edits to a family never change what it was scored on. Absent on older attempts, which fall back to the hash. */
     deliveredVariantIds?: string[];
+    /**
+     * Question ids whose score-sheet cell is flagged for a later check ("I am not sure about this
+     * one yet"). It lives on the submission as a list of question ids rather than on a `TestAnswer`
+     * because a manually typed cell may have no answer object to hang it on, and re-typing the
+     * points must not drop the flag. `student_tests` stores the whole record in one jsonb `data`
+     * column, so the list syncs and backs up with the submission and needs no migration.
+     *
+     * An empty array is a deliberate clear (the teacher looked and dismissed it), which is why
+     * clearing writes `[]` rather than removing the field: merges treat a known value as the
+     * teacher's latest word, so a stale copy cannot restore a dismissed flag. `undefined` means the
+     * record predates flagging, or was written by a path that never authored this field.
+     */
+    reviewFlags?: string[];
 }
 
 export type TestStrengthBucket = 'strong' | 'developing' | 'weak';

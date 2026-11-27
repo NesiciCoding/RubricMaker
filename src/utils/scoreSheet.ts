@@ -101,6 +101,30 @@ export function setAbsent(
     return { ...base, absent: absent || undefined, updatedAt: now };
 }
 
+/**
+ * Flags (or clears) one student's cell for a later check. The flag is stored on the submission as a
+ * list of question ids, so it survives re-typing the points, clearing the cell, and a sync round
+ * trip — see `StudentTest.reviewFlags` for why it is not on the answer.
+ */
+export function toggleReviewFlag(
+    existing: StudentTest | undefined,
+    test: Test,
+    studentId: string,
+    questionId: string,
+    now: string = new Date().toISOString()
+): StudentTest {
+    const base = existing ?? emptyManualTest(test, studentId, now);
+    const current = base.reviewFlags ?? [];
+    const next = current.includes(questionId) ? current.filter((id) => id !== questionId) : [...current, questionId];
+    // Clearing stores an empty array, never `undefined`: the empty value is what tells a merge that
+    // the teacher has seen and dismissed this cell, so a stale copy cannot carry the flag back.
+    return { ...base, reviewFlags: next, updatedAt: now };
+}
+
+export function isFlaggedForReview(st: StudentTest | undefined, questionId: string): boolean {
+    return (st?.reviewFlags ?? []).includes(questionId);
+}
+
 export function newScoreOnlyQuestion(label: string, points = 1): TestQuestion {
     return { id: nanoid(), prompt: label, type: 'open', points };
 }
@@ -124,6 +148,25 @@ export interface ScoreSheetCsvRow {
     /** Every norm-table column's grade, for a student whose year/track didn't pick one. */
     alternatives?: { label: string; grade: number | string | null }[];
     absent: boolean;
+    /** Question ids whose cell is flagged for review, so the mark survives the export. */
+    flagged?: string[];
+}
+
+/**
+ * Flagged cells among these submissions, ignoring question ids that are no longer on the test.
+ * The drawer's results/analysis header uses it so a flagged sheet stays visible after grading.
+ */
+export function countFlaggedCells(test: Test, studentTests: StudentTest[]): number {
+    const ids = new Set(test.questions.map((q) => q.id));
+    return studentTests.reduce((n, st) => n + (st.reviewFlags ?? []).filter((id) => ids.has(id)).length, 0);
+}
+
+/** One submission's flags as sheet column labels, in column order; unknown ids are dropped. */
+export function flaggedColumnLabels(test: Test, reviewFlags: string[] | undefined, columns: string[]): string[] {
+    if (!reviewFlags?.length) return [];
+    return test.questions
+        .map((q, i) => (reviewFlags.includes(q.id) ? columns[i] : null))
+        .filter((label): label is string => !!label);
 }
 
 /** The sheet as CSV; students without a resolved norm column get one extra `Grade (<column>)` per column. */
@@ -138,6 +181,7 @@ export function buildScoreSheetCsv(columns: string[], rows: ScoreSheetCsvRow[]):
         'Grade',
         ...altLabels.map((l) => `Grade (${l})`),
         'Absent',
+        'Flagged',
     ];
     const data = rows.map((r) => [
         r.name,
@@ -148,6 +192,7 @@ export function buildScoreSheetCsv(columns: string[], rows: ScoreSheetCsvRow[]):
         r.grade,
         ...altLabels.map((l) => r.alternatives?.find((a) => a.label === l)?.grade ?? ''),
         r.absent ? 'yes' : '',
+        r.flagged?.join(', ') ?? '',
     ]);
     return Papa.unparse({ fields: header, data }, CSV_UNPARSE_OPTIONS);
 }

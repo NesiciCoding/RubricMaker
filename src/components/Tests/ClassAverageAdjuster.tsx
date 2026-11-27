@@ -76,6 +76,8 @@ export default function ClassAverageAdjuster({ test, studentTests, students, onS
                     points: row.adjustmentPoints,
                     appliedAt: now,
                 },
+                // A re-apply after a revert owns the adjustment again; the old clear must not block it.
+                adjustmentRevertedAt: undefined,
                 updatedAt: now,
             });
         }
@@ -88,7 +90,9 @@ export default function ClassAverageAdjuster({ test, studentTests, students, onS
             const { adjustment, adjustmentPoints, ...rest } = st;
             void adjustment;
             void adjustmentPoints;
-            onSaveStudentTest({ ...rest, updatedAt: now });
+            // Deleting the fields alone looks like "never adjusted" to a merge, so an older copy would
+            // put the adjustment back. The marker makes the clear an edit in its own right.
+            onSaveStudentTest({ ...rest, adjustmentRevertedAt: now, updatedAt: now });
         }
     }
 

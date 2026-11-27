@@ -91,6 +91,105 @@ function StatefulHarness({ onSaveSpy }: { onSaveSpy: (list: StudentTest[]) => vo
 describe('ScoreSheetGrid context menu', () => {
     beforeEach(() => vi.clearAllMocks());
 
+    it('flags a cell for review and marks it in the sheet', async () => {
+        const onSave = vi.fn();
+        render(<StatefulHarness onSaveSpy={onSave} />);
+
+        fireEvent.contextMenu(cell(1, 0));
+        fireEvent.click(screen.getByRole('menuitem', { name: 'tests.scoreSheet.menu_flag_review' }));
+
+        await waitFor(() => expect(cell(1, 0).getAttribute('data-flagged')).toBe('true'));
+        expect(cell(1, 0)).toHaveAttribute('aria-describedby', 'cell-flag-1-0');
+        expect(screen.getByText('tests.scoreSheet.flagged')).toHaveAttribute('id', 'cell-flag-1-0');
+        expect(cell(0, 0).getAttribute('data-flagged')).toBeNull();
+        const saved = onSave.mock.calls[0][0] as StudentTest[];
+        expect(saved[0].studentId).toBe('s2');
+        expect(saved[0].reviewFlags).toEqual(['q1']);
+    });
+
+    it('offers to clear an existing flag instead of flagging again', async () => {
+        const onSave = vi.fn();
+        render(<StatefulHarness onSaveSpy={onSave} />);
+
+        fireEvent.contextMenu(cell(1, 0));
+        fireEvent.click(screen.getByRole('menuitem', { name: 'tests.scoreSheet.menu_flag_review' }));
+        await waitFor(() => expect(cell(1, 0).getAttribute('data-flagged')).toBe('true'));
+
+        fireEvent.contextMenu(cell(1, 0));
+        expect(screen.getByRole('menuitem', { name: 'tests.scoreSheet.menu_clear_flag' })).toBeInTheDocument();
+        expect(screen.queryByRole('menuitem', { name: 'tests.scoreSheet.menu_flag_review' })).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole('menuitem', { name: 'tests.scoreSheet.menu_clear_flag' }));
+
+        await waitFor(() => expect(cell(1, 0).getAttribute('data-flagged')).toBeNull());
+        const last = onSave.mock.calls.at(-1)![0] as StudentTest[];
+        expect(last[0].reviewFlags).toEqual([]);
+    });
+
+    it('jumps to the next flagged cell, wrapping around', async () => {
+        const onSave = vi.fn();
+        render(<StatefulHarness onSaveSpy={onSave} />);
+
+        fireEvent.contextMenu(cell(1, 1));
+        fireEvent.click(screen.getByRole('menuitem', { name: 'tests.scoreSheet.menu_flag_review' }));
+        await waitFor(() => expect(cell(1, 1).getAttribute('data-flagged')).toBe('true'));
+
+        const next = screen.getByTestId('score-sheet-next-flagged');
+        expect(next).toHaveTextContent('tests.scoreSheet.next_flagged:{"count":1}');
+        fireEvent.click(next);
+        expect(document.activeElement).toBe(cell(1, 1));
+
+        // One flag only: the route wraps onto the same cell rather than dead-ending.
+        fireEvent.click(next);
+        expect(document.activeElement).toBe(cell(1, 1));
+    });
+
+    it('walks flagged cells in reading order once each, even when flagging went backwards', async () => {
+        const onSave = vi.fn();
+        render(<StatefulHarness onSaveSpy={onSave} />);
+
+        // Q2 flagged before Q1: insertion order is the reverse of the order a reader expects.
+        fireEvent.contextMenu(cell(1, 1));
+        fireEvent.click(screen.getByRole('menuitem', { name: 'tests.scoreSheet.menu_flag_review' }));
+        await waitFor(() => expect(cell(1, 1).getAttribute('data-flagged')).toBe('true'));
+        fireEvent.contextMenu(cell(1, 0));
+        fireEvent.click(screen.getByRole('menuitem', { name: 'tests.scoreSheet.menu_flag_review' }));
+        await waitFor(() => expect(cell(1, 0).getAttribute('data-flagged')).toBe('true'));
+
+        expect(screen.getByTestId('score-sheet-next-flagged')).toHaveTextContent(
+            'tests.scoreSheet.next_flagged:{"count":2}'
+        );
+
+        // Start outside the review pass, on a cell that is not flagged.
+        act(() => cell(0, 0).focus());
+
+        // A real press focuses the button before the click, which blurs the cell and clears `focus`.
+        const press = () => {
+            const button = screen.getByTestId('score-sheet-next-flagged');
+            act(() => button.focus());
+            fireEvent.click(button);
+        };
+
+        press();
+        expect(document.activeElement).toBe(cell(1, 0));
+        press();
+        expect(document.activeElement).toBe(cell(1, 1));
+        press();
+        expect(document.activeElement).toBe(cell(1, 0));
+    });
+
+    it('skips a flagged cell that cannot take focus', async () => {
+        const onSave = vi.fn();
+        const absentAnna: StudentTest = { ...bram, id: 'st2', studentId: 's2', absent: true, answers: [] };
+        const sheet = new Map<string, StudentTest>([
+            ['s1', { ...bram, reviewFlags: ['q1'] }],
+            ['s2', absentAnna],
+        ]);
+        renderGrid(onSave, sheet);
+        // Anna's flag on a disabled cell is kept, but Bram's is the only reachable target.
+        fireEvent.click(screen.getByTestId('score-sheet-next-flagged'));
+        expect(document.activeElement).toBe(cell(0, 0));
+    });
+
     it('pastes a copied block from the cell menu', async () => {
         const onSave = renderGrid();
         Object.defineProperty(navigator, 'clipboard', {

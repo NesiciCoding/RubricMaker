@@ -1124,7 +1124,8 @@
             "import_error_wrong_test": "This submission code is for a different test.",
             "attempt_label": "(Attempt {{n}})",
             "drawer_title": "Results — {{name}}",
-            "submissions_title": "Submissions ({{count}})"
+            "submissions_title": "Submissions ({{count}})",
+            "flagged_cells": "{{count}} flagged for review"
         },
         "export": {
             "section_title": "Export summary",
@@ -2306,6 +2307,10 @@
             "menu_row_label": "Student row actions",
             "menu_mark_absent": "Mark absent",
             "menu_mark_present": "Mark present",
+            "menu_flag_review": "Flag for review",
+            "menu_clear_flag": "Clear review flag",
+            "flagged": "Flagged for review",
+            "next_flagged": "Next flagged ({{count}})",
             "menu_clear_cell": "Clear cell",
             "menu_copy_value": "Copy value",
             "menu_paste": "Paste",
@@ -5620,7 +5625,7 @@
         "route_test_scores_label": "Score sheet",
         "route_test_scores_desc": "Type in points per question per student, set the grading norm, and analyse test quality.",
         "gr_score_sheet_title": "Score sheet (manual points)",
-        "gr_score_sheet_body": "Open a test's score sheet from the table icon on its card (Tests page). Rows are the students of the chosen class, columns are the questions. Type the points earned in each cell — Enter or ↓ moves to the next student, ← and → to the next question — or paste a whole block from Excel or Google Sheets. Values above a question's maximum are flagged and not saved. Tick Absent to leave a student out of totals and analysis. Points typed here override auto-scoring without deleting what a student answered online, and the totals, percentage and grade update immediately. Export CSV downloads the sheet. Right-click a cell — or press Shift+F10 on a focused cell — to mark the student absent, clear the cell, copy or paste a value or block, or fill the column down; right-click a student's name for the row actions.",
+        "gr_score_sheet_body": "Open a test's score sheet from the table icon on its card (Tests page). Rows are the students of the chosen class, columns are the questions. Type the points earned in each cell — Enter or ↓ moves to the next student, ← and → to the next question — or paste a whole block from Excel or Google Sheets. Values above a question's maximum are flagged and not saved. Tick Absent to leave a student out of totals and analysis. Points typed here override auto-scoring without deleting what a student answered online, and the totals, percentage and grade update immediately. Export CSV downloads the sheet. Right-click a cell — or press Shift+F10 on a focused cell — to mark the student absent, clear the cell, copy or paste a value or block, or fill the column down; right-click a student's name for the row actions. Flag a cell for review (Flag for review in that menu) when you are unsure about a mark; flagged cells stay marked in the sheet and Next flagged jumps to the next one. Exported CSVs carry a Flagged column naming the marked questions, and the results drawer shows how many cells of a test are still flagged.",
         "gr_score_only_body": "For a paper test that was never built in the app, click New score-only test on the Tests page. You only define columns (a label such as 1a and the maximum points) under Questions & links, where each column can also be linked to standards, CEFR descriptors or a grammar point so the scores feed the standards, CEFR and mastery overviews. Score-only tests can't be assigned or taken online.",
         "gr_norms_title": "Grading norms per test",
         "gr_norms_body": "Each test has its own grading norm, set on the score sheet or in the Test Builder: percentage → grade scale (the default), N-term (the Dutch CvTE formula 9·score/max + N with its boundary rules), pass mark/caesura (the points needed for the pass grade; grades run linearly from 1 to the pass grade to 10), or a norm table of points → grade. A norm table can have a column per school year and VO track; each student is graded with the column that matches their year and track. When that can't be determined, every column's grade is shown with its label so you can see which grade belongs to which track. You also set the pass grade (default 5.5) and number of decimals. The chosen norm is used on the results page and in the CSV and Magister/SOMtoday exports. A norm-table cell can also hold a label such as IO, B or E instead of a number, so lower years can be graded with labels while upper years get 1–10; for a label column you choose from which label a result counts as sufficient, which drives the colours and the pass rate, and the analysis shows how many students got each label. Labels are exported as text in the CSV; the Magister/SOMtoday presets only take 1–10 grades and leave them blank.",

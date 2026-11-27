@@ -7,6 +7,7 @@ import {
     ClipboardPaste,
     Copy,
     Eraser,
+    Flag,
     UserCheck,
     UserX,
 } from 'lucide-react';
@@ -18,10 +19,12 @@ import { normTierLabel, resolveTestGrade } from '../../../utils/testGradingNorm'
 import {
     applyCellEdit,
     formatPoints,
+    isFlaggedForReview,
     isSheetComplete,
     parsePastedGrid,
     parsePoints,
     setAbsent,
+    toggleReviewFlag,
     validateCell,
 } from '../../../utils/scoreSheet';
 import { pValueColor } from '../ItemAnalysisPanel';
@@ -78,6 +81,9 @@ export default function ScoreSheetGrid({
     const tableRef = useRef<HTMLTableElement>(null);
     const [drafts, setDrafts] = useState<Record<string, string>>({});
     const [focus, setFocus] = useState<{ row: number; col: number } | null>(null);
+    // Where the review pass is, kept apart from the visual focus: activating "Next flagged" moves
+    // focus to the button, so the input's blur has already cleared `focus` by the time it runs.
+    const lastCellRef = useRef<{ row: number; col: number } | null>(null);
     // Context-menu items are built once, at open time, but stay selectable after a later
     // render (e.g. the auto-focus-driven blur-commit that fires right after opening) swaps
     // in a new `sheetByStudent`. Reading through this ref instead of the closed-over prop
@@ -241,6 +247,15 @@ export default function ScoreSheetGrid({
                 icon: absent ? <UserCheck size={14} aria-hidden /> : <UserX size={14} aria-hidden />,
                 disabled: !editable,
                 onSelect: () => onSave([setAbsent(sheetRef.current.get(student.id), test, student.id, !absent)]),
+            },
+            {
+                key: 'flag',
+                label: isFlaggedForReview(st, q.id)
+                    ? t('tests.scoreSheet.menu_clear_flag')
+                    : t('tests.scoreSheet.menu_flag_review'),
+                icon: <Flag size={14} aria-hidden />,
+                disabled: !editable,
+                onSelect: () => toggleFlag(row, col),
             },
             {
                 key: 'clear',
@@ -416,10 +431,80 @@ export default function ScoreSheetGrid({
         applyPastedGrid(grid, row, col);
     }
 
+    /**
+     * Flags or clears one cell for a later check. The flag lives on the submission (`reviewFlags`),
+     * so it survives re-typing the points, clearing the cell and a sync round trip.
+     */
+    function toggleFlag(row: number, col: number) {
+        const student = students[row];
+        const q = questions[col];
+        if (!student || !q) return;
+        onSave([toggleReviewFlag(sheetRef.current.get(student.id), test, student.id, q.id)]);
+    }
+
+    /** Moves to the next flagged cell, wrapping around — the review pass without hunting for markers. */
+    function focusNextFlagged() {
+        if (!flaggedCells.length) return;
+        const current = focus ?? lastCellRef.current;
+        const at = current ? flaggedCells.findIndex((c) => c.row === current.row && c.col === current.col) : -1;
+        const next = flaggedCells[(at + 1) % flaggedCells.length];
+        lastCellRef.current = next;
+        focusCell(next.row, next.col);
+    }
+
+    /** Mirrors the points input's disabled condition, so navigation never targets a cell it cannot focus. */
+    function cellEditable(row: number, col: number): boolean {
+        const student = students[row];
+        const q = questions[col];
+        if (!student || !q) return false;
+        const st = sheetByStudent.get(student.id);
+        if (st?.absent) return false;
+        if (!isQuestionDelivered(test, student.id, q.id, st?.deliveredVariantIds)) return false;
+        return canEdit?.(student) ?? true;
+    }
+
+    /**
+     * Every navigable flagged cell in reading order. Built from the questions rather than from the
+     * stored `reviewFlags` order, which records the order the teacher flagged them in — flagging Q2
+     * before Q1 must still walk Q1 first. A flag on a cell that cannot take focus (absent, not
+     * delivered, read-only) is kept but skipped, so the next one is always reachable.
+     */
+    const flaggedCells: { row: number; col: number }[] = [];
+    students.forEach((student, row) => {
+        const flagged = sheetByStudent.get(student.id)?.reviewFlags ?? [];
+        if (!flagged.length) return;
+        const ids = new Set(flagged);
+        questions.forEach((q, col) => {
+            if (ids.has(q.id) && cellEditable(row, col)) flaggedCells.push({ row, col });
+        });
+    });
+
     const colMeans = items.map((it) => it.mean);
 
     return (
         <div style={{ overflow: 'auto', maxHeight: '70vh', border: cellBorder, borderRadius: 8 }}>
+            {flaggedCells.length > 0 && (
+                <div
+                    style={{
+                        position: 'sticky',
+                        left: 0,
+                        zIndex: 2,
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        padding: '4px 6px',
+                    }}
+                >
+                    <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={focusNextFlagged}
+                        data-testid="score-sheet-next-flagged"
+                    >
+                        <Flag size={14} aria-hidden />{' '}
+                        {t('tests.scoreSheet.next_flagged', { count: flaggedCells.length })}
+                    </button>
+                </div>
+            )}
             <table ref={tableRef} style={{ borderCollapse: 'separate', borderSpacing: 0, fontSize: '0.85rem' }}>
                 <caption className="sr-only">{t('tests.scoreSheet.grid_caption', { name: test.name })}</caption>
                 <thead>
@@ -547,6 +632,7 @@ export default function ScoreSheetGrid({
                                     const validity = drafts[k] === undefined ? 'ok' : validateCell(drafts[k], q.points);
                                     const bad = validity === 'invalid' || validity === 'over_max';
                                     const isFocused = focus?.row === row && focus?.col === col;
+                                    const flagged = isFlaggedForReview(st, q.id);
                                     const inBand = !isFocused && (focus?.row === row || focus?.col === col);
                                     const notGiven = !isQuestionDelivered(
                                         test,
@@ -564,11 +650,20 @@ export default function ScoreSheetGrid({
                                             style={{
                                                 borderBottom: cellBorder,
                                                 padding: 2,
-                                                background: isFocused ? focusedCellBg : inBand ? bandCellBg : undefined,
+                                                background: flagged
+                                                    ? 'color-mix(in srgb, var(--yellow) 16%, transparent)'
+                                                    : isFocused
+                                                      ? focusedCellBg
+                                                      : inBand
+                                                        ? bandCellBg
+                                                        : undefined,
+                                                boxShadow: flagged ? 'inset 3px 0 0 var(--yellow)' : undefined,
                                             }}
                                         >
                                             <input
                                                 data-cell={`${row}-${col}`}
+                                                data-flagged={flagged || undefined}
+                                                aria-describedby={flagged ? `cell-flag-${row}-${col}` : undefined}
                                                 inputMode="decimal"
                                                 autoComplete="off"
                                                 disabled={absent || notGiven || !(canEdit?.(student) ?? true)}
@@ -592,6 +687,7 @@ export default function ScoreSheetGrid({
                                                 onChange={(e) => setDrafts((d) => ({ ...d, [k]: e.target.value }))}
                                                 onFocus={(e) => {
                                                     setFocus({ row, col });
+                                                    lastCellRef.current = { row, col };
                                                     e.target.select();
                                                 }}
                                                 onBlur={() => {
@@ -612,6 +708,11 @@ export default function ScoreSheetGrid({
                                                         : 'transparent',
                                                 }}
                                             />
+                                            {flagged && (
+                                                <span id={`cell-flag-${row}-${col}`} className="sr-only">
+                                                    {t('tests.scoreSheet.flagged')}
+                                                </span>
+                                            )}
                                         </td>
                                     );
                                 })}
