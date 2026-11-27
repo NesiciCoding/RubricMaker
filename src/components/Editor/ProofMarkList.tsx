@@ -283,7 +283,7 @@ export default function ProofMarkList({
                         border: '1px solid rgba(153, 27, 27, 0.3)',
                         borderRadius: 4,
                         background: '#fef2f2',
-                        color: '#991b1b',
+                        color: 'var(--page-mark-ink, #991b1b)',
                         font: 'inherit',
                         fontSize: 12,
                         cursor: 'pointer',
