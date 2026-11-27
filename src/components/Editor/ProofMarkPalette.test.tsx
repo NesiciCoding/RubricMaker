@@ -146,3 +146,55 @@ describe('ProofMarkPalette', () => {
         expect(screen.getByText('proofMarks.palette.needSelection')).toBeInTheDocument();
     });
 });
+
+describe('ProofMarkPalette a11y', () => {
+    const axeOptions = {
+        rules: {
+            'color-contrast': { enabled: false },
+            region: { enabled: false },
+        },
+    };
+
+    async function expectNoViolations(container: HTMLElement) {
+        const { axe } = await import('jest-axe');
+        const results = (await axe(container, axeOptions)) as unknown as {
+            violations: { id: string; nodes: { target: unknown[] }[] }[];
+        };
+        expect(results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual(
+            []
+        );
+    }
+
+    it('passes axe with one tab stop and the code field described by its hint', async () => {
+        const { container } = render(<ProofMarkPalette onPlaceMark={onPlaceMark} />);
+
+        const buttons = screen.getAllByRole('button');
+        expect(buttons.filter((button) => button.tabIndex === 0)).toHaveLength(1);
+        const field = screen.getByLabelText('proofMarks.palette.codeField');
+        expect(hint()).toHaveTextContent('proofMarks.palette.codeHint');
+        expect(field).toHaveAccessibleDescription();
+
+        await expectNoViolations(container);
+    });
+
+    it('passes axe once the hint answers a typed code', async () => {
+        const { container } = render(<ProofMarkPalette onPlaceMark={onPlaceMark} />);
+
+        fireEvent.change(screen.getByLabelText('proofMarks.palette.codeField'), { target: { value: 'ital' } });
+        expect(hint()).toHaveTextContent('proofMarks.palette.codeResolved');
+
+        await expectNoViolations(container);
+    });
+
+    it('passes axe while inert, with the reason announced through the hint', async () => {
+        const { container } = render(
+            <ProofMarkPalette onPlaceMark={onPlaceMark} enabled={false} disabledReason="students cannot mark" />
+        );
+
+        for (const button of screen.getAllByRole('button')) expect(button).toBeDisabled();
+        expect(screen.getByLabelText('proofMarks.palette.codeField')).toBeDisabled();
+        expect(hint()).toHaveTextContent('students cannot mark');
+
+        await expectNoViolations(container);
+    });
+});
