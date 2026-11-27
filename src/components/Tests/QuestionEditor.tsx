@@ -60,16 +60,8 @@ import KeyWordTransformationFields from './KeyWordTransformationFields';
 import ListeningControlsFields from './ListeningControlsFields';
 import ClozeBankFields from './ClozeBankFields';
 import MatrixEditor from './MatrixEditor';
-import {
-    DEFAULT_MAX_RECORDING_SECONDS,
-    defaultCategorizeItems,
-    defaultCategories,
-    defaultMatchingPairs,
-    defaultMatrixColumns,
-    defaultMatrixRows,
-    defaultOptions,
-    defaultOrderItems,
-} from '../../utils/questionTypeDefaults';
+import { DEFAULT_MAX_RECORDING_SECONDS } from '../../utils/questionTypeDefaults';
+import { convertQuestionType } from '../../utils/questionTypeConvert';
 import AnswerToleranceFields from './AnswerToleranceFields';
 import DistractorSuggestions from './DistractorSuggestions';
 import { optionLetter } from '../../utils/testExamContent';
@@ -260,111 +252,13 @@ export default function QuestionEditor({
         question.type === 'cloze' || question.type === 'cloze-dropdown' || question.type === 'cloze-bank';
 
     function changeType(type: TestQuestionType) {
-        // Clear stale grammar links (both derived ids and frameworkDescriptors entries) when
-        // switching to a type the grammar tags don't apply to, since getGrammarRecommendations()-style
-        // matching has no type check of its own.
-        const keepsGrammarLink = (
-            ['cloze', 'cloze-dropdown', 'cloze-bank', 'matrix', 'hot-text', 'matching'] as TestQuestionType[]
-        ).includes(type);
-        const base = keepsGrammarLink
-            ? withGrammarIds(question, effectiveFrameworkDescriptors)
-            : withGrammarIds(
-                  question,
-                  effectiveFrameworkDescriptors.filter((d) => d.framework !== 'grammar')
-              );
-        const { linkedGrammarItemId, linkedGrammarItemIds, frameworkDescriptors } = base;
-
-        if (type === 'multiple-choice' || type === 'multiple-response') {
-            const existing = question.options && question.options.length > 0 ? question.options : defaultOptions();
-            const firstCorrect = existing.findIndex((option) => option.isCorrect);
-            update({
-                type,
-                linkedGrammarItemId,
-                linkedGrammarItemIds,
-                frameworkDescriptors,
-                options:
-                    type === 'multiple-choice'
-                        ? existing.map((option, index) => ({ ...option, isCorrect: index === firstCorrect }))
-                        : existing,
-            });
-        } else if (type === 'true-false') {
-            update({
-                type,
-                correctBoolean: question.correctBoolean ?? true,
-                linkedGrammarItemId,
-                linkedGrammarItemIds,
-                frameworkDescriptors,
-            });
-        } else if (type === 'matrix') {
-            const matrixColumns =
-                question.matrixColumns && question.matrixColumns.length > 0
-                    ? question.matrixColumns
-                    : defaultMatrixColumns();
-            update({
-                type,
-                linkedGrammarItemId,
-                linkedGrammarItemIds,
-                frameworkDescriptors,
-                matrixColumns,
-                matrixRows:
-                    question.matrixRows && question.matrixRows.length > 0
-                        ? question.matrixRows
-                        : defaultMatrixRows(matrixColumns),
-            });
-        } else if (type === 'matching') {
-            update({
-                type,
-                linkedGrammarItemId,
-                linkedGrammarItemIds,
-                frameworkDescriptors,
-                matchingPairs:
-                    question.matchingPairs && question.matchingPairs.length > 0
-                        ? question.matchingPairs
-                        : defaultMatchingPairs(),
-            });
-        } else if (type === 'ordering') {
-            update({
-                type,
-                linkedGrammarItemId,
-                linkedGrammarItemIds,
-                frameworkDescriptors,
-                orderItems:
-                    question.orderItems && question.orderItems.length > 0 ? question.orderItems : defaultOrderItems(),
-            });
-        } else if (type === 'categorize') {
-            const categories =
-                question.categories && question.categories.length > 0 ? question.categories : defaultCategories();
-            update({
-                type,
-                linkedGrammarItemId,
-                linkedGrammarItemIds,
-                frameworkDescriptors,
-                categories,
-                categorizeItems:
-                    question.categorizeItems && question.categorizeItems.length > 0
-                        ? question.categorizeItems
-                        : defaultCategorizeItems(categories),
-            });
-        } else if (type === 'hot-text') {
-            update({
-                type,
-                linkedGrammarItemId,
-                linkedGrammarItemIds,
-                frameworkDescriptors,
-                hotTextPassage: question.hotTextPassage ?? '',
-                hotTextCorrectIndices: question.hotTextCorrectIndices ?? [],
-            });
-        } else if (type === 'audio-response') {
-            update({
-                type,
-                linkedGrammarItemId,
-                linkedGrammarItemIds,
-                frameworkDescriptors,
-                maxRecordingSeconds: question.maxRecordingSeconds ?? DEFAULT_MAX_RECORDING_SECONDS,
-            });
-        } else {
-            update({ type, linkedGrammarItemId, linkedGrammarItemIds, frameworkDescriptors });
-        }
+        // Chips written through the framework picker are persisted here, then the shared conversion
+        // keeps the ones the new type can use and drops the payloads that belonged to the old type.
+        // The editor commits in place, so anything authored that the target cannot hold is confirmed
+        // first — otherwise a matching question turned into ordering loses its pairs with no prompt.
+        const conversion = convertQuestionType(withGrammarIds(question, effectiveFrameworkDescriptors), type);
+        if (conversion.dropped.length > 0 && !window.confirm(t('tests.change_type_confirm_body'))) return;
+        onChange(conversion.question);
     }
 
     function addOption() {

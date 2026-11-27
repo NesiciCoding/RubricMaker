@@ -1,4 +1,4 @@
-import { ArrowRightLeft, Copy, Library, Trash2 } from 'lucide-react';
+import { ArrowRightLeft, Copy, Library, RefreshCw, Trash2 } from 'lucide-react';
 import type { TestQuestion, TestSection } from '../../types';
 import type { ContextMenuItem } from '../ui/ContextMenu';
 
@@ -9,6 +9,7 @@ interface Labels {
     moveTo: (sectionTitle: string) => string;
     noSection: string;
     remove: string;
+    changeType: string;
 }
 
 interface Args {
@@ -19,6 +20,7 @@ interface Args {
     insertFromBankAfter: () => void;
     moveToSection: (sectionId: string | undefined) => void;
     remove: () => void;
+    onChangeType: () => void;
 }
 
 /**
@@ -34,6 +36,7 @@ export function questionOutlineMenuItems({
     insertFromBankAfter,
     moveToSection,
     remove,
+    onChangeType,
 }: Args): ContextMenuItem[] {
     const knownSection = sections.some((s) => s.id === question.sectionId);
     const currentSectionId = knownSection ? question.sectionId : undefined;
@@ -55,6 +58,12 @@ export function questionOutlineMenuItems({
             icon: <ArrowRightLeft size={14} />,
             onSelect: () => moveToSection(target.id),
         })),
+        {
+            key: 'change-type',
+            label: labels.changeType,
+            icon: <RefreshCw size={14} />,
+            onSelect: onChangeType,
+        },
         { key: 'delete', label: labels.remove, icon: <Trash2 size={14} />, danger: true, onSelect: remove },
     ];
 }

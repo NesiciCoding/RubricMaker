@@ -1633,6 +1633,8 @@ describe('TestBuilderPage undo, redo and draft autosave', () => {
         mockTests = [twoQuestionTest()];
         renderBuilder('/tests/t1');
 
+        // The conversion discards the multiple-choice options, so it asks before switching.
+        const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
         fireEvent.click(document.getElementById('question-type-qa') as HTMLButtonElement);
         fireEvent.click(screen.getByRole('button', { name: questionTypeLabelKey('true-false') }));
         expect(screen.getByTestId('question-focus').textContent).toContain(questionTypeLabelKey('true-false'));
@@ -1643,6 +1645,7 @@ describe('TestBuilderPage undo, redo and draft autosave', () => {
         fireEvent.click(screen.getByLabelText('tests.move_question_down'));
         expect(outlineRows()[0]).toContain('Beta question');
         fireEvent.click(screen.getByTestId('builder_undo'));
+        confirmSpy.mockRestore();
         expect(outlineRows()[0]).toContain('Alpha question');
     });
 
