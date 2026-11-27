@@ -1151,9 +1151,13 @@ function TestBuilderEditor({
     // own undo must keep working.
     const undoRef = useRef(undo);
     const redoRef = useRef(redo);
+    // Confirming a type change writes the snapshot taken before the dialog opened, so an undo or
+    // redo that landed meanwhile would be silently overwritten. History is blocked until it closes.
+    const typeChangePendingRef = useRef(false);
     useEffect(() => {
         undoRef.current = undo;
         redoRef.current = redo;
+        typeChangePendingRef.current = pendingTypeChange !== null;
     });
     useEffect(() => {
         function handleKeyDown(e: KeyboardEvent) {
@@ -1164,7 +1168,7 @@ function TestBuilderEditor({
                 saveRef.current();
                 return;
             }
-            if (key !== 'z' || readOnly || isTypingTarget(e.target)) return;
+            if (key !== 'z' || readOnly || typeChangePendingRef.current || isTypingTarget(e.target)) return;
             e.preventDefault();
             if (e.shiftKey) redoRef.current();
             else undoRef.current();

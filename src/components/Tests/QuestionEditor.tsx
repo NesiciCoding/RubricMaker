@@ -254,7 +254,11 @@ export default function QuestionEditor({
     function changeType(type: TestQuestionType) {
         // Chips written through the framework picker are persisted here, then the shared conversion
         // keeps the ones the new type can use and drops the payloads that belonged to the old type.
-        onChange(convertQuestionType(withGrammarIds(question, effectiveFrameworkDescriptors), type).question);
+        // The editor commits in place, so anything authored that the target cannot hold is confirmed
+        // first — otherwise a matching question turned into ordering loses its pairs with no prompt.
+        const conversion = convertQuestionType(withGrammarIds(question, effectiveFrameworkDescriptors), type);
+        if (conversion.dropped.length > 0 && !window.confirm(t('tests.change_type_confirm_body'))) return;
+        onChange(conversion.question);
     }
 
     function addOption() {

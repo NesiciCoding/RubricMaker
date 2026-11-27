@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import QuestionEditor from '../QuestionEditor';
 import type { TestQuestion, TestSection } from '../../../types';
 
@@ -21,6 +21,12 @@ function chooseType(type: string) {
     fireEvent.click(screen.getByLabelText('tests.question_type_label'));
     fireEvent.click(document.querySelector(`[data-question-type="${type}"]`) as HTMLElement);
 }
+// A type change that discards authored content asks first; the default here is "yes".
+let confirmSpy: ReturnType<typeof vi.spyOn>;
+beforeEach(() => {
+    confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+});
+
 vi.mock('../../../context/AppContext', () => ({
     useRoster: () => makeAppContextMock(),
     useStudents: () => makeAppContextMock(),
@@ -334,6 +340,24 @@ describe('QuestionEditor', () => {
         );
         chooseType('true-false');
         expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ type: 'true-false' }));
+    });
+
+    it('keeps the question unchanged when discarding content is cancelled', () => {
+        const onChange = vi.fn();
+        confirmSpy.mockReturnValueOnce(false);
+        render(
+            <QuestionEditor
+                question={makeQuestion()}
+                index={0}
+                total={1}
+                sections={sections}
+                onChange={onChange}
+                onRemove={vi.fn()}
+            />
+        );
+        chooseType('true-false');
+        expect(confirmSpy).toHaveBeenCalled();
+        expect(onChange).not.toHaveBeenCalled();
     });
 
     it('clears a stale linkedGrammarItemId when switching to a type without the grammar picker', () => {

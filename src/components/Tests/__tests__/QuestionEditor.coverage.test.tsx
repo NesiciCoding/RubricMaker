@@ -237,6 +237,8 @@ function renderEditor(
 
 describe('QuestionEditor coverage', () => {
     beforeEach(() => {
+        // A type change that discards authored content asks first; these cases confirm it.
+        vi.spyOn(window, 'confirm').mockReturnValue(true);
         delete mockSettings.standardsApiKey;
         mockAddQuestionBankItem.mockClear();
         mockShowToast.mockClear();
