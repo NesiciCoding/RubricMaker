@@ -16,10 +16,14 @@ const STROKE_CHIP_WIDTH = 28;
 const LETTER_CHIP_WIDTH = 36;
 const GROUPED_CHIP_WIDTH = 44;
 
-/** The four contrast-guarded mark inks; status is never drawn with opacity. */
+/**
+ * The four contrast-guarded mark inks; status is never drawn with opacity. Noted and proposed read
+ * the page-mode mark token so the sheet, the chips and the panel share one declaration; the
+ * fallback is the measured light value, for as long as the token is not declared.
+ */
 const INK: Record<MarkStatus, string> = {
-    noted: '#991b1b',
-    proposed: '#991b1b',
+    noted: 'var(--page-mark-ink, #991b1b)',
+    proposed: 'var(--page-mark-ink, #991b1b)',
     accepted: '#08473e',
     rejected: '#534d45',
 };
