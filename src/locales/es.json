@@ -3388,6 +3388,10 @@
             "needSelection": "Selecciona texto primero y luego elige una marca.",
             "shortcut": "{{family}} (Alt+{{key}})"
         },
+        "unanchored": {
+            "label": "Marcas que ya no coinciden con el texto",
+            "hint": "Las palabras bajo estas marcas han cambiado, por eso no se muestran en la página."
+        },
         "edit": {
             "label": "Editar marcas",
             "symbol": "Marca",

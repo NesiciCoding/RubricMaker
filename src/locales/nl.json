@@ -3388,6 +3388,10 @@
             "needSelection": "Selecteer eerst tekst en kies dan een markering.",
             "shortcut": "{{family}} (Alt+{{key}})"
         },
+        "unanchored": {
+            "label": "Markeringen die niet meer bij de tekst passen",
+            "hint": "De woorden onder deze markeringen zijn gewijzigd, daarom worden ze niet op de pagina getoond."
+        },
         "edit": {
             "label": "Markeringen bewerken",
             "symbol": "Markering",

@@ -1,13 +1,14 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import CommentableDocumentView from './CommentableDocumentView';
 import type { DocumentComment, DocumentMark } from '../../types';
+import { hashSnippet } from '../../utils/proofRail';
 
 const fakeEditor = vi.hoisted(() => ({
     state: {
         selection: { from: 3, to: 8, empty: false },
-        doc: { textBetween: () => 'Hello' },
+        doc: { content: { size: 100 }, textBetween: () => 'Hello' },
     },
     commands: {
         setDocumentComments: vi.fn(),
@@ -440,6 +441,60 @@ describe('Mark editing', () => {
 
         fireEvent.click(screen.getByRole('button', { name: 'proofMarks.edit.close' }));
         expect(screen.queryByRole('group', { name: 'proofMarks.edit.label' })).not.toBeInTheDocument();
+    });
+});
+
+describe('Mark anchors', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockDocumentMarks.length = 0;
+        mockRailRows.rows = [];
+    });
+
+    it('draws only the marks whose anchor still matches', async () => {
+        mockDocumentMarks.push(
+            makeMark({ id: 'live', snippetHash: hashSnippet('Hello') }),
+            makeMark({ id: 'stale', anchor: { from: 900, to: 905 } })
+        );
+        render(<CommentableDocumentView content="<p>Hello</p>" attachmentId="att-1" />);
+
+        await waitFor(() =>
+            expect(fakeEditor.commands.setDocumentMarks).toHaveBeenCalledWith([expect.objectContaining({ id: 'live' })])
+        );
+    });
+
+    it('lists a mark whose anchor is out of bounds instead of dropping it silently', async () => {
+        mockDocumentMarks.push(makeMark({ id: 'stale', anchor: { from: 900, to: 905 } }));
+        render(<CommentableDocumentView content="<p>Hello</p>" attachmentId="att-1" />);
+
+        const list = await screen.findByRole('group', { name: 'proofMarks.unanchored.label' });
+        expect(within(list).getByText('proofMarks.sp.label')).toBeInTheDocument();
+    });
+
+    it('lists a mark whose stored snippet no longer matches', async () => {
+        mockDocumentMarks.push(makeMark({ id: 'stale', snippetHash: 'written-against-other-text' }));
+        render(<CommentableDocumentView content="<p>Hello</p>" attachmentId="att-1" />);
+
+        expect(await screen.findByRole('group', { name: 'proofMarks.unanchored.label' })).toBeInTheDocument();
+    });
+
+    it('deletes an unanchored mark through the store', async () => {
+        mockDocumentMarks.push(makeMark({ id: 'stale', anchor: { from: 900, to: 905 } }));
+        render(<CommentableDocumentView content="<p>Hello</p>" attachmentId="att-1" />);
+
+        const list = await screen.findByRole('group', { name: 'proofMarks.unanchored.label' });
+        fireEvent.click(within(list).getByRole('button', { name: /proofMarks.edit.delete/ }));
+        expect(mockDeleteDocumentMark).toHaveBeenCalledWith('stale');
+    });
+
+    it('shows no unanchored list when every mark still matches', async () => {
+        mockDocumentMarks.push(makeMark({ id: 'live', snippetHash: hashSnippet('Hello') }));
+        render(<CommentableDocumentView content="<p>Hello</p>" attachmentId="att-1" />);
+
+        await waitFor(() =>
+            expect(fakeEditor.commands.setDocumentMarks).toHaveBeenCalledWith([expect.objectContaining({ id: 'live' })])
+        );
+        expect(screen.queryByRole('group', { name: 'proofMarks.unanchored.label' })).not.toBeInTheDocument();
     });
 });
 

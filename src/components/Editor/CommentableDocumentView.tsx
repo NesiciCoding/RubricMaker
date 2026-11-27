@@ -10,11 +10,13 @@ import ProofRail from './ProofRail';
 import { useProofRail } from './useProofRail';
 import ProofMarkPalette from './ProofMarkPalette';
 import ProofMarkEditor from './ProofMarkEditor';
+import UnanchoredMarks from './UnanchoredMarks';
 import { useEditorSelection } from './useEditorSelection';
 import { useMarkMutations } from './useMarkMutations';
 import type { DocumentMark } from '../../types';
 import type { ProofMarkId } from '../../data/proofMarks';
 import { draftProofMark } from '../../utils/proofMarkDraft';
+import { markAnchorState } from '../../utils/proofRail';
 import { useAssessment, usePlatform } from '../../context/AppContext';
 
 interface CommentableDocumentViewProps {
@@ -77,10 +79,24 @@ export default function CommentableDocumentView({
         [propMarks, documentMarks, attachmentId]
     );
 
+    // Only the marks whose stored anchor still matches this document are drawn; the rest are
+    // listed instead, because a chip on the wrong words is worse than a mark that says so.
+    const { anchoredMarks, unanchoredMarks } = useMemo(() => {
+        const doc = editor?.state.doc;
+        if (!doc) return { anchoredMarks: marks, unanchoredMarks: NO_MARKS };
+        const anchored: DocumentMark[] = [];
+        const unanchored: DocumentMark[] = [];
+        for (const mark of marks) {
+            if (markAnchorState(doc, mark) === 'anchored') anchored.push(mark);
+            else unanchored.push(mark);
+        }
+        return { anchoredMarks: anchored, unanchoredMarks: unanchored };
+    }, [editor, marks]);
+
     const onCommentClick = useCallback((id: string) => setActiveCommentId(id), []);
     const extraExtensions = useMemo(() => [CommentHighlight.configure({ onCommentClick }), MarkCues], [onCommentClick]);
 
-    const { rows, box, dir } = useProofRail({ editor, pageElement: shell, marks });
+    const { rows, box, dir } = useProofRail({ editor, pageElement: shell, marks: anchoredMarks });
     const activeMarkIds = useMemo(() => rows.find((row) => row.line === activeLine)?.ids ?? NO_IDS, [rows, activeLine]);
     const activeMarks = useMemo(
         () => rows.find((row) => row.line === activeLine)?.marks ?? NO_MARKS,
@@ -102,8 +118,8 @@ export default function CommentableDocumentView({
     }, [editor, activeCommentId]);
 
     useEffect(() => {
-        if (editor) editor.commands.setDocumentMarks([...marks]);
-    }, [editor, marks]);
+        if (editor) editor.commands.setDocumentMarks([...anchoredMarks]);
+    }, [editor, anchoredMarks]);
 
     useEffect(() => {
         if (editor) editor.commands.setActiveDocumentMarks(activeMarkIds);
@@ -176,13 +192,18 @@ export default function CommentableDocumentView({
                 editable={false}
                 // The rail lives in the page's 96 px right padding, so marked documents open on the
                 // A4 sheet. Comment-only documents keep the compact flow they have always had.
-                defaultPageMode={marks.length > 0}
-                allowPageMode={marks.length > 0}
+                defaultPageMode={anchoredMarks.length > 0}
+                allowPageMode={anchoredMarks.length > 0}
                 extraExtensions={extraExtensions}
                 onEditorReady={setEditor}
             />
             {rows.length > 0 && (
                 <ProofRail rows={rows} box={box} dir={dir} activeLine={activeLine} onSelectLine={setActiveLine} />
+            )}
+            {unanchoredMarks.length > 0 && (
+                <div style={{ marginTop: 8 }}>
+                    <UnanchoredMarks marks={unanchoredMarks} onDelete={markMutations.remove} dir={dir} />
+                </div>
             )}
             {activeMarks.length > 0 && (
                 <div style={{ marginTop: 8 }}>

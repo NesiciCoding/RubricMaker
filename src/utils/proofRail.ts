@@ -46,21 +46,32 @@ export function hashSnippet(text: string): string {
     return hash.toString(36);
 }
 
+/** Why a stored anchor can no longer be drawn: it left the document, or the words under it changed. */
+export type MarkAnchorState = 'anchored' | 'out-of-bounds' | 'text-changed';
+
 /**
- * Resolves a stored anchor against the current document. Out-of-bounds and empty anchors are
- * dropped the way `commentDecorationSpecs` drops them; a mark whose `snippetHash` no longer matches
- * the text under it is dropped too, because a mark drawn on the wrong words is worse than no mark.
- * (The snippet itself is not stored, so there is nothing to re-search for. Documents are locked
- * after submission, so a mismatch means the record was written against other content.)
+ * Validates a stored anchor before anything is drawn from it. Out-of-bounds and empty anchors are
+ * refused the way `commentDecorationSpecs` refuses them; a mark whose `snippetHash` no longer
+ * matches the text under it is refused too, because a mark drawn on the wrong words is worse than no
+ * mark. (The snippet itself is not stored, so there is nothing to re-search for. Documents are
+ * locked after submission, so a mismatch means the record was written against other content.)
+ *
+ * The distinction between "not anchored" and "not verified" is kept so the review surface can list
+ * a stale mark with the reason instead of dropping it silently.
  */
-export function resolveMarkRange(doc: PMNode, mark: Pick<DocumentMark, 'anchor' | 'snippetHash'>): TextRange | null {
+export function markAnchorState(doc: PMNode, mark: Pick<DocumentMark, 'anchor' | 'snippetHash'>): MarkAnchorState {
     const { from, to } = mark.anchor;
-    if (from < 0 || to > doc.content.size || from >= to) return null;
+    if (from < 0 || to > doc.content.size || from >= to) return 'out-of-bounds';
     if (mark.snippetHash) {
         const text = doc.textBetween(from, to, ' ', ' ');
-        if (hashSnippet(text) !== mark.snippetHash) return null;
+        if (hashSnippet(text) !== mark.snippetHash) return 'text-changed';
     }
-    return { from, to };
+    return 'anchored';
+}
+
+/** The range to draw a mark on, or null when the anchor no longer matches this document. */
+export function resolveMarkRange(doc: PMNode, mark: Pick<DocumentMark, 'anchor' | 'snippetHash'>): TextRange | null {
+    return markAnchorState(doc, mark) === 'anchored' ? { from: mark.anchor.from, to: mark.anchor.to } : null;
 }
 
 export interface LineBox {

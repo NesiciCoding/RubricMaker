@@ -3388,6 +3388,10 @@
             "needSelection": "Select text first, then choose a mark.",
             "shortcut": "{{family}} (Alt+{{key}})"
         },
+        "unanchored": {
+            "label": "Marks that no longer match the text",
+            "hint": "The words under these marks have changed, so they are not drawn on the page."
+        },
         "edit": {
             "label": "Edit marks",
             "symbol": "Mark",
