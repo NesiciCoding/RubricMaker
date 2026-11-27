@@ -164,9 +164,20 @@ export default function EssayEditor({
     const colorInputRef = useRef<HTMLInputElement>(null);
     const highlightInputRef = useRef<HTMLInputElement>(null);
     const [showInvisibles, setShowInvisibles] = useState(false);
-    const [pageMode, setPageMode] = useState(allowPageMode && defaultPageMode);
+    const requestedPageMode = allowPageMode && defaultPageMode;
+    const [pageMode, setPageMode] = useState(requestedPageMode);
+    const lastRequestedPageMode = useRef(requestedPageMode);
     const lastTableInsertRef = useRef(0);
     const [tocData, setTocData] = useState<TableOfContentData>([]);
+
+    // The prop is followed after mount, not just read at init: marks load asynchronously, and the
+    // page sheet (with the margin rail's padding column) has to appear when they arrive. Only a
+    // change of the requested mode overrides the manual toolbar toggle.
+    useEffect(() => {
+        if (lastRequestedPageMode.current === requestedPageMode) return;
+        lastRequestedPageMode.current = requestedPageMode;
+        setPageMode(requestedPageMode);
+    }, [requestedPageMode]);
 
     const editor = useEditor({
         extensions: [

@@ -3375,6 +3375,12 @@
             "type-style": "Letterstijl",
             "align": "Uitlijning",
             "advisory": "Navragen"
+        },
+        "rail": {
+            "label": "Proefleesmarkeringen",
+            "chipLabel_one": "{{count}} markering op regel {{line}}: {{symbols}}",
+            "chipLabel_other": "{{count}} markeringen op regel {{line}}: {{symbols}}",
+            "spansLines": "loopt over meer dan één regel"
         }
     },
     "pwa": {

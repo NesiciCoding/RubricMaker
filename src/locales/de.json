@@ -3375,6 +3375,12 @@
             "type-style": "Schriftstil",
             "align": "Ausrichtung",
             "advisory": "Rückfrage"
+        },
+        "rail": {
+            "label": "Korrekturzeichen",
+            "chipLabel_one": "{{count}} Korrekturzeichen in Zeile {{line}}: {{symbols}}",
+            "chipLabel_other": "{{count}} Korrekturzeichen in Zeile {{line}}: {{symbols}}",
+            "spansLines": "reicht über mehrere Zeilen"
         }
     },
     "pwa": {

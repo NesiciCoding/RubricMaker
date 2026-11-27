@@ -5,14 +5,22 @@ import { BubbleMenu } from '@tiptap/react/menus';
 import EssayEditor from './EssayEditor';
 import CommentSidebar from './CommentSidebar';
 import { CommentHighlight } from './commentDecorations';
+import { MarkCues } from './markCues';
+import ProofRail from './ProofRail';
+import { useProofRail } from './useProofRail';
+import type { DocumentMark } from '../../types';
 import { useAssessment, usePlatform } from '../../context/AppContext';
 
 interface CommentableDocumentViewProps {
     content: string;
     attachmentId: string;
+    /** Proofreading marks to draw on this document; empty until the persistence layer supplies them. */
+    marks?: readonly DocumentMark[];
 }
 
 const noop = () => {};
+const NO_MARKS: readonly DocumentMark[] = [];
+const NO_IDS: string[] = [];
 
 /**
  * Read-only, paginated document view (essay HTML or Mammoth-converted DOCX HTML) with
@@ -20,14 +28,27 @@ const noop = () => {};
  * (see commentDecorations.ts) — comments never touch the document's own schema/HTML.
  * Only used from AttachmentViewer's grading-side (commentable) views.
  */
-export default function CommentableDocumentView({ content, attachmentId }: CommentableDocumentViewProps) {
+export default function CommentableDocumentView({
+    content,
+    attachmentId,
+    marks: allMarks = NO_MARKS,
+}: CommentableDocumentViewProps) {
     const { t } = useTranslation();
     const { documentComments, addDocumentComment, resolveDocumentComment, deleteDocumentComment } = useAssessment();
     const { getCurrentDatabaseUserId } = usePlatform();
 
     const [editor, setEditor] = useState<Editor | null>(null);
     const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const [shell, setShell] = useState<HTMLDivElement | null>(null);
+    const [activeLine, setActiveLine] = useState<number | null>(null);
+
+    // A callback ref, not `containerRef.current`: the rail hook needs the element itself, and refs
+    // are not a render input, so reading `.current` would leave the first render measuring nothing.
+    const setContainer = useCallback((node: HTMLDivElement | null) => {
+        containerRef.current = node;
+        setShell(node);
+    }, []);
 
     const currentUserId = useMemo(() => getCurrentDatabaseUserId() ?? 'local', [getCurrentDatabaseUserId]);
     const comments = useMemo(
@@ -35,8 +56,20 @@ export default function CommentableDocumentView({ content, attachmentId }: Comme
         [documentComments, attachmentId]
     );
 
+    const marks = useMemo(
+        () => allMarks.filter((mark) => mark.attachmentId === attachmentId),
+        [allMarks, attachmentId]
+    );
+
     const onCommentClick = useCallback((id: string) => setActiveCommentId(id), []);
-    const extraExtensions = useMemo(() => [CommentHighlight.configure({ onCommentClick })], [onCommentClick]);
+    const extraExtensions = useMemo(() => [CommentHighlight.configure({ onCommentClick }), MarkCues], [onCommentClick]);
+
+    const { rows, box, dir } = useProofRail({ editor, pageElement: shell, marks });
+    const activeMarkIds = useMemo(() => rows.find((row) => row.line === activeLine)?.ids ?? NO_IDS, [rows, activeLine]);
+
+    useEffect(() => {
+        setActiveLine(null);
+    }, [attachmentId]);
 
     useEffect(() => {
         if (editor) editor.commands.setDocumentComments(comments);
@@ -45,6 +78,14 @@ export default function CommentableDocumentView({ content, attachmentId }: Comme
     useEffect(() => {
         if (editor) editor.commands.setActiveDocumentComment(activeCommentId);
     }, [editor, activeCommentId]);
+
+    useEffect(() => {
+        if (editor) editor.commands.setDocumentMarks([...marks]);
+    }, [editor, marks]);
+
+    useEffect(() => {
+        if (editor) editor.commands.setActiveDocumentMarks(activeMarkIds);
+    }, [editor, activeMarkIds]);
 
     const scrollToComment = useCallback((id: string) => {
         setActiveCommentId(id);
@@ -64,7 +105,7 @@ export default function CommentableDocumentView({ content, attachmentId }: Comme
     }, [editor, attachmentId, currentUserId, addDocumentComment, t]);
 
     return (
-        <div ref={containerRef}>
+        <div ref={setContainer} style={{ position: 'relative' }}>
             {editor && (
                 <BubbleMenu editor={editor} shouldShow={({ state }) => !state.selection.empty}>
                     <button type="button" className="btn btn-primary btn-sm" onClick={handleAddComment}>
@@ -76,11 +117,16 @@ export default function CommentableDocumentView({ content, attachmentId }: Comme
                 content={content}
                 onChange={noop}
                 editable={false}
-                defaultPageMode
-                allowPageMode={false}
+                // The rail lives in the page's 96 px right padding, so marked documents open on the
+                // A4 sheet. Comment-only documents keep the compact flow they have always had.
+                defaultPageMode={marks.length > 0}
+                allowPageMode={marks.length > 0}
                 extraExtensions={extraExtensions}
                 onEditorReady={setEditor}
             />
+            {rows.length > 0 && (
+                <ProofRail rows={rows} box={box} dir={dir} activeLine={activeLine} onSelectLine={setActiveLine} />
+            )}
             <div style={{ marginTop: 10 }}>
                 <CommentSidebar
                     comments={comments}
