@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { MARK_GLYPHS } from './markGlyphs';
 import {
+    familyForShortcut,
+    familyLabelKey,
     getGlyph,
     getSymbol,
     operationFor,
     PROOF_MARK_FAMILIES,
+    PROOF_MARK_FAMILY_SHORTCUTS,
     PROOF_MARK_IDS,
     PROOF_MARKS,
+    shortcutFor,
     symbolsByFamily,
     type ProofMarkFamily,
 } from './proofMarks';
@@ -29,6 +33,19 @@ const OPERATIONS = [
 ];
 
 const ENTRIES = PROOF_MARK_IDS.map((id) => PROOF_MARKS[id]);
+
+const PALETTE_KEYS = [
+    'label',
+    'codeField',
+    'codePlaceholder',
+    'codeHint',
+    'codeResolved',
+    'codeNoMatch',
+    'codeAmbiguous',
+    'codeApplied',
+    'needSelection',
+    'shortcut',
+];
 
 function resolve(bundle: Record<string, unknown>, key: string): unknown {
     return key
@@ -91,6 +108,48 @@ describe('proofMarks registry', () => {
             for (const family of PROOF_MARK_FAMILIES) {
                 expect(typeof resolve(bundle, `proofMarks.families.${family}`), `${lang}: ${family}`).toBe('string');
             }
+        }
+    });
+});
+
+describe('palette shortcuts', () => {
+    it('gives every family its own digit, in palette order', () => {
+        expect(PROOF_MARK_FAMILIES.map((family) => shortcutFor(family))).toEqual(['1', '2', '3', '4', '5', '6']);
+        expect(Object.keys(PROOF_MARK_FAMILY_SHORTCUTS)).toHaveLength(PROOF_MARK_FAMILIES.length);
+        expect(new Set(PROOF_MARK_FAMILIES.map((family) => shortcutFor(family))).size).toBe(PROOF_MARK_FAMILIES.length);
+    });
+
+    it('resolves a digit back to its family and refuses a digit nobody claimed', () => {
+        for (const family of PROOF_MARK_FAMILIES) {
+            expect(familyForShortcut(shortcutFor(family)), family).toBe(family);
+        }
+        expect(familyForShortcut('9')).toBeNull();
+        expect(familyForShortcut('')).toBeNull();
+    });
+
+    it('names the locale key of every family', () => {
+        for (const family of PROOF_MARK_FAMILIES) {
+            expect(familyLabelKey(family)).toBe(`proofMarks.families.${family}`);
+        }
+    });
+});
+
+describe('palette locales', () => {
+    it('names the palette in all five locales', () => {
+        for (const [lang, bundle] of Object.entries(LOCALES)) {
+            for (const key of PALETTE_KEYS) {
+                const value = resolve(bundle, `proofMarks.palette.${key}`);
+                expect(typeof value, `${lang}: proofMarks.palette.${key}`).toBe('string');
+                expect((value as string).trim().length, `${lang}: proofMarks.palette.${key}`).toBeGreaterThan(0);
+            }
+        }
+    });
+
+    it('keeps the code hint and the shortcut placeholders, so the UI can fill them', () => {
+        for (const [lang, bundle] of Object.entries(LOCALES)) {
+            expect(resolve(bundle, 'proofMarks.palette.codeResolved'), lang).toContain('{{symbol}}');
+            expect(resolve(bundle, 'proofMarks.palette.shortcut'), lang).toContain('{{family}}');
+            expect(resolve(bundle, 'proofMarks.palette.shortcut'), lang).toContain('{{key}}');
         }
     });
 });

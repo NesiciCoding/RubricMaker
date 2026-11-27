@@ -3376,6 +3376,18 @@
             "align": "Uitlijning",
             "advisory": "Navragen"
         },
+        "palette": {
+            "label": "Correctiemarkeringen",
+            "codeField": "Markeercode",
+            "codePlaceholder": "Code, bijv. sp",
+            "codeHint": "Typ een code en druk op Enter",
+            "codeResolved": "Enter past toe: {{symbol}}",
+            "codeNoMatch": "Geen markering voor “{{code}}”",
+            "codeAmbiguous": "Meerdere markeringen voor “{{code}}”: {{symbols}}",
+            "codeApplied": "Gemarkeerd: {{symbol}}",
+            "needSelection": "Selecteer eerst tekst en kies dan een markering.",
+            "shortcut": "{{family}} (Alt+{{key}})"
+        },
         "rail": {
             "label": "Proefleesmarkeringen",
             "chipLabel_one": "{{count}} markering op regel {{line}}: {{symbols}}",

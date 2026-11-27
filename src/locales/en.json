@@ -3376,6 +3376,18 @@
             "align": "Alignment",
             "advisory": "Query"
         },
+        "palette": {
+            "label": "Proofreading marks",
+            "codeField": "Mark code",
+            "codePlaceholder": "Code, e.g. sp",
+            "codeHint": "Type a code and press Enter",
+            "codeResolved": "Enter applies: {{symbol}}",
+            "codeNoMatch": "No mark matches “{{code}}”",
+            "codeAmbiguous": "Several marks match “{{code}}”: {{symbols}}",
+            "codeApplied": "Marked: {{symbol}}",
+            "needSelection": "Select text first, then choose a mark.",
+            "shortcut": "{{family}} (Alt+{{key}})"
+        },
         "rail": {
             "label": "Proofreading marks",
             "chipLabel_one": "{{count}} mark on line {{line}}: {{symbols}}",

@@ -135,6 +135,31 @@ export const PROOF_MARKS: Readonly<Record<ProofMarkId, ProofMark>> = {
 
 export const PROOF_MARK_IDS = Object.keys(PROOF_MARKS) as ProofMarkId[];
 
+/**
+ * Alt + digit reaches a family in the palette, in palette order. The digit depends on the order of
+ * `PROOF_MARK_FAMILIES`, so a new family takes the next free digit rather than renumbering.
+ */
+export const PROOF_MARK_FAMILY_SHORTCUTS: Readonly<Record<ProofMarkFamily, string>> = {
+    delete: '1',
+    insert: '2',
+    replace: '3',
+    'type-style': '4',
+    align: '5',
+    advisory: '6',
+};
+
+export function shortcutFor(family: ProofMarkFamily): string {
+    return PROOF_MARK_FAMILY_SHORTCUTS[family];
+}
+
+export function familyForShortcut(key: string): ProofMarkFamily | null {
+    return PROOF_MARK_FAMILIES.find((family) => PROOF_MARK_FAMILY_SHORTCUTS[family] === key) ?? null;
+}
+
+export function familyLabelKey(family: ProofMarkFamily): `proofMarks.families.${ProofMarkFamily}` {
+    return `proofMarks.families.${family}`;
+}
+
 export interface ProofMarkFamilyGroup {
     family: ProofMarkFamily;
     symbols: ProofMark[];

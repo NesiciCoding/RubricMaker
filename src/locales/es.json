@@ -3376,6 +3376,18 @@
             "align": "Alineación",
             "advisory": "Duda"
         },
+        "palette": {
+            "label": "Marcas de corrección",
+            "codeField": "Código de marca",
+            "codePlaceholder": "Código, p. ej. sp",
+            "codeHint": "Escribe un código y pulsa Intro",
+            "codeResolved": "Intro aplica: {{symbol}}",
+            "codeNoMatch": "Ninguna marca coincide con “{{code}}”",
+            "codeAmbiguous": "Varias marcas coinciden con “{{code}}”: {{symbols}}",
+            "codeApplied": "Marcado: {{symbol}}",
+            "needSelection": "Selecciona texto primero y luego elige una marca.",
+            "shortcut": "{{family}} (Alt+{{key}})"
+        },
         "rail": {
             "label": "Marcas de corrección",
             "chipLabel_one": "{{count}} marca en la línea {{line}}: {{symbols}}",
