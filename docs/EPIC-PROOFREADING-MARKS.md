@@ -2,7 +2,7 @@
 
 **Status:** Phase 0 complete (proof of concept + measurement gates green) · ready for implementation planning
 **Owner:** unassigned · **Epic size:** ~45–60 dev-days across five milestones
-**Last updated:** 26 November 2026
+**Last updated:** 27 November 2026 (PM-16 added as unplanned scope)
 
 ---
 
@@ -175,6 +175,7 @@ Sizes: **S** ≤ 1 day · **M** 2–3 · **L** 4–6 · **XL** 7+.
 | PM-13 | Student view, legend, gloss, analytics         | M5        | L    | PM-05, PM-11 |
 | PM-14 | Export marks to DOCX/PDF                       | M5        | M    | PM-04        |
 | PM-15 | Cross-engine + a11y + keyboard gate            | M5        | M    | PM-04        |
+| PM-16 | Corrected copy (unplanned, not in the plan)    | M4        | M    | PM-11, PM-12 |
 
 ---
 
@@ -560,17 +561,43 @@ Dropped on purpose, to be recorded in the registry: hair space, letterspacing an
 
 ---
 
+### PM-16 · Corrected copy: keep the teacher's edit without touching the submission (unplanned)
+
+**Milestone** M4 · **Size** M · **Depends on** PM-11, PM-12 · **Added** 27 November 2026, after M4 had started · **Branch** `feat/grading-corrected-copy` · **PR** #1375
+
+**Why this is here.** It was not one of the original fifteen issues. It was built alongside the apply work, before the M4 question ("do they want the app to _apply_ the correction, or just explain it?") was answered, and it is recorded here so the epic accounts for all the scope it shipped. Its branch is deliberately not named `pm-13` — that number belongs to the student view.
+
+**Goal.** Once a mark has been accepted, a teacher's edited version of the essay has to live somewhere that is not the student's submission. Accepting one mark, or every formatting mark, in the commentable document view writes the reviewed HTML back to the attachment as `correctedHtml` / `correctedAt`; the student's `dataUrl` is never edited.
+
+**What landed.**
+
+1. The correction lives in the attachment's existing `data` jsonb — no migration, no new column and no file upload.
+2. `attachmentMeta` delta routing plus `AttachmentSync.updateAttachmentMeta` update only `data` for a known id; `upsertAttachment` writes `storage_path` only when a path is supplied, so a correction cannot null the file pointer.
+3. Comment and mark anchors are remapped through every doc-changing transaction (`src/utils/documentAnchorMapping.ts`), persisted as one `REMAP_DOCUMENT_ANCHORS` dispatch; a mark whose text is deleted becomes unanchored instead of pointing at the wrong words.
+4. `AttachmentViewer` renders the sanitized corrected copy behind a "Corrected copy" badge, with an original/corrected toggle and a confirmed revert.
+5. The writer is wired only for a student's HTML essay on a commentable grading surface — rubric material, DOCX and student-portal viewers keep no writer.
+
+**Files.** `src/utils/documentAnchorMapping.ts`, `src/services/database/` (delta routing, `AttachmentSync`, the adapter's metadata update), `src/components/Editor/CommentableDocumentView.tsx`, `src/components/AttachmentViewer.tsx`.
+
+**Done when.** A teacher accepts a mark, reloads, and still has the corrected copy while the submission is byte-identical; the correction syncs as metadata without an upload; a revert restores the original view.
+
+**Risks and open questions.** The M4 gate applies to it directly: nobody has asked teachers whether they want a stored second copy at all. The corrected copy is not exported by PM-14 and is invisible to students by design, and both are decisions rather than omissions — settle them with the trial, not by accident. It has no retention policy or audit trail of its own, because it rides inside `attachments.data`.
+
+---
+
 ## 6. Milestones
 
-| Milestone | Contents     | Estimate    | Outcome                                                             |
-| --------- | ------------ | ----------- | ------------------------------------------------------------------- |
-| **M1**    | PM-01        | ~1 day      | Codes on comments in teachers' hands; appetite signal               |
-| **M2**    | PM-02…PM-07  | ~18–22 days | Read-only rail with grouped chips, accessible, persisted, printable |
-| **M3**    | PM-08…PM-10  | ~7–9 days   | Fast placement, editable marks, density policy                      |
-| **M4**    | PM-11, PM-12 | ~12–16 days | Marks that can correct the essay                                    |
-| **M5**    | PM-13…PM-15  | ~9–12 days  | Student gloss/analytics, export, cross-engine + a11y                |
+| Milestone | Contents            | Estimate    | Outcome                                                                |
+| --------- | ------------------- | ----------- | ---------------------------------------------------------------------- |
+| **M1**    | PM-01               | ~1 day      | Codes on comments in teachers' hands; appetite signal                  |
+| **M2**    | PM-02…PM-07         | ~18–22 days | Read-only rail with grouped chips, accessible, persisted, printable    |
+| **M3**    | PM-08…PM-10         | ~7–9 days   | Fast placement, editable marks, density policy                         |
+| **M4**    | PM-11, PM-12, PM-16 | ~12–16 days | Marks that can correct the essay; teacher's corrected copy (unplanned) |
+| **M5**    | PM-13…PM-15         | ~9–12 days  | Student gloss/analytics, export, cross-engine + a11y                   |
 
 M1 and M2 can run in parallel after PM-02. **M4 should not start before a teacher trial of M2** — the value question ("do they want the app to _apply_ the correction, or just explain it?") is not settled by the research.
+
+PM-16 was added to M4 after that milestone had already started, so the same trial now has to answer a second question with it: whether the corrected copy is kept at all.
 
 ---
 
