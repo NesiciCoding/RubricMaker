@@ -10,7 +10,7 @@ import ProofRail from './ProofRail';
 import { useProofRail } from './useProofRail';
 import ProofMarkPalette from './ProofMarkPalette';
 import ProofMarkEditor from './ProofMarkEditor';
-import { useDocumentSelection } from './useDocumentSelection';
+import { useEditorSelection } from './useEditorSelection';
 import { useMarkMutations } from './useMarkMutations';
 import type { DocumentMark } from '../../types';
 import type { ProofMarkId } from '../../data/proofMarks';
@@ -87,7 +87,7 @@ export default function CommentableDocumentView({
         [rows, activeLine]
     );
     const markMutations = useMarkMutations();
-    const moveTarget = useDocumentSelection(editor);
+    const moveTarget = useEditorSelection(editor);
 
     useEffect(() => {
         setActiveLine(null);

@@ -15,6 +15,8 @@ const fakeEditor = vi.hoisted(() => ({
         setDocumentMarks: vi.fn(),
         setActiveDocumentMarks: vi.fn(),
     },
+    on: vi.fn(),
+    off: vi.fn(),
 }));
 
 const mockCommentHighlightConfig = vi.hoisted(() => ({
