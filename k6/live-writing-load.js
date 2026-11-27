@@ -17,7 +17,6 @@
 //   SUPABASE_URL           target (default http://127.0.0.1:54321)
 //   SUPABASE_ANON_KEY      anon / publishable key           (required)
 //   SUPABASE_SERVICE_KEY   service_role / secret key        (required, seeding)
-//   PROFILE                live | smoke                      (default live)
 //   VUS                    concurrent students (default STUDENTS)
 //   STUDENTS               roster rows to seed             (default 100)
 //   DURATION               hold time                        (default 60s)
@@ -32,7 +31,6 @@ const SUPABASE_URL = (__ENV.SUPABASE_URL || 'http://127.0.0.1:54321').replace(/\
 const ANON_KEY = __ENV.SUPABASE_ANON_KEY || '';
 const SERVICE_KEY = __ENV.SUPABASE_SERVICE_KEY || '';
 
-const PROFILE = (__ENV.PROFILE || 'live').toLowerCase();
 const STUDENTS = Math.max(3, Number(__ENV.STUDENTS || 100));
 const SAVES = Math.max(1, Number(__ENV.SAVES || 30));
 const SAVE_INTERVAL_MS = Math.max(200, Number(__ENV.SAVE_INTERVAL_MS || 1200));
