@@ -136,6 +136,36 @@ describe('convertQuestionType', () => {
         expect(converted.linkedGrammarItemId).toBeUndefined();
     });
 
+    it('keeps a legacy single grammar link the new type still supports', () => {
+        // Saved before the chip picker existed, so the tag only lives on the legacy field; the
+        // outline converts stored questions as they are, without the editor's migration step.
+        const q = question({ type: 'cloze', linkedGrammarItemId: 'gr-be-present-affirmative' });
+        const { question: converted } = convertQuestionType(q, 'matching');
+
+        expect(converted.linkedGrammarItemIds).toEqual(['gr-be-present-affirmative']);
+        expect(converted.linkedGrammarItemId).toBe('gr-be-present-affirmative');
+        expect(converted.frameworkDescriptors?.filter((d) => d.framework === 'grammar')).toHaveLength(1);
+    });
+
+    it('keeps every legacy multi grammar link, not just the first', () => {
+        const q = question({
+            type: 'cloze',
+            linkedGrammarItemIds: ['gr-be-present-affirmative', 'gr-be-past'],
+        });
+        const { question: converted } = convertQuestionType(q, 'hot-text');
+
+        expect(converted.linkedGrammarItemIds).toEqual(['gr-be-present-affirmative', 'gr-be-past']);
+        expect(converted.linkedGrammarItemId).toBe('gr-be-present-affirmative');
+    });
+
+    it('still clears a legacy grammar link on a type that cannot drill it', () => {
+        const q = question({ type: 'cloze', linkedGrammarItemId: 'gr-be-present-affirmative' });
+        const { question: converted } = convertQuestionType(q, 'open');
+
+        expect(converted.linkedGrammarItemIds).toBeUndefined();
+        expect(converted.linkedGrammarItemId).toBeUndefined();
+    });
+
     it('keeps grammar chips where they still apply', () => {
         const q = question({ type: 'cloze', frameworkDescriptors: [grammarChip, bloomChip] });
         const { question: converted } = convertQuestionType(q, 'matching');

@@ -1,5 +1,6 @@
-import type { TestQuestion, TestQuestionType } from '../types';
-import { withGrammarIds } from './grammarLinks';
+import type { LinkedFrameworkDescriptor, TestQuestion, TestQuestionType } from '../types';
+import { grammarItemToFrameworkDescriptor } from '../data/grammarStandards';
+import { getQuestionGrammarIds, withGrammarIds } from './grammarLinks';
 import {
     DEFAULT_MAX_RECORDING_SECONDS,
     defaultCategorizeItems,
@@ -100,16 +101,29 @@ export function convertQuestionType(question: TestQuestion, type: TestQuestionTy
     const next: TestQuestion = { ...hydrate(question, type), type };
     for (const field of leaving) delete next[field];
 
-    const descriptors = next.frameworkDescriptors ?? [];
+    // Chips found only through the legacy id fields have to become descriptors first: `withGrammarIds`
+    // derives the output ids from whatever it is handed, so an unmigrated legacy tag would be dropped
+    // even when the new type supports grammar links.
+    const descriptors = withLegacyGrammarDescriptors(question);
     const keptDescriptors = GRAMMAR_LINK_TYPES.includes(type)
         ? descriptors
         : descriptors.filter((descriptor) => descriptor.framework !== 'grammar');
-    const hasLinks =
-        descriptors.length > 0 ||
-        (question.linkedGrammarItemIds?.length ?? 0) > 0 ||
-        question.linkedGrammarItemId !== undefined;
 
-    return { question: hasLinks ? withGrammarIds(next, keptDescriptors) : next, dropped };
+    return { question: descriptors.length > 0 ? withGrammarIds(next, keptDescriptors) : next, dropped };
+}
+
+/** The question's framework chips, with any grammar id that only exists on the legacy fields added back. */
+function withLegacyGrammarDescriptors(question: TestQuestion): LinkedFrameworkDescriptor[] {
+    const descriptors = question.frameworkDescriptors ?? [];
+    const known = new Set(
+        descriptors.filter((descriptor) => descriptor.framework === 'grammar').map((d) => d.descriptorId)
+    );
+    const missing = getQuestionGrammarIds(question).filter((id) => !known.has(id));
+    const restored = missing.flatMap((id) => {
+        const descriptor = grammarItemToFrameworkDescriptor(id);
+        return descriptor ? [descriptor] : [];
+    });
+    return restored.length > 0 ? [...descriptors, ...restored] : descriptors;
 }
 
 /** Adds the answer shape a type needs to open on, without touching content the question already has. */
