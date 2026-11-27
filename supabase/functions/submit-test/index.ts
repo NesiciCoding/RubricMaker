@@ -359,12 +359,21 @@ serve(async (req) => {
     // `data` below is rebuilt field by field, so anything the teacher authored on this
     // assignment's previous attempt — review flags, a class-wide adjustment — would be lost on a
     // retake unless it is carried across explicitly (see _shared/teacherAuthoredTestFields.ts).
-    const { data: priorAttemptRows } = await admin
+    // Ordered by `attempt_number` first: `submitted_at` comes from the client, so it need not grow
+    // between attempts, and ordering by it alone could copy a clear teacher decision back from an
+    // older attempt. This matches `pickLatestAttempt`.
+    const { data: priorAttemptRows, error: priorAttemptErr } = await admin
         .from('student_tests')
         .select('data')
         .eq('assignment_id', assignmentId)
+        .order('attempt_number', { ascending: false })
         .order('submitted_at', { ascending: false })
         .limit(1);
+    // A failed read must not look like "no prior attempt": the insert below would then store this
+    // retake without the review flags and the class-wide adjustment set on the previous one.
+    if (priorAttemptErr) {
+        return json({ error: 'Could not read the previous attempt. Please try again.' }, 503);
+    }
     const priorAttemptData = (priorAttemptRows?.[0]?.data ?? null) as Record<string, unknown> | null;
 
     for (let retry = 0; retry < maxAttempts; retry++) {
