@@ -3,8 +3,9 @@ import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import { TextStyle } from '@tiptap/extension-text-style';
+import { Color } from '@tiptap/extension-color';
 import type { DocumentMark } from '../types';
-import { TextTransform } from '../components/Editor/tiptapExtensions';
+import { getTipTapExtensions, TextTransform } from '../components/Editor/tiptapExtensions';
 import { hashSnippet } from './proofRail';
 import {
     applyFormattingMark,
@@ -22,10 +23,17 @@ function makeEditor(content = '<p>Hello world again</p>', { underline = true } =
             StarterKit.configure({ link: false, underline: false, undoRedo: {} }),
             ...(underline ? [Underline] : []),
             TextStyle,
+            Color,
             TextTransform,
         ],
         content,
     });
+    editors.push(editor);
+    return editor;
+}
+
+function makeAppEditor(content: string): Editor {
+    const editor = new Editor({ extensions: getTipTapExtensions(), content });
     editors.push(editor);
     return editor;
 }
@@ -109,6 +117,31 @@ describe('applyFormattingMark', () => {
 
         applyFormattingMark(editor, mark({ id: 'm2', symbolId: 'lc' }));
         expect(editor.getHTML()).toContain('text-transform: lowercase');
+    });
+
+    it('keeps colour, font family and size when a case mark lands across a styled range', () => {
+        const editor = makeAppEditor(
+            '<p>Hello <span style="color: #ff0000; font-family: Georgia; font-size: 18px">world</span> again</p>'
+        );
+
+        const whole = mark({
+            symbolId: 'caps',
+            anchor: { from: 1, to: 18 },
+            snippetHash: hashSnippet('Hello world again'),
+        });
+        expect(applyFormattingMark(editor, whole).ok).toBe(true);
+
+        const spans = Array.from(editor.view.dom.querySelectorAll('span'));
+        const styled = spans.find((span) => span.textContent === 'world');
+        expect(styled?.style.color).toBe('rgb(255, 0, 0)');
+        expect(styled?.style.fontFamily).toBe('Georgia');
+        expect(styled?.style.fontSize).toBe('18px');
+        expect(styled?.style.textTransform).toBe('uppercase');
+
+        // The part that carried no styling still gets the transform rather than a bare span.
+        const plain = spans.find((span) => span.textContent === 'Hello ');
+        expect(plain?.style.textTransform).toBe('uppercase');
+        expect(editor.state.doc.textBetween(7, 12)).toBe('world');
     });
 
     it('reads a text-transform back from stored HTML', () => {

@@ -62,6 +62,8 @@ export function applyFormattingMark(editor: Editor, mark: DocumentMark): Formatt
     const { from, to } = mark.anchor;
     const previous = editor.state.selection;
     const chain = editor.chain().setTextSelection({ from, to });
+    // `setMark` merges the attributes each text node already carries, so a case mark keeps its
+    // colour, font family and size instead of replacing the whole textStyle.
     const ran =
         target.kind === 'mark'
             ? chain.setMark(target.name)
