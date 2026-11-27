@@ -50,9 +50,14 @@ export interface ProofMarkEditorProps {
     onEdit: (mark: DocumentMark, input: MarkEditInput) => void;
     onMove: (mark: DocumentMark) => void;
     onDelete: (mark: DocumentMark) => void;
-    onAccept: (mark: DocumentMark) => void;
+    /**
+     * Applies the mark to the document. Omitted when the surface cannot save the changed HTML —
+     * an accept button that survives only until reload would claim a save that never happened.
+     */
+    onAccept?: (mark: DocumentMark) => void;
     onReject: (mark: DocumentMark) => void;
-    onAcceptAllFormatting: () => void;
+    /** The one batch action; omitted for the same reason as `onAccept`. */
+    onAcceptAllFormatting?: () => void;
     /** Formatting marks on this page; 0 disables the one batch action. */
     formattingMarkCount: number;
     onUndo: () => void;
@@ -180,15 +185,17 @@ function MarkRow({ mark, selection, onEdit, onMove, onDelete, onAccept, onReject
                     <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.02em' }}>
                         {t(`proofMarks.apply.status.${mark.status}`)}
                     </span>
-                    <button
-                        type="button"
-                        onClick={() => onAccept(mark)}
-                        disabled={mark.status === 'accepted'}
-                        aria-label={`${t('proofMarks.apply.accept')}: ${label}`}
-                        style={BUTTON}
-                    >
-                        {t('proofMarks.apply.accept')}
-                    </button>
+                    {onAccept && (
+                        <button
+                            type="button"
+                            onClick={() => onAccept(mark)}
+                            disabled={mark.status === 'accepted'}
+                            aria-label={`${t('proofMarks.apply.accept')}: ${label}`}
+                            style={BUTTON}
+                        >
+                            {t('proofMarks.apply.accept')}
+                        </button>
+                    )}
                     <button
                         type="button"
                         onClick={() => onReject(mark)}
@@ -256,15 +263,17 @@ export default function ProofMarkEditor({
                 </div>
             </div>
 
-            <button
-                type="button"
-                onClick={onAcceptAllFormatting}
-                disabled={formattingMarkCount === 0}
-                title={formattingMarkCount === 0 ? t('proofMarks.apply.noFormatting') : undefined}
-                style={BUTTON}
-            >
-                {t('proofMarks.apply.acceptAll')}
-            </button>
+            {onAcceptAllFormatting && (
+                <button
+                    type="button"
+                    onClick={onAcceptAllFormatting}
+                    disabled={formattingMarkCount === 0}
+                    title={formattingMarkCount === 0 ? t('proofMarks.apply.noFormatting') : undefined}
+                    style={BUTTON}
+                >
+                    {t('proofMarks.apply.acceptAll')}
+                </button>
+            )}
 
             {marks.map((mark) => (
                 <MarkRow

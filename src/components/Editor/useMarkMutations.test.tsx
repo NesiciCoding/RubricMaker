@@ -165,8 +165,12 @@ describe('useMarkMutations', () => {
         const formatting = mark({ symbolId: 'ital', anchor: { from: 7, to: 12 }, snippetHash: hashSnippet('world') });
         const { result } = renderHook(() => useMarkMutations());
 
-        act(() => result.current.accept(editor, formatting));
+        let applied!: boolean;
+        act(() => {
+            applied = result.current.accept(editor, formatting);
+        });
 
+        expect(applied).toBe(true);
         expect(editor.getHTML()).toContain('<em>world</em>');
         expect(mocks.setDocumentMarkStatus).toHaveBeenCalledWith('m1', 'accepted');
         expect(mocks.showToast).toHaveBeenCalledWith('proofMarks.apply.accepted', 'success');
@@ -178,8 +182,12 @@ describe('useMarkMutations', () => {
         const stale = mark({ symbolId: 'bf', anchor: { from: 7, to: 12 }, snippetHash: hashSnippet('gone') });
         const { result } = renderHook(() => useMarkMutations());
 
-        act(() => result.current.accept(editor, stale));
+        let applied!: boolean;
+        act(() => {
+            applied = result.current.accept(editor, stale);
+        });
 
+        expect(applied).toBe(false);
         expect(editor.getHTML()).toBe(original);
         expect(mocks.setDocumentMarkStatus).not.toHaveBeenCalled();
         expect(mocks.showToast).toHaveBeenCalledWith('proofMarks.apply.refused.stale-anchor', 'warning');
@@ -190,6 +198,7 @@ describe('useMarkMutations', () => {
 
         act(() => result.current.accept(null, mark({ symbolId: 'ital' })));
 
+        expect(result.current.accept(null, mark({ symbolId: 'ital' }))).toBe(false);
         expect(mocks.setDocumentMarkStatus).not.toHaveBeenCalled();
         expect(mocks.showToast).not.toHaveBeenCalled();
     });
@@ -226,8 +235,12 @@ describe('useMarkMutations', () => {
         });
         const { result } = renderHook(() => useMarkMutations());
 
-        act(() => result.current.acceptAllFormatting(editor, [italic, bold]));
+        let applied!: number;
+        act(() => {
+            applied = result.current.acceptAllFormatting(editor, [italic, bold]);
+        });
 
+        expect(applied).toBe(2);
         expect(editor.getHTML()).toContain('<em>world</em>');
         expect(editor.getHTML()).toContain('<strong>again</strong>');
         expect(mocks.setDocumentMarkStatus).toHaveBeenCalledWith('m1', 'accepted');
@@ -241,8 +254,12 @@ describe('useMarkMutations', () => {
         const stale = mark({ id: 'm2', symbolId: 'bf', anchor: { from: 7, to: 12 }, snippetHash: hashSnippet('gone') });
         const { result } = renderHook(() => useMarkMutations());
 
-        act(() => result.current.acceptAllFormatting(editor, [italic, stale]));
+        let applied!: number;
+        act(() => {
+            applied = result.current.acceptAllFormatting(editor, [italic, stale]);
+        });
 
+        expect(applied).toBe(1);
         expect(mocks.setDocumentMarkStatus).toHaveBeenCalledTimes(1);
         expect(mocks.showToast).toHaveBeenCalledWith('proofMarks.apply.acceptedAll', 'success');
         expect(mocks.showToast).toHaveBeenCalledWith('proofMarks.apply.refused.stale-anchor', 'warning');
@@ -252,8 +269,12 @@ describe('useMarkMutations', () => {
         const editor = makeEditor();
         const { result } = renderHook(() => useMarkMutations());
 
-        act(() => result.current.acceptAllFormatting(editor, [mark({ symbolId: 'sp' })]));
+        let applied!: number;
+        act(() => {
+            applied = result.current.acceptAllFormatting(editor, [mark({ symbolId: 'sp' })]);
+        });
 
+        expect(applied).toBe(0);
         expect(mocks.setDocumentMarkStatus).not.toHaveBeenCalled();
         expect(mocks.showToast).toHaveBeenCalledWith('proofMarks.apply.noneApplied', 'warning');
     });

@@ -31,6 +31,13 @@ interface CommentableDocumentViewProps {
      * offered rather than offering a control that silently does nothing.
      */
     onCreateMark?: (mark: Omit<DocumentMark, 'id' | 'createdAt'>) => void;
+    /**
+     * Writes the corrected document HTML back through whatever owns the document. This view is
+     * read-only and owns nothing, so applying a mark here changes only this session's editor: the
+     * accept controls appear only when a caller can persist the result, rather than accepting a
+     * correction a reload throws away.
+     */
+    onApplyContent?: (html: string) => void;
 }
 
 const noop = () => {};
@@ -48,6 +55,7 @@ export default function CommentableDocumentView({
     attachmentId,
     marks: propMarks,
     onCreateMark,
+    onApplyContent,
 }: CommentableDocumentViewProps) {
     const { t } = useTranslation();
     const { documentComments, documentMarks, addDocumentComment, resolveDocumentComment, deleteDocumentComment } =
@@ -158,14 +166,17 @@ export default function CommentableDocumentView({
     );
 
     const handleAcceptMark = useCallback(
-        (mark: DocumentMark) => markMutations.accept(editor, mark),
-        [editor, markMutations]
+        (mark: DocumentMark) => {
+            if (!editor || !onApplyContent) return;
+            if (markMutations.accept(editor, mark)) onApplyContent(editor.getHTML());
+        },
+        [editor, markMutations, onApplyContent]
     );
 
-    const handleAcceptAllFormatting = useCallback(
-        () => markMutations.acceptAllFormatting(editor, formattingMarks),
-        [editor, formattingMarks, markMutations]
-    );
+    const handleAcceptAllFormatting = useCallback(() => {
+        if (!editor || !onApplyContent) return;
+        if (markMutations.acceptAllFormatting(editor, formattingMarks) > 0) onApplyContent(editor.getHTML());
+    }, [editor, formattingMarks, markMutations, onApplyContent]);
 
     const handlePlaceMark = useCallback(
         (symbolId: ProofMarkId) => {
@@ -232,9 +243,9 @@ export default function CommentableDocumentView({
                         onEdit={markMutations.update}
                         onMove={handleMoveMark}
                         onDelete={markMutations.remove}
-                        onAccept={handleAcceptMark}
+                        onAccept={onApplyContent ? handleAcceptMark : undefined}
                         onReject={markMutations.reject}
-                        onAcceptAllFormatting={handleAcceptAllFormatting}
+                        onAcceptAllFormatting={onApplyContent ? handleAcceptAllFormatting : undefined}
                         formattingMarkCount={formattingMarks.length}
                         onUndo={markMutations.undo}
                         onDismiss={() => setActiveLine(null)}

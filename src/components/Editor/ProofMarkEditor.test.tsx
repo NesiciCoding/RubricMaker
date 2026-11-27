@@ -193,6 +193,19 @@ describe('ProofMarkEditor apply', () => {
         expect(screen.getByRole('button', { name: /proofMarks\.apply\.reject:/ })).toBeEnabled();
     });
 
+    it('hides the accept controls when the surface cannot save the document', () => {
+        renderEditor({
+            marks: [mark({ symbolId: 'ital' })],
+            onAccept: undefined,
+            onAcceptAllFormatting: undefined,
+        });
+
+        expect(screen.queryByRole('button', { name: /proofMarks\.apply\.accept:/ })).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'proofMarks.apply.acceptAll' })).not.toBeInTheDocument();
+        expect(screen.getByText('proofMarks.apply.status.noted')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /proofMarks\.apply\.reject:/ })).toBeInTheDocument();
+    });
+
     it('disables the one batch action when the page has no formatting marks', () => {
         const props = renderEditor({ formattingMarkCount: 0 });
         const all = screen.getByRole('button', { name: 'proofMarks.apply.acceptAll' });

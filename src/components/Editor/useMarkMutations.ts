@@ -20,11 +20,17 @@ export interface MarkMutations {
     move: (mark: DocumentMark, selection: TextRange | null, text: string) => void;
     /** Deletes immediately and offers the undo in a toast — no confirmation dialog. */
     remove: (mark: DocumentMark) => void;
-    /** Applies a formatting mark to the document as one transaction and records the decision. */
-    accept: (editor: Editor | null, mark: DocumentMark) => void;
+    /**
+     * Applies a formatting mark to the document as one transaction and records the decision. True
+     * when the document changed, so the caller knows there is new HTML to save.
+     */
+    accept: (editor: Editor | null, mark: DocumentMark) => boolean;
     reject: (mark: DocumentMark) => void;
-    /** The only batch action: every formatting mark on the page, one transaction each. */
-    acceptAllFormatting: (editor: Editor | null, marks: readonly DocumentMark[]) => void;
+    /**
+     * The only batch action: every formatting mark on the page, one transaction each. Returns how
+     * many marks it applied, so the caller only saves a document that actually changed.
+     */
+    acceptAllFormatting: (editor: Editor | null, marks: readonly DocumentMark[]) => number;
     undo: () => void;
     canUndo: boolean;
 }
@@ -95,16 +101,17 @@ export function useMarkMutations(): MarkMutations {
      * only restore the status and would leave the text formatted — the mixed undo model to avoid.
      */
     const accept = useCallback(
-        (editor: Editor | null, mark: DocumentMark) => {
-            if (!editor) return;
+        (editor: Editor | null, mark: DocumentMark): boolean => {
+            if (!editor) return false;
             const result = applyFormattingMark(editor, mark);
             if (!result.ok) {
                 showToast(t(FORMATTING_REFUSAL_KEYS[result.reason]), 'warning');
-                return;
+                return false;
             }
             const status = markStatusAfter(mark.status, 'accept');
             if (status) setDocumentMarkStatus(mark.id, status);
             showToast(t('proofMarks.apply.accepted', { symbol: t(getSymbol(mark.symbolId).labelKey) }), 'success');
+            return true;
         },
         [setDocumentMarkStatus, showToast, t]
     );
@@ -120,8 +127,8 @@ export function useMarkMutations(): MarkMutations {
     );
 
     const acceptAllFormatting = useCallback(
-        (editor: Editor | null, marks: readonly DocumentMark[]) => {
-            if (!editor) return;
+        (editor: Editor | null, marks: readonly DocumentMark[]): number => {
+            if (!editor) return 0;
             const { applied, refused } = applyFormattingMarks(editor, marks);
             for (const mark of applied) {
                 const status = markStatusAfter(mark.status, 'accept');
@@ -133,6 +140,7 @@ export function useMarkMutations(): MarkMutations {
                 showToast(t('proofMarks.apply.acceptedAll', { total: applied.length }), 'success');
             }
             if (refused.length > 0) showToast(t(FORMATTING_REFUSAL_KEYS[refused[0]!.reason]), 'warning');
+            return applied.length;
         },
         [setDocumentMarkStatus, showToast, t]
     );
