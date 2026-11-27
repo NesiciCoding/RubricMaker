@@ -139,8 +139,8 @@ describe('ScoreSheetGrid context menu', () => {
         const trigger = screen.getByRole('button', { name: 'tests.scoreSheet.menu_cell_label' });
         // Hidden on fine pointers by CSS, exactly like the row and outline menu buttons.
         expect(trigger.closest('.menu-touch-only')).not.toBeNull();
-        // A real touch target, and a sibling of the input rather than an overlay hiding the points.
-        expect(trigger).toHaveStyle({ minWidth: '24px', minHeight: '24px' });
+        // A real 44px touch target, and a sibling of the input rather than an overlay hiding the points.
+        expect(trigger).toHaveStyle({ minWidth: '44px', minHeight: '44px' });
         expect(cell(0, 0).parentElement?.className).toContain('score-cell-has-menu');
         expect(cell(0, 0).nextElementSibling).toContainElement(trigger);
 
@@ -154,11 +154,23 @@ describe('ScoreSheetGrid context menu', () => {
         expect(screen.getByRole('button', { name: 'tests.scoreSheet.menu_cell_label' })).toBeInTheDocument();
     });
 
-    it('drops the cell menu trigger once its menu closes', () => {
+    it('returns focus to the cell input when the touch menu closes', () => {
         renderGrid();
-        act(() => cell(1, 1).focus());
+        const input = cell(1, 1);
+        act(() => input.focus());
         fireEvent.click(screen.getByRole('button', { name: 'tests.scoreSheet.menu_cell_label' }));
         fireEvent.keyDown(document, { key: 'Escape' });
+        // Not the ⋯ button (it unmounts with the focus it just lost) and not <body>.
+        expect(document.activeElement).toBe(input);
+        expect(screen.getByRole('button', { name: 'tests.scoreSheet.menu_cell_label' })).toBeInTheDocument();
+    });
+
+    it('drops the cell menu trigger once the cell loses focus', () => {
+        renderGrid();
+        const input = cell(1, 1);
+        act(() => input.focus());
+        expect(screen.getByRole('button', { name: 'tests.scoreSheet.menu_cell_label' })).toBeInTheDocument();
+        act(() => input.blur());
         expect(screen.queryByRole('button', { name: 'tests.scoreSheet.menu_cell_label' })).toBeNull();
     });
 

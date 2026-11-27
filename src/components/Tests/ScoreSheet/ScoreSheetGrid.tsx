@@ -294,10 +294,17 @@ export default function ScoreSheetGrid({
         ];
     }
 
-    /** Opens the cell menu from either route — right-click/Shift+F10 and the touch ⋯ button. */
-    function openCellMenu(event: React.MouseEvent, row: number, col: number) {
+    /**
+     * Opens the cell menu from either route — right-click/Shift+F10 and the touch ⋯ button. The ⋯
+     * button unmounts as soon as focus leaves the cell, so the menu closes onto the cell input
+     * instead; otherwise focus falls to <body> and the next Tab restarts at the top of the page.
+     */
+    function openCellMenu(event: React.MouseEvent, row: number, col: number, fromTouchButton = false) {
         setMenuCellKey(`${row}-${col}`);
-        ctx.open(event, cellMenu(row, col), t('tests.scoreSheet.menu_cell_label'));
+        const anchor = fromTouchButton
+            ? (tableRef.current?.querySelector<HTMLInputElement>(`[data-cell="${row}-${col}"]`) ?? undefined)
+            : undefined;
+        ctx.open(event, cellMenu(row, col), t('tests.scoreSheet.menu_cell_label'), anchor);
     }
 
     function rowMenu(row: number): ContextMenuItem[] {
@@ -577,7 +584,7 @@ export default function ScoreSheetGrid({
                                             }}
                                         >
                                             <div
-                                                className={showCellMenuButton ? 'score-cell-has-menu' : undefined}
+                                                className={`score-cell${showCellMenuButton ? ' score-cell-has-menu' : ''}`}
                                                 style={{ display: 'flex', alignItems: 'center' }}
                                             >
                                                 <input
@@ -637,12 +644,14 @@ export default function ScoreSheetGrid({
                                                     >
                                                         <MenuButton
                                                             label={t('tests.scoreSheet.menu_cell_label')}
-                                                            onOpen={(event) => openCellMenu(event, row, col)}
+                                                            onOpen={(event) => openCellMenu(event, row, col, true)}
                                                             style={{
-                                                                width: 24,
-                                                                height: 24,
-                                                                minWidth: 24,
-                                                                minHeight: 24,
+                                                                // The 44px WCAG target size; the cell reserves
+                                                                // the room beside the value (see .score-cell).
+                                                                width: 44,
+                                                                height: 44,
+                                                                minWidth: 44,
+                                                                minHeight: 44,
                                                                 padding: 0,
                                                                 background: 'var(--bg-elevated)',
                                                             }}

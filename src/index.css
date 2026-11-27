@@ -3241,12 +3241,17 @@ label.sub-item-check {
 
 /* Score-sheet cell: its touch-only ⋯ button is a sibling of the points input rather than an overlay.
    On coarse pointers the input gives up exactly the button's width, so the value is never underneath
-   the control and the column keeps its width. */
+   the control. The cell reserves the 44px target beside the 28px value even while the button is
+   hidden, so focusing a cell never reflows the column. */
 .score-cell-input {
     width: 52px;
 }
 
 @media (pointer: coarse) {
+    .score-cell {
+        min-width: 72px;
+    }
+
     .score-cell-has-menu .score-cell-input {
         width: 28px;
     }
