@@ -226,12 +226,14 @@ describe('SettingsPage coverage', () => {
             expect(screen.queryByText('settings.grade_scales')).not.toBeInTheDocument();
         });
 
-        it('loads sample data and reloads the page', () => {
+        it('loads sample data and reloads the page', async () => {
             const reloadSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
             renderPage();
             goToAdminTab();
             fireEvent.click(findButtonByText('settings.dev_sample_load'));
-            expect(mockSeedDemoData).toHaveBeenCalled();
+            // The demo dataset is imported on demand so it never ships in the production chunk,
+            // which makes the seed run a microtask after the click.
+            await waitFor(() => expect(mockSeedDemoData).toHaveBeenCalled());
             reloadSpy.mockRestore();
         });
     });

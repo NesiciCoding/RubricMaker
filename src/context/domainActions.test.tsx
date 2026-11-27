@@ -78,6 +78,7 @@ vi.mock('../store/storage', () => ({
         newsFlashReads: [],
         questionBank: [],
         documentComments: [],
+        documentMarks: [],
         notificationDismissals: [],
         gradingTasks: [],
         tests: [],
@@ -108,6 +109,7 @@ vi.mock('../store/storage', () => ({
     saveNotificationDismissals: vi.fn(),
     saveQuestionBank: vi.fn(),
     saveDocumentComments: vi.fn(),
+    saveDocumentMarks: vi.fn(),
     saveUserTemplates: vi.fn(),
     saveFlashcardDecks: vi.fn(),
     saveFlashcardAssignments: vi.fn(),
@@ -403,6 +405,38 @@ describe('domain action creators', () => {
             result.current.deleteDocumentComment(commentId);
         });
         expect(result.current.documentComments).toHaveLength(0);
+    });
+
+    it('adds, retags, updates, and deletes document marks', () => {
+        const { result } = renderHook(() => useAssessment(), { wrapper });
+
+        let markId = '';
+        act(() => {
+            const mark = result.current.addDocumentMark({
+                attachmentId: 'a1',
+                authorId: 't1',
+                symbolId: 'sp',
+                anchor: { from: 1, to: 4 },
+                status: 'noted',
+            });
+            markId = mark.id;
+        });
+        expect(result.current.documentMarks).toHaveLength(1);
+
+        act(() => {
+            result.current.setDocumentMarkStatus(markId, 'accepted');
+        });
+        expect(result.current.documentMarks[0].status).toBe('accepted');
+
+        act(() => {
+            result.current.updateDocumentMark(markId, { note: 'Check the tense' });
+        });
+        expect(result.current.documentMarks[0].note).toBe('Check the tense');
+
+        act(() => {
+            result.current.deleteDocumentMark(markId);
+        });
+        expect(result.current.documentMarks).toHaveLength(0);
     });
 
     it('logs a console error when grading-task pushes fail', async () => {

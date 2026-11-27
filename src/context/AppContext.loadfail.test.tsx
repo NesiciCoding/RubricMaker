@@ -90,6 +90,7 @@ vi.mock('../store/storage', () => ({
     saveNotificationDismissals: vi.fn(),
     saveQuestionBank: vi.fn(),
     saveDocumentComments: vi.fn(),
+    saveDocumentMarks: vi.fn(),
     saveUserTemplates: vi.fn(),
     saveFlashcardDecks: vi.fn(),
     saveFlashcardAssignments: vi.fn(),

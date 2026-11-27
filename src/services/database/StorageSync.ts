@@ -52,6 +52,7 @@ import type {
     NewsFlashRead,
     QuestionBankItem,
     DocumentComment,
+    DocumentMark,
     NotificationDismissal,
     ComparativeMatchup,
 } from '../../types';
@@ -703,7 +704,7 @@ class StorageSyncService {
 
     private static readonly HYDRATE_TIMEOUT_MS = 8000;
     // Number of fetches tracked across both hydrate waves — a unit test pins done === total.
-    static readonly HYDRATE_FETCH_COUNT = 35;
+    static readonly HYDRATE_FETCH_COUNT = 36;
     private hydrationGeneration = 0;
     private rosterFetch: RosterFetchMode = 'all';
     /** Settles when the last started full pull does — see the wait in hydratePartial. */
@@ -902,6 +903,7 @@ class StorageSyncService {
                 newsFlashReads,
                 questionBank,
                 documentComments,
+                documentMarks,
                 notificationDismissals,
                 comparativeMatchups,
             ] = await this.trackHydrate(
@@ -915,6 +917,7 @@ class StorageSyncService {
                     this.adapter.fetchNewsFlashReads(),
                     this.adapter.fetchQuestionBank(),
                     this.adapter.fetchDocumentComments(),
+                    this.adapter.fetchDocumentMarks(),
                     this.adapter.fetchNotificationDismissals(),
                     this.adapter.fetchComparativeMatchups(),
                 ])
@@ -994,6 +997,7 @@ class StorageSyncService {
                 newsFlashReads,
                 questionBank,
                 documentComments,
+                documentMarks,
                 notificationDismissals,
                 comparativeMatchups,
                 attachments,
@@ -1163,6 +1167,9 @@ class StorageSyncService {
                     case 'document_comments':
                         jobs.push(a.fetchDocumentComments().then((x) => void (result.documentComments = x)));
                         break;
+                    case 'document_marks':
+                        jobs.push(a.fetchDocumentMarks().then((x) => void (result.documentMarks = x)));
+                        break;
                     case 'notification_dismissals':
                         jobs.push(
                             a.fetchNotificationDismissals().then((x) => void (result.notificationDismissals = x))
@@ -1240,6 +1247,7 @@ class StorageSyncService {
                 ...state.newsFlashReads.map((r) => this.adapter.upsertNewsFlashRead(r)),
                 ...state.questionBank.map((q) => this.adapter.upsertQuestionBankItem(q)),
                 ...state.documentComments.map((c) => this.adapter.upsertDocumentComment(c)),
+                ...state.documentMarks.map((m) => this.adapter.upsertDocumentMark(m)),
                 ...state.notificationDismissals.map((d) => this.adapter.upsertNotificationDismissal(d)),
                 ...state.comparativeMatchups.map((m) => this.adapter.upsertComparativeMatchup(m)),
                 this.adapter.saveSettings(state.settings),
@@ -1336,6 +1344,10 @@ class StorageSyncService {
                     if (action === 'upsert')
                         result = await this.adapter.upsertDocumentComment(payload as DocumentComment);
                     else if (id) result = await this.adapter.deleteDocumentComment(id);
+                    break;
+                case 'documentMark':
+                    if (action === 'upsert') result = await this.adapter.upsertDocumentMark(payload as DocumentMark);
+                    else if (id) result = await this.adapter.deleteDocumentMark(id);
                     break;
                 case 'notificationDismissal':
                     if (action === 'upsert')

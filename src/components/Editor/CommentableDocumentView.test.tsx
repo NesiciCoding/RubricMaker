@@ -24,9 +24,11 @@ const mockDeleteDocumentComment = vi.fn();
 const mockGetCurrentDatabaseUserId = vi.fn(() => 'user-1');
 
 const mockDocumentComments: DocumentComment[] = [];
+const mockDocumentMarks: DocumentMark[] = [];
 
 const makeAppValue = () => ({
     documentComments: mockDocumentComments,
+    documentMarks: mockDocumentMarks,
     addDocumentComment: mockAddDocumentComment,
     resolveDocumentComment: mockResolveDocumentComment,
     deleteDocumentComment: mockDeleteDocumentComment,
@@ -135,6 +137,7 @@ describe('CommentableDocumentView', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockDocumentComments.length = 0;
+        mockDocumentMarks.length = 0;
         mockGetCurrentDatabaseUserId.mockReturnValue('user-1');
         fakeEditor.commands.setDocumentComments.mockClear();
         fakeEditor.commands.setActiveDocumentComment.mockClear();
@@ -172,6 +175,17 @@ describe('CommentableDocumentView', () => {
             expect(fakeEditor.commands.setDocumentMarks).toHaveBeenCalledWith([expect.objectContaining({ id: 'm1' })]);
         });
         expect(fakeEditor.commands.setActiveDocumentMarks).toHaveBeenCalledWith([]);
+    });
+
+    it('draws the stored marks for this document when no marks prop is passed', async () => {
+        mockDocumentMarks.push(makeMark({ id: 'stored-1' }), makeMark({ id: 'stored-2', attachmentId: 'att-other' }));
+        render(<CommentableDocumentView content="<p>Hello</p>" attachmentId="att-1" />);
+
+        await waitFor(() => {
+            expect(fakeEditor.commands.setDocumentMarks).toHaveBeenCalledWith([
+                expect.objectContaining({ id: 'stored-1' }),
+            ]);
+        });
     });
 
     it('sends no marks when the document has none', async () => {

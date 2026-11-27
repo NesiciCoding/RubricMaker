@@ -52,6 +52,7 @@ describe('student data registry (student_data_tables)', () => {
             'students',
             'attachments',
             'document_comments',
+            'document_marks',
             'recording_metadata',
             'essay_submissions',
             'essay_batch_assignments',
@@ -69,6 +70,7 @@ describe('student data registry (student_data_tables)', () => {
         const order = [...latestBody('student_data_tables').matchAll(/\('(\w+)',/g)].map((m) => m[1]);
         const before = (a: string, b: string) => expect(order.indexOf(a)).toBeLessThan(order.indexOf(b));
         before('document_comments', 'attachments');
+        before('document_marks', 'attachments');
         before('recording_metadata', 'speaking_sessions');
         before('essay_submissions', 'essay_assignments');
         before('placement_sessions', 'test_assignments');

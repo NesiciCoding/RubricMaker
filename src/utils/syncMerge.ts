@@ -225,6 +225,12 @@ const COLLECTIONS: CollectionSpec[] = [
         getUpdatedAt: (c: { updatedAt?: string }) => c.updatedAt,
     },
     {
+        key: 'documentMarks',
+        entity: 'documentMark',
+        getId: (m: { id: string }) => m.id,
+        getUpdatedAt: (m: { updatedAt?: string }) => m.updatedAt,
+    },
+    {
         key: 'notificationDismissals',
         entity: 'notificationDismissal',
         getId: (d: { id: string }) => d.id,

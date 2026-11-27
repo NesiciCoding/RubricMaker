@@ -34,6 +34,7 @@ import type {
     QuestionBankItem,
     StaircaseStep,
     DocumentComment,
+    DocumentMark,
     NotificationDismissal,
     ComparativeMatchup,
 } from '../types';
@@ -914,6 +915,7 @@ const KEYS = {
     newsFlashReads: 'rm_news_flash_reads',
     questionBank: 'rm_question_bank',
     documentComments: 'rm_document_comments',
+    documentMarks: 'rm_document_marks',
     notificationDismissals: 'rm_notification_dismissals',
     comparativeMatchups: 'rm_comparative_matchups',
     migrationDone: 'rm_migration_done',
@@ -1236,6 +1238,7 @@ export interface StoreData {
     newsFlashReads: NewsFlashRead[];
     questionBank: QuestionBankItem[];
     documentComments: DocumentComment[];
+    documentMarks: DocumentMark[];
     notificationDismissals: NotificationDismissal[];
     comparativeMatchups: ComparativeMatchup[];
 }
@@ -1292,6 +1295,7 @@ export function loadStore(): StoreData {
         newsFlashReads: load<NewsFlashRead[]>(KEYS.newsFlashReads, []),
         questionBank: load<QuestionBankItem[]>(KEYS.questionBank, []),
         documentComments: load<DocumentComment[]>(KEYS.documentComments, []),
+        documentMarks: load<DocumentMark[]>(KEYS.documentMarks, []),
         notificationDismissals: load<NotificationDismissal[]>(KEYS.notificationDismissals, []),
         comparativeMatchups: load<ComparativeMatchup[]>(KEYS.comparativeMatchups, []),
     };
@@ -1528,6 +1532,9 @@ export function saveQuestionBank(items: QuestionBankItem[]) {
 }
 export function saveDocumentComments(comments: DocumentComment[]) {
     save(KEYS.documentComments, comments);
+}
+export function saveDocumentMarks(marks: DocumentMark[]) {
+    save(KEYS.documentMarks, marks);
 }
 export function saveNotificationDismissals(dismissals: NotificationDismissal[]) {
     save(KEYS.notificationDismissals, dismissals);
@@ -1886,6 +1893,20 @@ export function importFullBackup(json: string, currentSettings?: AppSettings): b
             )
                 saveDocumentComments(data.documentComments as DocumentComment[]);
             else console.warn('[importFullBackup] documentComments failed validation — skipped');
+        }
+        if (data.documentMarks !== undefined) {
+            if (
+                Array.isArray(data.documentMarks) &&
+                data.documentMarks.every(
+                    (m) =>
+                        isPlainObject(m) &&
+                        typeof (m as Record<string, unknown>).id === 'string' &&
+                        typeof (m as Record<string, unknown>).attachmentId === 'string' &&
+                        isPlainObject((m as Record<string, unknown>).anchor)
+                )
+            )
+                saveDocumentMarks(data.documentMarks as DocumentMark[]);
+            else console.warn('[importFullBackup] documentMarks failed validation — skipped');
         }
         if (data.notificationDismissals !== undefined) {
             if (

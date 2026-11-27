@@ -606,6 +606,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         diff(prev.newsFlashReads, state.newsFlashReads, 'newsFlashRead', (r) => r.id);
         diff(prev.questionBank, state.questionBank, 'questionBankItem', (q) => q.id);
         diff(prev.documentComments, state.documentComments, 'documentComment', (c) => c.id);
+        diff(prev.documentMarks, state.documentMarks, 'documentMark', (m) => m.id);
         diff(prev.notificationDismissals, state.notificationDismissals, 'notificationDismissal', (d) => d.id);
         diff(prev.comparativeMatchups, state.comparativeMatchups, 'comparativeMatchup', (m) => m.id);
 

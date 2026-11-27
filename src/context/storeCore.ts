@@ -10,6 +10,7 @@ import type {
     CommentBankItem,
     DocumentAnalysisResult,
     DocumentComment,
+    DocumentMark,
     EssayAssignment,
     EssaySubmission,
     EssayTemplate,
@@ -55,6 +56,7 @@ import {
     saveCommentBank,
     saveComparativeMatchups,
     saveDocumentComments,
+    saveDocumentMarks,
     saveEssayAssignments,
     saveEssaySubmissions,
     saveEssayTemplates,
@@ -217,6 +219,10 @@ export type Action =
     | { type: 'ADD_DOCUMENT_COMMENT'; payload: DocumentComment }
     | { type: 'RESOLVE_DOCUMENT_COMMENT'; id: string; resolved: boolean }
     | { type: 'DELETE_DOCUMENT_COMMENT'; id: string }
+    | { type: 'ADD_DOCUMENT_MARK'; payload: DocumentMark }
+    | { type: 'UPDATE_DOCUMENT_MARK'; id: string; patch: Partial<Omit<DocumentMark, 'id' | 'createdAt'>> }
+    | { type: 'DELETE_DOCUMENT_MARK'; id: string }
+    | { type: 'SET_DOCUMENT_MARK_STATUS'; id: string; status: DocumentMark['status'] }
     | { type: 'DISMISS_NOTIFICATION'; payload: NotificationDismissal }
     | { type: 'ADD_COMPARATIVE_MATCHUP'; payload: ComparativeMatchup };
 
@@ -1013,6 +1019,32 @@ export function reducer(state: StoreData, action: Action): StoreData {
             if (isOffline()) saveDocumentComments(next);
             return { ...state, documentComments: next };
         }
+        case 'ADD_DOCUMENT_MARK': {
+            const next = [...state.documentMarks, action.payload];
+            if (isOffline()) saveDocumentMarks(next);
+            return { ...state, documentMarks: next };
+        }
+        case 'UPDATE_DOCUMENT_MARK': {
+            const updatedAt = new Date().toISOString();
+            const next = state.documentMarks.map((m) =>
+                m.id === action.id ? { ...m, ...action.patch, updatedAt } : m
+            );
+            if (isOffline()) saveDocumentMarks(next);
+            return { ...state, documentMarks: next };
+        }
+        case 'DELETE_DOCUMENT_MARK': {
+            const next = state.documentMarks.filter((m) => m.id !== action.id);
+            if (isOffline()) saveDocumentMarks(next);
+            return { ...state, documentMarks: next };
+        }
+        case 'SET_DOCUMENT_MARK_STATUS': {
+            const updatedAt = new Date().toISOString();
+            const next = state.documentMarks.map((m) =>
+                m.id === action.id ? { ...m, status: action.status, updatedAt } : m
+            );
+            if (isOffline()) saveDocumentMarks(next);
+            return { ...state, documentMarks: next };
+        }
         case 'DISMISS_NOTIFICATION': {
             const exists = state.notificationDismissals.findIndex((d) => d.id === action.payload.id);
             const next =
@@ -1166,6 +1198,10 @@ export interface AppContextValue extends StoreData {
     addDocumentComment: (c: Omit<DocumentComment, 'id' | 'createdAt' | 'resolved'>) => DocumentComment;
     resolveDocumentComment: (id: string, resolved: boolean) => void;
     deleteDocumentComment: (id: string) => void;
+    addDocumentMark: (m: Omit<DocumentMark, 'id' | 'createdAt'>) => DocumentMark;
+    updateDocumentMark: (id: string, patch: Partial<Omit<DocumentMark, 'id' | 'createdAt' | 'updatedAt'>>) => void;
+    deleteDocumentMark: (id: string) => void;
+    setDocumentMarkStatus: (id: string, status: DocumentMark['status']) => void;
     dismissNotification: (type: NotificationDismissalType, entityId: string, fingerprint: string) => void;
     addComparativeMatchup: (rubricId: string, studentAId: string, studentBId: string) => void;
     addExportTemplate: (t: Omit<ExportTemplate, 'id' | 'addedAt'>) => ExportTemplate;
@@ -1357,6 +1393,7 @@ export const COLLECTION_SAVERS: Partial<Record<keyof StoreData, (m: StoreData) =
     newsFlashReads: (m) => saveNewsFlashReads(m.newsFlashReads),
     questionBank: (m) => saveQuestionBank(m.questionBank),
     documentComments: (m) => saveDocumentComments(m.documentComments),
+    documentMarks: (m) => saveDocumentMarks(m.documentMarks),
     notificationDismissals: (m) => saveNotificationDismissals(m.notificationDismissals),
     comparativeMatchups: (m) => saveComparativeMatchups(m.comparativeMatchups),
 };

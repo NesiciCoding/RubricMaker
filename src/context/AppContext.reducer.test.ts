@@ -9,6 +9,7 @@ import type {
     AppSettings,
     Class,
     DocumentComment,
+    DocumentMark,
     EssayAssignment,
     EssaySubmission,
     EssayTemplate,
@@ -76,6 +77,7 @@ vi.mock('../store/storage', () => {
         'saveNewsFlashReads',
         'saveQuestionBank',
         'saveDocumentComments',
+        'saveDocumentMarks',
         'saveNotificationDismissals',
         'saveComparativeMatchups',
         'saveUserTemplates',
@@ -193,6 +195,7 @@ function makeState(overrides: Partial<StoreData> = {}): StoreData {
         newsFlashReads: [],
         questionBank: [],
         documentComments: [],
+        documentMarks: [],
         notificationDismissals: [],
         comparativeMatchups: [],
         ...overrides,
@@ -1000,6 +1003,31 @@ describe('AppContext reducer — templates, question bank, comments, notificatio
         expect(state.documentComments[0].resolved).toBe(true);
         state = run(state, { type: 'DELETE_DOCUMENT_COMMENT', id: 'dc1' });
         expect(state.documentComments).toHaveLength(0);
+    });
+
+    it('adds, retags, updates, and deletes document marks', () => {
+        const mark: DocumentMark = {
+            id: 'dm1',
+            attachmentId: 'a1',
+            authorId: 'teacher-1',
+            symbolId: 'sp',
+            anchor: { from: 1, to: 4 },
+            snippetHash: 'hash',
+            status: 'noted',
+            createdAt: now,
+        };
+        let state = run(makeState(), { type: 'ADD_DOCUMENT_MARK', payload: mark });
+        expect(state.documentMarks).toHaveLength(1);
+
+        state = run(state, { type: 'SET_DOCUMENT_MARK_STATUS', id: 'dm1', status: 'accepted' });
+        expect(state.documentMarks[0].status).toBe('accepted');
+        expect(state.documentMarks[0].updatedAt).toBeTruthy();
+
+        state = run(state, { type: 'UPDATE_DOCUMENT_MARK', id: 'dm1', patch: { note: 'See p.2' } });
+        expect(state.documentMarks[0].note).toBe('See p.2');
+
+        state = run(state, { type: 'DELETE_DOCUMENT_MARK', id: 'dm1' });
+        expect(state.documentMarks).toHaveLength(0);
     });
 
     it('dismisses notifications, upserting by id', () => {

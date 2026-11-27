@@ -8,7 +8,10 @@ import {
     saveTests,
     saveStudentTests,
     saveEssayAssignments,
+    saveAttachments,
+    saveDocumentMarks,
 } from '../store/storage';
+import { PROOF_MARK_DEMO_ESSAY, buildProofMarkDemo } from '../data/proofMarkDemo';
 import { DEFAULT_FORMAT } from '../types';
 import type {
     Rubric,
@@ -22,6 +25,7 @@ import type {
     TestQuestion,
     StudentTest,
     EssayAssignment,
+    Attachment,
     CefrLevel,
     CefrSkill,
     VoTrack,
@@ -354,6 +358,20 @@ export function seedDemoData(): void {
         expiresAt: i === 4 ? daysAgo(1) : new Date(now + 7 * 86_400_000).toISOString(),
     }));
 
+    // ── Proofreading demo document ────────────────────────────────────────────
+    // The 40-mark fixture the rail was measured against (PM-04), stored as a real attachment and
+    // real marks so the margin chips appear in the grading view instead of only in tests.
+    const proofMarkAttachment: Attachment = {
+        id: nanoid(),
+        name: 'Homework debate — marked essay.html',
+        mimeType: 'text/html',
+        dataUrl: `data:text/html;base64,${btoa(unescape(encodeURIComponent(PROOF_MARK_DEMO_ESSAY)))}`,
+        studentId: students[0].id,
+        size: PROOF_MARK_DEMO_ESSAY.length,
+        addedAt: daysAgo(3),
+    };
+    const proofMarks = buildProofMarkDemo(proofMarkAttachment.id, 'demo-teacher', daysAgo(3));
+
     // ── Persist ───────────────────────────────────────────────────────────────
     // Comment bank is intentionally not seeded here — DEFAULT_COMMENT_BANK (storage.ts)
     // already becomes a fresh session's comment bank automatically.
@@ -365,4 +383,6 @@ export function seedDemoData(): void {
     saveTests(tests);
     saveStudentTests(studentTests);
     saveEssayAssignments(essayAssignments);
+    saveAttachments([proofMarkAttachment]);
+    saveDocumentMarks(proofMarks);
 }
