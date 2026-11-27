@@ -11,6 +11,7 @@
 #   scripts/loadtest.sh [profile] [-- <extra k6 flags>]
 #
 #   profile   smoke | load | stress | spike | soak      (default: load)
+#             live  — live-writing room: join + 1.2 s autosave RPCs, 100 students
 #
 # Examples:
 #   scripts/loadtest.sh                       # default 'load' profile, ~50 VUs
@@ -31,7 +32,6 @@
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SCRIPT="$HERE/k6/load-test.js"
 
 # ── Parse args: optional profile, then optional `-- <k6 flags>` ───────────────
 PROFILE_ARG=""
@@ -44,6 +44,13 @@ while [ $# -gt 0 ]; do
     esac
 done
 export PROFILE="${PROFILE_ARG:-${PROFILE:-load}}"
+# `live` runs k6/live-writing-load.js (a whole class in a live-writing room);
+# everything else runs the general backend load test.
+if [ "$PROFILE" = "live" ]; then
+    SCRIPT="$HERE/k6/live-writing-load.js"
+else
+    SCRIPT="$HERE/k6/load-test.js"
+fi
 
 # ── k6 must be installed ──────────────────────────────────────────────────────
 if ! command -v k6 >/dev/null 2>&1; then
@@ -145,7 +152,11 @@ case "$SUPABASE_URL" in
 esac
 
 echo "[loadtest] profile: ${PROFILE}  target-tier: ${TARGET:-both}  (VUS=${VUS:-profile default}  DURATION=${DURATION:-profile default})"
-echo "[loadtest] seeding: ${SEED_TESTS:-5} tests, ${SEED_ASSIGNMENTS:-40} assignments"
+if [ "$PROFILE" = "live" ]; then
+    echo "[loadtest] seeding: one live-writing session, ${STUDENTS:-100} roster students"
+else
+    echo "[loadtest] seeding: ${SEED_TESTS:-5} tests, ${SEED_ASSIGNMENTS:-40} assignments"
+fi
 echo
 
 # Guard the empty-array expansion: on macOS's bash 3.2, "${arr[@]}" on an empty

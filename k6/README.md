@@ -32,17 +32,44 @@ npm run loadtest        # default 'load' profile — ~50 VUs against the local s
 `brew install k6` (macOS) or see
 [k6 install](https://grafana.com/docs/k6/latest/set-up/install-k6/).
 
+## Live-writing rooms
+
+`live-writing-load.js` simulates one whole class in a live-writing session
+(#1153): it seeds a teacher, a class, a roster and a session already in
+`writing`, then every virtual user joins with the code (anon RPC, no account)
+and autosaves a ~200-word draft every 1.2 s — the exact cadence
+`StudentLiveWritePage` debounces to. It is the only per-student write in the
+room.
+
+```bash
+npm run loadtest:live          # 100 students, 60 s hold
+npm run loadtest:live:smoke    # 10 students, 20 s — sanity check
+VUS=100 STUDENTS=100 npm run loadtest:live
+```
+
+Thresholds fail the run above 1 % failed requests or a p95 over 500 ms on
+either the join or the autosave RPC. Teardown also fails when fewer students
+joined than the seeded roster, so a broken join path cannot look healthy just
+because the RPC answered quickly.
+
+**Realtime fan-out is not in this script.** Supabase Realtime is a managed
+service; the client only broadcasts phase hints (`LiveWritingAdapter`
+`.broadcastSessionEvent`), never draft text. While a live run is going, open a
+projector and one student screen against the same stack and confirm the board
+keeps up; `useLiveSessionTelemetry` throttles the equivalent essay-monitor
+snapshots and is the same pattern the live room follows.
+
 ## Load profiles
 
 Pick a profile as the first argument (or via the `npm run loadtest:*` scripts):
 
-| Profile  | npm script              | Shape                                              | Answers |
-| -------- | ----------------------- | -------------------------------------------------- | ------- |
-| `smoke`  | `loadtest:smoke`        | 5 VUs, ~15s                                         | Is the path alive under a little concurrency? |
-| `load`   | `loadtest` (default)    | ramp to 50 VUs, hold 60s                            | Does a class/small-school workload stay healthy? |
-| `stress` | `loadtest:stress`       | climb 50→100→150→200 VUs in steps                   | Where does it start to break? |
-| `spike`  | `loadtest:spike`        | jump to 150 VUs in 3s, hold                         | Whole class hits "open test" at once |
-| `soak`   | `loadtest:soak`         | 30 VUs held for 10 min                             | Leaks / slow degradation over time |
+| Profile  | npm script           | Shape                             | Answers                                          |
+| -------- | -------------------- | --------------------------------- | ------------------------------------------------ |
+| `smoke`  | `loadtest:smoke`     | 5 VUs, ~15s                       | Is the path alive under a little concurrency?    |
+| `load`   | `loadtest` (default) | ramp to 50 VUs, hold 60s          | Does a class/small-school workload stay healthy? |
+| `stress` | `loadtest:stress`    | climb 50→100→150→200 VUs in steps | Where does it start to break?                    |
+| `spike`  | `loadtest:spike`     | jump to 150 VUs in 3s, hold       | Whole class hits "open test" at once             |
+| `soak`   | `loadtest:soak`      | 30 VUs held for 10 min            | Leaks / slow degradation over time               |
 
 Every profile's peak and hold are overridable:
 
@@ -72,11 +99,11 @@ exported summary; you can also run that directly on any `--summary-export` JSON.
 
 `TARGET` picks which backend tier to exercise:
 
-| `TARGET` | Hits                                   | Use when |
-| -------- | -------------------------------------- | -------- |
+| `TARGET`         | Hits                                                     | Use when                                                                 |
+| ---------------- | -------------------------------------------------------- | ------------------------------------------------------------------------ |
 | `both` (default) | `get-test-assignment` edge fn **and** the PostgREST read | target has an edge runtime (Supabase Cloud / official self-hosted stack) |
-| `edge`   | just the edge function                 | isolating edge-function behaviour |
-| `rest`   | just the PostgREST / Postgres read     | target has **no** edge runtime |
+| `edge`           | just the edge function                                   | isolating edge-function behaviour                                        |
+| `rest`           | just the PostgREST / Postgres read                       | target has **no** edge runtime                                           |
 
 **Important:** this repo's own `docker-compose.yml` runs **no edge functions**
 (they live on Supabase Cloud or the official self-hosted stack behind Kong). Point
@@ -104,7 +131,7 @@ the same CPU. Two consequences you have to design around:
 **1. Make sure you're measuring the server, not the generator.** k6 can create
 thousands of VUs trivially; the stack is what saturates first. While a run is
 going, watch host CPU (`htop`) and the k6 live output. If you see
-`dropped_iterations`, climbing `http_req_blocked`, or connection errors *before*
+`dropped_iterations`, climbing `http_req_blocked`, or connection errors _before_
 the server's own latency rises, your machine — not RubricMaker — is the
 bottleneck, and the numbers are about your laptop. Mitigations:
 
@@ -119,13 +146,13 @@ bottleneck, and the numbers are about your laptop. Mitigations:
 edge-runtime container serves every function call, whereas production Supabase
 autoscales edge functions and runs isolated, tuned Postgres. So use the local run
 for **relative** questions — "did this change regress the hot paths?", "does 50
-concurrent stay under my p95 bound?", "at what VU count does *my box* fall over?"
+concurrent stay under my p95 bound?", "at what VU count does _my box_ fall over?"
 — and treat absolute throughput as a floor, not the production ceiling.
 
 To answer "can a real school of 100–200 students test simultaneously?", point the
 **same script** at a **staging VM that mirrors a self-hosted deployment** (or a
 staging Supabase project): export `SUPABASE_URL` + its anon/service keys, run k6
-from a *separate* machine, then `npm run loadtest:stress` with a high `VUS`. The
+from a _separate_ machine, then `npm run loadtest:stress` with a high `VUS`. The
 generator and the server are then fully separated and the target is real infra.
 [`docs/LOAD_TESTING_STAGING.md`](../docs/LOAD_TESTING_STAGING.md) is the full
 guide — VM bring-up, the "k6 stays outside the VM" rule, and a VU→spec sizing

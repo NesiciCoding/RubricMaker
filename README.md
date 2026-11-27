@@ -101,14 +101,16 @@ One-glance overview — see the [Features wiki page](https://github.com/NesiciCo
 | Flashcards                 | FSRS spaced repetition, vocab/grammar decks, CSV/XLSX/DOCX import, student-created decks.                                                                                                                     |
 | CEFR & language assessment | Proficiency overviews, speaking sessions, rule-based learning paths, grammar mastery.                                                                                                                         |
 | Vocabulary profiling       | Rule-based (no-AI) CEFR vocabulary profiler with a target-level "is this text right?" verdict.                                                                                                                |
-| Live writing               | In-class writing sessions, zero AI, anonymous finals gallery, peer voting.                                                                                                                                    |
+| Live writing               | In-class writing sessions, zero AI, anonymous finals gallery, peer voting, shareable tagged prompts, optional signed-in portal join.                                                                          |
 | Student portal             | Shareable link per student: grades, to-dos, essays, tests, flashcards, messaging, 5 languages.                                                                                                                |
 | Analytics                  | Student Snapshot dashboard, grade distributions, query builder, writing trends.                                                                                                                               |
 | Export                     | PDF/DOCX/CSV, Magister/SOMtoday presets, CITO-style printable exam export.                                                                                                                                    |
-| Collaboration              | Marketplace, live sharing, co-teaching, proctoring, notifications.                                                                                                                                            |
+| Collaboration              | Marketplace (including tagged live-writing prompts), live sharing, co-teaching, proctoring, notifications.                                                                                                    |
 | Accessibility              | WCAG 2.1 AA + AAA contrast, dyslexia mode, six themes, global search.                                                                                                                                         |
 
 **Offline-first, cloud-ready:** the core grading workflow works fully offline in `localStorage`. An optional [Supabase](https://supabase.com) backend unlocks cross-device sync, collaboration, the student portal and the marketplace — if it's configured but unreachable, the app falls back to local storage rather than failing. See [Supabase Sync on the wiki](https://github.com/NesiciCoding/RubricMaker/wiki/Supabase-Sync).
+
+Live writing is the one feature that is **off in local mode**: a code-join room needs the shared backend, so `/live` and `/join` show a short "cloud connection required" empty state instead of pretending to run locally. There is no separate school-level switch; sessions are always teacher-created, and `Lock after start` stops late code joins once a round is running. A session can also opt in to **portal join**, which lets a signed-in student enter the code in their portal and join as themselves without the name picker.
 
 ---
 
@@ -314,68 +316,68 @@ Deep operational detail — attachment retention, nightly backups, email digests
 
 A map of what each path renders — for how a page actually behaves, read its component. System-level design is on the [Architecture wiki page](https://github.com/NesiciCoding/RubricMaker/wiki/Architecture).
 
-| Path                                               | Page                                                   |
-| -------------------------------------------------- | ------------------------------------------------------ |
-| `/`                                                | Dashboard                                              |
-| `/rubrics`                                         | Rubric list                                            |
-| `/rubrics/new`                                     | New rubric                                             |
-| `/rubrics/import/:code`                            | Import a shared rubric                                 |
-| `/rubrics/:id`                                     | Rubric builder                                         |
-| `/rubrics/:rubricId/grade`                         | Grading queue for a rubric                             |
-| `/rubrics/:rubricId/grade/:studentId`              | Grade a student                                        |
-| `/rubrics/:rubricId/peer-review`                   | Peer review roster                                     |
-| `/rubrics/:rubricId/peer-review/:studentId`        | Peer review view                                       |
-| `/peer-analytics/:rubricId`                        | Peer review analytics                                  |
-| `/rubrics/:rubricId/self-assess/:studentId`        | Student self-assessment                                |
-| `/essays`                                          | Essay list                                             |
-| `/essays/new`                                      | New essay                                              |
-| `/essays/:teacherKey`                              | Essay builder                                          |
-| `/essays/:assignmentId/monitor`                    | Live essay monitor                                     |
-| `/essays/:assignmentId/monitor/project/:studentId` | Read-only draft projector                              |
-| `/live`                                            | Live writing session list                              |
-| `/live/new`                                        | New live writing session                               |
-| `/live/:sessionId`                                 | Live writing console                                   |
-| `/live/:sessionId/project`                         | Classroom projector                                    |
-| `/join`                                            | Public code entry for a live writing session           |
-| `/join/:code`                                      | Public student writing screen                          |
-| `/speaking/:rubricId/:studentId`                   | Speaking session                                       |
-| `/grade-comparative/:classId/:rubricId`            | Comparative grading                                    |
-| `/marketplace`                                     | School marketplace (rubrics, tests, decks, bank items) |
-| `/tests`                                           | Test list                                              |
-| `/tests/new`                                       | New test                                               |
-| `/tests/:id`                                       | Test builder                                           |
-| `/tests/:testId/results/:studentTestId`            | Test results & manual grading                          |
-| `/tests/:testId/monitor`                           | Live test monitor                                      |
-| `/tests/:id/scores`                                | Score sheet & test quality analysis                    |
-| `/students`                                        | Students list                                          |
-| `/students/:id`                                    | Student profile                                        |
-| `/students/:id/cefr-overview`                      | Per-student CEFR overview                              |
-| `/students/:id/grammar-overview`                   | Per-student grammar standards overview                 |
-| `/students/:id/learning-path`                      | Per-student learning path                              |
-| `/cefr-overview`                                   | Whole-class CEFR overview                              |
-| `/grammar-overview`                                | Whole-class grammar standards overview                 |
-| `/vocabulary`                                      | Vocabulary Insights hub                                |
-| `/flashcards`                                      | Flashcard deck list                                    |
-| `/flashcards/:id`                                  | Flashcard deck editor                                  |
-| `/news-flashes`                                    | News flashes                                           |
-| `/portal/:studentId`                               | Student portal (public)                                |
-| `/portal/:studentId/flashcards/:deckId`            | Student flashcard study session                        |
-| `/feedback/:code`                                  | Student feedback view (public)                         |
-| `/preview/:code`                                   | Rubric preview (public)                                |
-| `/essay/:code`                                     | Essay writing session (public)                         |
-| `/test/:code`                                      | Take a test (public)                                   |
-| `/attachments`                                     | Attachment manager                                     |
-| `/comments`                                        | Comment bank                                           |
-| `/question-bank`                                   | Question bank                                          |
-| `/statistics`                                      | Statistics dashboard                                   |
-| `/activity-dashboard`                              | Activity Dashboard                                     |
-| `/moderation`                                      | Moderation queue                                       |
-| `/messages`                                        | Messages inbox                                         |
-| `/notifications`                                   | Notification Center                                    |
-| `/export`                                          | Export page                                            |
-| `/settings`                                        | Settings                                               |
-| `/admin`                                           | Admin panel (admin role only)                          |
-| `/privacy`                                         | Privacy statement                                      |
+| Path                                               | Page                                                                 |
+| -------------------------------------------------- | -------------------------------------------------------------------- |
+| `/`                                                | Dashboard                                                            |
+| `/rubrics`                                         | Rubric list                                                          |
+| `/rubrics/new`                                     | New rubric                                                           |
+| `/rubrics/import/:code`                            | Import a shared rubric                                               |
+| `/rubrics/:id`                                     | Rubric builder                                                       |
+| `/rubrics/:rubricId/grade`                         | Grading queue for a rubric                                           |
+| `/rubrics/:rubricId/grade/:studentId`              | Grade a student                                                      |
+| `/rubrics/:rubricId/peer-review`                   | Peer review roster                                                   |
+| `/rubrics/:rubricId/peer-review/:studentId`        | Peer review view                                                     |
+| `/peer-analytics/:rubricId`                        | Peer review analytics                                                |
+| `/rubrics/:rubricId/self-assess/:studentId`        | Student self-assessment                                              |
+| `/essays`                                          | Essay list                                                           |
+| `/essays/new`                                      | New essay                                                            |
+| `/essays/:teacherKey`                              | Essay builder                                                        |
+| `/essays/:assignmentId/monitor`                    | Live essay monitor                                                   |
+| `/essays/:assignmentId/monitor/project/:studentId` | Read-only draft projector                                            |
+| `/live`                                            | Live writing session list                                            |
+| `/live/new`                                        | New live writing session                                             |
+| `/live/:sessionId`                                 | Live writing console                                                 |
+| `/live/:sessionId/project`                         | Classroom projector                                                  |
+| `/join`                                            | Public code entry for a live writing session                         |
+| `/join/:code`                                      | Public student writing screen                                        |
+| `/speaking/:rubricId/:studentId`                   | Speaking session                                                     |
+| `/grade-comparative/:classId/:rubricId`            | Comparative grading                                                  |
+| `/marketplace`                                     | School marketplace (rubrics, tests, decks, bank items, live prompts) |
+| `/tests`                                           | Test list                                                            |
+| `/tests/new`                                       | New test                                                             |
+| `/tests/:id`                                       | Test builder                                                         |
+| `/tests/:testId/results/:studentTestId`            | Test results & manual grading                                        |
+| `/tests/:testId/monitor`                           | Live test monitor                                                    |
+| `/tests/:id/scores`                                | Score sheet & test quality analysis                                  |
+| `/students`                                        | Students list                                                        |
+| `/students/:id`                                    | Student profile                                                      |
+| `/students/:id/cefr-overview`                      | Per-student CEFR overview                                            |
+| `/students/:id/grammar-overview`                   | Per-student grammar standards overview                               |
+| `/students/:id/learning-path`                      | Per-student learning path                                            |
+| `/cefr-overview`                                   | Whole-class CEFR overview                                            |
+| `/grammar-overview`                                | Whole-class grammar standards overview                               |
+| `/vocabulary`                                      | Vocabulary Insights hub                                              |
+| `/flashcards`                                      | Flashcard deck list                                                  |
+| `/flashcards/:id`                                  | Flashcard deck editor                                                |
+| `/news-flashes`                                    | News flashes                                                         |
+| `/portal/:studentId`                               | Student portal (public)                                              |
+| `/portal/:studentId/flashcards/:deckId`            | Student flashcard study session                                      |
+| `/feedback/:code`                                  | Student feedback view (public)                                       |
+| `/preview/:code`                                   | Rubric preview (public)                                              |
+| `/essay/:code`                                     | Essay writing session (public)                                       |
+| `/test/:code`                                      | Take a test (public)                                                 |
+| `/attachments`                                     | Attachment manager                                                   |
+| `/comments`                                        | Comment bank                                                         |
+| `/question-bank`                                   | Question bank                                                        |
+| `/statistics`                                      | Statistics dashboard                                                 |
+| `/activity-dashboard`                              | Activity Dashboard                                                   |
+| `/moderation`                                      | Moderation queue                                                     |
+| `/messages`                                        | Messages inbox                                                       |
+| `/notifications`                                   | Notification Center                                                  |
+| `/export`                                          | Export page                                                          |
+| `/settings`                                        | Settings                                                             |
+| `/admin`                                           | Admin panel (admin role only)                                        |
+| `/privacy`                                         | Privacy statement                                                    |
 
 ### Key utility modules
 
@@ -493,7 +495,8 @@ A map of what each path renders — for how a page actually behaves, read its co
 | `src/utils/scoreSheet.ts`                                                 | Score-sheet cell edits, paste parsing, absent marking and CSV export                                                                                                                                                                                                              |
 | `src/utils/reportCardAggregator.ts`                                       | Composes CEFR, learning-goals, and test-summary data into one report card                                                                                                                                                                                                         |
 | `src/utils/globalSearch.ts`                                               | Token-aware search (`type:`/`class:`/`year:`/`track:` filters, student+rubric grading shortcut) across rubrics, tests, students, classes, essays, flashcard decks, and news flashes                                                                                               |
-| `src/utils/liveWriting.ts`                                                | Live writing join-code normalisation, status label keys and public join links.                                                                                                                                                                                                    |
+| `src/utils/liveWriting.ts`                                                | Live writing join-code normalisation, status/focus label keys, CEFR early estimate, public join links, per-tab join resume and join-error mapping.                                                                                                                                |
+| `src/services/database/LiveWritingAdapter.ts`                             | Live writing teacher control RPCs and token-scoped student state: sessions, join, autosave/hand-in, self-check, peer voting, finals, prompt sharing and the grading hand-off.                                                                                                     |
 | `src/utils/portalSearch.ts`                                               | Student-portal search over a student's own graded rubrics, work (tests/essays), and flashcard decks                                                                                                                                                                               |
 | `src/utils/statsChartPresets.ts`                                          | Recommended chart definitions for the Statistics "Custom Views" gallery                                                                                                                                                                                                           |
 | `src/utils/assessmentTimeline.ts`                                         | Merges rubric grades with graded assessment-mode test results for progress trends (class, class comparison, student timeline)                                                                                                                                                     |

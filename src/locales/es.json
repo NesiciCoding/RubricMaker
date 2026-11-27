@@ -3649,7 +3649,8 @@
         "switch_back_to_teacher": "Volver al rol de docente",
         "letter_grade_range": "{{grade}} = {{min}}–{{max}} % en {{scale}}",
         "back_to_portal": "Volver al portal",
-        "privacy_link": "Privacidad y protección de datos"
+        "privacy_link": "Privacidad y protección de datos",
+        "live_writing_title": "Escritura en vivo"
     },
     "selfAssess": {
         "title": "Autoevaluación MCER",
@@ -5708,7 +5709,16 @@
         "gr_test_rich_authoring_item_rich_notes": "Las pistas y explicaciones son texto enriquecido: negrita, listas, enlaces e imágenes. Las notas escritas antes como texto sin formato conservan sus saltos de línea, salvo que contengan texto que parezca una etiqueta HTML. El alumnado ve la pista cuando la pide y la explicación tras enviar una prueba de práctica.",
         "gr_test_rich_authoring_item_typed_gap_chips": "Los huecos de respuesta libre muestran ahora sus respuestas aceptadas como fichas, igual que los desplegables: añada una (o varias a la vez como a|b|c), quite una con × y pulse Intro en un cuadro vacío para guardar. La primera respuesta es la que se muestra en el editor.",
         "gr_test_answer_options_item_scripts": "El texto de opciones y elementos puede mostrar subíndices y superíndices: escriba H_{2}O o x^{2} (las llaves son obligatorias, así que un texto normal como snake_case o 2^10 nunca cambia). Se ve en pantalla, en el cuadernillo impreso (HTML y Word) y como Unicode en resultados y claves de respuesta.",
-        "gs_classes_item_scope": "Los administradores que también enseñan ven por defecto sus propias clases y las que comparten, y pueden cambiar a Todo el centro en la barra superior. La gestión de una clase sigue siendo del propietario, salvo que un administrador cambie de ámbito para ayudar. Solo se descarga el ámbito activo; al cambiar se carga el resto."
+        "gs_classes_item_scope": "Los administradores que también enseñan ven por defecto sus propias clases y las que comparten, y pueden cambiar a Todo el centro en la barra superior. La gestión de una clase sigue siendo del propietario, salvo que un administrador cambie de ámbito para ayudar. Solo se descarga el ámbito activo; al cambiar se carga el resto.",
+        "lw_share_title": "Compartir consignas con colegas",
+        "lw_share_body": "Una consigna guardada puede publicarse en el mercado de tu centro y otro docente puede clonarla como punto de partida de su propia sesión.",
+        "lw_share_item_tags": "Publica con etiquetas propias — asignatura, idioma, nivel(es) MCER, enfoque de escritura y curso escolar — para que tus colegas puedan filtrar el banco de consignas.",
+        "lw_share_item_clone": "Al clonar se abre un borrador de sesión con la consigna, la imagen, el tiempo y las pistas ya rellenados; solo eliges la clase.",
+        "lw_share_item_privacy": "Solo viajan esos campos de la consigna. La clase, los participantes, las respuestas, los votos y los resultados nunca salen de la sesión original.",
+        "lw_share_item_unpublish": "Retirar la publicación la quita del listado; las sesiones ya clonadas no se ven afectadas.",
+        "rb_marketplace_live_prompt_note": "Las consignas de escritura en vivo se publican desde la consola de sesión y aparecen en el mismo mercado, filtrables por asignatura y nivel MCER.",
+        "lw_local_mode_info": "Modo local y límite de la función: la escritura en vivo necesita el backend compartido de Supabase. Sin él, /live y /join muestran un breve aviso de que se requiere conexión en la nube en lugar de fallar o simular que funciona en local. No hay un interruptor por centro — cada sesión la crea el docente, y «Bloquear tras el inicio» impide unirse tarde con el código una vez que la ronda está en marcha.",
+        "lw_teacher_item_portal": "La entrada desde el portal es opcional en cada sesión: si está activa, el alumnado con sesión iniciada escribe el código en su portal y entra como él mismo, sin elegir nombre."
     },
     "studentProfile": {
         "tab_overview": "Resumen",
@@ -6030,7 +6040,15 @@
         "kind_questionBankItems": "Elementos del banco de preguntas",
         "sort_label": "Ordenar por",
         "sort_newest": "Más reciente",
-        "sort_upvotes": "Más votado"
+        "sort_upvotes": "Más votado",
+        "kind_live_prompt": "Consigna de escritura en vivo",
+        "kind_live_prompts": "Consignas en vivo",
+        "filter_cefr_label": "Nivel MCER",
+        "filter_cefr_all": "Todos los niveles",
+        "unpublish_title": "Retirar publicación",
+        "unpublish_toast": "Publicación retirada",
+        "unpublish_failed": "No se pudo retirar esta publicación",
+        "clone_prompt_title": "Usar esta consigna"
     },
     "search": {
         "placeholder": "Buscar rúbricas, pruebas, alumnos… (prueba type:test, class:5A)",
@@ -7042,7 +7060,35 @@
         "image_hint": "Se muestra en el proyector y en la página de cada estudiante. JPG, PNG o WebP, 5 MB como máximo.",
         "image_invalid": "Elige una imagen JPG, PNG o WebP.",
         "image_too_large": "Esa imagen supera los 5 MB.",
-        "image_upload_failed": "No se pudo subir la imagen."
+        "image_upload_failed": "No se pudo subir la imagen.",
+        "focus_narrative": "Narrativo",
+        "focus_argumentative": "Argumentativo",
+        "focus_descriptive": "Descriptivo",
+        "focus_expository": "Expositivo",
+        "focus_reflective": "Reflexivo",
+        "focus_language_practice": "Práctica de lengua",
+        "share_title": "Compartir esta consigna",
+        "share_open": "Compartir",
+        "share_intro": "Publica la consigna, la imagen, el tiempo y las pistas en el mercado de tu centro. No se comparten clases, estudiantes, respuestas, votos ni resultados.",
+        "share_subject": "Asignatura",
+        "share_language": "Idioma",
+        "share_levels": "Nivel(es) MCER",
+        "share_focus": "Enfoque de escritura",
+        "share_year": "Curso escolar",
+        "share_year_any": "Cualquier curso",
+        "share_select": "Seleccionar…",
+        "share_publish": "Publicar consigna",
+        "share_published": "Consigna publicada en el mercado de tu centro",
+        "share_failed": "No se pudo publicar esta consigna",
+        "share_requires_school": "Únete a un centro para compartir consignas con tus colegas.",
+        "portal_join_toggle": "Permitir que el alumnado del portal entre con el código",
+        "portal_join_hint": "El alumnado con sesión iniciada se salta la lista de nombres y entra como él mismo.",
+        "portal_join_title": "Unirse a una sesión de escritura en vivo",
+        "portal_join_subtitle": "Escribe el código de la pizarra. Entras como tú mismo, sin elegir nombre.",
+        "portal_join_button": "Unirse",
+        "portal_join_joining": "Entrando…",
+        "portal_join_disabled": "La entrada desde el portal está desactivada para esta sesión. Usa el enlace público y elige tu nombre.",
+        "portal_join_signed_out": "Inicia sesión en tu portal de estudiante para entrar así."
     },
     "scope": {
         "label": "Ámbito del alumnado",

@@ -16,61 +16,17 @@ import type {
 } from '../types';
 import { countWords } from '../utils/essayUtils';
 import {
+    clearStoredLiveWritingJoin,
     isCompleteJoinCode,
     liveWritingCefrEstimate,
+    liveWritingJoinErrorKey,
+    liveWritingLookupErrorKey,
     LIVE_WRITING_CEFR_MIN_WORDS,
     normalizeJoinCode,
+    readStoredLiveWritingJoin,
+    writeStoredLiveWritingJoin,
 } from '../utils/liveWriting';
-
-const JOIN_STORAGE_PREFIX = 'rm_live_write_join:';
-
-interface StoredJoin {
-    participantId: string;
-    joinToken: string;
-}
-
-function joinStorageKey(code: string): string {
-    return `${JOIN_STORAGE_PREFIX}${normalizeJoinCode(code)}`;
-}
-
-function readStoredJoin(code: string): StoredJoin | null {
-    if (!isCompleteJoinCode(code)) return null;
-    try {
-        const raw = sessionStorage.getItem(joinStorageKey(code));
-        if (!raw) return null;
-        const parsed = JSON.parse(raw) as Partial<StoredJoin>;
-        if (typeof parsed.participantId === 'string' && typeof parsed.joinToken === 'string') {
-            return { participantId: parsed.participantId, joinToken: parsed.joinToken };
-        }
-    } catch {
-        // Private browsing or a corrupt value: fall back to the name picker.
-    }
-    return null;
-}
-
-function writeStoredJoin(code: string, join: StoredJoin): void {
-    try {
-        sessionStorage.setItem(joinStorageKey(code), JSON.stringify(join));
-    } catch {
-        // The session still works; only reload-resume is unavailable.
-    }
-}
-
-function clearStoredJoin(code: string): void {
-    try {
-        sessionStorage.removeItem(joinStorageKey(code));
-    } catch {
-        // Nothing to clear when storage is unavailable.
-    }
-}
-
-function errorKey(error: unknown): string {
-    const message = error instanceof Error ? error.message : '';
-    if (message.includes('too_many_attempts')) return 'liveWriting.too_many_attempts';
-    if (message.includes('student_not_in_class')) return 'liveWriting.student_not_in_class';
-    if (message.includes('invalid_code')) return 'liveWriting.invalid_code';
-    return 'liveWriting.join_failed';
-}
+import type { StoredLiveWritingJoin } from '../utils/liveWriting';
 
 function formatCountdown(ms: number): string {
     const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
@@ -92,7 +48,7 @@ export default function StudentLiveWritePage() {
 
     const [code, setCode] = useState(routeCode ?? '');
     const [roster, setRoster] = useState<LiveWritingRosterEntry[] | null>(null);
-    const [join, setJoin] = useState<StoredJoin | null>(null);
+    const [join, setJoin] = useState<StoredLiveWritingJoin | null>(null);
     const [state, setState] = useState<LiveWritingStudentState | null>(null);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(adapter ? null : 'liveWriting.join_unavailable');
@@ -153,7 +109,7 @@ export default function StudentLiveWritePage() {
                     setRoster(names);
                 }
             } catch (err) {
-                setError(errorKey(err));
+                setError(liveWritingLookupErrorKey(err));
             } finally {
                 setBusy(false);
             }
@@ -177,7 +133,7 @@ export default function StudentLiveWritePage() {
             setError('liveWriting.invalid_code');
             return;
         }
-        const stored = readStoredJoin(routeCode);
+        const stored = readStoredLiveWritingJoin(routeCode);
         if (stored) setJoin(stored);
         else void lookup(routeCode);
     }, [routeCode, lookup]);
@@ -211,7 +167,7 @@ export default function StudentLiveWritePage() {
                 if (cancelled) return;
                 const message = err instanceof Error ? err.message : '';
                 if (message.includes('invalid_token')) {
-                    clearStoredJoin(code);
+                    clearStoredLiveWritingJoin(code);
                     setJoin(null);
                     setState(null);
                     setReadyRound(null);
@@ -461,19 +417,19 @@ export default function StudentLiveWritePage() {
         try {
             const joined = await adapter.join(normalizeJoinCode(code), studentId);
             const stored = { participantId: joined.participantId, joinToken: joined.joinToken };
-            writeStoredJoin(code, stored);
+            writeStoredLiveWritingJoin(code, stored);
             setJoin(stored);
             setRoster(null);
             if (!routeCode) navigate(`/join/${encodeURIComponent(normalizeJoinCode(code))}`, { replace: true });
         } catch (err) {
-            setError(errorKey(err));
+            setError(liveWritingJoinErrorKey(err));
         } finally {
             setBusy(false);
         }
     }
 
     function changeName() {
-        clearStoredJoin(code);
+        clearStoredLiveWritingJoin(code);
         setJoin(null);
         setState(null);
         setReadyRound(null);

@@ -89,6 +89,7 @@ import type {
 import { isLocalMode } from '../store/storage';
 import { useToast } from '../hooks/useToast';
 import { useDbStatus } from '../hooks/useDbStatus';
+import PortalLiveWritingJoin from '../components/Students/PortalLiveWritingJoin';
 import { EmptyState } from '../components/ui/EmptyState';
 
 // Sections scroll to just below the sticky tab bar, whose height grows when the tabs wrap on phones.
@@ -139,6 +140,7 @@ type PortalTab = 'home' | 'assignments' | 'feedback' | 'progress';
 /** Which portal tab each scroll section belongs to (Phase 41.1). */
 const SECTION_TAB: Record<string, PortalTab> = {
     'portal-section-top': 'home',
+    'portal-section-live': 'assignments',
     'portal-section-news-flashes': 'home',
     'portal-section-moderation': 'home',
     'portal-section-work': 'assignments',
@@ -1151,6 +1153,15 @@ export default function StudentPortalPage() {
                         {t('studentPortal.work_load_error')}
                     </div>
                 )}
+                {dbStatus.isConnected &&
+                    dbStatus.userId !== null &&
+                    settings.userRole === 'student' &&
+                    isTab('assignments') && (
+                        <Section id="portal-section-live" title={t('studentPortal.live_writing_title')}>
+                            <PortalLiveWritingJoin />
+                        </Section>
+                    )}
+
                 {(hasWork || workLoading) && isTab('assignments') && (
                     <Section id="portal-section-work" title={t('studentPortal.my_work')}>
                         {workLoading ? (

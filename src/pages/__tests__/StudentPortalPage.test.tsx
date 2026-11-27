@@ -247,16 +247,18 @@ vi.mock('react-joyride', () => ({
     STATUS: { FINISHED: 'finished', SKIPPED: 'skipped' },
 }));
 
+const mockDbState = vi.hoisted(() => ({ connected: false, userId: null as string | null }));
+
 vi.mock('../../services/database', () => ({
     loadSupabaseConfig: () => null,
     storageSync: {
         adapter: {},
         subscribe: () => () => {},
         onAuthChange: () => () => {},
-        isConnected: () => false,
+        isConnected: () => mockDbState.connected,
         getStatus: () => 'disconnected',
         getLastSyncAt: () => null,
-        getCurrentUserId: () => null,
+        getCurrentUserId: () => mockDbState.userId,
     },
 }));
 
@@ -304,6 +306,8 @@ function switchTab(tab: 'home' | 'assignments' | 'feedback' | 'progress') {
 
 describe('StudentPortalPage', () => {
     beforeEach(async () => {
+        mockDbState.connected = false;
+        mockDbState.userId = null;
         mockFetchMyEssayAssignments.mockClear();
         mockFetchMyEssayAssignments.mockResolvedValue([]);
         mockFetchMyTestAssignments.mockClear();
@@ -359,6 +363,20 @@ describe('StudentPortalPage', () => {
         // Progress tab shows its empty state when there are no grades.
         switchTab('progress');
         expect(screen.getByText('studentPortal.tab_empty_progress')).toBeInTheDocument();
+    });
+
+    it('offers the portal live-writing join only to a signed-in student', () => {
+        renderAt('s1');
+        switchTab('assignments');
+        expect(screen.queryByText('studentPortal.live_writing_title')).not.toBeInTheDocument();
+        cleanup();
+
+        mockDbState.connected = true;
+        mockDbState.userId = 'student-user-1';
+        renderAt('s1');
+        switchTab('assignments');
+        expect(screen.getByText('studentPortal.live_writing_title')).toBeInTheDocument();
+        expect(screen.getByLabelText('liveWriting.code_label')).toBeInTheDocument();
     });
 
     it('wires the section tabs with ARIA tabs semantics (#709)', () => {

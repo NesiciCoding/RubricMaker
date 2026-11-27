@@ -3649,7 +3649,8 @@
         "switch_back_to_teacher": "Revenir au rôle enseignant",
         "letter_grade_range": "{{grade}} = {{min}}–{{max}} % sur {{scale}}",
         "back_to_portal": "Retour au portail",
-        "privacy_link": "Confidentialité et protection des données"
+        "privacy_link": "Confidentialité et protection des données",
+        "live_writing_title": "Écriture en direct"
     },
     "selfAssess": {
         "title": "Auto-évaluation CECR",
@@ -5708,7 +5709,16 @@
         "gr_test_rich_authoring_item_rich_notes": "Les indices et explications sont du texte enrichi : gras, listes, liens et images. Les notes écrites auparavant en texte brut conservent leurs sauts de ligne, sauf si elles contiennent du texte qui ressemble à une balise HTML. Les élèves voient l'indice à leur demande et l'explication après l'envoi d'un test d'entraînement.",
         "gr_test_rich_authoring_item_typed_gap_chips": "Les trous à saisie libre listent désormais leurs réponses acceptées sous forme de puces, comme les trous à liste déroulante : ajoutez-en une (ou plusieurs d'un coup avec a|b|c), supprimez-en une avec ×, et appuyez sur Entrée dans un champ vide pour enregistrer. La première réponse est celle affichée dans l'éditeur.",
         "gr_test_answer_options_item_scripts": "Le texte des options et des éléments peut afficher indices et exposants : écrivez H_{2}O ou x^{2} (les accolades sont obligatoires, donc un texte ordinaire comme snake_case ou 2^10 n'est jamais modifié). Ils s'affichent à l'écran, dans le livret imprimé (HTML et Word) et en Unicode dans les résultats et les corrigés.",
-        "gs_classes_item_scope": "Les administrateurs qui enseignent voient par défaut leurs propres classes et celles qu'ils co-enseignent, et peuvent passer à Toute l'école dans la barre supérieure. La gestion d'une classe reste au propriétaire, sauf si un administrateur change de portée pour intervenir. Seule la portée active est téléchargée ; basculer charge le reste."
+        "gs_classes_item_scope": "Les administrateurs qui enseignent voient par défaut leurs propres classes et celles qu'ils co-enseignent, et peuvent passer à Toute l'école dans la barre supérieure. La gestion d'une classe reste au propriétaire, sauf si un administrateur change de portée pour intervenir. Seule la portée active est téléchargée ; basculer charge le reste.",
+        "lw_share_title": "Partager des sujets avec vos collègues",
+        "lw_share_body": "Un sujet enregistré peut être publié sur la place de marché de votre établissement et cloné par un autre enseignant comme point de départ de sa propre session.",
+        "lw_share_item_tags": "Publiez avec des étiquettes dédiées — matière, langue, niveau(x) CECRL, objectif d’écriture et année scolaire — pour que vos collègues puissent filtrer la banque de sujets.",
+        "lw_share_item_clone": "Le clonage ouvre un nouveau brouillon de session avec le sujet, l’image, la durée et les aides remplis ; seule la classe reste à choisir.",
+        "lw_share_item_privacy": "Seuls ces champs du sujet sont transmis. La classe, les participants, les réponses, les votes et les résultats ne quittent jamais la session d’origine.",
+        "lw_share_item_unpublish": "Dépublier retire l’annonce de la navigation ; les sessions déjà clonées ne sont pas affectées.",
+        "rb_marketplace_live_prompt_note": "Les sujets d’écriture en direct sont publiés depuis la console de session et apparaissent sur la même place de marché, filtrables par matière et niveau CECRL.",
+        "lw_local_mode_info": "Mode local et activation : l’écriture en direct nécessite le backend Supabase partagé. Sans lui, /live et /join affichent un court message « connexion cloud requise » au lieu d’échouer ou de simuler un fonctionnement local. Il n’existe pas d’interrupteur par établissement — chaque session est créée par l’enseignant, et « Verrouiller après le départ » bloque les arrivées tardives par code une fois la manche lancée.",
+        "lw_teacher_item_portal": "La connexion via le portail est optionnelle par séance : activée, elle permet à un élève connecté de saisir le code dans son portail et de rejoindre la séance sous sa propre identité, sans choisir de nom."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",
@@ -6030,7 +6040,15 @@
         "kind_questionBankItems": "Éléments de banque de questions",
         "sort_label": "Trier par",
         "sort_newest": "Plus récent",
-        "sort_upvotes": "Plus voté"
+        "sort_upvotes": "Plus voté",
+        "kind_live_prompt": "Sujet d’écriture en direct",
+        "kind_live_prompts": "Sujets en direct",
+        "filter_cefr_label": "Niveau CECRL",
+        "filter_cefr_all": "Tous les niveaux",
+        "unpublish_title": "Dépublier",
+        "unpublish_toast": "Publication retirée",
+        "unpublish_failed": "Impossible de dépublier cette annonce",
+        "clone_prompt_title": "Utiliser ce sujet"
     },
     "search": {
         "placeholder": "Rechercher rubriques, tests, élèves… (essayez type:test, class:5A)",
@@ -7042,7 +7060,35 @@
         "image_hint": "Affichée sur le projecteur et sur la page de chaque élève. JPG, PNG ou WebP, 5 Mo maximum.",
         "image_invalid": "Choisissez une image JPG, PNG ou WebP.",
         "image_too_large": "Cette image dépasse 5 Mo.",
-        "image_upload_failed": "L'image n'a pas pu être envoyée."
+        "image_upload_failed": "L'image n'a pas pu être envoyée.",
+        "focus_narrative": "Narratif",
+        "focus_argumentative": "Argumentatif",
+        "focus_descriptive": "Descriptif",
+        "focus_expository": "Explicatif",
+        "focus_reflective": "Réflexif",
+        "focus_language_practice": "Pratique de la langue",
+        "share_title": "Partager ce sujet",
+        "share_open": "Partager",
+        "share_intro": "Publiez le sujet, l’image, la durée et les aides sur la place de marché de votre établissement. Aucune classe, aucun élève, aucune réponse, aucun vote ni résultat n’est partagé.",
+        "share_subject": "Matière",
+        "share_language": "Langue",
+        "share_levels": "Niveau(x) CECRL",
+        "share_focus": "Objectif d’écriture",
+        "share_year": "Année scolaire",
+        "share_year_any": "Toutes les années",
+        "share_select": "Sélectionner…",
+        "share_publish": "Publier le sujet",
+        "share_published": "Sujet publié sur la place de marché de votre établissement",
+        "share_failed": "Impossible de publier ce sujet",
+        "share_requires_school": "Rejoignez un établissement pour partager des sujets avec vos collègues.",
+        "portal_join_toggle": "Autoriser la connexion des élèves du portail avec le code",
+        "portal_join_hint": "Les élèves connectés sautent la liste des noms et participent sous leur propre identité.",
+        "portal_join_title": "Rejoindre une séance d'écriture en direct",
+        "portal_join_subtitle": "Saisissez le code du tableau. Vous rejoignez la séance sous votre propre identité, sans choisir de nom.",
+        "portal_join_button": "Rejoindre",
+        "portal_join_joining": "Connexion…",
+        "portal_join_disabled": "La connexion via le portail est désactivée pour cette séance. Utilisez le lien public et choisissez votre nom.",
+        "portal_join_signed_out": "Connectez-vous à votre portail élève pour rejoindre ainsi."
     },
     "scope": {
         "label": "Portée du groupe",
