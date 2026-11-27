@@ -84,6 +84,9 @@ export class TestBuilderPage extends BasePage {
     async setQuestionType(index: number, type: 'multiple-choice' | 'short-answer' | 'open'): Promise<void> {
         // The type field opens the picker rather than a native <select>. Cards carry
         // data-question-type, so this doesn't depend on translated card labels.
+        // A conversion that drops authored content asks first; Playwright dismisses native
+        // dialogs by default, which would leave the question on its old type.
+        this.page.once('dialog', (dialog) => void dialog.accept());
         await this.questionCard(index)
             .getByLabel(/question type/i)
             .click();
