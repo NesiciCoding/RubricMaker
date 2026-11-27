@@ -119,20 +119,26 @@ describe('ProofMarkPopover as a bottom sheet', () => {
         return render(<ProofMarkPopover variant="sheet" row={ROW} dir="ltr" titleId="sheet-title" onClose={vi.fn()} />);
     }
 
-    it('is fixed to the viewport bottom instead of being placed beside a chip', () => {
-        renderSheet();
+    it('is a modal sheet fixed to the viewport bottom, with focus trapped on its close button', () => {
+        const { container } = renderSheet();
 
+        // It covers the page, so unlike the anchored panel it takes focus and hides the rest of the
+        // page from assistive tech until it is dismissed.
         const dialog = screen.getByRole('dialog');
         expect(dialog).toHaveAttribute('data-side', 'sheet');
         expect(dialog).toHaveStyle({ position: 'fixed', bottom: '8px' });
         expect(dialog).not.toHaveStyle({ position: 'absolute' });
+        expect(container.closest('[aria-hidden="true"]')).not.toBeNull();
+
+        const close = screen.getByRole('button', { name: 'proofMarks.panel.close' });
+        expect(close).toHaveFocus();
+        fireEvent.keyDown(dialog, { key: 'Tab' });
+        expect(close).toHaveFocus();
     });
 
-    it('closes on Escape and opens on its close button without an anchor', () => {
+    it('closes on Escape without an anchor', () => {
         const onClose = vi.fn();
         render(<ProofMarkPopover variant="sheet" row={ROW} dir="ltr" titleId="sheet-title" onClose={onClose} />);
-
-        expect(screen.getByRole('button', { name: 'proofMarks.panel.close' })).toHaveFocus();
 
         fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
         expect(onClose).toHaveBeenCalledTimes(1);

@@ -31,8 +31,9 @@ export interface ProofMarkPopoverProps {
  * replacement), and Escape or Close to dismiss it.
  *
  * Radix owns the ARIA and Escape handling, so the panel is one of the shared dialog primitives
- * rather than another hand-rolled overlay. It is deliberately non-modal: the rail's chips and the
- * narrow-screen list stay reachable while it is open. The bottom sheet is portalled to <body> so
+ * rather than another hand-rolled overlay. The anchored panel is non-modal — the rail's chips stay
+ * reachable while it sits beside one — while the bottom sheet covers the screen on a narrow
+ * viewport, so it is modal and traps focus until it closes. The sheet is portalled to <body> so
  * `position: fixed` cannot be captured by an animated ancestor; the anchored panel stays in the
  * rail, whose coordinate space its placement is measured in.
  *
@@ -74,7 +75,7 @@ export default function ProofMarkPopover({
     }, []);
 
     const panel = (
-        <Dialog.Root open modal={false} onOpenChange={(open) => !open && onClose()}>
+        <Dialog.Root open modal={sheet} onOpenChange={(open) => !open && onClose()}>
             <Dialog.Content
                 ref={panelRef}
                 aria-labelledby={titleId}
