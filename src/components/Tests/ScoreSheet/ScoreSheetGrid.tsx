@@ -78,6 +78,10 @@ export default function ScoreSheetGrid({
     const tableRef = useRef<HTMLTableElement>(null);
     const [drafts, setDrafts] = useState<Record<string, string>>({});
     const [focus, setFocus] = useState<{ row: number; col: number } | null>(null);
+    // The cell whose menu was opened from its ⋯ button. Opening a menu moves focus to its first item,
+    // which blurs the input and would unmount the trigger mid-interaction, so the cell keeps it until
+    // the menu closes.
+    const [menuCellKey, setMenuCellKey] = useState<string | null>(null);
     // Context-menu items are built once, at open time, but stay selectable after a later
     // render (e.g. the auto-focus-driven blur-commit that fires right after opening) swaps
     // in a new `sheetByStudent`. Reading through this ref instead of the closed-over prop
@@ -288,6 +292,19 @@ export default function ScoreSheetGrid({
                 onSelect: () => fillAcross(row, col),
             },
         ];
+    }
+
+    /**
+     * Opens the cell menu from either route — right-click/Shift+F10 and the touch ⋯ button. The ⋯
+     * button unmounts as soon as focus leaves the cell, so the menu closes onto the cell input
+     * instead; otherwise focus falls to <body> and the next Tab restarts at the top of the page.
+     */
+    function openCellMenu(event: React.MouseEvent, row: number, col: number, fromTouchButton = false) {
+        setMenuCellKey(`${row}-${col}`);
+        const anchor = fromTouchButton
+            ? (tableRef.current?.querySelector<HTMLInputElement>(`[data-cell="${row}-${col}"]`) ?? undefined)
+            : undefined;
+        ctx.open(event, cellMenu(row, col), t('tests.scoreSheet.menu_cell_label'), anchor);
     }
 
     function rowMenu(row: number): ContextMenuItem[] {
@@ -547,6 +564,7 @@ export default function ScoreSheetGrid({
                                     const validity = drafts[k] === undefined ? 'ok' : validateCell(drafts[k], q.points);
                                     const bad = validity === 'invalid' || validity === 'over_max';
                                     const isFocused = focus?.row === row && focus?.col === col;
+                                    const showCellMenuButton = isFocused || menuCellKey === `${row}-${col}`;
                                     const inBand = !isFocused && (focus?.row === row || focus?.col === col);
                                     const notGiven = !isQuestionDelivered(
                                         test,
@@ -558,60 +576,89 @@ export default function ScoreSheetGrid({
                                         <td
                                             key={q.id}
                                             data-context-menu="cell"
-                                            onContextMenu={(e) =>
-                                                ctx.open(e, cellMenu(row, col), t('tests.scoreSheet.menu_cell_label'))
-                                            }
+                                            onContextMenu={(e) => openCellMenu(e, row, col)}
                                             style={{
                                                 borderBottom: cellBorder,
                                                 padding: 2,
                                                 background: isFocused ? focusedCellBg : inBand ? bandCellBg : undefined,
                                             }}
                                         >
-                                            <input
-                                                data-cell={`${row}-${col}`}
-                                                inputMode="decimal"
-                                                autoComplete="off"
-                                                disabled={absent || notGiven || !(canEdit?.(student) ?? true)}
-                                                placeholder={notGiven ? '–' : undefined}
-                                                aria-label={t('tests.scoreSheet.cell_label', {
-                                                    student: student.name,
-                                                    question: test.scoreOnly ? q.prompt : col + 1,
-                                                    max: formatPoints(q.points, i18n.language),
-                                                })}
-                                                aria-invalid={bad || undefined}
-                                                title={
-                                                    notGiven
-                                                        ? t('tests.scoreSheet.not_delivered')
-                                                        : validity === 'over_max'
-                                                          ? t('tests.scoreSheet.over_max', { max: q.points })
-                                                          : validity === 'invalid'
-                                                            ? t('tests.scoreSheet.invalid')
-                                                            : undefined
-                                                }
-                                                value={value}
-                                                onChange={(e) => setDrafts((d) => ({ ...d, [k]: e.target.value }))}
-                                                onFocus={(e) => {
-                                                    setFocus({ row, col });
-                                                    e.target.select();
-                                                }}
-                                                onBlur={() => {
-                                                    setFocus(null);
-                                                    handleBlur(row, col);
-                                                }}
-                                                onKeyDown={(e) => handleKeyDown(e, row, col)}
-                                                onPaste={(e) => handlePaste(e, row, col)}
-                                                style={{
-                                                    width: 52,
-                                                    textAlign: 'center',
-                                                    padding: '4px 2px',
-                                                    border: bad ? '2px solid var(--red)' : '1px solid transparent',
-                                                    outline: isFocused && !bad ? '2px solid var(--accent)' : undefined,
-                                                    outlineOffset: -2,
-                                                    background: bad
-                                                        ? 'color-mix(in srgb, var(--red) 10%, transparent)'
-                                                        : 'transparent',
-                                                }}
-                                            />
+                                            <div
+                                                className={`score-cell${showCellMenuButton ? ' score-cell-has-menu' : ''}`}
+                                                style={{ display: 'flex', alignItems: 'center' }}
+                                            >
+                                                <input
+                                                    className="score-cell-input"
+                                                    data-cell={`${row}-${col}`}
+                                                    inputMode="decimal"
+                                                    autoComplete="off"
+                                                    disabled={absent || notGiven || !(canEdit?.(student) ?? true)}
+                                                    placeholder={notGiven ? '–' : undefined}
+                                                    aria-label={t('tests.scoreSheet.cell_label', {
+                                                        student: student.name,
+                                                        question: test.scoreOnly ? q.prompt : col + 1,
+                                                        max: formatPoints(q.points, i18n.language),
+                                                    })}
+                                                    aria-invalid={bad || undefined}
+                                                    title={
+                                                        notGiven
+                                                            ? t('tests.scoreSheet.not_delivered')
+                                                            : validity === 'over_max'
+                                                              ? t('tests.scoreSheet.over_max', { max: q.points })
+                                                              : validity === 'invalid'
+                                                                ? t('tests.scoreSheet.invalid')
+                                                                : undefined
+                                                    }
+                                                    value={value}
+                                                    onChange={(e) => setDrafts((d) => ({ ...d, [k]: e.target.value }))}
+                                                    onFocus={(e) => {
+                                                        setFocus({ row, col });
+                                                        e.target.select();
+                                                    }}
+                                                    onBlur={() => {
+                                                        setFocus(null);
+                                                        handleBlur(row, col);
+                                                    }}
+                                                    onKeyDown={(e) => handleKeyDown(e, row, col)}
+                                                    onPaste={(e) => handlePaste(e, row, col)}
+                                                    style={{
+                                                        textAlign: 'center',
+                                                        padding: '4px 2px',
+                                                        border: bad ? '2px solid var(--red)' : '1px solid transparent',
+                                                        outline:
+                                                            isFocused && !bad ? '2px solid var(--accent)' : undefined,
+                                                        outlineOffset: -2,
+                                                        background: bad
+                                                            ? 'color-mix(in srgb, var(--red) 10%, transparent)'
+                                                            : 'transparent',
+                                                    }}
+                                                />
+                                                {showCellMenuButton && (
+                                                    <span
+                                                        // Coarse pointers only (#1325): the visible route to the menu
+                                                        // right-click already opens. Suppressing pointerdown keeps
+                                                        // the input focused, so the tap is not spent on the blur that
+                                                        // would commit the draft and unmount this button.
+                                                        className="menu-touch-only"
+                                                        onPointerDown={(event) => event.preventDefault()}
+                                                    >
+                                                        <MenuButton
+                                                            label={t('tests.scoreSheet.menu_cell_label')}
+                                                            onOpen={(event) => openCellMenu(event, row, col, true)}
+                                                            style={{
+                                                                // The 44px WCAG target size; the cell reserves
+                                                                // the room beside the value (see .score-cell).
+                                                                width: 44,
+                                                                height: 44,
+                                                                minWidth: 44,
+                                                                minHeight: 44,
+                                                                padding: 0,
+                                                                background: 'var(--bg-elevated)',
+                                                            }}
+                                                        />
+                                                    </span>
+                                                )}
+                                            </div>
                                         </td>
                                     );
                                 })}
@@ -699,7 +746,13 @@ export default function ScoreSheetGrid({
                     </tr>
                 </tfoot>
             </table>
-            <ContextMenu {...ctx.menuProps} />
+            <ContextMenu
+                {...ctx.menuProps}
+                onClose={() => {
+                    setMenuCellKey(null);
+                    ctx.menuProps.onClose();
+                }}
+            />
         </div>
     );
 }

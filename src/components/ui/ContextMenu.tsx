@@ -58,14 +58,28 @@ export function useContextMenu() {
         invoker: null,
     });
 
-    const open = useCallback((event: React.MouseEvent, items: ContextMenuItem[], label?: string) => {
-        if (!items.length || keepsNativeMenu(event.target)) return;
-        event.preventDefault();
-        const target = event.target instanceof Element ? event.target : null;
-        const invoker =
-            target?.closest<HTMLElement>('input, button, [tabindex]') ?? (event.currentTarget as HTMLElement | null);
-        setState({ open: true, point: contextMenuPoint(event), items, label, invoker });
-    }, []);
+    const open = useCallback(
+        (
+            event: React.MouseEvent,
+            items: ContextMenuItem[],
+            label?: string,
+            /**
+             * The element focus should return to when the menu closes, when the click target is a
+             * trigger that does not outlive the menu — the score sheet's ⋯ button, for instance.
+             */
+            invokerOverride?: HTMLElement | null
+        ) => {
+            if (!items.length || keepsNativeMenu(event.target)) return;
+            event.preventDefault();
+            const target = event.target instanceof Element ? event.target : null;
+            const invoker =
+                invokerOverride ??
+                target?.closest<HTMLElement>('input, button, [tabindex]') ??
+                (event.currentTarget as HTMLElement | null);
+            setState({ open: true, point: contextMenuPoint(event), items, label, invoker });
+        },
+        []
+    );
 
     const close = useCallback(() => setState((s) => (s.open ? { ...s, open: false } : s)), []);
 
