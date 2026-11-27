@@ -112,6 +112,31 @@ describe('ProofMarkPopover', () => {
         fireEvent.click(screen.getByRole('button', { name: 'proofMarks.panel.close' }));
         expect(onClose).toHaveBeenCalledTimes(1);
     });
+
+    it('closes when the teacher clicks elsewhere on the page', async () => {
+        const onClose = vi.fn();
+        render(
+            <div>
+                <button type="button">elsewhere</button>
+                <ProofMarkPopover
+                    row={ROW}
+                    anchor={ANCHOR}
+                    bounds={BOUNDS}
+                    dir="ltr"
+                    titleId="panel-title"
+                    onClose={onClose}
+                />
+            </div>
+        );
+
+        // Radix attaches the outside listener a tick after opening (so the click that opened the
+        // panel cannot immediately close it again) and confirms the click after its pointer down.
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        const elsewhere = screen.getByRole('button', { name: 'elsewhere' });
+        fireEvent.pointerDown(elsewhere);
+        fireEvent.click(elsewhere);
+        expect(onClose).toHaveBeenCalledTimes(1);
+    });
 });
 
 describe('ProofMarkPopover as a bottom sheet', () => {

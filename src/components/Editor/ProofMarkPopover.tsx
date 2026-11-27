@@ -30,12 +30,12 @@ export interface ProofMarkPopoverProps {
  * name, a list of instructions (symbol, what the teacher means, and the word as written → the
  * replacement), and Escape or Close to dismiss it.
  *
- * Radix owns the ARIA and Escape handling, so the panel is one of the shared dialog primitives
- * rather than another hand-rolled overlay. The anchored panel is non-modal — the rail's chips stay
- * reachable while it sits beside one — while the bottom sheet covers the screen on a narrow
- * viewport, so it is modal and traps focus until it closes. The sheet is portalled to <body> so
- * `position: fixed` cannot be captured by an animated ancestor; the anchored panel stays in the
- * rail, whose coordinate space its placement is measured in.
+ * Radix owns the ARIA, Escape and outside-click handling, so the panel is one of the shared dialog
+ * primitives rather than another hand-rolled overlay. The anchored panel is non-modal — the rail's
+ * chips stay reachable, and a click anywhere else on the page dismisses it — while the bottom sheet
+ * covers the screen on a narrow viewport, so it is modal and traps focus until it closes. The sheet
+ * is portalled to <body> so `position: fixed` cannot be captured by an animated ancestor; the
+ * anchored panel stays in the rail, whose coordinate space its placement is measured in.
  *
  * Nothing here writes to the document: the panel only reads the anchor's text, so the essay HTML
  * stays free of marks.
