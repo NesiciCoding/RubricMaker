@@ -135,7 +135,10 @@ export default function ProofMarkPopover({
                             data-mark-id={mark.id}
                             style={{ display: 'flex', alignItems: 'flex-start', gap: 6, padding: '4px 0' }}
                         >
-                            <span aria-hidden="true" style={{ display: 'inline-flex', marginTop: 1 }}>
+                            <span
+                                aria-hidden="true"
+                                style={{ display: 'inline-flex', marginTop: 1, color: 'var(--page-mark-ink, #991b1b)' }}
+                            >
                                 <MarkGlyph id={symbol.glyph} dir={dir} size={14} />
                             </span>
                             <span style={{ flex: 1, minWidth: 0 }}>
