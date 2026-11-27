@@ -143,6 +143,53 @@ describe('ScoreSheetGrid context menu', () => {
         expect(document.activeElement).toBe(cell(1, 1));
     });
 
+    it('walks flagged cells in reading order once each, even when flagging went backwards', async () => {
+        const onSave = vi.fn();
+        render(<StatefulHarness onSaveSpy={onSave} />);
+
+        // Q2 flagged before Q1: insertion order is the reverse of the order a reader expects.
+        fireEvent.contextMenu(cell(1, 1));
+        fireEvent.click(screen.getByRole('menuitem', { name: 'tests.scoreSheet.menu_flag_review' }));
+        await waitFor(() => expect(cell(1, 1).getAttribute('data-flagged')).toBe('true'));
+        fireEvent.contextMenu(cell(1, 0));
+        fireEvent.click(screen.getByRole('menuitem', { name: 'tests.scoreSheet.menu_flag_review' }));
+        await waitFor(() => expect(cell(1, 0).getAttribute('data-flagged')).toBe('true'));
+
+        expect(screen.getByTestId('score-sheet-next-flagged')).toHaveTextContent(
+            'tests.scoreSheet.next_flagged:{"count":2}'
+        );
+
+        // Start outside the review pass, on a cell that is not flagged.
+        act(() => cell(0, 0).focus());
+
+        // A real press focuses the button before the click, which blurs the cell and clears `focus`.
+        const press = () => {
+            const button = screen.getByTestId('score-sheet-next-flagged');
+            act(() => button.focus());
+            fireEvent.click(button);
+        };
+
+        press();
+        expect(document.activeElement).toBe(cell(1, 0));
+        press();
+        expect(document.activeElement).toBe(cell(1, 1));
+        press();
+        expect(document.activeElement).toBe(cell(1, 0));
+    });
+
+    it('skips a flagged cell that cannot take focus', async () => {
+        const onSave = vi.fn();
+        const absentAnna: StudentTest = { ...bram, id: 'st2', studentId: 's2', absent: true, answers: [] };
+        const sheet = new Map<string, StudentTest>([
+            ['s1', { ...bram, reviewFlags: ['q1'] }],
+            ['s2', absentAnna],
+        ]);
+        renderGrid(onSave, sheet);
+        // Anna's flag on a disabled cell is kept, but Bram's is the only reachable target.
+        fireEvent.click(screen.getByTestId('score-sheet-next-flagged'));
+        expect(document.activeElement).toBe(cell(0, 0));
+    });
+
     it('pastes a copied block from the cell menu', async () => {
         const onSave = renderGrid();
         Object.defineProperty(navigator, 'clipboard', {

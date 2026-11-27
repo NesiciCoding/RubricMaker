@@ -1800,6 +1800,11 @@ export interface StudentTest {
         appliedAt: string;
         note?: string;
     };
+    /**
+     * Set when the teacher reverts a class-average adjustment. Removing the two fields above reads as
+     * "never adjusted" to a merge, which would let an older copy restore them; this records the clear.
+     */
+    adjustmentRevertedAt?: string;
     /** Proctoring events captured while the student took the test */
     events?: ProctorEvent[];
     /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */

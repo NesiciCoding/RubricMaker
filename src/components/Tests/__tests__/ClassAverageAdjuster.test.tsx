@@ -213,6 +213,8 @@ describe('ClassAverageAdjuster', () => {
             const saved = call[0] as StudentTest;
             expect(saved.adjustment).toBeUndefined();
             expect(saved.adjustmentPoints).toBeUndefined();
+            // The clear is recorded, so a stale copy on another device cannot restore the adjustment.
+            expect(saved.adjustmentRevertedAt).toBeDefined();
         }
     });
 });

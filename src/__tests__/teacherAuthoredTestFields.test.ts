@@ -50,11 +50,53 @@ describe('carryTeacherAuthoredTestFields', () => {
         expect(carryTeacherAuthoredTestFields({ id: 'st1' }, undefined)).toEqual({ id: 'st1' });
     });
 
+    it('does not restore an adjustment the teacher reverted', () => {
+        const reverted = {
+            id: 'st1',
+            adjustmentRevertedAt: '2026-02-01T00:00:00.000Z',
+            updatedAt: '2026-02-01T00:00:00.000Z',
+        };
+        const staleAdjusted = {
+            id: 'st1',
+            adjustmentPoints: 2,
+            adjustment: { points: 2, appliedAt: '2026-01-01T00:00:00.000Z' },
+        };
+
+        const merged = carryTeacherAuthoredTestFields<Record<string, unknown>>(reverted, staleAdjusted);
+
+        expect(merged.adjustment).toBeUndefined();
+        expect(merged.adjustmentPoints).toBeUndefined();
+        expect(merged.adjustmentRevertedAt).toBe('2026-02-01T00:00:00.000Z');
+    });
+
+    it('still inherits an adjustment when the newer copy simply never knew about it', () => {
+        // The documented carry case: a hand-in rewrote the row without the adjustment. A row with
+        // no marker is not evidence of a revert, and treating it as one would lose the adjustment.
+        const merged = carryTeacherAuthoredTestFields<Record<string, unknown>>(
+            { id: 'st1', updatedAt: '2026-02-01T00:00:00.000Z' },
+            { id: 'st1', adjustmentPoints: 2, adjustment: { points: 2, appliedAt: '2026-01-01T00:00:00.000Z' } }
+        );
+
+        expect(merged.adjustmentPoints).toBe(2);
+        expect(merged.adjustment).toBeDefined();
+    });
+
+    it('still carries an adjustment onto a rebuilt attempt with a fresh id', () => {
+        const merged = carryTeacherAuthoredTestFields<Record<string, unknown>>(
+            { id: 'st-new', submittedAt: '2026-02-01T00:00:00.000Z' },
+            { id: 'st1', adjustmentPoints: 2, adjustment: { points: 2, appliedAt: '2026-01-01T00:00:00.000Z' } }
+        );
+
+        expect(merged.adjustmentPoints).toBe(2);
+        expect(merged.adjustment).toBeDefined();
+    });
+
     it('covers exactly the fields a student hand-in must never erase', () => {
         expect([...TEACHER_AUTHORED_TEST_FIELDS]).toEqual([
             'reviewFlags',
             'adjustment',
             'adjustmentPoints',
+            'adjustmentRevertedAt',
             'lastEditedBy',
         ]);
     });
