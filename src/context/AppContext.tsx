@@ -575,7 +575,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
         diff(prev.students, state.students, 'student', (s) => s.id);
         diff(prev.studentRubrics, state.studentRubrics, 'studentRubric', (sr) => sr.id);
         diff(prev.peerReviews, state.peerReviews, 'peerReview', (sr) => sr.id);
-        diff(prev.attachments, state.attachments, 'attachment', (a) => a.id);
+        // An attachment update must never re-upload the file or rewrite storage_path; only an id
+        // that was not here before is an add. See StorageSync's attachmentMeta case.
+        const knownAttachmentIds = new Set(prev.attachments.map((a) => a.id));
+        const changedAttachments = diffCollection(prev.attachments, state.attachments, (a) => a.id);
+        for (const id of changedAttachments.deletedIds) storageSync.pushOne('attachment', 'delete', null, id);
+        for (const att of changedAttachments.upserted) {
+            storageSync.pushOne(
+                knownAttachmentIds.has(att.id) ? 'attachmentMeta' : 'attachment',
+                'upsert',
+                att,
+                att.id
+            );
+        }
         diff(prev.gradeScales, state.gradeScales, 'gradeScale', (gs) => gs.id);
         diff(prev.commentBank, state.commentBank, 'commentBankItem', (cb) => cb.id);
         diff(prev.exportTemplates, state.exportTemplates, 'exportTemplate', (t) => t.id);

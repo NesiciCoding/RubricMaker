@@ -1300,6 +1300,21 @@ function GradingTab() {
                 </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.gr_document_correction_title')}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
+                    {t('docs.gr_document_correction_body')}
+                </p>
+                <FeatureList
+                    items={[
+                        t('docs.gr_document_correction_item_marks'),
+                        t('docs.gr_document_correction_item_anchors'),
+                        t('docs.gr_document_correction_item_toggle'),
+                        t('docs.gr_document_correction_item_revert'),
+                    ]}
+                />
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.gr_comparative_title')}
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>

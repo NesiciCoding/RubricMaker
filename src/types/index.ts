@@ -304,6 +304,10 @@ export interface Attachment {
     name: string;
     mimeType: string;
     dataUrl: string; // base64 encoded file content
+    /** Teacher's corrected HTML for an imported essay; the original dataUrl is never edited. */
+    correctedHtml?: string;
+    /** ISO timestamp of the last accepted correction in the copy. */
+    correctedAt?: string;
     rubricId?: string; // if attached to a rubric globally
     studentId?: string; // if attached to a specific student
     size: number; // bytes

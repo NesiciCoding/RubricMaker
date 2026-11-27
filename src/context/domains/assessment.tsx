@@ -17,6 +17,7 @@ import { StoreData } from '../../store/storage';
 import { nanoid } from '../../utils/nanoid';
 import { loadDb } from '../../services/database/lazyDb';
 import { unrecoveredSessions, buildRecoveredStudentTest } from '../../utils/placementRecovery';
+import type { CommentAnchorPatch, MarkAnchorPatch } from '../../utils/documentAnchorMapping';
 
 export type AssessmentValue = Pick<
     AppContextValue,
@@ -55,6 +56,7 @@ export type AssessmentValue = Pick<
     | 'deleteDocumentMark'
     | 'restoreDocumentMark'
     | 'setDocumentMarkStatus'
+    | 'remapDocumentAnchors'
     | 'addGradingTasks'
     | 'deleteGradingTask'
     | 'saveTestAssignment'
@@ -79,6 +81,7 @@ export type AssessmentActions = Pick<
     | 'deleteDocumentMark'
     | 'restoreDocumentMark'
     | 'setDocumentMarkStatus'
+    | 'remapDocumentAnchors'
     | 'savePeerReview'
     | 'deletePeerReview'
     | 'saveSelfAssessment'
@@ -137,6 +140,10 @@ export function createAssessmentActions(ctx: StoreActionsCtx): AssessmentActions
     const restoreDocumentMark = (mark: DocumentMark) => dispatch({ type: 'ADD_DOCUMENT_MARK', payload: mark });
     const setDocumentMarkStatus = (id: string, status: DocumentMark['status']) =>
         dispatch({ type: 'SET_DOCUMENT_MARK_STATUS', id, status });
+    const remapDocumentAnchors = (attachmentId: string, marks: MarkAnchorPatch[], comments: CommentAnchorPatch[]) => {
+        if (marks.length === 0 && comments.length === 0) return;
+        dispatch({ type: 'REMAP_DOCUMENT_ANCHORS', attachmentId, marks, comments });
+    };
     const savePeerReview = (sr: StudentRubric) => {
         dispatch({ type: 'SAVE_PEER_REVIEW', payload: sr });
     };
@@ -213,6 +220,7 @@ export function createAssessmentActions(ctx: StoreActionsCtx): AssessmentActions
         deleteDocumentMark,
         restoreDocumentMark,
         setDocumentMarkStatus,
+        remapDocumentAnchors,
         savePeerReview,
         deletePeerReview,
         saveSelfAssessment,

@@ -54,6 +54,7 @@ export type RosterValue = Pick<
     | 'restoreStudentRubric'
     | 'addAttachment'
     | 'deleteAttachment'
+    | 'updateAttachmentCorrection'
     | 'setStudentPassword'
     | 'addComparativeMatchup'
 >;
@@ -94,6 +95,7 @@ export type GradingValue = Pick<
     | 'restoreStudentRubric'
     | 'addAttachment'
     | 'deleteAttachment'
+    | 'updateAttachmentCorrection'
     | 'addComparativeMatchup'
 >;
 
@@ -120,6 +122,7 @@ export type RosterActions = Pick<
     | 'restoreStudentRubric'
     | 'addAttachment'
     | 'deleteAttachment'
+    | 'updateAttachmentCorrection'
     | 'setStudentPassword'
     | 'anonymizeStudent'
     | 'eraseStudent'
@@ -315,6 +318,8 @@ export function createRosterActions(ctx: StoreActionsCtx): RosterActions {
         return att;
     };
     const deleteAttachment = (id: string) => dispatch({ type: 'DELETE_ATTACHMENT', id });
+    const updateAttachmentCorrection = (id: string, html: string | null) =>
+        dispatch({ type: 'UPDATE_ATTACHMENT_CORRECTION', id, html });
     const addComparativeMatchup = (rubricId: string, studentAId: string, studentBId: string) => {
         const matchup: ComparativeMatchup = {
             id: nanoid(),
@@ -376,6 +381,7 @@ export function createRosterActions(ctx: StoreActionsCtx): RosterActions {
         restoreStudentRubric,
         addAttachment,
         deleteAttachment,
+        updateAttachmentCorrection,
         setStudentPassword,
         anonymizeStudent,
         eraseStudent,
@@ -444,6 +450,7 @@ export function useRosterValue(
             restoreStudentRubric: actions.restoreStudentRubric,
             addAttachment: actions.addAttachment,
             deleteAttachment: actions.deleteAttachment,
+            updateAttachmentCorrection: actions.updateAttachmentCorrection,
             addComparativeMatchup: actions.addComparativeMatchup,
         }),
         [activeStudentRubrics, deletedStudentRubrics, state.attachments, state.comparativeMatchups, actions]

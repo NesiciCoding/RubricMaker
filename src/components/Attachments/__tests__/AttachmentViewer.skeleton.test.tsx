@@ -18,6 +18,7 @@ vi.mock('../../Editor/CommentableDocumentView', () => ({
 }));
 vi.mock('../../../context/AppContext', () => ({
     useAssessment: () => ({ addDocumentMark: vi.fn() }),
+    useRoster: () => ({ updateAttachmentCorrection: vi.fn() }),
 }));
 
 import AttachmentViewer from '../AttachmentViewer';

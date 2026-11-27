@@ -19,6 +19,7 @@ import type { ProofMarkId } from '../../data/proofMarks';
 import { draftProofMark } from '../../utils/proofMarkDraft';
 import { isFormattingMark } from '../../utils/markOperations';
 import { markAnchorState } from '../../utils/proofRail';
+import { remapCommentAnchors, remapMarkAnchors, type AnchorMapping } from '../../utils/documentAnchorMapping';
 import { useAssessment, usePlatform } from '../../context/AppContext';
 
 interface CommentableDocumentViewProps {
@@ -34,9 +35,9 @@ interface CommentableDocumentViewProps {
     onCreateMark?: (mark: Omit<DocumentMark, 'id' | 'createdAt'>) => void;
     /**
      * Writes the corrected document HTML back through whatever owns the document. This view is
-     * read-only and owns nothing, so applying a mark here changes only this session's editor: the
-     * accept controls appear only when a caller can persist the result, rather than accepting a
-     * correction a reload throws away.
+     * read-only and owns nothing, so the accept controls appear only when a caller can persist the
+     * result. The writer runs on every document change, including undo and redo, and mark/comment
+     * anchors are moved through the same mapping afterwards.
      */
     onApplyContent?: (html: string) => void;
 }
@@ -59,8 +60,14 @@ export default function CommentableDocumentView({
     onApplyContent,
 }: CommentableDocumentViewProps) {
     const { t } = useTranslation();
-    const { documentComments, documentMarks, addDocumentComment, resolveDocumentComment, deleteDocumentComment } =
-        useAssessment();
+    const {
+        documentComments,
+        documentMarks,
+        addDocumentComment,
+        resolveDocumentComment,
+        deleteDocumentComment,
+        remapDocumentAnchors,
+    } = useAssessment();
     const { getCurrentDatabaseUserId } = usePlatform();
 
     const [editor, setEditor] = useState<Editor | null>(null);
@@ -137,6 +144,67 @@ export default function CommentableDocumentView({
         if (editor) editor.commands.setActiveDocumentMarks(activeMarkIds);
     }, [editor, activeMarkIds]);
 
+    const latestMarks = useRef(marks);
+    const latestComments = useRef(comments);
+    const pendingMappings = useRef<AnchorMapping[]>([]);
+    const pendingHtml = useRef<string | null>(null);
+    const flushScheduled = useRef(false);
+    const mounted = useRef(true);
+
+    useEffect(() => {
+        latestMarks.current = marks;
+    }, [marks]);
+
+    useEffect(() => {
+        latestComments.current = comments;
+    }, [comments]);
+
+    useEffect(() => {
+        mounted.current = true;
+        return () => {
+            mounted.current = false;
+        };
+    }, []);
+
+    // Correction changes and the editor's own undo/redo all arrive as document transactions. Batch
+    // the synchronous burst (a batch accept dispatches several) into one save, then move the
+    // sidecar anchors through the same mappings. HTML is written before the anchors: a failed
+    // anchor write leaves a mark unanchored, never pointing at other words.
+    const scheduleSave = useCallback(
+        (html: string) => {
+            pendingHtml.current = html;
+            if (flushScheduled.current) return;
+            flushScheduled.current = true;
+            queueMicrotask(() => {
+                flushScheduled.current = false;
+                const htmlToSave = pendingHtml.current;
+                const mappings = pendingMappings.current;
+                pendingHtml.current = null;
+                pendingMappings.current = [];
+                if (!mounted.current) return;
+                if (htmlToSave !== null) onApplyContent?.(htmlToSave);
+                if (mappings.length === 0) return;
+                remapDocumentAnchors(
+                    attachmentId,
+                    remapMarkAnchors(latestMarks.current, mappings),
+                    remapCommentAnchors(latestComments.current, mappings)
+                );
+            });
+        },
+        [attachmentId, onApplyContent, remapDocumentAnchors]
+    );
+
+    useEffect(() => {
+        if (!editor || !onApplyContent) return;
+        const recordMapping = ({ transaction }: { transaction: { docChanged: boolean; mapping: AnchorMapping } }) => {
+            if (transaction.docChanged) pendingMappings.current.push(transaction.mapping);
+        };
+        editor.on('transaction', recordMapping);
+        return () => {
+            editor.off('transaction', recordMapping);
+        };
+    }, [editor, onApplyContent]);
+
     const scrollToComment = useCallback((id: string) => {
         setActiveCommentId(id);
         const el = containerRef.current?.querySelector(`[data-comment-id="${id}"]`);
@@ -169,16 +237,16 @@ export default function CommentableDocumentView({
 
     const handleAcceptMark = useCallback(
         (mark: DocumentMark) => {
-            if (!editor || !onApplyContent) return;
-            if (markMutations.accept(editor, mark)) onApplyContent(editor.getHTML());
+            if (!editor) return;
+            markMutations.accept(editor, mark);
         },
-        [editor, markMutations, onApplyContent]
+        [editor, markMutations]
     );
 
     const handleAcceptAllFormatting = useCallback(() => {
-        if (!editor || !onApplyContent) return;
-        if (markMutations.acceptAllFormatting(editor, formattingMarks) > 0) onApplyContent(editor.getHTML());
-    }, [editor, formattingMarks, markMutations, onApplyContent]);
+        if (!editor) return;
+        markMutations.acceptAllFormatting(editor, formattingMarks);
+    }, [editor, formattingMarks, markMutations]);
 
     const handlePlaceMark = useCallback(
         (symbolId: ProofMarkId) => {
@@ -213,7 +281,7 @@ export default function CommentableDocumentView({
             )}
             <EssayEditor
                 content={content}
-                onChange={noop}
+                onChange={onApplyContent ? scheduleSave : noop}
                 editable={false}
                 // The rail lives in the page's 96 px right padding, so marked documents open on the
                 // A4 sheet. Comment-only documents keep the compact flow they have always had.
